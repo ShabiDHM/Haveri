@@ -1,8 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V7.1 (SHARING METHODS)
-// 1. ADDED: shareDocument, shareArchiveItem, shareArchiveCase methods.
-// 2. LOGIC: Enables toggling visibility for the Client Portal.
-// 3. STATUS: Frontend API layer complete.
+// PHOENIX PROTOCOL - API MASTER V8.0 (PRODUCTION ALIGNMENT)
+// 1. MODIFIED: Replaced dynamic URL logic with an explicit, environment-aware configuration.
+// 2. LOGIC: The API base URL now points directly to 'https://api.haveri.tech' when the frontend is accessed via 'haveri.tech'. This is a robust, non-negotiable configuration for production system integrity. Local development remains on localhost.
+// 3. STATUS: Final frontend configuration complete.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -19,15 +19,26 @@ export interface TaxCalculation { period_month: number; period_year: number; tot
 export interface WizardState { calculation: TaxCalculation; issues: AuditIssue[]; ready_to_close: boolean; }
 export interface InvoiceUpdate { client_name?: string; client_email?: string; client_address?: string; items?: InvoiceItem[]; tax_rate?: number; due_date?: string; status?: string; notes?: string; }
 
-// --- Restored Expense Interfaces ---
-// (Already present in your pasted file, kept for completeness)
-
 interface LoginResponse { access_token: string; }
 interface DocumentContentResponse { text: string; }
 
-const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000';
-let normalizedUrl = rawBaseUrl.replace(/\/$/, '');
-if (typeof window !== 'undefined' && window.location.protocol === 'https:' && normalizedUrl.startsWith('http:')) { normalizedUrl = normalizedUrl.replace('http:', 'https:'); }
+// --- PHOENIX MODIFICATION START ---
+// Explicitly define production and development API endpoints.
+const getBaseUrl = (): string => {
+    // This logic is now robust and environment-aware.
+    if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        if (hostname === 'www.haveri.tech' || hostname === 'haveri.tech') {
+            return 'https://api.haveri.tech'; // Production API endpoint
+        }
+    }
+    // Fallback for local development or other environments.
+    return 'http://localhost:8000';
+};
+
+const normalizedUrl = getBaseUrl();
+// --- PHOENIX MODIFICATION END ---
+
 export const API_BASE_URL = normalizedUrl;
 export const API_V1_URL = `${API_BASE_URL}/api/v1`;
 export const API_V2_URL = `${API_BASE_URL}/api/v2`;
@@ -127,7 +138,6 @@ class ApiService {
     public async deleteArchiveItem(itemId: string): Promise<void> { await this.axiosInstance.delete(`/archive/items/${itemId}`); }
     public async renameArchiveItem(itemId: string, newTitle: string): Promise<void> { await this.axiosInstance.put(`/archive/items/${itemId}/rename`, { new_title: newTitle }); }
     
-    // --- PHOENIX NEW: SHARING METHODS ---
     public async shareDocument(caseId: string, docId: string, isShared: boolean): Promise<Document> {
         const response = await this.axiosInstance.put<Document>(`/cases/${caseId}/documents/${docId}/share`, { is_shared: isShared });
         return response.data;
