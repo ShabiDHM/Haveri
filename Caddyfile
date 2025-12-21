@@ -1,28 +1,32 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - REVERSE PROXY CONFIG
-# 1. STATUS: Routing to backend:8000.
-# 2. ENHANCEMENT: Added security headers (HSTS, NoSniff, etc.).
+# PHOENIX PROTOCOL - REVERSE PROXY CONFIG V2.0 (PRODUCTION ALIGNMENT)
+# 1. STATUS: Domain updated from api.juristi.tech to api.haveri.tech to match live environment.
+# 2. LOGIC: Caddy will now perform automatic HTTPS for the correct domain, resolving the SSL protocol error.
+# 3. ENHANCEMENT: Maintained security headers for system integrity.
 
 {
+    # This email is used for ACME (Let's Encrypt) notifications.
     email shabanbala@gmail.com
 }
 
-api.juristi.tech {
-    # Reverse proxy to the backend container
+# Define the server block for the correct production domain.
+api.haveri.tech {
+    # Reverse proxy all traffic to the backend service container on port 8000.
     reverse_proxy backend:8000
 
     # Security Headers for System Integrity
     header {
         # Enable HTTP Strict Transport Security (HSTS)
+        # Tells browsers to always use HTTPS for this site for the next year.
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         
-        # Prevent browsers from MIME-sniffing a response away from the declared content-type
+        # Prevent browsers from MIME-sniffing a response away from the declared content-type.
         X-Content-Type-Options "nosniff"
         
-        # Prevent clickjacking attacks
+        # Prevent the page from being displayed in an iframe (clickjacking protection).
         X-Frame-Options "DENY"
         
-        # Cross-Site Scripting (XSS) Protection
+        # Enable the browser's built-in Cross-Site Scripting (XSS) filter.
         X-XSS-Protection "1; mode=block"
     }
 }
