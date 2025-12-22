@@ -1,8 +1,7 @@
 // FILE: src/components/Sidebar.tsx
-// PHOENIX PROTOCOL - SIDEBAR V1.4 (MOBILE COMPACT FIX)
-// 1. UI: Reduced button height and font sizes in mobile footer for a sleeker look.
-// 2. LAYOUT: Adjusted avatar size and spacing to prevent overcrowding.
-// 3. STATUS: Mobile view is now consistent and professional.
+// PHOENIX PROTOCOL - SIDEBAR V1.5 (ROLE LOGIC FIX)
+// 1. FIX: Admin check is now case-insensitive (handles 'admin' and 'ADMIN').
+// 2. STATUS: Admin Panel link will now correctly render for backend-promoted users.
 
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -53,7 +52,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       },
     ];
 
-    if (user?.role === 'ADMIN') {
+    // PHOENIX FIX: Case-insensitive check for admin role
+    if (user?.role?.toUpperCase() === 'ADMIN') {
       baseItems.splice(1, 0, {
         icon: Shield,
         label: t('sidebar.admin', 'Admin Panel'),
@@ -122,7 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             })}
           </nav>
 
-          {/* Mobile-Only Profile Footer - PHOENIX FIX: Ultra Compact & Proportional */}
+          {/* Mobile-Only Profile Footer */}
           <div className="p-3 border-t border-glass-edge bg-[#0a0a0a] lg:hidden mt-auto flex-shrink-0 pb-safe">
             <div className="flex items-center gap-3 mb-3 px-1">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-secondary-start to-secondary-end flex items-center justify-center text-white font-bold shadow-md shrink-0 text-xs">
