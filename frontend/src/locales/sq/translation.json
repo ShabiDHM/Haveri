@@ -2,7 +2,7 @@
   "general": {
     "login": "Hyrja",
     "logout": "Dalja",
-    "dashboard": "Juristi AI",
+    "dashboard": "Haveri AI",
     "drafting": "Hartimi",
     "search": "Kërko",
     "userProfile": "Profili i Përdoruesit",
@@ -25,10 +25,11 @@
     "edit": "Ndrysho",
     "view": "Shiko",
     "archive": "Arkivo",
-    "delete": "Fshi"
+    "delete": "Fshi",
+    "actions": "Veprime"
   },
   "branding": {
-    "default": "Juristi Portal"
+    "default": "Omni Portal"
   },
   "portal": {
     "secure_connection": "Lidhje e Sigurt",
@@ -62,7 +63,7 @@
     "date": "sq-AL"
   },
   "auth": {
-    "loginTitle": "Hyni në Juristi AI",
+    "loginTitle": "Hyni në Omni",
     "loginSubtitle": "Menaxhoni çështjet ligjore me inteligjencë.",
     "usernameOrEmail": "Përdoruesi ose Email",
     "usernameOrEmailPlaceholder": "psh: blerim ose blerim@example.com",
@@ -114,8 +115,9 @@
     "slide5_desc": "Menaxhoni financat, faturat dhe llogaritni tatimet automatikisht. Gati për ATK."
   },
   "sidebar": {
-    "dashboard": "Juristi AI",
-    "juristi_ai": "Juristi AI",
+    "dashboard": "Haveri AI",
+    "juristi_ai": "Haveri AI",
+    "haveri_ai": "Haveri AI",
     "calendar": "Kalendari",
     "drafting": "Hartimi",
     "business": "Zyra Ime",
@@ -148,7 +150,7 @@
     "confirmDelete": "A jeni i sigurt që doni ta fshini këtë rast?"
   },
   "caseView": {
-    "backToDashboard": "Kthehu te Juristi AI",
+    "backToDashboard": "Kthehu te Haveri AI",
     "statusLabel": "Statusi",
     "findingsTitle": "Gjetjet",
     "errorLoadingTitle": "Gabim",
@@ -450,7 +452,33 @@
     "title": "Paneli i Administratorit",
     "subtitle": "Menaxhimi i përdoruesve dhe sistemit.",
     "userUpdated": "Përdoruesi u përditësua.",
-    "confirmDelete": "A jeni të sigurt që doni të fshini këtë përdorues?"
+    "confirmDelete": "A jeni të sigurt që doni të fshini këtë përdorues?",
+    "totalUsers": "Total Përdorues",
+    "pendingApproval": "Në Pritje",
+    "registeredUsers": "Përdoruesit e Regjistruar",
+    "search": "Kërko...",
+    "table": {
+        "user": "Përdoruesi",
+        "role": "Roli",
+        "status": "Statusi",
+        "registered": "Regjistruar"
+    },
+    "statuses": {
+        "ACTIVE": "Aktive",
+        "INACTIVE": "Në Pritje"
+    },
+    "roles": {
+        "STANDARD": "Përdorues",
+        "ADMIN": "Admin"
+    },
+    "editModal": {
+        "title": "Ndrysho Përdoruesin",
+        "username": "Emri i Përdoruesit",
+        "email": "Email",
+        "role": "Roli",
+        "subscriptionStatus": "Abonimi",
+        "accountStatus": "Llogaria (Gatekeeper)"
+    }
   },
   "calendar": {
     "loadFailure": "Dështoi ngarkimi i të dhënave të kalendarit.",
@@ -555,5 +583,10 @@
   "pdfViewer": {
     "downloadOriginal": "Shkarko Dokumentin Origjinal",
     "close": "Mbyll"
+  },
+  "subscription": {
+      "ACTIVE": "Aktive",
+      "INACTIVE": "Jo Aktive",
+      "TRIAL": "Provë (Trial)"
   }
 }

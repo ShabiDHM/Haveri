@@ -1,7 +1,8 @@
 // FILE: src/components/Sidebar.tsx
-// PHOENIX PROTOCOL - SIDEBAR V1.5 (ROLE LOGIC FIX)
-// 1. FIX: Admin check is now case-insensitive (handles 'admin' and 'ADMIN').
-// 2. STATUS: Admin Panel link will now correctly render for backend-promoted users.
+// PHOENIX PROTOCOL - SIDEBAR V1.6 (REBRANDING)
+// 1. REBRAND: Updated navigation label from "Juristi AI" to "Haveri AI".
+// 2. LOGIC: Changed translation key to 'sidebar.haveri_ai' to force immediate update.
+// 3. STATUS: Navigation text updated.
 
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -32,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       },
       { 
         icon: Scale, 
-        label: t('sidebar.juristi_ai', 'Juristi AI'), 
+        label: t('sidebar.haveri_ai', 'Haveri AI'), // PHOENIX: Rebranded to Haveri AI
         path: '/dashboard' 
       },
       { 
