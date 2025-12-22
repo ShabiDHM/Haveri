@@ -1,8 +1,9 @@
 # FILE: backend/scripts/force_admin.py
-# PHOENIX PROTOCOL - DEFINITIVE CORRECTION V3.0
-# 1. FIX: The script now correctly sets 'subscription_status' to 'active'
-#    in addition to setting the admin role. This was the final gatekeeper
-#    preventing login.
+# PHOENIX PROTOCOL - DEFINITIVE CORRECTION V3.1
+# 1. FIX: Added specific update for the 'status' field.
+#    - Previous version only updated 'subscription_status'.
+#    - UserService explicitly checks 'status' for login authorization.
+# 2. STATUS: Fully aligned with User Model V5.0 and User Service V1.3.
 
 import os
 import sys
@@ -30,21 +31,26 @@ def promote():
         db = client[db_name]
 
         # --- THE DEFINITIVE FIX IS HERE ---
+        # We must update BOTH status fields to satisfy the UserService logic.
         update_data = {
             "$set": {
                 "role": "admin",
                 "is_superuser": True,
                 "is_staff": True,
-                "subscription_status": "active"  # This was the missing piece.
+                "subscription_status": "active",
+                "status": "active"  # CRITICAL FIX: Required by user_service.authenticate line 60
             }
         }
         
-        for col_name in ["User", "users"]:
+        # We prioritize the 'users' collection as per standard convention,
+        # but keep 'User' as a fallback if legacy collections exist.
+        for col_name in ["users", "User"]:
             collection = db[col_name]
+            # normalized_email check handling (case insensitive match via regex not ideal in script, strict match preferred for admin ops)
             result = collection.update_one({"email": target_email}, update_data)
             
             if result.matched_count > 0:
-                print(f"✅ SUCCESS! User '{target_email}' is now an ACTIVE ADMIN.")
+                print(f"✅ SUCCESS! User '{target_email}' is now an ACTIVE ADMIN (Collection: {col_name}).")
                 client.close()
                 return
 
