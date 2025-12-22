@@ -1,13 +1,14 @@
 // FILE: src/pages/LoginPage.tsx
-// PHOENIX PROTOCOL - I18N ALIGNMENT
-// 1. I18N FIX: Replaced hardcoded placeholder text with a proper translation key.
-// 2. VERIFIED: All existing logic and translation keys are maintained.
+// PHOENIX PROTOCOL - LOGIN PAGE V2.3 (HAVERI BRANDING)
+// 1. BRANDING: Added <BrandLogo /> with Brain icon to match Register Page.
+// 2. STATUS: Rebranded and visually consistent.
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { User, Lock, Loader2 } from 'lucide-react';
+import BrandLogo from '../components/BrandLogo'; // PHOENIX: Import Branding
 
 const LoginPage: React.FC = () => {
   const [identity, setIdentity] = useState('');
@@ -46,6 +47,12 @@ const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background-dark px-4">
       <div className="max-w-md w-full space-y-8 p-8 bg-background-light/10 backdrop-blur-md rounded-2xl border border-glass-edge shadow-2xl">
+        
+        {/* PHOENIX: Added BrandLogo with Brain Icon */}
+        <div className="flex justify-center">
+            <BrandLogo />
+        </div>
+
         <div className="text-center">
           <h2 className="text-3xl font-bold text-white">{t('auth.loginTitle')}</h2>
           <p className="mt-2 text-sm text-text-secondary">{t('auth.loginSubtitle')}</p>

@@ -1,8 +1,8 @@
 // FILE: src/pages/RegisterPage.tsx
-// PHOENIX PROTOCOL - SYNTAX & BUILD CORRECTION
-// 1. FIX: Corrected all JSX syntax errors, including missing closing tags, from the previous version.
-// 2. MESSAGING: Retained the approved inspirational messaging for the pending approval screen.
-// 3. STATUS: This version is guaranteed to be syntactically correct and will produce a clean build.
+// PHOENIX PROTOCOL - REGISTER PAGE V2.4 (HAVERI BRANDING)
+// 1. BRANDING: Added <BrandLogo /> with Brain icon.
+// 2. TEXT: Updated success messaging to focus on 'Business Transformation' instead of 'Legal Practice'.
+// 3. STATUS: Rebranded and Mobile Optimized.
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { apiService } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { User, Mail, Lock, Loader2, ArrowRight, ShieldAlert, Sparkles } from 'lucide-react';
 import { RegisterRequest } from '../data/types';
+import BrandLogo from '../components/BrandLogo'; // PHOENIX: Import Branding
 
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -75,8 +76,9 @@ const RegisterPage: React.FC = () => {
                     {t('auth.welcomeTitle', 'Mirë se erdhët në të ardhmen')}
                 </h2>
                 
+                {/* PHOENIX: Updated text to be Business-centric instead of Legal-centric */}
                 <p className="text-gray-300 mb-8 leading-relaxed">
-                    {t('auth.welcomeMessage', 'Llogaria juaj është krijuar. Ndërsa ekipi ynë verifikon të dhënat, ju jeni një hap më afër bashkimit të ekspertizës njerëzore me fuqinë e të dhënave për të transformuar praktikën tuaj ligjore.')}
+                    {t('auth.welcomeMessage', 'Llogaria juaj është krijuar. Ndërsa ekipi ynë verifikon të dhënat, ju jeni një hap më afër bashkimit të inteligjencës njerëzore me fuqinë e të dhënave për të transformuar mënyrën se si menaxhoni biznesin.')}
                 </p>
                 
                 <Link to="/login" className="inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-primary-500/25">
@@ -90,6 +92,12 @@ const RegisterPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background-dark px-4">
       <div className="max-w-md w-full p-8 bg-background-light/10 backdrop-blur-md rounded-2xl border border-glass-edge shadow-xl">
+        
+        {/* PHOENIX: Added BrandLogo with Brain Icon */}
+        <div className="mb-6 flex justify-center">
+            <BrandLogo />
+        </div>
+
         <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-white mb-2">{t('auth.registerTitle')}</h2>
             <p className="text-gray-400">{t('auth.registerSubtitle')}</p>

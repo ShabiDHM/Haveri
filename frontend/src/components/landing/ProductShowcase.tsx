@@ -1,23 +1,22 @@
 // FILE: src/components/landing/ProductShowcase.tsx
-// PHOENIX PROTOCOL - LANDING PRESENTATION V2.1 (ACCOUNTANT ADDED)
-// 1. CONTENT: Added 5th Slide: "Kontabilisti i Zyrës".
-// 2. UI: Added 'FinanceMockup' to visualize Income/Expense/Tax tracking.
-// 3. LOGIC: Carousel now rotates through 5 items.
+// PHOENIX PROTOCOL - LANDING PRESENTATION V2.5 (CLEANUP)
+// 1. FIX: Removed unused 'Target' import to satisfy TypeScript linter.
+// 2. STATUS: Clean build.
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { 
-    ShieldAlert, FileText, ScanEye, BrainCircuit, 
+    FileText, ScanEye, BrainCircuit, 
     CheckCircle, PenTool, FolderOpen, 
-    Sparkles, Gavel, Calculator, TrendingUp
+    Sparkles, Calculator, TrendingUp 
 } from 'lucide-react';
 
 const ProductShowcase = () => {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState(0);
 
-    // Auto-rotate slides (Now 5 slides)
+    // Auto-rotate slides
     useEffect(() => {
         const timer = setInterval(() => {
             setActiveTab((prev) => (prev + 1) % 5);
@@ -28,11 +27,11 @@ const ProductShowcase = () => {
     const features = [
         {
             id: 0,
-            title: t('showcase.slide1_title', 'Dhoma e Luftës'),
-            desc: t('showcase.slide1_desc', 'Gjeni gënjeshtrat automatikisht.'),
-            icon: <Gavel className="w-5 h-5 lg:w-6 lg:h-6" />,
+            title: t('showcase.slide1_title', 'Dhoma e Strategjisë'),
+            desc: t('showcase.slide1_desc', 'Gjeni mospërputhjet automatikisht.'),
+            icon: <BrainCircuit className="w-5 h-5 lg:w-6 lg:h-6" />,
             color: "from-orange-500 to-red-600",
-            mockup: <WarRoomMockup />
+            mockup: <StrategyMockup /> 
         },
         {
             id: 1,
@@ -44,8 +43,8 @@ const ProductShowcase = () => {
         },
         {
             id: 2,
-            title: t('showcase.slide3_title', 'Hartim i Padukshëm'),
-            desc: t('showcase.slide3_desc', 'Ju shkruani strategjinë, ne shkruajmë nenet.'),
+            title: t('showcase.slide3_title', 'Hartim i Shpejtë'),
+            desc: t('showcase.slide3_desc', 'Ju shkruani strategjinë, ne shkruajmë detajet.'),
             icon: <PenTool className="w-5 h-5 lg:w-6 lg:h-6" />,
             color: "from-emerald-500 to-green-500",
             mockup: <DraftingMockup />
@@ -60,7 +59,7 @@ const ProductShowcase = () => {
         },
         {
             id: 4,
-            title: t('showcase.slide5_title', 'Kontabilisti i Zyrës'),
+            title: t('showcase.slide5_title', 'Menaxhimi Financiar'),
             desc: t('showcase.slide5_desc', 'Menaxhoni financat dhe tatimet automatikisht.'),
             icon: <Calculator className="w-5 h-5 lg:w-6 lg:h-6" />,
             color: "from-yellow-500 to-amber-600",
@@ -82,7 +81,7 @@ const ProductShowcase = () => {
                         {t('showcase.title', 'Jo Thjesht Softuer. Partneri Juaj.')}
                     </h2>
                     <p className="text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto">
-                        {t('showcase.subtitle', 'Inteligjencë Artificiale e ndërtuar për sistemin e Kosovës.')}
+                        {t('showcase.subtitle', 'Inteligjencë Artificiale e ndërtuar për biznesin tuaj.')}
                     </p>
                 </div>
 
@@ -179,29 +178,29 @@ const ProductShowcase = () => {
 
 // --- MOCKUPS ---
 
-const WarRoomMockup = () => (
+const StrategyMockup = () => (
     <div className="space-y-3 lg:space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col justify-center">
         <div className="flex items-center gap-3 mb-2 lg:mb-6">
-            <div className="p-2 bg-orange-500/20 rounded-lg"><ShieldAlert className="text-orange-500 w-5 h-5 lg:w-6 lg:h-6" /></div>
-            <div className="h-3 lg:h-4 w-24 lg:w-32 bg-gray-700 rounded animate-pulse" />
+            <div className="p-2 bg-orange-500/20 rounded-lg"><TrendingUp className="text-orange-500 w-5 h-5 lg:w-6 lg:h-6" /></div>
+            <div className="h-3 lg:h-4 w-32 lg:w-48 bg-gray-700 rounded animate-pulse" />
         </div>
-        <div className="p-3 lg:p-4 bg-red-900/20 border border-red-500/30 rounded-xl">
-            <div className="flex items-center gap-2 mb-2 text-red-400 font-bold text-[10px] lg:text-xs uppercase">
-                <Sparkles size={12} /> Kontradiktë e Gjetur
+        <div className="p-3 lg:p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-xl">
+            <div className="flex items-center gap-2 mb-2 text-emerald-400 font-bold text-[10px] lg:text-xs uppercase">
+                <Sparkles size={12} /> Trend Pozitiv
             </div>
             <div className="space-y-2">
-                <div className="h-2 lg:h-3 w-full bg-red-500/10 rounded" />
-                <div className="h-2 lg:h-3 w-3/4 bg-red-500/10 rounded" />
+                <div className="h-2 lg:h-3 w-full bg-emerald-500/10 rounded" />
+                <div className="h-2 lg:h-3 w-3/4 bg-emerald-500/10 rounded" />
             </div>
         </div>
         <div className="flex gap-3 lg:gap-4">
             <div className="flex-1 p-3 lg:p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
-                <div className="text-blue-400 font-bold text-[10px] lg:text-xs mb-2">PALA E PADITUR</div>
+                <div className="text-blue-400 font-bold text-[10px] lg:text-xs mb-2">TË HYRAT Q4</div>
                 <div className="h-1.5 lg:h-2 w-full bg-blue-500/10 rounded mb-1" />
                 <div className="h-1.5 lg:h-2 w-1/2 bg-blue-500/10 rounded" />
             </div>
             <div className="flex-1 p-3 lg:p-4 bg-gray-800 border border-white/5 rounded-xl opacity-50">
-                <div className="text-gray-500 font-bold text-[10px] lg:text-xs mb-2">PROVA</div>
+                <div className="text-gray-500 font-bold text-[10px] lg:text-xs mb-2">BUXHETI</div>
                 <div className="h-1.5 lg:h-2 w-full bg-gray-700 rounded mb-1" />
                 <div className="h-1.5 lg:h-2 w-1/2 bg-gray-700 rounded" />
             </div>
@@ -242,8 +241,8 @@ const DraftingMockup = () => (
              <motion.div initial={{ width: 0 }} animate={{ width: "40%" }} transition={{ duration: 0.5, delay: 2 }} className="h-2 lg:h-3 bg-gray-700 rounded opacity-30" />
         </div>
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 2.5 }} className="absolute bottom-2 lg:bottom-10 right-0 left-0 mx-2 lg:mx-4 p-3 bg-indigo-900/80 backdrop-blur border border-indigo-500/50 rounded-xl">
-            <div className="flex items-center gap-2 mb-1"><BrainCircuit className="w-3 h-3 lg:w-4 lg:h-4 text-indigo-300" /><span className="text-[9px] lg:text-[10px] text-indigo-200 font-bold uppercase">Juristi AI</span></div>
-            <div className="text-[10px] lg:text-xs text-white">Duke analizuar Ligjin nr. 03/L-006... Sugjeroj të shtoni Nenin 14.</div>
+            <div className="flex items-center gap-2 mb-1"><BrainCircuit className="w-3 h-3 lg:w-4 lg:h-4 text-indigo-300" /><span className="text-[9px] lg:text-[10px] text-indigo-200 font-bold uppercase">Haveri AI</span></div>
+            <div className="text-[10px] lg:text-xs text-white">Duke analizuar tregun... Sugjeroj optimizim të kostove operative.</div>
         </motion.div>
     </div>
 );

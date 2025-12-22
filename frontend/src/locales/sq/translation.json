@@ -195,9 +195,9 @@
     "archiveFailed": "Arkivimi dështoi."
   },
   "chatPanel": {
-    "title": "Nastradini",
+    "title": "Haveri AI",
     "inputPlaceholder": "Shtypni pyetjen tuaj këtu...",
-    "thinking": "Duke analizuar...",
+    "thinking": "Haveri tu menu...",
     "welcomeMessage": "Përshëndetje! Unë jam asistenti juaj inteligjent.",
     "statusConnected": "Lidhur",
     "confirmClear": "Pastro bisedën?",
