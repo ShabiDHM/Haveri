@@ -1,7 +1,7 @@
 // FILE: vite.config.ts
-// PHOENIX PROTOCOL - BUILD FIX
-// 1. FIX: Added 'workbox' configuration to handle large JS chunks.
-// 2. LOGIC: 'maximumFileSizeToCacheInBytes' prevents build failure from PWA caching.
+// PHOENIX PROTOCOL - BUILD REBRAND V2.0
+// 1. REBRAND: Updated PWA manifest name, short_name, and description to 'Haveri'.
+// 2. STATUS: PWA generation is now aligned with the new brand identity.
 
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -14,9 +14,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Juristi AI',
-        short_name: 'Juristi',
-        description: 'Platforma e Inteligjencës Ligjore',
+        name: 'Haveri AI',
+        short_name: 'Haveri',
+        description: 'Platforma Inteligjente për Menaxhimin e Biznesit',
         theme_color: '#111827', 
         background_color: '#111827',
         display: 'standalone', 
@@ -40,10 +40,8 @@ export default defineConfig({
           }
         ]
       },
-      // PHOENIX FIX: Added workbox config to solve build error
       workbox: {
         // This setting tells the service worker to ignore large files.
-        // We increase the limit to 5MB, which is more than enough for our large JS chunk.
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       }
     })
