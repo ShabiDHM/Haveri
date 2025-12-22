@@ -133,7 +133,7 @@
     "logout": "Dilni"
   },
   "dashboard": {
-    "mainTitle": "Haveri Ytë",
+    "mainTitle": "Haveri AI",
     "welcome": "Mirësevini, {{name}}",
     "subtitle": "I gatshëm për ndihmë.",
     "newCase": "Projekt i ri",
@@ -194,9 +194,9 @@
     "archiveFailed": "Arkivimi dështoi."
   },
   "chatPanel": {
-    "title": "Asistenti Sokratik",
+    "title": "Nastradini",
     "inputPlaceholder": "Shtypni pyetjen tuaj këtu...",
-    "thinking": "Duke analizuar...",
+    "thinking": "Nastardini tu menu...",
     "welcomeMessage": "Përshëndetje! Unë jam asistenti juaj inteligjent.",
     "statusConnected": "Lidhur",
     "confirmClear": "Pastro bisedën?",
