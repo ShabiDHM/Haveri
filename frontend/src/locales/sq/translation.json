@@ -29,7 +29,7 @@
     "actions": "Veprime"
   },
   "branding": {
-    "default": "Omni Portal"
+    "default": "Haveri Portal"
   },
   "portal": {
     "secure_connection": "Lidhje e Sigurt",
@@ -63,7 +63,7 @@
     "date": "sq-AL"
   },
   "auth": {
-    "loginTitle": "Hyni në Omni",
+    "loginTitle": "Hyni në Haveri",
     "loginSubtitle": "Menaxhoni projektet tuaja me inteligjencë.",
     "usernameOrEmail": "Përdoruesi ose Email",
     "usernameOrEmailPlaceholder": "psh: blerim ose blerim@example.com",
@@ -86,7 +86,10 @@
     "registerFailed": "Regjistrimi dështoi. Ju lutemi provoni përsëri.",
     "successTitle": "Llogaria u Krijua",
     "successMessage": "Llogaria juaj është krijuar me sukses.",
-    "loginNow": "Vazhdoni te Hyrja"
+    "loginNow": "Vazhdoni te Hyrja",
+    "welcomeTitle": "Mirë se erdhët në të ardhmen",
+    "welcomeMessage": "Llogaria juaj është krijuar. Ndërsa ekipi ynë verifikon të dhënat, ju jeni një hap më afër bashkimit të inteligjencës njerëzore me fuqinë e të dhënave për të transformuar mënyrën se si menaxhoni biznesin.",
+    "backToLogin": "Kthehu te Kyçja"
   },
   "landing": {
     "heroTitle": "Inteligjenca Artificiale",
@@ -192,7 +195,10 @@
     "renameTitle": "Riemërto Dokumentin",
     "newName": "Emri i ri",
     "archiveSuccess": "Dokumenti u arkivua me sukses!",
-    "archiveFailed": "Arkivimi dështoi."
+    "archiveFailed": "Arkivimi dështoi.",
+    "share": "Ndaj me Klientin",
+    "unshare": "Hiq Ndarjen",
+    "shared": "Ndarë me klientin"
   },
   "chatPanel": {
     "title": "Haveri AI",
@@ -336,6 +342,7 @@
     "tabTransactions": "Transaksionet",
     "tabReports": "Raportet",
     "tabHistory": "Historiku",
+    "invoice": "Faturë",
     "analytics": {
       "periodTitle": "Analiza (30 Ditë)",
       "totalSales": "Shitjet Totale",
@@ -411,7 +418,10 @@
     "view": "Shiko",
     "download": "Shkarko",
     "delete": "Fshi",
-    "deleteConfirm": "A jeni i sigurt që doni ta fshini këtë element? Veprimi është i pakthyeshëm."
+    "deleteConfirm": "A jeni i sigurt që doni ta fshini këtë element? Veprimi është i pakthyeshëm.",
+    "sharedTooltip": "Ndarë me klientin",
+    "share": "Ndaj me Klientin",
+    "unshare": "Hiq Ndarjen"
   },
   "category": {
     "general": "Të Përgjithshme",
