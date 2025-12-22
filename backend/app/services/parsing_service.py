@@ -1,4 +1,8 @@
 # FILE: backend/app/services/parsing_service.py
+# PHOENIX PROTOCOL - PARSING SERVICE V2.1 (ID GENERATION FIX)
+# 1. FIX: Explicitly removes '_id' from model_dump to prevent 'dup key: { _id: null }' error.
+# 2. STATUS: Production Ready.
+
 import pandas as pd
 import io
 import logging
@@ -51,7 +55,11 @@ class ParsingService:
             except UnicodeDecodeError:
                 df = pd.read_csv(io.BytesIO(contents), encoding='cp1252', sep=None, engine='python')
             except Exception as e:
-                raise HTTPException(status_code=400, detail=f"File format error: {str(e)}")
+                # Fallback: try excel if csv fails, or vice versa
+                try:
+                     df = pd.read_excel(io.BytesIO(contents))
+                except:
+                    raise HTTPException(status_code=400, detail=f"File format error: {str(e)}")
             
             await file.seek(0)
             df = df.fillna("")
@@ -90,15 +98,22 @@ class ParsingService:
         except Exception as e:
              raise HTTPException(status_code=400, detail=f"File read error: {str(e)}")
             
+        # Rename columns based on mapping
+        # Mapping is { 'Original Header': 'db_field' }
         df.rename(columns=mapping, inplace=True)
         
+        # --- FIX 1: Sanitize Batch Record ---
         batch_record = ImportBatch(
             user_id=user_id,
             filename=filename,
             mapping_snapshot=mapping,
             status="processing"
         )
-        batch_res = self.db["import_batches"].insert_one(batch_record.model_dump(by_alias=True))
+        batch_dict = batch_record.model_dump(by_alias=True)
+        if batch_dict.get("_id") is None:
+            del batch_dict["_id"] # Allow Mongo to generate ID
+            
+        batch_res = self.db["import_batches"].insert_one(batch_dict)
         batch_id = str(batch_res.inserted_id)
 
         transactions_to_insert = []
@@ -106,6 +121,7 @@ class ParsingService:
         
         for _, row in df.iterrows():
             try:
+                # Check if 'amount' exists (it might be mapped)
                 if 'amount' not in row:
                     continue
                     
@@ -139,7 +155,12 @@ class ParsingService:
                     original_row_data=row.to_dict()
                 )
                 
-                transactions_to_insert.append(tx.model_dump(by_alias=True))
+                # --- FIX 2: Sanitize Transaction Record ---
+                tx_dict = tx.model_dump(by_alias=True)
+                if tx_dict.get("_id") is None:
+                    del tx_dict["_id"] # Critical Fix for BulkWriteError
+                
+                transactions_to_insert.append(tx_dict)
                 total_value += amount
 
             except Exception as row_error:
