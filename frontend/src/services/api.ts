@@ -1,8 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V8.2 (STATE SYNC)
-// 1. FIX: Added public 'setToken' method.
-// 2. REASON: Allows AuthContext to synchronize the token from localStorage on startup.
-// 3. STATUS: Mobile login race condition is now fully resolved.
+// PHOENIX PROTOCOL - API MASTER V9.0 (INTEGRATION HUB)
+// 1. ADDED: 'previewImport' and 'confirmImport' for POS CSV ingestion.
+// 2. STATUS: Production Ready.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -19,20 +18,32 @@ export interface TaxCalculation { period_month: number; period_year: number; tot
 export interface WizardState { calculation: TaxCalculation; issues: AuditIssue[]; ready_to_close: boolean; }
 export interface InvoiceUpdate { client_name?: string; client_email?: string; client_address?: string; items?: InvoiceItem[]; tax_rate?: number; due_date?: string; status?: string; notes?: string; }
 
+// --- IMPORT TYPES ---
+export interface ImportPreviewResponse {
+    filename: string;
+    headers: string[];
+    sample_data: Record<string, string>[];
+    total_rows_estimated: number;
+}
+
+export interface ImportResult {
+    status: string;
+    imported_count: number;
+    total_value: number;
+    batch_id: string;
+}
+
 interface LoginResponse { access_token: string; }
 interface DocumentContentResponse { text: string; }
 
 // --- PHOENIX MODIFICATION START ---
-// Explicitly define production and development API endpoints.
 const getBaseUrl = (): string => {
-    // This logic is now robust and environment-aware.
     if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
         if (hostname === 'www.haveri.tech' || hostname === 'haveri.tech') {
-            return 'https://api.haveri.tech'; // Production API endpoint
+            return 'https://api.haveri.tech';
         }
     }
-    // Fallback for local development or other environments.
     return 'http://localhost:8000';
 };
 
@@ -93,15 +104,28 @@ class ApiService {
             });
     }
     
-    // PHOENIX FIX: Added public method to set token from AuthContext
-    public setToken(token: string | null): void {
-        tokenManager.set(token);
-    }
-
+    public setToken(token: string | null): void { tokenManager.set(token); }
     public getToken(): string | null { return tokenManager.get(); }
     public async refreshToken(): Promise<boolean> { try { const response = await this.axiosInstance.post<LoginResponse>('/auth/refresh'); if (response.data.access_token) { tokenManager.set(response.data.access_token); return true; } return false; } catch (error) { console.warn("[API] Session Refresh Failed (Normal if logged out):", error); return false; } }
     public async login(data: LoginRequest): Promise<LoginResponse> { const response = await this.axiosInstance.post<LoginResponse>('/auth/login', data); if (response.data.access_token) tokenManager.set(response.data.access_token); return response.data; }
     public logout() { tokenManager.set(null); }
+
+    // --- INTEGRATION HUB (NEW) ---
+    public async previewImport(file: File): Promise<ImportPreviewResponse> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData);
+        return response.data;
+    }
+
+    public async confirmImport(file: File, mapping: Record<string, string>): Promise<ImportResult> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('mapping', JSON.stringify(mapping));
+        const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData);
+        return response.data;
+    }
+    // ----------------------------
 
     public async fetchImageBlob(url: string): Promise<Blob> { const response = await this.axiosInstance.get(url, { responseType: 'blob' }); return response.data; }
     public async getExpenseReceiptBlob(expenseId: string): Promise<{ blob: Blob, filename: string }> { const response = await this.axiosInstance.get(`/finance/expenses/${expenseId}/receipt`, { responseType: 'blob' }); const disposition = response.headers['content-disposition']; let filename = `receipt-${expenseId}.pdf`; if (disposition && disposition.indexOf('filename=') !== -1) { const matches = /filename="([^"]*)"/.exec(disposition); if (matches != null && matches[1]) filename = matches[1]; } return { blob: response.data, filename }; }

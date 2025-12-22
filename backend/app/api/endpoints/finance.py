@@ -1,10 +1,7 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - V11.1 (ANALYTICS FIELD ALIGNMENT)
-# 1. FIX: Updated invoice_pipeline to group by 'related_case_id' instead of 'case_id'.
-# 2. STATUS: Production Ready.
-
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+import json
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from typing import List, Annotated, Optional, Any, Dict
 from datetime import datetime, timedelta
@@ -21,11 +18,44 @@ from app.models.finance import (
 from app.models.archive import ArchiveItemOut 
 from app.services.finance_service import FinanceService
 from app.services.archive_service import ArchiveService
+from app.services.parsing_service import ParsingService 
 from app.services import report_service
 from app.api.endpoints.dependencies import get_current_user, get_db, get_async_db, get_current_active_user
 
 router = APIRouter(tags=["Finance"])
 
+# --- DATA IMPORT ENDPOINTS (THE INTEGRATION HUB) ---
+
+@router.post("/import/preview")
+async def preview_import_file(
+    file: UploadFile = File(...),
+    db: Database = Depends(get_db)
+):
+    service = ParsingService(db)
+    return await service.preview_file(file)
+
+@router.post("/import/confirm")
+async def confirm_import(
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    file: UploadFile = File(...),
+    mapping: str = Form(...),
+    db: Database = Depends(get_db)
+):
+    """
+    Step 2: Process the file using the confirmed column mapping.
+    NOTE: 'current_user' is now first to avoid Python default argument errors.
+    """
+    try:
+        mapping_dict = json.loads(mapping)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid mapping format")
+        
+    service = ParsingService(db)
+    return await service.process_import(
+        file, 
+        str(current_user.id), 
+        mapping_dict
+    )
 
 # --- ANALYTICS & HISTORY ENDPOINTS ---
 
@@ -35,13 +65,10 @@ async def get_case_financial_summaries(
     db: Any = Depends(get_async_db)
 ):
     user_oid = ObjectId(current_user.id)
-
-    # PHOENIX FIX: Updated to use 'related_case_id' to match current data model
     invoice_pipeline = [
         {"$match": {"user_id": user_oid, "status": {"$ne": "CANCELLED"}, "related_case_id": {"$exists": True, "$ne": None}}},
         {"$group": {"_id": "$related_case_id", "total_billed": {"$sum": "$total_amount"}}}
     ]
-
     expense_pipeline = [
         {"$match": {"user_id": user_oid, "related_case_id": {"$exists": True, "$ne": None}}},
         {"$group": {"_id": "$related_case_id", "total_expenses": {"$sum": "$amount"}}}
@@ -78,7 +105,6 @@ async def get_case_financial_summaries(
             
     return sorted(summaries, key=lambda s: s.total_billed, reverse=True)
 
-
 @router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
 async def get_analytics_dashboard(
     current_user: Annotated[UserInDB, Depends(get_current_active_user)],
@@ -89,36 +115,52 @@ async def get_analytics_dashboard(
     start_date = end_date - timedelta(days=days)
     user_oid = ObjectId(current_user.id)
 
+    # 1. Manual Invoices
     inv_pipeline = [
         {"$match": {"user_id": user_oid, "issue_date": {"$gte": start_date, "$lte": end_date}, "status": {"$ne": "CANCELLED"}}},
         {"$unwind": "$items"},
         {"$project": {"date": "$issue_date", "amount": {"$multiply": ["$items.quantity", "$items.unit_price"]}, "product": "$items.description", "quantity": "$items.quantity"}}
     ]
+    # 2. Manual Expenses
     exp_pipeline = [
         {"$match": {"user_id": user_oid, "date": {"$gte": start_date, "$lte": end_date}}},
         {"$project": {"date": "$date", "amount": {"$multiply": ["$amount", -1]}}}
     ]
+    # 3. Integrated POS Transactions
+    pos_pipeline = [
+        {"$match": {"user_id": str(user_oid), "date": {"$gte": start_date, "$lte": end_date}}},
+        {"$project": {"date": "$date", "amount": "$amount", "product": "$description", "quantity": "$quantity"}}
+    ]
     
     inv_data_task = db["invoices"].aggregate(inv_pipeline).to_list(length=None)
     exp_data_task = db["expenses"].aggregate(exp_pipeline).to_list(length=None)
-    inv_data, exp_data = await asyncio.gather(inv_data_task, exp_data_task)
+    pos_data_task = db["transactions"].aggregate(pos_pipeline).to_list(length=None)
     
-    total_revenue = sum(item['amount'] for item in inv_data)
-    total_count = len(inv_data)
+    inv_data, exp_data, pos_data = await asyncio.gather(inv_data_task, exp_data_task, pos_data_task)
+    
+    all_income = inv_data + pos_data 
+    
+    total_revenue = sum(item['amount'] for item in all_income)
+    total_count = len(all_income)
     
     trend_map: Dict[str, float] = {}
     product_map: Dict[str, Dict[str, float]] = {}
 
-    for item in inv_data:
-        date_key = item["date"].strftime("%Y-%m-%d")
+    for item in all_income:
+        d = item["date"]
+        if isinstance(d, str): d = datetime.fromisoformat(d)
+        date_key = d.strftime("%Y-%m-%d")
         trend_map[date_key] = trend_map.get(date_key, 0.0) + item['amount']
+        
         prod_name = item.get("product", "Shërbim")
         if prod_name not in product_map: product_map[prod_name] = {"qty": 0, "rev": 0.0}
         product_map[prod_name]["qty"] += item.get('quantity', 0)
         product_map[prod_name]["rev"] += item['amount']
 
     for exp in exp_data:
-        date_key = exp["date"].strftime("%Y-%m-%d")
+        d = exp["date"]
+        if isinstance(d, str): d = datetime.fromisoformat(d)
+        date_key = d.strftime("%Y-%m-%d")
         trend_map[date_key] = trend_map.get(date_key, 0.0) + exp['amount']
 
     sales_trend = [SalesTrendPoint(date=k, amount=round(v, 2)) for k, v in sorted(trend_map.items())]

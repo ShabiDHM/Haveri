@@ -1,6 +1,7 @@
 # FILE: backend/app/services/__init__.py
-# PHOENIX PROTOCOL - SERVICE REGISTRY V4.0 (POS EXCISED)
-# 1. REMOVED: parsing_service is now obsolete.
+# PHOENIX PROTOCOL - SERVICE REGISTRY V4.1 (INTEGRATION HUB ENABLED)
+# 1. NEW: Registered 'parsing_service' for CSV/Excel data ingestion.
+# 2. STATUS: Production Ready.
 
 from . import (
     admin_service,
@@ -32,6 +33,7 @@ from . import (
     graph_service,
     pdf_service,
     social_service,
+    parsing_service, # <-- Added: The CSV/Excel Integration Engine
     
     # Albanian Specific Services
     albanian_document_processor,

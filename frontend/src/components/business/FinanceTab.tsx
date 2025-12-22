@@ -1,7 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V9.0 (TRANSLATION FIX)
-// 1. FIX: Ensured 'Invoice'/'Expense' labels in history list use translation keys.
-// 2. STATUS: Fully localized.
+// PHOENIX PROTOCOL - FINANCE TAB V10.0 (INTEGRATION HUB)
+// 1. ADDED: TransactionImporter component integration.
+// 2. ADDED: "Import Transactions" button with i18n support.
+// 3. STATUS: Production Ready.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -9,7 +10,8 @@ import {
     TrendingUp, TrendingDown, Wallet, Calculator, MinusCircle, Plus, FileText, 
     Edit2, Eye, Download, Archive, Trash2, CheckCircle, Paperclip, X, User, Activity, 
     Loader2, BarChart2, History, Search, Briefcase, ChevronRight, ChevronDown,
-    Car, Coffee, Building, Users, Landmark, Zap, Wifi, Receipt, Utensils
+    Car, Coffee, Building, Users, Landmark, Zap, Wifi, Receipt, Utensils,
+    FileSpreadsheet // NEW ICON
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
@@ -19,6 +21,7 @@ import {
 } from '../../data/types';
 import { useTranslation } from 'react-i18next';
 import PDFViewerModal from '../PDFViewerModal';
+import { TransactionImporter } from './TransactionImporter'; // NEW IMPORT
 import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { sq, enUS } from 'date-fns/locale';
@@ -109,10 +112,14 @@ export const FinanceTab: React.FC = () => {
     const [openingDocId, setOpeningDocId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [analyticsData, setAnalyticsData] = useState<AnalyticsDashboardData | null>(null);
+    
+    // Modals State
     const [showInvoiceModal, setShowInvoiceModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false); // NEW STATE
     const [showArchiveInvoiceModal, setShowArchiveInvoiceModal] = useState(false);
     const [showArchiveExpenseModal, setShowArchiveExpenseModal] = useState(false);
+    
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
     const [selectedCaseForInvoice, setSelectedCaseForInvoice] = useState<string>("");
@@ -157,9 +164,13 @@ export const FinanceTab: React.FC = () => {
         }
     }, [includeVat]);
 
+    // This total now comes mainly from Analytics, but we keep basic sums for quick view
     const totalIncome = invoices.reduce((sum, inv) => sum + inv.total_amount, 0);
     const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const totalBalance = totalIncome - totalExpenses;
+    
+    // PHOENIX: We use the Analytics Data for the "Big Numbers" because it includes Imports
+    const displayIncome = analyticsData ? analyticsData.total_revenue_period : totalIncome;
+    const displayBalance = displayIncome - totalExpenses;
 
     const sortedTransactions = useMemo(() => {
         const combined = [
@@ -411,9 +422,9 @@ export const FinanceTab: React.FC = () => {
                 <div className="lg:col-span-1 flex flex-col gap-6 h-full">
                     <div className="bg-background-dark/50 border border-glass-edge rounded-3xl p-6 space-y-4 flex-none">
                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">{t('finance.overview')}</h3>
-                        <SmartStatCard title={t('finance.income')} amount={`€${totalIncome.toFixed(2)}`} icon={<TrendingUp size={20} />} color="text-emerald-400" />
+                        <SmartStatCard title={t('finance.income')} amount={`€${displayIncome.toFixed(2)}`} icon={<TrendingUp size={20} />} color="text-emerald-400" />
                         <SmartStatCard title={t('finance.expense')} amount={`€${totalExpenses.toFixed(2)}`} icon={<TrendingDown size={20} />} color="text-rose-400" />
-                        <SmartStatCard title={t('finance.balance')} amount={`€${totalBalance.toFixed(2)}`} icon={<Wallet size={20} />} color="text-blue-400" />
+                        <SmartStatCard title={t('finance.balance')} amount={`€${displayBalance.toFixed(2)}`} icon={<Wallet size={20} />} color="text-blue-400" />
                         
                         {analyticsData && (
                             <div className="pt-4 border-t border-white/10 mt-4">
@@ -429,6 +440,15 @@ export const FinanceTab: React.FC = () => {
                     <div className="bg-background-dark/50 border border-glass-edge rounded-3xl p-6 space-y-3 flex-1 flex flex-col justify-start">
                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">{t('finance.quickActions')}</h3>
                         <QuickActionButton icon={<Plus size={18} />} label={t('finance.createInvoice')} onClick={() => setShowInvoiceModal(true)} color="text-emerald-400" />
+                        
+                        {/* PHOENIX: NEW IMPORT BUTTON */}
+                        <QuickActionButton 
+                            icon={<FileSpreadsheet size={18} />} 
+                            label={t('finance.import.title') || 'Importo Transaksionet'} 
+                            onClick={() => setShowImportModal(true)} 
+                            color="text-blue-400" 
+                        />
+                        
                         <QuickActionButton icon={<MinusCircle size={18} />} label={t('finance.addExpense')} onClick={() => setShowExpenseModal(true)} color="text-rose-400" />
                         <QuickActionButton icon={<Calculator size={18} />} label={t('finance.monthlyClose')} onClick={() => navigate('/finance/wizard')} color="text-gray-400" />
                     </div>
@@ -558,7 +578,6 @@ export const FinanceTab: React.FC = () => {
                                                             <YAxis dataKey="product_name" type="category" stroke="#9ca3af" fontSize={12} width={100} tick={{fill: '#e5e7eb', fontSize: 12}} />
                                                             <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#f3f4f6', borderRadius: '8px' }} formatter={(value: any) => [`€${Number(value).toFixed(2)}`, t('finance.analytics.tableValue')]} />
                                                             <Bar dataKey="total_revenue" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20}>
-                                                                {/* PHOENIX FIX: Added type annotation for '_' and 'index' */}
                                                                 {analyticsData.top_products.map((_: TopProductItem, index: number) => (<Cell key={`cell-${index}`} fill={['#34d399', '#60a5fa', '#fbbf24', '#f87171', '#a78bfa'][index % 5]} />))}
                                                             </Bar>
                                                         </BarChart>
@@ -621,7 +640,6 @@ export const FinanceTab: React.FC = () => {
                                                     <div className="bg-black/20 p-4 border-t border-white/5 space-y-2">
                                                         <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('finance.details', 'Detajet Financiare')}</h5>
                                                         {item.activity.map((act, idx) => (<div key={`${act.type}-${idx}`} className="flex justify-between items-center text-sm py-1 border-b border-white/5 last:border-0"><div className="flex items-center gap-3"><span className="text-gray-400 text-xs font-mono">{new Date(act.date).toLocaleDateString('sq-AL')}</span><div className="flex flex-col"><span className="text-white font-medium">{act.label || act.type}</span>
-                                                        {/* PHOENIX FIX: Translation applied here */}
                                                         <span className={`text-[10px] uppercase ${act.type === 'invoice' ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
                                                             {act.type === 'invoice' ? t('category.invoices', 'Faturë') : t('finance.expense', 'Shpenzim')}
                                                         </span>
@@ -639,13 +657,20 @@ export const FinanceTab: React.FC = () => {
             </div>
             
             {showInvoiceModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 custom-finance-scroll"><div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-white">{editingInvoiceId ? t('finance.editInvoice') : t('finance.createInvoice')}</h2><button onClick={closeInvoiceModal} className="text-gray-400 hover:text-white"><X size={24} /></button></div><form onSubmit={handleCreateOrUpdateInvoice} className="space-y-6"><div className="space-y-4">
-                {/* PHOENIX FIX: REMOVED STATUS DROPDOWN BLOCK */}
                 <h3 className="text-sm font-bold text-primary-start uppercase tracking-wider flex items-center gap-2"><User size={16} /> {t('caseCard.client')}</h3><div><label className="block text-sm text-gray-300 mb-1">{t('drafting.selectCaseLabel', "Lënda e Lidhur (Opsionale)")}</label><select value={newInvoice.related_case_id} onChange={e => setNewInvoice({...newInvoice, related_case_id: e.target.value})} className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white"><option value="">-- {t('finance.noCase', 'Pa Lëndë')} --</option>{cases.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}</select></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.clientName', 'Emri')}</label><input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_name} onChange={e => setNewInvoice({...newInvoice, client_name: e.target.value})} /></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-sm text-gray-300 mb-1">{t('business.publicEmail')}</label><input type="email" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_email} onChange={e => setNewInvoice({...newInvoice, client_email: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.phone')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_phone} onChange={e => setNewInvoice({...newInvoice, client_phone: e.target.value})} /></div></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-sm text-gray-300 mb-1">{t('business.city')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_city} onChange={e => setNewInvoice({...newInvoice, client_city: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.taxId')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_tax_id} onChange={e => setNewInvoice({...newInvoice, client_tax_id: e.target.value})} /></div></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.address')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_address} onChange={e => setNewInvoice({...newInvoice, client_address: e.target.value})} /></div><div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/10"><input type="checkbox" id="vatToggle" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} className="w-4 h-4 text-primary-start rounded border-gray-300 focus:ring-primary-start" /><label htmlFor="vatToggle" className="text-sm text-gray-300 cursor-pointer select-none">Apliko TVSH (18%)</label></div></div><div className="space-y-3 pt-4 border-t border-white/10"><h3 className="text-sm font-bold text-primary-start uppercase tracking-wider flex items-center gap-2"><FileText size={16} /> {t('finance.services')}</h3>{lineItems.map((item, index) => (<div key={index} className="flex flex-col sm:flex-row gap-2 items-center"><input type="text" placeholder={t('finance.description')} className="flex-1 w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} required /><input type="number" placeholder={t('finance.qty')} className="w-full sm:w-20 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))} min="1" /><input type="number" placeholder={t('finance.price')} className="w-full sm:w-24 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.unit_price} onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))} min="0" /><button type="button" onClick={() => removeLineItem(index)} className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg self-end sm:self-center"><Trash2 size={18} /></button></div>))}<button type="button" onClick={addLineItem} className="text-sm text-primary-start hover:underline flex items-center gap-1"><Plus size={14} /> {t('finance.addLine')}</button></div><div className="flex justify-end gap-3"><button type="button" onClick={closeInvoiceModal} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold">{t('general.save')}</button></div></form></div></div>)}
             {showExpenseModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6"><div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-white flex items-center gap-2"><MinusCircle size={20} className="text-rose-500" /> {editingExpenseId ? t('finance.editExpense') : t('finance.addExpense')}</h2><button onClick={closeExpenseModal} className="text-gray-400 hover:text-white"><X size={24} /></button></div><div className="mb-6"><input type="file" ref={receiptInputRef} className="hidden" accept="image/*,.pdf" onChange={(e) => setExpenseReceipt(e.target.files?.[0] || null)} /><button onClick={() => receiptInputRef.current?.click()} className={`w-full py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${expenseReceipt ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>{expenseReceipt ? (<><CheckCircle size={18} /> {expenseReceipt.name}</>) : (<><Paperclip size={18} /> {t('finance.attachReceipt')}</>)}</button></div><form onSubmit={handleCreateOrUpdateExpense} className="space-y-5"><div><label className="block text-sm text-gray-300 mb-1">{t('drafting.selectCaseLabel', "Lënda e Lidhur (Opsionale)")}</label><select value={newExpense.related_case_id} onChange={e => setNewExpense({...newExpense, related_case_id: e.target.value})} className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white"><option value="">-- {t('finance.noCase', 'Pa Lëndë')} --</option>{cases.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}</select></div><div><label className="block text-sm text-gray-300 mb-1">{t('finance.expenseCategory')}</label><input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newExpense.category} onChange={e => setNewExpense({...newExpense, category: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('finance.amount')}</label><input required type="number" step="0.01" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: parseFloat(e.target.value)})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('finance.date')}</label><DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" required /></div><div><label className="block text-sm text-gray-300 mb-1">{t('finance.description')}</label><textarea rows={2} className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newExpense.description} onChange={e => setNewExpense({...newExpense, description: e.target.value})} /></div><div className="flex justify-end gap-3 pt-4"><button type="button" onClick={closeExpenseModal} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold">{t('general.save')}</button></div></form></div></div>)}
             {showArchiveInvoiceModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2 bg-blue-600 text-white rounded-lg">{t('general.save')}</button></div></div></div>)}
             {showArchiveExpenseModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2 bg-indigo-600 text-white rounded-lg">{t('general.save')}</button></div></div></div>)}
 
-            {/* FIX: PASSED onMinimize HANDLER */}
+            {/* PHOENIX: RENDER THE IMPORT MODAL */}
+            {showImportModal && (
+                <TransactionImporter 
+                    onClose={() => setShowImportModal(false)} 
+                    onSuccess={() => { loadInitialData(); setShowImportModal(false); }}
+                    t={t}
+                />
+            )}
+
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} onMinimize={closePreview} t={t} directUrl={viewingUrl} />}
         </motion.div>
     );

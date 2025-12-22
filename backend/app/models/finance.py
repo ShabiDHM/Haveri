@@ -1,12 +1,39 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V7.2 (WIZARD STATE FIX)
-# 1. FIX: Reverted 'ready_to_close' in WizardState to 'bool' to resolve validation error.
-# 2. STATUS: Production Ready.
-
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 from .common import PyObjectId
+
+# --- IMPORT BATCH (AUDIT TRAIL) ---
+class ImportBatch(BaseModel):
+    id: PyObjectId = Field(alias="_id", default=None)
+    user_id: str
+    business_id: Optional[str] = None
+    filename: str
+    upload_timestamp: datetime = Field(default_factory=datetime.utcnow)
+    status: str = "processing"
+    row_count: int = 0
+    total_amount: float = 0.0
+    mapping_snapshot: Dict[str, str] = {}
+    
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
+
+# --- POS TRANSACTION (OPERATIONAL DATA) ---
+class Transaction(BaseModel):
+    id: PyObjectId = Field(alias="_id", default=None)
+    user_id: str
+    business_id: Optional[str] = None
+    batch_id: Optional[str] = None
+    date: datetime
+    amount: float
+    type: str = "income"
+    category: str = "Uncategorized"
+    description: str
+    quantity: float = 1.0
+    unit_price: Optional[float] = None
+    original_row_data: Optional[Dict[str, Any]] = None
+    
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
 # --- INVOICE MODELS ---
 class InvoiceItem(BaseModel):
@@ -20,39 +47,31 @@ class InvoiceBase(BaseModel):
     client_name: str
     client_email: Optional[str] = None
     client_address: Optional[str] = None
-    
-    # PHOENIX: Added missing client details
     client_phone: Optional[str] = None
     client_city: Optional[str] = None
     client_tax_id: Optional[str] = None
     client_website: Optional[str] = None
-    
     issue_date: datetime = Field(default_factory=datetime.utcnow)
     due_date: datetime = Field(default_factory=datetime.utcnow)
     items: List[InvoiceItem] = []
     notes: Optional[str] = None
     subtotal: float = 0.0
-    tax_rate: float = 0.0 
+    tax_rate: float = 0.0
     tax_amount: float = 0.0
     total_amount: float = 0.0
     currency: str = "EUR"
-    status: str = "DRAFT" 
+    status: str = "DRAFT"
     is_locked: bool = False
-    
-    # PHOENIX: Renamed from case_id to match Expense model and Frontend
     related_case_id: Optional[str] = None
 
 class InvoiceCreate(BaseModel):
     client_name: str
     client_email: Optional[str] = None
     client_address: Optional[str] = None
-    
-    # PHOENIX: Added missing client details
     client_phone: Optional[str] = None
     client_city: Optional[str] = None
     client_tax_id: Optional[str] = None
     client_website: Optional[str] = None
-    
     items: List[InvoiceItem]
     tax_rate: float = 0.0
     due_date: Optional[datetime] = None
@@ -63,13 +82,10 @@ class InvoiceUpdate(BaseModel):
     client_name: Optional[str] = None
     client_email: Optional[str] = None
     client_address: Optional[str] = None
-    
-    # PHOENIX: Added missing client details
     client_phone: Optional[str] = None
     client_city: Optional[str] = None
     client_tax_id: Optional[str] = None
     client_website: Optional[str] = None
-    
     items: Optional[List[InvoiceItem]] = None
     tax_rate: Optional[float] = None
     due_date: Optional[datetime] = None
@@ -119,7 +135,7 @@ class ExpenseInDB(ExpenseBase):
 class ExpenseOut(ExpenseInDB):
     id: PyObjectId = Field(alias="_id", serialization_alias="id", default=None)
 
-# --- ANALYTICS & CASE SUMMARY MODELS (RESTORED) ---
+# --- ANALYTICS MODELS ---
 class SalesTrendPoint(BaseModel):
     date: str
     amount: float
@@ -143,7 +159,7 @@ class CaseFinancialSummary(BaseModel):
     total_expenses: float
     net_balance: float
 
-# --- TAX ENGINE MODELS ---
+# --- TAX MODELS ---
 class TaxCalculation(BaseModel):
     period_month: int
     period_year: int
@@ -168,4 +184,4 @@ class AuditIssue(BaseModel):
 class WizardState(BaseModel):
     calculation: TaxCalculation
     issues: List[AuditIssue]
-    ready_to_close: bool # PHOENIX FIX: Changed back to bool
+    ready_to_close: bool

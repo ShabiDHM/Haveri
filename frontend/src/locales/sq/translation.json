@@ -395,6 +395,23 @@
         "copy": "Kopjo",
         "copied": "U Kopjua"
       }
+    },
+    "import": {
+      "title": "Importo Transaksionet",
+      "uploadTitle": "Ngarko Raportin (CSV / Excel)",
+      "uploadDesc": "Sistemi pranon raporte nga çdo sistem POS.",
+      "selectFile": "Zgjidh Skedarin",
+      "analyzing": "Duke analizuar...",
+      "mappingTitle": "Lidhja e Kolonave",
+      "mappingDesc": "Ju lutem lidhni kolonat e skedarit tuaj me fushat e sistemit tonë.",
+      "autoMapInfo": "Sistemi ka tentuar t'i lidhë automatikisht kolonat e gjetura.",
+      "preview": "Pamje Paraprake",
+      "processingTitle": "Duke importuar...",
+      "processingDesc": "Ju lutem prisni, transaksionet po ruhen në databazë.",
+      "confirm": "Konfirmo Importin",
+      "back": "Kthehu",
+      "columnSelect": "-- Zgjidh Kolonën --",
+      "success": "Importi u krye me sukses!"
     }
   },
   "archive": {
