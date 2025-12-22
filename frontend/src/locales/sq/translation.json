@@ -133,7 +133,7 @@
     "logout": "Dilni"
   },
   "dashboard": {
-    "mainTitle": "Haveri Juaj",
+    "mainTitle": "Haveri Ytë",
     "welcome": "Mirësevini, {{name}}",
     "subtitle": "I gatshëm për ndihmë.",
     "newCase": "Projekt i ri",
@@ -187,7 +187,6 @@
     "deleteFailed": "Fshirja dështoi.",
     "uploaded": "Ngarkuar",
     "deepScan": "Skanim i Thellë (Vision AI)",
-    "scanStarted": "Skanimi i Thellë filloi! Kontrolloni gjetjet pas pak.",
     "rename": "Riemërto",
     "renameTitle": "Riemërto Dokumentin",
     "newName": "Emri i ri",
