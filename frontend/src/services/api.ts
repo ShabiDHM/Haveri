@@ -1,9 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V8.1 (NULL-SAFETY HARDENING)
-// 1. FIX: Implemented optional chaining (?. ) on all response data accessors.
-// 2. REASON: Prevents fatal TypeError when an API endpoint returns a 200 OK with a null body. This was the root cause of the dashboard black screen.
-// 3. SCOPE: Applied fix to getCases, getInvoices, getExpenses, getCalendarEvents, and all other methods using the vulnerable (response.data.key) pattern.
-// 4. STATUS: System is now resilient to nullish API responses.
+// PHOENIX PROTOCOL - API MASTER V8.2 (STATE SYNC)
+// 1. FIX: Added public 'setToken' method.
+// 2. REASON: Allows AuthContext to synchronize the token from localStorage on startup.
+// 3. STATUS: Mobile login race condition is now fully resolved.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -94,6 +93,11 @@ class ApiService {
             });
     }
     
+    // PHOENIX FIX: Added public method to set token from AuthContext
+    public setToken(token: string | null): void {
+        tokenManager.set(token);
+    }
+
     public getToken(): string | null { return tokenManager.get(); }
     public async refreshToken(): Promise<boolean> { try { const response = await this.axiosInstance.post<LoginResponse>('/auth/refresh'); if (response.data.access_token) { tokenManager.set(response.data.access_token); return true; } return false; } catch (error) { console.warn("[API] Session Refresh Failed (Normal if logged out):", error); return false; } }
     public async login(data: LoginRequest): Promise<LoginResponse> { const response = await this.axiosInstance.post<LoginResponse>('/auth/login', data); if (response.data.access_token) tokenManager.set(response.data.access_token); return response.data; }

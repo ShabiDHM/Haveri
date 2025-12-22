@@ -1,8 +1,8 @@
 # FILE: backend/app/services/case_service.py
-# PHOENIX PROTOCOL - CASE SERVICE V5.5 (WORKFLOW UPDATE)
-# 1. FIX: Updated Invoice Whitelist to match new "Auto-Paid" workflow.
-# 2. LOGIC: Removed 'OPEN' and 'PARTIAL' statuses.
-# 3. RESULT: Old/Zombie invoices with status 'OPEN' are now hidden.
+# PHOENIX PROTOCOL - CASE SERVICE V5.6 (PORTAL AUTH FIX)
+# 1. FIX: 'get_public_case_events' now checks for an 'is_shared' flag on the case document.
+# 2. LOGIC: Removed the ambiguous "Zero-Share Protection" block.
+# 3. RESULT: Client Portal access is now correctly governed by the master share toggle.
 
 import re
 import importlib
@@ -173,6 +173,10 @@ def get_public_case_events(db: Database, case_id: str) -> Optional[Dict[str, Any
         case_oid = ObjectId(case_id)
         case = db.cases.find_one({"_id": case_oid})
         if not case: return None
+
+        # PHOENIX FIX: Add a master check for the 'is_shared' flag on the case.
+        if case.get("is_shared") is not True:
+            return None
         
         # 1. Fetch Timeline
         events_cursor = db.calendar_events.find({
@@ -232,8 +236,6 @@ def get_public_case_events(db: Database, case_id: str) -> Optional[Dict[str, Any
             })
 
         # 4. Fetch Invoices (UPDATED STRICT WHITELIST)
-        # PHOENIX FIX: Removed 'OPEN' and 'PARTIAL' to match new workflow.
-        # Only 'PAID', 'SENT', 'OVERDUE' are considered active/public.
         invoices_cursor = db.invoices.find({
             "related_case_id": case_id,
             "status": {"$in": ["PAID", "SENT", "OVERDUE"]}
@@ -249,9 +251,8 @@ def get_public_case_events(db: Database, case_id: str) -> Optional[Dict[str, Any
                 "date": inv.get("issue_date")
             })
 
-        # --- SECURITY: ZERO-SHARE PROTECTION ---
-        if not events and not shared_docs and not shared_invoices:
-            return None
+        # PHOENIX FIX: Removed the "Zero-Share Protection" block
+        # The master 'is_shared' flag is now the single source of truth.
 
         # --- BRANDING RETRIEVAL ---
         owner_id = case.get("owner_id") or case.get("user_id")

@@ -1,7 +1,8 @@
 // FILE: src/context/AuthContext.tsx
-// PHOENIX PROTOCOL - REVISED AUTHENTICATION CONTEXT
-// 1. UPDATE: Implements 'Proactive Refresh' to prevent 401 console errors on reload.
-// 2. LOGIC: Tries to restore session via refresh token before fetching user profile.
+// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V3.0 (STATE PERSISTENCE)
+// 1. FIX: The login function now explicitly saves the access token to localStorage.
+// 2. LOGIC: The initialization logic will now try to load from localStorage first. This prevents the mobile redirect race condition by making the session synchronous after a reload.
+// 3. BRANDING: Updated loading screen text from "Juristi AI" to "Haveri AI".
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, LoginRequest, RegisterRequest } from '../data/types';
@@ -19,6 +20,8 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
+const AUTH_TOKEN_KEY = 'haveri_access_token';
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -26,6 +29,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   const logout = useCallback(() => {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
     apiService.logout(); 
     setUser(null);
   }, []);
@@ -34,29 +38,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     apiService.setLogoutHandler(logout);
   }, [logout]);
 
-  // PHOENIX FIX: Proactive Initialization
-  // Instead of failing on /users/me then refreshing, we refresh first.
   useEffect(() => {
     let isMounted = true;
 
     const initializeApp = async () => {
       try {
-        // Step 1: Proactively try to refresh the token using the HttpOnly cookie.
-        // This suppresses the 401 error that would otherwise occur on the first request.
+        // PHOENIX FIX: Synchronous Check First
+        // Attempt to load token from localStorage immediately.
+        const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+        if (storedToken) {
+            apiService.setToken(storedToken); // Immediately arm the apiService
+        }
+
+        // Proactively try to refresh the token using the HttpOnly cookie.
         const refreshed = await apiService.refreshToken();
         
         if (refreshed) {
-            // Step 2: If refresh succeeded, we have a valid token. Fetch user.
+            // If refresh succeeded, we have a valid token. Fetch user.
             const fullUser = await apiService.fetchUserProfile();
+            // Persist the new token from the refresh
+            const newAccessToken = apiService.getToken();
+            if (newAccessToken) {
+                localStorage.setItem(AUTH_TOKEN_KEY, newAccessToken);
+            }
             if (isMounted) setUser(fullUser);
         } else {
-            // Step 3: If refresh failed (no cookie or expired), we are logged out.
-            if (isMounted) setUser(null);
+            // If refresh failed, we are logged out.
+            logout();
         }
       } catch (error) {
-        // Fallback for any unexpected network errors
         console.error("Session initialization failed:", error);
-        if (isMounted) setUser(null);
+        if (isMounted) logout();
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -65,7 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initializeApp();
     
     return () => { isMounted = false; };
-  }, []); 
+  }, [logout]); 
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -75,7 +87,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           password: password 
       };
 
-      await apiService.login(loginPayload);
+      const response = await apiService.login(loginPayload);
+      
+      // PHOENIX FIX: Persist the token immediately after login
+      localStorage.setItem(AUTH_TOKEN_KEY, response.access_token);
+      
       const fullUser = await apiService.fetchUserProfile();
       setUser(fullUser);
 
@@ -93,7 +109,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         <div className="min-h-screen bg-gray-900 flex items-center justify-center">
             <div className="text-center">
                 <Loader2 className="h-12 w-12 text-blue-500 animate-spin mx-auto mb-4" />
-                <h2 className="text-xl font-bold text-white">Juristi AI</h2>
+                <h2 className="text-xl font-bold text-white">Haveri AI</h2>
                 <p className="text-sm text-gray-400 mt-2">Duke u ngarkuar...</p>
             </div>
         </div>

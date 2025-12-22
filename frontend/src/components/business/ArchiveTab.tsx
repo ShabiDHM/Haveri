@@ -1,8 +1,8 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V10.5 (REBRANDING)
-// 1. REBRAND: 'Dosje Çështjeje' -> 'Dosje Projekti'.
-// 2. TEXT: 'Rasti #' -> 'Projekti #'.
-// 3. STATUS: Business context aligned.
+// PHOENIX PROTOCOL - ARCHIVE TAB V10.6 (TOOLTIP LOCALIZATION)
+// 1. FIX: Added 'title' attribute to all action icons (View, Download, Delete, Share, Rename).
+// 2. I18N: Ensured all tooltips use the t() translation function.
+// 3. STATUS: All hover text is now correctly displayed and localized.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,7 +44,7 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
                     <div className="flex justify-between items-start gap-2">
                         <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-300">{icon}</div>
                         {isShared && (
-                            <div className="bg-green-500/20 text-green-400 p-1.5 rounded-lg border border-green-500/30" title={t('documentsPanel.shared', 'E ndarë me klientin')}>
+                            <div className="bg-green-500/20 text-green-400 p-1.5 rounded-lg border border-green-500/30" title={t('archive.sharedTooltip', 'Ndarë me klientin')}>
                                 <Share2 size={14} />
                             </div>
                         )}
@@ -56,7 +56,7 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
                 </div>
                 <div className="flex flex-col mb-6 relative z-10">
                     <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
-                        <Info className="w-3.5 h-3.5 text-indigo-400" /><span className="text-sm font-bold text-gray-300 uppercase tracking-wider">{isFolder ? t('archive.contents', 'Contents') : t('archive.details', 'Details')}</span>
+                        <Info className="w-3.5 h-3.5 text-indigo-400" /><span className="text-sm font-bold text-gray-300 uppercase tracking-wider">{isFolder ? t('archive.contents', 'Përmbajtja') : t('archive.details', 'Detajet')}</span>
                     </div>
                     <div className="space-y-1.5 pl-1">
                         <div className="flex items-center gap-2 text-base font-medium text-gray-200">{isFolder ? <FolderOpen className="w-4 h-4 text-amber-500" /> : <FileText className="w-4 h-4 text-blue-500" />}<span className="truncate">{type}</span></div>
@@ -66,21 +66,22 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
             </div>
             
             <div className="relative z-10 pt-4 border-t border-white/5 flex items-center justify-between min-h-[3rem]">
-                <span className="text-sm font-medium text-indigo-400 group-hover:text-indigo-300 transition-colors flex items-center gap-1">{isFolder ? t('archive.openFolder', 'Open Folder') : ''}</span>
+                <span className="text-sm font-medium text-indigo-400 group-hover:text-indigo-300 transition-colors flex items-center gap-1">{isFolder ? t('archive.openFolder', 'Hap Dosjen') : ''}</span>
                 <div className="flex gap-1 items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    {/* PHOENIX: Added 'title' to all buttons for tooltips */}
                     {!isFolder && onShare && (
-                        <button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 rounded-lg transition-colors ${isShared ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'text-gray-600 hover:text-white hover:bg-white/10'}`} title={isShared ? t('documentsPanel.unshare') : t('documentsPanel.share')}>
+                        <button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 rounded-lg transition-colors ${isShared ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'text-gray-600 hover:text-white hover:bg-white/10'}`} title={isShared ? t('archive.unshare', 'Hiq Ndarjen') : t('archive.share', 'Ndaj me Klientin')}>
                             <Share2 className="h-4 w-4" />
                         </button>
                     )}
                     {onRename && (
-                        <button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 rounded-lg text-gray-600 hover:text-white hover:bg-white/10 transition-colors" title={t('documentsPanel.rename', 'Riemërto')}>
+                        <button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 rounded-lg text-gray-600 hover:text-white hover:bg-white/10 transition-colors" title={t('general.edit', 'Ndrysho')}>
                             <Pencil className="h-4 w-4" />
                         </button>
                     )}
-                    {!isFolder && <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-2 rounded-lg text-gray-600 hover:text-blue-400 hover:bg-blue-400/10 transition-colors">{isLoading ? <Loader2 className="h-4 w-4 animate-spin text-blue-400" /> : <Eye className="h-4 w-4" />}</button>}
-                    {!isFolder && onDownload && <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="p-2 rounded-lg text-gray-600 hover:text-green-400 hover:bg-green-400/10 transition-colors"><Download className="h-4 w-4" /></button>}
-                    {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-400/10 transition-colors"><Trash2 className="h-4 w-4" /></button>}
+                    {!isFolder && <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-2 rounded-lg text-gray-600 hover:text-blue-400 hover:bg-blue-400/10 transition-colors" title={t('general.view', 'Shiko')}>{isLoading ? <Loader2 className="h-4 w-4 animate-spin text-blue-400" /> : <Eye className="h-4 w-4" />}</button>}
+                    {!isFolder && onDownload && <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="p-2 rounded-lg text-gray-600 hover:text-green-400 hover:bg-green-400/10 transition-colors" title={t('general.download', 'Shkarko')}><Download className="h-4 w-4" /></button>}
+                    {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-400/10 transition-colors" title={t('general.delete', 'Fshi')}><Trash2 className="h-4 w-4" /></button>}
                 </div>
             </div>
         </div>
@@ -269,9 +270,9 @@ export const ArchiveTab: React.FC = () => {
                         {filteredCases.map(c => (
                             <div key={c.id} className="h-full">
                                 <ArchiveCard 
-                                    title={c.title || `Projekti #${c.case_number}`} // PHOENIX: Updated Text
+                                    title={c.title || `Projekti #${c.case_number}`} 
                                     subtitle={c.case_number || 'Pa numër'} 
-                                    type="Dosje Projekti" // PHOENIX: Updated Text
+                                    type="Dosje Projekti" 
                                     date={new Date(c.created_at).toLocaleDateString()} 
                                     icon={<Briefcase className="w-5 h-5 text-indigo-400" />} 
                                     isFolder={true} 
