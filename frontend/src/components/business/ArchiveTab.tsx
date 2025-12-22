@@ -1,15 +1,15 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V10.6 (TOOLTIP LOCALIZATION)
-// 1. FIX: Added 'title' attribute to all action icons (View, Download, Delete, Share, Rename).
-// 2. I18N: Ensured all tooltips use the t() translation function.
-// 3. STATUS: All hover text is now correctly displayed and localized.
+// PHOENIX PROTOCOL - ARCHIVE TAB V10.8 (PER-ITEM SHARING)
+// 1. FIX: Removed the project-level "Share Project" and "Copy Portal Link" buttons.
+// 2. LOGIC: Sharing is now exclusively handled on individual files via the ArchiveCard.
+// 3. RESULT: Aligns the UI with the backend's per-item sharing security model.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Home, Briefcase, FolderOpen, ChevronRight, FolderPlus, Loader2,
     Calendar, Info, Hash, FileText, FileImage, FileCode, File as FileIcon, Eye, Download, Trash2, Tag, X, Pencil, Save,
-    FolderUp, FileUp, Search, Share2, CheckCircle, Link as LinkIcon
+    FolderUp, FileUp, Search, Share2
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { ArchiveItemOut, Case, Document } from '../../data/types';
@@ -68,7 +68,6 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
             <div className="relative z-10 pt-4 border-t border-white/5 flex items-center justify-between min-h-[3rem]">
                 <span className="text-sm font-medium text-indigo-400 group-hover:text-indigo-300 transition-colors flex items-center gap-1">{isFolder ? t('archive.openFolder', 'Hap Dosjen') : ''}</span>
                 <div className="flex gap-1 items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    {/* PHOENIX: Added 'title' to all buttons for tooltips */}
                     {!isFolder && onShare && (
                         <button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 rounded-lg transition-colors ${isShared ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'text-gray-600 hover:text-white hover:bg-white/10'}`} title={isShared ? t('archive.unshare', 'Hiq Ndarjen') : t('archive.share', 'Ndaj me Klientin')}>
                             <Share2 className="h-4 w-4" />
@@ -106,7 +105,6 @@ export const ArchiveTab: React.FC = () => {
     const [itemToRename, setItemToRename] = useState<ArchiveItemOut | null>(null);
     const [renameValue, setRenameValue] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
-    const [linkCopied, setLinkCopied] = useState(false);
 
     const folderInputRef = useRef<HTMLInputElement>(null);
     const archiveInputRef = useRef<HTMLInputElement>(null);
@@ -206,16 +204,6 @@ export const ArchiveTab: React.FC = () => {
             alert(t('error.generic', 'Gabim gjatë procesimit'));
         }
     };
-    
-    const handleCopyPortalLink = () => {
-        const active = breadcrumbs[breadcrumbs.length - 1];
-        if (active.type === 'CASE' && active.id) {
-            const link = `${window.location.origin}/portal/${active.id}`;
-            navigator.clipboard.writeText(link);
-            setLinkCopied(true);
-            setTimeout(() => setLinkCopied(false), 2000);
-        }
-    };
 
     const currentView = breadcrumbs[breadcrumbs.length - 1];
     const filteredCases = cases.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.case_number.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -236,16 +224,7 @@ export const ArchiveTab: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex w-full md:w-auto gap-2 flex-shrink-0 p-1.5 bg-white/5 rounded-xl border border-white/10">
-                    {currentView.type === 'CASE' && (
-                        <button 
-                            onClick={handleCopyPortalLink} 
-                            className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg border transition-all font-bold text-xs uppercase tracking-wide ${linkCopied ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20'}`}
-                            title={linkCopied ? "Link Copied" : "Copy Client Portal Link"}
-                        >
-                            {linkCopied ? <CheckCircle size={16} /> : <LinkIcon size={16} />}
-                            <span className="hidden sm:inline">{linkCopied ? t('general.copied') : "Portal Link"}</span>
-                        </button>
-                    )}
+                    {/* PHOENIX FIX: Removed Project-level sharing buttons */}
                     <button onClick={() => setShowFolderModal(true)} className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-primary-start/10 text-primary-start hover:bg-primary-start/20 rounded-lg border border-primary-start/30 transition-all font-bold text-xs uppercase tracking-wide"><FolderPlus size={16} /> <span className="hidden sm:inline">Krijo Dosje</span></button>
                     <div className="relative flex-1 md:flex-initial"><input type="file" ref={folderInputRef} onChange={handleFolderUpload} className="hidden" {...({ webkitdirectory: "", directory: "" } as any)} multiple /><button onClick={() => folderInputRef.current?.click()} disabled={isUploading} className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-primary-start/10 text-primary-start hover:bg-primary-start/20 rounded-lg border border-primary-start/30 transition-all font-bold text-xs uppercase tracking-wide disabled:opacity-50 disabled:cursor-wait" title={t('archive.uploadFolderTooltip')}><FolderUp size={16} /> <span className="hidden sm:inline">Ngarko Dosje</span></button></div>
                     <div className="relative flex-1 md:flex-initial"><input type="file" ref={archiveInputRef} className="hidden" onChange={handleSmartUpload} /><button onClick={() => archiveInputRef.current?.click()} disabled={isUploading} className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-primary-start hover:bg-primary-end text-white rounded-lg shadow-lg shadow-primary-start/20 transition-all font-bold text-xs uppercase tracking-wide disabled:opacity-50 disabled:cursor-wait">{isUploading ? <Loader2 className="animate-spin w-4 h-4" /> : <FileUp size={16} />} <span className="hidden sm:inline">Ngarko Skedar</span></button></div>
