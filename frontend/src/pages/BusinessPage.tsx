@@ -1,8 +1,7 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - BUSINESS PAGE V9.6 (CHART RENDER FIX)
-// 1. FIX: Implemented Conditional Rendering for tabs.
-// 2. LOGIC: The FinanceTab (and its chart) is now only mounted when active.
-// 3. RESULT: Fixes the 'width(-1) and height(-1)' chart warning in the console.
+// PHOENIX PROTOCOL - BUSINESS PAGE V9.7 (TITLE CASE FIX)
+// 1. FIX: Updated 'capitalize' helper to format every word in the username (Title Case).
+// 2. RESULT: "shaban bala" now correctly displays as "Shaban Bala".
 
 import React, { useState } from 'react';
 import { Building2, FileText, FolderOpen } from 'lucide-react';
@@ -19,10 +18,13 @@ const BusinessPage: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>('profile');
 
-  // Helper function to capitalize the first letter of a string
+  // PHOENIX FIX: Capitalize the first letter of EVERY word (Title Case)
   const capitalize = (s: string | undefined) => {
     if (!s) return 'Përdorues';
-    return s.charAt(0).toUpperCase() + s.slice(1);
+    return s
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   // PHOENIX FIX: Component mapping for conditional rendering

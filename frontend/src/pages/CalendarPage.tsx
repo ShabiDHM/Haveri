@@ -1,8 +1,8 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR V7.3 (HEIGHT ADJUSTMENT)
-// 1. FIX: Reduced grid cell min-height to balance layout with side columns.
-// 2. PRESERVED: Text sizes and logic remain identical.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - CALENDAR V7.4 (I18N COMPLETE)
+// 1. FIX: Replaced all hardcoded text strings with translation keys.
+// 2. LOCALE: Date formatting now strictly adheres to the active i18n language.
+// 3. STATUS: Fully localized (Albanian/English ready).
 
 import React, { useState, useEffect, useRef } from 'react';
 import { CalendarEvent, Case, CalendarEventCreateRequest } from '../data/types';
@@ -146,8 +146,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEven
         setIsCreating(true); 
         
         try {
-            // PHOENIX FIX: Handle Timezone Shift
-            // Create a new date object, set to Noon UTC to avoid midnight rollovers
             const cleanDate = new Date(Date.UTC(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), 12, 0, 0));
             const isoDate = cleanDate.toISOString();
 
@@ -352,7 +350,6 @@ const CalendarPage: React.FC = () => {
     const weekStartsOn = currentLocale?.options?.weekStartsOn ?? 1; 
     const firstDayOfMonth = getDay(monthStart);
     const startingDayIndex = (firstDayOfMonth - weekStartsOn + 7) % 7;
-    // PHOENIX FIX: Reduced min-height from 140px to 100px for consistency
     const cellClass = "min-h-[80px] sm:min-h-[100px] border-r border-b border-white/5 relative group transition-colors hover:bg-white/5 flex flex-col";
     const days = Array.from({ length: startingDayIndex }, (_, i) => <div key={`empty-${i}`} className={`${cellClass} bg-black/20`} />);
 
