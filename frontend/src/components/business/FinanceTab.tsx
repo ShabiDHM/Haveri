@@ -1,7 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V8.91 (LINT CLEANUP 2)
-// 1. FIX: Removed unused 'Menu' and 'Transition' imports (Resolves TS6192).
-// 2. STATUS: Clean build, optimized UI without unused logic.
+// PHOENIX PROTOCOL - FINANCE TAB V9.0 (TRANSLATION FIX)
+// 1. FIX: Ensured 'Invoice'/'Expense' labels in history list use translation keys.
+// 2. STATUS: Fully localized.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -220,8 +220,6 @@ export const FinanceTab: React.FC = () => {
         if (cat.includes('internet') || cat.includes('tel')) return <Wifi size={18} />;
         return <Receipt size={18} />;
     };
-
-    // PHOENIX: REMOVED getStatusBadge
 
     const closePreview = () => { if (viewingUrl) window.URL.revokeObjectURL(viewingUrl); setViewingUrl(null); setViewingDoc(null); };
     const addLineItem = () => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0 }]);
@@ -622,7 +620,12 @@ export const FinanceTab: React.FC = () => {
                                                 {expandedCaseId === item.caseData.id && (
                                                     <div className="bg-black/20 p-4 border-t border-white/5 space-y-2">
                                                         <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('finance.details', 'Detajet Financiare')}</h5>
-                                                        {item.activity.map((act, idx) => (<div key={`${act.type}-${idx}`} className="flex justify-between items-center text-sm py-1 border-b border-white/5 last:border-0"><div className="flex items-center gap-3"><span className="text-gray-400 text-xs font-mono">{new Date(act.date).toLocaleDateString('sq-AL')}</span><div className="flex flex-col"><span className="text-white font-medium">{act.label || act.type}</span><span className={`text-[10px] uppercase ${act.type === 'invoice' ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>{act.type === 'invoice' ? t('finance.invoice') : t('finance.expense')}</span></div></div><span className={`${act.type === 'invoice' ? 'text-emerald-400' : 'text-rose-400'} font-mono`}>{act.type === 'invoice' ? '+' : '-'}€{act.amount.toFixed(2)}</span></div>))}
+                                                        {item.activity.map((act, idx) => (<div key={`${act.type}-${idx}`} className="flex justify-between items-center text-sm py-1 border-b border-white/5 last:border-0"><div className="flex items-center gap-3"><span className="text-gray-400 text-xs font-mono">{new Date(act.date).toLocaleDateString('sq-AL')}</span><div className="flex flex-col"><span className="text-white font-medium">{act.label || act.type}</span>
+                                                        {/* PHOENIX FIX: Translation applied here */}
+                                                        <span className={`text-[10px] uppercase ${act.type === 'invoice' ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
+                                                            {act.type === 'invoice' ? t('category.invoices', 'Faturë') : t('finance.expense', 'Shpenzim')}
+                                                        </span>
+                                                        </div></div><span className={`${act.type === 'invoice' ? 'text-emerald-400' : 'text-rose-400'} font-mono`}>{act.type === 'invoice' ? '+' : '-'}€{act.amount.toFixed(2)}</span></div>))}
                                                     </div>
                                                 )}
                                             </div>

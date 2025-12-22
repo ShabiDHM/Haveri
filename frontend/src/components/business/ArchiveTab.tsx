@@ -1,7 +1,8 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V10.4 (INTERFACE ALIGNMENT)
-// 1. FIX: Changed 'onMinimizeRequest' to 'onMinimize' to match PDFViewerModal.
-// 2. STATUS: Clean build.
+// PHOENIX PROTOCOL - ARCHIVE TAB V10.5 (REBRANDING)
+// 1. REBRAND: 'Dosje Çështjeje' -> 'Dosje Projekti'.
+// 2. TEXT: 'Rasti #' -> 'Projekti #'.
+// 3. STATUS: Business context aligned.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -263,7 +264,23 @@ export const ArchiveTab: React.FC = () => {
             </div>
             
             <div className="space-y-10">
-                {currentView.type === 'ROOT' && filteredCases.length > 0 && (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">{filteredCases.map(c => (<div key={c.id} className="h-full"><ArchiveCard title={c.title || `Rasti #${c.case_number}`} subtitle={c.case_number || 'Pa numër'} type="Dosje Çështjeje" date={new Date(c.created_at).toLocaleDateString()} icon={<Briefcase className="w-5 h-5 text-indigo-400" />} isFolder={true} onClick={() => handleEnterFolder(c.id, c.title, 'CASE')} /></div>))}</div>)}
+                {currentView.type === 'ROOT' && filteredCases.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredCases.map(c => (
+                            <div key={c.id} className="h-full">
+                                <ArchiveCard 
+                                    title={c.title || `Projekti #${c.case_number}`} // PHOENIX: Updated Text
+                                    subtitle={c.case_number || 'Pa numër'} 
+                                    type="Dosje Projekti" // PHOENIX: Updated Text
+                                    date={new Date(c.created_at).toLocaleDateString()} 
+                                    icon={<Briefcase className="w-5 h-5 text-indigo-400" />} 
+                                    isFolder={true} 
+                                    onClick={() => handleEnterFolder(c.id, c.title, 'CASE')} 
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
                 {filteredItems.length > 0 && (
                     <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         <AnimatePresence>
@@ -344,7 +361,6 @@ export const ArchiveTab: React.FC = () => {
                 </div>
             )}
 
-            {/* PHOENIX FIX: Updated prop name to 'onMinimize' */}
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} onMinimize={closePreview} t={t} directUrl={viewingUrl} />}
         </motion.div>
     );
