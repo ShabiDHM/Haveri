@@ -133,7 +133,7 @@
     "logout": "Dilni"
   },
   "dashboard": {
-    "mainTitle": "Haveri AI",
+    "mainTitle": "Asistenti juaj",
     "welcome": "Mirësevini, {{name}}",
     "subtitle": "I gatshëm për ndihmë.",
     "newCase": "Projekt i ri",
@@ -187,6 +187,7 @@
     "deleteFailed": "Fshirja dështoi.",
     "uploaded": "Ngarkuar",
     "deepScan": "Skanim i Thellë (Vision AI)",
+    "scanStarted": "Skanimi i Thellë filloi! Kontrolloni gjetjet pas pak.",
     "rename": "Riemërto",
     "renameTitle": "Riemërto Dokumentin",
     "newName": "Emri i ri",
@@ -194,9 +195,9 @@
     "archiveFailed": "Arkivimi dështoi."
   },
   "chatPanel": {
-    "title": "Nastradini",
+    "title": "Asistenti Sokratik",
     "inputPlaceholder": "Shtypni pyetjen tuaj këtu...",
-    "thinking": "Nastardini tu menu...",
+    "thinking": "Duke analizuar...",
     "welcomeMessage": "Përshëndetje! Unë jam asistenti juaj inteligjent.",
     "statusConnected": "Lidhur",
     "confirmClear": "Pastro bisedën?",
@@ -500,7 +501,7 @@
     "type": "Lloji",
     "title": "Titulli",
     "deadline": "Afati",
-    "hearing": "Seancë",
+    "hearing": "Prezantim",
     "meeting": "Takim",
     "filing": "Dorëzim",
     "conflictWarning": "Kujdes: Keni ngjarje të tjera të planifikuara për këtë datë.",
@@ -514,10 +515,10 @@
     "eventTypes": "Llojet e Ngjarjeve",
     "types": {
       "DEADLINE": "Afati",
-      "HEARING": "Seancë",
+      "HEARING": "Prezantim",
       "MEETING": "Takim",
       "FILING": "Dorëzim",
-      "COURT_DATE": "Datë Gjykimi",
+      "COURT_DATE": "Milestone",
       "CONSULTATION": "Konsultim"
     },
     "priorities": {
@@ -588,6 +589,6 @@
   "subscription": {
       "ACTIVE": "Aktive",
       "INACTIVE": "Jo Aktive",
-      "TRIAL": "Provë (Trial)"
+      "TRIAL": "Provë "
   }
 }
