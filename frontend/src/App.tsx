@@ -1,7 +1,8 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V2.2 (CLIENT PORTAL ENABLED)
-// 1. FEATURE: Added public route '/portal/:caseId'.
-// 2. LOGIC: Allows external clients to access the portal without login.
+// PHOENIX PROTOCOL - ROUTING V2.3 (ADMIN GUARD FIX)
+// 1. FIX: The AdminRoute guard now performs a case-insensitive role check.
+// 2. REASON: The previous strict 'ADMIN' check conflicted with the backend's 'admin' value, blocking access.
+// 3. STATUS: Admin page is now fully accessible.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -21,7 +22,7 @@ import BusinessPage from './pages/BusinessPage';
 import AccountPage from './pages/AccountPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import FinanceWizardPage from './pages/FinanceWizardPage';
-import ClientPortalPage from './pages/ClientPortalPage'; // PHOENIX: Imported Portal
+import ClientPortalPage from './pages/ClientPortalPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -48,7 +49,8 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
-  if (user?.role !== 'ADMIN') {
+  // PHOENIX FIX: Case-insensitive check for admin role
+  if (user?.role?.toUpperCase() !== 'ADMIN') {
     return <Navigate to="/dashboard" />;
   }
 
@@ -65,7 +67,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />} />
       
-      {/* PHOENIX: Client Portal Route (Public Access via Link) */}
+      {/* Client Portal Route (Public Access via Link) */}
       <Route path="/portal/:caseId" element={<ClientPortalPage />} />
 
       {/* Standalone Protected Routes (No Sidebar) */}
