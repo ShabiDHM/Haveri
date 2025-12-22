@@ -1,7 +1,8 @@
 # FILE: backend/app/services/parsing_service.py
-# PHOENIX PROTOCOL - PARSING SERVICE V3.2 (STABLE)
-# 1. FIX: Reverted to standard top-level imports (Verified: No circular dependency exists).
-# 2. STATUS: Production Ready.
+# PHOENIX PROTOCOL - PARSING SERVICE V3.3 (CIRCULAR FIX)
+# 1. FIX: Moved 'InventoryService' import INSIDE the method.
+# 2. REASON: Prevents 'ImportError: cannot import name ParsingService' during app startup.
+# 3. STATUS: Production Ready.
 
 import pandas as pd
 import io
@@ -10,12 +11,7 @@ from datetime import datetime
 from typing import List, Dict, Tuple, Any
 from fastapi import UploadFile, HTTPException
 from pymongo.database import Database
-
-# Models
 from app.models.finance import Transaction, ImportBatch
-
-# Services (Safe to import here as InventoryService does NOT import ParsingService)
-from app.services.inventory_service import InventoryService
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +48,7 @@ class ParsingService:
             filename = file.filename or "unknown_file"
 
             try:
+                # Safe check for extension
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
                     df = pd.read_excel(io.BytesIO(contents))
                 else:
@@ -59,7 +56,7 @@ class ParsingService:
             except UnicodeDecodeError:
                 df = pd.read_csv(io.BytesIO(contents), encoding='cp1252', sep=None, engine='python')
             except Exception as e:
-                # Fallback
+                # Fallback: try excel if csv fails, or vice versa
                 try:
                      df = pd.read_excel(io.BytesIO(contents))
                 except:
@@ -88,6 +85,10 @@ class ParsingService:
         mapping: Dict[str, str]
     ) -> Dict[str, Any]:
         
+        # --- LOCAL IMPORT TO BREAK CIRCULAR DEPENDENCY ---
+        # This is critical. Do not move this to the top of the file.
+        from app.services.inventory_service import InventoryService
+        
         contents = await file.read()
         filename = file.filename or "imported_file.csv"
 
@@ -102,9 +103,10 @@ class ParsingService:
         except Exception as e:
              raise HTTPException(status_code=400, detail=f"File read error: {str(e)}")
             
+        # Rename columns based on mapping
         df.rename(columns=mapping, inplace=True)
         
-        # Batch Record
+        # Create Batch Record (Explicit ID handling for Pymongo)
         batch_record = ImportBatch(
             user_id=user_id,
             filename=filename,
@@ -123,6 +125,7 @@ class ParsingService:
         
         for _, row in df.iterrows():
             try:
+                # Check if 'amount' exists (it might be mapped)
                 if 'amount' not in row:
                     continue
                     
@@ -154,7 +157,7 @@ class ParsingService:
                     quantity=qty,
                     category=str(row.get('category', 'Sales')),
                     original_row_data=row.to_dict(),
-                    is_inventory_processed=False
+                    is_inventory_processed=False # Default to False
                 )
                 
                 tx_dict = tx.model_dump(by_alias=True)
@@ -171,12 +174,14 @@ class ParsingService:
         if transactions_to_insert:
             self.db["transactions"].insert_many(transactions_to_insert)
             
-            # --- END-TO-END INVENTORY SYNC ---
+            # --- START: END-TO-END INVENTORY SYNC ---
+            # Now we use the locally imported service
             try:
                 inv_service = InventoryService(self.db)
                 inv_service.process_transaction_batch(batch_id, user_id)
             except Exception as e:
                 logger.error(f"Inventory sync failed for batch {batch_id}: {e}")
+            # --- END: END-TO-END INVENTORY SYNC ---
 
             self.db["import_batches"].update_one(
                 {"_id": batch_res.inserted_id},
