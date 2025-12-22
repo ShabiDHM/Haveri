@@ -1,7 +1,8 @@
 # FILE: backend/app/services/business_service.py
-# PHOENIX PROTOCOL - BUSINESS SERVICE
-# 1. IMPORTS: Correctly imports form ..models.business
-# 2. LOGIC: Handles logo relative URL generation.
+# PHOENIX PROTOCOL - BUSINESS SERVICE V2.0 (STORAGE PATH FIX)
+# 1. FIX: Changed logo upload path from 'branding/{uid}' to '{uid}/branding'.
+# 2. REASON: Solves 'AccessDenied' errors by adhering to user-root path restrictions.
+# 3. STATUS: Uploads should now succeed if document uploads are working.
 
 import structlog
 import mimetypes
@@ -62,9 +63,12 @@ class BusinessService:
             raise HTTPException(400, "Format i pavlefshëm. Lejohen vetëm PNG, JPG, WEBP.")
         
         try:
+            # PHOENIX FIX: Moved user_id to the root of the path
+            # Was: f"branding/{user_id}" -> AccessDenied
+            # Now: f"{user_id}/branding" -> Allowed (Matches document structure)
             storage_key = storage_service.upload_file_raw(
                 file=file,
-                folder=f"branding/{user_id}"
+                folder=f"{user_id}/branding"
             )
             
             # Store relative URL
