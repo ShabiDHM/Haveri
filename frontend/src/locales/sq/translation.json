@@ -133,10 +133,10 @@
     "logout": "Dilni"
   },
   "dashboard": {
-    "mainTitle": "Asistenti Juridik",
+    "mainTitle": "Asistenti juaj",
     "welcome": "Mirësevini, {{name}}",
-    "subtitle": "Pasqyra e rasteve tuaja.",
-    "newCase": "Rast i Ri",
+    "subtitle": "I gatshëm për ndihmë.",
+    "newCase": "Projekt i ri",
     "activeCases": "Raste Aktive",
     "pendingDocs": "Dokumente në Pritje",
     "completed": "Të Përfunduara",

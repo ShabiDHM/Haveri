@@ -1,15 +1,15 @@
 // FILE: src/components/Sidebar.tsx
-// PHOENIX PROTOCOL - SIDEBAR V1.6 (REBRANDING)
-// 1. REBRAND: Updated navigation label from "Juristi AI" to "Haveri AI".
-// 2. LOGIC: Changed translation key to 'sidebar.haveri_ai' to force immediate update.
-// 3. STATUS: Navigation text updated.
+// PHOENIX PROTOCOL - SIDEBAR V1.7 (ICONOGRAPHY UPDATE)
+// 1. UPDATE: Replaced 'Scale' icon with 'Brain' icon for the 'Haveri AI' menu item.
+// 2. REASON: Better semantic match for the AI Assistant functionality.
+// 3. STATUS: Icon updated.
 
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
     Calendar, FileText, MessageSquare, 
-    Building2, Shield, LogOut, User as UserIcon, Scale 
-} from 'lucide-react';
+    Building2, Shield, LogOut, User as UserIcon, Brain 
+} from 'lucide-react'; // PHOENIX: Imported Brain, Removed Scale
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import BrandLogo from './BrandLogo';
@@ -32,8 +32,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         path: '/business' 
       },
       { 
-        icon: Scale, 
-        label: t('sidebar.haveri_ai', 'Haveri AI'), // PHOENIX: Rebranded to Haveri AI
+        icon: Brain, // PHOENIX: Updated to Brain icon for Haveri AI
+        label: t('sidebar.haveri_ai', 'Haveri AI'), 
         path: '/dashboard' 
       },
       { 
@@ -53,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       },
     ];
 
-    // PHOENIX FIX: Case-insensitive check for admin role
+    // Case-insensitive check for admin role
     if (user?.role?.toUpperCase() === 'ADMIN') {
       baseItems.splice(1, 0, {
         icon: Shield,
