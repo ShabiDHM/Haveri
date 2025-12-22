@@ -1,8 +1,8 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR V7.5 (BUSINESS REFACTOR)
-// 1. UPDATE: Swapped legal icons (Gavel, Scale) for business ones (Briefcase, Flag).
-// 2. REASON: Aligning visual language with the 'Haveri AI' rebranding.
-// 3. STATUS: Visuals updated.
+// PHOENIX PROTOCOL - CALENDAR V7.6 (DROPDOWN CLEANUP)
+// 1. UPDATE: Removed 'COURT_DATE' logic from styling (removed from dropdowns via JSON).
+// 2. REFACTOR: Simplified priority checking since 'CRITICAL' is removed.
+// 3. STATUS: Business logic active.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { CalendarEvent, Case, CalendarEventCreateRequest } from '../data/types';
@@ -26,9 +26,9 @@ import {
 import { sq, enUS } from 'date-fns/locale'; 
 import {
   Calendar as CalendarIcon, Clock, MapPin, Users, AlertCircle, Plus, ChevronLeft, ChevronRight,
-  Search, FileText, Briefcase, AlertTriangle, XCircle, Bell, ChevronDown, Flag, MessageSquare,
+  Search, FileText, Briefcase, AlertTriangle, XCircle, Bell, ChevronDown, MessageSquare,
   Eye, EyeOff, ShieldAlert
-} from 'lucide-react'; // PHOENIX: Imported Briefcase and Flag
+} from 'lucide-react';
 import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/DatePicker.css';
@@ -44,12 +44,10 @@ type ViewMode = 'month' | 'list';
 const getEventStyle = (type: string) => {
     switch (type) {
       case 'DEADLINE': return { border: 'border-rose-500/50', bg: 'bg-rose-500/10 hover:bg-rose-500/20', text: 'text-rose-200', indicator: 'bg-rose-500', icon: <AlertTriangle size={12} className="text-rose-400" /> };
-      // PHOENIX: HEARING -> Briefcase (Presentation/Meeting)
       case 'HEARING': return { border: 'border-purple-500/50', bg: 'bg-purple-500/10 hover:bg-purple-500/20', text: 'text-purple-200', indicator: 'bg-purple-500', icon: <Briefcase size={12} className="text-purple-400" /> };
       case 'MEETING': return { border: 'border-blue-500/50', bg: 'bg-blue-500/10 hover:bg-blue-500/20', text: 'text-blue-200', indicator: 'bg-blue-500', icon: <Users size={12} className="text-blue-400" /> };
       case 'FILING': return { border: 'border-amber-500/50', bg: 'bg-amber-500/10 hover:bg-amber-500/20', text: 'text-amber-200', indicator: 'bg-amber-500', icon: <FileText size={12} className="text-amber-400" /> };
-      // PHOENIX: COURT_DATE -> Flag (Milestone)
-      case 'COURT_DATE': return { border: 'border-orange-500/50', bg: 'bg-orange-500/10 hover:bg-orange-500/20', text: 'text-orange-200', indicator: 'bg-orange-500', icon: <Flag size={12} className="text-orange-400" /> };
+      // PHOENIX: Removed COURT_DATE case
       case 'CONSULTATION': return { border: 'border-emerald-500/50', bg: 'bg-emerald-500/10 hover:bg-emerald-500/20', text: 'text-emerald-200', indicator: 'bg-emerald-500', icon: <MessageSquare size={12} className="text-emerald-400" /> };
       default: return { border: 'border-slate-500/50', bg: 'bg-slate-500/10 hover:bg-slate-500/20', text: 'text-slate-200', indicator: 'bg-slate-500', icon: <CalendarIcon size={12} className="text-slate-400" /> };
     }
@@ -300,7 +298,8 @@ const CalendarPage: React.FC = () => {
 
   const upcomingAlerts = events
     .filter(event => {
-        if (!['DEADLINE', 'HEARING', 'COURT_DATE'].includes(event.event_type)) return false;
+        // PHOENIX: Removed 'COURT_DATE' from alerts filter
+        if (!['DEADLINE', 'HEARING'].includes(event.event_type)) return false;
         const eventDate = parseISO(event.start_date);
         const today = new Date(); today.setHours(0, 0, 0, 0); 
         const sevenDaysFromNow = new Date(today); sevenDaysFromNow.setDate(today.getDate() + 7); sevenDaysFromNow.setHours(23, 59, 59, 999); 
@@ -386,7 +385,7 @@ const CalendarPage: React.FC = () => {
                         {isShared && <Eye size={8} className="text-emerald-400 ml-auto" />}
                     </button>
                     <AnimatePresence>
-                        {isHovered && (<motion.div initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 5 }} transition={{ duration: 0.15 }} className="absolute left-0 top-full mt-2 z-[999] w-64 bg-[#1e293b] border border-white/10 rounded-xl p-3 shadow-2xl backdrop-blur-xl" style={{ minWidth: '200px' }}><div className="absolute -top-1.5 left-4 w-3 h-3 bg-[#1e293b] border-t border-l border-white/10 transform rotate-45" /><div className="relative z-10"><div className={`text-[10px] font-bold uppercase mb-1.5 flex items-center gap-1.5 ${style.text}`}>{style.icon} {t(`calendar.types.${event.event_type}`)}</div><div className="text-white font-bold text-sm mb-1 line-clamp-2 leading-tight">{event.title}</div><div className="text-gray-400 text-xs mb-2 line-clamp-2">{event.description || t('general.notAvailable')}</div><div className="pt-2 border-t border-white/10 text-gray-500 text-[10px] flex justify-between font-mono"><span>{format(parseISO(event.start_date), 'HH:mm')}</span><span className={`${event.priority === 'CRITICAL' ? 'text-rose-500 font-bold' : 'text-gray-400'}`}>{t(`calendar.priorities.${event.priority}`)}</span></div></div></motion.div>)}
+                        {isHovered && (<motion.div initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 5 }} transition={{ duration: 0.15 }} className="absolute left-0 top-full mt-2 z-[999] w-64 bg-[#1e293b] border border-white/10 rounded-xl p-3 shadow-2xl backdrop-blur-xl" style={{ minWidth: '200px' }}><div className="absolute -top-1.5 left-4 w-3 h-3 bg-[#1e293b] border-t border-l border-white/10 transform rotate-45" /><div className="relative z-10"><div className={`text-[10px] font-bold uppercase mb-1.5 flex items-center gap-1.5 ${style.text}`}>{style.icon} {t(`calendar.types.${event.event_type}`)}</div><div className="text-white font-bold text-sm mb-1 line-clamp-2 leading-tight">{event.title}</div><div className="text-gray-400 text-xs mb-2 line-clamp-2">{event.description || t('general.notAvailable')}</div><div className="pt-2 border-t border-white/10 text-gray-500 text-[10px] flex justify-between font-mono"><span>{format(parseISO(event.start_date), 'HH:mm')}</span><span className={`text-gray-400`}>{t(`calendar.priorities.${event.priority}`)}</span></div></div></motion.div>)}
                     </AnimatePresence>
                 </div>
               );
