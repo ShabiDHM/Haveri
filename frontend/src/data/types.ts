@@ -1,8 +1,7 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES REFACTOR V7.1 (FINANCIAL & SHARING)
-// 1. ADDED: Financial interfaces (Expense, Analytics, Summary).
-// 2. UPDATED: Document & ArchiveItemOut with 'is_shared' flag.
-// 3. STATUS: Fully synchronized with Backend V4.8.
+// PHOENIX PROTOCOL - TYPES REFACTOR V8.0 (INVENTORY ADDED)
+// 1. ADDED: InventoryItem, Recipe, Ingredient interfaces.
+// 2. STATUS: Production Ready.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -55,7 +54,7 @@ export interface Document {
     error_message?: string;
     progress_percent?: number;
     progress_message?: string;
-    is_shared?: boolean; // PHOENIX: Client Portal Visibility
+    is_shared?: boolean;
 }
 
 export interface ChatMessage {
@@ -145,7 +144,6 @@ export interface InvoiceCreateRequest {
     related_case_id?: string;
 }
 
-// PHOENIX: Financial Types Added
 export interface Expense { 
     id: string; 
     category: string; 
@@ -203,7 +201,7 @@ export interface ArchiveItemOut {
     case_id?: string;
     parent_id?: string; 
     item_type?: 'FILE' | 'FOLDER';
-    is_shared?: boolean; // PHOENIX: Added for Archive Sharing
+    is_shared?: boolean;
 }
 
 // --- SHARED ---
@@ -284,3 +282,37 @@ export interface CaseAnalysisResult {
 export interface GraphNode { id: string; name: string; group: string; val: number; }
 export interface GraphLink { source: string; target: string; label: string; }
 export interface GraphData { nodes: GraphNode[]; links: GraphLink[]; }
+
+// --- INVENTORY & RECIPES (NEW) ---
+export interface InventoryItem {
+    _id: string;
+    name: string;
+    unit: string;
+    current_stock: number;
+    cost_per_unit: number;
+    low_stock_threshold: number;
+}
+
+export interface InventoryItemCreate {
+    name: string;
+    unit: string;
+    current_stock: number;
+    cost_per_unit: number;
+    low_stock_threshold?: number;
+}
+
+export interface Ingredient {
+    inventory_item_id: string;
+    quantity_required: number;
+}
+
+export interface Recipe {
+    _id: string;
+    product_name: string;
+    ingredients: Ingredient[];
+}
+
+export interface RecipeCreate {
+    product_name: string;
+    ingredients: Ingredient[];
+}

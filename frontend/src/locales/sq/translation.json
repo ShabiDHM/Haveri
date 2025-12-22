@@ -615,5 +615,34 @@
       "ACTIVE": "Aktive",
       "INACTIVE": "Jo Aktive",
       "TRIAL": "Provë "
+  },
+  "inventory": {
+    "title": "Inventari & Recetat",
+    "tabItems": "Lënda e Parë",
+    "tabRecipes": "Recetat (Menu)",
+    "items": {
+      "title": "Depo e Materialeve",
+      "add": "Shto Artikull",
+      "name": "Emrtimi",
+      "unit": "Njësia (kg, l)",
+      "stock": "Stoku Aktual",
+      "cost": "Kosto/Njësi (€)",
+      "lowStock": "Alarm Pakicë",
+      "noItems": "Nuk keni shtuar asnjë material."
+    },
+    "recipes": {
+      "title": "Menaxhimi i Recetave",
+      "add": "Krijo Recetë",
+      "productName": "Emri i Produktit (POS)",
+      "productNameDesc": "Duhet të jetë identik me emrin në raportin e shitjes.",
+      "ingredients": "Përbërësit",
+      "selectIngredient": "Zgjidh Materialin",
+      "qtyRequired": "Sasia e nevojshme",
+      "addIngredient": "Shto Përbërës",
+      "noRecipes": "Nuk keni krijuar asnjë recetë.",
+      "costPreview": "Kosto e llogaritur: "
+    },
+    "save": "Ruaj",
+    "cancel": "Anulo"
   }
 }

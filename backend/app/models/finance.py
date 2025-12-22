@@ -24,8 +24,15 @@ class Transaction(BaseModel):
     user_id: str
     business_id: Optional[str] = None
     batch_id: Optional[str] = None
+    
     date: datetime
-    amount: float
+    amount: float # Revenue
+    
+    # NEW: PROFITABILITY ENGINE FIELDS
+    cost: float = 0.0       # COGS (Calculated from Recipe)
+    net_profit: float = 0.0 # Amount - Cost
+    is_inventory_processed: bool = False # True if stock has been deducted
+    
     type: str = "income"
     category: str = "Uncategorized"
     description: str
@@ -35,7 +42,7 @@ class Transaction(BaseModel):
     
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
-# --- INVOICE MODELS ---
+# --- INVOICE MODELS (UNCHANGED) ---
 class InvoiceItem(BaseModel):
     description: str
     quantity: float = 1.0
@@ -104,7 +111,7 @@ class InvoiceInDB(InvoiceBase):
 class InvoiceOut(InvoiceInDB):
     id: PyObjectId = Field(alias="_id", serialization_alias="id", default=None)
 
-# --- EXPENSE MODELS ---
+# --- EXPENSE MODELS (UNCHANGED) ---
 class ExpenseBase(BaseModel):
     category: str
     amount: float
@@ -135,7 +142,7 @@ class ExpenseInDB(ExpenseBase):
 class ExpenseOut(ExpenseInDB):
     id: PyObjectId = Field(alias="_id", serialization_alias="id", default=None)
 
-# --- ANALYTICS MODELS ---
+# --- ANALYTICS MODELS (UNCHANGED) ---
 class SalesTrendPoint(BaseModel):
     date: str
     amount: float
@@ -159,7 +166,7 @@ class CaseFinancialSummary(BaseModel):
     total_expenses: float
     net_balance: float
 
-# --- TAX MODELS ---
+# --- TAX MODELS (UNCHANGED) ---
 class TaxCalculation(BaseModel):
     period_month: int
     period_year: int

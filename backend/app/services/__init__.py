@@ -1,6 +1,6 @@
 # FILE: backend/app/services/__init__.py
-# PHOENIX PROTOCOL - SERVICE REGISTRY V4.1 (INTEGRATION HUB ENABLED)
-# 1. NEW: Registered 'parsing_service' for CSV/Excel data ingestion.
+# PHOENIX PROTOCOL - SERVICE REGISTRY V5.0 (INVENTORY ADDED)
+# 1. NEW: Registered 'inventory_service' for Operational Engine.
 # 2. STATUS: Production Ready.
 
 from . import (
@@ -33,7 +33,8 @@ from . import (
     graph_service,
     pdf_service,
     social_service,
-    parsing_service, # <-- Added: The CSV/Excel Integration Engine
+    parsing_service,
+    inventory_service, # <-- The new Brain
     
     # Albanian Specific Services
     albanian_document_processor,

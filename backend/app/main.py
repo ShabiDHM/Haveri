@@ -1,7 +1,6 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V6.0 (HAVERI TRANSFORMATION)
-# 1. TRANSFORMED: Updated application title and default CORS origins from
-#    'Juristi' to 'Haveri' to complete the project identity transformation.
+# PHOENIX PROTOCOL - MAIN APPLICATION V6.1 (INVENTORY MODULE)
+# 1. ADDED: Registered 'inventory_router' to expose the Operational Engine.
 # 2. STATUS: Production Ready for Haveri.
 
 from fastapi import FastAPI, status, APIRouter
@@ -28,6 +27,7 @@ from app.api.endpoints.graph import router as graph_router
 from app.api.endpoints.archive import router as archive_router
 from app.api.endpoints.drafting_v2 import router as drafting_v2_router
 from app.api.endpoints.share import router as share_router
+from app.api.endpoints.inventory import router as inventory_router # <-- NEW IMPORT
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,8 +39,6 @@ app = FastAPI(title="Haveri AI API", lifespan=lifespan)
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*") # type: ignore
 
 # --- CORS CONFIGURATION ---
-# PHOENIX TRANSFORMATION: Default origins updated to Haveri.
-# The primary source of truth is now exclusively the .env file.
 allowed_origins = [
     "http://localhost:3000",
     "http://localhost:5173",
@@ -51,7 +49,6 @@ allowed_origins = [
 try:
     env_origins_str = os.getenv("BACKEND_CORS_ORIGINS")
     if env_origins_str:
-        # This will correctly load the origins from your .env file
         parsed_origins = json.loads(env_origins_str)
         allowed_origins.extend(parsed_origins)
 except (json.JSONDecodeError, TypeError) as e:
@@ -83,9 +80,10 @@ api_v1_router.include_router(stream_router, prefix="/stream", tags=["Streaming"]
 api_v1_router.include_router(support_router, prefix="/support", tags=["Support"])
 api_v1_router.include_router(business_router, prefix="/business", tags=["Business"])
 
-# Finance Modules
+# Finance & Operations Modules
 api_v1_router.include_router(finance_router, prefix="/finance", tags=["Finance"])
 api_v1_router.include_router(finance_wizard.router, prefix="/finance/wizard", tags=["Finance Wizard"])
+api_v1_router.include_router(inventory_router, prefix="/inventory", tags=["Inventory & Operations"]) # <-- NEW REGISTRATION
 
 # Advanced Modules
 api_v1_router.include_router(graph_router, prefix="/graph", tags=["Graph"])

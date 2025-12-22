@@ -1,6 +1,6 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V9.0 (INTEGRATION HUB)
-// 1. ADDED: 'previewImport' and 'confirmImport' for POS CSV ingestion.
+// PHOENIX PROTOCOL - API MASTER V10.0 (INVENTORY ENABLED)
+// 1. ADDED: Inventory and Recipe management endpoints.
 // 2. STATUS: Production Ready.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
@@ -9,7 +9,9 @@ import type {
     DeletedDocumentResponse, CalendarEvent, CalendarEventCreateRequest, CreateDraftingJobRequest,
     DraftingJobStatus, DraftingJobResult, ChangePasswordRequest, CaseAnalysisResult,
     BusinessProfile, BusinessProfileUpdate, Invoice, InvoiceCreateRequest, InvoiceItem,
-    GraphData, ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate
+    GraphData, ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
+    // NEW IMPORTS
+    InventoryItem, InventoryItemCreate, Recipe, RecipeCreate
 } from '../data/types';
 
 // ... (Existing Interfaces) ...
@@ -110,7 +112,7 @@ class ApiService {
     public async login(data: LoginRequest): Promise<LoginResponse> { const response = await this.axiosInstance.post<LoginResponse>('/auth/login', data); if (response.data.access_token) tokenManager.set(response.data.access_token); return response.data; }
     public logout() { tokenManager.set(null); }
 
-    // --- INTEGRATION HUB (NEW) ---
+    // --- INTEGRATION HUB (EXISTING) ---
     public async previewImport(file: File): Promise<ImportPreviewResponse> {
         const formData = new FormData();
         formData.append('file', file);
@@ -125,8 +127,29 @@ class ApiService {
         const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData);
         return response.data;
     }
-    // ----------------------------
 
+    // --- INVENTORY & RECIPES (NEW) ---
+    public async getInventoryItems(): Promise<InventoryItem[]> {
+        const response = await this.axiosInstance.get<InventoryItem[]>('/inventory/items');
+        return response.data;
+    }
+
+    public async createInventoryItem(data: InventoryItemCreate): Promise<InventoryItem> {
+        const response = await this.axiosInstance.post<InventoryItem>('/inventory/items', data);
+        return response.data;
+    }
+
+    public async getRecipes(): Promise<Recipe[]> {
+        const response = await this.axiosInstance.get<Recipe[]>('/inventory/recipes');
+        return response.data;
+    }
+
+    public async createRecipe(data: RecipeCreate): Promise<Recipe> {
+        const response = await this.axiosInstance.post<Recipe>('/inventory/recipes', data);
+        return response.data;
+    }
+
+    // --- EXISTING METHODS ---
     public async fetchImageBlob(url: string): Promise<Blob> { const response = await this.axiosInstance.get(url, { responseType: 'blob' }); return response.data; }
     public async getExpenseReceiptBlob(expenseId: string): Promise<{ blob: Blob, filename: string }> { const response = await this.axiosInstance.get(`/finance/expenses/${expenseId}/receipt`, { responseType: 'blob' }); const disposition = response.headers['content-disposition']; let filename = `receipt-${expenseId}.pdf`; if (disposition && disposition.indexOf('filename=') !== -1) { const matches = /filename="([^"]*)"/.exec(disposition); if (matches != null && matches[1]) filename = matches[1]; } return { blob: response.data, filename }; }
     public async getWizardState(month: number, year: number): Promise<WizardState> { const response = await this.axiosInstance.get<WizardState>('/finance/wizard/state', { params: { month, year } }); return response.data; }
