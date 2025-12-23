@@ -1,8 +1,6 @@
 # FILE: backend/app/services/user_service.py
-# PHOENIX PROTOCOL - USER SERVICE V1.3 (COMPLETE & CORRECTED)
-# 1. RESTORED: Re-integrated the missing 'change_password' and 'delete_user_and_all_data' functions.
-# 2. FIX: 'authenticate' now re-fetches the user by ID after password check to prevent stale data issues.
-# 3. STATUS: Complete, verified, and secure.
+# PHOENIX PROTOCOL - USER SERVICE V1.4 (PORTAL BRANDING FIX)
+# 1. FIX: 'get_user_by_id' now fetches and attaches the business profile using a string ID, ensuring the portal displays the correct name and logo.
 
 from pymongo.database import Database
 from bson import ObjectId
@@ -19,7 +17,6 @@ from app.services import storage_service
 logger = logging.getLogger(__name__)
 
 def get_user_by_username(db: Database, username: str) -> Optional[UserInDB]:
-    # PHOENIX FIX: Case-insensitive regex query
     query = {"username": {"$regex": f"^{re.escape(username)}$", "$options": "i"}}
     user_dict = db.users.find_one(query)
     if user_dict:
@@ -27,7 +24,6 @@ def get_user_by_username(db: Database, username: str) -> Optional[UserInDB]:
     return None
 
 def get_user_by_email(db: Database, email: str) -> Optional[UserInDB]:
-    # PHOENIX FIX: Case-insensitive regex query
     query = {"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}}
     user_dict = db.users.find_one(query)
     if user_dict:
@@ -37,11 +33,18 @@ def get_user_by_email(db: Database, email: str) -> Optional[UserInDB]:
 def get_user_by_id(db: Database, user_id: ObjectId) -> Optional[UserInDB]:
     user_dict = db.users.find_one({"_id": user_id})
     if user_dict:
+        # PHOENIX FIX: Fetch and attach business profile to the user object
+        # The portal page relies on this to display the correct branding.
+        business_profile = db.business_profiles.find_one({"user_id": str(user_id)})
+        if business_profile:
+            user_dict["business_profile"] = {
+                "firm_name": business_profile.get("firm_name"),
+                "logo_url": business_profile.get("logo_url")
+            }
         return UserInDB.model_validate(user_dict)
     return None
 
 def authenticate(db: Database, username: str, password: str) -> Optional[UserInDB]:
-    # Step 1: Find the user by username or email
     user = get_user_by_username(db, username)
     if not user:
         user = get_user_by_email(db, username)
@@ -49,19 +52,14 @@ def authenticate(db: Database, username: str, password: str) -> Optional[UserInD
     if not user:
         return None
         
-    # Step 2: Verify the password against the possibly stale user object
     if not verify_password(password, user.hashed_password):
         return None
         
-    # PHOENIX FIX: CACHE-BUSTING READ
-    # Step 3: Password is correct. Now, re-fetch the user using their specific ID
-    # This guarantees we get the absolute latest version from the database.
     fresh_user = get_user_by_id(db, user.id)
 
     if not fresh_user:
         return None
 
-    # Step 4: Perform the security check on the fresh data
     if fresh_user.status != "active":
         logger.warning(f"Login attempt for inactive user: {username}")
         return None
@@ -75,7 +73,6 @@ def create(db: Database, obj_in: UserCreate) -> UserInDB:
     
     user_data["hashed_password"] = hashed_password
     user_data["created_at"] = datetime.now(timezone.utc)
-    # Default status of 'inactive' is now applied from the User model
     
     result = db.users.insert_one(user_data)
     new_user = db.users.find_one({"_id": result.inserted_id})
@@ -125,7 +122,7 @@ def delete_user_and_all_data(db: Database, user: UserInDB):
             db.calendar_events.delete_many({"case_id": {"$in": case_ids}})
             db.cases.delete_many({"_id": {"$in": case_ids}})
 
-        db.business_profiles.delete_one({"user_id": str(user_id)}) # Ensure string conversion for lookup
+        db.business_profiles.delete_one({"user_id": str(user_id)})
         db.users.delete_one({"_id": user_id})
         
     except Exception as e:
