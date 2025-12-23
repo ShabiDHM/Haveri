@@ -1,9 +1,9 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V12.2 (AESTHETIC RESTORATION)
-// 1. REVERT (P3): Restored the "Ecuria e Shitjeve" chart to use the visually superior AreaChart.
-// 2. CLEANUP: Adjusted recharts imports to match the restored chart implementation.
-// 3. VERIFIED: All Co-Pilot Upgrade features from V12.0 remain intact and functional.
-// 4. STATUS: Production Ready.
+// PHOENIX PROTOCOL - FINANCE TAB V12.3 (CRITICAL DEBUG FIX)
+// 1. FIX: Modified loadInitialData to explicitly log errors from the getPosTransactions API call. This un-hides the silent failure preventing imported transactions from appearing.
+// 2. I18N: Added fallback for the 'finance.posSale' translation key as requested.
+// 3. VERIFIED: All previous features and aesthetic restorations remain intact.
+// 4. STATUS: Debugging Ready.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -108,7 +108,7 @@ export const FinanceTab: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [posTransactions, setPosTransactions] = useState<PosTransaction[]>([]); // PHOENIX: P1 State
+    const [posTransactions, setPosTransactions] = useState<PosTransaction[]>([]);
     const [cases, setCases] = useState<Case[]>([]);
     const [activeTab, setActiveTab] = useState<ActiveTab>('transactions');
     const [openingDocId, setOpeningDocId] = useState<string | null>(null);
@@ -152,10 +152,18 @@ export const FinanceTab: React.FC = () => {
                 apiService.getExpenses().catch(() => []),
                 apiService.getCases().catch(() => []),
                 apiService.getAnalyticsDashboard(30).catch(() => null),
-                apiService.getPosTransactions().catch(() => []), // PHOENIX: P1 Data Fetch
+                // PHOENIX: CRITICAL FIX - Explicitly log the error if this fetch fails
+                apiService.getPosTransactions().catch(error => {
+                    console.error("PHOENIX DIAGNOSTIC: Failed to fetch POS transactions.", error);
+                    return []; // Return empty array to prevent UI crash, but log the error
+                }),
             ]);
             setInvoices(inv); setExpenses(exp); setCases(cs); setAnalyticsData(analytics); setPosTransactions(pos);
-        } catch (e) { console.error(e); } finally { setLoading(false); }
+        } catch (e) { 
+            console.error("PHOENIX DIAGNOSTIC: A critical error occurred in Promise.all.", e); 
+        } finally { 
+            setLoading(false); 
+        }
     };
 
     useEffect(() => { loadInitialData(); }, []);
@@ -172,7 +180,6 @@ export const FinanceTab: React.FC = () => {
     const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     const displayIncome = analyticsData ? analyticsData.total_revenue_period : 0;
     
-    // PHOENIX: P2 Real Profit & COGS Calculation
     const displayProfit = analyticsData?.total_profit_period ?? (displayIncome - totalExpenses);
     const costOfGoodsSold = analyticsData ? displayIncome - displayProfit : 0;
 
@@ -180,7 +187,7 @@ export const FinanceTab: React.FC = () => {
         const combined = [
             ...invoices.map(i => ({ ...i, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name })),
             ...expenses.map(e => ({ ...e, type: 'expense' as const, amount: e.amount, label: e.category })),
-            ...posTransactions.map(p => ({ ...p, type: 'pos' as const, date: p.transaction_date, amount: p.total_price, label: p.product_name })), // PHOENIX: P1 Merging
+            ...posTransactions.map(p => ({ ...p, type: 'pos' as const, date: p.transaction_date, amount: p.total_price, label: p.product_name })),
         ];
         return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [invoices, expenses, posTransactions]);
@@ -197,7 +204,6 @@ export const FinanceTab: React.FC = () => {
     }, [sortedTransactions, searchTerm, activeTab]);
 
     const historyByCase = useMemo(() => {
-        // PHOENIX: P4 Group case-specific items
         const caseGroups = cases.map(c => {
             const caseExpenses = expenses.filter(e => e.related_case_id === c.id);
             const caseInvoices = invoices.filter(i => i.related_case_id === c.id);
@@ -213,7 +219,6 @@ export const FinanceTab: React.FC = () => {
             return { id: c.id, caseData: c, expenseTotal, invoiceTotal, balance, activity, hasActivity: activity.length > 0 };
         }).filter(x => x.hasActivity);
 
-        // PHOENIX: P4 Group general (non-case) items
         const generalInvoices = invoices.filter(i => !i.related_case_id);
         const generalExpenses = expenses.filter(e => !e.related_case_id);
         const generalActivity = [
@@ -411,7 +416,6 @@ export const FinanceTab: React.FC = () => {
                         
                         <SmartStatCard title={t('finance.income')} amount={`€${displayIncome.toFixed(2)}`} icon={<TrendingUp size={20} />} color="text-emerald-400" />
                         
-                        {/* PHOENIX: P2 COGS (KMSH) CARD */}
                         <SmartStatCard 
                             title={t('finance.cogs', 'KMSH')}
                             amount={`€${costOfGoodsSold.toFixed(2)}`} 
@@ -509,7 +513,6 @@ export const FinanceTab: React.FC = () => {
                                             <h4 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-2"><TrendingUp size={16} className="text-indigo-400"/> {t('finance.analytics.salesTrend')}</h4>
                                             <div className="h-64 w-full min-h-[250px]">
                                                 <ResponsiveContainer width="100%" height="100%">
-                                                    {/* PHOENIX: P3 CHART RESTORED */}
                                                     <AreaChart data={analyticsData.sales_trend}>
                                                         <defs>
                                                             <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">

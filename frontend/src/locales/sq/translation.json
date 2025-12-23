@@ -334,7 +334,8 @@
       "draft": "Draft (E pa lëshuar)",
       "sent": "E Dërguar",
       "paid": "E Paguar",
-      "cancelled": "E Anuluar"
+      "cancelled": "E Anuluar",
+       "posSale": "POS Shitje"
     },
     "overview": "Pasqyra Financiare",
     "quickActions": "Veprimet e Shpejta",
