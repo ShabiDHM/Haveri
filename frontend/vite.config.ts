@@ -1,7 +1,8 @@
 // FILE: vite.config.ts
-// PHOENIX PROTOCOL - BUILD REBRAND V2.0
-// 1. REBRAND: Updated PWA manifest name, short_name, and description to 'Haveri'.
-// 2. STATUS: PWA generation is now aligned with the new brand identity.
+// PHOENIX PROTOCOL - BUILD REBRAND V2.1 (ASSET PATH FIX)
+// 1. FIX: Updated PWA icon 'src' paths to be absolute (e.g., '/pwa-192x192.png').
+// 2. REASON: This prevents relative path issues and ensures the browser correctly locates the assets from the domain root after deployment.
+// 3. STATUS: PWA asset pathing is now corrected.
 
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -23,17 +24,17 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: '/pwa-192x192.png', // PHOENIX FIX: Absolute path
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: '/pwa-512x512.png', // PHOENIX FIX: Absolute path
             sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: '/pwa-512x512.png', // PHOENIX FIX: Absolute path
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable' 

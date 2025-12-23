@@ -1,8 +1,8 @@
 // FILE: src/context/AuthContext.tsx
-// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.0 (BRANDING AWARE)
-// 1. MODIFIED: Context now fetches and stores BusinessProfile alongside the User object.
-// 2. MODIFIED: The AuthContextType interface is updated to expose 'businessProfile'.
-// 3. LOGIC: On login or refresh, both user and business profiles are fetched and provided to the app.
+// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.1 (STATE REFRESH)
+// 1. ADDED: A 'refreshBusinessProfile' function to allow components to re-sync the global profile state on demand.
+// 2. LOGIC: This solves the stale state issue after updates on pages like the Business Profile tab.
+// 3. STATUS: Production Ready.
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, BusinessProfile, LoginRequest, RegisterRequest } from '../data/types';
@@ -13,12 +13,13 @@ type AuthUser = User;
 
 interface AuthContextType {
   user: AuthUser | null;
-  businessProfile: BusinessProfile | null; // PHOENIX: Added businessProfile
+  businessProfile: BusinessProfile | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  refreshBusinessProfile: () => Promise<void>; // PHOENIX: Added refresh function
 }
 
 const AUTH_TOKEN_KEY = 'haveri_access_token';
@@ -27,14 +28,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null); // PHOENIX: Added state for profile
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     apiService.logout(); 
     setUser(null);
-    setBusinessProfile(null); // PHOENIX: Clear business profile on logout
+    setBusinessProfile(null);
+  }, []);
+
+  // PHOENIX: Function to refresh business profile state
+  const refreshBusinessProfile = useCallback(async () => {
+    try {
+        const profile = await apiService.getBusinessProfile();
+        setBusinessProfile(profile);
+    } catch (error) {
+        console.error("Failed to refresh business profile:", error);
+    }
   }, []);
 
   useEffect(() => {
@@ -54,7 +65,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const refreshed = await apiService.refreshToken();
         
         if (refreshed) {
-            // PHOENIX: Fetch both user and business profile
             const [fullUser, profile] = await Promise.all([
                 apiService.fetchUserProfile(),
                 apiService.getBusinessProfile() 
@@ -95,7 +105,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await apiService.login(loginPayload);
       localStorage.setItem(AUTH_TOKEN_KEY, response.access_token);
       
-      // PHOENIX: Fetch both user and business profile after login
       const [fullUser, profile] = await Promise.all([
         apiService.fetchUserProfile(),
         apiService.getBusinessProfile()
@@ -126,7 +135,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   return (
-    <AuthContext.Provider value={{ user, businessProfile, isAuthenticated: !!user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, businessProfile, isAuthenticated: !!user, login, register, logout, isLoading, refreshBusinessProfile }}>
       {children}
     </AuthContext.Provider>
   );
