@@ -1,8 +1,7 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V1.3 (I18N POLISH)
-// 1. FIX: Removed all hardcoded English strings ("Est. Cost", "Click to Select", etc.).
-// 2. UPDATE: All text now uses t() keys for full localization support.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - INVENTORY TAB V1.4 (TRANSLATION FIX)
+// 1. FIX: Changed t('inventory.import') to t('inventory.import.button') to resolve the "returned an object" error.
+// 2. STATUS: Production Ready.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -199,12 +198,12 @@ export const InventoryTab: React.FC = () => {
                                             </p>
                                             {item.current_stock <= item.low_stock_threshold && (
                                                 <p className="text-xs text-rose-400 mt-2 flex items-center gap-1">
-                                                    <AlertTriangle size={12} /> {t('inventory.lowStock', 'Low Stock')}
+                                                    <AlertTriangle size={12} /> {t('inventory.lowStock')}
                                                 </p>
                                             )}
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-xs text-gray-500 uppercase">{t('inventory.cost', 'Cost')}</p>
+                                            <p className="text-xs text-gray-500 uppercase">{t('inventory.cost')}</p>
                                             <p className="font-mono text-emerald-400 font-bold">€{item.cost_per_unit.toFixed(2)}/{item.unit}</p>
                                         </div>
                                     </div>
@@ -249,7 +248,7 @@ export const InventoryTab: React.FC = () => {
                                                 const item = items.find(i => i._id === ing.inventory_item_id);
                                                 return (
                                                     <div key={idx} className="flex justify-between border-b border-white/5 last:border-0 pb-1 last:pb-0">
-                                                        <span>{item?.name || t('inventory.unknownItem', 'Unknown Item')}</span>
+                                                        <span>{item?.name || t('inventory.unknownItem')}</span>
                                                         <span className="font-mono text-gray-400">{ing.quantity_required} {item?.unit}</span>
                                                     </div>
                                                 );
@@ -337,7 +336,7 @@ export const InventoryTab: React.FC = () => {
                                             required
                                             type="number" 
                                             step="0.001" 
-                                            placeholder={t('finance.qty', 'Qty')} 
+                                            placeholder={t('finance.qty')} 
                                             className="w-20 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm"
                                             value={ing.quantity_required}
                                             onChange={e => updateIngredient(index, 'quantity_required', parseFloat(e.target.value))}
@@ -410,7 +409,7 @@ export const InventoryTab: React.FC = () => {
                                 className="px-6 py-2 bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700 text-white rounded-lg font-bold flex items-center gap-2"
                             >
                                 {importing && <Loader2 size={16} className="animate-spin" />}
-                                {t('inventory.import')}
+                                {t('inventory.import.button')}
                             </button>
                         </div>
                     </div>
