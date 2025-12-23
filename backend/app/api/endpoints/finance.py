@@ -1,4 +1,8 @@
 # FILE: backend/app/api/endpoints/finance.py
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V13.0 (PROFITABILITY VISUALIZATION)
+# 1. UPDATE: 'get_analytics_dashboard' now calculates Real Net Profit.
+# 2. STATUS: Production Ready.
+
 import asyncio
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
@@ -24,85 +28,39 @@ from app.api.endpoints.dependencies import get_current_user, get_db, get_async_d
 
 router = APIRouter(tags=["Finance"])
 
-# --- DATA IMPORT ENDPOINTS (THE INTEGRATION HUB) ---
-
+# --- DATA IMPORT ENDPOINTS ---
 @router.post("/import/preview")
-async def preview_import_file(
-    file: UploadFile = File(...),
-    db: Database = Depends(get_db)
-):
+async def preview_import_file(file: UploadFile = File(...), db: Database = Depends(get_db)):
     service = ParsingService(db)
     return await service.preview_file(file)
 
 @router.post("/import/confirm")
-async def confirm_import(
-    current_user: Annotated[UserInDB, Depends(get_current_user)],
-    file: UploadFile = File(...),
-    mapping: str = Form(...),
-    db: Database = Depends(get_db)
-):
-    """
-    Step 2: Process the file using the confirmed column mapping.
-    NOTE: 'current_user' is now first to avoid Python default argument errors.
-    """
-    try:
-        mapping_dict = json.loads(mapping)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid mapping format")
-        
+async def confirm_import(current_user: Annotated[UserInDB, Depends(get_current_user)], file: UploadFile = File(...), mapping: str = Form(...), db: Database = Depends(get_db)):
+    try: mapping_dict = json.loads(mapping)
+    except Exception: raise HTTPException(status_code=400, detail="Invalid mapping format")
     service = ParsingService(db)
-    return await service.process_import(
-        file, 
-        str(current_user.id), 
-        mapping_dict
-    )
+    return await service.process_import(file, str(current_user.id), mapping_dict)
 
-# --- ANALYTICS & HISTORY ENDPOINTS ---
-
+# --- ANALYTICS ENDPOINTS ---
 @router.get("/case-summary", response_model=List[CaseFinancialSummary])
-async def get_case_financial_summaries(
-    current_user: Annotated[UserInDB, Depends(get_current_active_user)],
-    db: Any = Depends(get_async_db)
-):
+async def get_case_financial_summaries(current_user: Annotated[UserInDB, Depends(get_current_active_user)], db: Any = Depends(get_async_db)):
     user_oid = ObjectId(current_user.id)
-    invoice_pipeline = [
-        {"$match": {"user_id": user_oid, "status": {"$ne": "CANCELLED"}, "related_case_id": {"$exists": True, "$ne": None}}},
-        {"$group": {"_id": "$related_case_id", "total_billed": {"$sum": "$total_amount"}}}
-    ]
-    expense_pipeline = [
-        {"$match": {"user_id": user_oid, "related_case_id": {"$exists": True, "$ne": None}}},
-        {"$group": {"_id": "$related_case_id", "total_expenses": {"$sum": "$amount"}}}
-    ]
-    
-    billed_data_task = db["invoices"].aggregate(invoice_pipeline).to_list(length=None)
-    expense_data_task = db["expenses"].aggregate(expense_pipeline).to_list(length=None)
-    billed_data, expense_data = await asyncio.gather(billed_data_task, expense_data_task)
-    
+    invoice_pipeline = [{"$match": {"user_id": user_oid, "status": {"$ne": "CANCELLED"}, "related_case_id": {"$exists": True, "$ne": None}}}, {"$group": {"_id": "$related_case_id", "total_billed": {"$sum": "$total_amount"}}}]
+    expense_pipeline = [{"$match": {"user_id": user_oid, "related_case_id": {"$exists": True, "$ne": None}}}, {"$group": {"_id": "$related_case_id", "total_expenses": {"$sum": "$amount"}}}]
+    billed_data, expense_data = await asyncio.gather(db["invoices"].aggregate(invoice_pipeline).to_list(length=None), db["expenses"].aggregate(expense_pipeline).to_list(length=None))
     billed_map = {item['_id']: item['total_billed'] for item in billed_data}
     expense_map = {item['_id']: item['total_expenses'] for item in expense_data}
     all_case_ids = set(billed_map.keys()) | set(expense_map.keys())
-    
     if not all_case_ids: return []
-
     case_oids = [ObjectId(cid) for cid in all_case_ids if ObjectId.is_valid(cid)]
-    cases_cursor = db["cases"].find({"_id": {"$in": case_oids}}, {"title": 1, "case_number": 1})
-    cases = await cases_cursor.to_list(length=len(case_oids))
+    cases = await db["cases"].find({"_id": {"$in": case_oids}}, {"title": 1, "case_number": 1}).to_list(length=len(case_oids))
     case_map = {str(c["_id"]): c for c in cases}
-
     summaries = []
     for case_id in all_case_ids:
         if case_id in case_map:
             billed = billed_map.get(case_id, 0.0)
             expenses = expense_map.get(case_id, 0.0)
-            summaries.append(CaseFinancialSummary(
-                case_id=case_id,
-                case_title=case_map[case_id].get("title", "Pa Titull"),
-                case_number=case_map[case_id].get("case_number", ""),
-                total_billed=billed,
-                total_expenses=expenses,
-                net_balance=billed - expenses
-            ))
-            
+            summaries.append(CaseFinancialSummary(case_id=case_id, case_title=case_map[case_id].get("title", "Pa Titull"), case_number=case_map[case_id].get("case_number", ""), total_billed=billed, total_expenses=expenses, net_balance=billed - expenses))
     return sorted(summaries, key=lambda s: s.total_billed, reverse=True)
 
 @router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
@@ -115,34 +73,61 @@ async def get_analytics_dashboard(
     start_date = end_date - timedelta(days=days)
     user_oid = ObjectId(current_user.id)
 
-    # 1. Manual Invoices
+    # 1. Manual Invoices (Profit = Revenue for services)
     inv_pipeline = [
         {"$match": {"user_id": user_oid, "issue_date": {"$gte": start_date, "$lte": end_date}, "status": {"$ne": "CANCELLED"}}},
         {"$unwind": "$items"},
         {"$project": {"date": "$issue_date", "amount": {"$multiply": ["$items.quantity", "$items.unit_price"]}, "product": "$items.description", "quantity": "$items.quantity"}}
     ]
-    # 2. Manual Expenses
+    # 2. Manual Expenses (Negative impact)
     exp_pipeline = [
         {"$match": {"user_id": user_oid, "date": {"$gte": start_date, "$lte": end_date}}},
         {"$project": {"date": "$date", "amount": {"$multiply": ["$amount", -1]}}}
     ]
-    # 3. Integrated POS Transactions
+    # 3. POS Transactions (Includes 'net_profit' field from inventory engine)
     pos_pipeline = [
         {"$match": {"user_id": str(user_oid), "date": {"$gte": start_date, "$lte": end_date}}},
-        {"$project": {"date": "$date", "amount": "$amount", "product": "$description", "quantity": "$quantity"}}
+        {"$project": {
+            "date": "$date", 
+            "amount": "$amount", 
+            "net_profit": "$net_profit", # Fetch real profit
+            "product": "$description", 
+            "quantity": "$quantity"
+        }}
     ]
     
-    inv_data_task = db["invoices"].aggregate(inv_pipeline).to_list(length=None)
-    exp_data_task = db["expenses"].aggregate(exp_pipeline).to_list(length=None)
-    pos_data_task = db["transactions"].aggregate(pos_pipeline).to_list(length=None)
+    inv_data, exp_data, pos_data = await asyncio.gather(
+        db["invoices"].aggregate(inv_pipeline).to_list(length=None),
+        db["expenses"].aggregate(exp_pipeline).to_list(length=None),
+        db["transactions"].aggregate(pos_pipeline).to_list(length=None)
+    )
     
-    inv_data, exp_data, pos_data = await asyncio.gather(inv_data_task, exp_data_task, pos_data_task)
+    # --- PROFIT CALCULATION ENGINE ---
+    # Invoice Revenue
+    inv_revenue = sum(item['amount'] for item in inv_data)
     
+    # POS Revenue
+    pos_revenue = sum(item['amount'] for item in pos_data)
+    
+    # POS Profit (Real data from recipes)
+    # If net_profit is missing (old data), fallback to amount (assume 100% margin if unknown, or 0)
+    # Using amount as fallback prevents showing 0 profit for unmapped items, but might be misleading.
+    # Let's use 0 fallback for strict correctness, or amount for optimistic.
+    # Decision: Use amount for fallback to keep UI consistent with Revenue if no recipe exists.
+    pos_profit = sum(item.get('net_profit', item['amount']) for item in pos_data)
+    
+    # Expenses (Negative values)
+    expenses_total = sum(item['amount'] for item in exp_data) # This is negative
+
+    total_revenue = inv_revenue + pos_revenue
+    total_count = len(inv_data) + len(pos_data)
+    
+    # Net Profit = (Invoice Rev + POS Profit) - |Expenses|
+    # expenses_total is negative, so we add it.
+    total_net_profit = inv_revenue + pos_profit + expenses_total
+
+    # --- Trend & Product Logic ---
     all_income = inv_data + pos_data 
-    
-    total_revenue = sum(item['amount'] for item in all_income)
-    total_count = len(all_income)
-    
     trend_map: Dict[str, float] = {}
     product_map: Dict[str, Dict[str, float]] = {}
 
@@ -167,7 +152,13 @@ async def get_analytics_dashboard(
     sorted_products = sorted(product_map.items(), key=lambda i: i[1]['rev'], reverse=True)[:5]
     top_products = [TopProductItem(product_name=k, total_quantity=v['qty'], total_revenue=round(v['rev'], 2)) for k, v in sorted_products]
 
-    return AnalyticsDashboardData(total_revenue_period=round(total_revenue, 2), total_transactions_period=total_count, sales_trend=sales_trend, top_products=top_products)
+    return AnalyticsDashboardData(
+        total_revenue_period=round(total_revenue, 2),
+        total_transactions_period=total_count,
+        sales_trend=sales_trend,
+        top_products=top_products,
+        total_profit_period=round(total_net_profit, 2)
+    )
 
 # --- INVOICES ---
 @router.get("/invoices", response_model=List[InvoiceOut])

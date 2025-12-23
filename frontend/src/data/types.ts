@@ -1,6 +1,6 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES REFACTOR V8.0 (INVENTORY ADDED)
-// 1. ADDED: InventoryItem, Recipe, Ingredient interfaces.
+// PHOENIX PROTOCOL - TYPES REFACTOR V8.1 (PROFITABILITY FIELD)
+// 1. ADDED: 'total_profit_period' to AnalyticsDashboardData.
 // 2. STATUS: Production Ready.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
@@ -188,6 +188,7 @@ export interface AnalyticsDashboardData {
     total_transactions_period: number;
     sales_trend: SalesTrendPoint[];
     top_products: TopProductItem[];
+    total_profit_period?: number; // <-- NEW FIELD
 }
 
 export interface ArchiveItemOut {

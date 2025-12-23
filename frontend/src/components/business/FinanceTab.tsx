@@ -1,17 +1,16 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V10.0 (INTEGRATION HUB)
-// 1. ADDED: TransactionImporter component integration.
-// 2. ADDED: "Import Transactions" button with i18n support.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - FINANCE TAB V11.1 (CLEANUP)
+// 1. FIX: Removed unused 'Wallet' icon import.
+// 2. STATUS: Production Ready.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
-    TrendingUp, TrendingDown, Wallet, Calculator, MinusCircle, Plus, FileText, 
+    TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, FileText, 
     Edit2, Eye, Download, Archive, Trash2, CheckCircle, Paperclip, X, User, Activity, 
     Loader2, BarChart2, History, Search, Briefcase, ChevronRight, ChevronDown,
     Car, Coffee, Building, Users, Landmark, Zap, Wifi, Receipt, Utensils,
-    FileSpreadsheet // NEW ICON
+    FileSpreadsheet, PiggyBank // Wallet icon removed from here
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
@@ -21,7 +20,7 @@ import {
 } from '../../data/types';
 import { useTranslation } from 'react-i18next';
 import PDFViewerModal from '../PDFViewerModal';
-import { TransactionImporter } from './TransactionImporter'; // NEW IMPORT
+import { TransactionImporter } from './TransactionImporter'; 
 import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { sq, enUS } from 'date-fns/locale';
@@ -116,7 +115,7 @@ export const FinanceTab: React.FC = () => {
     // Modals State
     const [showInvoiceModal, setShowInvoiceModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
-    const [showImportModal, setShowImportModal] = useState(false); // NEW STATE
+    const [showImportModal, setShowImportModal] = useState(false); 
     const [showArchiveInvoiceModal, setShowArchiveInvoiceModal] = useState(false);
     const [showArchiveExpenseModal, setShowArchiveExpenseModal] = useState(false);
     
@@ -164,13 +163,14 @@ export const FinanceTab: React.FC = () => {
         }
     }, [includeVat]);
 
-    // This total now comes mainly from Analytics, but we keep basic sums for quick view
-    const totalIncome = invoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+    // Financial Totals
     const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const displayIncome = analyticsData ? analyticsData.total_revenue_period : 0;
     
-    // PHOENIX: We use the Analytics Data for the "Big Numbers" because it includes Imports
-    const displayIncome = analyticsData ? analyticsData.total_revenue_period : totalIncome;
-    const displayBalance = displayIncome - totalExpenses;
+    // PHOENIX: Real Profit Calculation
+    const displayProfit = analyticsData?.total_profit_period !== undefined 
+        ? analyticsData.total_profit_period 
+        : (displayIncome - totalExpenses);
 
     const sortedTransactions = useMemo(() => {
         const combined = [
@@ -422,9 +422,18 @@ export const FinanceTab: React.FC = () => {
                 <div className="lg:col-span-1 flex flex-col gap-6 h-full">
                     <div className="bg-background-dark/50 border border-glass-edge rounded-3xl p-6 space-y-4 flex-none">
                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">{t('finance.overview')}</h3>
+                        
                         <SmartStatCard title={t('finance.income')} amount={`€${displayIncome.toFixed(2)}`} icon={<TrendingUp size={20} />} color="text-emerald-400" />
+                        
+                        {/* PHOENIX: NET PROFIT CARD */}
+                        <SmartStatCard 
+                            title={t('finance.balanceSub')} 
+                            amount={`€${displayProfit.toFixed(2)}`} 
+                            icon={<PiggyBank size={20} />} 
+                            color="text-amber-400" 
+                        />
+                        
                         <SmartStatCard title={t('finance.expense')} amount={`€${totalExpenses.toFixed(2)}`} icon={<TrendingDown size={20} />} color="text-rose-400" />
-                        <SmartStatCard title={t('finance.balance')} amount={`€${displayBalance.toFixed(2)}`} icon={<Wallet size={20} />} color="text-blue-400" />
                         
                         {analyticsData && (
                             <div className="pt-4 border-t border-white/10 mt-4">

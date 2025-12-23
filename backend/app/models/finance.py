@@ -1,4 +1,8 @@
 # FILE: backend/app/models/finance.py
+# PHOENIX PROTOCOL - FINANCE MODELS V9.0 (PROFITABILITY)
+# 1. UPDATE: Added 'total_profit_period' to AnalyticsDashboardData.
+# 2. STATUS: Production Ready.
+
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from datetime import datetime
@@ -26,12 +30,12 @@ class Transaction(BaseModel):
     batch_id: Optional[str] = None
     
     date: datetime
-    amount: float # Revenue
+    amount: float
     
-    # NEW: PROFITABILITY ENGINE FIELDS
-    cost: float = 0.0       # COGS (Calculated from Recipe)
-    net_profit: float = 0.0 # Amount - Cost
-    is_inventory_processed: bool = False # True if stock has been deducted
+    # PROFITABILITY ENGINE FIELDS
+    cost: float = 0.0
+    net_profit: float = 0.0
+    is_inventory_processed: bool = False
     
     type: str = "income"
     category: str = "Uncategorized"
@@ -42,7 +46,7 @@ class Transaction(BaseModel):
     
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
-# --- INVOICE MODELS (UNCHANGED) ---
+# --- INVOICE MODELS ---
 class InvoiceItem(BaseModel):
     description: str
     quantity: float = 1.0
@@ -111,7 +115,7 @@ class InvoiceInDB(InvoiceBase):
 class InvoiceOut(InvoiceInDB):
     id: PyObjectId = Field(alias="_id", serialization_alias="id", default=None)
 
-# --- EXPENSE MODELS (UNCHANGED) ---
+# --- EXPENSE MODELS ---
 class ExpenseBase(BaseModel):
     category: str
     amount: float
@@ -142,7 +146,7 @@ class ExpenseInDB(ExpenseBase):
 class ExpenseOut(ExpenseInDB):
     id: PyObjectId = Field(alias="_id", serialization_alias="id", default=None)
 
-# --- ANALYTICS MODELS (UNCHANGED) ---
+# --- ANALYTICS & CASE SUMMARY MODELS ---
 class SalesTrendPoint(BaseModel):
     date: str
     amount: float
@@ -157,6 +161,7 @@ class AnalyticsDashboardData(BaseModel):
     total_transactions_period: int
     sales_trend: List[SalesTrendPoint]
     top_products: List[TopProductItem]
+    total_profit_period: float = 0.0 # NEW FIELD
 
 class CaseFinancialSummary(BaseModel):
     case_id: str
@@ -166,7 +171,7 @@ class CaseFinancialSummary(BaseModel):
     total_expenses: float
     net_balance: float
 
-# --- TAX MODELS (UNCHANGED) ---
+# --- TAX ENGINE MODELS ---
 class TaxCalculation(BaseModel):
     period_month: int
     period_year: int
