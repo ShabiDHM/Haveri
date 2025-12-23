@@ -1,6 +1,6 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V11.3 (CO-PILOT UPGRADE)
-// 1. ADDED: The 'getPosTransactions' method to support the unified dashboard.
+// PHOENIX PROTOCOL - API MASTER V11.4 (CRITICAL FIX)
+// 1. FIX: The 'getPosTransactions' method has been made more robust to correctly parse direct array responses from the API. This resolves the bug where imported transactions were not displayed.
 // 2. VERIFIED: All previous logic remains present and correct.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
@@ -108,10 +108,18 @@ class ApiService {
     public async uploadExpenseReceipt(expenseId: string, file: File): Promise<void> { const formData = new FormData(); formData.append('file', file); await this.axiosInstance.put(`/finance/expenses/${expenseId}/receipt`, formData); }
     public async getExpenseReceiptBlob(expenseId: string): Promise<{ blob: Blob, filename: string }> { const response = await this.axiosInstance.get(`/finance/expenses/${expenseId}/receipt`, { responseType: 'blob' }); const disposition = response.headers['content-disposition']; let filename = `receipt-${expenseId}.pdf`; if (disposition && disposition.indexOf('filename=') !== -1) { const matches = /filename="([^"]*)"/.exec(disposition); if (matches != null && matches[1]) filename = matches[1]; } return { blob: response.data, filename }; }
     
-    // PHOENIX: ADDED FOR CO-PILOT UPGRADE
+    // PHOENIX: ROBUST IMPLEMENTATION
     public async getPosTransactions(): Promise<PosTransaction[]> {
-        const response = await this.axiosInstance.get<{ transactions: PosTransaction[] }>('/finance/transactions');
-        return response.data.transactions || [];
+        const response = await this.axiosInstance.get<any>('/finance/transactions');
+        // Handle both a direct array `[]` and an object `{ "transactions": [] }`
+        if (Array.isArray(response.data)) {
+            return response.data;
+        }
+        if (response.data && Array.isArray(response.data.transactions)) {
+            return response.data.transactions;
+        }
+        console.warn("Could not parse POS transactions from API response:", response.data);
+        return [];
     }
 
     public async getWizardState(month: number, year: number): Promise<WizardState> { const response = await this.axiosInstance.get<WizardState>('/finance/wizard/state', { params: { month, year } }); return response.data; }
