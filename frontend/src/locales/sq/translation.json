@@ -298,6 +298,7 @@
     "expenseSub": "Shpenzimet operacionale",
     "balance": "Bilanci",
     "balanceSub": "Fitimi neto",
+    "cogs": "KMSH",
     "invoicesTitle": "Faturat e Lëshuara",
     "accountantAI": "Kontabilisti AI",
     "createInvoice": "Krijo Faturë",
@@ -329,13 +330,16 @@
     "qty": "Sasia",
     "price": "Çmimi",
     "addLine": "Shto Rresht",
+    "posSale": "POS Shitje",
+    "generalTransactions": "Transaksionet e Përgjithshme",
+    "notCaseRelated": "Jo të lidhura me lëndë",
     "statusLabel": "Statusi i Faturës",
     "status": {
       "draft": "Draft (E pa lëshuar)",
       "sent": "E Dërguar",
       "paid": "E Paguar",
       "cancelled": "E Anuluar",
-       "posSale": "POS Shitje"
+      "posSale": "POS Shitje"
     },
     "overview": "Pasqyra Financiare",
     "quickActions": "Veprimet e Shpejta",
@@ -634,16 +638,28 @@
     "recipes": {
       "title": "Menaxhimi i Recetave",
       "add": "Krijo Recetë",
+      "import": "Importo Receta",
       "productName": "Emri i Produktit (POS)",
       "productNameDesc": "Duhet të jetë identik me emrin në raportin e shitjes.",
-      "ingredients": "Përbërësit",
-      "selectIngredient": "Zgjidh Materialin",
-      "qtyRequired": "Sasia e nevojshme",
-      "addIngredient": "Shto Përbërës",
-      "noRecipes": "Nuk keni krijuar asnjë recetë.",
-      "costPreview": "Kosto e llogaritur: "
+      "ingredients": "Përbërësit (Lënda e Parë)",
+      "selectIngredient": "Zgjidh Lëndën e Parë",
+      "addIngredient": "Shto Përbërës Tjetër",
+      "costPreview": "Kosto e Përllogaritur:",
+      "estCost": "Kosto e Vlerësuar",
+      "importedCount": "Receta të krijuara",
+      "missingItems": "Përbërësit që mungojnë",
+      "noRecipes": "Nuk keni krijuar asnjë recetë."
+    },
+    "import": {
+      "instruction": "Ngarko një file CSV ose Excel me kolonat:",
+      "columns": "Emri i Produktit | Lënda e Parë | Sasia",
+      "clickToSelect": "Kliko për të zgjedhur file",
+      "button": "Importo"
     },
     "save": "Ruaj",
-    "cancel": "Anulo"
+    "cancel": "Anulo",
+    "lowStock": "Stok i pakët",
+    "cost": "Kosto",
+    "unknownItem": "Artikull i panjohur"
   }
 }

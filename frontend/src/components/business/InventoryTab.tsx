@@ -1,7 +1,7 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V1.2 (UNIVERSAL IMPORTER)
-// 1. ADDED: 'Import Recipes' button and Modal.
-// 2. LOGIC: connects to the new '/recipes/import' backend endpoint.
+// PHOENIX PROTOCOL - INVENTORY TAB V1.3 (I18N POLISH)
+// 1. FIX: Removed all hardcoded English strings ("Est. Cost", "Click to Select", etc.).
+// 2. UPDATE: All text now uses t() keys for full localization support.
 // 3. STATUS: Production Ready.
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -35,7 +35,7 @@ export const InventoryTab: React.FC = () => {
     // Modals
     const [showItemModal, setShowItemModal] = useState(false);
     const [showRecipeModal, setShowRecipeModal] = useState(false);
-    const [showImportModal, setShowImportModal] = useState(false); // PHOENIX: New Import Modal
+    const [showImportModal, setShowImportModal] = useState(false); 
 
     // Form State - Item
     const [newItem, setNewItem] = useState({ name: '', unit: 'kg', current_stock: 0, cost_per_unit: 0, low_stock_threshold: 5 });
@@ -89,7 +89,6 @@ export const InventoryTab: React.FC = () => {
         }
     };
 
-    // PHOENIX: UNIVERSAL IMPORT HANDLER
     const handleImportRecipes = async () => {
         if (!importFile) return;
         setImporting(true);
@@ -97,19 +96,18 @@ export const InventoryTab: React.FC = () => {
         formData.append('file', importFile);
 
         try {
-            // Use axios instance directly to access the new endpoint without full type regeneration
             const response = await apiService.axiosInstance.post('/inventory/recipes/import', formData);
             const data = response.data;
             
-            let message = `${t('inventory.recipes.importedCount', 'Recipes Created')}: ${data.recipes_created}`;
+            let message = `${t('inventory.recipes.importedCount')}: ${data.recipes_created}`;
             if (data.missing_ingredients && data.missing_ingredients.length > 0) {
-                message += `\n\n${t('inventory.recipes.missingItems', 'Missing Items')}:\n` + data.missing_ingredients.join(', ');
+                message += `\n\n${t('inventory.recipes.missingItems')}:\n` + data.missing_ingredients.join(', ');
             }
             
             alert(message);
             setImportFile(null);
             setShowImportModal(false);
-            loadData(); // Refresh list
+            loadData(); 
         } catch (error) {
             console.error(error);
             alert(t('error.generic'));
@@ -201,12 +199,12 @@ export const InventoryTab: React.FC = () => {
                                             </p>
                                             {item.current_stock <= item.low_stock_threshold && (
                                                 <p className="text-xs text-rose-400 mt-2 flex items-center gap-1">
-                                                    <AlertTriangle size={12} /> Low Stock
+                                                    <AlertTriangle size={12} /> {t('inventory.lowStock', 'Low Stock')}
                                                 </p>
                                             )}
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-xs text-gray-500 uppercase">Cost</p>
+                                            <p className="text-xs text-gray-500 uppercase">{t('inventory.cost', 'Cost')}</p>
                                             <p className="font-mono text-emerald-400 font-bold">€{item.cost_per_unit.toFixed(2)}/{item.unit}</p>
                                         </div>
                                     </div>
@@ -220,9 +218,8 @@ export const InventoryTab: React.FC = () => {
                 {activeTab === 'recipes' && (
                     <div className="space-y-4">
                         <div className="flex justify-end gap-3">
-                            {/* PHOENIX: NEW IMPORT BUTTON */}
                             <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors">
-                                <FileSpreadsheet size={18} className="text-green-400" /> {t('inventory.recipes.import', 'Import Recipes')}
+                                <FileSpreadsheet size={18} className="text-green-400" /> {t('inventory.recipes.import')}
                             </button>
                             <button onClick={() => setShowRecipeModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors">
                                 <Plus size={18} /> {t('inventory.recipes.add')}
@@ -241,7 +238,7 @@ export const InventoryTab: React.FC = () => {
                                                 {recipe.product_name}
                                             </h4>
                                             <div className="text-right">
-                                                <span className="text-xs text-gray-500 block">Est. Cost</span>
+                                                <span className="text-xs text-gray-500 block">{t('inventory.recipes.estCost')}</span>
                                                 <span className="text-rose-400 font-mono font-bold">
                                                     €{calculateRecipeCost(recipe.ingredients).toFixed(2)}
                                                 </span>
@@ -252,7 +249,7 @@ export const InventoryTab: React.FC = () => {
                                                 const item = items.find(i => i._id === ing.inventory_item_id);
                                                 return (
                                                     <div key={idx} className="flex justify-between border-b border-white/5 last:border-0 pb-1 last:pb-0">
-                                                        <span>{item?.name || 'Unknown Item'}</span>
+                                                        <span>{item?.name || t('inventory.unknownItem', 'Unknown Item')}</span>
                                                         <span className="font-mono text-gray-400">{ing.quantity_required} {item?.unit}</span>
                                                     </div>
                                                 );
@@ -340,7 +337,7 @@ export const InventoryTab: React.FC = () => {
                                             required
                                             type="number" 
                                             step="0.001" 
-                                            placeholder="Qty" 
+                                            placeholder={t('finance.qty', 'Qty')} 
                                             className="w-20 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm"
                                             value={ing.quantity_required}
                                             onChange={e => updateIngredient(index, 'quantity_required', parseFloat(e.target.value))}
@@ -373,10 +370,10 @@ export const InventoryTab: React.FC = () => {
             {showImportModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6 text-center">
-                        <h3 className="text-xl font-bold text-white mb-2">{t('inventory.recipes.import', 'Import Recipes')}</h3>
+                        <h3 className="text-xl font-bold text-white mb-2">{t('inventory.recipes.import')}</h3>
                         <p className="text-gray-400 text-sm mb-6">
-                            Upload a CSV or Excel file with columns: <br/>
-                            <span className="font-mono text-xs bg-white/5 px-1 rounded">Product Name | Ingredient Name | Quantity</span>
+                            {t('inventory.import.instruction')} <br/>
+                            <span className="font-mono text-xs bg-white/5 px-1 rounded">{t('inventory.import.columns')}</span>
                         </p>
                         
                         <div className="mb-6">
@@ -399,7 +396,7 @@ export const InventoryTab: React.FC = () => {
                                 ) : (
                                     <>
                                         <Upload size={32} className="text-gray-500" />
-                                        <span className="text-gray-400 text-sm">Click to Select File</span>
+                                        <span className="text-gray-400 text-sm">{t('inventory.import.clickToSelect')}</span>
                                     </>
                                 )}
                             </button>
@@ -413,7 +410,7 @@ export const InventoryTab: React.FC = () => {
                                 className="px-6 py-2 bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700 text-white rounded-lg font-bold flex items-center gap-2"
                             >
                                 {importing && <Loader2 size={16} className="animate-spin" />}
-                                {t('inventory.import', 'Import')}
+                                {t('inventory.import')}
                             </button>
                         </div>
                     </div>
