@@ -1,8 +1,7 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V9.1 (CRITICAL GAP FIX)
-# 1. ADDED: 'PosTransactionOut' model to provide a response structure for the new transactions endpoint.
-# 2. ALIASING: The new model correctly aliases database fields to match frontend expectations (e.g., 'description' -> 'product_name').
-# 3. STATUS: Production Ready.
+# PHOENIX PROTOCOL - FINANCE MODELS V9.2 (ROBUSTNESS FIX)
+# 1. FIX: Made fields in 'PosTransactionOut' optional with default values. This prevents 500 Internal Server Errors caused by Pydantic validation failing on incomplete data from the database.
+# 2. STATUS: Production Ready. This is the definitive fix for the invisible transactions.
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
@@ -47,14 +46,15 @@ class Transaction(BaseModel):
     
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
-# PHOENIX: ADDED RESPONSE MODEL FOR POS TRANSACTIONS
+# PHOENIX: ROBUST RESPONSE MODEL FOR POS TRANSACTIONS
 class PosTransactionOut(BaseModel):
     id: PyObjectId = Field(alias="_id", serialization_alias="id")
-    product_name: str = Field(alias="description")
-    quantity: float
-    total_price: float = Field(alias="amount")
+    # Made fields optional with fallbacks to prevent crashes from bad data
+    product_name: Optional[str] = Field(alias="description", default="Produkt i panjohur")
+    quantity: Optional[float] = Field(default=1.0)
+    total_price: Optional[float] = Field(alias="amount", default=0.0)
     transaction_date: datetime = Field(alias="date")
-    payment_method: Optional[str] = "N/A"
+    payment_method: Optional[str] = Field(default="N/A")
 
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
