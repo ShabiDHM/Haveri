@@ -1,13 +1,14 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V1.1 (UI CONSISTENCY FIX)
-// 1. FIX: Custom styled <select> dropdowns to match application's dark theme.
-// 2. STATUS: Production Ready.
+// PHOENIX PROTOCOL - INVENTORY TAB V1.2 (UNIVERSAL IMPORTER)
+// 1. ADDED: 'Import Recipes' button and Modal.
+// 2. LOGIC: connects to the new '/recipes/import' backend endpoint.
+// 3. STATUS: Production Ready.
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
     Package, Plus, Scale, AlertTriangle, ChefHat, 
-    Trash2, Loader2 
+    Trash2, Loader2, FileSpreadsheet, Upload, CheckCircle
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { InventoryItem, Recipe, Ingredient } from '../../data/types';
@@ -34,12 +35,18 @@ export const InventoryTab: React.FC = () => {
     // Modals
     const [showItemModal, setShowItemModal] = useState(false);
     const [showRecipeModal, setShowRecipeModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false); // PHOENIX: New Import Modal
 
     // Form State - Item
     const [newItem, setNewItem] = useState({ name: '', unit: 'kg', current_stock: 0, cost_per_unit: 0, low_stock_threshold: 5 });
     
     // Form State - Recipe
     const [newRecipe, setNewRecipe] = useState<{ product_name: string; ingredients: Ingredient[] }>({ product_name: '', ingredients: [] });
+
+    // Import State
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importing, setImporting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const loadData = async () => {
         try {
@@ -82,6 +89,35 @@ export const InventoryTab: React.FC = () => {
         }
     };
 
+    // PHOENIX: UNIVERSAL IMPORT HANDLER
+    const handleImportRecipes = async () => {
+        if (!importFile) return;
+        setImporting(true);
+        const formData = new FormData();
+        formData.append('file', importFile);
+
+        try {
+            // Use axios instance directly to access the new endpoint without full type regeneration
+            const response = await apiService.axiosInstance.post('/inventory/recipes/import', formData);
+            const data = response.data;
+            
+            let message = `${t('inventory.recipes.importedCount', 'Recipes Created')}: ${data.recipes_created}`;
+            if (data.missing_ingredients && data.missing_ingredients.length > 0) {
+                message += `\n\n${t('inventory.recipes.missingItems', 'Missing Items')}:\n` + data.missing_ingredients.join(', ');
+            }
+            
+            alert(message);
+            setImportFile(null);
+            setShowImportModal(false);
+            loadData(); // Refresh list
+        } catch (error) {
+            console.error(error);
+            alert(t('error.generic'));
+        } finally {
+            setImporting(false);
+        }
+    };
+
     const addIngredientRow = () => {
         setNewRecipe({
             ...newRecipe,
@@ -112,7 +148,6 @@ export const InventoryTab: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 h-full flex flex-col">
             
-            {/* PHOENIX FIX: Custom styles for select dropdown arrow */}
             <style>{`
                 .bg-chevron-down {
                     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
@@ -184,7 +219,11 @@ export const InventoryTab: React.FC = () => {
                 {/* --- RECIPES TAB --- */}
                 {activeTab === 'recipes' && (
                     <div className="space-y-4">
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-3">
+                            {/* PHOENIX: NEW IMPORT BUTTON */}
+                            <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors">
+                                <FileSpreadsheet size={18} className="text-green-400" /> {t('inventory.recipes.import', 'Import Recipes')}
+                            </button>
                             <button onClick={() => setShowRecipeModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors">
                                 <Plus size={18} /> {t('inventory.recipes.add')}
                             </button>
@@ -326,6 +365,57 @@ export const InventoryTab: React.FC = () => {
                                 <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg">{t('inventory.save')}</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* --- MODAL: IMPORT RECIPES --- */}
+            {showImportModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6 text-center">
+                        <h3 className="text-xl font-bold text-white mb-2">{t('inventory.recipes.import', 'Import Recipes')}</h3>
+                        <p className="text-gray-400 text-sm mb-6">
+                            Upload a CSV or Excel file with columns: <br/>
+                            <span className="font-mono text-xs bg-white/5 px-1 rounded">Product Name | Ingredient Name | Quantity</span>
+                        </p>
+                        
+                        <div className="mb-6">
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept=".csv, .xlsx, .xls"
+                                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                            />
+                            <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                className={`w-full py-8 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 transition-all ${importFile ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/5'}`}
+                            >
+                                {importFile ? (
+                                    <>
+                                        <CheckCircle size={32} className="text-emerald-400" />
+                                        <span className="text-emerald-400 font-medium">{importFile.name}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={32} className="text-gray-500" />
+                                        <span className="text-gray-400 text-sm">Click to Select File</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => setShowImportModal(false)} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button>
+                            <button 
+                                onClick={handleImportRecipes} 
+                                disabled={!importFile || importing}
+                                className="px-6 py-2 bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700 text-white rounded-lg font-bold flex items-center gap-2"
+                            >
+                                {importing && <Loader2 size={16} className="animate-spin" />}
+                                {t('inventory.import', 'Import')}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
