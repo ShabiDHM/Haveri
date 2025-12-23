@@ -1,6 +1,6 @@
 # FILE: backend/app/services/share_service.py
-# PHOENIX PROTOCOL - SHARE SERVICE V1.3 (BRANDING FIX)
-# 1. FIX: Corrected user_id type in business_profile query from ObjectId to str. This resolves the bug preventing the logo and firm name from appearing on the client portal.
+# PHOENIX PROTOCOL - SHARE SERVICE V1.3 (CORRECT FIELD LOOKUP)
+# 1. FIX: Changed the case document lookup from 'user_id' to the correct 'owner_id' field. This resolves the bug preventing the business name and logo from appearing on the client portal.
 
 from pymongo.database import Database
 from typing import Dict, Any, List
@@ -11,6 +11,10 @@ class ShareService:
         self.db = db
 
     def get_public_case_data(self, case_id: str) -> Dict[str, Any]:
+        """
+        Aggregates all public-facing data for a given case.
+        This is the single source of truth for the Client Portal.
+        """
         if not ObjectId.is_valid(case_id):
             return {}
         
@@ -21,9 +25,11 @@ class ShareService:
         if not case_doc:
             return {}
 
-        user_id = case_doc.get("user_id")
-        
-        # PHOENIX FIX: The business_profiles collection uses a string representation of the user_id.
+        # PHOENIX FIX: The field name in the 'cases' collection is 'owner_id', not 'user_id'.
+        user_id = case_doc.get("owner_id")
+        if not user_id:
+            return {} # If case has no owner, it cannot be shared.
+
         business_profile = self.db["business_profiles"].find_one({"user_id": str(user_id)}) or {}
 
         public_events_cursor = self.db["calendar_events"].find({
@@ -77,7 +83,9 @@ class ShareService:
         case_oid = ObjectId(case_id)
         user_oid = ObjectId(user_id)
         
-        case_doc = self.db["cases"].find_one({"_id": case_oid, "user_id": user_oid})
+        # PHOENIX FIX: The field name here should also be owner_id for consistency, assuming ownership check.
+        # However, the user object passed in has .id, which is an ObjectId, so we use that directly.
+        case_doc = self.db["cases"].find_one({"_id": case_oid, "owner_id": user_oid})
         if not case_doc:
             return False
 
