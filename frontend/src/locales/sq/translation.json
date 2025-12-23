@@ -352,7 +352,9 @@
       "totalSales": "Shitjet Totale",
       "invoiceCount": "Numri i Faturave",
       "tableProduct": "Produkti",
-      "tableSales": "Shitjet"
+      "tableSales": "Shitjet",
+      "tableQty": "Sasia",
+      "tableValue": "Vlera"
     }
   },
   "archive": {
