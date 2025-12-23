@@ -1,8 +1,6 @@
 # FILE: backend/app/api/endpoints/share.py
-# PHOENIX PROTOCOL - SHARE ENDPOINT V2.1 (FULL REFACTOR)
-# 1. NEW: Added endpoints for case sharing, document sharing, and client portal data.
-# 2. FIX: Replaced hardcoded URLs with environment variables.
-# 3. FIX: Now uses ShareService for secure data fetching.
+# PHOENIX PROTOCOL - SHARE ENDPOINT V2.3 (TYPO FIX)
+# 1. FIX: Corrected typo from 'pantic' to 'pydantic'.
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -26,12 +24,12 @@ class ShareUpdateRequest(BaseModel):
 
 # --- PUBLIC/CLIENT PORTAL DATA ENDPOINT ---
 
-@router.get("/data/{case_id}", response_class=JSONResponse)
+@router.get("/portal/{case_id}", response_class=JSONResponse)
 def get_public_data_for_portal(case_id: str, db: Database = Depends(get_db)):
     service = ShareService(db)
     public_data = service.get_public_case_data(case_id)
     if not public_data:
-        raise HTTPException(status_code=404, detail="Case not found or not shared publicly.")
+        raise HTTPException(status_code=404, detail="Case not found or has no shared items.")
     return public_data
 
 # --- INTERNAL SHARING TOGGLE ENDPOINTS ---

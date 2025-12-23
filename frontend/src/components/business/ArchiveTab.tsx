@@ -1,8 +1,6 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V11.2 (SURGICAL SHARE MERGE)
-// 1. MERGE: Surgically integrated file-level share/unshare button and copy-link logic into the new V11 ArchiveCard component.
-// 2. FIX: Ensured all necessary icons are imported and component props are correctly passed.
-// 3. VERIFIED: Preserves all existing V11 functionality (project-level sharing, folder uploads) without degradation.
+// PHOENIX PROTOCOL - ARCHIVE TAB V11.3 (UI/UX ENHANCEMENT)
+// 1. ADDED: A primary "Share Project" button to the main action bar when inside a case view.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,7 +25,6 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
         <div onClick={onClick} className={`group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-2xl transition-all duration-300 cursor-pointer bg-gray-900/40 backdrop-blur-md border border-white/5 shadow-xl hover:shadow-2xl hover:bg-gray-800/60 hover:-translate-y-1 hover:scale-[1.01]`}>
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             
-            {/* PHOENIX: ADDED COPY LINK BUTTON FOR SHARED ITEMS */}
             {isShared && onCopyLink && (
                 <button onClick={(e) => { e.stopPropagation(); onCopyLink(); }} className="absolute top-3 left-3 z-20 bg-green-500/20 text-green-400 p-1.5 rounded-lg border border-green-500/30 hover:bg-green-500/30" title={t('archive.copyLink')}>
                     <LinkIcon size={14} />
@@ -112,6 +109,8 @@ export const ArchiveTab: React.FC = () => {
     const filteredCases = cases.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.case_number.toLowerCase().includes(searchTerm.toLowerCase()));
     const filteredItems = archiveItems.filter(item => { if (currentView.type === 'ROOT' && item.case_id) return false; return item.title.toLowerCase().includes(searchTerm.toLowerCase()); });
     
+    const currentCase = currentView.type === 'CASE' ? cases.find(c => c.id === currentView.id) : null;
+
     if (loading) return <div className="flex justify-center h-64 items-center"><Loader2 className="animate-spin text-primary-start" /></div>;
 
     return (
@@ -119,6 +118,13 @@ export const ArchiveTab: React.FC = () => {
             <div className="flex flex-col md:flex-row gap-4 items-center">
                 <div className="flex-1 w-full"><div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" /><input type="text" placeholder={t('header.searchPlaceholder') || "Kërko..."} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-base focus:outline-none focus:border-primary-start/50 transition-all text-gray-200" /></div></div>
                 <div className="flex w-full md:w-auto gap-2 flex-shrink-0 p-1.5 bg-white/5 rounded-xl border border-white/10">
+                    {/* PHOENIX: ADDED SHARE BUTTON TO ACTION BAR */}
+                    {currentView.type === 'CASE' && currentCase && (
+                        <button onClick={() => handleShareCaseClick(currentCase)} className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 rounded-lg border border-indigo-500/30 transition-all font-bold text-xs uppercase tracking-wide">
+                            <Share2 size={16} />
+                            <span className="hidden sm:inline">{t('archive.shareCaseTitle', 'Share Project')}</span>
+                        </button>
+                    )}
                     <button onClick={() => setShowFolderModal(true)} className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-primary-start/10 text-primary-start hover:bg-primary-start/20 rounded-lg border border-primary-start/30 transition-all font-bold text-xs uppercase tracking-wide"><FolderPlus size={16} /> <span className="hidden sm:inline">Krijo Dosje</span></button>
                     <div className="relative flex-1 md:flex-initial"><input type="file" ref={folderInputRef} onChange={handleFolderUpload} className="hidden" {...({ webkitdirectory: "", directory: "" } as any)} multiple /><button onClick={() => folderInputRef.current?.click()} disabled={isUploading} className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-primary-start/10 text-primary-start hover:bg-primary-start/20 rounded-lg border border-primary-start/30 transition-all font-bold text-xs uppercase tracking-wide disabled:opacity-50 disabled:cursor-wait" title={t('archive.uploadFolderTooltip')}><FolderUp size={16} /> <span className="hidden sm:inline">Ngarko Dosje</span></button></div>
                     <div className="relative flex-1 md:flex-initial"><input type="file" ref={archiveInputRef} className="hidden" onChange={handleSmartUpload} /><button onClick={() => archiveInputRef.current?.click()} disabled={isUploading} className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-primary-start hover:bg-primary-end text-white rounded-lg shadow-lg shadow-primary-start/20 transition-all font-bold text-xs uppercase tracking-wide disabled:opacity-50 disabled:cursor-wait">{isUploading ? <Loader2 className="animate-spin w-4 h-4" /> : <FileUp size={16} />} <span className="hidden sm:inline">Ngarko Skedar</span></button></div>
@@ -180,31 +186,9 @@ export const ArchiveTab: React.FC = () => {
                     </motion.div>
                 )}
             </div>
-
-            {shareModalCase && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-background-dark border border-glass-edge rounded-3xl w-full max-w-md p-8 shadow-2xl">
-                        <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold text-white">{t('archive.shareCaseTitle')}</h3><button onClick={() => setShareModalCase(null)} className="text-gray-500 hover:text-white"><X size={24}/></button></div>
-                        <p className="text-sm text-gray-400 mb-6">{t('archive.shareCaseDesc')}</p>
-                        <div className={`rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all duration-300 mb-6 ${shareModalCase.is_shared ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-black/20 border border-white/5'}`} onClick={handleToggleCaseShare}>
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${shareModalCase.is_shared ? 'bg-indigo-500 text-white' : 'bg-white/10 text-gray-400'}`}>{shareModalCase.is_shared ? <Eye size={18} /> : <EyeOff size={18} />}</div>
-                                <div><h4 className={`text-sm font-bold ${shareModalCase.is_shared ? 'text-indigo-200' : 'text-gray-400'}`}>{shareModalCase.is_shared ? t('archive.sharingEnabled') : t('archive.sharingDisabled')}</h4></div>
-                            </div>
-                            <div className={`w-10 h-5 rounded-full relative transition-colors ${shareModalCase.is_shared ? 'bg-indigo-500' : 'bg-gray-700'}`}><div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${shareModalCase.is_shared ? 'translate-x-5' : 'translate-x-0'}`} /></div>
-                        </div>
-                        {shareModalCase.is_shared && (
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-500 uppercase">{t('archive.portalLink')}</label>
-                                <div className="flex gap-2">
-                                    <input type="text" readOnly value={`${window.location.origin}/portal/${shareModalCase.id}`} className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-300 text-sm font-mono"/>
-                                    <button onClick={() => handleCopyLink(shareModalCase)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm transition-colors">{copySuccess ? t('archive.linkCopied') : t('archive.copyLink')}</button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+            
+            {/* All modals remain unchanged */}
+            {shareModalCase && ( <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-3xl w-full max-w-md p-8 shadow-2xl"><div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold text-white">{t('archive.shareCaseTitle')}</h3><button onClick={() => setShareModalCase(null)} className="text-gray-500 hover:text-white"><X size={24}/></button></div><p className="text-sm text-gray-400 mb-6">{t('archive.shareCaseDesc')}</p><div className={`rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all duration-300 mb-6 ${shareModalCase.is_shared ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-black/20 border border-white/5'}`} onClick={handleToggleCaseShare}><div className="flex items-center gap-3"><div className={`p-2 rounded-lg ${shareModalCase.is_shared ? 'bg-indigo-500 text-white' : 'bg-white/10 text-gray-400'}`}>{shareModalCase.is_shared ? <Eye size={18} /> : <EyeOff size={18} />}</div><div><h4 className={`text-sm font-bold ${shareModalCase.is_shared ? 'text-indigo-200' : 'text-gray-400'}`}>{shareModalCase.is_shared ? t('archive.sharingEnabled') : t('archive.sharingDisabled')}</h4></div></div><div className={`w-10 h-5 rounded-full relative transition-colors ${shareModalCase.is_shared ? 'bg-indigo-500' : 'bg-gray-700'}`}><div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${shareModalCase.is_shared ? 'translate-x-5' : 'translate-x-0'}`} /></div></div>{shareModalCase.is_shared && (<div className="space-y-2"><label className="text-xs font-bold text-gray-500 uppercase">{t('archive.portalLink')}</label><div className="flex gap-2"><input type="text" readOnly value={`${window.location.origin}/portal/${shareModalCase.id}`} className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-300 text-sm font-mono"/><button onClick={() => handleCopyLink(shareModalCase)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm transition-colors">{copySuccess ? t('archive.linkCopied') : t('archive.copyLink')}</button></div></div>)}</div></div> )}
             {showFolderModal && ( <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"><div className="bg-background-dark border border-glass-edge rounded-3xl w-full max-w-sm p-8 shadow-2xl scale-100"><div className="flex justify-between items-center mb-6"><h3 className="text-xl font-bold text-white">{t('archive.newFolderTitle')}</h3><button onClick={() => setShowFolderModal(false)} className="text-gray-500 hover:text-white"><X size={24}/></button></div><form onSubmit={handleCreateFolder}><div className="relative mb-5"><FolderOpen className="absolute left-4 top-3.5 w-6 h-6 text-amber-500" /><input autoFocus type="text" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} placeholder={t('archive.folderNamePlaceholder')} className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white text-lg focus:ring-2 focus:ring-amber-500/50 outline-none transition-all placeholder:text-gray-600" /></div><div className="relative mb-8"><Tag className="absolute left-4 top-3.5 w-5 h-5 text-gray-500" /><select value={newFolderCategory} onChange={(e) => setNewFolderCategory(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-gray-300 focus:ring-2 focus:ring-amber-500/50 outline-none appearance-none cursor-pointer"><option value="GENERAL">{t('category.general')}</option><option value="EVIDENCE">{t('category.evidence')}</option><option value="LEGAL_DOCS">{t('category.legalDocs')}</option><option value="INVOICES">{t('category.invoices')}</option><option value="CONTRACTS">{t('category.contracts')}</option></select></div><div className="flex justify-end gap-3"><button type="button" onClick={() => setShowFolderModal(false)} className="px-6 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors font-medium">{t('general.cancel')}</button><button type="submit" className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white rounded-xl font-bold shadow-lg shadow-amber-500/20 transition-all transform hover:scale-[1.02]">{t('general.create')}</button></div></form></div></div> )}
             {itemToRename && ( <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"><div className="bg-background-dark border border-glass-edge rounded-3xl w-full max-w-sm p-8 shadow-2xl scale-100"><div className="flex justify-between items-center mb-6"><h3 className="text-xl font-bold text-white">{t('documentsPanel.renameTitle')}</h3><button onClick={() => setItemToRename(null)} className="text-gray-500 hover:text-white"><X size={24}/></button></div><form onSubmit={submitRename}><div className="relative mb-5"><Pencil className="absolute left-4 top-3.5 w-5 h-5 text-blue-400" /><input autoFocus type="text" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white text-lg focus:ring-2 focus:ring-blue-500/50 outline-none transition-all" /></div><div className="flex justify-end gap-3"><button type="button" onClick={() => setItemToRename(null)} className="px-6 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors font-medium">{t('general.cancel')}</button><button type="submit" className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02] flex items-center gap-2"><Save size={16} /> {t('general.save')}</button></div></form></div></div> )}
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} onMinimize={closePreview} t={t} directUrl={viewingUrl} />}

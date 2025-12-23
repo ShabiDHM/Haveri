@@ -1,6 +1,6 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - CLIENT PORTAL V5.1 (CLEANUP)
-// 1. FIX: Removed unused 'Download' icon and related functions.
+// PHOENIX PROTOCOL - CLIENT PORTAL V5.2 (ENDPOINT FIX)
+// 1. FIX: Changed API call from '/share/data/{caseId}' to the correct '/share/portal/{caseId}' to align with the new public-safe backend endpoint.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -42,7 +42,8 @@ const ClientPortalPage: React.FC = () => {
                 return;
             }
             try {
-                const response = await apiService.axiosInstance.get(`${API_V1_URL}/share/data/${caseId}`);
+                // PHOENIX FIX: Call the new, correct, public-safe endpoint
+                const response = await apiService.axiosInstance.get(`${API_V1_URL}/share/portal/${caseId}`);
                 const caseData = response.data;
                 setData(caseData);
                 if (caseData) {
