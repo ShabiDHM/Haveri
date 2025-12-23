@@ -1,15 +1,15 @@
 // FILE: src/components/Sidebar.tsx
-// PHOENIX PROTOCOL - SIDEBAR V1.7 (ICONOGRAPHY UPDATE)
-// 1. UPDATE: Replaced 'Scale' icon with 'Brain' icon for the 'Haveri AI' menu item.
-// 2. REASON: Better semantic match for the AI Assistant functionality.
-// 3. STATUS: Icon updated.
+// PHOENIX PROTOCOL - SIDEBAR V1.8 (DYNAMIC BRANDING)
+// 1. MODIFIED: Consumes 'businessProfile' from the updated AuthContext.
+// 2. LOGIC: Passes the dynamic firm_name and logo_url to the BrandLogo component.
+// 3. STATUS: Branding is now driven by user context.
 
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
     Calendar, FileText, MessageSquare, 
     Building2, Shield, LogOut, User as UserIcon, Brain 
-} from 'lucide-react'; // PHOENIX: Imported Brain, Removed Scale
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import BrandLogo from './BrandLogo';
@@ -21,7 +21,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user, logout, businessProfile } = useAuth(); // PHOENIX: Get businessProfile from context
   const location = useLocation();
 
   const getNavItems = () => {
@@ -32,7 +32,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         path: '/business' 
       },
       { 
-        icon: Brain, // PHOENIX: Updated to Brain icon for Haveri AI
+        icon: Brain,
         label: t('sidebar.haveri_ai', 'Haveri AI'), 
         path: '/dashboard' 
       },
@@ -53,7 +53,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       },
     ];
 
-    // Case-insensitive check for admin role
     if (user?.role?.toUpperCase() === 'ADMIN') {
       baseItems.splice(1, 0, {
         icon: Shield,
@@ -74,7 +73,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
   return (
     <>
-      {/* Mobile Backdrop */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/80 z-40 lg:hidden backdrop-blur-sm transition-opacity"
@@ -88,12 +86,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
           
-          {/* Header */}
           <div className="h-16 flex items-center px-6 border-b border-glass-edge bg-background-light/10 flex-shrink-0">
-            <BrandLogo />
+            {/* PHOENIX: Pass dynamic props to BrandLogo */}
+            <BrandLogo 
+              firmName={businessProfile?.firm_name}
+              logoUrl={businessProfile?.logo_url}
+            />
           </div>
 
-          {/* Navigation */}
           <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto custom-scrollbar min-h-0">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -123,7 +123,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             })}
           </nav>
 
-          {/* Mobile-Only Profile Footer */}
           <div className="p-3 border-t border-glass-edge bg-[#0a0a0a] lg:hidden mt-auto flex-shrink-0 pb-safe">
             <div className="flex items-center gap-3 mb-3 px-1">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-secondary-start to-secondary-end flex items-center justify-center text-white font-bold shadow-md shrink-0 text-xs">

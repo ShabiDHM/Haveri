@@ -1,11 +1,23 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES REFACTOR V8.3 (CO-PILOT UPGRADE)
-// 1. ADDED: 'PosTransaction' type to support imported financial data.
-// 2. STATUS: Production Ready.
+// PHOENIX PROTOCOL - TYPES REFACTOR V8.4 (BRANDING INTEGRATION)
+// 1. MODIFIED: The 'User' interface now includes an optional 'business_profile' property.
+// 2. LOGIC: This links the authenticated user directly to their business branding information.
+// 3. STATUS: Production Ready.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
-export interface User { id: string; email: string; username: string; role: 'ADMIN' | 'LAWYER' | 'CLIENT'; status: 'active' | 'inactive'; created_at: string; token?: string; subscription_status?: string; }
+// PHOENIX MODIFICATION: Added 'business_profile' to the User interface
+export interface User { 
+    id: string; 
+    email: string; 
+    username: string; 
+    role: 'ADMIN' | 'LAWYER' | 'CLIENT'; 
+    status: 'active' | 'inactive'; 
+    created_at: string; 
+    token?: string; 
+    subscription_status?: string; 
+    business_profile?: BusinessProfile; // Added for branding
+}
 export type AdminUser = User;
 
 export interface Case { id: string; case_number: string; case_name: string; title: string; status: 'open' | 'closed' | 'pending' | 'archived'; client?: { name: string; phone: string; email: string; }; opposing_party?: { name: string; lawyer: string; }; court_info?: { name: string; judge: string; }; description: string; created_at: string; updated_at: string; tags: string[]; chat_history?: ChatMessage[]; document_count?: number; alert_count?: number; event_count?: number; is_shared?: boolean; }
@@ -26,7 +38,6 @@ export interface TopProductItem { product_name: string; total_quantity: number; 
 export interface AnalyticsDashboardData { total_revenue_period: number; total_transactions_period: number; sales_trend: SalesTrendPoint[]; top_products: TopProductItem[]; total_profit_period?: number; }
 export interface ArchiveItemOut { id: string; title: string; file_type: string; category: string; storage_key: string; file_size: number; created_at: string; case_id?: string; parent_id?: string; item_type?: 'FILE' | 'FOLDER'; is_shared?: boolean; }
 
-// PHOENIX: ADDED FOR CO-PILOT UPGRADE
 export interface PosTransaction {
     id: string;
     product_name: string;

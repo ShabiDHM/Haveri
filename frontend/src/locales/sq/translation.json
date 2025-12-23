@@ -343,7 +343,17 @@
     "tabTransactions": "Transaksionet",
     "tabReports": "Raportet",
     "tabHistory": "Historiku",
-    "invoice": "Faturë"
+    "invoice": "Faturë",
+    "analytics": {
+      "salesTrend": "Trendi i Shitjeve",
+      "topProducts": "Produktet Kryesore",
+      "productDetails": "Detajet e Produkteve",
+      "periodTitle": "Periudha e Zgjedhur",
+      "totalSales": "Shitjet Totale",
+      "invoiceCount": "Numri i Faturave",
+      "tableProduct": "Produkti",
+      "tableSales": "Shitjet"
+    }
   },
   "archive": {
     "caseFolders": "Dosjet e Projekteve",

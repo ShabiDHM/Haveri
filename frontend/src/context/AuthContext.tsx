@@ -1,11 +1,11 @@
 // FILE: src/context/AuthContext.tsx
-// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V3.0 (STATE PERSISTENCE)
-// 1. FIX: The login function now explicitly saves the access token to localStorage.
-// 2. LOGIC: The initialization logic will now try to load from localStorage first. This prevents the mobile redirect race condition by making the session synchronous after a reload.
-// 3. BRANDING: Updated loading screen text from "Juristi AI" to "Haveri AI".
+// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.0 (BRANDING AWARE)
+// 1. MODIFIED: Context now fetches and stores BusinessProfile alongside the User object.
+// 2. MODIFIED: The AuthContextType interface is updated to expose 'businessProfile'.
+// 3. LOGIC: On login or refresh, both user and business profiles are fetched and provided to the app.
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { User, LoginRequest, RegisterRequest } from '../data/types';
+import { User, BusinessProfile, LoginRequest, RegisterRequest } from '../data/types';
 import { apiService } from '../services/api';
 import { Loader2 } from 'lucide-react';
 
@@ -13,6 +13,7 @@ type AuthUser = User;
 
 interface AuthContextType {
   user: AuthUser | null;
+  businessProfile: BusinessProfile | null; // PHOENIX: Added businessProfile
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
@@ -26,12 +27,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null); // PHOENIX: Added state for profile
   const [isLoading, setIsLoading] = useState(true);
 
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     apiService.logout(); 
     setUser(null);
+    setBusinessProfile(null); // PHOENIX: Clear business profile on logout
   }, []);
 
   useEffect(() => {
@@ -43,27 +46,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const initializeApp = async () => {
       try {
-        // PHOENIX FIX: Synchronous Check First
-        // Attempt to load token from localStorage immediately.
         const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
         if (storedToken) {
-            apiService.setToken(storedToken); // Immediately arm the apiService
+            apiService.setToken(storedToken);
         }
 
-        // Proactively try to refresh the token using the HttpOnly cookie.
         const refreshed = await apiService.refreshToken();
         
         if (refreshed) {
-            // If refresh succeeded, we have a valid token. Fetch user.
-            const fullUser = await apiService.fetchUserProfile();
-            // Persist the new token from the refresh
+            // PHOENIX: Fetch both user and business profile
+            const [fullUser, profile] = await Promise.all([
+                apiService.fetchUserProfile(),
+                apiService.getBusinessProfile() 
+            ]);
+
             const newAccessToken = apiService.getToken();
             if (newAccessToken) {
                 localStorage.setItem(AUTH_TOKEN_KEY, newAccessToken);
             }
-            if (isMounted) setUser(fullUser);
+            if (isMounted) {
+                setUser(fullUser);
+                setBusinessProfile(profile);
+            }
         } else {
-            // If refresh failed, we are logged out.
             logout();
         }
       } catch (error) {
@@ -88,12 +93,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       };
 
       const response = await apiService.login(loginPayload);
-      
-      // PHOENIX FIX: Persist the token immediately after login
       localStorage.setItem(AUTH_TOKEN_KEY, response.access_token);
       
-      const fullUser = await apiService.fetchUserProfile();
+      // PHOENIX: Fetch both user and business profile after login
+      const [fullUser, profile] = await Promise.all([
+        apiService.fetchUserProfile(),
+        apiService.getBusinessProfile()
+      ]);
+
       setUser(fullUser);
+      setBusinessProfile(profile);
 
     } finally {
       setIsLoading(false);
@@ -117,7 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, businessProfile, isAuthenticated: !!user, login, register, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
