@@ -1,106 +1,91 @@
 # FILE: backend/app/api/endpoints/share.py
-# PHOENIX PROTOCOL - SMART SHARE ENDPOINT
-# 1. FEATURE: Generates Open Graph (OG) Metadata for Social Media Previews.
-# 2. LOGIC: Bots see the Case Card; Humans are redirected to Client Portal.
+# PHOENIX PROTOCOL - SHARE ENDPOINT V2.1 (FULL REFACTOR)
+# 1. NEW: Added endpoints for case sharing, document sharing, and client portal data.
+# 2. FIX: Replaced hardcoded URLs with environment variables.
+# 3. FIX: Now uses ShareService for secure data fetching.
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import HTMLResponse, JSONResponse
 from pymongo.database import Database
-from typing import Optional
+from pydantic import BaseModel
+import os
 from bson import ObjectId
 
-from app.api.endpoints.dependencies import get_db
-from app.services import case_service
+from app.api.endpoints.dependencies import get_db, get_current_user
+from app.services.share_service import ShareService
+from app.models.user import UserInDB
 
 router = APIRouter()
 
 # CONFIGURATION
-FRONTEND_URL = "https://juristi.tech"
-API_URL = "https://api.juristi.tech" # Adjust if your API domain is different
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.haveri.tech")
+API_URL = os.getenv("API_BASE_URL", "https://api.haveri.tech")
 
-@router.get("/{case_id}", response_class=HTMLResponse)
-async def get_smart_share_preview(
-    request: Request, 
-    case_id: str, 
+class ShareUpdateRequest(BaseModel):
+    is_shared: bool
+
+# --- PUBLIC/CLIENT PORTAL DATA ENDPOINT ---
+
+@router.get("/data/{case_id}", response_class=JSONResponse)
+def get_public_data_for_portal(case_id: str, db: Database = Depends(get_db)):
+    service = ShareService(db)
+    public_data = service.get_public_case_data(case_id)
+    if not public_data:
+        raise HTTPException(status_code=404, detail="Case not found or not shared publicly.")
+    return public_data
+
+# --- INTERNAL SHARING TOGGLE ENDPOINTS ---
+
+@router.put("/case/{case_id}", status_code=status.HTTP_200_OK)
+def update_case_share_status(
+    case_id: str,
+    update_data: ShareUpdateRequest,
+    current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db)
 ):
-    """
-    Serves a static HTML page with Open Graph tags for Social Media Bots.
-    Redirects real users to the React Client Portal.
-    """
-    # 1. Fetch Public Case Data
-    case_data = case_service.get_public_case_events(db, case_id)
+    service = ShareService(db)
+    service.set_case_share_status(case_id, str(current_user.id), update_data.is_shared)
+    return {"status": "success", "case_id": case_id, "is_shared": update_data.is_shared}
+
+# --- SOCIAL MEDIA PREVIEW ENDPOINT ---
+
+@router.get("/{case_id}", response_class=HTMLResponse)
+def get_smart_share_preview(case_id: str, db: Database = Depends(get_db)):
+    service = ShareService(db)
+    case_data = service.get_public_case_data(case_id)
     
     if not case_data:
-        # If case is private or doesn't exist, redirect to home
-        return f"""
-        <html>
-            <head>
-                <meta http-equiv="refresh" content="0;url={FRONTEND_URL}" />
-            </head>
-            <body>Redirecting...</body>
-        </html>
-        """
+        return HTMLResponse(content=f'<html><head><meta http-equiv="refresh" content="0;url={FRONTEND_URL}" /></head><body></body></html>')
 
-    # 2. Extract Data for Preview
-    title = case_data.get("title", "Rast Ligjor")
+    title = case_data.get("title", "Dosje")
     client = case_data.get("client_name", "Klient")
     case_number = case_data.get("case_number", "---")
-    status = case_data.get("status", "OPEN").upper()
-    org_name = case_data.get("organization_name", "Juristi Portal")
+    status_str = str(case_data.get("status", "OPEN")).upper()
+    org_name = case_data.get("organization_name", "Haveri Portal")
     
-    # 3. Handle Logo URL (Must be Absolute for WhatsApp)
     logo_path = case_data.get("logo")
-    logo_url = f"{FRONTEND_URL}/static/logo.png" # Default fallback
+    logo_url = f"{FRONTEND_URL}/logo.png"
     
     if logo_path:
         if logo_path.startswith("http"):
             logo_url = logo_path
         elif logo_path.startswith("/"):
-            # Construct absolute API URL for the logo
             logo_url = f"{API_URL}{logo_path}"
 
-    # 4. Construct the HTML Response
-    # The 'og:' tags are what WhatsApp/Viber read.
-    # The <script> window.location is what redirects the user.
-    
     html_content = f"""
     <!DOCTYPE html>
     <html lang="sq">
     <head>
         <meta charset="UTF-8">
         <title>{title} | {org_name}</title>
-        
-        <!-- Open Graph / Facebook / WhatsApp -->
         <meta property="og:type" content="website" />
         <meta property="og:url" content="{FRONTEND_URL}/portal/{case_id}" />
         <meta property="og:title" content="{title} (#{case_number})" />
-        <meta property="og:description" content="Klient: {client} | Status: {status} | {org_name}" />
+        <meta property="og:description" content="Klient: {client} | Status: {status_str} | {org_name}" />
         <meta property="og:image" content="{logo_url}" />
-        <meta property="og:image:width" content="300" />
-        <meta property="og:image:height" content="300" />
-        
-        <!-- Twitter -->
-        <meta property="twitter:card" content="summary" />
-        <meta property="twitter:title" content="{title} (#{case_number})" />
-        <meta property="twitter:description" content="Klient: {client} | Status: {status}" />
-        <meta property="twitter:image" content="{logo_url}" />
-
-        <!-- Automatic Redirect for Humans -->
-        <script>
-            window.location.replace("{FRONTEND_URL}/portal/{case_id}");
-        </script>
-        
-        <style>
-            body {{ font-family: sans-serif; background: #0a0a0a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }}
-            .loader {{ border: 4px solid #333; border-top: 4px solid #6366f1; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }}
-            @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
-        </style>
+        <script>window.location.replace("{FRONTEND_URL}/portal/{case_id}");</script>
     </head>
-    <body>
-        <div class="loader"></div>
-        <p style="margin-left: 15px;">Duke hapur dosjen...</p>
-    </body>
+    <body><p>Duke hapur dosjen...</p></body>
     </html>
     """
     

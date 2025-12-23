@@ -1,0 +1,115 @@
+
+# FILE: backend/app/services/share_service.py
+# PHOENIX PROTOCOL - SHARE SERVICE V1.0
+# 1. NEW: Dedicated service to securely fetch public data for client portals.
+# 2. LOGIC: Only returns items explicitly marked 'is_public' or 'is_shared'.
+
+from pymongo.database import Database
+from typing import Dict, Any
+from bson import ObjectId
+
+class ShareService:
+    def __init__(self, db: Database):
+        self.db = db
+
+    def get_public_case_data(self, case_id: str) -> Dict[str, Any]:
+        """
+        Aggregates all public-facing data for a given case.
+        This is the single source of truth for the Client Portal.
+        """
+        if not ObjectId.is_valid(case_id):
+            return {}
+        
+        case_oid = ObjectId(case_id)
+        
+        # 1. Fetch the main case data
+        case_doc = self.db["cases"].find_one({"_id": case_oid})
+        if not case_doc or not case_doc.get("is_shared"):
+            return {} # Return empty if case doesn't exist or isn't shared
+
+        # 2. Fetch business profile for branding
+        user_id = case_doc.get("user_id")
+        business_profile = self.db["business_profiles"].find_one({"user_id": str(user_id)}) or {}
+
+        # 3. Fetch public calendar events
+        public_events_cursor = self.db["calendar_events"].find({
+            "case_id": case_id,
+            "is_public": True
+        })
+        timeline = [
+            {
+                "title": event.get("title"),
+                "date": event.get("start_date"),
+                "type": event.get("event_type"),
+                "description": event.get("description")
+            }
+            for event in list(public_events_cursor)
+        ]
+        
+        # 4. Fetch shared documents (from active cases)
+        shared_docs_cursor = self.db["documents"].find({
+            "case_id": case_id,
+            "is_shared": True
+        })
+        active_documents = [
+            {
+                "id": str(doc.get("_id")),
+                "file_name": doc.get("file_name"),
+                "created_at": doc.get("created_at"),
+                "file_type": doc.get("mime_type", "application/octet-stream"),
+                "source": "ACTIVE"
+            }
+            for doc in list(shared_docs_cursor)
+        ]
+        
+        # 5. Fetch shared documents (from archive)
+        shared_archive_cursor = self.db["archive"].find({
+            "case_id": case_id,
+            "is_shared": True
+        })
+        archive_documents = [
+            {
+                "id": str(doc.get("_id")),
+                "file_name": doc.get("title"),
+                "created_at": doc.get("created_at"),
+                "file_type": doc.get("file_type", "application/octet-stream"),
+                "source": "ARCHIVE"
+            }
+            for doc in list(shared_archive_cursor)
+        ]
+
+        # 6. Fetch shared invoices (coming soon, stub for now)
+        shared_invoices = []
+
+        return {
+            "case_number": case_doc.get("case_number"),
+            "title": case_doc.get("title"),
+            "client_name": case_doc.get("client", {}).get("name"),
+            "status": case_doc.get("status"),
+            "organization_name": business_profile.get("firm_name"),
+            "logo": business_profile.get("logo_url"),
+            "timeline": sorted(timeline, key=lambda x: x['date'], reverse=True),
+            "documents": active_documents + archive_documents,
+            "invoices": shared_invoices
+        }
+
+    def set_case_share_status(self, case_id: str, user_id: str, is_shared: bool) -> bool:
+        """
+        Updates the 'is_shared' flag on a case, verifying ownership.
+        """
+        if not ObjectId.is_valid(case_id) or not ObjectId.is_valid(user_id):
+            return False
+        
+        case_oid = ObjectId(case_id)
+        user_oid = ObjectId(user_id)
+        
+        # Verify the user owns this case before sharing
+        case_doc = self.db["cases"].find_one({"_id": case_oid, "user_id": user_oid})
+        if not case_doc:
+            return False
+
+        result = self.db["cases"].update_one(
+            {"_id": case_oid},
+            {"$set": {"is_shared": is_shared}}
+        )
+        return result.modified_count > 0

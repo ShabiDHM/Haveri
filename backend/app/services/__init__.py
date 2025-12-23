@@ -29,8 +29,9 @@ from . import (
     graph_service,
     pdf_service,
     social_service,
-    inventory_service, # Make sure this is above parsing if alphabetical, but order in init doesn't determine load order usually
+    inventory_service,
     parsing_service,
+    share_service, # <-- ADD THIS
     
     # Albanian Specific Services
     albanian_document_processor,
