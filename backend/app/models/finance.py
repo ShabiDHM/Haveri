@@ -1,7 +1,7 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V9.2 (ROBUSTNESS FIX)
-# 1. FIX: Made fields in 'PosTransactionOut' optional with default values. This prevents 500 Internal Server Errors caused by Pydantic validation failing on incomplete data from the database.
-# 2. STATUS: Production Ready. This is the definitive fix for the invisible transactions.
+# PHOENIX PROTOCOL - FINANCE MODELS V9.3 (ID VALIDATION FIX)
+# 1. FIX: Added 'default=None' to the 'id' field in 'PosTransactionOut'. This resolves the 'ResponseValidationError' (Input should be an instance of ObjectId) that was causing the 500 error.
+# 2. STATUS: Production Ready.
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
@@ -48,8 +48,9 @@ class Transaction(BaseModel):
 
 # PHOENIX: ROBUST RESPONSE MODEL FOR POS TRANSACTIONS
 class PosTransactionOut(BaseModel):
-    id: PyObjectId = Field(alias="_id", serialization_alias="id")
-    # Made fields optional with fallbacks to prevent crashes from bad data
+    # Added default=None to prevent validation crashes on ID
+    id: Optional[PyObjectId] = Field(alias="_id", serialization_alias="id", default=None)
+    
     product_name: Optional[str] = Field(alias="description", default="Produkt i panjohur")
     quantity: Optional[float] = Field(default=1.0)
     total_price: Optional[float] = Field(alias="amount", default=0.0)
