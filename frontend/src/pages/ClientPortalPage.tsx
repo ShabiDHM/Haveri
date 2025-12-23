@@ -1,7 +1,7 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - CLIENT PORTAL V5.4 (UI UNIFICATION)
+// PHOENIX PROTOCOL - CLIENT PORTAL V5.5 (UI SIMPLIFICATION)
 // 1. REMOVED: "Kronologjia" (Timeline) tab and all related logic.
-// 2. FOCUS: The portal now defaults to and exclusively displays the "Dokumentet" view for a cleaner client experience.
+// 2. FOCUS: The portal now defaults to and exclusively displays the "Dokumentet" view.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
