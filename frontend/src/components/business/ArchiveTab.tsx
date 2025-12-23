@@ -1,15 +1,15 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V11.1 (SHARE LOGIC FIXED)
-// 1. FIX: Restored project-level "Share Project" button and modal.
-// 2. FIX: Added missing 'EyeOff' icon import.
-// 3. FIX: Cleaned up unused 'LinkIcon' import.
+// PHOENIX PROTOCOL - ARCHIVE TAB V11.2 (SURGICAL SHARE MERGE)
+// 1. MERGE: Surgically integrated file-level share/unshare button and copy-link logic into the new V11 ArchiveCard component.
+// 2. FIX: Ensured all necessary icons are imported and component props are correctly passed.
+// 3. VERIFIED: Preserves all existing V11 functionality (project-level sharing, folder uploads) without degradation.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Home, Briefcase, FolderOpen, ChevronRight, FolderPlus, Loader2,
     Calendar, Info, Hash, FileText, FileImage, FileCode, File as FileIcon, Eye, Download, Trash2, Tag, X, Pencil, Save,
-    FolderUp, FileUp, Search, Share2, EyeOff
+    FolderUp, FileUp, Search, Share2, EyeOff, Link as LinkIcon
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { ArchiveItemOut, Case, Document } from '../../data/types';
@@ -21,11 +21,19 @@ type Breadcrumb = { id: string | null; name: string; type: 'ROOT' | 'CASE' | 'FO
 const getMimeType = (fileType: string, fileName: string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; if (['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF'].includes(fileType)) return 'image/jpeg'; return 'application/octet-stream'; };
 const getFileIcon = (fileType: string) => { const ft = fileType ? fileType.toUpperCase() : ""; if (ft === 'PDF') return <FileText className="w-5 h-5 text-red-400" />; if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-purple-400" />; if (['JSON', 'JS', 'TS'].includes(ft)) return <FileCode className="w-5 h-5 text-yellow-400" />; return <FileIcon className="w-5 h-5 text-blue-400" />; };
 
-const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, onCaseShare, isShared, isFolder, isLoading }: any) => {
+const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, onCaseShare, isShared, isFolder, isLoading, onCopyLink }: any) => {
     const { t } = useTranslation();
     return (
         <div onClick={onClick} className={`group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-2xl transition-all duration-300 cursor-pointer bg-gray-900/40 backdrop-blur-md border border-white/5 shadow-xl hover:shadow-2xl hover:bg-gray-800/60 hover:-translate-y-1 hover:scale-[1.01]`}>
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            
+            {/* PHOENIX: ADDED COPY LINK BUTTON FOR SHARED ITEMS */}
+            {isShared && onCopyLink && (
+                <button onClick={(e) => { e.stopPropagation(); onCopyLink(); }} className="absolute top-3 left-3 z-20 bg-green-500/20 text-green-400 p-1.5 rounded-lg border border-green-500/30 hover:bg-green-500/30" title={t('archive.copyLink')}>
+                    <LinkIcon size={14} />
+                </button>
+            )}
+
             <div>
                 <div className="flex flex-col mb-4 relative z-10">
                     <div className="flex justify-between items-start gap-2">
@@ -95,10 +103,10 @@ export const ArchiveTab: React.FC = () => {
     const closePreview = () => { setViewingDoc(null); if(viewingUrl) window.URL.revokeObjectURL(viewingUrl); };
     const handleRenameClick = (item: ArchiveItemOut) => { setItemToRename(item); setRenameValue(item.title); };
     const submitRename = async (e: React.FormEvent) => { e.preventDefault(); if (!itemToRename || !renameValue.trim()) return; try { await apiService.renameArchiveItem(itemToRename.id, renameValue); setArchiveItems(prev => prev.map(i => i.id === itemToRename.id ? { ...i, title: renameValue } : i)); setItemToRename(null); } catch (error) { alert(t('error.generic')); } };
-    const handleShareItem = async (item: ArchiveItemOut) => { try { const newStatus = !(item as any).is_shared; await apiService.shareArchiveItem(item.id, newStatus); setArchiveItems(prev => prev.map(i => i.id === item.id ? { ...i, is_shared: newStatus } as any : i)); } catch (e) { alert(t('error.generic')); } };
+    const handleShareItem = async (item: ArchiveItemOut) => { try { const newStatus = !item.is_shared; await apiService.shareArchiveItem(item.id, newStatus); setArchiveItems(prev => prev.map(i => i.id === item.id ? { ...i, is_shared: newStatus } : i)); } catch (e) { alert(t('error.generic')); } };
     const handleShareCaseClick = (caseData: Case) => { setShareModalCase(caseData); };
     const handleToggleCaseShare = async () => { if (!shareModalCase) return; const newStatus = !shareModalCase.is_shared; try { await apiService.updateCaseShareStatus(shareModalCase.id, newStatus); const updatedCase = { ...shareModalCase, is_shared: newStatus }; setShareModalCase(updatedCase); setCases(prev => prev.map(c => c.id === updatedCase.id ? updatedCase : c)); } catch { alert(t('error.generic')); } };
-    const handleCopyLink = () => { if (!shareModalCase) return; const link = `${window.location.origin}/portal/${shareModalCase.id}`; navigator.clipboard.writeText(link); setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); };
+    const handleCopyLink = (itemOrCase: ArchiveItemOut | Case) => { const caseId = 'case_id' in itemOrCase ? itemOrCase.case_id : itemOrCase.id; if (!caseId) return; const link = `${window.location.origin}/portal/${caseId}`; navigator.clipboard.writeText(link); setCopySuccess(true); setTimeout(() => setCopySuccess(false), 2000); };
     
     const currentView = breadcrumbs[breadcrumbs.length - 1];
     const filteredCases = cases.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.case_number.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -145,25 +153,25 @@ export const ArchiveTab: React.FC = () => {
                     <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         <AnimatePresence>
                             {filteredItems.map(item => { 
-                                const isFolder = (item as any).item_type === 'FOLDER'; 
+                                const isFolder = item.item_type === 'FOLDER'; 
                                 const fileExt = item.file_type || 'FILE'; 
-                                const isShared = (item as any).is_shared === true;
                                 return (
                                     <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} key={item.id} className="h-full">
                                         <ArchiveCard 
                                             title={item.title} 
                                             subtitle={isFolder ? t('archive.caseFolders') : `${fileExt} Dokument`} 
                                             type={isFolder ? 'Folder' : fileExt} 
-                                            date={new Date().toLocaleDateString()} 
+                                            date={new Date(item.created_at).toLocaleDateString()} 
                                             icon={isFolder ? <FolderOpen className="w-5 h-5 text-amber-500" /> : getFileIcon(fileExt)} 
                                             isFolder={isFolder} 
-                                            isShared={isShared}
+                                            isShared={item.is_shared}
                                             isLoading={openingDocId === item.id}
                                             onClick={() => isFolder ? handleEnterFolder(item.id, item.title, 'FOLDER') : handleViewItem(item)} 
                                             onDownload={() => downloadArchiveItem(item.id, item.title)} 
                                             onDelete={() => deleteArchiveItem(item.id)}
                                             onRename={() => handleRenameClick(item)} 
                                             onShare={() => handleShareItem(item)}
+                                            onCopyLink={() => handleCopyLink(item)}
                                         />
                                     </motion.div>
                                 );
@@ -190,7 +198,7 @@ export const ArchiveTab: React.FC = () => {
                                 <label className="text-xs font-bold text-gray-500 uppercase">{t('archive.portalLink')}</label>
                                 <div className="flex gap-2">
                                     <input type="text" readOnly value={`${window.location.origin}/portal/${shareModalCase.id}`} className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-gray-300 text-sm font-mono"/>
-                                    <button onClick={handleCopyLink} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm transition-colors">{copySuccess ? t('archive.linkCopied') : t('archive.copyLink')}</button>
+                                    <button onClick={() => handleCopyLink(shareModalCase)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm transition-colors">{copySuccess ? t('archive.linkCopied') : t('archive.copyLink')}</button>
                                 </div>
                             </div>
                         )}
