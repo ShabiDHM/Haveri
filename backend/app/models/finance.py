@@ -1,7 +1,8 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V9.0 (PROFITABILITY)
-# 1. UPDATE: Added 'total_profit_period' to AnalyticsDashboardData.
-# 2. STATUS: Production Ready.
+# PHOENIX PROTOCOL - FINANCE MODELS V9.1 (CRITICAL GAP FIX)
+# 1. ADDED: 'PosTransactionOut' model to provide a response structure for the new transactions endpoint.
+# 2. ALIASING: The new model correctly aliases database fields to match frontend expectations (e.g., 'description' -> 'product_name').
+# 3. STATUS: Production Ready.
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
@@ -44,6 +45,17 @@ class Transaction(BaseModel):
     unit_price: Optional[float] = None
     original_row_data: Optional[Dict[str, Any]] = None
     
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
+
+# PHOENIX: ADDED RESPONSE MODEL FOR POS TRANSACTIONS
+class PosTransactionOut(BaseModel):
+    id: PyObjectId = Field(alias="_id", serialization_alias="id")
+    product_name: str = Field(alias="description")
+    quantity: float
+    total_price: float = Field(alias="amount")
+    transaction_date: datetime = Field(alias="date")
+    payment_method: Optional[str] = "N/A"
+
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
 # --- INVOICE MODELS ---
@@ -161,7 +173,7 @@ class AnalyticsDashboardData(BaseModel):
     total_transactions_period: int
     sales_trend: List[SalesTrendPoint]
     top_products: List[TopProductItem]
-    total_profit_period: float = 0.0 # NEW FIELD
+    total_profit_period: float = 0.0 
 
 class CaseFinancialSummary(BaseModel):
     case_id: str

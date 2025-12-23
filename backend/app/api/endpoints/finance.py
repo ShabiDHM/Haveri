@@ -1,7 +1,8 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V13.0 (PROFITABILITY VISUALIZATION)
-# 1. UPDATE: 'get_analytics_dashboard' now calculates Real Net Profit.
-# 2. STATUS: Production Ready.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V13.1 (CRITICAL GAP FIX)
+# 1. ADDED: New GET endpoint at '/import/transactions' to list all imported POS transactions, resolving the 404 error and the "Invisible Transactions" bug.
+# 2. MODELS: Imported the 'PosTransactionOut' model to support the new endpoint.
+# 3. STATUS: Production Ready.
 
 import asyncio
 import json
@@ -10,14 +11,15 @@ from fastapi.responses import StreamingResponse
 from typing import List, Annotated, Optional, Any, Dict
 from datetime import datetime, timedelta
 from bson import ObjectId
-from pymongo.database import Database 
+from pymongo.database import Database
+import pymongo # Import pymongo for sorting
 
 from app.models.user import UserInDB
 from app.models.finance import (
     InvoiceCreate, InvoiceOut, InvoiceUpdate, 
     ExpenseCreate, ExpenseOut, ExpenseUpdate,
     AnalyticsDashboardData, SalesTrendPoint, TopProductItem,
-    CaseFinancialSummary 
+    CaseFinancialSummary, PosTransactionOut
 )
 from app.models.archive import ArchiveItemOut 
 from app.services.finance_service import FinanceService
@@ -40,6 +42,20 @@ async def confirm_import(current_user: Annotated[UserInDB, Depends(get_current_u
     except Exception: raise HTTPException(status_code=400, detail="Invalid mapping format")
     service = ParsingService(db)
     return await service.process_import(file, str(current_user.id), mapping_dict)
+
+# PHOENIX: ADDED ENDPOINT TO FIX INVISIBLE TRANSACTIONS
+@router.get("/import/transactions", response_model=List[PosTransactionOut])
+async def get_imported_transactions(
+    current_user: Annotated[UserInDB, Depends(get_current_active_user)],
+    db: Any = Depends(get_async_db)
+):
+    """
+    Retrieves all imported POS transactions for the current user.
+    """
+    user_id_str = str(current_user.id)
+    cursor = db["transactions"].find({"user_id": user_id_str}).sort("date", pymongo.DESCENDING)
+    transactions = await cursor.to_list(length=None) 
+    return transactions
 
 # --- ANALYTICS ENDPOINTS ---
 @router.get("/case-summary", response_model=List[CaseFinancialSummary])
@@ -103,27 +119,12 @@ async def get_analytics_dashboard(
     )
     
     # --- PROFIT CALCULATION ENGINE ---
-    # Invoice Revenue
     inv_revenue = sum(item['amount'] for item in inv_data)
-    
-    # POS Revenue
     pos_revenue = sum(item['amount'] for item in pos_data)
-    
-    # POS Profit (Real data from recipes)
-    # If net_profit is missing (old data), fallback to amount (assume 100% margin if unknown, or 0)
-    # Using amount as fallback prevents showing 0 profit for unmapped items, but might be misleading.
-    # Let's use 0 fallback for strict correctness, or amount for optimistic.
-    # Decision: Use amount for fallback to keep UI consistent with Revenue if no recipe exists.
     pos_profit = sum(item.get('net_profit', item['amount']) for item in pos_data)
-    
-    # Expenses (Negative values)
     expenses_total = sum(item['amount'] for item in exp_data) # This is negative
-
     total_revenue = inv_revenue + pos_revenue
     total_count = len(inv_data) + len(pos_data)
-    
-    # Net Profit = (Invoice Rev + POS Profit) - |Expenses|
-    # expenses_total is negative, so we add it.
     total_net_profit = inv_revenue + pos_profit + expenses_total
 
     # --- Trend & Product Logic ---
