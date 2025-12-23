@@ -1,7 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V12.1 (REGRESSION FIX)
-// 1. FIX: Corrected typo 'i1n' to 'i18n' from the useTranslation hook.
-// 2. CLEANUP: Removed unused 'AreaChart' and 'Area' imports from recharts.
+// PHOENIX PROTOCOL - FINANCE TAB V12.2 (AESTHETIC RESTORATION)
+// 1. REVERT (P3): Restored the "Ecuria e Shitjeve" chart to use the visually superior AreaChart.
+// 2. CLEANUP: Adjusted recharts imports to match the restored chart implementation.
 // 3. VERIFIED: All Co-Pilot Upgrade features from V12.0 remain intact and functional.
 // 4. STATUS: Production Ready.
 
@@ -27,7 +27,7 @@ import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { sq, enUS } from 'date-fns/locale';
 import { 
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+    BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 
 const DatePicker = (ReactDatePicker as any).default;
@@ -509,14 +509,20 @@ export const FinanceTab: React.FC = () => {
                                             <h4 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-2"><TrendingUp size={16} className="text-indigo-400"/> {t('finance.analytics.salesTrend')}</h4>
                                             <div className="h-64 w-full min-h-[250px]">
                                                 <ResponsiveContainer width="100%" height="100%">
-                                                    {/* PHOENIX: P3 CHART FIX */}
-                                                    <BarChart data={analyticsData.sales_trend}>
+                                                    {/* PHOENIX: P3 CHART RESTORED */}
+                                                    <AreaChart data={analyticsData.sales_trend}>
+                                                        <defs>
+                                                            <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/>
+                                                                <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
+                                                            </linearGradient>
+                                                        </defs>
                                                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.15)" />
                                                         <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} tickFormatter={(str) => str.slice(5)} tick={{fill: '#d1d5db'}} />
                                                         <YAxis stroke="#9ca3af" fontSize={12} tick={{fill: '#d1d5db'}} width={40} />
-                                                        <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#f3f4f6', borderRadius: '8px' }} formatter={(value: any) => [`€${Number(value).toFixed(2)}`, t('finance.income')]} labelStyle={{ color: '#9ca3af', marginBottom: '4px' }} cursor={{fill: 'rgba(129, 140, 248, 0.1)'}} />
-                                                        <Bar dataKey="amount" fill="#818cf8" radius={[4, 4, 0, 0]} />
-                                                    </BarChart>
+                                                        <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#f3f4f6', borderRadius: '8px' }} formatter={(value: any) => [`€${Number(value).toFixed(2)}`, t('finance.income')]} labelStyle={{ color: '#9ca3af', marginBottom: '4px' }} />
+                                                        <Area type="monotone" dataKey="amount" stroke="#818cf8" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+                                                    </AreaChart>
                                                 </ResponsiveContainer>
                                             </div>
                                         </div>
