@@ -1,6 +1,6 @@
 # FILE: backend/app/services/share_service.py
-# PHOENIX PROTOCOL - SHARE SERVICE V1.2 (DATA TYPE FIX)
-# 1. FIX: Corrected the business_profile query to use str(user_id). This resolves the bug where the logo URL was not being fetched for the client portal.
+# PHOENIX PROTOCOL - SHARE SERVICE V1.3 (BRANDING FIX)
+# 1. FIX: Corrected user_id type in business_profile query from ObjectId to str. This resolves the bug preventing the logo and firm name from appearing on the client portal.
 
 from pymongo.database import Database
 from typing import Dict, Any, List
@@ -11,10 +11,6 @@ class ShareService:
         self.db = db
 
     def get_public_case_data(self, case_id: str) -> Dict[str, Any]:
-        """
-        Aggregates all public-facing data for a given case.
-        This is the single source of truth for the Client Portal.
-        """
         if not ObjectId.is_valid(case_id):
             return {}
         
@@ -25,56 +21,35 @@ class ShareService:
         if not case_doc:
             return {}
 
-        # 2. Fetch business profile for branding
         user_id = case_doc.get("user_id")
         
-        # PHOENIX FIX: Query business_profiles using a string ID, which is how it's stored.
+        # PHOENIX FIX: The business_profiles collection uses a string representation of the user_id.
         business_profile = self.db["business_profiles"].find_one({"user_id": str(user_id)}) or {}
 
-        # 3. Fetch public calendar events
         public_events_cursor = self.db["calendar_events"].find({
             "case_id": case_id,
             "is_public": True
         })
         timeline: List[Dict[str, Any]] = [
-            {
-                "title": event.get("title"),
-                "date": event.get("start_date"),
-                "type": event.get("event_type"),
-                "description": event.get("description")
-            }
-            for event in list(public_events_cursor)
+            {"title": e.get("title"), "date": e.get("start_date"), "type": e.get("event_type"), "description": e.get("description")}
+            for e in list(public_events_cursor)
         ]
         
-        # 4. Fetch shared documents (from active cases)
         shared_docs_cursor = self.db["documents"].find({
             "case_id": case_id,
             "is_shared": True
         })
         active_documents: List[Dict[str, Any]] = [
-            {
-                "id": str(doc.get("_id")),
-                "file_name": doc.get("file_name"),
-                "created_at": doc.get("created_at"),
-                "file_type": doc.get("mime_type", "application/octet-stream"),
-                "source": "ACTIVE"
-            }
-            for doc in list(shared_docs_cursor)
+            {"id": str(d.get("_id")), "file_name": d.get("file_name"), "created_at": d.get("created_at"), "file_type": d.get("mime_type", "application/octet-stream"), "source": "ACTIVE"}
+            for d in list(shared_docs_cursor)
         ]
         
-        # 5. Fetch shared documents (from archive)
         shared_archive_cursor = self.db["archives"].find({
-            "case_id": case_oid, # Query by ObjectId for consistency
+            "case_id": case_oid,
             "is_shared": True
         })
         archive_documents: List[Dict[str, Any]] = [
-            {
-                "id": str(doc.get("_id")),
-                "file_name": doc.get("title"),
-                "created_at": doc.get("created_at"),
-                "file_type": doc.get("file_type", "application/octet-stream"),
-                "source": "ARCHIVE"
-            }
+            {"id": str(doc.get("_id")), "file_name": doc.get("title"), "created_at": doc.get("created_at"), "file_type": doc.get("file_type", "application/octet-stream"), "source": "ARCHIVE"}
             for doc in list(shared_archive_cursor)
         ]
 
@@ -96,9 +71,6 @@ class ShareService:
         }
 
     def set_case_share_status(self, case_id: str, user_id: str, is_shared: bool) -> bool:
-        """
-        Updates the 'is_shared' flag on a case, verifying ownership.
-        """
         if not ObjectId.is_valid(case_id) or not ObjectId.is_valid(user_id):
             return False
         

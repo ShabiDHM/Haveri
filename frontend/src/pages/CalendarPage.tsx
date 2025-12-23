@@ -1,8 +1,7 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR V8.0 (SHARE LOGIC REBUILT)
-// 1. FIX: 'Publike për Klientin' toggle now correctly sends the 'is_public' flag to the backend.
-// 2. NEW: Added logic to update the share status of existing events.
-// 3. NEW: Added a 'Copy Link' button for shared cases.
+// PHOENIX PROTOCOL - CALENDAR V8.1 (UNIFICATION)
+// 1. REMOVED: The old project-level share toggle from the EventDetailModal.
+// 2. FOCUS: Sharing is now exclusively controlled via the Archive tab.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { CalendarEvent, Case, CalendarEventCreateRequest } from '../data/types';
@@ -17,7 +16,7 @@ import { sq, enUS } from 'date-fns/locale';
 import {
   Calendar as CalendarIcon, Clock, MapPin, Users, AlertCircle, Plus, ChevronLeft, ChevronRight,
   Search, FileText, Briefcase, AlertTriangle, XCircle, Bell, ChevronDown, MessageSquare,
-  Eye, EyeOff, ShieldAlert, Link as LinkIcon // New Icon
+  Eye, EyeOff, ShieldAlert
 } from 'lucide-react';
 import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -32,7 +31,6 @@ interface CreateEventModalProps { cases: Case[]; existingEvents: CalendarEvent[]
 type ViewMode = 'month' | 'list';
 
 const getEventStyle = (type: string) => {
-    // ... (This function remains unchanged)
     switch (type) {
       case 'DEADLINE': return { border: 'border-rose-500/50', bg: 'bg-rose-500/10 hover:bg-rose-500/20', text: 'text-rose-200', indicator: 'bg-rose-500', icon: <AlertTriangle size={12} className="text-rose-400" /> };
       case 'HEARING': return { border: 'border-purple-500/50', bg: 'bg-purple-500/10 hover:bg-purple-500/20', text: 'text-purple-200', indicator: 'bg-purple-500', icon: <Briefcase size={12} className="text-purple-400" /> };
@@ -49,32 +47,12 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, onU
     const { t, i18n } = useTranslation();
     const currentLocale = localeMap[i18n.language] || enUS; 
     const [isDeleting, setIsDeleting] = useState(false);
-    const [isPublic, setIsPublic] = useState(event.is_public === true);
     
     const isMidnight = (dateString: string) => { const d = parseISO(dateString); return d.getHours() === 0 && d.getMinutes() === 0; };
     const formatEventDate = (dateString: string) => { const date = parseISO(dateString); const formatStr = (event.is_all_day || isMidnight(dateString)) ? 'dd MMMM yyyy' : 'dd MMMM yyyy, HH:mm'; return format(date, formatStr, { locale: currentLocale }); };
     
     const handleDelete = async () => { if (!window.confirm(t('calendar.detailModal.deleteConfirm'))) return; const eventId = getEventId(event); if (!eventId) return; setIsDeleting(true); try { await apiService.deleteCalendarEvent(eventId); onUpdate(); onClose(); } catch (error: any) { alert(error.response?.data?.message || t('calendar.detailModal.deleteFailed')); } finally { setIsDeleting(false); } };
     
-    const handleToggleShare = async () => {
-        const eventId = getEventId(event);
-        if (!eventId) return;
-        try {
-            await apiService.updateEventShareStatus(eventId, !isPublic);
-            setIsPublic(!isPublic);
-            onUpdate(); // Refresh the main calendar view to show icon changes
-        } catch {
-            alert(t('error.generic'));
-        }
-    };
-
-    const copyShareLink = () => {
-        if (!event.case_id) return;
-        const shareLink = `${window.location.origin}/portal/${event.case_id}`;
-        navigator.clipboard.writeText(shareLink);
-        alert(t('general.copied', 'U kopjua!'));
-    };
-
     const style = getEventStyle(event.event_type);
     const relatedCase = cases.find(c => c.id === event.case_id);
     
@@ -99,24 +77,6 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, onU
                 </div>
 
                 <div className="space-y-6">
-                    {/* Share Toggle */}
-                    <div className={`rounded-xl p-4 flex items-center justify-between cursor-pointer transition-all duration-300 ${isPublic ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-black/20 border border-white/5'}`} onClick={handleToggleShare}>
-                        <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${isPublic ? 'bg-indigo-500 text-white' : 'bg-white/10 text-gray-400'}`}>{isPublic ? <Eye size={18} /> : <EyeOff size={18} />}</div>
-                            <div>
-                                <h4 className={`text-sm font-bold ${isPublic ? 'text-indigo-200' : 'text-gray-400'}`}>{isPublic ? t('calendar.visibilityPublic') : t('calendar.visibilityPrivate')}</h4>
-                                <p className="text-[10px] text-gray-500">{isPublic ? t('calendar.visibilityPublicDesc') : t('calendar.visibilityPrivateDesc')}</p>
-                            </div>
-                        </div>
-                        <div className={`w-10 h-5 rounded-full relative transition-colors ${isPublic ? 'bg-indigo-500' : 'bg-gray-700'}`}><div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-0'}`} /></div>
-                    </div>
-                    {isPublic && event.case_id && (
-                        <button onClick={copyShareLink} className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg border border-white/10 transition-colors">
-                            <LinkIcon size={14} />
-                            Kopjo Linkun e Portalit
-                        </button>
-                    )}
-
                     {event.description && (<div className="bg-black/20 p-4 rounded-xl border border-white/5"><h3 className="text-xs font-bold text-gray-500 uppercase mb-2">{t('calendar.detailModal.description')}</h3><p className="text-gray-200 text-sm leading-relaxed">{event.description}</p></div>)}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div><h3 className="text-xs font-bold text-gray-500 uppercase mb-1">{t('calendar.detailModal.startDate')}</h3><div className="flex items-center text-white"><Clock className="h-4 w-4 mr-2 text-primary-start" />{formatEventDate(event.start_date)}</div></div>
@@ -135,16 +95,7 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, onU
     );
 };
 
-// ... (CreateEventModal and CalendarPage components remain unchanged from your last version, but ensure they are here)
-// Make sure to pass `cases={cases}` to EventDetailModal where it's called.
-// Example:
-// {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={loadData} cases={cases} />}
-
-// --- FINAL FULL COMPONENT ---
-// NOTE: I am providing the FULL CalendarPage.tsx again to ensure all changes are applied correctly.
-
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEvents, onClose, onCreate }) => {
-    // ... (This component is unchanged from your last full version)
     const { t, i18n } = useTranslation();
     const currentLocale = localeMap[i18n.language] || enUS; 
     const [isCreating, setIsCreating] = useState(false);
@@ -259,7 +210,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEven
 };
 
 const CalendarPage: React.FC = () => {
-  // ... (This component is unchanged from your last full version)
   const { t, i18n } = useTranslation();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [cases, setCases] = useState<Case[]>([]);
