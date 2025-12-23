@@ -1,6 +1,6 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES REFACTOR V8.2 (SHARE LOGIC)
-// 1. UPDATE: Added 'is_shared' flag to Case, CalendarEvent and its create request.
+// PHOENIX PROTOCOL - TYPES REFACTOR V8.3 (CO-PILOT UPGRADE)
+// 1. ADDED: 'PosTransaction' type to support imported financial data.
 // 2. STATUS: Production Ready.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
@@ -25,6 +25,17 @@ export interface SalesTrendPoint { date: string; amount: number; }
 export interface TopProductItem { product_name: string; total_quantity: number; total_revenue: number; }
 export interface AnalyticsDashboardData { total_revenue_period: number; total_transactions_period: number; sales_trend: SalesTrendPoint[]; top_products: TopProductItem[]; total_profit_period?: number; }
 export interface ArchiveItemOut { id: string; title: string; file_type: string; category: string; storage_key: string; file_size: number; created_at: string; case_id?: string; parent_id?: string; item_type?: 'FILE' | 'FOLDER'; is_shared?: boolean; }
+
+// PHOENIX: ADDED FOR CO-PILOT UPGRADE
+export interface PosTransaction {
+    id: string;
+    product_name: string;
+    quantity: number;
+    total_price: number;
+    transaction_date: string;
+    payment_method: string;
+}
+
 export interface LoginRequest { username: string; password: string; }
 export interface RegisterRequest { email: string; password: string; username: string; }
 export interface ChangePasswordRequest { current_password: string; new_password: string; }

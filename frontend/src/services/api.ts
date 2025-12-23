@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V11.2 (STABLE & COMPLETE - FINAL)
-// 1. ADDED: The 'fetchImageBlob' method has been implemented to resolve TS2339 error.
-// 2. VERIFIED: All previous share logic and operational logic remain present and correct.
+// PHOENIX PROTOCOL - API MASTER V11.3 (CO-PILOT UPGRADE)
+// 1. ADDED: The 'getPosTransactions' method to support the unified dashboard.
+// 2. VERIFIED: All previous logic remains present and correct.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -10,7 +10,7 @@ import type {
     DraftingJobStatus, DraftingJobResult, ChangePasswordRequest, CaseAnalysisResult,
     BusinessProfile, BusinessProfileUpdate, Invoice, InvoiceCreateRequest, InvoiceItem,
     GraphData, ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
-    InventoryItem, InventoryItemCreate, Recipe, RecipeCreate
+    InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction
 } from '../data/types';
 
 export interface AuditIssue { id: string; severity: 'CRITICAL' | 'WARNING'; message: string; related_item_id?: string; item_type?: 'INVOICE' | 'EXPENSE'; }
@@ -107,6 +107,13 @@ class ApiService {
     public async deleteExpense(expenseId: string): Promise<void> { await this.axiosInstance.delete(`/finance/expenses/${expenseId}`); }
     public async uploadExpenseReceipt(expenseId: string, file: File): Promise<void> { const formData = new FormData(); formData.append('file', file); await this.axiosInstance.put(`/finance/expenses/${expenseId}/receipt`, formData); }
     public async getExpenseReceiptBlob(expenseId: string): Promise<{ blob: Blob, filename: string }> { const response = await this.axiosInstance.get(`/finance/expenses/${expenseId}/receipt`, { responseType: 'blob' }); const disposition = response.headers['content-disposition']; let filename = `receipt-${expenseId}.pdf`; if (disposition && disposition.indexOf('filename=') !== -1) { const matches = /filename="([^"]*)"/.exec(disposition); if (matches != null && matches[1]) filename = matches[1]; } return { blob: response.data, filename }; }
+    
+    // PHOENIX: ADDED FOR CO-PILOT UPGRADE
+    public async getPosTransactions(): Promise<PosTransaction[]> {
+        const response = await this.axiosInstance.get<{ transactions: PosTransaction[] }>('/finance/transactions');
+        return response.data.transactions || [];
+    }
+
     public async getWizardState(month: number, year: number): Promise<WizardState> { const response = await this.axiosInstance.get<WizardState>('/finance/wizard/state', { params: { month, year } }); return response.data; }
     public async downloadMonthlyReport(month: number, year: number): Promise<void> { const response = await this.axiosInstance.get('/finance/wizard/report/pdf', { params: { month, year }, responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([response.data])); const link = document.createElement('a'); link.href = url; link.setAttribute('download', `Raporti_${month}_${year}.pdf`); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); }
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
