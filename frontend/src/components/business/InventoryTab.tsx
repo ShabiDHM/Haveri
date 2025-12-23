@@ -1,6 +1,6 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V1.0
-// 1. NEW: Dashboard for managing Raw Materials and Recipes.
+// PHOENIX PROTOCOL - INVENTORY TAB V1.1 (UI CONSISTENCY FIX)
+// 1. FIX: Custom styled <select> dropdowns to match application's dark theme.
 // 2. STATUS: Production Ready.
 
 import React, { useEffect, useState } from 'react';
@@ -112,6 +112,16 @@ export const InventoryTab: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 h-full flex flex-col">
             
+            {/* PHOENIX FIX: Custom styles for select dropdown arrow */}
+            <style>{`
+                .bg-chevron-down {
+                    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+                    background-position: right 0.5rem center;
+                    background-repeat: no-repeat;
+                    background-size: 1.5em 1.5em;
+                }
+            `}</style>
+
             {/* Header / Tabs */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-none">
                 <h2 className="text-xl font-bold text-white">{t('inventory.title')}</h2>
@@ -181,7 +191,7 @@ export const InventoryTab: React.FC = () => {
                         </div>
 
                         {recipes.length === 0 ? (
-                            <div className="text-center py-10 text-gray-500 italic">{t('inventory.recipes.noRecipes')}</div>
+                             <div className="text-center py-10 text-gray-500 italic">{t('inventory.recipes.noRecipes')}</div>
                         ) : (
                             <div className="space-y-3">
                                 {recipes.map(recipe => (
@@ -230,7 +240,7 @@ export const InventoryTab: React.FC = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-1">{t('inventory.items.unit')}</label>
-                                    <select className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white" value={newItem.unit} onChange={e => setNewItem({...newItem, unit: e.target.value})}>
+                                    <select className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white appearance-none bg-chevron-down" value={newItem.unit} onChange={e => setNewItem({...newItem, unit: e.target.value})}>
                                         <option value="kg">Kg</option>
                                         <option value="litra">Litra</option>
                                         <option value="cope">Copë</option>
@@ -280,7 +290,7 @@ export const InventoryTab: React.FC = () => {
                                     <div key={index} className="flex gap-2 mb-2 items-center">
                                         <select 
                                             required
-                                            className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm"
+                                            className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm appearance-none bg-chevron-down"
                                             value={ing.inventory_item_id}
                                             onChange={e => updateIngredient(index, 'inventory_item_id', e.target.value)}
                                         >
