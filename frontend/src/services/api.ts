@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V11.1 (STABLE & COMPLETE - FINAL)
-// 1. RESTORED: All missing methods (archiveInvoice, downloadInvoicePdf, etc.) have been restored.
-// 2. VERIFIED: All share logic and operational logic are present and correct.
+// PHOENIX PROTOCOL - API MASTER V11.2 (STABLE & COMPLETE - FINAL)
+// 1. ADDED: The 'fetchImageBlob' method has been implemented to resolve TS2339 error.
+// 2. VERIFIED: All previous share logic and operational logic remain present and correct.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -135,6 +135,12 @@ class ApiService {
     public async getBusinessProfile(): Promise<BusinessProfile> { const response = await this.axiosInstance.get<BusinessProfile>('/business/profile'); return response.data; }
     public async updateBusinessProfile(data: BusinessProfileUpdate): Promise<BusinessProfile> { const response = await this.axiosInstance.put<BusinessProfile>('/business/profile', data); return response.data; }
     public async uploadBusinessLogo(file: File): Promise<BusinessProfile> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.put<BusinessProfile>('/business/logo', formData); return response.data; }
+    
+    public async fetchImageBlob(url: string): Promise<Blob> {
+        const response = await this.axiosInstance.get(url, { responseType: 'blob' });
+        return response.data;
+    }
+
     public async sendContactForm(data: { firstName: string; lastName: string; email: string; phone: string; message: string }): Promise<void> { await this.axiosInstance.post('/support/contact', { first_name: data.firstName, last_name: data.lastName, email: data.email, phone: data.phone, message: data.message }); }
 }
 
