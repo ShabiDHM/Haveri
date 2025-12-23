@@ -1,6 +1,8 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - CLIENT PORTAL V5.2 (ENDPOINT FIX)
-// 1. FIX: Changed API call from '/share/data/{caseId}' to the correct '/share/portal/{caseId}' to align with the new public-safe backend endpoint.
+// PHOENIX PROTOCOL - CLIENT PORTAL V5.3 (DOWNLOAD ENABLED)
+// 1. ADDED: Download button next to the View button for every document.
+// 2. ADDED: 'handleDownload' logic to call the correct API endpoint (active vs. archive).
+// 3. ADDED: 'Download' icon to the component imports.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -8,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Calendar, AlertCircle, Loader2, 
     FileText, Gavel, Users, ShieldCheck, 
-    Briefcase, Eye, Building2
+    Briefcase, Eye, Building2, Download
 } from 'lucide-react';
 import { API_V1_URL, apiService } from '../services/api';
 import PDFViewerModal from '../components/PDFViewerModal';
@@ -42,7 +44,6 @@ const ClientPortalPage: React.FC = () => {
                 return;
             }
             try {
-                // PHOENIX FIX: Call the new, correct, public-safe endpoint
                 const response = await apiService.axiosInstance.get(`${API_V1_URL}/share/portal/${caseId}`);
                 const caseData = response.data;
                 setData(caseData);
@@ -80,6 +81,26 @@ const ClientPortalPage: React.FC = () => {
             setViewingDoc({ id: docId, file_name: filename, mime_type: mimeType, status: 'READY' } as Document);
         } catch {
             alert("Could not load document preview.");
+        }
+    };
+
+    const handleDownload = async (docId: string, source: 'ACTIVE' | 'ARCHIVE', filename: string) => {
+        try {
+            if (source === 'ACTIVE') {
+                const blob = await apiService.getOriginalDocument(caseId!, docId);
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode?.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else {
+                await apiService.downloadArchiveItem(docId, filename);
+            }
+        } catch {
+            alert("Could not download document.");
         }
     };
     
@@ -179,7 +200,11 @@ const ClientPortalPage: React.FC = () => {
                                 {data.documents.length === 0 ? (
                                     <div className="text-center py-20 bg-[#0F0F0F] border border-dashed border-white/10 rounded-3xl"><div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4"><FileText className="text-gray-500 opacity-50" size={32} /></div><p className="text-gray-500 text-sm">{t('portal.empty_documents')}</p></div>
                                 ) : (
-                                    data.documents.map((doc, i) => (<div key={i} className="bg-[#0F0F0F] border border-white/10 rounded-2xl p-4 hover:border-white/20 hover:bg-white/[0.02] transition-all flex items-center justify-between group"><div className="flex items-center gap-4 min-w-0"><div className="w-12 h-12 rounded-xl bg-blue-500/5 border border-blue-500/10 flex items-center justify-center text-blue-400 flex-shrink-0 group-hover:bg-blue-500/10 transition-colors"><FileText size={20} /></div><div className="min-w-0"><h4 className="text-sm font-bold text-gray-200 truncate pr-4">{doc.file_name}</h4><div className="flex items-center gap-2 mt-1"><span className="text-[10px] text-gray-500 font-mono">{new Date(doc.created_at).toLocaleDateString()}</span>{doc.source === 'ARCHIVE' && (<span className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-1.5 py-0.5 rounded-[4px] text-[9px] uppercase font-bold tracking-wider">{t('portal.archive')}</span>)}</div></div></div><div className="flex gap-2"><button onClick={() => handleView(doc.id, doc.source, doc.file_name, doc.file_type)} className="p-2.5 bg-white/5 hover:bg-white/10 hover:text-white rounded-xl text-gray-400 transition-all border border-transparent hover:border-white/10" title={t('actions.view')}><Eye size={18} /></button></div></div>))
+                                    data.documents.map((doc, i) => (<div key={i} className="bg-[#0F0F0F] border border-white/10 rounded-2xl p-4 hover:border-white/20 hover:bg-white/[0.02] transition-all flex items-center justify-between group"><div className="flex items-center gap-4 min-w-0"><div className="w-12 h-12 rounded-xl bg-blue-500/5 border border-blue-500/10 flex items-center justify-center text-blue-400 flex-shrink-0 group-hover:bg-blue-500/10 transition-colors"><FileText size={20} /></div><div className="min-w-0"><h4 className="text-sm font-bold text-gray-200 truncate pr-4">{doc.file_name}</h4><div className="flex items-center gap-2 mt-1"><span className="text-[10px] text-gray-500 font-mono">{new Date(doc.created_at).toLocaleDateString()}</span>{doc.source === 'ARCHIVE' && (<span className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-1.5 py-0.5 rounded-[4px] text-[9px] uppercase font-bold tracking-wider">{t('portal.archive')}</span>)}</div></div></div><div className="flex gap-2">
+                                        <button onClick={() => handleView(doc.id, doc.source, doc.file_name, doc.file_type)} className="p-2.5 bg-white/5 hover:bg-white/10 hover:text-white rounded-xl text-gray-400 transition-all border border-transparent hover:border-white/10" title={t('actions.view')}><Eye size={18} /></button>
+                                        {/* PHOENIX: ADDED DOWNLOAD BUTTON */}
+                                        <button onClick={() => handleDownload(doc.id, doc.source, doc.file_name)} className="p-2.5 bg-white/5 hover:bg-white/10 hover:text-white rounded-xl text-gray-400 transition-all border border-transparent hover:border-white/10" title={t('actions.download')}><Download size={18} /></button>
+                                    </div></div>))
                                 )}
                             </div>
                         </motion.div>

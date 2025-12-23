@@ -1,6 +1,6 @@
 # FILE: backend/app/services/share_service.py
-# PHOENIX PROTOCOL - SHARE SERVICE V1.1 (SELECTIVE SHARE FIX)
-# 1. FIX: Removed the requirement for the parent case to be "shared". The service now correctly fetches any case and then finds selectively shared items within it. This resolves the "Access Denied" bug.
+# PHOENIX PROTOCOL - SHARE SERVICE V1.2 (DATA TYPE FIX)
+# 1. FIX: Corrected the business_profile query to use str(user_id). This resolves the bug where the logo URL was not being fetched for the client portal.
 
 from pymongo.database import Database
 from typing import Dict, Any, List
@@ -20,17 +20,16 @@ class ShareService:
         
         case_oid = ObjectId(case_id)
         
-        # 1. Fetch the main case data
         case_doc = self.db["cases"].find_one({"_id": case_oid})
         
-        # PHOENIX FIX: The case itself does not need to be shared. 
-        # We only care if there are shared items *within* it.
         if not case_doc:
             return {}
 
         # 2. Fetch business profile for branding
         user_id = case_doc.get("user_id")
-        business_profile = self.db["business_profiles"].find_one({"user_id": user_id}) or {}
+        
+        # PHOENIX FIX: Query business_profiles using a string ID, which is how it's stored.
+        business_profile = self.db["business_profiles"].find_one({"user_id": str(user_id)}) or {}
 
         # 3. Fetch public calendar events
         public_events_cursor = self.db["calendar_events"].find({
@@ -79,11 +78,9 @@ class ShareService:
             for doc in list(shared_archive_cursor)
         ]
 
-        # If there is nothing to show, deny access.
         if not timeline and not active_documents and not archive_documents:
             return {}
 
-        # 6. Fetch shared invoices (coming soon, stub for now)
         shared_invoices: List[Dict[str, Any]] = []
 
         return {
