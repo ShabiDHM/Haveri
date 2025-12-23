@@ -1,10 +1,10 @@
 // FILE: src/components/BrandLogo.tsx
-// PHOENIX PROTOCOL - PLATFORM IDENTITY V3.0 (DYNAMIC BRANDING)
-// 1. REFACTOR: Component now accepts 'firmName' and 'logoUrl' props for dynamic display.
-// 2. LOGIC: Renders the user's uploaded logo if available, otherwise falls back to the default icon.
-// 3. LOGIC: Displays the user's firm name, falling back to a default if not provided.
+// PHOENIX PROTOCOL - PLATFORM IDENTITY V3.1 (DIAGNOSTIC LOGGING)
+// 1. ADDED: Console logging to trace the props being received by this component.
+// 2. LOGIC: This will definitively prove whether the dynamic data from AuthContext is arriving here or not.
+// 3. STATUS: This is a temporary diagnostic tool.
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Brain } from 'lucide-react';
 
 interface BrandLogoProps {
@@ -20,6 +20,15 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
   firmName,
   logoUrl
 }) => {
+  
+  // PHOENIX DIAGNOSTIC: Log received props every time the component renders.
+  useEffect(() => {
+    console.log('[PHOENIX DIAGNOSTIC] BrandLogo Component Rendered. Props received:', {
+      firmName: firmName,
+      logoUrl: logoUrl,
+    });
+  });
+
   const displayName = firmName || "Haveri";
 
   return (
