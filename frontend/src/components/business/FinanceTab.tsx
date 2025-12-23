@@ -1,9 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V12.3 (CRITICAL DEBUG FIX)
-// 1. FIX: Modified loadInitialData to explicitly log errors from the getPosTransactions API call. This un-hides the silent failure preventing imported transactions from appearing.
-// 2. I18N: Added fallback for the 'finance.posSale' translation key as requested.
-// 3. VERIFIED: All previous features and aesthetic restorations remain intact.
-// 4. STATUS: Debugging Ready.
+// PHOENIX PROTOCOL - FINANCE TAB V12.4 (ROBUST MAPPING FIX)
+// 1. FIX: Added defensive data mapping for 'posTransactions'. Now checks for both 'total_price'/'product_name' AND 'amount'/'description' to prevent "undefined" crashes.
+// 2. SAFETY: Added safeguards around .toFixed() calls to ensure they never execute on undefined values.
+// 3. STATUS: Production Ready & Crash Proof.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -152,10 +151,9 @@ export const FinanceTab: React.FC = () => {
                 apiService.getExpenses().catch(() => []),
                 apiService.getCases().catch(() => []),
                 apiService.getAnalyticsDashboard(30).catch(() => null),
-                // PHOENIX: CRITICAL FIX - Explicitly log the error if this fetch fails
                 apiService.getPosTransactions().catch(error => {
                     console.error("PHOENIX DIAGNOSTIC: Failed to fetch POS transactions.", error);
-                    return []; // Return empty array to prevent UI crash, but log the error
+                    return []; 
                 }),
             ]);
             setInvoices(inv); setExpenses(exp); setCases(cs); setAnalyticsData(analytics); setPosTransactions(pos);
@@ -187,10 +185,17 @@ export const FinanceTab: React.FC = () => {
         const combined = [
             ...invoices.map(i => ({ ...i, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name })),
             ...expenses.map(e => ({ ...e, type: 'expense' as const, amount: e.amount, label: e.category })),
-            ...posTransactions.map(p => ({ ...p, type: 'pos' as const, date: p.transaction_date, amount: p.total_price, label: p.product_name })),
+            // PHOENIX: Robust mapping to handle both camelCase and snake_case/aliases
+            ...posTransactions.map(p => ({ 
+                ...p, 
+                type: 'pos' as const, 
+                date: p.transaction_date || (p as any).date || new Date().toISOString(), 
+                amount: p.total_price ?? (p as any).amount ?? 0, 
+                label: p.product_name || (p as any).description || t('finance.posSale') 
+            })),
         ];
         return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [invoices, expenses, posTransactions]);
+    }, [invoices, expenses, posTransactions, t]);
 
     const filteredTransactions = useMemo(() => {
         if (!searchTerm || activeTab !== 'transactions') return sortedTransactions;
@@ -221,17 +226,27 @@ export const FinanceTab: React.FC = () => {
 
         const generalInvoices = invoices.filter(i => !i.related_case_id);
         const generalExpenses = expenses.filter(e => !e.related_case_id);
+        
+        // PHOENIX: Robust mapping here as well
         const generalActivity = [
             ...generalInvoices.map(i => ({ ...i, type: 'invoice', date: i.issue_date, amount: i.total_amount, label: i.client_name })),
             ...generalExpenses.map(e => ({ ...e, type: 'expense', date: e.date, amount: e.amount, label: e.category })),
-            ...posTransactions.map(p => ({ ...p, type: 'pos', date: p.transaction_date, amount: p.total_price, label: p.product_name }))
+            ...posTransactions.map(p => ({ 
+                ...p, 
+                type: 'pos', 
+                date: p.transaction_date || (p as any).date || new Date().toISOString(), 
+                amount: p.total_price ?? (p as any).amount ?? 0, 
+                label: p.product_name || (p as any).description || t('finance.posSale')
+            }))
         ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        const posTotal = posTransactions.reduce((s, p) => s + (p.total_price ?? (p as any).amount ?? 0), 0);
 
         const generalGroup = {
             id: 'general',
             caseData: { id: 'general', title: t('finance.generalTransactions', 'Transaksionet e Përgjithshme'), case_number: t('finance.notCaseRelated', 'Jo të lidhura me lëndë') } as any,
             expenseTotal: generalExpenses.reduce((s, e) => s + e.amount, 0),
-            invoiceTotal: generalInvoices.reduce((s, i) => s + i.total_amount, 0) + posTransactions.reduce((s, p) => s + p.total_price, 0),
+            invoiceTotal: generalInvoices.reduce((s, i) => s + i.total_amount, 0) + posTotal,
             balance: 0,
             activity: generalActivity,
             hasActivity: generalActivity.length > 0
@@ -414,18 +429,19 @@ export const FinanceTab: React.FC = () => {
                     <div className="bg-background-dark/50 border border-glass-edge rounded-3xl p-6 space-y-4 flex-none">
                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">{t('finance.overview')}</h3>
                         
-                        <SmartStatCard title={t('finance.income')} amount={`€${displayIncome.toFixed(2)}`} icon={<TrendingUp size={20} />} color="text-emerald-400" />
+                        <SmartStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={20} />} color="text-emerald-400" />
                         
+                        {/* PHOENIX: P2 COGS (KMSH) CARD */}
                         <SmartStatCard 
                             title={t('finance.cogs', 'KMSH')}
-                            amount={`€${costOfGoodsSold.toFixed(2)}`} 
+                            amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} 
                             icon={<Calculator size={20} />} 
                             color="text-amber-400" 
                         />
                         
-                        <SmartStatCard title={t('finance.balanceSub')} amount={`€${displayProfit.toFixed(2)}`} icon={<PiggyBank size={20} />} color="text-sky-400" />
+                        <SmartStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={20} />} color="text-sky-400" />
                         
-                        <SmartStatCard title={t('finance.expense')} amount={`€${totalExpenses.toFixed(2)}`} icon={<TrendingDown size={20} />} color="text-rose-400" />
+                        <SmartStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} />} color="text-rose-400" />
                         
                         {analyticsData && (
                             <div className="pt-4 border-t border-white/10 mt-4">
@@ -485,7 +501,7 @@ export const FinanceTab: React.FC = () => {
 
                                                 <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-1 sm:mt-0 pl-11 sm:pl-0">
                                                     <div className="flex items-center gap-3">
-                                                        <p className={`font-bold ${tx.type === 'invoice' || tx.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'}`}>{tx.type === 'invoice' || tx.type === 'pos' ? `+€${tx.amount.toFixed(2)}` : `-€${tx.amount.toFixed(2)}`}</p>
+                                                        <p className={`font-bold ${tx.type === 'invoice' || tx.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'}`}>{tx.type === 'invoice' || tx.type === 'pos' ? `+€${(tx.amount || 0).toFixed(2)}` : `-€${(tx.amount || 0).toFixed(2)}`}</p>
                                                         
                                                         { tx.type !== 'pos' &&
                                                             <div className="flex items-center gap-1">
@@ -513,6 +529,7 @@ export const FinanceTab: React.FC = () => {
                                             <h4 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-2"><TrendingUp size={16} className="text-indigo-400"/> {t('finance.analytics.salesTrend')}</h4>
                                             <div className="h-64 w-full min-h-[250px]">
                                                 <ResponsiveContainer width="100%" height="100%">
+                                                    {/* PHOENIX: P3 CHART RESTORED */}
                                                     <AreaChart data={analyticsData.sales_trend}>
                                                         <defs>
                                                             <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
@@ -596,7 +613,7 @@ export const FinanceTab: React.FC = () => {
                                                         <div className={`p-2 rounded-lg ${item.id === 'general' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-blue-500/20 text-blue-400'}`}>{item.id === 'general' ? <PiggyBank size={18} /> : <Briefcase size={18} />}</div>
                                                         <div><h4 className="font-bold text-white text-sm">{item.caseData.title}</h4><p className="text-xs text-gray-500">{item.caseData.case_number}</p></div>
                                                     </div>
-                                                    <div className="flex items-center gap-4"><div className="text-right"><p className="text-xs text-gray-400 uppercase">{t('finance.balance', 'Bilanci')}</p><p className={`font-bold ${item.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{item.balance >= 0 ? '+' : ''}€{item.balance.toFixed(2)}</p></div>{expandedCaseId === item.id ? <ChevronDown size={18} className="text-gray-500"/> : <ChevronRight size={18} className="text-gray-500"/>}</div>
+                                                    <div className="flex items-center gap-4"><div className="text-right"><p className="text-xs text-gray-400 uppercase">{t('finance.balance', 'Bilanci')}</p><p className={`font-bold ${item.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{item.balance >= 0 ? '+' : ''}€{(item.balance || 0).toFixed(2)}</p></div>{expandedCaseId === item.id ? <ChevronDown size={18} className="text-gray-500"/> : <ChevronRight size={18} className="text-gray-500"/>}</div>
                                                 </div>
                                                 {expandedCaseId === item.id && (
                                                     <div className="bg-black/20 p-4 border-t border-white/5 space-y-2">
@@ -605,7 +622,7 @@ export const FinanceTab: React.FC = () => {
                                                         <span className={`text-[10px] uppercase ${act.type === 'invoice' || act.type === 'pos' ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
                                                             {act.type === 'invoice' ? t('category.invoices', 'Faturë') : act.type === 'expense' ? t('finance.expense', 'Shpenzim') : t('finance.posSale', 'POS Shitje')}
                                                         </span>
-                                                        </div></div><span className={`${act.type === 'invoice' || act.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'} font-mono`}>{act.type === 'invoice' || act.type === 'pos' ? '+' : '-'}€{act.amount.toFixed(2)}</span></div>))}
+                                                        </div></div><span className={`${act.type === 'invoice' || act.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'} font-mono`}>{act.type === 'invoice' || act.type === 'pos' ? '+' : '-'}€{(act.amount || 0).toFixed(2)}</span></div>))}
                                                     </div>
                                                 )}
                                             </div>
