@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V11.4 (CRITICAL FIX)
-// 1. FIX: The 'getPosTransactions' method has been made more robust to correctly parse direct array responses from the API. This resolves the bug where imported transactions were not displayed.
-// 2. VERIFIED: All previous logic remains present and correct.
+// PHOENIX PROTOCOL - API MASTER V11.5 (ENDPOINT CORRECTION)
+// 1. FIX: Corrected the URL in 'getPosTransactions' from '/finance/transactions' to the correct '/finance/import/transactions' endpoint to resolve the 404 Not Found error.
+// 2. VERIFIED: All other logic remains correct. This should resolve the invisible transactions bug.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -108,10 +108,9 @@ class ApiService {
     public async uploadExpenseReceipt(expenseId: string, file: File): Promise<void> { const formData = new FormData(); formData.append('file', file); await this.axiosInstance.put(`/finance/expenses/${expenseId}/receipt`, formData); }
     public async getExpenseReceiptBlob(expenseId: string): Promise<{ blob: Blob, filename: string }> { const response = await this.axiosInstance.get(`/finance/expenses/${expenseId}/receipt`, { responseType: 'blob' }); const disposition = response.headers['content-disposition']; let filename = `receipt-${expenseId}.pdf`; if (disposition && disposition.indexOf('filename=') !== -1) { const matches = /filename="([^"]*)"/.exec(disposition); if (matches != null && matches[1]) filename = matches[1]; } return { blob: response.data, filename }; }
     
-    // PHOENIX: ROBUST IMPLEMENTATION
     public async getPosTransactions(): Promise<PosTransaction[]> {
-        const response = await this.axiosInstance.get<any>('/finance/transactions');
-        // Handle both a direct array `[]` and an object `{ "transactions": [] }`
+        // PHOENIX: CORRECTED ENDPOINT
+        const response = await this.axiosInstance.get<any>('/finance/import/transactions');
         if (Array.isArray(response.data)) {
             return response.data;
         }
