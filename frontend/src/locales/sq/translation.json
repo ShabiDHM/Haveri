@@ -409,7 +409,19 @@
       "noData": "Nuk ka të dhëna për raportim."
     },
     "import": {
-      "title": "Importo Transaksione"
+      "title": "Importo Transaksione",
+      "uploadTitle": "Ngarko Skedarin tënd",
+      "uploadDesc": "Tërhiq dhe lësho një skedar .csv ose .xlsx, ose kliko për të zgjedhur.",
+      "analyzing": "Duke analizuar...",
+      "selectFile": "Zgjidh Skedarin",
+      "mappingTitle": "Përshtat Kolonat",
+      "autoMapInfo": "Ne kemi provuar të gjejmë automatikisht kolonat. Verifiko që çdo fushë e sistemit përputhet me kolonën e duhur nga skedari yt.",
+      "columnSelect": "Zgjidh një kolonë...",
+      "preview": "Parapamje e të Dhënave",
+      "processingTitle": "Duke Procesuar Importin",
+      "processingDesc": "Ju lutemi prisni ndërsa ne importojmë transaksionet tuaja. Kjo mund të marrë pak kohë.",
+      "back": "Kthehu",
+      "confirm": "Konfirmo Importin"
     },
     "digitalReceipt": {
       "title": "DËSHMI DIGJITALE E SHPENZIMIT (HAVERI AI)",
