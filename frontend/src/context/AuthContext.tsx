@@ -1,8 +1,8 @@
 // FILE: src/context/AuthContext.tsx
-// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.1 (STATE REFRESH)
-// 1. ADDED: A 'refreshBusinessProfile' function to allow components to re-sync the global profile state on demand.
-// 2. LOGIC: This solves the stale state issue after updates on pages like the Business Profile tab.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.2 (ATOMIC INITIALIZATION)
+// 1. MODIFIED: Refactored the 'initializeApp' function for more robust, atomic state updates.
+// 2. LOGIC: Ensures that user and businessProfile are only set after all data is successfully fetched.
+// 3. FIX: On any authentication failure, it now forces a clean logout, preventing the display of stale or fallback data.
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, BusinessProfile, LoginRequest, RegisterRequest } from '../data/types';
@@ -19,7 +19,7 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
-  refreshBusinessProfile: () => Promise<void>; // PHOENIX: Added refresh function
+  refreshBusinessProfile: () => Promise<void>;
 }
 
 const AUTH_TOKEN_KEY = 'haveri_access_token';
@@ -38,7 +38,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setBusinessProfile(null);
   }, []);
 
-  // PHOENIX: Function to refresh business profile state
   const refreshBusinessProfile = useCallback(async () => {
     try {
         const profile = await apiService.getBusinessProfile();
@@ -56,7 +55,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let isMounted = true;
 
     const initializeApp = async () => {
+      setIsLoading(true); // Ensure loading state is true at the start of initialization
       try {
+        // PHOENIX: This logic remains the same - check for a token and try to refresh it.
         const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
         if (storedToken) {
             apiService.setToken(storedToken);
@@ -64,28 +65,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const refreshed = await apiService.refreshToken();
         
-        if (refreshed) {
+        // PHOENIX: This is the critical change. We only proceed if refresh is successful.
+        if (refreshed && isMounted) {
+            // Fetch both user and profile together. If one fails, the whole block fails.
             const [fullUser, profile] = await Promise.all([
                 apiService.fetchUserProfile(),
                 apiService.getBusinessProfile() 
             ]);
 
+            // Save the new token that was acquired during the refresh
             const newAccessToken = apiService.getToken();
             if (newAccessToken) {
                 localStorage.setItem(AUTH_TOKEN_KEY, newAccessToken);
             }
+
+            // Atomically update the state only after all data is successfully fetched
             if (isMounted) {
                 setUser(fullUser);
                 setBusinessProfile(profile);
             }
-        } else {
+        } else if (isMounted) {
+            // If the refresh fails for any reason, perform a clean logout.
             logout();
         }
       } catch (error) {
+        // If any part of the process fails (network error, etc.), ensure a clean logout state.
         console.error("Session initialization failed:", error);
-        if (isMounted) logout();
+        if (isMounted) {
+            logout();
+        }
       } finally {
-        if (isMounted) setIsLoading(false);
+        // Always set loading to false at the very end.
+        if (isMounted) {
+            setIsLoading(false);
+        }
       }
     };
 

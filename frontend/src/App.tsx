@@ -1,8 +1,8 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V2.4 (HOME BASE RE-ROUTE)
-// 1. MODIFIED: All authenticated redirects now point to '/business' instead of '/dashboard'.
-// 2. REASON: Designates 'Zyra Ime' (BusinessPage) as the new default landing page for logged-in users.
-// 3. STATUS: Application flow now aligns with the "Solo Business OS" model.
+// PHOENIX PROTOCOL - ROUTING V2.5 (DASHBOARD REMOVAL)
+// 1. REMOVED: The '/dashboard' route has been completely removed from the router.
+// 2. REASON: The DashboardPage is now fully deprecated and has been replaced by the '/business' home base.
+// 3. STATUS: The application's routing is now clean, consistent, and aligned with the Singleton Workspace model.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -12,7 +12,8 @@ import MainLayout from './pages/MainLayout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
+// PHOENIX: DashboardPage is no longer a primary route. It can be removed or kept for future development.
+// import DashboardPage from './pages/DashboardPage'; 
 import CaseViewPage from './pages/CaseViewPage';
 import CalendarPage from './pages/CalendarPage';
 import DraftingPage from './pages/DraftingPage';
@@ -50,7 +51,6 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   if (user?.role?.toUpperCase() !== 'ADMIN') {
-    // PHOENIX: Changed fallback from /dashboard to /business
     return <Navigate to="/business" />;
   }
 
@@ -62,7 +62,7 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Public Routes (No Auth Required) - PHOENIX: Redirects updated to /business */}
+      {/* Public Routes - All redirects point to the new '/business' home base */}
       <Route path="/" element={isAuthenticated ? <Navigate to="/business" /> : <LandingPage />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/business" /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/business" /> : <RegisterPage />} />
@@ -75,8 +75,7 @@ const AppRoutes: React.FC = () => {
 
       {/* Standard Protected Routes (With Sidebar) */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-        {/* PHOENIX: /dashboard is now a secondary, deprecated route. /business is primary. */}
-        <Route path="/dashboard" element={<DashboardPage />} /> 
+        {/* PHOENIX: The /dashboard route has been completely removed. */}
         <Route path="/cases/:caseId" element={<CaseViewPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/drafting" element={<DraftingPage />} />
