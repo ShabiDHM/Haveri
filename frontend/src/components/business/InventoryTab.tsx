@@ -1,8 +1,8 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V2.3 (UI CONSISTENCY FIX)
-// 1. UI FIX: Applied standard dark-theme styling to all <select> dropdown elements in modals.
-// 2. UI FIX: Ensured custom dropdown arrow is consistently applied.
-// 3. STATUS: All form elements are now visually consistent with the application's design system.
+// PHOENIX PROTOCOL - INVENTORY TAB V2.4 (DROPDOWN STYLE OVERRIDE)
+// 1. UI FIX: Injected a targeted <style> block to force dark-theme styling on <select> and <option> elements, overriding native browser styles.
+// 2. UI CONSISTENCY: All dropdowns within the modals are now visually consistent with the application's dark theme.
+// 3. STATUS: Production Ready with all UI inconsistencies resolved.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -167,7 +167,10 @@ export const InventoryTab: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 h-full flex flex-col">
             
-            <style>{`.bg-chevron-down { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; }`}</style>
+            <style>{`
+                .bg-chevron-down { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; }
+                select option { background-color: #1f2937; color: #f9fafb; }
+            `}</style>
 
             <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-none">
                 <h2 className="text-xl font-bold text-white">{t('inventory.title')}</h2>
