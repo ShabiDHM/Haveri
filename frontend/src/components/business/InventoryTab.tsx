@@ -1,9 +1,8 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V2.2 (FUNCTIONAL & STYLED)
-// 1. FUNCTIONAL FIX: Implemented full CRUD logic. Edit and Delete buttons are now fully functional for both Items and Recipes.
-// 2. UI CONSISTENCY: Applied standard application-wide styling to action icons (amber for Edit, rose for Delete).
-// 3. REFACTOR: Upgraded creation handlers to handle both create and update logic, improving code reusability.
-// 4. STATUS: Production Ready. Functionally complete and visually consistent.
+// PHOENIX PROTOCOL - INVENTORY TAB V2.3 (UI CONSISTENCY FIX)
+// 1. UI FIX: Applied standard dark-theme styling to all <select> dropdown elements in modals.
+// 2. UI FIX: Ensured custom dropdown arrow is consistently applied.
+// 3. STATUS: All form elements are now visually consistent with the application's design system.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
