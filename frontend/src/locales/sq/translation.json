@@ -135,22 +135,8 @@
     "settings": "Cilësimet",
     "logout": "Dilni"
   },
-  "dashboard": {
-    "mainTitle": "Haveri",
-    "welcome": "Mirësevini, {{name}}",
-    "subtitle": "I gatshëm për ndihmë.",
-    "newCase": "Projekt i ri",
-    "activeCases": "Projekte Aktive",
-    "pendingDocs": "Dokumente në Pritje",
-    "completed": "Të Përfunduara",
-    "createCaseTitle": "Krijo Projekt të Ri",
-    "caseNumber": "ID e Projektit",
-    "caseTitle": "Titulli i Projektit",
-    "description": "Përshkrimi",
-    "clientName": "Emri i Klientit / Partnerit",
-    "clientEmail": "Emaili",
-    "clientPhone": "Telefoni",
-    "confirmDelete": "A jeni i sigurt që doni ta fshini këtë projekt?"
+  "caseCard": {
+    "client": "Klienti"
   },
   "caseView": {
     "backToDashboard": "Kthehu te Haveri AI",
@@ -291,7 +277,8 @@
     "city": "Qyteti",
     "website": "Webfaqja",
     "taxId": "Numri Fiskal / NUI",
-    "logoUploadFailed": "Ngarkimi i logos dështoi."
+    "logoUploadFailed": "Ngarkimi i logos dështoi.",
+    "clientName": "Emri i Klientit"
   },
   "daily_briefing": {
     "agent_name": "Haveri AI Agent",
@@ -374,6 +361,65 @@
       "tableSales": "Shitjet",
       "tableQty": "Sasia",
       "tableValue": "Vlera"
+    },
+    "wizard": {
+      "stepAudit": "Auditimi",
+      "stepTax": "Llogaritja e Taksave",
+      "stepFinalize": "Finalizimi",
+      "cleanRecordTitle": "Regjistrim i Pastër",
+      "cleanRecordDesc": "Nuk u gjetën probleme për këtë muaj. Jeni gati të llogaritni.",
+      "criticalIssues": "Probleme Kritike",
+      "mustFix": "Duhet të rregullohen",
+      "warnings": "Paralajmërime",
+      "recommended": "Rekomandohet",
+      "regimeSmall": "Regjimi: Biznes i Vogël",
+      "regimeVat": "Regjimi: Pagues i TVSH-së",
+      "rate9": "Norma tatimore e aplikuar: 9%",
+      "rate18": "Norma e TVSH-së e aplikuar: 18%",
+      "totalSales": "Shitjet Totale Bruto",
+      "vatCollected": "TVSH e mbledhur",
+      "operationalExpenses": "Shpenzimet Operacionale",
+      "noTaxEffect": "Pa efekt tatimor",
+      "totalPurchases": "Blerjet Totale Bruto",
+      "vatDeductible": "TVSH e zbritshme",
+      "readyToFile": "Gati për Deklarim",
+      "downloadReport": "Shkarko Raportin",
+      "back": "Kthehu te Financat",
+      "fixIssues": "Rregullo Problemet",
+      "next": "Hapi Tjetër",
+      "atk": {
+        "openEdi": "Hap e-Deklarimin në ATK",
+        "copyInstruction": "Kopjoni vlerat në kutitë përkatëse në formularin e deklarimit të ATK-së.",
+        "box9": "Të ardhurat totale të tatueshme",
+        "box11": "Tatimi për t’u paguar",
+        "box10": "Furnizimet e tatueshme me normën standarde",
+        "box23": "Blerjet e tatueshme me normën standarde",
+        "box48": "Obligimi tatimor neto (ose kreditimi)",
+        "copy": "Kopjo Vlerën",
+        "copied": "U Kopjua"
+      }
+    },
+    "posSale": "Shitje POS",
+    "generalTransactions": "Transaksionet e Përgjithshme",
+    "notCaseRelated": "Nuk Lidhet me Projekt",
+    "cogs": "Kosto e Mallrave të Shitura (KMSH)",
+    "applyVat": "Apliko TVSH (18%)",
+    "invoicePrefix": "Fatura #",
+    "reports": {
+      "noData": "Nuk ka të dhëna për raportim."
+    },
+    "import": {
+      "title": "Importo Transaksione"
+    },
+    "digitalReceipt": {
+      "title": "DËSHMI DIGJITALE E SHPENZIMIT (HAVERI AI)",
+      "category": "Kategoria:",
+      "amount": "Shuma:",
+      "date": "Data:",
+      "description": "Përshkrimi:",
+      "noDescription": "Pa përshkrim",
+      "generated": "Gjeneruar automatikisht.",
+      "fileNamePrefix": "Shpenzim"
     }
   },
   "archive": {
@@ -416,17 +462,6 @@
     "invoices": "Fatura",
     "contracts": "Kontrata"
   },
-  "caseCard": {
-    "createdOn": "Krijuar më",
-    "client": "Informacioni i Klientit",
-    "documents": "Dokumente",
-    "alerts": "Alarme",
-    "events": "Ngjarje",
-    "viewDetails": "Shiko Detajet",
-    "deleteCase": "Fshij Projektin",
-    "untitled": "Projekt pa Titull",
-    "caseNumber": "Projekti"
-  },
   "account": {
     "title": "Llogaria Ime",
     "profileInfo": "Informacione Personale",
@@ -454,26 +489,26 @@
     "registeredUsers": "Përdoruesit e Regjistruar",
     "search": "Kërko...",
     "table": {
-        "user": "Përdoruesi",
-        "role": "Roli",
-        "status": "Statusi",
-        "registered": "Regjistruar"
+      "user": "Përdoruesi",
+      "role": "Roli",
+      "status": "Statusi",
+      "registered": "Regjistruar"
     },
     "statuses": {
-        "ACTIVE": "Aktive",
-        "INACTIVE": "Në Pritje"
+      "ACTIVE": "Aktive",
+      "INACTIVE": "Në Pritje"
     },
     "roles": {
-        "STANDARD": "Përdorues",
-        "ADMIN": "Admin"
+      "STANDARD": "Përdorues",
+      "ADMIN": "Admin"
     },
     "editModal": {
-        "title": "Ndrysho Përdoruesin",
-        "username": "Emri i Përdoruesit",
-        "email": "Email",
-        "role": "Roli",
-        "subscriptionStatus": "Abonimi",
-        "accountStatus": "Llogaria (Gatekeeper)"
+      "title": "Ndrysho Përdoruesin",
+      "username": "Emri i Përdoruesit",
+      "email": "Email",
+      "role": "Roli",
+      "subscriptionStatus": "Abonimi",
+      "accountStatus": "Llogaria (Gatekeeper)"
     }
   },
   "calendar": {
@@ -581,9 +616,9 @@
     "close": "Mbyll"
   },
   "subscription": {
-      "ACTIVE": "Aktive",
-      "INACTIVE": "Jo Aktive",
-      "TRIAL": "Provë "
+    "ACTIVE": "Aktive",
+    "INACTIVE": "Jo Aktive",
+    "TRIAL": "Provë "
   },
   "inventory": {
     "title": "Inventari & Recetat",
@@ -613,10 +648,10 @@
       "missingItems": "Përbërësit që mungojnë"
     },
     "import": {
-        "instruction": "Ngarko një file CSV ose Excel me kolonat:",
-        "columns": "Emri i Produktit | Lënda e Parë | Sasia",
-        "clickToSelect": "Kliko për të zgjedhur file",
-        "button": "Importo"
+      "instruction": "Ngarko një file CSV ose Excel me kolonat:",
+      "columns": "Emri i Produktit | Lënda e Parë | Sasia",
+      "clickToSelect": "Kliko për të zgjedhur file",
+      "button": "Importo"
     },
     "save": "Ruaj",
     "cancel": "Anulo",
