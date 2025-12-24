@@ -1,6 +1,7 @@
 // FILE: src/types/dailyBriefing.ts
-// PHOENIX PROTOCOL - TYPE DEFINITIONS
-// Defines the shape of data coming from the AI Agent (Backend).
+// PHOENIX PROTOCOL - TYPE DEFINITIONS V2.0
+// 1. ADDED: 'revenue_yesterday' to Finance section.
+// 2. ADDED: 'top_product' to Inventory section.
 
 export interface BriefingMeta {
     generated_at: string;
@@ -33,11 +34,13 @@ export interface DailyBriefingResponse {
         attention_needed: boolean;
         unpaid_count: number;
         items: FinanceItem[];
+        revenue_yesterday: number; // <--- V2.0 FIELD
     };
     inventory: {
         risk_alert: boolean;
         risk_count: number;
         items: InventoryItem[];
+        top_product: string; // <--- V2.0 FIELD
     };
     calendar: {
         event_count: number;
