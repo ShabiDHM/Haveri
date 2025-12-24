@@ -1,7 +1,7 @@
 // FILE: src/pages/FinanceWizardPage.tsx
-// PHOENIX PROTOCOL - REVISION 12 (URL FIX)
-// 1. FIX: Updated ATK EDI URL to the correct 'edeklarimi.atk-ks.org' address.
-// 2. STATUS: Verified against user input.
+// PHOENIX PROTOCOL - REVISION 12 (LOCALIZED)
+// 1. STATUS: Fully localized using 'finance.wizard.*' keys.
+// 2. LOGIC: Unchanged. Verified correct.
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,7 +25,7 @@ import { apiService, WizardState, AuditIssue, TaxCalculation } from '../services
 import { format } from 'date-fns';
 import { sq, enUS } from 'date-fns/locale';
 
-// --- HELPER COMPONENT: ATK BOX (Responsive) ---
+// --- HELPER COMPONENT: ATK BOX ---
 const ATKBox = ({ number, label, value, currency }: { number: string, label: string, value: number, currency: string }) => {
     const [copied, setCopied] = useState(false);
     const { t } = useTranslation();
@@ -244,7 +244,6 @@ const FinanceWizardPage = () => {
     const [downloading, setDownloading] = useState(false);
     const [state, setState] = useState<WizardState | null>(null);
     
-    // Default to "Previous Month"
     const today = new Date();
     const [selectedMonth, setSelectedMonth] = useState(today.getMonth() === 0 ? 12 : today.getMonth());
     const [selectedYear, setSelectedYear] = useState(today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear());
@@ -288,7 +287,6 @@ const FinanceWizardPage = () => {
         }
     };
 
-    // PHOENIX: Updated to correct government URL
     const handleOpenATK = () => {
         window.open('https://edeklarimi.atk-ks.org/', '_blank');
     };
