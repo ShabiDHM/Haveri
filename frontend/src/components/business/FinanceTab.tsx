@@ -1,16 +1,16 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V13.5 (PROJECT DECOUPLING)
-// 1. SURGICAL REMOVAL: Removed 'related_case_id' dropdown from Invoice creation modal.
-// 2. SURGICAL REMOVAL: Removed 'related_case_id' dropdown from Expense creation modal.
-// 3. LOGIC UPDATE: State and API handlers for Invoice/Expense creation/update are now decoupled from projects.
-// 4. STATUS: Creation modals simplified as per mandate. History and Archive functionality preserved.
+// PHOENIX PROTOCOL - FINANCE TAB V13.8 (FULL-STACK VALIDATED)
+// 1. REFACTOR: Removed "History" tab and its obsolete project-based grouping logic.
+// 2. CONSOLIDATION: "Transactions" tab is now the single source of truth, displaying Invoices, Expenses, and POS transactions.
+// 3. FULL-STACK VERIFICATION: Confirmed backend still requires Case/Project data for the "Archive" feature; this logic has been preserved to prevent system degradation.
+// 4. STATUS: Component is now fully synchronized with the backend's single-source financial model while maintaining archival functionality.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, FileText, 
     Edit2, Eye, Download, Archive, Trash2, CheckCircle, Paperclip, X, User, Activity, 
-    Loader2, BarChart2, History, Search, Briefcase, ChevronRight, ChevronDown,
+    Loader2, BarChart2, Search,
     Car, Coffee, Building, Users, Landmark, Zap, Wifi, Utensils,
     FileSpreadsheet, PiggyBank, ShoppingCart, ArrowUpRight, ArrowDownRight, Calendar
 } from 'lucide-react';
@@ -96,7 +96,7 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
 );
 
 export const FinanceTab: React.FC = () => {
-    type ActiveTab = 'transactions' | 'reports' | 'history';
+    type ActiveTab = 'transactions' | 'reports';
 
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
@@ -127,7 +127,6 @@ export const FinanceTab: React.FC = () => {
     const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
     const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
-    const [expandedCaseId, setExpandedCaseId] = useState<string | null | 'general'>('general');
 
     const [newInvoice, setNewInvoice] = useState({ 
         client_name: '', client_email: '', client_phone: '', client_address: '', 
@@ -180,7 +179,7 @@ export const FinanceTab: React.FC = () => {
     }, [invoices, expenses, posTransactions, t]);
 
     const filteredTransactions = useMemo(() => {
-        if (!searchTerm || activeTab !== 'transactions') return sortedTransactions;
+        if (!searchTerm) return sortedTransactions;
         const lowerTerm = searchTerm.toLowerCase();
         return sortedTransactions.filter(tx => {
             if (tx.type === 'invoice') return (tx.label.toLowerCase().includes(lowerTerm) || (tx as Invoice).invoice_number?.toLowerCase().includes(lowerTerm) || tx.amount.toString().includes(lowerTerm));
@@ -188,35 +187,7 @@ export const FinanceTab: React.FC = () => {
             if (tx.type === 'pos') return (tx.label.toLowerCase().includes(lowerTerm) || tx.amount.toString().includes(lowerTerm));
             return false;
         });
-    }, [sortedTransactions, searchTerm, activeTab]);
-
-    const historyByCase = useMemo(() => {
-        const caseGroups = cases.map(c => {
-            const caseExpenses = expenses.filter(e => e.related_case_id === c.id);
-            const caseInvoices = invoices.filter(i => i.related_case_id === c.id);
-            const expenseTotal = caseExpenses.reduce((sum, e) => sum + e.amount, 0);
-            const invoiceTotal = caseInvoices.reduce((sum, i) => sum + i.total_amount, 0);
-            const balance = invoiceTotal - expenseTotal;
-            const activity = [
-                ...caseExpenses.map(e => ({ ...e, type: 'expense', date: e.date, amount: e.amount, label: e.category })),
-                ...caseInvoices.map(i => ({ ...i, type: 'invoice', date: i.issue_date, amount: i.total_amount, label: i.client_name }))
-            ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            return { id: c.id, caseData: c, expenseTotal, invoiceTotal, balance, activity, hasActivity: activity.length > 0 };
-        }).filter(x => x.hasActivity);
-        const generalInvoices = invoices.filter(i => !i.related_case_id);
-        const generalExpenses = expenses.filter(e => !e.related_case_id);
-        const generalActivity = [
-            ...generalInvoices.map(i => ({ ...i, type: 'invoice', date: i.issue_date, amount: i.total_amount, label: i.client_name })),
-            ...generalExpenses.map(e => ({ ...e, type: 'expense', date: e.date, amount: e.amount, label: e.category })),
-            ...posTransactions.map(p => ({ ...p, type: 'pos', date: p.transaction_date || (p as any).date || new Date().toISOString(), amount: p.total_price ?? (p as any).amount ?? 0, label: p.product_name || (p as any).description || t('finance.posSale')}))
-        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        const posTotal = posTransactions.reduce((s, p) => s + (p.total_price ?? (p as any).amount ?? 0), 0);
-        const generalGroup = { id: 'general', caseData: { id: 'general', title: t('finance.generalTransactions'), case_number: t('finance.notCaseRelated') } as any, expenseTotal: generalExpenses.reduce((s, e) => s + e.amount, 0), invoiceTotal: generalInvoices.reduce((s, i) => s + i.total_amount, 0) + posTotal, balance: 0, activity: generalActivity, hasActivity: generalActivity.length > 0 };
-        generalGroup.balance = generalGroup.invoiceTotal - generalGroup.expenseTotal;
-        return generalGroup.hasActivity ? [generalGroup, ...caseGroups] : caseGroups;
-    }, [cases, expenses, invoices, posTransactions, t]);
-
-    const filteredHistory = useMemo(() => { if (!searchTerm || activeTab !== 'history') return historyByCase; const lowerTerm = searchTerm.toLowerCase(); return historyByCase.filter(item => { const inCase = item.caseData.title.toLowerCase().includes(lowerTerm) || item.caseData.case_number.toLowerCase().includes(lowerTerm); const inActivity = item.activity.some(act => (act.label && act.label.toLowerCase().includes(lowerTerm))); return inCase || inActivity; }); }, [historyByCase, searchTerm, activeTab]);
+    }, [sortedTransactions, searchTerm]);
 
     const getCategoryIcon = (category: string) => { 
         const cat = category.toLowerCase(); 
@@ -294,7 +265,6 @@ export const FinanceTab: React.FC = () => {
                     <div className="flex items-center gap-1 bg-black/20 p-1.5 rounded-2xl">
                         <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
                         <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
-                        <TabButton label={t('finance.tabHistory')} icon={<History size={16} />} isActive={activeTab === 'history'} onClick={() => setActiveTab('history')} />
                     </div>
                 </div>
 
@@ -403,69 +373,6 @@ export const FinanceTab: React.FC = () => {
                                 </div>
                             )}
                         </div>
-                    )}
-                    
-                    {activeTab === 'history' && (
-                         <div className="flex flex-col h-full space-y-4">
-                            <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-                                <input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/20 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-start/50 transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                            </div>
-                            <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-4">
-                                {filteredHistory.map((item) => (
-                                    <div key={item.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden transition-all duration-300 hover:border-white/20">
-                                        <div 
-                                            className="p-5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors" 
-                                            onClick={() => setExpandedCaseId(expandedCaseId === item.id ? null : item.id)}
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className={`p-3 rounded-xl ${item.id === 'general' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                                                    {item.id === 'general' ? <PiggyBank size={20} /> : <Briefcase size={20} />}
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-bold text-white text-base">{item.caseData.title}</h4>
-                                                    <p className="text-sm text-gray-500">{item.caseData.case_number}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-6">
-                                                <div className="text-right">
-                                                    <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">{t('finance.balance')}</p>
-                                                    <p className={`text-lg font-bold font-mono ${item.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                        {item.balance >= 0 ? '+' : ''}€{(item.balance || 0).toFixed(2)}
-                                                    </p>
-                                                </div>
-                                                <div className={`transform transition-transform duration-300 ${expandedCaseId === item.id ? 'rotate-180' : ''}`}>
-                                                    {expandedCaseId === item.id ? <ChevronDown size={20} className="text-gray-500" /> : <ChevronRight size={20} className="text-gray-500" />}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        {expandedCaseId === item.id && (
-                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/10 bg-black/20">
-                                                <div className="p-4 space-y-1">
-                                                    {item.activity.map((act, idx) => (
-                                                        <div key={`${act.type}-${(act as any).id || idx}`} className="flex justify-between items-center py-3 px-4 hover:bg-white/5 rounded-lg transition-colors">
-                                                            <div className="flex items-center gap-4">
-                                                                <span className="text-gray-500 text-xs font-mono">{new Date(act.date).toLocaleDateString()}</span>
-                                                                <div>
-                                                                    <p className="text-white text-sm font-medium">{act.label || act.type}</p>
-                                                                    <p className={`text-[10px] uppercase tracking-wider font-bold ${act.type === 'invoice' || act.type === 'pos' ? 'text-emerald-500/70' : 'text-rose-500/70'}`}>
-                                                                        {act.type}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                            <span className={`font-mono font-medium ${act.type === 'invoice' || act.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                                {act.type === 'invoice' || act.type === 'pos' ? '+' : '-'}€{(act.amount || 0).toFixed(2)}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                         </div>
                     )}
                 </div>
             </div>
