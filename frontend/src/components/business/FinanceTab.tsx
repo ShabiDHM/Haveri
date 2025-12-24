@@ -1,9 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V13.8 (FULL-STACK VALIDATED)
-// 1. REFACTOR: Removed "History" tab and its obsolete project-based grouping logic.
-// 2. CONSOLIDATION: "Transactions" tab is now the single source of truth, displaying Invoices, Expenses, and POS transactions.
-// 3. FULL-STACK VERIFICATION: Confirmed backend still requires Case/Project data for the "Archive" feature; this logic has been preserved to prevent system degradation.
-// 4. STATUS: Component is now fully synchronized with the backend's single-source financial model while maintaining archival functionality.
+// PHOENIX PROTOCOL - FINANCE TAB V13.9 (POS DELETION ACTIVATED)
+// 1. UPDATED: Added 'deletePosTransaction' handler function.
+// 2. UPDATED: Exposed 'Trash2' (Delete) button for POS transactions in the UI.
+// 3. STATUS: Functional.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -220,6 +219,17 @@ export const FinanceTab: React.FC = () => {
     const closeExpenseModal = () => { setShowExpenseModal(false); setEditingExpenseId(null); setNewExpense({ category: '', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setExpenseReceipt(null); };
     const deleteExpense = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await apiService.deleteExpense(id); setExpenses(expenses.filter(e => e.id !== id)); } catch { alert(t('error.generic')); } };
     
+    // NEW: POS Transaction Delete Handler
+    const deletePosTransaction = async (id: string) => {
+        if(!window.confirm(t('general.confirmDelete'))) return;
+        try {
+            await apiService.deletePosTransaction(id);
+            setPosTransactions(posTransactions.filter(t => (t as any).id !== id && (t as any)._id !== id));
+        } catch {
+            alert(t('documentsPanel.deleteFailed'));
+        }
+    };
+
     const generateDigitalReceipt = (expense: Expense): File => {
         const content = `${t('finance.digitalReceipt.title')}\n------------------------------------------------\n` +
                         `${t('finance.digitalReceipt.category')}   ${expense.category}\n` +
@@ -304,23 +314,29 @@ export const FinanceTab: React.FC = () => {
                                                 {tx.type === 'invoice' || tx.type === 'pos' ? '+' : '-'}€{(tx.amount || 0).toFixed(2)}
                                             </span>
                                             
-                                            {tx.type !== 'pos' && (
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => tx.type === 'invoice' ? handleEditInvoice(tx as Invoice) : handleEditExpense(tx as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300" title={t('general.edit')}><Edit2 size={16} /></button>
-                                                    <button onClick={() => tx.type === 'invoice' ? handleViewInvoice(tx as Invoice) : handleViewExpense(tx as Expense)} disabled={openingDocId === tx.id} className="p-2 hover:bg-white/10 rounded-lg text-blue-400 hover:text-blue-300" title={t('general.view')}>
-                                                        {openingDocId === tx.id ? <Loader2 size={16} className="animate-spin"/> : <Eye size={16} />}
-                                                    </button>
-                                                    <button onClick={() => tx.type === 'invoice' ? downloadInvoice(tx.id) : handleDownloadExpense(tx as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-green-400 hover:text-green-300" title={t('general.download')}>
-                                                        <Download size={16} />
-                                                    </button>
-                                                    <button onClick={() => tx.type === 'invoice' ? handleArchiveInvoiceClick(tx.id) : handleArchiveExpenseClick(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-indigo-400 hover:text-indigo-300" title={t('general.archive')}>
-                                                        <Archive size={16} />
-                                                    </button>
-                                                    <button onClick={() => tx.type === 'invoice' ? deleteInvoice(tx.id) : deleteExpense(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300" title={t('general.delete')}>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {tx.type !== 'pos' ? (
+                                                    <>
+                                                        <button onClick={() => tx.type === 'invoice' ? handleEditInvoice(tx as Invoice) : handleEditExpense(tx as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300" title={t('general.edit')}><Edit2 size={16} /></button>
+                                                        <button onClick={() => tx.type === 'invoice' ? handleViewInvoice(tx as Invoice) : handleViewExpense(tx as Expense)} disabled={openingDocId === tx.id} className="p-2 hover:bg-white/10 rounded-lg text-blue-400 hover:text-blue-300" title={t('general.view')}>
+                                                            {openingDocId === tx.id ? <Loader2 size={16} className="animate-spin"/> : <Eye size={16} />}
+                                                        </button>
+                                                        <button onClick={() => tx.type === 'invoice' ? downloadInvoice(tx.id) : handleDownloadExpense(tx as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-green-400 hover:text-green-300" title={t('general.download')}>
+                                                            <Download size={16} />
+                                                        </button>
+                                                        <button onClick={() => tx.type === 'invoice' ? handleArchiveInvoiceClick(tx.id) : handleArchiveExpenseClick(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-indigo-400 hover:text-indigo-300" title={t('general.archive')}>
+                                                            <Archive size={16} />
+                                                        </button>
+                                                        <button onClick={() => tx.type === 'invoice' ? deleteInvoice(tx.id) : deleteExpense(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300" title={t('general.delete')}>
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <button onClick={() => deletePosTransaction(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300" title={t('general.delete')}>
                                                         <Trash2 size={16} />
                                                     </button>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

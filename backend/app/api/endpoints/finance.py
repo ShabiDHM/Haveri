@@ -1,6 +1,6 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V13.2 (FINAL IMPORT FIX)
-# 1. VERIFIED: Ensures 'pymongo' is imported and used for sorting.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V13.3 (DELETE TRANSACTION)
+# 1. VERIFIED: Added 'delete_transaction' endpoint.
 # 2. STATUS: Production Ready.
 
 import asyncio
@@ -42,7 +42,6 @@ async def confirm_import(current_user: Annotated[UserInDB, Depends(get_current_u
     service = ParsingService(db)
     return await service.process_import(file, str(current_user.id), mapping_dict)
 
-# PHOENIX: ADDED ENDPOINT TO FIX INVISIBLE TRANSACTIONS
 @router.get("/import/transactions", response_model=List[PosTransactionOut])
 async def get_imported_transactions(
     current_user: Annotated[UserInDB, Depends(get_current_active_user)],
@@ -55,6 +54,17 @@ async def get_imported_transactions(
     cursor = db["transactions"].find({"user_id": user_id_str}).sort("date", pymongo.DESCENDING)
     transactions = await cursor.to_list(length=None) 
     return transactions
+
+@router.delete("/transactions/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_transaction(
+    transaction_id: str,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    db: Database = Depends(get_db)
+):
+    """
+    Deletes a specific POS transaction by ID.
+    """
+    FinanceService(db).delete_pos_transaction(str(current_user.id), transaction_id)
 
 # --- ANALYTICS ENDPOINTS ---
 @router.get("/case-summary", response_model=List[CaseFinancialSummary])

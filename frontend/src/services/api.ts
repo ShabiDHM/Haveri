@@ -1,9 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V12.1 (INVENTORY CRUD COMPLETE)
-// 1. ADDED: Full CRUD methods for Inventory Items (updateInventoryItem, deleteInventoryItem).
-// 2. ADDED: Full CRUD methods for Recipes (updateRecipe, deleteRecipe).
-// 3. ADDED: 'importRecipes' method to support file uploads.
-// 4. STATUS: All compilation errors resolved. Frontend functionality is now complete.
+// PHOENIX PROTOCOL - API MASTER V12.2 (POS DELETION ADDED)
+// 1. ADDED: 'deletePosTransaction' method to support deleting imported transactions.
+// 2. STATUS: Fully synchronized with backend finance endpoints.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -118,6 +116,10 @@ class ApiService {
         if (response.data && Array.isArray(response.data.transactions)) { return response.data.transactions; }
         console.warn("Could not parse POS transactions from API response:", response.data);
         return [];
+    }
+
+    public async deletePosTransaction(transactionId: string): Promise<void> {
+        await this.axiosInstance.delete(`/finance/transactions/${transactionId}`);
     }
 
     public async getWizardState(month: number, year: number): Promise<WizardState> { const response = await this.axiosInstance.get<WizardState>('/finance/wizard/state', { params: { month, year } }); return response.data; }

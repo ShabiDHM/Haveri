@@ -1,7 +1,8 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE LOGIC V5.5 (CLEAN STATE)
-# 1. REVERT: Removed manual string conversion for IDs. Models handle serialization now.
-# 2. STATUS: Fully functional and type-safe.
+# PHOENIX PROTOCOL - FINANCE LOGIC V5.6 (POS DELETION ADDED)
+# 1. NEW: Added 'delete_pos_transaction' method.
+# 2. LOGIC: Uses string-based 'user_id' to match 'transactions' collection schema.
+# 3. STATUS: Fully functional and type-safe.
 
 import structlog
 from datetime import datetime, timezone
@@ -56,6 +57,23 @@ class FinanceService:
         except Exception as e:
             logger.error(f"Error calculating POS revenue: {e}")
             return 0.0
+
+    def delete_pos_transaction(self, user_id: str, transaction_id: str) -> None:
+        """
+        Deletes a POS transaction.
+        NOTE: Transactions collection uses 'user_id' as a string, unlike Invoices/Expenses which use ObjectId.
+        """
+        try:
+            oid = ObjectId(transaction_id)
+        except:
+            raise HTTPException(status_code=400, detail="Invalid Transaction ID")
+        
+        # We ensure strict ownership.
+        # Note: In the 'transactions' collection, user_id is stored as a string.
+        result = self.db.transactions.delete_one({"_id": oid, "user_id": str(user_id)})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Transaction not found")
 
     # --- INVOICE LOGIC ---
     def _generate_invoice_number(self, user_id: str) -> str:
