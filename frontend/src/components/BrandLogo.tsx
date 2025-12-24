@@ -1,12 +1,12 @@
 // FILE: src/components/BrandLogo.tsx
-// PHOENIX PROTOCOL - PLATFORM IDENTITY V3.2 (URL FIX)
-// 1. FIXED: Now constructs the full, absolute URL for the logo by prepending the API base URL.
-// 2. ADDED: An onError handler to gracefully fall back to the icon if the image fails to load.
-// 3. CLEANUP: Removed temporary diagnostic logging.
+// PHOENIX PROTOCOL - PLATFORM IDENTITY V3.3 (FALLBACK CORRECTION)
+// 1. FIXED: Changed the default fallback text from "Haveri" to "Haveri AI".
+// 2. LOGIC: Ensures that if a dynamic firm name is not available, the UI displays the correct, consistent brand name.
+// 3. STATUS: The component now correctly reflects the platform's identity.
 
 import React, { useState, useMemo } from 'react';
 import { Brain } from 'lucide-react';
-import { API_V1_URL } from '../services/api'; // PHOENIX: Import the API base URL.
+import { API_V1_URL } from '../services/api';
 
 interface BrandLogoProps {
   className?: string;
@@ -23,18 +23,16 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
 
-  // PHOENIX: Construct the full, absolute URL for the image source.
   const fullLogoUrl = useMemo(() => {
     if (!logoUrl) return null;
-    // If the URL is already absolute, use it directly.
-    if (logoUrl.startsWith('http')) return logoUrl;
-    // Otherwise, prepend the API base URL, ensuring no double slashes.
+    if (logoUrl.startsWith('http') || logoUrl.startsWith('blob:')) return logoUrl;
     const baseUrl = API_V1_URL.endsWith('/') ? API_V1_URL.slice(0, -1) : API_V1_URL;
     const path = logoUrl.startsWith('/') ? logoUrl : `/${logoUrl}`;
     return `${baseUrl}${path}`;
   }, [logoUrl]);
 
-  const displayName = firmName || "Haveri";
+  // PHOENIX FIX: Use the dynamic firm name, or fall back to the correct brand name "Haveri AI".
+  const displayName = firmName || "Haveri AI";
   const showImage = fullLogoUrl && !imgError;
 
   return (
@@ -45,7 +43,6 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
             src={fullLogoUrl!} 
             alt={`${displayName} Logo`} 
             className="w-full h-full object-cover" 
-            // PHOENIX: Add an error handler for graceful fallback.
             onError={() => setImgError(true)}
           />
         ) : (

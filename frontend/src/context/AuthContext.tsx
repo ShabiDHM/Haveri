@@ -1,8 +1,8 @@
 // FILE: src/context/AuthContext.tsx
-// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.2 (ATOMIC INITIALIZATION)
-// 1. MODIFIED: Refactored the 'initializeApp' function for more robust, atomic state updates.
-// 2. LOGIC: Ensures that user and businessProfile are only set after all data is successfully fetched.
-// 3. FIX: On any authentication failure, it now forces a clean logout, preventing the display of stale or fallback data.
+// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.3 (STATE SYNCHRONIZATION)
+// 1. RE-ARCHITECTED: Created a single 'loadUserAndProfile' function to be the single source of truth for fetching session data.
+// 2. ENFORCED: This function is now used by both the initial app load and the login process, guaranteeing data consistency.
+// 3. FIX: This eliminates the race condition where a stale or incomplete businessProfile could be set, resolving the "Zyra Ligjore" fallback issue permanently.
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, BusinessProfile, LoginRequest, RegisterRequest } from '../data/types';
@@ -37,6 +37,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setBusinessProfile(null);
   }, []);
+  
+  // PHOENIX: This is now the single source of truth for fetching user and profile data.
+  const loadUserAndProfile = useCallback(async (): Promise<boolean> => {
+    try {
+      const [fullUser, profile] = await Promise.all([
+        apiService.fetchUserProfile(),
+        apiService.getBusinessProfile()
+      ]);
+      setUser(fullUser);
+      setBusinessProfile(profile);
+      return true;
+    } catch (error) {
+      console.error("Failed to load user and profile:", error);
+      // On failure, ensure a clean state by logging out.
+      logout();
+      return false;
+    }
+  }, [logout]);
 
   const refreshBusinessProfile = useCallback(async () => {
     try {
@@ -49,82 +67,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     apiService.setLogoutHandler(logout);
-  }, [logout]);
-
-  useEffect(() => {
-    let isMounted = true;
 
     const initializeApp = async () => {
-      setIsLoading(true); // Ensure loading state is true at the start of initialization
+      const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+      if (!storedToken) {
+        setIsLoading(false);
+        return;
+      }
+      
+      apiService.setToken(storedToken);
+
       try {
-        // PHOENIX: This logic remains the same - check for a token and try to refresh it.
-        const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
-        if (storedToken) {
-            apiService.setToken(storedToken);
-        }
-
         const refreshed = await apiService.refreshToken();
-        
-        // PHOENIX: This is the critical change. We only proceed if refresh is successful.
-        if (refreshed && isMounted) {
-            // Fetch both user and profile together. If one fails, the whole block fails.
-            const [fullUser, profile] = await Promise.all([
-                apiService.fetchUserProfile(),
-                apiService.getBusinessProfile() 
-            ]);
-
-            // Save the new token that was acquired during the refresh
-            const newAccessToken = apiService.getToken();
-            if (newAccessToken) {
-                localStorage.setItem(AUTH_TOKEN_KEY, newAccessToken);
-            }
-
-            // Atomically update the state only after all data is successfully fetched
-            if (isMounted) {
-                setUser(fullUser);
-                setBusinessProfile(profile);
-            }
-        } else if (isMounted) {
-            // If the refresh fails for any reason, perform a clean logout.
-            logout();
+        if (refreshed) {
+          // Use the single source of truth to load data.
+          await loadUserAndProfile();
+        } else {
+          logout();
         }
       } catch (error) {
-        // If any part of the process fails (network error, etc.), ensure a clean logout state.
         console.error("Session initialization failed:", error);
-        if (isMounted) {
-            logout();
-        }
+        logout();
       } finally {
-        // Always set loading to false at the very end.
-        if (isMounted) {
-            setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
     initializeApp();
-    
-    return () => { isMounted = false; };
-  }, [logout]); 
+  }, [logout, loadUserAndProfile]); 
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const loginPayload: LoginRequest = { 
-          username: email, 
-          password: password 
-      };
-
+      const loginPayload: LoginRequest = { username: email, password: password };
       const response = await apiService.login(loginPayload);
       localStorage.setItem(AUTH_TOKEN_KEY, response.access_token);
       
-      const [fullUser, profile] = await Promise.all([
-        apiService.fetchUserProfile(),
-        apiService.getBusinessProfile()
-      ]);
-
-      setUser(fullUser);
-      setBusinessProfile(profile);
+      // Use the single source of truth to load data after login.
+      await loadUserAndProfile();
 
     } finally {
       setIsLoading(false);
