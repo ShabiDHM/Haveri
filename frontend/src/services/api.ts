@@ -1,8 +1,9 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V12.0 (AI AGENT INTEGRATED)
-// 1. ADDED: 'getDailyBriefing()' method to fetch AI Agent reports.
-// 2. ADDED: Import for 'DailyBriefingResponse'.
-// 3. STATUS: Full File Replacement.
+// PHOENIX PROTOCOL - API MASTER V12.1 (INVENTORY CRUD COMPLETE)
+// 1. ADDED: Full CRUD methods for Inventory Items (updateInventoryItem, deleteInventoryItem).
+// 2. ADDED: Full CRUD methods for Recipes (updateRecipe, deleteRecipe).
+// 3. ADDED: 'importRecipes' method to support file uploads.
+// 4. STATUS: All compilation errors resolved. Frontend functionality is now complete.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -13,7 +14,7 @@ import type {
     GraphData, ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
     InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction
 } from '../data/types';
-import { DailyBriefingResponse } from '../types/dailyBriefing'; // <-- NEW IMPORT
+import { DailyBriefingResponse } from '../types/dailyBriefing';
 
 export interface AuditIssue { id: string; severity: 'CRITICAL' | 'WARNING'; message: string; related_item_id?: string; item_type?: 'INVOICE' | 'EXPENSE'; }
 export interface TaxCalculation { period_month: number; period_year: number; total_sales_gross: number; total_purchases_gross: number; vat_collected: number; vat_deductible: number; net_obligation: number; currency: string; status: string; regime: string; tax_rate_applied: string; description: string; }
@@ -21,6 +22,7 @@ export interface WizardState { calculation: TaxCalculation; issues: AuditIssue[]
 export interface InvoiceUpdate { client_name?: string; client_email?: string; client_address?: string; items?: InvoiceItem[]; tax_rate?: number; due_date?: string; status?: string; notes?: string; }
 export interface ImportPreviewResponse { filename: string; headers: string[]; sample_data: Record<string, string>[]; total_rows_estimated: number; }
 export interface ImportResult { status: string; imported_count: number; total_value: number; batch_id: string; }
+export interface RecipeImportResult { recipes_created: number; missing_ingredients: string[]; }
 interface LoginResponse { access_token: string; }
 interface DocumentContentResponse { text: string; }
 
@@ -112,12 +114,8 @@ class ApiService {
     
     public async getPosTransactions(): Promise<PosTransaction[]> {
         const response = await this.axiosInstance.get<any>('/finance/import/transactions');
-        if (Array.isArray(response.data)) {
-            return response.data;
-        }
-        if (response.data && Array.isArray(response.data.transactions)) {
-            return response.data.transactions;
-        }
+        if (Array.isArray(response.data)) { return response.data; }
+        if (response.data && Array.isArray(response.data.transactions)) { return response.data.transactions; }
         console.warn("Could not parse POS transactions from API response:", response.data);
         return [];
     }
@@ -126,10 +124,21 @@ class ApiService {
     public async downloadMonthlyReport(month: number, year: number): Promise<void> { const response = await this.axiosInstance.get('/finance/wizard/report/pdf', { params: { month, year }, responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([response.data])); const link = document.createElement('a'); link.href = url; link.setAttribute('download', `Raporti_${month}_${year}.pdf`); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); }
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
     public async confirmImport(file: File, mapping: Record<string, string>): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); formData.append('mapping', JSON.stringify(mapping)); const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData); return response.data; }
+    
+    // --- INVENTORY ---
     public async getInventoryItems(): Promise<InventoryItem[]> { const response = await this.axiosInstance.get<InventoryItem[]>('/inventory/items'); return response.data; }
     public async createInventoryItem(data: InventoryItemCreate): Promise<InventoryItem> { const response = await this.axiosInstance.post<InventoryItem>('/inventory/items', data); return response.data; }
+    public async updateInventoryItem(id: string, data: InventoryItemCreate): Promise<InventoryItem> { const response = await this.axiosInstance.put<InventoryItem>(`/inventory/items/${id}`, data); return response.data; }
+    public async deleteInventoryItem(id: string): Promise<void> { await this.axiosInstance.delete(`/inventory/items/${id}`); }
+
+    // --- RECIPES ---
     public async getRecipes(): Promise<Recipe[]> { const response = await this.axiosInstance.get<Recipe[]>('/inventory/recipes'); return response.data; }
     public async createRecipe(data: RecipeCreate): Promise<Recipe> { const response = await this.axiosInstance.post<Recipe>('/inventory/recipes', data); return response.data; }
+    public async updateRecipe(id: string, data: RecipeCreate): Promise<Recipe> { const response = await this.axiosInstance.put<Recipe>(`/inventory/recipes/${id}`, data); return response.data; }
+    public async deleteRecipe(id: string): Promise<void> { await this.axiosInstance.delete(`/inventory/recipes/${id}`); }
+    public async importRecipes(file: File): Promise<RecipeImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<RecipeImportResult>('/inventory/recipes/import', formData); return response.data; }
+
+    // --- ARCHIVE ---
     public async getArchiveItems(category?: string, caseId?: string, parentId?: string): Promise<ArchiveItemOut[]> { const params: any = {}; if (category) params.category = category; if (caseId) params.case_id = caseId; if (parentId) params.parent_id = parentId; const response = await this.axiosInstance.get<{items: ArchiveItemOut[]}>('/archive/items', { params }); return Array.isArray(response.data) ? response.data : (response.data?.items || []); }
     public async createArchiveFolder(title: string, parentId?: string, caseId?: string, category?: string): Promise<ArchiveItemOut> { const formData = new FormData(); formData.append('title', title); if (parentId) formData.append('parent_id', parentId); if (caseId) formData.append('case_id', caseId); if (category) formData.append('category', category); const response = await this.axiosInstance.post<ArchiveItemOut>('/archive/folder', formData); return response.data; }
     public async uploadArchiveItem(file: File, title: string, category: string, caseId?: string, parentId?: string): Promise<ArchiveItemOut> { const formData = new FormData(); formData.append('file', file); formData.append('title', title); formData.append('category', category); if (caseId) formData.append('case_id', caseId); if (parentId) formData.append('parent_id', parentId); const response = await this.axiosInstance.post<ArchiveItemOut>('/archive/upload', formData); return response.data; }
@@ -140,28 +149,29 @@ class ApiService {
     public async updateEventShareStatus(eventId: string, isPublic: boolean): Promise<any> { const response = await this.axiosInstance.put(`/calendar/events/${eventId}/share`, { is_public: isPublic }); return response.data; }
     public async updateCaseShareStatus(caseId: string, isShared: boolean): Promise<any> { const response = await this.axiosInstance.put(`/share/case/${caseId}`, { is_shared: isShared }); return response.data; }
     public async shareArchiveItem(itemId: string, isShared: boolean): Promise<ArchiveItemOut> { const response = await this.axiosInstance.put<ArchiveItemOut>(`/archive/items/${itemId}/share`, { is_shared: isShared }); return response.data; }
+    
+    // --- CALENDAR ---
     public async getCalendarEvents(): Promise<CalendarEvent[]> { const response = await this.axiosInstance.get<any>('/calendar/events'); return Array.isArray(response.data) ? response.data : (response.data?.events || []); }
     public async createCalendarEvent(data: CalendarEventCreateRequest): Promise<CalendarEvent> { const response = await this.axiosInstance.post<CalendarEvent>('/calendar/events', data); return response.data; }
     public async deleteCalendarEvent(eventId: string): Promise<void> { await this.axiosInstance.delete(`/calendar/events/${eventId}`); }
     public async getAlertsCount(): Promise<{ count: number }> { const response = await this.axiosInstance.get<{ count: number }>('/calendar/alerts'); return response.data; }
+    
+    // --- DRAFTING ---
     public async initiateDraftingJob(data: CreateDraftingJobRequest): Promise<DraftingJobStatus> { const response = await this.axiosInstance.post<DraftingJobStatus>(`${API_V2_URL}/drafting/jobs`, data); return response.data; }
     public async getDraftingJobStatus(jobId: string): Promise<DraftingJobStatus> { const response = await this.axiosInstance.get<DraftingJobStatus>(`${API_V2_URL}/drafting/jobs/${jobId}/status`); return response.data; }
     public async getDraftingJobResult(jobId: string): Promise<DraftingJobResult> { const response = await this.axiosInstance.get<DraftingJobResult>(`${API_V2_URL}/drafting/jobs/${jobId}/result`); return response.data; }
+    
+    // --- BUSINESS ---
     public async getBusinessProfile(): Promise<BusinessProfile> { const response = await this.axiosInstance.get<BusinessProfile>('/business/profile'); return response.data; }
     public async updateBusinessProfile(data: BusinessProfileUpdate): Promise<BusinessProfile> { const response = await this.axiosInstance.put<BusinessProfile>('/business/profile', data); return response.data; }
     public async uploadBusinessLogo(file: File): Promise<BusinessProfile> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.put<BusinessProfile>('/business/logo', formData); return response.data; }
     
-    public async fetchImageBlob(url: string): Promise<Blob> {
-        const response = await this.axiosInstance.get(url, { responseType: 'blob' });
-        return response.data;
-    }
+    public async fetchImageBlob(url: string): Promise<Blob> { const response = await this.axiosInstance.get(url, { responseType: 'blob' }); return response.data; }
 
-    // --- PHOENIX NEW METHOD: AI Agent ---
-    public async getDailyBriefing(): Promise<DailyBriefingResponse> {
-        const response = await this.axiosInstance.get<DailyBriefingResponse>('/daily-briefing/');
-        return response.data;
-    }
+    // --- AI AGENT ---
+    public async getDailyBriefing(): Promise<DailyBriefingResponse> { const response = await this.axiosInstance.get<DailyBriefingResponse>('/daily-briefing/'); return response.data; }
 
+    // --- SUPPORT ---
     public async sendContactForm(data: { firstName: string; lastName: string; email: string; phone: string; message: string }): Promise<void> { await this.axiosInstance.post('/support/contact', { first_name: data.firstName, last_name: data.lastName, email: data.email, phone: data.phone, message: data.message }); }
 }
 

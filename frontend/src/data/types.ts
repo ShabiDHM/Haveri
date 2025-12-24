@@ -1,12 +1,10 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES REFACTOR V8.4 (BRANDING INTEGRATION)
-// 1. MODIFIED: The 'User' interface now includes an optional 'business_profile' property.
-// 2. LOGIC: This links the authenticated user directly to their business branding information.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - TYPES REFACTOR V8.5 (INVENTORY IMPORT)
+// 1. ADDED: 'RecipeImportResult' interface to correctly type the response from the recipe import API endpoint.
+// 2. STATUS: Production Ready.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
-// PHOENIX MODIFICATION: Added 'business_profile' to the User interface
 export interface User { 
     id: string; 
     email: string; 
@@ -16,7 +14,7 @@ export interface User {
     created_at: string; 
     token?: string; 
     subscription_status?: string; 
-    business_profile?: BusinessProfile; // Added for branding
+    business_profile?: BusinessProfile;
 }
 export type AdminUser = User;
 
@@ -68,3 +66,4 @@ export interface InventoryItemCreate { name: string; unit: string; current_stock
 export interface Ingredient { inventory_item_id: string; quantity_required: number; }
 export interface Recipe { _id: string; product_name: string; ingredients: Ingredient[]; }
 export interface RecipeCreate { product_name: string; ingredients: Ingredient[]; }
+export interface RecipeImportResult { recipes_created: number; missing_ingredients: string[]; }
