@@ -30,8 +30,9 @@ from . import (
     pdf_service,
     social_service,
     inventory_service,
+    daily_briefing_service, # <-- NEW AGENT SERVICE
     parsing_service,
-    share_service, # <-- ADD THIS
+    share_service,
     
     # Albanian Specific Services
     albanian_document_processor,

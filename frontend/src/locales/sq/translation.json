@@ -273,6 +273,8 @@
     "profile": "Profili",
     "finance": "Financat",
     "archive": "Arkiva",
+    "briefing": "Përmbledhja",
+    "briefing_short": "Ditore",
     "totalCases": "Projekte Totale",
     "documentsProcessed": "Dokumente të Procesuara",
     "efficiency": "Efiçenca",
@@ -290,6 +292,23 @@
     "website": "Webfaqja",
     "taxId": "Numri Fiskal / NUI",
     "logoUploadFailed": "Ngarkimi i logos dështoi."
+  },
+  "daily_briefing": {
+    "agent_name": "Haveri AI Agent",
+    "morning_report": "Raporti i Mëngjesit",
+    "run_time": "Gjeneruar në 06:00",
+    "system_optimal": "Sistemet Optimale",
+    "attention_needed": "Veprim i Kërkuar",
+    "finance_summary": "Analiza e faturave të papaguara nga dita e djeshme.",
+    "view_finances": "Shiko Financat",
+    "predictive_stock": "Parashikimi i Stokut",
+    "risk_alert": "Rrezik Mungese",
+    "inventory_prediction": "Bazuar në shitjet e djeshme, këta artikuj rrezikojnë të mbarojnë sot.",
+    "predicted_out": "Parashikohet të mbarojë në 14:00",
+    "restock_suggest": "Sugjerohet rifurnizim pasdite",
+    "manage_inventory": "Menaxho Inventarin",
+    "events_count": "{{count}} Ngjarje",
+    "open_calendar": "Hap Kalendarin"
   },
   "finance": {
     "income": "Të Hyrat",

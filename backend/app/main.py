@@ -1,6 +1,6 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V6.1 (INVENTORY MODULE)
-# 1. ADDED: Registered 'inventory_router' to expose the Operational Engine.
+# PHOENIX PROTOCOL - MAIN APPLICATION V6.2 (DAILY BRIEFING ADDED)
+# 1. ADDED: Registered 'daily_briefing_router' to expose the AI Agent.
 # 2. STATUS: Production Ready for Haveri.
 
 from fastapi import FastAPI, status, APIRouter
@@ -27,7 +27,8 @@ from app.api.endpoints.graph import router as graph_router
 from app.api.endpoints.archive import router as archive_router
 from app.api.endpoints.drafting_v2 import router as drafting_v2_router
 from app.api.endpoints.share import router as share_router
-from app.api.endpoints.inventory import router as inventory_router # <-- NEW IMPORT
+from app.api.endpoints.inventory import router as inventory_router
+from app.api.endpoints.daily_briefing import router as daily_briefing_router # <-- NEW IMPORT
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -83,7 +84,8 @@ api_v1_router.include_router(business_router, prefix="/business", tags=["Busines
 # Finance & Operations Modules
 api_v1_router.include_router(finance_router, prefix="/finance", tags=["Finance"])
 api_v1_router.include_router(finance_wizard.router, prefix="/finance/wizard", tags=["Finance Wizard"])
-api_v1_router.include_router(inventory_router, prefix="/inventory", tags=["Inventory & Operations"]) # <-- NEW REGISTRATION
+api_v1_router.include_router(inventory_router, prefix="/inventory", tags=["Inventory & Operations"])
+api_v1_router.include_router(daily_briefing_router, prefix="/daily-briefing", tags=["Daily Briefing"]) # <-- NEW REGISTRATION
 
 # Advanced Modules
 api_v1_router.include_router(graph_router, prefix="/graph", tags=["Graph"])

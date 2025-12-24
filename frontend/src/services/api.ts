@@ -1,7 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V11.5 (ENDPOINT CORRECTION)
-// 1. FIX: Corrected the URL in 'getPosTransactions' from '/finance/transactions' to the correct '/finance/import/transactions' endpoint to resolve the 404 Not Found error.
-// 2. VERIFIED: All other logic remains correct. This should resolve the invisible transactions bug.
+// PHOENIX PROTOCOL - API MASTER V12.0 (AI AGENT INTEGRATED)
+// 1. ADDED: 'getDailyBriefing()' method to fetch AI Agent reports.
+// 2. ADDED: Import for 'DailyBriefingResponse'.
+// 3. STATUS: Full File Replacement.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -12,6 +13,7 @@ import type {
     GraphData, ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
     InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction
 } from '../data/types';
+import { DailyBriefingResponse } from '../types/dailyBriefing'; // <-- NEW IMPORT
 
 export interface AuditIssue { id: string; severity: 'CRITICAL' | 'WARNING'; message: string; related_item_id?: string; item_type?: 'INVOICE' | 'EXPENSE'; }
 export interface TaxCalculation { period_month: number; period_year: number; total_sales_gross: number; total_purchases_gross: number; vat_collected: number; vat_deductible: number; net_obligation: number; currency: string; status: string; regime: string; tax_rate_applied: string; description: string; }
@@ -109,7 +111,6 @@ class ApiService {
     public async getExpenseReceiptBlob(expenseId: string): Promise<{ blob: Blob, filename: string }> { const response = await this.axiosInstance.get(`/finance/expenses/${expenseId}/receipt`, { responseType: 'blob' }); const disposition = response.headers['content-disposition']; let filename = `receipt-${expenseId}.pdf`; if (disposition && disposition.indexOf('filename=') !== -1) { const matches = /filename="([^"]*)"/.exec(disposition); if (matches != null && matches[1]) filename = matches[1]; } return { blob: response.data, filename }; }
     
     public async getPosTransactions(): Promise<PosTransaction[]> {
-        // PHOENIX: CORRECTED ENDPOINT
         const response = await this.axiosInstance.get<any>('/finance/import/transactions');
         if (Array.isArray(response.data)) {
             return response.data;
@@ -152,6 +153,12 @@ class ApiService {
     
     public async fetchImageBlob(url: string): Promise<Blob> {
         const response = await this.axiosInstance.get(url, { responseType: 'blob' });
+        return response.data;
+    }
+
+    // --- PHOENIX NEW METHOD: AI Agent ---
+    public async getDailyBriefing(): Promise<DailyBriefingResponse> {
+        const response = await this.axiosInstance.get<DailyBriefingResponse>('/daily-briefing/');
         return response.data;
     }
 

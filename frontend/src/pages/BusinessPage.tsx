@@ -1,42 +1,23 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - BUSINESS PAGE V10.1 (DAILY BRIEFING + REORDER)
-// 1. MOVED: 'Profile' tab to the far right (after Archive).
-// 2. ADDED: 'Daily Briefing' tab as the new default landing view.
-// 3. UPDATED: Navigation grid changed from 4 to 5 columns.
-// 4. INTEGRITY: Inline 'DailyBriefingTab' added to prevent build errors.
+// PHOENIX PROTOCOL - BUSINESS PAGE V11.1 (COMPONENT DECOUPLED)
+// 1. REFACTORED: DailyBriefingTab logic moved to dedicated component.
+// 2. CLEANUP: Removed inline placeholder code.
 
 import React, { useState } from 'react';
-import { Building2, FileText, FolderOpen, Package, LayoutDashboard } from 'lucide-react'; // Added LayoutDashboard
+import { Building2, FileText, FolderOpen, Package, LayoutDashboard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { ProfileTab } from '../components/business/ProfileTab';
 import { FinanceTab } from '../components/business/FinanceTab';
 import { ArchiveTab } from '../components/business/ArchiveTab';
 import { InventoryTab } from '../components/business/InventoryTab';
-
-// --- PLACEHOLDER COMPONENT (Move to src/components/business/DailyBriefingTab.tsx later) ---
-const DailyBriefingTab: React.FC = () => {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-            <h3 className="text-xl font-bold text-white mb-4">The Daily Briefing</h3>
-            <p className="text-gray-400">Përmbledhja ditore do të shfaqet këtu.</p>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-            <h3 className="text-xl font-bold text-white mb-4">Aktiviteti i fundit</h3>
-            <p className="text-gray-400">Nuk ka aktivitet të fundit për të shfaqur.</p>
-        </div>
-    </div>
-  );
-};
-// ------------------------------------------------------------------------------------------
+import { DailyBriefingTab } from '../components/business/DailyBriefingTab'; // Imported
 
 type ActiveTab = 'briefing' | 'finance' | 'inventory' | 'archive' | 'profile';
 
 const BusinessPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  // Default to 'briefing' as the landing view
   const [activeTab, setActiveTab] = useState<ActiveTab>('briefing');
 
   const capitalize = (s: string | undefined) => {
@@ -78,17 +59,17 @@ const BusinessPage: React.FC = () => {
             </p>
         </div>
         
-        {/* FIX: Grid layout updated to 5 columns for mobile to fit all tabs */}
+        {/* Navigation Grid - 5 Columns */}
         <div className="w-full sm:w-auto grid grid-cols-5 sm:flex bg-background-light/10 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md gap-1 sm:gap-0">
             
-            {/* 1. THE DAILY BRIEFING (New Default) */}
+            {/* 1. THE DAILY BRIEFING */}
             <button 
                 onClick={() => setActiveTab('briefing')} 
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto ${activeTab === 'briefing' ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
                 <LayoutDashboard size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span className="hidden xs:inline truncate">Briefing</span>
-                <span className="xs:hidden">Ditor</span>
+                <span className="hidden xs:inline truncate">{t('business.briefing', 'Briefing')}</span>
+                <span className="xs:hidden">{t('business.briefing_short', 'Ditor')}</span>
             </button>
 
             {/* 2. FINANCES */}
@@ -97,8 +78,8 @@ const BusinessPage: React.FC = () => {
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto ${activeTab === 'finance' ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
                 <FileText size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span className="hidden xs:inline truncate">{t('business.finance')}</span>
-                <span className="xs:hidden">Financat</span>
+                <span className="hidden xs:inline truncate">{t('business.finance', 'Financat')}</span>
+                <span className="xs:hidden">{t('business.finance', 'Financat')}</span>
             </button>
             
             {/* 3. INVENTORY */}
@@ -108,7 +89,7 @@ const BusinessPage: React.FC = () => {
             >
                 <Package size={16} className="sm:w-[18px] sm:h-[18px]" />
                 <span className="hidden xs:inline truncate">{t('inventory.title', 'Inventari').split(' ')[0]}</span>
-                <span className="xs:hidden">Inventari</span>
+                <span className="xs:hidden">{t('inventory.title', 'Inventari').split(' ')[0]}</span>
             </button>
 
             {/* 4. ARCHIVE */}
@@ -117,18 +98,18 @@ const BusinessPage: React.FC = () => {
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto ${activeTab === 'archive' ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
                 <FolderOpen size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span className="hidden xs:inline truncate">{t('business.archive')}</span>
-                <span className="xs:hidden">Arkiva</span>
+                <span className="hidden xs:inline truncate">{t('business.archive', 'Arkiva')}</span>
+                <span className="xs:hidden">{t('business.archive', 'Arkiva')}</span>
             </button>
 
-            {/* 5. PROFILE (Moved to End) */}
+            {/* 5. PROFILE */}
             <button 
                 onClick={() => setActiveTab('profile')} 
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto ${activeTab === 'profile' ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
                 <Building2 size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span className="hidden xs:inline truncate">{t('business.profile')}</span>
-                <span className="xs:hidden">Profili</span>
+                <span className="hidden xs:inline truncate">{t('business.profile', 'Profili')}</span>
+                <span className="xs:hidden">{t('business.profile', 'Profili')}</span>
             </button>
         </div>
       </div>
