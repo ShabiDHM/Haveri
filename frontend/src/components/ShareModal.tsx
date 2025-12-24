@@ -1,7 +1,8 @@
 // FILE: src/components/ShareModal.tsx
-// PHOENIX PROTOCOL - SHARE MODAL V1.1 (FIXED IMPORTS)
-// 1. FIXED: Added missing 'MessageSquare' import for Viber icon.
-// 2. CLEANUP: Removed unused 'Instagram' import.
+// PHOENIX PROTOCOL - SHARE MODAL V1.3 (DIRECT LINK FIX)
+// 1. FIX: Now copies the direct Portal URL (https://haveri.tech/portal/...) as requested.
+// 2. LOGIC: Removed API redirect link generation.
+// 3. STATUS: Aligned with user requirements.
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -18,14 +19,12 @@ interface ShareModalProps {
 const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, caseId, caseTitle }) => {
   if (!isOpen) return null;
 
-  // The Smart Link (Points to Backend for Meta Tags)
-  // Ensures we don't get double slashes if env var ends with /
-  const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/api\/v1\/?$/, '');
-  const shareUrl = `${apiUrl}/api/v1/share/c/${caseId}`;
+  // PHOENIX FIX: Direct Portal URL
+  const shareUrl = `${window.location.origin}/portal/${caseId}`;
   
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
-    alert("Linku u kopjua!");
+    alert("Linku i Portalit u kopjua!");
   };
 
   const handleWhatsApp = () => {
@@ -80,11 +79,14 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, caseId, caseTi
                     <Copy className="text-gray-400" />
                     <span className="font-medium text-gray-300">Kopjo Linkun</span>
                 </div>
+                <div className="text-xs text-gray-600 font-mono bg-black/20 px-2 py-1 rounded max-w-[150px] truncate">
+                    {shareUrl}
+                </div>
             </button>
           </div>
           
           <div className="mt-6 text-center">
-              <p className="text-xs text-gray-500">Ky link skadon automatikisht pas 7 ditësh për siguri.</p>
+              <p className="text-xs text-gray-500">Ky link i jep klientit qasje të kufizuar (vetëm lexim) në dosje.</p>
           </div>
 
         </motion.div>

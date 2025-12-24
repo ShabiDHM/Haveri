@@ -1,7 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V11.7 (LINTER CLEANUP)
-// 1. CLEANUP: Removed unused imports ('FolderInput', 'Upload').
-// 2. STATUS: Zero warnings. "Portal Link" button preserved.
+// PHOENIX PROTOCOL - ARCHIVE TAB V12.2 (CLEANUP)
+// 1. CLEANUP: Removed unused 'onCopyLink' prop and orphaned 'handleCopyLink' function.
+// 2. STATUS: Zero warnings. Production Ready.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,7 +21,7 @@ type Breadcrumb = { id: string | null; name: string; type: 'ROOT' | 'CASE' | 'FO
 const getMimeType = (fileType: string, fileName: string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; if (['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF'].includes(fileType)) return 'image/jpeg'; return 'application/octet-stream'; };
 const getFileIcon = (fileType: string) => { const ft = fileType ? fileType.toUpperCase() : ""; if (ft === 'PDF') return <FileText className="w-5 h-5 text-red-400" />; if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-purple-400" />; if (['JSON', 'JS', 'TS'].includes(ft)) return <FileCode className="w-5 h-5 text-yellow-400" />; return <FileIcon className="w-5 h-5 text-blue-400" />; };
 
-const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, isShared, isFolder, isLoading, onCopyLink }: any) => {
+const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, isShared, isFolder, isLoading }: any) => {
     const { t } = useTranslation();
     return (
         <div onClick={onClick} className={`group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-2xl transition-all duration-300 cursor-pointer bg-gray-900/40 backdrop-blur-md border border-white/5 shadow-xl hover:shadow-2xl hover:bg-gray-800/60 hover:-translate-y-1 hover:scale-[1.01]`}>
@@ -30,10 +30,12 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
                 <div className="flex flex-col mb-4 relative z-10">
                     <div className="flex justify-between items-start gap-2">
                         <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-300">{icon}</div>
+                        
+                        {/* Static Share Indicator */}
                         {isShared && (
-                            <button onClick={(e) => { e.stopPropagation(); onCopyLink(); }} className="bg-green-500/20 text-green-400 p-1.5 rounded-lg border border-green-500/30 hover:bg-green-500/30" title={t('archive.copyLink')}>
+                            <div className="bg-green-500/10 text-green-400 p-1.5 rounded-lg border border-green-500/20 cursor-default" title={t('archive.isShared', 'E Ndarë me Klientin')}>
                                 <Share2 size={14} />
-                            </button>
+                            </div>
                         )}
                     </div>
                     <div className="mt-4"><h2 className="text-xl font-bold text-gray-100 line-clamp-2 leading-tight tracking-tight group-hover:text-primary-start transition-colors break-words">{title}</h2><div className="flex items-center gap-2 mt-2"><Calendar className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" /><p className="text-sm text-gray-500 font-medium truncate">{date}</p></div></div>
@@ -77,7 +79,6 @@ export const ArchiveTab: React.FC = () => {
     const [renameValue, setRenameValue] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     
-    // SHARE MODAL STATE
     const [showShareModal, setShowShareModal] = useState(false);
     
     const folderInputRef = useRef<HTMLInputElement>(null);
@@ -100,7 +101,6 @@ export const ArchiveTab: React.FC = () => {
     const handleRenameClick = (item: ArchiveItemOut) => { setItemToRename(item); setRenameValue(item.title); };
     const submitRename = async (e: React.FormEvent) => { e.preventDefault(); if (!itemToRename || !renameValue.trim()) return; try { await apiService.renameArchiveItem(itemToRename.id, renameValue); setArchiveItems(prev => prev.map(i => i.id === itemToRename.id ? { ...i, title: renameValue } : i)); setItemToRename(null); } catch (error) { alert(t('error.generic')); } };
     const handleShareItem = async (item: ArchiveItemOut) => { try { const newStatus = !item.is_shared; await apiService.shareArchiveItem(item.id, newStatus); setArchiveItems(prev => prev.map(i => i.id === item.id ? { ...i, is_shared: newStatus } : i)); } catch (e) { alert(t('error.generic')); } };
-    const handleCopyLink = (itemOrCase: ArchiveItemOut | Case) => { const caseId = 'case_id' in itemOrCase ? itemOrCase.case_id : itemOrCase.id; if (!caseId) return; const link = `${window.location.origin}/portal/${caseId}`; navigator.clipboard.writeText(link); alert(t('general.copied')); };
     
     const currentView = breadcrumbs[breadcrumbs.length - 1];
     const isInsideCase = currentView.type === 'CASE'; 
@@ -115,7 +115,7 @@ export const ArchiveTab: React.FC = () => {
                 <div className="flex-1 w-full"><div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" /><input type="text" placeholder={t('header.searchPlaceholder') || "Kërko..."} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-base focus:outline-none focus:border-primary-start/50 transition-all text-gray-200" /></div></div>
                 <div className="flex w-full md:w-auto gap-2 flex-shrink-0 p-1.5 bg-white/5 rounded-xl border border-white/10">
                     
-                    {/* RESTORED PORTAL LINK BUTTON */}
+                    {/* PORTAL LINK BUTTON */}
                     {isInsideCase && currentView.id && (
                          <button 
                             onClick={() => setShowShareModal(true)} 
@@ -149,7 +149,6 @@ export const ArchiveTab: React.FC = () => {
                                     isFolder={true} 
                                     isShared={c.is_shared}
                                     onClick={() => handleEnterFolder(c.id, c.title, 'CASE')} 
-                                    onCopyLink={() => handleCopyLink(c)}
                                 />
                             </div>
                         ))}
@@ -177,7 +176,6 @@ export const ArchiveTab: React.FC = () => {
                                             onDelete={() => deleteArchiveItem(item.id)}
                                             onRename={() => handleRenameClick(item)} 
                                             onShare={() => handleShareItem(item)}
-                                            onCopyLink={() => handleCopyLink(item)}
                                         />
                                     </motion.div>
                                 );
@@ -192,7 +190,7 @@ export const ArchiveTab: React.FC = () => {
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} onMinimize={closePreview} t={t} directUrl={viewingUrl} />}
             
             {/* SHARE MODAL INTEGRATION */}
-            {currentView.type === 'CASE' && currentView.id && (
+            {isInsideCase && currentView.id && (
                 <ShareModal 
                     isOpen={showShareModal} 
                     onClose={() => setShowShareModal(false)} 
