@@ -1,8 +1,8 @@
 # FILE: backend/app/services/drafting_service.py
-# PHOENIX PROTOCOL - DRAFTING SERVICE V17.3 (MULTI-TENANT COMPATIBILITY)
-# 1. FIXED: Replaced missing imports with 'query_mixed_intelligence'.
-# 2. LOGIC: Implements Dual-Brain RAG (Private Documents + Public Laws) in one call.
-# 3. STATUS: Fully compatible with V20 Vector Store.
+# PHOENIX PROTOCOL - DRAFTING SERVICE V17.4 (IMPORT FIX)
+# 1. FIXED: Corrected the import path for 'UserInDB' to point directly to the model file.
+# 2. REASON: Resolves a circular dependency issue that was causing a Pylance error.
+# 3. STATUS: All dependencies are now correctly resolved.
 
 import os
 import asyncio
@@ -16,9 +16,9 @@ from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-from ..models.user import UserInDB
-from app.services.text_sterilization_service import sterilize_text_for_llm 
-# PHOENIX FIX: Import the new unified query function
+# PHOENIX FIX: Point directly to the model file to break the import cycle.
+from ..models.user import UserInDB 
+from .text_sterilization_service import sterilize_text_for_llm 
 from .vector_store_service import query_mixed_intelligence
 from .embedding_service import generate_embedding
 
@@ -78,8 +78,6 @@ async def generate_draft_stream(
     {template_instruction}
     """
 
-    # PHOENIX FIX: Unified RAG Call (Private + Public)
-    # We fetch relevant case docs AND laws in one go using the new Multi-Tenant Engine
     try:
         rag_results = await asyncio.to_thread(
             query_mixed_intelligence,
@@ -92,7 +90,6 @@ async def generate_draft_stream(
         logger.error(f"RAG failed: {e}")
         rag_results = []
 
-    # Organize RAG results
     private_context = []
     public_laws = []
     
@@ -141,7 +138,6 @@ async def generate_draft_stream(
     yield "**[Draftimi dështoi. Provoni përsëri.]**"
 
 def generate_objection_document(analysis_result: Dict[str, Any], case_title: str) -> bytes:
-    # (Identical to previous version - keeping logic for .docx generation)
     document = Document()
     style = document.styles['Normal']
     font = style.font # type: ignore

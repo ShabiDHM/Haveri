@@ -1,8 +1,8 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V2.3 (ADMIN GUARD FIX)
-// 1. FIX: The AdminRoute guard now performs a case-insensitive role check.
-// 2. REASON: The previous strict 'ADMIN' check conflicted with the backend's 'admin' value, blocking access.
-// 3. STATUS: Admin page is now fully accessible.
+// PHOENIX PROTOCOL - ROUTING V2.4 (HOME BASE RE-ROUTE)
+// 1. MODIFIED: All authenticated redirects now point to '/business' instead of '/dashboard'.
+// 2. REASON: Designates 'Zyra Ime' (BusinessPage) as the new default landing page for logged-in users.
+// 3. STATUS: Application flow now aligns with the "Solo Business OS" model.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -49,9 +49,9 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
-  // PHOENIX FIX: Case-insensitive check for admin role
   if (user?.role?.toUpperCase() !== 'ADMIN') {
-    return <Navigate to="/dashboard" />;
+    // PHOENIX: Changed fallback from /dashboard to /business
+    return <Navigate to="/business" />;
   }
 
   return <>{children}</>;
@@ -62,10 +62,10 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Public Routes (No Auth Required) */}
-      <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <LandingPage />} />
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />} />
+      {/* Public Routes (No Auth Required) - PHOENIX: Redirects updated to /business */}
+      <Route path="/" element={isAuthenticated ? <Navigate to="/business" /> : <LandingPage />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/business" /> : <LoginPage />} />
+      <Route path="/register" element={isAuthenticated ? <Navigate to="/business" /> : <RegisterPage />} />
       
       {/* Client Portal Route (Public Access via Link) */}
       <Route path="/portal/:caseId" element={<ClientPortalPage />} />
@@ -75,7 +75,8 @@ const AppRoutes: React.FC = () => {
 
       {/* Standard Protected Routes (With Sidebar) */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-        <Route path="/dashboard" element={<DashboardPage />} />
+        {/* PHOENIX: /dashboard is now a secondary, deprecated route. /business is primary. */}
+        <Route path="/dashboard" element={<DashboardPage />} /> 
         <Route path="/cases/:caseId" element={<CaseViewPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/drafting" element={<DraftingPage />} />

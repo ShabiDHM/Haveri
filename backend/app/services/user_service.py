@@ -1,6 +1,8 @@
 # FILE: backend/app/services/user_service.py
-# PHOENIX PROTOCOL - USER SERVICE V1.4 (PORTAL BRANDING FIX)
-# 1. FIX: 'get_user_by_id' now fetches and attaches the business profile using a string ID, ensuring the portal displays the correct name and logo.
+# PHOENIX PROTOCOL - USER SERVICE V1.5 (SINGLETON WORKSPACE)
+# 1. ADDED: On user creation, a default "workspace" Case is now automatically generated.
+# 2. LOGIC: Imports and uses 'case_service' to ensure the workspace is created correctly.
+# 3. RESULT: Guarantees every user has a primary workspace from the moment of registration.
 
 from pymongo.database import Database
 from bson import ObjectId
@@ -12,7 +14,8 @@ import re
 
 from app.core.security import verify_password, get_password_hash
 from app.models.user import UserInDB, UserCreate
-from app.services import storage_service
+from app.models.case import CaseCreate # PHOENIX: Import CaseCreate model
+from app.services import storage_service, case_service # PHOENIX: Import case_service
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +36,6 @@ def get_user_by_email(db: Database, email: str) -> Optional[UserInDB]:
 def get_user_by_id(db: Database, user_id: ObjectId) -> Optional[UserInDB]:
     user_dict = db.users.find_one({"_id": user_id})
     if user_dict:
-        # PHOENIX FIX: Fetch and attach business profile to the user object
-        # The portal page relies on this to display the correct branding.
         business_profile = db.business_profiles.find_one({"user_id": str(user_id)})
         if business_profile:
             user_dict["business_profile"] = {
@@ -75,12 +76,33 @@ def create(db: Database, obj_in: UserCreate) -> UserInDB:
     user_data["created_at"] = datetime.now(timezone.utc)
     
     result = db.users.insert_one(user_data)
-    new_user = db.users.find_one({"_id": result.inserted_id})
+    new_user_dict = db.users.find_one({"_id": result.inserted_id})
     
-    if not new_user:
+    if not new_user_dict:
         raise HTTPException(status_code=500, detail="User creation failed")
+    
+    new_user = UserInDB.model_validate(new_user_dict)
+
+    # --- PHOENIX: SINGLETON WORKSPACE CREATION ---
+    try:
+        logger.info(f"Creating default workspace for new user {new_user.id}")
+        workspace_name = f"{new_user.full_name}'s Workspace" if new_user.full_name else "My Workspace"
+        default_case = CaseCreate(
+            title=workspace_name,
+            case_name=workspace_name,
+            case_number=f"WS-{str(new_user.id)[-6:]}",
+            status="Active",
+            clientName=new_user.full_name or new_user.username,
+            clientEmail=new_user.email
+        )
+        case_service.create_case(db=db, case_in=default_case, owner=new_user)
+        logger.info(f"Successfully created default workspace for user {new_user.id}")
+    except Exception as e:
+        # Log the error but don't fail the user creation process
+        logger.error(f"FATAL: Could not create default workspace for user {new_user.id}. Error: {e}")
+    # --- END PHOENIX BLOCK ---
         
-    return UserInDB.model_validate(new_user)
+    return new_user
 
 def update_last_login(db: Database, user_id: str):
     try:

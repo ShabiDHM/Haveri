@@ -1,8 +1,8 @@
 # FILE: backend/app/models/case.py
-# PHOENIX PROTOCOL - CHAT PERSISTENCE FIX
-# 1. MOVED: 'ChatMessage' class to top-level so it can be referenced.
-# 2. ADDED: 'chat_history' field to 'CaseOut' schema.
-# 3. RESULT: Chat messages are now correctly serialized and sent to the frontend on refresh.
+# PHOENIX PROTOCOL - CASE MODEL V2.1 (SINGLETON WORKSPACE SUPPORT)
+# 1. ADDED: 'case_name' field to CaseBase and CaseCreate.
+# 2. REASON: Required by user_service to create the default workspace with a specific name.
+# 3. STATUS: Model is now consistent with new backend logic.
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Dict, Any
@@ -15,7 +15,7 @@ class ClientData(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
 
-# Chat Message Model (Moved up for visibility)
+# Chat Message Model
 class ChatMessage(BaseModel):
     role: str 
     content: str
@@ -25,11 +25,11 @@ class ChatMessage(BaseModel):
 class CaseBase(BaseModel):
     case_number: Optional[str] = None 
     title: str
+    case_name: Optional[str] = None # PHOENIX: Added for explicit naming
     description: Optional[str] = None
     status: str = "OPEN"
     client_id: Optional[PyObjectId] = None 
     
-    # Optional metadata
     court_name: Optional[str] = None
     judge_name: Optional[str] = None
     opponent_name: Optional[str] = None
@@ -71,11 +71,8 @@ class CaseOut(CaseBase):
     updated_at: datetime
     
     client: Optional[ClientData] = None
-
-    # PHOENIX FIX: Expose chat history to frontend
     chat_history: Optional[List[ChatMessage]] = []
 
-    # Explicitly exposed counters
     document_count: int = 0
     alert_count: int = 0
     event_count: int = 0

@@ -1,7 +1,8 @@
 # FILE: backend/app/models/user.py
-# PHOENIX PROTOCOL - USER MODEL V5.0 (BRANDING SUPPORT)
-# 1. FEATURE: Added 'organization_name' and 'logo' fields for White-Labeling.
-# 2. SECURITY: Fields are optional and default to None.
+# PHOENIX PROTOCOL - USER MODEL V5.1 (SINGLETON WORKSPACE SUPPORT)
+# 1. ADDED: 'full_name' field to UserBase and UserCreate.
+# 2. REASON: Required for automatically naming the default user workspace on registration.
+# 3. STATUS: Model is now consistent with new backend logic.
 
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import Optional
@@ -12,11 +13,11 @@ from .common import PyObjectId
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
-    role: str = "STANDARD" # USER, ADMIN, LAWYER
-    subscription_status: str = "TRIAL" # ACTIVE, INACTIVE, TRIAL, EXPIRED
+    full_name: Optional[str] = None # PHOENIX: Added for workspace naming
+    role: str = "STANDARD" 
+    subscription_status: str = "TRIAL"
     status: str = "inactive"
     
-    # PHOENIX NEW: Branding Fields
     organization_name: Optional[str] = None
     logo: Optional[str] = None 
 
@@ -27,6 +28,7 @@ class UserCreate(UserBase):
 # Model for updating user details
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
+    full_name: Optional[str] = None # PHOENIX: Added for updates
     password: Optional[str] = None
     role: Optional[str] = None
     subscription_status: Optional[str] = None

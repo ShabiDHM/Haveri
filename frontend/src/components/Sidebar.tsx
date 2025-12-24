@@ -1,10 +1,10 @@
 // FILE: src/components/Sidebar.tsx
-// PHOENIX PROTOCOL - SIDEBAR V1.8 (DYNAMIC BRANDING)
-// 1. MODIFIED: Consumes 'businessProfile' from the updated AuthContext.
-// 2. LOGIC: Passes the dynamic firm_name and logo_url to the BrandLogo component.
-// 3. STATUS: Branding is now driven by user context.
+// PHOENIX PROTOCOL - SIDEBAR V2.1 (FALLBACK ROUTE FIX)
+// 1. MODIFIED: The fallback path for "Haveri AI" is now '/business'.
+// 2. REASON: Ensures new users with no projects are sent to the new home base, not the deprecated dashboard.
+// 3. STATUS: Routing logic is now fully consistent with the "Singleton Workspace" model.
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
     Calendar, FileText, MessageSquare, 
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import { apiService } from '../services/api';
 import BrandLogo from './BrandLogo';
 
 interface SidebarProps {
@@ -21,10 +22,29 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { t } = useTranslation();
-  const { user, logout, businessProfile } = useAuth(); // PHOENIX: Get businessProfile from context
+  const { user, logout, businessProfile } = useAuth();
   const location = useLocation();
 
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPrimaryWorkspace = async () => {
+      try {
+        const projects = await apiService.getCases();
+        if (projects && projects.length > 0) {
+          setWorkspaceId(projects[0].id);
+        }
+      } catch (error) {
+        console.error("Could not fetch primary workspace:", error);
+      }
+    };
+    fetchPrimaryWorkspace();
+  }, []);
+
   const getNavItems = () => {
+    // PHOENIX: The fallback path is now '/business', the new application home.
+    const haveriAIPath = workspaceId ? `/cases/${workspaceId}` : '/business';
+
     const baseItems = [
       { 
         icon: Building2, 
@@ -34,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       { 
         icon: Brain,
         label: t('sidebar.haveri_ai', 'Haveri AI'), 
-        path: '/dashboard' 
+        path: haveriAIPath
       },
       { 
         icon: Calendar, 
@@ -87,7 +107,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       `}>
           
           <div className="h-16 flex items-center px-6 border-b border-glass-edge bg-background-light/10 flex-shrink-0">
-            {/* PHOENIX: Pass dynamic props to BrandLogo */}
             <BrandLogo 
               firmName={businessProfile?.firm_name}
               logoUrl={businessProfile?.logo_url}
@@ -97,11 +116,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto custom-scrollbar min-h-0">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              // PHOENIX: Enhanced isActive check to correctly highlight dynamic workspace link.
+              const isActive = (location.pathname.startsWith('/cases') && item.path.startsWith('/cases')) || location.pathname === item.path;
               
               return (
                 <NavLink
-                  key={item.path}
+                  key={item.label}
                   to={item.path}
                   onClick={() => setIsOpen(false)}
                   className={`
