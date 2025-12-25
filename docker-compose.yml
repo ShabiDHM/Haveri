@@ -1,13 +1,5 @@
 # FILE: docker-compose.yml
-# PHOENIX PROTOCOL - INFRASTRUCTURE V2.3 (PERSISTENT AI CACHE)
-# 1. FIX: Added a named volume 'huggingface_cache' to the 'ai-core-service'.
-# 2. REASON: This makes the downloaded AI models persistent. They will now survive container rebuilds (`--build`), preventing the need to re-download them and solving the startup failure.
-# 3. STATUS: System is now fully resilient to restarts and rebuilds.
-
 services:
-  # -------------------------------------------------------
-  # JURISTI AI CORE (Embeddings, NER, Categorization)
-  # -------------------------------------------------------
   ai-core-service:
     build: 
       context: ./ai-core-service
@@ -15,7 +7,6 @@ services:
     restart: unless-stopped
     ports:
       - "8010:8000"
-    # PHOENIX FIX: Added a persistent volume for the HuggingFace cache
     volumes:
       - huggingface_cache:/root/.cache/huggingface
     env_file: ./.env
@@ -26,11 +17,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-      start_period: 300s
+      start_period: 900s
 
-  # -------------------------------------------------------
-  # LOCAL LLM ENGINE (The Free Brain)
-  # -------------------------------------------------------
   local-llm:
     image: ollama/ollama:latest
     restart: unless-stopped
@@ -39,9 +27,6 @@ services:
     networks:
       - phoenix_net
 
-  # -------------------------------------------------------
-  # INFRASTRUCTURE & BACKEND
-  # -------------------------------------------------------
   caddy:
     image: caddy:latest
     restart: unless-stopped
@@ -89,9 +74,6 @@ services:
       mongo: { condition: service_healthy }
       backend: { condition: service_started }
 
-  # -------------------------------------------------------
-  # DATABASE & CACHE
-  # -------------------------------------------------------
   mongo:
     image: mongo:6.0
     restart: unless-stopped
@@ -121,7 +103,6 @@ services:
       - chroma_data:/chroma/chroma
     depends_on: [backend]
 
-  # --- GRAPH DATABASE (Neo4j) ---
   neo4j:
     image: neo4j:5
     restart: unless-stopped
@@ -132,7 +113,6 @@ services:
       - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-password}
       - NEO4J_PLUGINS=["apoc"]
       - NEO4J_dbms_security_procedures_unrestricted=apoc.*
-      # STRICT RAM LIMITS
       - NEO4J_dbms_memory_heap_initial__size=1G
       - NEO4J_dbms_memory_heap_max__size=2G
       - NEO4J_dbms_memory_pagecache_size=1G
@@ -155,7 +135,6 @@ volumes:
   ollama_data: {}
   neo4j_data: {}
   neo4j_logs: {}
-  # PHOENIX FIX: Define the new persistent volume
   huggingface_cache: {}
 
 networks:
