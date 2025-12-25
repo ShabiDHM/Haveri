@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class NERManager:
     _instance = None
-    nlp: Any = None
+    nlp: Any = None # Spacy language object
     model_name: str = ""
 
     def __new__(cls):
@@ -18,6 +18,7 @@ class NERManager:
         return cls._instance
 
     def load_model(self):
+        """Loads the Spacy NER model into memory."""
         if self.nlp is None:
             logger.info(f"📥 Loading NER Model: {self.model_name}...")
             try:
@@ -25,9 +26,15 @@ class NERManager:
                 logger.info(f"✅ NER Model '{self.model_name}' loaded successfully.")
             except Exception as e:
                 logger.critical(f"❌ Failed to load NER model: {e}")
+                # We don't raise here to prevent blocking the whole service, 
+                # but specific NER requests will fail.
                 self.nlp = None
 
     def extract_entities(self, text: str) -> List[Dict[str, str]]:
+        """
+        Extracts named entities from the text.
+        """
+        # 1. Ensure model is loaded
         if self.nlp is None:
             self.load_model()
             
@@ -36,6 +43,7 @@ class NERManager:
 
         try:
             doc = self.nlp(text)
+            # Convert Spacy entities to our standard format
             entities = [{"text": ent.text, "label": ent.label_} for ent in doc.ents]
             return entities
             
