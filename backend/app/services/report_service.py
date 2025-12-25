@@ -1,7 +1,9 @@
 # FILE: backend/app/services/report_service.py
-# PHOENIX PROTOCOL - REPORT SERVICE V4.3 (LABEL REDUNDANCY FIX)
-# 1. FIX: Changed "invoice_num" translation from "Fatura #" to "Nr." to avoid "Fatura # Faktura-..." redundancy.
-# 2. STATUS: Production Ready.
+# PHOENIX PROTOCOL - REPORT SERVICE V5.0 (SYMMETRY & POLISH)
+# 1. UI: Implemented "Symmetrical Header" layout (Logo/Firm Left, Meta Right).
+# 2. UI: Added dedicated "BILL TO" section with visual separation.
+# 3. FIX: Corrected label redundancy (Fatura # -> Nr.).
+# 4. STATUS: Production Ready.
 
 import io
 import os
@@ -15,8 +17,8 @@ from reportlab.lib.units import mm
 from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer, Table, TableStyle, Flowable
 from reportlab.platypus import Image as ReportLabImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.colors import HexColor, white
-from reportlab.lib.enums import TA_RIGHT
+from reportlab.lib.colors import HexColor, white, black
+from reportlab.lib.enums import TA_RIGHT, TA_LEFT, TA_CENTER
 from pymongo.database import Database
 from typing import List, Optional
 from bson import ObjectId
@@ -35,26 +37,35 @@ COLOR_BORDER = HexColor("#E5E7EB")
 BRAND_COLOR_DEFAULT = "#4f46e5"
 
 STYLES = getSampleStyleSheet()
-STYLES.add(ParagraphStyle(name='H1', parent=STYLES['h1'], fontSize=22, textColor=COLOR_PRIMARY_TEXT, alignment=TA_RIGHT, fontName='Helvetica-Bold'))
+
+# Typography Hierarchy
+STYLES.add(ParagraphStyle(name='InvoiceTitle', parent=STYLES['Heading1'], fontSize=24, textColor=COLOR_PRIMARY_TEXT, alignment=TA_RIGHT, fontName='Helvetica-Bold', spaceAfter=2))
 STYLES.add(ParagraphStyle(name='MetaLabel', parent=STYLES['Normal'], fontSize=8, textColor=COLOR_SECONDARY_TEXT, alignment=TA_RIGHT))
-STYLES.add(ParagraphStyle(name='MetaValue', parent=STYLES['Normal'], fontSize=10, textColor=COLOR_PRIMARY_TEXT, alignment=TA_RIGHT, spaceBefore=2))
-STYLES.add(ParagraphStyle(name='AddressLabel', parent=STYLES['Normal'], fontName='Helvetica-Bold', fontSize=10, textColor=COLOR_PRIMARY_TEXT, spaceBottom=6))
-STYLES.add(ParagraphStyle(name='AddressText', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_SECONDARY_TEXT, leading=14))
+STYLES.add(ParagraphStyle(name='MetaValue', parent=STYLES['Normal'], fontSize=10, textColor=COLOR_PRIMARY_TEXT, alignment=TA_RIGHT, fontName='Helvetica-Bold'))
+
+STYLES.add(ParagraphStyle(name='FirmName', parent=STYLES['Normal'], fontSize=12, textColor=COLOR_PRIMARY_TEXT, fontName='Helvetica-Bold', spaceAfter=2, alignment=TA_LEFT))
+STYLES.add(ParagraphStyle(name='FirmMeta', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_SECONDARY_TEXT, leading=12, alignment=TA_LEFT))
+
+STYLES.add(ParagraphStyle(name='ClientLabel', parent=STYLES['Normal'], fontSize=8, textColor=COLOR_SECONDARY_TEXT, fontName='Helvetica-Bold', spaceAfter=2, uppercase=True))
+STYLES.add(ParagraphStyle(name='ClientName', parent=STYLES['Normal'], fontSize=12, textColor=COLOR_PRIMARY_TEXT, fontName='Helvetica-Bold', spaceAfter=2))
+STYLES.add(ParagraphStyle(name='ClientMeta', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_PRIMARY_TEXT, leading=12))
+
 STYLES.add(ParagraphStyle(name='TableHeader', parent=STYLES['Normal'], fontName='Helvetica-Bold', fontSize=9, textColor=white))
-STYLES.add(ParagraphStyle(name='TableCell', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_PRIMARY_TEXT))
+STYLES.add(ParagraphStyle(name='TableCell', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_PRIMARY_TEXT, leading=12))
 STYLES.add(ParagraphStyle(name='TableCellRight', parent=STYLES['TableCell'], alignment=TA_RIGHT))
-STYLES.add(ParagraphStyle(name='TotalLabel', parent=STYLES['TableCellRight']))
-STYLES.add(ParagraphStyle(name='TotalValue', parent=STYLES['TableCellRight'], fontName='Helvetica-Bold'))
-STYLES.add(ParagraphStyle(name='NotesLabel', parent=STYLES['AddressLabel'], spaceBefore=10))
-STYLES.add(ParagraphStyle(name='FirmName', parent=STYLES['h3'], alignment=TA_RIGHT, fontSize=14, spaceAfter=4, textColor=COLOR_PRIMARY_TEXT))
-STYLES.add(ParagraphStyle(name='FirmMeta', parent=STYLES['Normal'], alignment=TA_RIGHT, fontSize=9, textColor=COLOR_SECONDARY_TEXT, leading=12))
+
+STYLES.add(ParagraphStyle(name='TotalLabel', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_SECONDARY_TEXT, alignment=TA_RIGHT))
+STYLES.add(ParagraphStyle(name='TotalValue', parent=STYLES['Normal'], fontSize=11, textColor=COLOR_PRIMARY_TEXT, alignment=TA_RIGHT, fontName='Helvetica-Bold'))
+
+STYLES.add(ParagraphStyle(name='NotesHeader', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_PRIMARY_TEXT, fontName='Helvetica-Bold', spaceAfter=2))
+STYLES.add(ParagraphStyle(name='NotesText', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_SECONDARY_TEXT, leading=12))
 
 # --- TRANSLATIONS ---
 TRANSLATIONS = {
     "sq": {
         "invoice_title": "FATURA", "invoice_num": "Nr.", "date_issue": "Data e Lëshimit", "date_due": "Afati i Pagesës",
-        "status": "Statusi", "from": "Nga", "to": "Për", "desc": "Përshkrimi", "qty": "Sasia", "price": "Çmimi",
-        "total": "Totali", "subtotal": "Nëntotali", "tax": "TVSH (18%)", "notes": "Shënime",
+        "status": "Statusi", "bill_to": "FATURUAR PËR", "from": "Nga", "to": "Për", "desc": "Përshkrimi", "qty": "Sasia", "price": "Çmimi",
+        "total": "TOTALI", "subtotal": "Nëntotali", "tax": "TVSH (18%)", "notes": "Shënime",
         "footer_gen": "Dokument i gjeneruar elektronikisht nga", "page": "Faqe", 
         "lbl_address": "Adresa:", "lbl_tel": "Tel:", "lbl_email": "Email:", "lbl_web": "Web:", "lbl_nui": "NUI:"
     }
@@ -147,8 +158,11 @@ def _fetch_logo_buffer(url: Optional[str], storage_key: Optional[str] = None) ->
 
 def _header_footer_invoice(c: canvas.Canvas, doc: BaseDocTemplate, branding: dict, lang: str):
     c.saveState()
+    # Bottom Border Line
     c.setStrokeColor(COLOR_BORDER)
     c.line(15 * mm, 15 * mm, 195 * mm, 15 * mm)
+    
+    # Footer Text
     c.setFont('Helvetica', 8)
     c.setFillColor(COLOR_SECONDARY_TEXT)
     firm = branding.get('firm_name', 'Juristi.tech')
@@ -194,6 +208,9 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
     brand_color = HexColor(branding.get("branding_color", BRAND_COLOR_DEFAULT))
     Story: List[Flowable] = []
 
+    # --- TOP HEADER: LOGO/FIRM (Left) vs META (Right) ---
+    
+    # 1. Left Side: Logo + Firm Details
     logo_buffer = _fetch_logo_buffer(branding.get("logo_url"), branding.get("logo_storage_key"))
     logo_obj = Spacer(0, 0)
     if logo_buffer:
@@ -202,65 +219,68 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
             iw, ih = p_img.size
             aspect = ih / float(iw)
             w = 40 * mm; h = w * aspect
-            if h > 30 * mm: h = 30 * mm; w = h / aspect
+            if h > 25 * mm: h = 25 * mm; w = h / aspect
             logo_buffer.seek(0)
             logo_obj = ReportLabImage(logo_buffer, width=w, height=h); logo_obj.hAlign = 'LEFT'
         except: pass
 
-    firm_content: List[Flowable] = []
+    firm_content: List[Flowable] = [logo_obj]
     if branding.get("firm_name"): firm_content.append(Paragraph(str(branding.get("firm_name")), STYLES['FirmName']))
     
-    for key, label_key in [("address", "lbl_address"), ("nui", "lbl_nui"), ("email_public", "lbl_email"), ("phone", "lbl_tel"), ("website", "lbl_web")]:
-        val = branding.get(key)
-        if val: firm_content.append(Paragraph(f"<b>{_get_text(label_key, lang)}</b> {val}", STYLES['FirmMeta']))
+    firm_meta_text = []
+    if branding.get("address"): firm_meta_text.append(branding.get("address"))
+    if branding.get("nui"): firm_meta_text.append(f"NUI: {branding.get('nui')}")
+    if branding.get("email_public"): firm_meta_text.append(branding.get("email_public"))
+    if branding.get("phone"): firm_meta_text.append(branding.get("phone"))
+    
+    if firm_meta_text:
+        firm_content.append(Paragraph("<br/>".join(firm_meta_text), STYLES['FirmMeta']))
 
-    Story.append(Table([[logo_obj, firm_content]], colWidths=[100*mm, 80*mm], style=[('VALIGN', (0,0), (-1,-1), 'TOP')]))
-    Story.append(Spacer(1, 15*mm))
-
-    meta_data = [
+    # 2. Right Side: Invoice Title + Dates
+    meta_table_data = [
         [Paragraph(f"{_get_text('invoice_num', lang)} {invoice.invoice_number}", STYLES['MetaValue'])],
-        [Spacer(1, 3*mm)],
+        [Spacer(1, 4*mm)],
         [Paragraph(_get_text('date_issue', lang), STYLES['MetaLabel'])], [Paragraph(invoice.issue_date.strftime("%d/%m/%Y"), STYLES['MetaValue'])],
         [Spacer(1, 2*mm)],
         [Paragraph(_get_text('date_due', lang), STYLES['MetaLabel'])], [Paragraph(invoice.due_date.strftime("%d/%m/%Y"), STYLES['MetaValue'])],
     ]
-    Story.append(Table([[Paragraph(_get_text('invoice_title', lang), STYLES['H1']), Table(meta_data, colWidths=[80*mm], style=[('ALIGN', (0,0), (-1,-1), 'RIGHT')])]], colWidths=[100*mm, 80*mm], style=[('VALIGN', (0,0), (-1,-1), 'TOP')]))
+    meta_table = Table(meta_table_data, colWidths=[80*mm], style=[('ALIGN', (0,0), (-1,-1), 'RIGHT')])
+
+    # Combine Header
+    header_table = Table([
+        [
+            Table([[c] for c in firm_content], style=[('LEFTPADDING', (0,0), (-1,-1), 0)]), # Left Cell
+            Table([[Paragraph(_get_text('invoice_title', lang), STYLES['InvoiceTitle'])], [meta_table]], style=[('ALIGN', (0,0), (-1,-1), 'RIGHT')]) # Right Cell
+        ]
+    ], colWidths=[90*mm, 90*mm])
+    header_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
+    
+    Story.append(header_table)
     Story.append(Spacer(1, 15*mm))
 
-    # --- CLIENT DETAILS BLOCK ---
-    client_content: List[Flowable] = []
-    client_content.append(Paragraph(f"<b>{invoice.client_name}</b>", STYLES['AddressText']))
+    # --- CLIENT SECTION ---
+    Story.append(Paragraph(_get_text('bill_to', lang), STYLES['ClientLabel']))
+    Story.append(Paragraph(invoice.client_name, STYLES['ClientName']))
     
+    client_meta_text = []
     c_address = getattr(invoice, 'client_address', '')
     c_city = getattr(invoice, 'client_city', '')
     full_address = c_address
-    if c_city:
-        full_address = f"{c_address}, {c_city}" if c_address else c_city
+    if c_city: full_address = f"{c_address}, {c_city}" if c_address else c_city
+    if full_address: client_meta_text.append(full_address)
     
-    if full_address:
-        client_content.append(Paragraph(f"<b>{_get_text('lbl_address', lang)}</b> {full_address}", STYLES['AddressText']))
-
-    c_tax_id = getattr(invoice, 'client_tax_id', '')
-    if c_tax_id:
-        client_content.append(Paragraph(f"<b>{_get_text('lbl_nui', lang)}</b> {c_tax_id}", STYLES['AddressText']))
-
+    c_tax = getattr(invoice, 'client_tax_id', '')
+    if c_tax: client_meta_text.append(f"NUI: {c_tax}")
+    
     c_email = getattr(invoice, 'client_email', '')
-    if c_email:
-        client_content.append(Paragraph(f"<b>{_get_text('lbl_email', lang)}</b> {c_email}", STYLES['AddressText']))
+    if c_email: client_meta_text.append(c_email)
 
-    c_phone = getattr(invoice, 'client_phone', '')
-    if c_phone:
-        client_content.append(Paragraph(f"<b>{_get_text('lbl_tel', lang)}</b> {c_phone}", STYLES['AddressText']))
+    if client_meta_text:
+        Story.append(Paragraph("<br/>".join(client_meta_text), STYLES['ClientMeta']))
 
-    c_website = getattr(invoice, 'client_website', '')
-    if c_website:
-        client_content.append(Paragraph(f"<b>{_get_text('lbl_web', lang)}</b> {c_website}", STYLES['AddressText']))
-
-    t_addr = Table([[Paragraph(_get_text('to', lang), STYLES['AddressLabel']), client_content]], colWidths=[20*mm, 160*mm])
-    t_addr.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
-    Story.append(t_addr)
     Story.append(Spacer(1, 10*mm))
 
+    # --- ITEMS TABLE ---
     headers = [_get_text('desc', lang), _get_text('qty', lang), _get_text('price', lang), _get_text('total', lang)]
     data = [[Paragraph(h, STYLES['TableHeader']) for h in headers]]
     for item in invoice.items:
@@ -270,29 +290,38 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
             Paragraph(f"{item.unit_price:,.2f} EUR", STYLES['TableCellRight']),
             Paragraph(f"{item.total:,.2f} EUR", STYLES['TableCellRight']),
         ])
-    t_items = Table(data, colWidths=[95*mm, 20*mm, 30*mm, 35*mm])
+    
+    t_items = Table(data, colWidths=[90*mm, 20*mm, 30*mm, 40*mm])
     t_items.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), brand_color),
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('LINEBELOW', (0,-1), (-1,-1), 1, COLOR_BORDER),
-        ('TOPPADDING', (0,0), (-1,-1), 8),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+        ('LINEBELOW', (0,-1), (-1,-1), 0.5, COLOR_BORDER),
+        ('TOPPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
         ('ROWBACKGROUNDS', (0,1), (-1,-1), [HexColor("#FFFFFF"), HexColor("#F9FAFB")])
     ]))
     Story.append(t_items)
 
+    # --- TOTALS SECTION ---
     totals_data = [
         [Paragraph(_get_text('subtotal', lang), STYLES['TotalLabel']), Paragraph(f"{invoice.subtotal:,.2f} EUR", STYLES['TotalLabel'])],
         [Paragraph(_get_text('tax', lang), STYLES['TotalLabel']), Paragraph(f"{invoice.tax_amount:,.2f} EUR", STYLES['TotalLabel'])],
-        [Paragraph(f"<b>{_get_text('total', lang)}</b>", STYLES['TotalValue']), Paragraph(f"<b>{invoice.total_amount:,.2f} EUR</b>", STYLES['TotalValue'])],
+        [Paragraph(f"{_get_text('total', lang)}", STYLES['TotalValue']), Paragraph(f"{invoice.total_amount:,.2f} EUR", STYLES['TotalValue'])],
     ]
-    t_totals = Table(totals_data, colWidths=[40*mm, 35*mm], style=[('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LINEABOVE', (0, 2), (1, 2), 1.5, COLOR_PRIMARY_TEXT), ('TOPPADDING', (0, 2), (1, 2), 6)])
-    Story.append(Table([["", t_totals]], colWidths=[110*mm, 75*mm], style=[('ALIGN', (1,0), (1,0), 'RIGHT')]))
+    t_totals = Table(totals_data, colWidths=[50*mm, 40*mm], style=[
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), 
+        ('LINEABOVE', (0, 2), (1, 2), 1, COLOR_BORDER), 
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 2), (1, 2), 8)
+    ])
+    Story.append(Table([["", t_totals]], colWidths=[90*mm, 90*mm], style=[('ALIGN', (1,0), (1,0), 'RIGHT')]))
 
+    # --- FOOTER NOTES ---
     if invoice.notes:
-        Story.append(Spacer(1, 10*mm))
-        Story.append(Paragraph(_get_text('notes', lang), STYLES['NotesLabel']))
-        Story.append(Paragraph(escape(invoice.notes).replace('\n', '<br/>'), STYLES['AddressText']))
+        Story.append(Spacer(1, 15*mm))
+        Story.append(Paragraph(_get_text('notes', lang), STYLES['NotesHeader']))
+        Story.append(Paragraph(escape(invoice.notes).replace('\n', '<br/>'), STYLES['NotesText']))
 
     doc.build(Story)
     buffer.seek(0)
