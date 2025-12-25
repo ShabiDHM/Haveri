@@ -1,14 +1,16 @@
 # FILE: backend/app/services/daily_briefing_service.py
-# PHOENIX PROTOCOL - DAILY BRIEFING AGENT V3.1 (ALERTS ENABLED)
-# 1. UPDATED: Calendar logic now fetches "Today's Events" AND "Upcoming Deadlines" (3 Days).
-# 2. LOGIC: Merges them into a single timeline for the dashboard.
+# PHOENIX PROTOCOL - DAILY BRIEFING AGENT V3.3 (ASYNC TYPING FIX)
+# 1. FIX: Changed 'db' type hint to 'Any' to resolve Pylance errors with Motor async driver.
+# 2. STATUS: Verified against reported 'to_list' attribute errors.
 
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
-from typing import Any as AnyType
+from bson import ObjectId
 
 class DailyBriefingService:
-    def __init__(self, db: AnyType):
+    def __init__(self, db: Any):
+        # We use Any here because we are using Motor (Async), but Pylance 
+        # often confuses it with PyMongo (Sync) if typed strictly as Database.
         self.db = db
 
     async def generate_morning_report(self, user_id: str) -> Dict[str, Any]:
@@ -19,17 +21,19 @@ class DailyBriefingService:
         3. Fetches Agenda + Upcoming Alerts (Calendar).
         4. Calculates Yesterday's Revenue & Top Product.
         """
+        # Ensure user_id is string for consistent handling
+        user_id_str = str(user_id)
         
         # 1. FINANCE CHECK
-        unpaid_invoices = await self._get_unpaid_invoices(user_id)
-        yesterday_revenue = await self._get_yesterday_revenue(user_id)
+        unpaid_invoices = await self._get_unpaid_invoices(user_id_str)
+        yesterday_revenue = await self._get_yesterday_revenue(user_id_str)
         
         # 2. INVENTORY PREDICTION
-        stock_risks = await self._predict_stock_risks(user_id)
-        top_product = await self._get_top_product_yesterday(user_id)
+        stock_risks = await self._predict_stock_risks(user_id_str)
+        top_product = await self._get_top_product_yesterday(user_id_str)
         
         # 3. CALENDAR (Today's Agenda + Urgent Alerts)
-        calendar_data = await self._get_calendar_briefing(user_id)
+        calendar_data = await self._get_calendar_briefing(user_id_str)
 
         return {
             "finance": {
@@ -50,15 +54,22 @@ class DailyBriefingService:
             },
             "meta": {
                 "generated_at": datetime.utcnow(),
-                "agent": "Haveri AI v3.1"
+                "agent": "Haveri AI v3.3"
             }
         }
 
     async def _get_unpaid_invoices(self, user_id: str) -> List[Dict]:
+        # INVOICES use ObjectId for user_id
+        try:
+            user_oid = ObjectId(user_id)
+        except:
+            return []
+
         cursor = self.db.invoices.find({
-            "user_id": user_id,
+            "user_id": user_oid,
             "status": {"$in": ["SENT", "OVERDUE", "PENDING"]}, 
         }).sort("due_date", 1)
+        
         invoices = await cursor.to_list(length=10)
         return [
             {
@@ -71,30 +82,54 @@ class DailyBriefingService:
         ]
 
     async def _get_yesterday_revenue(self, user_id: str) -> float:
+        # TRANSACTIONS use String for user_id
         now = datetime.utcnow()
         start_of_yesterday = datetime(now.year, now.month, now.day) - timedelta(days=1)
         end_of_yesterday = datetime(now.year, now.month, now.day)
+        
         pipeline = [
-            {"$match": {"user_id": user_id, "date": {"$gte": start_of_yesterday, "$lt": end_of_yesterday}, "type": "income"}},
+            {
+                "$match": {
+                    "user_id": str(user_id), # Force String
+                    "date": {"$gte": start_of_yesterday, "$lt": end_of_yesterday},
+                    # We match both 'income' type AND POS transactions which might default to income
+                    "$or": [{"type": "income"}, {"type": "pos"}] 
+                }
+            },
             {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
         ]
+        
         result = await self.db.transactions.aggregate(pipeline).to_list(length=1)
         return float(result[0].get("total", 0.0)) if result else 0.0
 
     async def _get_top_product_yesterday(self, user_id: str) -> str:
+        # TRANSACTIONS use String for user_id
         now = datetime.utcnow()
         start_of_yesterday = datetime(now.year, now.month, now.day) - timedelta(days=1)
         end_of_yesterday = datetime(now.year, now.month, now.day)
+        
         pipeline = [
-            {"$match": {"user_id": user_id, "date": {"$gte": start_of_yesterday, "$lt": end_of_yesterday}, "type": "income"}},
+            {
+                "$match": {
+                    "user_id": str(user_id), # Force String
+                    "date": {"$gte": start_of_yesterday, "$lt": end_of_yesterday},
+                    "$or": [{"type": "income"}, {"type": "pos"}]
+                }
+            },
             {"$group": {"_id": "$description", "count": {"$sum": "$quantity"}}},
-            {"$sort": {"count": -1}}, {"$limit": 1}
+            {"$sort": {"count": -1}}, 
+            {"$limit": 1}
         ]
+        
         result = await self.db.transactions.aggregate(pipeline).to_list(length=1)
-        return str(result[0].get("_id")) if result and result[0].get("_id") else "N/A"
+        # Handle cases where description might be None or missing
+        if result and result[0].get("_id"):
+            return str(result[0].get("_id"))
+        return "N/A"
 
     async def _get_calendar_briefing(self, user_id: str) -> Dict[str, Any]:
         """Fetches Today's Events AND Urgent Deadlines (Next 3 Days)"""
+        # CALENDAR usually uses String for owner_id/user_id in this architecture
         now = datetime.utcnow()
         start_of_day = datetime(now.year, now.month, now.day)
         end_of_day = start_of_day + timedelta(days=1)
@@ -102,14 +137,14 @@ class DailyBriefingService:
 
         # 1. Get Today's Events (All Types)
         cursor_today = self.db.calendar_events.find({
-            "owner_id": user_id, 
+            "owner_id": str(user_id), 
             "start_date": {"$gte": start_of_day, "$lt": end_of_day}
         }).sort("start_date", 1)
         today_events = await cursor_today.to_list(length=10)
 
         # 2. Get Upcoming Urgent Items (Deadlines/Court Dates only)
         cursor_alerts = self.db.calendar_events.find({
-            "owner_id": user_id,
+            "owner_id": str(user_id),
             "start_date": {"$gte": end_of_day, "$lte": three_days_later},
             "event_type": {"$in": ["DEADLINE", "COURT_DATE", "HEARING"]}
         }).sort("start_date", 1)
@@ -144,8 +179,9 @@ class DailyBriefingService:
         }
 
     async def _predict_stock_risks(self, user_id: str) -> List[Dict]:
+        # INVENTORY usually uses String for user_id
         risks = []
-        async for item in self.db.inventory.find({"user_id": user_id}):
+        async for item in self.db.inventory.find({"user_id": str(user_id)}):
             stock = item.get("current_stock", 0.0)
             threshold = item.get("low_stock_threshold", 5.0)
             if stock <= threshold:

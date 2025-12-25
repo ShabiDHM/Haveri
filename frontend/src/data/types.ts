@@ -1,6 +1,6 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES REFACTOR V8.5 (INVENTORY IMPORT)
-// 1. ADDED: 'RecipeImportResult' interface to correctly type the response from the recipe import API endpoint.
+// PHOENIX PROTOCOL - TYPES REFACTOR V8.6 (DAILY BRIEFING MERGE)
+// 1. ADDED: Daily Briefing interfaces (BriefingMeta, FinanceItem, etc.) merged from redundant file.
 // 2. STATUS: Production Ready.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
@@ -43,6 +43,54 @@ export interface PosTransaction {
     total_price: number;
     transaction_date: string;
     payment_method: string;
+}
+
+// --- DAILY BRIEFING TYPES ---
+export interface BriefingMeta {
+    generated_at: string;
+    agent: string;
+}
+
+export interface FinanceBriefingItem {
+    client: string;
+    amount: number;
+    status: string;
+    invoice_number: string;
+}
+
+export interface InventoryBriefingItem {
+    name: string;
+    status: 'CRITICAL' | 'LOW';
+    remaining: number;
+    prediction: string;
+}
+
+export interface CalendarBriefingItem {
+    title: string;
+    time: string; // ISO Date String
+    type: string;
+    location: string;
+    is_alert?: boolean; 
+}
+
+export interface DailyBriefingResponse {
+    finance: {
+        attention_needed: boolean;
+        unpaid_count: number;
+        items: FinanceBriefingItem[];
+        revenue_yesterday: number; 
+    };
+    inventory: {
+        risk_alert: boolean;
+        risk_count: number;
+        items: InventoryBriefingItem[];
+        top_product: string; 
+    };
+    calendar: {
+        event_count: number;
+        items: CalendarBriefingItem[];
+    };
+    meta: BriefingMeta;
 }
 
 export interface LoginRequest { username: string; password: string; }

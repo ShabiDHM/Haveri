@@ -98,7 +98,7 @@
     "getStarted": "Fillo Falas",
     "feature1Title": "Analizë e Sigurt",
     "feature1Desc": "Skanoni dokumente për rreziqe dhe të dhëna kritike.",
-    "feature2Title": "AI Sokratike",
+    "feature2Title": "AI",
     "feature2Desc": "Bisedoni me dokumentet tuaja. Bëni pyetje dhe merrni përgjigje me citime.",
     "feature3Title": "Hartim Inteligjent",
     "feature3Desc": "Krijoni dokumente dhe raporte të personalizuara bazuar në shabllone."
@@ -279,7 +279,6 @@
     "clientName": "Emri i Klientit"
   },
   "daily_briefing": {
-    "agent_name": "Haveri AI Agent",
     "morning_report": "Raporti i Mëngjesit",
     "run_time": "Gjeneruar në 06:00",
     "system_optimal": "Sistemet Optimale",
