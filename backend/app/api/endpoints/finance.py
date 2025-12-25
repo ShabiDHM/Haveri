@@ -1,7 +1,8 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V13.3 (DELETE TRANSACTION)
-# 1. VERIFIED: Added 'delete_transaction' endpoint.
-# 2. STATUS: Production Ready.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V13.4 (SMART ANALYTICS)
+# 1. FIX: Added 'Smart Window' logic to analytics dashboard.
+# 2. BEHAVIOR: If no data exists in the last 30 days, looks back to the last active transaction date.
+# 3. STATUS: Production Ready.
 
 import asyncio
 import json
@@ -94,9 +95,36 @@ async def get_analytics_dashboard(
     db: Any = Depends(get_async_db),
     days: int = 30
 ):
-    end_date = datetime.utcnow()
-    start_date = end_date - timedelta(days=days)
     user_oid = ObjectId(current_user.id)
+    user_id_str = str(current_user.id)
+    
+    # --- SMART WINDOW LOGIC ---
+    # 1. Determine the "Anchor Date" (End Date)
+    # We prefer 'Now'. But if there is no recent data, we look for the Last Active Transaction.
+    anchor_date = datetime.utcnow()
+    
+    # Check if there is ANY activity in the last 30 days
+    check_start = anchor_date - timedelta(days=30)
+    
+    recent_count = await db["transactions"].count_documents({
+        "user_id": user_id_str, 
+        "date": {"$gte": check_start}
+    })
+    
+    # If no recent data, find the absolute last transaction date
+    if recent_count == 0:
+        last_tx = await db["transactions"].find_one(
+            {"user_id": user_id_str},
+            sort=[("date", pymongo.DESCENDING)]
+        )
+        if last_tx and "date" in last_tx:
+            # Shift the anchor to the last active day
+            anchor_date = last_tx["date"]
+            # Add 23:59:59 to capture that full day
+            anchor_date = anchor_date.replace(hour=23, minute=59, second=59)
+
+    end_date = anchor_date
+    start_date = end_date - timedelta(days=days)
 
     # 1. Manual Invoices (Profit = Revenue for services)
     inv_pipeline = [
