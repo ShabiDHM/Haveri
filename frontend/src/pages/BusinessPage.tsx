@@ -1,7 +1,8 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - BUSINESS PAGE V11.1 (COMPONENT DECOUPLED)
-// 1. REFACTORED: DailyBriefingTab logic moved to dedicated component.
-// 2. CLEANUP: Removed inline placeholder code.
+// PHOENIX PROTOCOL - BUSINESS PAGE V16.0 (LOCALIZATION FIX)
+// 1. LOCALE: Updated welcome message key to 'business.welcome' with Albanian fallback "Mirësevini {{name}}".
+// 2. UI: Adjusted mobile label fallbacks (Ditor -> Ditore) for consistency.
+// 3. STATUS: Production Ready.
 
 import React, { useState } from 'react';
 import { Building2, FileText, FolderOpen, Package, LayoutDashboard } from 'lucide-react';
@@ -11,7 +12,7 @@ import { ProfileTab } from '../components/business/ProfileTab';
 import { FinanceTab } from '../components/business/FinanceTab';
 import { ArchiveTab } from '../components/business/ArchiveTab';
 import { InventoryTab } from '../components/business/InventoryTab';
-import { DailyBriefingTab } from '../components/business/DailyBriefingTab'; // Imported
+import { DailyBriefingTab } from '../components/business/DailyBriefingTab';
 
 type ActiveTab = 'briefing' | 'finance' | 'inventory' | 'archive' | 'profile';
 
@@ -49,9 +50,9 @@ const BusinessPage: React.FC = () => {
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-10 gap-4 sm:gap-6">
         <div>
-            {/* Dynamic Welcome Message */}
+            {/* Dynamic Welcome Message with Albanian Fallback */}
             <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                {t('dashboard.welcome', { name: capitalize(user?.username) })}
+                {t('business.welcome', 'Mirësevini {{name}}', { name: capitalize(user?.username) })}
             </h1>
             {/* Context Label */}
             <p className="text-gray-400 text-sm sm:text-base">
@@ -69,7 +70,7 @@ const BusinessPage: React.FC = () => {
             >
                 <LayoutDashboard size={16} className="sm:w-[18px] sm:h-[18px]" />
                 <span className="hidden xs:inline truncate">{t('business.briefing', 'Briefing')}</span>
-                <span className="xs:hidden">{t('business.briefing_short', 'Ditor')}</span>
+                <span className="xs:hidden">{t('business.briefing_short', 'Ditore')}</span>
             </button>
 
             {/* 2. FINANCES */}
