@@ -1,5 +1,5 @@
 # FILE: ai-core-service/app/services/embedding_manager.py
-# PHOENIX PROTOCOL - REVERT TO ORIGINAL FOR FILE COPY
+# PHOENIX PROTOCOL - EMBEDDING MANAGER V2.1 (OFFLINE-FIRST FIX)
 
 import logging
 from typing import Optional, Any
@@ -8,6 +8,8 @@ from config import settings
 from langdetect import detect, LangDetectException
 
 logger = logging.getLogger(__name__)
+
+OFFLINE_EMBEDDING_MODEL_PATH = "/root/.cache/huggingface/hub/models--sentence-transformers--paraphrase-multilingual-mpnet-base-v2/snapshots/4328cf26390c98c5e3c738b4460a05b95f4911f5"
 
 class EmbeddingManager:
     _instance = None
@@ -22,14 +24,14 @@ class EmbeddingManager:
         return cls._instance
 
     def load_model(self):
-        """Loads the embedding model into memory."""
+        """Loads the embedding model into memory from a guaranteed offline path."""
         if self.model is None:
-            logger.info(f"📥 Loading Embedding Model: {self.model_name}...")
+            logger.info(f"📥 Loading Embedding Model from OFFLINE path: {self.model_name}...")
             try:
-                self.model = SentenceTransformer(self.model_name)
+                self.model = SentenceTransformer(OFFLINE_EMBEDDING_MODEL_PATH)
                 logger.info("✅ Embedding Model loaded successfully.")
             except Exception as e:
-                logger.error(f"❌ Failed to load embedding model: {e}")
+                logger.error(f"❌ Failed to load embedding model from offline path: {e}")
                 raise e
 
     def generate_embedding(self, text: str, language: Optional[str] = "standard"):
