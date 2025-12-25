@@ -1,8 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V15.1 (LINT FIX)
-// 1. FIX: Restored 'openingDocId' usage in grouped rows to fix TypeScript warning.
-// 2. UX: Clicking 'View' inside a batch now correctly shows a loading spinner.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - FINANCE TAB V15.4 (AUTO-REFRESH ANALYTICS)
+// 1. FEATURE: Added 'refreshAnalytics' helper.
+// 2. LOGIC: Triggers a silent update of Dashboard Numbers (Income/Expense/Profit) after any Create/Update/Delete action.
+// 3. RESULT: Cards update automatically without page refresh.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -159,6 +159,16 @@ export const FinanceTab: React.FC = () => {
     const [expenseReceipt, setExpenseReceipt] = useState<File | null>(null);
     const receiptInputRef = useRef<HTMLInputElement>(null);
 
+    // --- NEW: Silent Analytics Refresh Helper ---
+    const refreshAnalytics = async () => {
+        try {
+            const analytics = await apiService.getAnalyticsDashboard(30);
+            setAnalyticsData(analytics);
+        } catch (e) {
+            console.error("Failed to refresh analytics:", e);
+        }
+    };
+
     const loadInitialData = async () => {
         setLoading(true);
         try {
@@ -226,7 +236,7 @@ export const FinanceTab: React.FC = () => {
                 result.push({
                     type: 'group',
                     date: txDate,
-                    groupType: tx.type, // 'invoice' | 'expense' | 'pos'
+                    groupType: tx.type, 
                     totalAmount: tx.amount,
                     count: 1,
                     items: [tx]
@@ -255,24 +265,82 @@ export const FinanceTab: React.FC = () => {
     const addLineItem = () => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0 }]);
     const removeLineItem = (i: number) => lineItems.length > 1 && setLineItems(lineItems.filter((_, idx) => idx !== i));
     const updateLineItem = (i: number, f: keyof InvoiceItem, v: any) => { const n = [...lineItems]; n[i] = { ...n[i], [f]: v }; n[i].total = n[i].quantity * n[i].unit_price; setLineItems(n); };
+    
     const handleEditInvoice = (invoice: Invoice) => { setEditingInvoiceId(invoice.id); setNewInvoice({ client_name: invoice.client_name, client_email: invoice.client_email || '', client_address: invoice.client_address || '', client_phone: (invoice as any).client_phone || '', client_city: (invoice as any).client_city || '', client_tax_id: (invoice as any).client_tax_id || '', client_website: (invoice as any).client_website || '', tax_rate: invoice.tax_rate, notes: invoice.notes || '', status: invoice.status }); setIncludeVat(invoice.tax_rate > 0); setLineItems(invoice.items); setShowInvoiceModal(true); };
-    const handleCreateOrUpdateInvoice = async (e: React.FormEvent) => { e.preventDefault(); try { const payload = { ...newInvoice, items: lineItems, tax_rate: includeVat ? newInvoice.tax_rate : 0 }; if (editingInvoiceId) { const u = await apiService.updateInvoice(editingInvoiceId, payload); setInvoices(invoices.map(i => i.id === editingInvoiceId ? u : i)); } else { const n = await apiService.createInvoice(payload); setInvoices([n, ...invoices]); } closeInvoiceModal(); } catch { alert(t('error.generic')); } };
+    
+    const handleCreateOrUpdateInvoice = async (e: React.FormEvent) => { 
+        e.preventDefault(); 
+        try { 
+            const payload = { ...newInvoice, items: lineItems, tax_rate: includeVat ? newInvoice.tax_rate : 0 }; 
+            if (editingInvoiceId) { 
+                const u = await apiService.updateInvoice(editingInvoiceId, payload); 
+                setInvoices(invoices.map(i => i.id === editingInvoiceId ? u : i)); 
+            } else { 
+                const n = await apiService.createInvoice(payload); 
+                setInvoices([n, ...invoices]); 
+            } 
+            closeInvoiceModal(); 
+            // FIX: Refresh analytics silently
+            await refreshAnalytics();
+        } catch { alert(t('error.generic')); } 
+    };
+    
     const closeInvoiceModal = () => { setShowInvoiceModal(false); setEditingInvoiceId(null); setNewInvoice({ client_name: '', client_email: '', client_phone: '', client_address: '', client_city: '', client_tax_id: '', client_website: '', tax_rate: 18, notes: '', status: 'PAID' }); setIncludeVat(true); setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0 }]); };
-    const deleteInvoice = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await apiService.deleteInvoice(id); setInvoices(invoices.filter(inv => inv.id !== id)); } catch { alert(t('documentsPanel.deleteFailed')); } };
+    
+    const deleteInvoice = async (id: string) => { 
+        if(!window.confirm(t('general.confirmDelete'))) return; 
+        try { 
+            await apiService.deleteInvoice(id); 
+            setInvoices(invoices.filter(inv => inv.id !== id)); 
+            // FIX: Refresh analytics silently
+            await refreshAnalytics();
+        } catch { alert(t('documentsPanel.deleteFailed')); } 
+    };
+    
     const handleViewInvoice = async (invoice: Invoice) => { setOpeningDocId(invoice.id); try { const blob = await apiService.getInvoicePdfBlob(invoice.id, i18n.language || 'sq'); const url = window.URL.createObjectURL(blob); setViewingUrl(url); setViewingDoc({ id: invoice.id, file_name: `${t('finance.invoicePrefix')}${invoice.invoice_number}`, mime_type: 'application/pdf', status: 'READY' } as any); } catch { alert(t('error.generic')); } finally { setOpeningDocId(null); } };
     const downloadInvoice = async (id: string) => { try { await apiService.downloadInvoicePdf(id, i18n.language || 'sq'); } catch { alert(t('error.generic')); } };
     const handleArchiveInvoiceClick = (id: string) => { setSelectedInvoiceId(id); setShowArchiveInvoiceModal(true); };
     const submitArchiveInvoice = async () => { if (!selectedInvoiceId) return; try { await apiService.archiveInvoice(selectedInvoiceId, selectedCaseForInvoice || undefined); alert(t('general.saveSuccess')); setShowArchiveInvoiceModal(false); setSelectedCaseForInvoice(""); } catch { alert(t('error.generic')); } };
     const handleEditExpense = (expense: Expense) => { setEditingExpenseId(expense.id); setNewExpense({ category: expense.category, amount: expense.amount, description: expense.description || '', date: expense.date }); setExpenseDate(new Date(expense.date)); setShowExpenseModal(true); };
-    const handleCreateOrUpdateExpense = async (e: React.FormEvent) => { e.preventDefault(); try { const payload = { ...newExpense, date: expenseDate ? expenseDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0] }; let s: Expense; if (editingExpenseId) { s = await apiService.updateExpense(editingExpenseId, payload); setExpenses(expenses.map(exp => exp.id === editingExpenseId ? s : exp)); } else { s = await apiService.createExpense(payload); setExpenses([s, ...expenses]); } if (expenseReceipt && s.id) { await apiService.uploadExpenseReceipt(s.id, expenseReceipt); const f = { ...s, receipt_url: "PENDING_REFRESH" }; setExpenses(prev => prev.map(exp => exp.id === f.id ? f : exp)); } closeExpenseModal(); } catch { alert(t('error.generic')); } };
+    
+    const handleCreateOrUpdateExpense = async (e: React.FormEvent) => { 
+        e.preventDefault(); 
+        try { 
+            const payload = { ...newExpense, date: expenseDate ? expenseDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0] }; 
+            let s: Expense; 
+            if (editingExpenseId) { 
+                s = await apiService.updateExpense(editingExpenseId, payload); 
+                setExpenses(expenses.map(exp => exp.id === editingExpenseId ? s : exp)); 
+            } else { 
+                s = await apiService.createExpense(payload); 
+                setExpenses([s, ...expenses]); 
+            } 
+            if (expenseReceipt && s.id) { await apiService.uploadExpenseReceipt(s.id, expenseReceipt); const f = { ...s, receipt_url: "PENDING_REFRESH" }; setExpenses(prev => prev.map(exp => exp.id === f.id ? f : exp)); } 
+            closeExpenseModal(); 
+            // FIX: Refresh analytics silently
+            await refreshAnalytics();
+        } catch { alert(t('error.generic')); } 
+    };
+    
     const closeExpenseModal = () => { setShowExpenseModal(false); setEditingExpenseId(null); setNewExpense({ category: '', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setExpenseReceipt(null); };
-    const deleteExpense = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await apiService.deleteExpense(id); setExpenses(expenses.filter(e => e.id !== id)); } catch { alert(t('error.generic')); } };
+    
+    const deleteExpense = async (id: string) => { 
+        if(!window.confirm(t('general.confirmDelete'))) return; 
+        try { 
+            await apiService.deleteExpense(id); 
+            setExpenses(expenses.filter(e => e.id !== id)); 
+            // FIX: Refresh analytics silently
+            await refreshAnalytics();
+        } catch { alert(t('error.generic')); } 
+    };
     
     const deletePosTransaction = async (id: string) => {
         if(!window.confirm(t('general.confirmDelete'))) return;
         try {
             await apiService.deletePosTransaction(id);
             setPosTransactions(posTransactions.filter(t => (t as any).id !== id && (t as any)._id !== id));
+            // FIX: Refresh analytics silently
+            await refreshAnalytics();
         } catch {
             alert(t('documentsPanel.deleteFailed'));
         }
@@ -305,19 +373,22 @@ export const FinanceTab: React.FC = () => {
             bg: 'bg-emerald-500/10', text: 'text-emerald-400', 
             icon: <FileText size={20} />, 
             title: t('finance.invoiceDailySummary'),
-            amountColor: 'text-emerald-400'
+            amountColor: 'text-emerald-400',
+            labelKey: 'finance.invoiceCount'
         };
         if (type === 'expense') return { 
             bg: 'bg-rose-500/10', text: 'text-rose-400', 
             icon: <MinusCircle size={20} />, 
             title: t('finance.expenseDailySummary'),
-            amountColor: 'text-rose-400'
+            amountColor: 'text-rose-400',
+            labelKey: 'finance.expenseCount'
         };
         return { 
             bg: 'bg-purple-500/10', text: 'text-purple-400', 
             icon: <Layers size={20} />, 
             title: t('finance.posDailySummary'),
-            amountColor: 'text-purple-400'
+            amountColor: 'text-purple-400',
+            labelKey: 'finance.posCount'
         };
     };
 
@@ -404,7 +475,7 @@ export const FinanceTab: React.FC = () => {
                                         );
                                     } else {
                                         // RENDER GROUP BATCH (Unified)
-                                        const isExpanded = expandedGroups.has(item.date + item.groupType); // Unique Key
+                                        const isExpanded = expandedGroups.has(item.date + item.groupType);
                                         const styles = getBatchStyles(item.groupType);
                                         const isIncome = item.groupType !== 'expense';
 
@@ -423,7 +494,7 @@ export const FinanceTab: React.FC = () => {
                                                             <div className="flex items-center gap-2 text-sm text-gray-500">
                                                                 <span>{item.date}</span>
                                                                 <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                                                                <span className="text-gray-400">{t('finance.itemCount', { count: item.count })}</span>
+                                                                <span className="text-gray-400">{t(styles.labelKey, { count: item.count })}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -453,7 +524,6 @@ export const FinanceTab: React.FC = () => {
                                                                         <span className={`font-mono text-sm ${subTx.type === 'expense' ? 'text-rose-500' : 'text-emerald-500'}`}>
                                                                             {subTx.type === 'expense' ? '-' : '+'}€{subTx.amount.toFixed(2)}
                                                                         </span>
-                                                                        {/* FIXED: Added Loading Spinner logic to Grouped items too */}
                                                                         <div className="flex items-center gap-2">
                                                                             {subTx.type !== 'pos' ? (
                                                                                 <>
@@ -483,9 +553,9 @@ export const FinanceTab: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Report Section Omitted for brevity, logic remains identical... */}
                     {activeTab === 'reports' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
+                            {/* ... (Existing Report Logic) ... */}
                             {!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     <div className="bg-black/20 rounded-2xl p-6 border border-white/5">
