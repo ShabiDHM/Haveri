@@ -175,8 +175,6 @@
     "uploadFailed": "Ngarkimi dështoi",
     "deleteFailed": "Fshirja dështoi.",
     "uploaded": "Ngarkuar",
-    "deepScan": "Skanim i Thellë (Vision AI)",
-    "scanStarted": "Skanimi i Thellë filloi! Kontrolloni gjetjet pas pak.",
     "rename": "Riemërto",
     "renameTitle": "Riemërto Dokumentin",
     "newName": "Emri i ri",
@@ -391,7 +389,7 @@
         "openEdi": "Hap e-Deklarimin në ATK",
         "copyInstruction": "Kopjoni vlerat në kutitë përkatëse në formularin e deklarimit të ATK-së.",
         "box9": "Të ardhurat totale të tatueshme",
-        "box11": "Tatimi për t’u paguar",
+        "box11": "Tatimi për tu paguar",
         "box10": "Furnizimet e tatueshme me normën standarde",
         "box23": "Blerjet e tatueshme me normën standarde",
         "box48": "Obligimi tatimor neto (ose kreditimi)",
@@ -402,7 +400,7 @@
     "posSale": "Shitje POS",
     "generalTransactions": "Transaksionet e Përgjithshme",
     "notCaseRelated": "Nuk Lidhet me Projekt",
-    "cogs": "Kosto e Mallrave të Shitura (KMSH)",
+    "cogs": "Kosto e Mallrave të Shitura",
     "applyVat": "Apliko TVSH (18%)",
     "invoicePrefix": "Fatura #",
     "reports": {
@@ -424,7 +422,7 @@
       "confirm": "Konfirmo Importin"
     },
     "digitalReceipt": {
-      "title": "DËSHMI DIGJITALE E SHPENZIMIT (HAVERI AI)",
+      "title": "DËSHMI DIGJITALE E SHPENZIMIT",
       "category": "Kategoria:",
       "amount": "Shuma:",
       "date": "Data:",
@@ -635,7 +633,7 @@
   "inventory": {
     "title": "Inventari & Recetat",
     "tabItems": "Lënda e Parë",
-    "tabRecipes": "Recetat (Menu)",
+    "tabRecipes": "Recetat",
     "items": {
       "add": "Shto Artikull",
       "noItems": "Nuk ka artikuj në inventar. Shtoni të parin!",
