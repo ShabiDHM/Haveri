@@ -1,3 +1,4 @@
+# FILE: ai-core-service/app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -5,6 +6,7 @@ import logging
 
 from config import settings
 from routers import embeddings, reranking, ner, categorization
+# NOTE: Managers are imported, but their models are NOT loaded here.
 from services.embedding_manager import embedding_manager
 from services.rerank_manager import rerank_manager
 from services.ner_manager import ner_manager
@@ -18,15 +20,9 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     logger.info(f"🚀 {settings.PROJECT_NAME} Starting...")
     
-    # Load ALL models on startup (The Full Brain)
-    # 1. Embeddings
-    embedding_manager.load_model()
-    # 2. Reranking
-    rerank_manager.load_model()
-    # 3. NER
-    ner_manager.load_model()
-    # 4. Categorization (Heaviest)
-    categorization_manager.load_model()
+    # PHOENIX FIX: DO NOT load models on startup.
+    # This ensures the server starts instantly and passes its healthcheck.
+    # Models will be lazy-loaded by their respective managers on first use.
     
     yield
     logger.info(f"🛑 Shutting down {settings.PROJECT_NAME}...")
