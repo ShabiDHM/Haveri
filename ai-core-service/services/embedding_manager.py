@@ -1,4 +1,4 @@
-# FILE: ai-core-service/app/services/embedding_manager.py
+# FILE: ai-core-service/services/embedding_manager.py
 # PHOENIX PROTOCOL - EMBEDDING MANAGER V2.1 (OFFLINE-FIRST FIX)
 
 import logging
@@ -9,6 +9,7 @@ from langdetect import detect, LangDetectException
 
 logger = logging.getLogger(__name__)
 
+# PHOENIX FIX: Define the absolute, offline path to the model files.
 OFFLINE_EMBEDDING_MODEL_PATH = "/root/.cache/huggingface/hub/models--sentence-transformers--paraphrase-multilingual-mpnet-base-v2/snapshots/4328cf26390c98c5e3c738b4460a05b95f4911f5"
 
 class EmbeddingManager:
