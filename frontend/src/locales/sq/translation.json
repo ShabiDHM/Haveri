@@ -334,11 +334,23 @@
     "addLine": "Shto Rresht",
     "statusLabel": "Statusi i Faturës",
     "posDailySummary": "Përmbledhja Ditore POS",
-    "itemCount": "{{count}} Artikuj",
+    "invoiceDailySummary": "Faturat Ditore",
+    "expenseDailySummary": "Shpenzimet Ditore",
+    "itemCount": "{{count}} Zëra",
     "types": {
       "invoice": "Faturë",
       "expense": "Shpenzim",
       "pos": "POS"
+    },
+    "categories": {
+      "rent": "Qira",
+      "salary": "Paga",
+      "supplies": "Furnizime",
+      "transport": "Transport",
+      "utilities": "Shërbime (Rrymë/Ujë)",
+      "marketing": "Marketing",
+      "tax": "Tatime",
+      "other": "Tjetër"
     },
     "status": {
       "draft": "Draft (E pa lëshuar)",
@@ -512,7 +524,7 @@
     },
     "statuses": {
       "ACTIVE": "Aktive",
-      "INACTIVE": "Në Pritje"
+      "INACTIVE": "Joaktive"
     },
     "roles": {
       "STANDARD": "Përdorues",
@@ -524,7 +536,7 @@
       "email": "Email",
       "role": "Roli",
       "subscriptionStatus": "Abonimi",
-      "accountStatus": "Llogaria (Gatekeeper)"
+      "accountStatus": "Llogaria"
     }
   },
   "calendar": {
