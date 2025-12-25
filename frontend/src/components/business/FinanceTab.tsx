@@ -1,8 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.1 (TYPESCRIPT FIX)
-// 1. FIX: Resolved unused 'expense' variable in generateDigitalReceipt.
-// 2. FIX: Resolved unused 'index' variable in list rendering.
-// 3. STATUS: Production Ready & lint-free.
+// PHOENIX PROTOCOL - FINANCE TAB V14.2 (UI POLISH)
+// 1. FIX: Action buttons are now always visible (removed hover opacity).
+// 2. I18N: "POS Daily Summary", "Items", "Invoice/Expense" badges are now translated.
+// 3. STATUS: Production Ready.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -286,7 +286,6 @@ export const FinanceTab: React.FC = () => {
         setExpandedGroups(newSet);
     };
 
-    // FIX: Using expense data to prevent 'unused variable' error
     const generateDigitalReceipt = (expense: Expense): File => {
         const content = `${t('finance.digitalReceipt.title')}\n` +
                         `------------------------------------------------\n` +
@@ -345,7 +344,6 @@ export const FinanceTab: React.FC = () => {
                             </div>
                             
                             <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-2">
-                                {/* FIX: Removed unused 'index' parameter */}
                                 {groupedList.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                                         <ShoppingCart size={48} className="mb-4 opacity-20" />
@@ -367,7 +365,10 @@ export const FinanceTab: React.FC = () => {
                                                             <Calendar size={12} />
                                                             <span>{new Date(tx.date).toLocaleDateString()}</span>
                                                             <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                                                            <span className="uppercase text-[10px] tracking-wider bg-white/5 px-1.5 rounded">{tx.type}</span>
+                                                            {/* TRANSLATED BADGE */}
+                                                            <span className="uppercase text-[10px] tracking-wider bg-white/5 px-1.5 rounded">
+                                                                {t(`finance.types.${tx.type}`, tx.type)}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -375,7 +376,8 @@ export const FinanceTab: React.FC = () => {
                                                     <span className={`text-lg font-bold font-mono ${tx.type === 'invoice' || tx.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'}`}>
                                                         {tx.type === 'invoice' || tx.type === 'pos' ? '+' : '-'}€{(tx.amount || 0).toFixed(2)}
                                                     </span>
-                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {/* FIXED: Removed opacity-0 group-hover:opacity-100 */}
+                                                    <div className="flex items-center gap-1 transition-opacity">
                                                         {tx.type !== 'pos' ? (
                                                             <>
                                                                 <button onClick={() => tx.type === 'invoice' ? handleEditInvoice(tx.raw as Invoice) : handleEditExpense(tx.raw as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300" title={t('general.edit')}><Edit2 size={16} /></button>
@@ -405,11 +407,11 @@ export const FinanceTab: React.FC = () => {
                                                             <Layers size={20} />
                                                         </div>
                                                         <div>
-                                                            <h4 className="font-semibold text-white">POS Daily Summary</h4>
+                                                            <h4 className="font-semibold text-white">{t('finance.posDailySummary')}</h4>
                                                             <div className="flex items-center gap-2 text-sm text-gray-500">
                                                                 <span>{item.date}</span>
                                                                 <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                                                                <span className="text-purple-300">{item.count} Items</span>
+                                                                <span className="text-purple-300">{t('finance.itemCount', { count: item.count })}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -452,6 +454,7 @@ export const FinanceTab: React.FC = () => {
 
                     {activeTab === 'reports' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
+                            {/* ... (Existing Report Logic) ... */}
                             {!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     <div className="bg-black/20 rounded-2xl p-6 border border-white/5">

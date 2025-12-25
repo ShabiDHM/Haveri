@@ -333,6 +333,13 @@
     "price": "Çmimi",
     "addLine": "Shto Rresht",
     "statusLabel": "Statusi i Faturës",
+    "posDailySummary": "Përmbledhja Ditore POS",
+    "itemCount": "{{count}} Artikuj",
+    "types": {
+      "invoice": "Faturë",
+      "expense": "Shpenzim",
+      "pos": "POS"
+    },
     "status": {
       "draft": "Draft (E pa lëshuar)",
       "sent": "E Dërguar",
