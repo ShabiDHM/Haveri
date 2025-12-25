@@ -1,10 +1,9 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V16.0 (MOBILE OPTIMIZED)
-// 1. UI: Implemented horizontal scrolling for action buttons on mobile.
-// 2. UI: Adjusted padding breakpoints (p-4 mobile, p-6 desktop).
-// 3. UI: Enforced text-base on inputs for mobile (prevents iOS zoom).
-// 4. UI: Tighter list item spacing for small screens.
-// 5. STATUS: Production Ready.
+// PHOENIX PROTOCOL - FINANCE TAB V16.2 (MOBILE LAYOUT FIX)
+// 1. FIX: Tightened mobile layout for Group Headers (Faturat/Shpenzimet Ditore).
+// 2. UI: Added 'min-w-0' and truncation to prevent text overlap on small screens.
+// 3. UI: Adjusted icon sizes and padding for mobile density.
+// 4. STATUS: Production Ready.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -307,21 +306,21 @@ export const FinanceTab: React.FC = () => {
     const getBatchStyles = (type: 'invoice' | 'expense' | 'pos') => {
         if (type === 'invoice') return { 
             bg: 'bg-emerald-500/10', text: 'text-emerald-400', 
-            icon: <FileText size={20} />, 
+            icon: <FileText className="w-4 h-4 sm:w-5 sm:h-5" />, 
             title: t('finance.invoiceDailySummary'),
             amountColor: 'text-emerald-400',
             labelKey: 'finance.invoiceCount'
         };
         if (type === 'expense') return { 
             bg: 'bg-rose-500/10', text: 'text-rose-400', 
-            icon: <MinusCircle size={20} />, 
+            icon: <MinusCircle className="w-4 h-4 sm:w-5 sm:h-5" />, 
             title: t('finance.expenseDailySummary'),
             amountColor: 'text-rose-400',
             labelKey: 'finance.expenseCount'
         };
         return { 
             bg: 'bg-purple-500/10', text: 'text-purple-400', 
-            icon: <Layers size={20} />, 
+            icon: <Layers className="w-4 h-4 sm:w-5 sm:h-5" />, 
             title: t('finance.posDailySummary'),
             amountColor: 'text-purple-400',
             labelKey: 'finance.posCount'
@@ -386,22 +385,22 @@ export const FinanceTab: React.FC = () => {
                                         const tx = item.data;
                                         return (
                                             <div key={`${tx.type}-${tx.id}`} className="group flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-transparent hover:border-white/5 cursor-default gap-3">
-                                                <div className="flex items-center gap-4 min-w-0">
-                                                    <div className={`p-3 rounded-xl ${tx.type === 'invoice' || tx.type === 'pos' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                                        {tx.type === 'invoice' ? <ArrowDownRight size={20} /> : tx.type === 'pos' ? <ShoppingCart size={20} /> : getCategoryIcon(tx.label)}
+                                                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                                                    <div className={`p-2 sm:p-3 rounded-xl flex-shrink-0 ${tx.type === 'invoice' || tx.type === 'pos' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                                                        {tx.type === 'invoice' ? <ArrowDownRight className="w-4 h-4 sm:w-5 sm:h-5" /> : tx.type === 'pos' ? <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" /> : getCategoryIcon(tx.label)}
                                                     </div>
-                                                    <div className="min-w-0">
+                                                    <div className="min-w-0 truncate">
                                                         <h4 className="font-semibold text-white truncate text-sm sm:text-base">{tx.label}</h4>
-                                                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                                                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 truncate">
                                                             <Calendar size={12} />
                                                             <span>{new Date(tx.date).toLocaleDateString()}</span>
-                                                            <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                                                            <span className="uppercase text-[10px] tracking-wider bg-white/5 px-1.5 rounded">{t(`finance.types.${tx.type}`, tx.type)}</span>
+                                                            <span className="w-1 h-1 rounded-full bg-gray-600 flex-shrink-0"></span>
+                                                            <span className="uppercase text-[10px] tracking-wider bg-white/5 px-1.5 rounded flex-shrink-0">{t(`finance.types.${tx.type}`, tx.type)}</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-row sm:items-center justify-between sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto mt-1 sm:mt-0 pl-[60px] sm:pl-0">
-                                                    <span className={`text-lg font-bold font-mono ${tx.type === 'invoice' || tx.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                <div className="flex flex-row sm:items-center justify-between sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto mt-1 sm:mt-0 pl-[52px] sm:pl-0">
+                                                    <span className={`text-base sm:text-lg font-bold font-mono ${tx.type === 'invoice' || tx.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'}`}>
                                                         {tx.type === 'invoice' || tx.type === 'pos' ? '+' : '-'}€{(tx.amount || 0).toFixed(2)}
                                                     </span>
                                                     <div className="flex items-center gap-1 transition-opacity">
@@ -421,7 +420,7 @@ export const FinanceTab: React.FC = () => {
                                             </div>
                                         );
                                     } else {
-                                        // RENDER GROUP BATCH (Unified)
+                                        // RENDER GROUP BATCH (Unified - Mobile Optimized)
                                         const isExpanded = expandedGroups.has(item.date + item.groupType);
                                         const styles = getBatchStyles(item.groupType);
                                         const isIncome = item.groupType !== 'expense';
@@ -430,23 +429,23 @@ export const FinanceTab: React.FC = () => {
                                             <div key={`group-${item.date}-${item.groupType}`} className="rounded-xl border border-white/10 bg-black/20 overflow-hidden">
                                                 <div 
                                                     onClick={() => toggleGroup(item.date + item.groupType)}
-                                                    className="flex items-center justify-between p-3 sm:p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                                                    className="flex items-center justify-between p-3 sm:p-4 cursor-pointer hover:bg-white/5 transition-colors gap-2"
                                                 >
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`p-3 rounded-xl ${styles.bg} ${styles.text}`}>
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className={`p-2 sm:p-3 rounded-xl flex-shrink-0 ${styles.bg} ${styles.text}`}>
                                                             {styles.icon}
                                                         </div>
-                                                        <div>
-                                                            <h4 className="font-semibold text-white text-sm sm:text-base">{styles.title}</h4>
-                                                            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                                                        <div className="min-w-0 truncate">
+                                                            <h4 className="font-semibold text-white text-sm sm:text-base truncate">{styles.title}</h4>
+                                                            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 truncate">
                                                                 <span>{item.date}</span>
-                                                                <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                                                                <span className="text-gray-400">{t(styles.labelKey, { count: item.count })}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-gray-600 flex-shrink-0"></span>
+                                                                <span className="text-gray-400 truncate">{t(styles.labelKey, { count: item.count })}</span>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2 sm:gap-4">
-                                                        <span className={`text-base sm:text-lg font-bold font-mono ${styles.amountColor}`}>
+                                                    <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0">
+                                                        <span className={`text-sm sm:text-lg font-bold font-mono ${styles.amountColor}`}>
                                                             {isIncome ? '+' : '-'}€{item.totalAmount.toFixed(2)}
                                                         </span>
                                                         {isExpanded ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
@@ -462,13 +461,13 @@ export const FinanceTab: React.FC = () => {
                                                             className="border-t border-white/10 bg-black/40"
                                                         >
                                                             {item.items.map(subTx => (
-                                                                <div key={subTx.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center px-4 py-3 hover:bg-white/5 border-b border-white/5 last:border-0 pl-16">
-                                                                    <div className="flex items-center gap-3">
-                                                                        {subTx.type === 'pos' ? <ShoppingCart size={14} className="text-gray-600" /> : <CreditCard size={14} className="text-gray-600" />}
-                                                                        <span className="text-gray-300 text-sm font-medium">{subTx.label}</span>
+                                                                <div key={subTx.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center px-3 sm:px-4 py-3 hover:bg-white/5 border-b border-white/5 last:border-0 pl-14 sm:pl-16">
+                                                                    <div className="flex items-center gap-3 min-w-0">
+                                                                        {subTx.type === 'pos' ? <ShoppingCart size={14} className="text-gray-600 flex-shrink-0" /> : <CreditCard size={14} className="text-gray-600 flex-shrink-0" />}
+                                                                        <span className="text-gray-300 text-xs sm:text-sm font-medium truncate">{subTx.label}</span>
                                                                     </div>
                                                                     <div className="flex items-center justify-between sm:justify-end gap-4 mt-2 sm:mt-0">
-                                                                        <span className={`font-mono text-sm ${subTx.type === 'expense' ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                                                        <span className={`font-mono text-xs sm:text-sm ${subTx.type === 'expense' ? 'text-rose-500' : 'text-emerald-500'}`}>
                                                                             {subTx.type === 'expense' ? '-' : '+'}€{subTx.amount.toFixed(2)}
                                                                         </span>
                                                                         <div className="flex items-center gap-2">
