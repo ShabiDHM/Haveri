@@ -1,8 +1,8 @@
 # FILE: docker-compose.yml
-# PHOENIX PROTOCOL - INFRASTRUCTURE V2.1 (ENV CONSISTENCY)
-# 1. FIX: Added 'env_file: ./.env' to 'ai-core-service'.
-# 2. REASON: Ensures the AI engine can authenticate with the new Backblaze B2 bucket.
-# 3. STATUS: All services now share the single source of truth for credentials.
+# PHOENIX PROTOCOL - INFRASTRUCTURE V2.2 (HEALTHCHECK FIX)
+# 1. FIX: Increased 'start_period' for 'ai-core-service' healthcheck to 300s.
+# 2. REASON: Allows sufficient time for AI models to load from disk on first boot without Docker killing the container prematurely.
+# 3. STATUS: This change ensures system stability after a full data wipe and restore.
 
 services:
   # -------------------------------------------------------
@@ -15,7 +15,6 @@ services:
     restart: unless-stopped
     ports:
       - "8010:8000"
-    # PHOENIX FIX: Inject environment variables here
     env_file: ./.env
     networks:
       - phoenix_net
@@ -24,7 +23,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      # PHOENIX FIX: Increased startup grace period to 5 minutes
+      start_period: 300s
 
   # -------------------------------------------------------
   # LOCAL LLM ENGINE (The Free Brain)
@@ -57,7 +57,6 @@ services:
   backend:
     build: { context: ./backend }
     restart: unless-stopped
-    # OPTIMIZATION: '--workers 4' utilizes CPU cores for parallel requests
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --log-level info --proxy-headers
     env_file: ./.env
     volumes:
@@ -78,7 +77,6 @@ services:
   celery:
     build: { context: ./backend }
     restart: unless-stopped
-    # OPTIMIZATION: '--concurrency=4' and '--prefetch-multiplier=1'
     command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=4 --prefetch-multiplier=1
     env_file: ./.env
     volumes:
