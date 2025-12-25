@@ -1,13 +1,14 @@
 # FILE: backend/app/services/daily_briefing_service.py
-# PHOENIX PROTOCOL - DAILY BRIEFING AGENT V3.4 (VISIBILITY FIX)
-# 1. FIX: Widened revenue query window to include TODAY.
-# 2. REASON: Ensures imported data (defaulting to 'now') appears in the dashboard immediately.
-# 3. STATUS: Production Ready.
+# PHOENIX PROTOCOL - DAILY BRIEFING AGENT V3.5 (SMART FALLBACK)
+# 1. NEW: Implemented 'Last Active Day' logic.
+# 2. FIX: If no data exists for Yesterday, it finds the most recent transaction date and reports on that.
+# 3. RESULT: Dashboard will show October data even if today is December.
 
 from datetime import datetime, timedelta
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from bson import ObjectId
 from typing import Any as AnyType
+import pymongo
 
 class DailyBriefingService:
     def __init__(self, db: AnyType):
@@ -16,16 +17,20 @@ class DailyBriefingService:
     async def generate_morning_report(self, user_id: str) -> Dict[str, Any]:
         user_id_str = str(user_id)
         
-        # 1. FINANCE CHECK
+        # 1. Determine the "Report Date" (Yesterday vs Last Active Day)
+        report_date = await self._get_last_active_date(user_id_str)
+        if not report_date:
+            report_date = datetime.utcnow() # Default to now if completely empty
+
+        # 2. FINANCE CHECK (Using Report Date)
         unpaid_invoices = await self._get_unpaid_invoices(user_id_str)
-        # Now fetches Yesterday + Today so recent imports show up
-        yesterday_revenue = await self._get_recent_revenue(user_id_str)
+        revenue_data = await self._get_revenue_for_date(user_id_str, report_date)
         
-        # 2. INVENTORY PREDICTION
+        # 3. INVENTORY PREDICTION (Using Report Date for top product)
         stock_risks = await self._predict_stock_risks(user_id_str)
-        top_product = await self._get_top_product_recent(user_id_str)
+        top_product = await self._get_top_product_for_date(user_id_str, report_date)
         
-        # 3. CALENDAR
+        # 4. CALENDAR (Always Real-time)
         calendar_data = await self._get_calendar_briefing(user_id_str)
 
         return {
@@ -33,7 +38,7 @@ class DailyBriefingService:
                 "attention_needed": len(unpaid_invoices) > 0,
                 "unpaid_count": len(unpaid_invoices),
                 "items": unpaid_invoices[:5],
-                "revenue_yesterday": yesterday_revenue
+                "revenue_yesterday": revenue_data # Variable name kept for frontend compatibility
             },
             "inventory": {
                 "risk_alert": len(stock_risks) > 0,
@@ -47,9 +52,25 @@ class DailyBriefingService:
             },
             "meta": {
                 "generated_at": datetime.utcnow(),
-                "agent": "Haveri AI v3.4"
+                "agent": "Haveri AI v3.5"
             }
         }
+
+    async def _get_last_active_date(self, user_id: str) -> Optional[datetime]:
+        """Finds the date of the most recent transaction."""
+        try:
+            # Sort by date DESC, get 1
+            cursor = self.db.transactions.find(
+                {"user_id": str(user_id)}
+            ).sort("date", pymongo.DESCENDING).limit(1)
+            
+            latest_tx = await cursor.to_list(length=1)
+            
+            if latest_tx and "date" in latest_tx[0]:
+                return latest_tx[0]["date"]
+            return None
+        except Exception:
+            return None
 
     async def _get_unpaid_invoices(self, user_id: str) -> List[Dict]:
         try:
@@ -65,16 +86,16 @@ class DailyBriefingService:
         invoices = await cursor.to_list(length=10)
         return [{"client": inv.get("client_name", "Unknown"), "amount": inv.get("total_amount", 0.0), "status": inv.get("status"), "invoice_number": inv.get("invoice_number", "N/A")} for inv in invoices]
 
-    async def _get_recent_revenue(self, user_id: str) -> float:
-        # Changed to fetch Yesterday AND Today
-        now = datetime.utcnow()
-        start_window = datetime(now.year, now.month, now.day) - timedelta(days=1)
+    async def _get_revenue_for_date(self, user_id: str, target_date: datetime) -> float:
+        # Create a window for the target date (Start of day to End of day)
+        start_of_day = datetime(target_date.year, target_date.month, target_date.day)
+        end_of_day = start_of_day + timedelta(days=1)
         
         pipeline = [
             {
                 "$match": {
                     "user_id": str(user_id),
-                    "date": {"$gte": start_window}, # Fetches everything since start of yesterday
+                    "date": {"$gte": start_of_day, "$lt": end_of_day},
                     "$or": [{"type": "income"}, {"type": "pos"}] 
                 }
             },
@@ -84,15 +105,15 @@ class DailyBriefingService:
         result = await self.db.transactions.aggregate(pipeline).to_list(length=1)
         return float(result[0].get("total", 0.0)) if result else 0.0
 
-    async def _get_top_product_recent(self, user_id: str) -> str:
-        now = datetime.utcnow()
-        start_window = datetime(now.year, now.month, now.day) - timedelta(days=1)
+    async def _get_top_product_for_date(self, user_id: str, target_date: datetime) -> str:
+        start_of_day = datetime(target_date.year, target_date.month, target_date.day)
+        end_of_day = start_of_day + timedelta(days=1)
         
         pipeline = [
             {
                 "$match": {
                     "user_id": str(user_id),
-                    "date": {"$gte": start_window},
+                    "date": {"$gte": start_of_day, "$lt": end_of_day},
                     "$or": [{"type": "income"}, {"type": "pos"}]
                 }
             },
