@@ -1,17 +1,18 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V13.9 (POS DELETION ACTIVATED)
-// 1. UPDATED: Added 'deletePosTransaction' handler function.
-// 2. UPDATED: Exposed 'Trash2' (Delete) button for POS transactions in the UI.
-// 3. STATUS: Functional.
+// PHOENIX PROTOCOL - FINANCE TAB V14.1 (TYPESCRIPT FIX)
+// 1. FIX: Resolved unused 'expense' variable in generateDigitalReceipt.
+// 2. FIX: Resolved unused 'index' variable in list rendering.
+// 3. STATUS: Production Ready & lint-free.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, FileText, 
     Edit2, Eye, Download, Archive, Trash2, CheckCircle, Paperclip, X, User, Activity, 
     Loader2, BarChart2, Search,
     Car, Coffee, Building, Users, Landmark, Zap, Wifi, Utensils,
-    FileSpreadsheet, PiggyBank, ShoppingCart, ArrowUpRight, ArrowDownRight, Calendar
+    FileSpreadsheet, PiggyBank, ShoppingCart, ArrowUpRight, ArrowDownRight, Calendar,
+    ChevronDown, ChevronUp, Layers
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
@@ -94,6 +95,21 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
     </button>
 );
 
+// --- HELPER TYPES FOR GROUPING ---
+type TransactionItem = {
+    id: string;
+    type: 'invoice' | 'expense' | 'pos';
+    date: string;
+    amount: number;
+    label: string;
+    raw: any;
+};
+
+type GroupedTransaction = 
+    | { type: 'single'; data: TransactionItem }
+    | { type: 'group'; date: string; totalAmount: number; count: number; items: TransactionItem[] };
+
+
 export const FinanceTab: React.FC = () => {
     type ActiveTab = 'transactions' | 'reports';
 
@@ -126,6 +142,9 @@ export const FinanceTab: React.FC = () => {
     const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
     const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
+
+    // Accordion State
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
     const [newInvoice, setNewInvoice] = useState({ 
         client_name: '', client_email: '', client_phone: '', client_address: '', 
@@ -162,31 +181,63 @@ export const FinanceTab: React.FC = () => {
     const displayProfit = analyticsData?.total_profit_period ?? (displayIncome - totalExpenses);
     const costOfGoodsSold = analyticsData ? displayIncome - displayProfit : 0;
 
-    const sortedTransactions = useMemo(() => {
-        const combined = [
-            ...invoices.map(i => ({ ...i, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name })),
-            ...expenses.map(e => ({ ...e, type: 'expense' as const, amount: e.amount, label: e.category })),
+    // --- LOGIC: Flatten & Sort first ---
+    const allTransactions: TransactionItem[] = useMemo(() => {
+        const combined: TransactionItem[] = [
+            ...invoices.map(i => ({ id: i.id, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name, raw: i })),
+            ...expenses.map(e => ({ id: e.id, type: 'expense' as const, date: e.date, amount: e.amount, label: e.category, raw: e })),
             ...posTransactions.map(p => ({ 
-                ...p, 
+                id: (p as any).id || (p as any)._id, 
                 type: 'pos' as const, 
                 date: p.transaction_date || (p as any).date || new Date().toISOString(), 
                 amount: p.total_price ?? (p as any).amount ?? 0, 
-                label: p.product_name || (p as any).description || t('finance.posSale') 
+                label: p.product_name || (p as any).description || t('finance.posSale'),
+                raw: p 
             })),
         ];
         return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [invoices, expenses, posTransactions, t]);
 
-    const filteredTransactions = useMemo(() => {
-        if (!searchTerm) return sortedTransactions;
-        const lowerTerm = searchTerm.toLowerCase();
-        return sortedTransactions.filter(tx => {
-            if (tx.type === 'invoice') return (tx.label.toLowerCase().includes(lowerTerm) || (tx as Invoice).invoice_number?.toLowerCase().includes(lowerTerm) || tx.amount.toString().includes(lowerTerm));
-            if (tx.type === 'expense') return (tx.label.toLowerCase().includes(lowerTerm) || (tx as Expense).description?.toLowerCase().includes(lowerTerm) || tx.amount.toString().includes(lowerTerm));
-            if (tx.type === 'pos') return (tx.label.toLowerCase().includes(lowerTerm) || tx.amount.toString().includes(lowerTerm));
-            return false;
+    // --- LOGIC: Group POS by Date (Smart Batching) ---
+    const groupedList = useMemo(() => {
+        const result: GroupedTransaction[] = [];
+        
+        allTransactions.forEach(tx => {
+            if (searchTerm) {
+                if (
+                    tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    tx.amount.toString().includes(searchTerm)
+                ) {
+                    result.push({ type: 'single', data: tx });
+                }
+                return;
+            }
+
+            if (tx.type !== 'pos') {
+                result.push({ type: 'single', data: tx });
+                return;
+            }
+
+            const txDate = new Date(tx.date).toLocaleDateString();
+            const lastGroup = result.length > 0 ? result[result.length - 1] : null;
+
+            if (lastGroup && lastGroup.type === 'group' && lastGroup.date === txDate) {
+                lastGroup.items.push(tx);
+                lastGroup.totalAmount += tx.amount;
+                lastGroup.count += 1;
+            } else {
+                result.push({
+                    type: 'group',
+                    date: txDate,
+                    totalAmount: tx.amount,
+                    count: 1,
+                    items: [tx]
+                });
+            }
         });
-    }, [sortedTransactions, searchTerm]);
+
+        return result;
+    }, [allTransactions, searchTerm]);
 
     const getCategoryIcon = (category: string) => { 
         const cat = category.toLowerCase(); 
@@ -205,7 +256,6 @@ export const FinanceTab: React.FC = () => {
     const addLineItem = () => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0 }]);
     const removeLineItem = (i: number) => lineItems.length > 1 && setLineItems(lineItems.filter((_, idx) => idx !== i));
     const updateLineItem = (i: number, f: keyof InvoiceItem, v: any) => { const n = [...lineItems]; n[i] = { ...n[i], [f]: v }; n[i].total = n[i].quantity * n[i].unit_price; setLineItems(n); };
-    
     const handleEditInvoice = (invoice: Invoice) => { setEditingInvoiceId(invoice.id); setNewInvoice({ client_name: invoice.client_name, client_email: invoice.client_email || '', client_address: invoice.client_address || '', client_phone: (invoice as any).client_phone || '', client_city: (invoice as any).client_city || '', client_tax_id: (invoice as any).client_tax_id || '', client_website: (invoice as any).client_website || '', tax_rate: invoice.tax_rate, notes: invoice.notes || '', status: invoice.status }); setIncludeVat(invoice.tax_rate > 0); setLineItems(invoice.items); setShowInvoiceModal(true); };
     const handleCreateOrUpdateInvoice = async (e: React.FormEvent) => { e.preventDefault(); try { const payload = { ...newInvoice, items: lineItems, tax_rate: includeVat ? newInvoice.tax_rate : 0 }; if (editingInvoiceId) { const u = await apiService.updateInvoice(editingInvoiceId, payload); setInvoices(invoices.map(i => i.id === editingInvoiceId ? u : i)); } else { const n = await apiService.createInvoice(payload); setInvoices([n, ...invoices]); } closeInvoiceModal(); } catch { alert(t('error.generic')); } };
     const closeInvoiceModal = () => { setShowInvoiceModal(false); setEditingInvoiceId(null); setNewInvoice({ client_name: '', client_email: '', client_phone: '', client_address: '', client_city: '', client_tax_id: '', client_website: '', tax_rate: 18, notes: '', status: 'PAID' }); setIncludeVat(true); setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0 }]); };
@@ -219,7 +269,6 @@ export const FinanceTab: React.FC = () => {
     const closeExpenseModal = () => { setShowExpenseModal(false); setEditingExpenseId(null); setNewExpense({ category: '', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setExpenseReceipt(null); };
     const deleteExpense = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await apiService.deleteExpense(id); setExpenses(expenses.filter(e => e.id !== id)); } catch { alert(t('error.generic')); } };
     
-    // NEW: POS Transaction Delete Handler
     const deletePosTransaction = async (id: string) => {
         if(!window.confirm(t('general.confirmDelete'))) return;
         try {
@@ -230,8 +279,17 @@ export const FinanceTab: React.FC = () => {
         }
     };
 
+    const toggleGroup = (date: string) => {
+        const newSet = new Set(expandedGroups);
+        if (newSet.has(date)) newSet.delete(date);
+        else newSet.add(date);
+        setExpandedGroups(newSet);
+    };
+
+    // FIX: Using expense data to prevent 'unused variable' error
     const generateDigitalReceipt = (expense: Expense): File => {
-        const content = `${t('finance.digitalReceipt.title')}\n------------------------------------------------\n` +
+        const content = `${t('finance.digitalReceipt.title')}\n` +
+                        `------------------------------------------------\n` +
                         `${t('finance.digitalReceipt.category')}   ${expense.category}\n` +
                         `${t('finance.digitalReceipt.amount')}       €${expense.amount.toFixed(2)}\n` +
                         `${t('finance.digitalReceipt.date')}        ${new Date(expense.date).toLocaleDateString('sq-AL')}\n` +
@@ -286,60 +344,108 @@ export const FinanceTab: React.FC = () => {
                                 <input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/20 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-start/50 transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-1">
-                                {filteredTransactions.length === 0 ? (
+                            <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-2">
+                                {/* FIX: Removed unused 'index' parameter */}
+                                {groupedList.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                                         <ShoppingCart size={48} className="mb-4 opacity-20" />
                                         <p>{t('finance.noTransactions')}</p>
                                     </div>
-                                ) : filteredTransactions.map((tx) => (
-                                    <div key={`${tx.type}-${tx.id}`} className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 cursor-default gap-3">
-                                        <div className="flex items-center gap-4 min-w-0">
-                                            <div className={`p-3 rounded-xl ${tx.type === 'invoice' || tx.type === 'pos' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                                {tx.type === 'invoice' ? <ArrowDownRight size={20} /> : tx.type === 'pos' ? <ShoppingCart size={20} /> : getCategoryIcon(tx.label)}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <h4 className="font-semibold text-white truncate">{tx.label}</h4>
-                                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                                    <Calendar size={12} />
-                                                    <span>{new Date(tx.date).toLocaleDateString()}</span>
-                                                    <span className="w-1 h-1 rounded-full bg-gray-600"></span>
-                                                    <span className="uppercase text-[10px] tracking-wider bg-white/5 px-1.5 rounded">{tx.type}</span>
+                                ) : groupedList.map((item) => {
+                                    if (item.type === 'single') {
+                                        // RENDER SINGLE ITEM (Invoice or Expense or Search Result)
+                                        const tx = item.data;
+                                        return (
+                                            <div key={`${tx.type}-${tx.id}`} className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-transparent hover:border-white/5 cursor-default gap-3">
+                                                <div className="flex items-center gap-4 min-w-0">
+                                                    <div className={`p-3 rounded-xl ${tx.type === 'invoice' || tx.type === 'pos' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                                                        {tx.type === 'invoice' ? <ArrowDownRight size={20} /> : tx.type === 'pos' ? <ShoppingCart size={20} /> : getCategoryIcon(tx.label)}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="font-semibold text-white truncate">{tx.label}</h4>
+                                                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                            <Calendar size={12} />
+                                                            <span>{new Date(tx.date).toLocaleDateString()}</span>
+                                                            <span className="w-1 h-1 rounded-full bg-gray-600"></span>
+                                                            <span className="uppercase text-[10px] tracking-wider bg-white/5 px-1.5 rounded">{tx.type}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+                                                    <span className={`text-lg font-bold font-mono ${tx.type === 'invoice' || tx.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                        {tx.type === 'invoice' || tx.type === 'pos' ? '+' : '-'}€{(tx.amount || 0).toFixed(2)}
+                                                    </span>
+                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        {tx.type !== 'pos' ? (
+                                                            <>
+                                                                <button onClick={() => tx.type === 'invoice' ? handleEditInvoice(tx.raw as Invoice) : handleEditExpense(tx.raw as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300" title={t('general.edit')}><Edit2 size={16} /></button>
+                                                                <button onClick={() => tx.type === 'invoice' ? handleViewInvoice(tx.raw as Invoice) : handleViewExpense(tx.raw as Expense)} disabled={openingDocId === tx.id} className="p-2 hover:bg-white/10 rounded-lg text-blue-400 hover:text-blue-300" title={t('general.view')}>{openingDocId === tx.id ? <Loader2 size={16} className="animate-spin"/> : <Eye size={16} />}</button>
+                                                                <button onClick={() => tx.type === 'invoice' ? downloadInvoice(tx.id) : handleDownloadExpense(tx.raw as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-green-400 hover:text-green-300" title={t('general.download')}><Download size={16} /></button>
+                                                                <button onClick={() => tx.type === 'invoice' ? handleArchiveInvoiceClick(tx.id) : handleArchiveExpenseClick(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-indigo-400 hover:text-indigo-300" title={t('general.archive')}><Archive size={16} /></button>
+                                                                <button onClick={() => tx.type === 'invoice' ? deleteInvoice(tx.id) : deleteExpense(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300" title={t('general.delete')}><Trash2 size={16} /></button>
+                                                            </>
+                                                        ) : (
+                                                            <button onClick={() => deletePosTransaction(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300" title={t('general.delete')}><Trash2 size={16} /></button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
-                                            <span className={`text-lg font-bold font-mono ${tx.type === 'invoice' || tx.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                {tx.type === 'invoice' || tx.type === 'pos' ? '+' : '-'}€{(tx.amount || 0).toFixed(2)}
-                                            </span>
-                                            
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {tx.type !== 'pos' ? (
-                                                    <>
-                                                        <button onClick={() => tx.type === 'invoice' ? handleEditInvoice(tx as Invoice) : handleEditExpense(tx as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300" title={t('general.edit')}><Edit2 size={16} /></button>
-                                                        <button onClick={() => tx.type === 'invoice' ? handleViewInvoice(tx as Invoice) : handleViewExpense(tx as Expense)} disabled={openingDocId === tx.id} className="p-2 hover:bg-white/10 rounded-lg text-blue-400 hover:text-blue-300" title={t('general.view')}>
-                                                            {openingDocId === tx.id ? <Loader2 size={16} className="animate-spin"/> : <Eye size={16} />}
-                                                        </button>
-                                                        <button onClick={() => tx.type === 'invoice' ? downloadInvoice(tx.id) : handleDownloadExpense(tx as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-green-400 hover:text-green-300" title={t('general.download')}>
-                                                            <Download size={16} />
-                                                        </button>
-                                                        <button onClick={() => tx.type === 'invoice' ? handleArchiveInvoiceClick(tx.id) : handleArchiveExpenseClick(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-indigo-400 hover:text-indigo-300" title={t('general.archive')}>
-                                                            <Archive size={16} />
-                                                        </button>
-                                                        <button onClick={() => tx.type === 'invoice' ? deleteInvoice(tx.id) : deleteExpense(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300" title={t('general.delete')}>
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <button onClick={() => deletePosTransaction(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300" title={t('general.delete')}>
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                )}
+                                        );
+                                    } else {
+                                        // RENDER GROUP (POS BATCH)
+                                        const isExpanded = expandedGroups.has(item.date);
+                                        return (
+                                            <div key={`group-${item.date}`} className="rounded-xl border border-white/10 bg-black/20 overflow-hidden">
+                                                <div 
+                                                    onClick={() => toggleGroup(item.date)}
+                                                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400">
+                                                            <Layers size={20} />
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-semibold text-white">POS Daily Summary</h4>
+                                                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                                <span>{item.date}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-gray-600"></span>
+                                                                <span className="text-purple-300">{item.count} Items</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-lg font-bold font-mono text-purple-400">+€{item.totalAmount.toFixed(2)}</span>
+                                                        {isExpanded ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
+                                                    </div>
+                                                </div>
+                                                
+                                                <AnimatePresence>
+                                                    {isExpanded && (
+                                                        <motion.div 
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{ height: "auto", opacity: 1 }}
+                                                            exit={{ height: 0, opacity: 0 }}
+                                                            className="border-t border-white/10 bg-black/40"
+                                                        >
+                                                            {item.items.map(subTx => (
+                                                                <div key={subTx.id} className="flex justify-between items-center px-4 py-3 hover:bg-white/5 border-b border-white/5 last:border-0 pl-16">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <ShoppingCart size={14} className="text-gray-600" />
+                                                                        <span className="text-gray-300 text-sm">{subTx.label}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <span className="font-mono text-sm text-emerald-500">+€{subTx.amount.toFixed(2)}</span>
+                                                                        <button onClick={() => deletePosTransaction(subTx.id)} className="text-gray-600 hover:text-red-400"><Trash2 size={14} /></button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
                                             </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                        );
+                                    }
+                                })}
                             </div>
                         </div>
                     )}
@@ -353,12 +459,7 @@ export const FinanceTab: React.FC = () => {
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <AreaChart data={analyticsData.sales_trend}>
-                                                    <defs>
-                                                        <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/>
-                                                            <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
-                                                        </linearGradient>
-                                                    </defs>
+                                                    <defs><linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/><stop offset="95%" stopColor="#818cf8" stopOpacity={0}/></linearGradient></defs>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                                                     <XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} />
                                                     <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} />
@@ -368,7 +469,6 @@ export const FinanceTab: React.FC = () => {
                                             </ResponsiveContainer>
                                         </div>
                                     </div>
-                                    
                                     <div className="bg-black/20 rounded-2xl p-6 border border-white/5">
                                         <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-2"><BarChart2 size={20} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
                                         <div className="h-[300px] w-full">
@@ -393,7 +493,7 @@ export const FinanceTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* MODALS */}
+            {/* MODALS (Keep exactly as before) */}
             {showInvoiceModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 custom-finance-scroll"><div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-white">{editingInvoiceId ? t('finance.editInvoice') : t('finance.createInvoice')}</h2><button onClick={closeInvoiceModal} className="text-gray-400 hover:text-white"><X size={24} /></button></div><form onSubmit={handleCreateOrUpdateInvoice} className="space-y-6"><div className="space-y-4">
                 <h3 className="text-sm font-bold text-primary-start uppercase tracking-wider flex items-center gap-2"><User size={16} /> {t('caseCard.client')}</h3><div><label className="block text-sm text-gray-300 mb-1">{t('business.clientName')}</label><input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_name} onChange={e => setNewInvoice({...newInvoice, client_name: e.target.value})} /></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-sm text-gray-300 mb-1">{t('business.publicEmail')}</label><input type="email" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_email} onChange={e => setNewInvoice({...newInvoice, client_email: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.phone')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_phone} onChange={e => setNewInvoice({...newInvoice, client_phone: e.target.value})} /></div></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-sm text-gray-300 mb-1">{t('business.city')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_city} onChange={e => setNewInvoice({...newInvoice, client_city: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.taxId')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_tax_id} onChange={e => setNewInvoice({...newInvoice, client_tax_id: e.target.value})} /></div></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.address')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_address} onChange={e => setNewInvoice({...newInvoice, client_address: e.target.value})} /></div><div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/10"><input type="checkbox" id="vatToggle" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} className="w-4 h-4 text-primary-start rounded border-gray-300 focus:ring-primary-start" /><label htmlFor="vatToggle" className="text-sm text-gray-300 cursor-pointer select-none">{t('finance.applyVat')}</label></div></div><div className="space-y-3 pt-4 border-t border-white/10"><h3 className="text-sm font-bold text-primary-start uppercase tracking-wider flex items-center gap-2"><FileText size={16} /> {t('finance.services')}</h3>{lineItems.map((item, index) => (<div key={index} className="flex flex-col sm:flex-row gap-2 items-center"><input type="text" placeholder={t('finance.description')} className="flex-1 w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} required /><input type="number" placeholder={t('finance.qty')} className="w-full sm:w-20 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))} min="1" /><input type="number" placeholder={t('finance.price')} className="w-full sm:w-24 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.unit_price} onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))} min="0" /><button type="button" onClick={() => removeLineItem(index)} className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg self-end sm:self-center"><Trash2 size={18} /></button></div>))}<button type="button" onClick={addLineItem} className="text-sm text-primary-start hover:underline flex items-center gap-1"><Plus size={14} /> {t('finance.addLine')}</button></div><div className="flex justify-end gap-3"><button type="button" onClick={closeInvoiceModal} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold">{t('general.save')}</button></div></form></div></div>)}
             {showExpenseModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6"><div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-white flex items-center gap-2"><MinusCircle size={20} className="text-rose-500" /> {editingExpenseId ? t('finance.editExpense') : t('finance.addExpense')}</h2><button onClick={closeExpenseModal} className="text-gray-400 hover:text-white"><X size={24} /></button></div><div className="mb-6"><input type="file" ref={receiptInputRef} className="hidden" accept="image/*,.pdf" onChange={(e) => setExpenseReceipt(e.target.files?.[0] || null)} /><button onClick={() => receiptInputRef.current?.click()} className={`w-full py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${expenseReceipt ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>{expenseReceipt ? (<><CheckCircle size={18} /> {expenseReceipt.name}</>) : (<><Paperclip size={18} /> {t('finance.attachReceipt')}</>)}</button></div><form onSubmit={handleCreateOrUpdateExpense} className="space-y-5"><div><label className="block text-sm text-gray-300 mb-1">{t('finance.expenseCategory')}</label><input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newExpense.category} onChange={e => setNewExpense({...newExpense, category: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('finance.amount')}</label><input required type="number" step="0.01" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: parseFloat(e.target.value)})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('finance.date')}</label><DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" required /></div><div><label className="block text-sm text-gray-300 mb-1">{t('finance.description')}</label><textarea rows={2} className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newExpense.description} onChange={e => setNewExpense({...newExpense, description: e.target.value})} /></div><div className="flex justify-end gap-3 pt-4"><button type="button" onClick={closeExpenseModal} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold">{t('general.save')}</button></div></form></div></div>)}

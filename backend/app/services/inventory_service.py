@@ -1,14 +1,19 @@
 # FILE: backend/app/services/inventory_service.py
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from bson import ObjectId
 from pymongo.database import Database
 from app.models.inventory import InventoryItem, Recipe
+import datetime
 
 class InventoryService:
     def __init__(self, db: Database):
         self.db = db
 
     def create_item(self, user_id: str, item_in: dict) -> InventoryItem:
+        # Default source is MANUAL unless specified
+        if "source" not in item_in:
+            item_in["source"] = "MANUAL"
+            
         item = InventoryItem(user_id=user_id, **item_in)
         item_dict = item.model_dump(by_alias=True)
         if "_id" in item_dict and item_dict["_id"] is None:
@@ -26,6 +31,44 @@ class InventoryService:
         cursor = self.db["inventory"].find({"user_id": user_id})
         return [InventoryItem(**item) for item in list(cursor)]
 
+    def update_item(self, user_id: str, item_id: str, data: dict) -> Optional[InventoryItem]:
+        oid = ObjectId(item_id)
+        data["updated_at"] = datetime.datetime.utcnow()
+        self.db["inventory"].update_one(
+            {"_id": oid, "user_id": user_id},
+            {"$set": data}
+        )
+        return self.get_item(item_id)
+
+    def delete_item(self, user_id: str, item_id: str):
+        self.db["inventory"].delete_one({"_id": ObjectId(item_id), "user_id": user_id})
+
+    # --- BULK IMPORT FOR POS ITEMS ---
+    def import_items_bulk(self, user_id: str, items_data: List[Dict[str, Any]]) -> int:
+        """
+        Bulk inserts inventory items with source='POS'.
+        """
+        clean_items = []
+        for row in items_data:
+            # Map CSV headers to Model fields if necessary, or assume pre-mapped
+            item_obj = InventoryItem(
+                user_id=user_id,
+                name=str(row.get("name", row.get("Product", "Unknown"))),
+                unit=str(row.get("unit", row.get("Unit", "kg"))).lower(),
+                current_stock=float(row.get("current_stock", row.get("Stock", 0.0))),
+                cost_per_unit=float(row.get("cost_per_unit", row.get("Cost", 0.0))),
+                source="POS" # Explicitly tag as POS
+            )
+            item_dict = item_obj.model_dump(by_alias=True)
+            if "_id" in item_dict: del item_dict["_id"]
+            clean_items.append(item_dict)
+        
+        if clean_items:
+            res = self.db["inventory"].insert_many(clean_items)
+            return len(res.inserted_ids)
+        return 0
+
+    # --- RECIPES ---
     def create_recipe(self, user_id: str, recipe_in: dict) -> Recipe:
         recipe = Recipe(user_id=user_id, **recipe_in)
         recipe_dict = recipe.model_dump(by_alias=True)
@@ -33,10 +76,22 @@ class InventoryService:
             del recipe_dict["_id"]
         self.db["recipes"].insert_one(recipe_dict)
         return Recipe(**recipe_dict)
+        
+    def update_recipe(self, user_id: str, recipe_id: str, data: dict) -> Recipe:
+        oid = ObjectId(recipe_id)
+        self.db["recipes"].update_one({"_id": oid, "user_id": user_id}, {"$set": data})
+        return self.get_recipe(recipe_id) # type: ignore
+
+    def get_recipe(self, recipe_id: str) -> Optional[Recipe]:
+        doc = self.db["recipes"].find_one({"_id": ObjectId(recipe_id)})
+        return Recipe(**doc) if doc else None
 
     def get_recipes(self, user_id: str) -> List[Recipe]:
         cursor = self.db["recipes"].find({"user_id": user_id})
         return [Recipe(**item) for item in list(cursor)]
+        
+    def delete_recipe(self, user_id: str, recipe_id: str):
+        self.db["recipes"].delete_one({"_id": ObjectId(recipe_id), "user_id": user_id})
 
     def get_cost_for_product(self, user_id: str, product_name: str) -> float:
         recipe_doc = self.db["recipes"].find_one({

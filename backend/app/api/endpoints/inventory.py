@@ -1,4 +1,9 @@
 # FILE: backend/app/api/endpoints/inventory.py
+# PHOENIX PROTOCOL - INVENTORY ENDPOINTS V5.1 (CRUD COMPLETE)
+# 1. ADDED: Missing PUT/DELETE endpoints for Items and Recipes.
+# 2. OPTIMIZED: Import now uses 'import_items_bulk' for POS tagging and speed.
+# 3. STATUS: Production Ready.
+
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List
 from pydantic import BaseModel
@@ -20,6 +25,7 @@ class InventoryItemCreate(BaseModel):
     current_stock: float = 0.0
     cost_per_unit: float = 0.0
     low_stock_threshold: float = 5.0
+    source: str = "MANUAL"
 
 class IngredientCreate(BaseModel):
     inventory_item_id: str
@@ -48,6 +54,28 @@ def create_inventory_item(
     service = InventoryService(db)
     return service.create_item(str(current_user.id), item_in.model_dump())
 
+@router.put("/items/{item_id}", response_model=InventoryItem)
+def update_inventory_item(
+    item_id: str,
+    item_in: InventoryItemCreate,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    service = InventoryService(db)
+    updated = service.update_item(str(current_user.id), item_id, item_in.model_dump())
+    if not updated:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return updated
+
+@router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_inventory_item(
+    item_id: str,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    service = InventoryService(db)
+    service.delete_item(str(current_user.id), item_id)
+
 @router.post("/items/import")
 async def import_inventory_items(
     file: UploadFile = File(...),
@@ -56,7 +84,7 @@ async def import_inventory_items(
 ):
     """
     Import Inventory Items from CSV.
-    Matches Albanian headers: EmriProduktit, SasiaStokut, KostoPerNjesi.
+    Uses bulk insert and tags items as source='POS'.
     """
     content = await file.read()
     filename = file.filename or "unknown.csv"
@@ -65,10 +93,8 @@ async def import_inventory_items(
         if filename.endswith('.xlsx'):
             df = pd.read_excel(io.BytesIO(content))
         else:
-            try:
-                df = pd.read_csv(io.BytesIO(content), encoding='utf-8')
-            except:
-                df = pd.read_csv(io.BytesIO(content), encoding='cp1252')
+            try: df = pd.read_csv(io.BytesIO(content), encoding='utf-8')
+            except: df = pd.read_csv(io.BytesIO(content), encoding='cp1252')
     except Exception as e:
         raise HTTPException(400, f"Invalid file format: {str(e)}")
 
@@ -77,80 +103,58 @@ async def import_inventory_items(
     
     # Mapping logic
     col_map = {}
-    
-    # Find Name column
     for c in df.columns:
-        if any(x in c for x in ['emri', 'name', 'produkt', 'product']):
-            col_map['name'] = c
-            break
-            
-    # Find Stock column
-    for c in df.columns:
-        if any(x in c for x in ['sasia', 'stok', 'qty', 'stock']):
-            col_map['stock'] = c
-            break
-            
-    # Find Cost column
-    for c in df.columns:
-        if any(x in c for x in ['kosto', 'cost', 'price', 'cmimi']):
-            col_map['cost'] = c
-            break
-
-    # Find Unit column
-    for c in df.columns:
-        if any(x in c for x in ['njesi', 'unit']):
-            col_map['unit'] = c
-            break
+        if any(x in c for x in ['emri', 'name', 'produkt', 'product']): col_map['name'] = c
+        elif any(x in c for x in ['sasia', 'stok', 'qty', 'stock']): col_map['stock'] = c
+        elif any(x in c for x in ['kosto', 'cost', 'price', 'cmimi']): col_map['cost'] = c
+        elif any(x in c for x in ['njesi', 'unit']): col_map['unit'] = c
 
     if 'name' not in col_map:
         raise HTTPException(400, "CSV must contain a 'Name' or 'Emri' column.")
 
-    service = InventoryService(db)
-    created_count = 0
+    items_to_create = []
     
     for _, row in df.iterrows():
         try:
             name = str(row[col_map['name']]).strip()
             if not name: continue
             
-            # Stock
             stock = 0.0
             if 'stock' in col_map:
                 try: stock = float(str(row[col_map['stock']]).replace(',', '.'))
                 except: stock = 0.0
                 
-            # Cost
             cost = 0.0
             if 'cost' in col_map:
                 try: cost = float(str(row[col_map['cost']]).replace(',', '.'))
                 except: cost = 0.0
             
-            # Unit
             unit = "kg"
             if 'unit' in col_map:
                 val = str(row[col_map['unit']]).strip().lower()
                 if val: unit = val
             
-            item_data = {
+            items_to_create.append({
                 "name": name,
                 "unit": unit,
                 "current_stock": stock,
-                "cost_per_unit": cost,
-                "low_stock_threshold": 5.0
-            }
+                "cost_per_unit": cost
+            })
             
-            service.create_item(str(current_user.id), item_data)
-            created_count += 1
-            
-        except Exception as e:
-            print(f"Skipping row: {e}")
+        except Exception:
             continue
 
-    return {
-        "status": "success",
-        "items_created": created_count,
-        "message": f"Successfully imported {created_count} items."
-    }
+    if items_to_create:
+        service = InventoryService(db)
+        # Use new bulk import method to auto-tag as POS
+        count = service.import_items_bulk(str(current_user.id), items_to_create)
+        return {
+            "status": "success",
+            "items_created": count,
+            "message": f"Successfully imported {count} items."
+        }
+    
+    return {"status": "success", "items_created": 0, "message": "No valid items found."}
 
 # --- RECIPE ENDPOINTS ---
 
@@ -171,6 +175,26 @@ def create_recipe(
     service = InventoryService(db)
     return service.create_recipe(str(current_user.id), recipe_in.model_dump())
 
+@router.put("/recipes/{recipe_id}", response_model=Recipe)
+def update_recipe(
+    recipe_id: str,
+    recipe_in: RecipeCreate,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    service = InventoryService(db)
+    updated = service.update_recipe(str(current_user.id), recipe_id, recipe_in.model_dump())
+    return updated
+
+@router.delete("/recipes/{recipe_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_recipe(
+    recipe_id: str,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    service = InventoryService(db)
+    service.delete_recipe(str(current_user.id), recipe_id)
+
 @router.post("/recipes/import")
 async def import_recipes(
     file: UploadFile = File(...),
@@ -187,10 +211,8 @@ async def import_recipes(
         if filename.endswith('.xlsx'):
             df = pd.read_excel(io.BytesIO(content))
         else:
-            try:
-                df = pd.read_csv(io.BytesIO(content), encoding='utf-8')
-            except:
-                df = pd.read_csv(io.BytesIO(content), encoding='cp1252')
+            try: df = pd.read_csv(io.BytesIO(content), encoding='utf-8')
+            except: df = pd.read_csv(io.BytesIO(content), encoding='cp1252')
     except Exception as e:
         raise HTTPException(400, f"Invalid file format: {str(e)}")
 
@@ -198,12 +220,9 @@ async def import_recipes(
     col_map = {}
     
     for c in df.columns:
-        if any(x in c for x in ['product', 'produkt', 'emri']):
-            col_map['product'] = c
-        elif any(x in c for x in ['ingredient', 'lenda', 'material', 'perberes']):
-            col_map['ingredient'] = c
-        elif any(x in c for x in ['quant', 'sasia', 'qty']):
-            col_map['qty'] = c
+        if any(x in c for x in ['product', 'produkt', 'emri']): col_map['product'] = c
+        elif any(x in c for x in ['ingredient', 'lenda', 'material', 'perberes']): col_map['ingredient'] = c
+        elif any(x in c for x in ['quant', 'sasia', 'qty']): col_map['qty'] = c
             
     if len(col_map) < 3:
         cols = df.columns.tolist()
@@ -223,42 +242,27 @@ async def import_recipes(
         try:
             prod_name = str(row[col_map['product']]).strip()
             ing_name = str(row[col_map['ingredient']]).strip()
-            
             raw_qty = row[col_map['qty']]
-            if isinstance(raw_qty, str):
-                raw_qty = raw_qty.replace(',', '.')
+            if isinstance(raw_qty, str): raw_qty = raw_qty.replace(',', '.')
             try: qty = float(raw_qty)
             except: qty = 0
                 
-            if not prod_name or not ing_name or qty <= 0:
-                continue
-                
-            ing_id = item_map.get(ing_name.lower())
+            if not prod_name or not ing_name or qty <= 0: continue
             
+            ing_id = item_map.get(ing_name.lower())
             if not ing_id:
                 missing_items.add(ing_name)
                 continue
                 
-            if prod_name not in recipes_to_create:
-                recipes_to_create[prod_name] = []
-                
-            recipes_to_create[prod_name].append({
-                "inventory_item_id": ing_id,
-                "quantity_required": qty
-            })
-        except:
-            continue
+            if prod_name not in recipes_to_create: recipes_to_create[prod_name] = []
+            recipes_to_create[prod_name].append({"inventory_item_id": ing_id, "quantity_required": qty})
+        except: continue
 
     created_count = 0
     for prod_name, ingredients in recipes_to_create.items():
         if not ingredients: continue
-            
         db["recipes"].delete_many({"user_id": str(current_user.id), "product_name": prod_name})
-        
-        recipe_in = {
-            "product_name": prod_name,
-            "ingredients": ingredients
-        }
+        recipe_in = {"product_name": prod_name, "ingredients": ingredients}
         inv_service.create_recipe(str(current_user.id), recipe_in)
         created_count += 1
 

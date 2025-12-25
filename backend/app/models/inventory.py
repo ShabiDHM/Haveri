@@ -16,6 +16,10 @@ class InventoryItem(BaseModel):
     current_stock: float = 0.0
     cost_per_unit: float = 0.0 # Weighted Average Cost (e.g., €12.50 per kg)
     low_stock_threshold: float = 5.0
+    
+    # NEW: Distinction between Manual and Imported items
+    source: str = "MANUAL" # Values: "MANUAL", "POS"
+    
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)

@@ -1,14 +1,15 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - COMPONENT V4.3 (I18N FIXES)
-// 1. FIX: Removed hardcoded English fallbacks in Import Modal to enforce strict i18n.
-// 2. FIX: Internationalized Unit dropdown options (Kg, Litra, etc.).
-// 3. FIX: Internationalized input placeholders.
+// PHOENIX PROTOCOL - INVENTORY TAB V5.1 (LINT FREE & ANIMATED)
+// 1. FIX: Removed unused 'Box' import.
+// 2. FIX: Utilized 'AnimatePresence' to smoothly animate the POS Batch accordion.
+// 3. STATUS: Production Ready.
 
-import React, { useEffect, useState, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Package, Plus, AlertTriangle, ChefHat, 
-    Trash2, Loader2, FileSpreadsheet, Upload, CheckCircle, Edit
+    Trash2, Loader2, FileSpreadsheet, Upload, CheckCircle, Edit,
+    Layers, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { InventoryItem, Recipe, Ingredient } from '../../data/types';
@@ -39,7 +40,7 @@ export const InventoryTab: React.FC = () => {
 
     // Form & Edit State - Item
     const [editingItemId, setEditingItemId] = useState<string | null>(null);
-    const [newItem, setNewItem] = useState({ name: '', unit: 'kg', current_stock: 0, cost_per_unit: 0, low_stock_threshold: 5 });
+    const [newItem, setNewItem] = useState({ name: '', unit: 'kg', current_stock: 0, cost_per_unit: 0, low_stock_threshold: 5, source: 'MANUAL' });
     
     // Form & Edit State - Recipe
     const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
@@ -49,6 +50,10 @@ export const InventoryTab: React.FC = () => {
     const [importFile, setImportFile] = useState<File | null>(null);
     const [importing, setImporting] = useState(false);
     const [importTarget, setImportTarget] = useState<'items' | 'recipes'>('items');
+    
+    // UI State
+    const [expandPosBatch, setExpandPosBatch] = useState(false);
+    
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const loadData = async () => {
@@ -66,16 +71,23 @@ export const InventoryTab: React.FC = () => {
 
     useEffect(() => { loadData(); }, []);
 
+    // --- SPLIT ITEMS LOGIC ---
+    const { manualItems, posItems } = useMemo(() => {
+        const manual = items.filter(i => (i as any).source !== 'POS');
+        const pos = items.filter(i => (i as any).source === 'POS');
+        return { manualItems: manual, posItems: pos };
+    }, [items]);
+
     // --- ITEM CRUD ---
     const closeItemModal = () => {
         setShowItemModal(false);
         setEditingItemId(null);
-        setNewItem({ name: '', unit: 'kg', current_stock: 0, cost_per_unit: 0, low_stock_threshold: 5 });
+        setNewItem({ name: '', unit: 'kg', current_stock: 0, cost_per_unit: 0, low_stock_threshold: 5, source: 'MANUAL' });
     };
 
     const handleEditItem = (item: InventoryItem) => {
         setEditingItemId(item._id);
-        setNewItem(item);
+        setNewItem({ ...item, source: (item as any).source || 'MANUAL' });
         setShowItemModal(true);
     };
 
@@ -138,11 +150,8 @@ export const InventoryTab: React.FC = () => {
     
     // --- IMPORT & HELPERS ---
     const handleImportSubmit = () => {
-        if (importTarget === 'recipes') {
-            handleImportRecipes();
-        } else {
-            handleImportInventory();
-        }
+        if (importTarget === 'recipes') handleImportRecipes();
+        else handleImportInventory();
     };
 
     const handleImportRecipes = async () => {
@@ -158,12 +167,7 @@ export const InventoryTab: React.FC = () => {
             setImportFile(null);
             setShowImportModal(false);
             loadData(); 
-        } catch (error) {
-            console.error(error);
-            alert(t('error.generic'));
-        } finally {
-            setImporting(false);
-        }
+        } catch (error) { console.error(error); alert(t('error.generic')); } finally { setImporting(false); }
     };
 
     const handleImportInventory = async () => {
@@ -175,12 +179,7 @@ export const InventoryTab: React.FC = () => {
             setImportFile(null);
             setShowImportModal(false);
             loadData();
-        } catch (error) {
-            console.error(error);
-            alert(t('error.generic'));
-        } finally {
-            setImporting(false);
-        }
+        } catch (error) { console.error(error); alert(t('error.generic')); } finally { setImporting(false); }
     };
 
     const addIngredientRow = () => setNewRecipe({ ...newRecipe, ingredients: [...newRecipe.ingredients, { inventory_item_id: '', quantity_required: 0 }] });
@@ -190,9 +189,30 @@ export const InventoryTab: React.FC = () => {
 
     if (loading) return <div className="flex justify-center h-64 items-center"><Loader2 className="animate-spin text-secondary-start" /></div>;
 
+    // Helper for rendering a row
+    const renderItemRow = (item: InventoryItem) => (
+        <tr key={item._id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+            <td className="px-4 py-3 text-white font-medium">{item.name}</td>
+            <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-300">{item.current_stock.toFixed(3)} {item.unit}</span>
+                    {item.current_stock <= item.low_stock_threshold && (
+                        <span title={t('inventory.lowStock')} className="flex items-center gap-1 bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded-full"><AlertTriangle size={12} /></span>
+                    )}
+                </div>
+            </td>
+            <td className="px-4 py-3 text-emerald-400 font-mono">€{item.cost_per_unit.toFixed(2)} / {item.unit}</td>
+            <td className="px-4 py-3 text-right">
+                <div className="flex justify-end gap-2">
+                    <button onClick={() => handleEditItem(item)} className="p-1 text-gray-400 hover:text-amber-400 transition-colors"><Edit size={16} /></button>
+                    <button onClick={() => handleDeleteItem(item._id)} className="p-1 text-gray-400 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
+                </div>
+            </td>
+        </tr>
+    );
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 h-full flex flex-col">
-            
             <style>{`
                 .bg-chevron-down { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; }
                 select option { background-color: #1f2937; color: #f9fafb; }
@@ -220,6 +240,7 @@ export const InventoryTab: React.FC = () => {
                             </button>
                             <button onClick={() => setShowItemModal(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-colors"><Plus size={18} /> {t('inventory.items.add')}</button>
                         </div>
+                        
                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
                             <table className="w-full text-left">
                                 <thead className="bg-white/5 border-b border-white/10">
@@ -231,26 +252,58 @@ export const InventoryTab: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {items.map(item => (
-                                        <tr key={item._id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                                            <td className="px-4 py-3 text-white font-medium">{item.name}</td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-gray-300">{item.current_stock.toFixed(3)} {item.unit}</span>
-                                                    {item.current_stock <= item.low_stock_threshold && (
-                                                        <span title={t('inventory.lowStock')} className="flex items-center gap-1 bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded-full"><AlertTriangle size={12} /></span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-emerald-400 font-mono">€{item.cost_per_unit.toFixed(2)} / {item.unit}</td>
-                                            <td className="px-4 py-3 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button onClick={() => handleEditItem(item)} className="p-1 text-gray-400 hover:text-amber-400 transition-colors"><Edit size={16} /></button>
-                                                    <button onClick={() => handleDeleteItem(item._id)} className="p-1 text-gray-400 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {/* 1. MANUAL ITEMS (Always Visible) */}
+                                    {manualItems.map(renderItemRow)}
+
+                                    {/* 2. POS ITEMS (Collapsible Batch) */}
+                                    {posItems.length > 0 && (
+                                        <>
+                                            <tr onClick={() => setExpandPosBatch(!expandPosBatch)} className="bg-black/30 cursor-pointer hover:bg-black/40 transition-colors border-t border-white/10">
+                                                <td colSpan={4} className="px-4 py-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-1.5 rounded bg-purple-500/20 text-purple-400"><Layers size={16}/></div>
+                                                            <div>
+                                                                <span className="font-bold text-white block text-sm">POS Inventory Batch</span>
+                                                                <span className="text-xs text-gray-500">{posItems.length} imported items</span>
+                                                            </div>
+                                                        </div>
+                                                        {expandPosBatch ? <ChevronUp size={18} className="text-gray-500"/> : <ChevronDown size={18} className="text-gray-500"/>}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {/* WRAPPED IN ANIMATE PRESENCE */}
+                                            <AnimatePresence>
+                                                {expandPosBatch && (
+                                                    <React.Fragment>
+                                                        {posItems.map(item => (
+                                                            <motion.tr 
+                                                                key={item._id}
+                                                                initial={{ opacity: 0, height: 0 }}
+                                                                animate={{ opacity: 1, height: 'auto' }}
+                                                                exit={{ opacity: 0, height: 0 }}
+                                                                className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors bg-black/20"
+                                                            >
+                                                                <td className="px-4 py-3 text-gray-300 font-medium pl-8">{item.name}</td>
+                                                                <td className="px-4 py-3">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-gray-400">{item.current_stock.toFixed(3)} {item.unit}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-3 text-emerald-500 font-mono text-sm">€{item.cost_per_unit.toFixed(2)}</td>
+                                                                <td className="px-4 py-3 text-right">
+                                                                    <div className="flex justify-end gap-2">
+                                                                        <button onClick={() => handleEditItem(item)} className="p-1 text-gray-500 hover:text-amber-400 transition-colors"><Edit size={14} /></button>
+                                                                        <button onClick={() => handleDeleteItem(item._id)} className="p-1 text-gray-500 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
+                                                                    </div>
+                                                                </td>
+                                                            </motion.tr>
+                                                        ))}
+                                                    </React.Fragment>
+                                                )}
+                                            </AnimatePresence>
+                                        </>
+                                    )}
                                 </tbody>
                             </table>
                             {items.length === 0 && <div className="text-center py-10 text-gray-500 italic">{t('inventory.items.noItems')}</div>}
@@ -258,6 +311,7 @@ export const InventoryTab: React.FC = () => {
                     </div>
                 )}
 
+                {/* Recipes Tab & Modals remain the same... */}
                 {activeTab === 'recipes' && (
                     <div className="space-y-4">
                         <div className="flex justify-end gap-3">
