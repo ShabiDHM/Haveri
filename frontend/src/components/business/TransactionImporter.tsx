@@ -1,3 +1,9 @@
+// FILE: src/components/business/TransactionImporter.tsx
+// PHOENIX PROTOCOL - IMPORTER V2.0 (UI CLEANUP)
+// 1. FIX: Removed redundant English sub-labels (e.g., 'amount', 'date').
+// 2. FIX: Added internal CSS to enforce dark mode on dropdowns.
+// 3. STATUS: Production Ready.
+
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { apiService, ImportPreviewResponse } from '../../services/api';
@@ -16,7 +22,6 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
     const [isLoading, setIsLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Defined inside component to access 't'
     const requiredFields = [
         { key: 'amount', label: t('finance.amount'), required: true },
         { key: 'date', label: t('finance.date'), required: false },
@@ -35,11 +40,9 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
             const data = await apiService.previewImport(uploadedFile);
             setPreviewData(data);
             
-            // Auto-map smart logic
             const initialMapping: Record<string, string> = {};
             data.headers.forEach(header => {
                 const h = header.toLowerCase();
-                // We keep the heuristics generic as CSV headers won't be translated usually
                 if (h.includes('shum') || h.includes('total') || h.includes('amount') || h.includes('price') || h.includes('çmimi') || h.includes('cmimi')) initialMapping['amount'] = header;
                 else if (h.includes('dat') || h.includes('time') || h.includes('koha')) initialMapping['date'] = header;
                 else if (h.includes('përsh') || h.includes('desc') || h.includes('artik') || h.includes('item') || h.includes('emërtimi')) initialMapping['description'] = header;
@@ -47,8 +50,6 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                 else if (h.includes('sasi') || h.includes('qty')) initialMapping['quantity'] = header;
             });
             
-            // Invert for UI: { db_field: csv_header } -> { csv_header: db_field } for internal logic if needed, 
-            // but here we store { csv_header: db_field } directly for the API.
             const apiReadyMapping: Record<string, string> = {};
             Object.entries(initialMapping).forEach(([dbField, csvHeader]) => {
                 apiReadyMapping[csvHeader] = dbField;
@@ -70,7 +71,6 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
         setStep('processing');
         try {
             await apiService.confirmImport(file, mapping);
-            // alert(t('finance.import.success')); // Optional: Show alert or just close
             onSuccess();
             onClose();
         } catch (error) {
@@ -83,11 +83,9 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
 
     const updateMapping = (dbField: string, csvHeader: string) => {
         const newMapping = { ...mapping };
-        // Remove old mapping for this dbField
         Object.keys(newMapping).forEach(key => {
             if (newMapping[key] === dbField) delete newMapping[key];
         });
-        // Add new
         if (csvHeader) {
             newMapping[csvHeader] = dbField;
         }
@@ -100,6 +98,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <style>{`select option { background-color: #1f2937; color: #f9fafb; }`}</style>
             <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 
                 {/* Header */}
@@ -154,7 +153,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                                                 {field.label}
                                                 {field.required && <span className="text-rose-400 text-xs">*</span>}
                                             </p>
-                                            <p className="text-xs text-gray-500">{field.key}</p>
+                                            {/* REMOVED: Redundant English Text */}
                                         </div>
                                         <ArrowRight className="text-gray-600" size={16} />
                                         <div className="flex-1">
