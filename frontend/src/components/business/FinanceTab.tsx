@@ -1,8 +1,10 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V15.5 (UI POLISH)
-// 1. FIX: Added CSS to force dark background on <select> dropdown options.
-// 2. FIX: Verified batch label translation logic.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - FINANCE TAB V16.0 (MOBILE OPTIMIZED)
+// 1. UI: Implemented horizontal scrolling for action buttons on mobile.
+// 2. UI: Adjusted padding breakpoints (p-4 mobile, p-6 desktop).
+// 3. UI: Enforced text-base on inputs for mobile (prevents iOS zoom).
+// 4. UI: Tighter list item spacing for small screens.
+// 5. STATUS: Production Ready.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -67,7 +69,7 @@ const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.R
     <button 
         onClick={onClick} 
         className={`
-            flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
+            flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 whitespace-nowrap
             ${primary 
                 ? 'bg-primary-start hover:bg-primary-end text-white shadow-lg shadow-primary-start/20' 
                 : 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 hover:border-white/20'
@@ -83,7 +85,7 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
     <button 
         onClick={onClick} 
         className={`
-            relative px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2
+            relative px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2
             ${isActive ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}
         `}
     >
@@ -91,7 +93,8 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
             <motion.div layoutId="activeTab" className="absolute inset-0 bg-white/10 rounded-xl" initial={false} transition={{ type: "spring", stiffness: 500, damping: 30 }} />
         )}
         <span className="relative z-10">{icon}</span>
-        <span className="relative z-10">{label}</span>
+        <span className="relative z-10 hidden sm:inline">{label}</span>
+        <span className="relative z-10 sm:hidden">{label.split(' ')[0]}</span>
     </button>
 );
 
@@ -326,7 +329,7 @@ export const FinanceTab: React.FC = () => {
     };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-8">
             <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
@@ -334,6 +337,9 @@ export const FinanceTab: React.FC = () => {
                 .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
                 /* Dark dropdown options */
                 select option { background-color: #1f2937; color: #f9fafb; }
+                /* Hide scrollbar for action buttons on mobile */
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -343,7 +349,8 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} />} type="expense" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
+            {/* Action Bar: Scrollable on mobile */}
+            <div className="flex overflow-x-auto sm:flex-wrap items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 no-scrollbar mask-linear-fade">
                 <ActionButton primary icon={<Plus size={16} />} label={t('finance.createInvoice')} onClick={() => setShowInvoiceModal(true)} />
                 <div className="w-px h-8 bg-white/10 mx-2 hidden sm:block"></div>
                 <ActionButton icon={<FileSpreadsheet size={16} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
@@ -351,12 +358,12 @@ export const FinanceTab: React.FC = () => {
                 <ActionButton icon={<Calculator size={16} />} label={t('finance.monthlyClose')} onClick={() => navigate('/finance/wizard')} />
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-6 border-b border-white/5 pb-6">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">{t('finance.activityAndReports')}</h2>
-                    <div className="flex items-center gap-1 bg-black/20 p-1.5 rounded-2xl">
-                        <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
-                        <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-4 sm:p-6 backdrop-blur-md min-h-[500px] sm:min-h-[600px] flex flex-col">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 sm:mb-6 border-b border-white/5 pb-4 sm:pb-6">
+                    <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight self-start sm:self-auto">{t('finance.activityAndReports')}</h2>
+                    <div className="flex items-center gap-1 bg-black/20 p-1 rounded-2xl w-full sm:w-auto">
+                        <div className="flex-1 sm:flex-none"><TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} /></div>
+                        <div className="flex-1 sm:flex-none"><TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} /></div>
                     </div>
                 </div>
 
@@ -365,7 +372,7 @@ export const FinanceTab: React.FC = () => {
                         <div className="flex flex-col h-full space-y-4">
                             <div className="relative">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-                                <input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/20 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-start/50 transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                <input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/20 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-base sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary-start/50 transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                             </div>
                             
                             <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-2">
@@ -378,14 +385,14 @@ export const FinanceTab: React.FC = () => {
                                     if (item.type === 'single') {
                                         const tx = item.data;
                                         return (
-                                            <div key={`${tx.type}-${tx.id}`} className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-transparent hover:border-white/5 cursor-default gap-3">
+                                            <div key={`${tx.type}-${tx.id}`} className="group flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-transparent hover:border-white/5 cursor-default gap-3">
                                                 <div className="flex items-center gap-4 min-w-0">
                                                     <div className={`p-3 rounded-xl ${tx.type === 'invoice' || tx.type === 'pos' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                                                         {tx.type === 'invoice' ? <ArrowDownRight size={20} /> : tx.type === 'pos' ? <ShoppingCart size={20} /> : getCategoryIcon(tx.label)}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <h4 className="font-semibold text-white truncate">{tx.label}</h4>
-                                                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                        <h4 className="font-semibold text-white truncate text-sm sm:text-base">{tx.label}</h4>
+                                                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
                                                             <Calendar size={12} />
                                                             <span>{new Date(tx.date).toLocaleDateString()}</span>
                                                             <span className="w-1 h-1 rounded-full bg-gray-600"></span>
@@ -393,7 +400,7 @@ export const FinanceTab: React.FC = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto">
+                                                <div className="flex flex-row sm:items-center justify-between sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto mt-1 sm:mt-0 pl-[60px] sm:pl-0">
                                                     <span className={`text-lg font-bold font-mono ${tx.type === 'invoice' || tx.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'}`}>
                                                         {tx.type === 'invoice' || tx.type === 'pos' ? '+' : '-'}€{(tx.amount || 0).toFixed(2)}
                                                     </span>
@@ -423,23 +430,23 @@ export const FinanceTab: React.FC = () => {
                                             <div key={`group-${item.date}-${item.groupType}`} className="rounded-xl border border-white/10 bg-black/20 overflow-hidden">
                                                 <div 
                                                     onClick={() => toggleGroup(item.date + item.groupType)}
-                                                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                                                    className="flex items-center justify-between p-3 sm:p-4 cursor-pointer hover:bg-white/5 transition-colors"
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div className={`p-3 rounded-xl ${styles.bg} ${styles.text}`}>
                                                             {styles.icon}
                                                         </div>
                                                         <div>
-                                                            <h4 className="font-semibold text-white">{styles.title}</h4>
-                                                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                            <h4 className="font-semibold text-white text-sm sm:text-base">{styles.title}</h4>
+                                                            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
                                                                 <span>{item.date}</span>
                                                                 <span className="w-1 h-1 rounded-full bg-gray-600"></span>
                                                                 <span className="text-gray-400">{t(styles.labelKey, { count: item.count })}</span>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <span className={`text-lg font-bold font-mono ${styles.amountColor}`}>
+                                                    <div className="flex items-center gap-2 sm:gap-4">
+                                                        <span className={`text-base sm:text-lg font-bold font-mono ${styles.amountColor}`}>
                                                             {isIncome ? '+' : '-'}€{item.totalAmount.toFixed(2)}
                                                         </span>
                                                         {isExpanded ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
@@ -495,12 +502,11 @@ export const FinanceTab: React.FC = () => {
 
                     {activeTab === 'reports' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
-                            {/* ... (Existing Report Logic) ... */}
                             {!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <div className="bg-black/20 rounded-2xl p-6 border border-white/5">
+                                    <div className="bg-black/20 rounded-2xl p-4 sm:p-6 border border-white/5">
                                         <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-2"><TrendingUp size={20} className="text-primary-start" /> {t('finance.analytics.salesTrend')}</h4>
-                                        <div className="h-[300px] w-full">
+                                        <div className="h-[250px] sm:h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <AreaChart data={analyticsData.sales_trend}>
                                                     <defs><linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/><stop offset="95%" stopColor="#818cf8" stopOpacity={0}/></linearGradient></defs>
@@ -513,9 +519,9 @@ export const FinanceTab: React.FC = () => {
                                             </ResponsiveContainer>
                                         </div>
                                     </div>
-                                    <div className="bg-black/20 rounded-2xl p-6 border border-white/5">
+                                    <div className="bg-black/20 rounded-2xl p-4 sm:p-6 border border-white/5">
                                         <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-2"><BarChart2 size={20} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
-                                        <div className="h-[300px] w-full">
+                                        <div className="h-[250px] sm:h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 20 }}>
                                                     <XAxis type="number" hide />
@@ -537,13 +543,85 @@ export const FinanceTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* MODALS UNCHANGED */}
-            {/* ... */}
-            {showInvoiceModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 custom-finance-scroll"><div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-white">{editingInvoiceId ? t('finance.editInvoice') : t('finance.createInvoice')}</h2><button onClick={closeInvoiceModal} className="text-gray-400 hover:text-white"><X size={24} /></button></div><form onSubmit={handleCreateOrUpdateInvoice} className="space-y-6"><div className="space-y-4">
-                <h3 className="text-sm font-bold text-primary-start uppercase tracking-wider flex items-center gap-2"><User size={16} /> {t('caseCard.client')}</h3><div><label className="block text-sm text-gray-300 mb-1">{t('business.clientName')}</label><input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_name} onChange={e => setNewInvoice({...newInvoice, client_name: e.target.value})} /></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-sm text-gray-300 mb-1">{t('business.publicEmail')}</label><input type="email" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_email} onChange={e => setNewInvoice({...newInvoice, client_email: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.phone')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_phone} onChange={e => setNewInvoice({...newInvoice, client_phone: e.target.value})} /></div></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-sm text-gray-300 mb-1">{t('business.city')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_city} onChange={e => setNewInvoice({...newInvoice, client_city: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.taxId')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_tax_id} onChange={e => setNewInvoice({...newInvoice, client_tax_id: e.target.value})} /></div></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.address')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newInvoice.client_address} onChange={e => setNewInvoice({...newInvoice, client_address: e.target.value})} /></div><div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/10"><input type="checkbox" id="vatToggle" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} className="w-4 h-4 text-primary-start rounded border-gray-300 focus:ring-primary-start" /><label htmlFor="vatToggle" className="text-sm text-gray-300 cursor-pointer select-none">{t('finance.applyVat')}</label></div></div><div className="space-y-3 pt-4 border-t border-white/10"><h3 className="text-sm font-bold text-primary-start uppercase tracking-wider flex items-center gap-2"><FileText size={16} /> {t('finance.services')}</h3>{lineItems.map((item, index) => (<div key={index} className="flex flex-col sm:flex-row gap-2 items-center"><input type="text" placeholder={t('finance.description')} className="flex-1 w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} required /><input type="number" placeholder={t('finance.qty')} className="w-full sm:w-20 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))} min="1" /><input type="number" placeholder={t('finance.price')} className="w-full sm:w-24 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.unit_price} onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))} min="0" /><button type="button" onClick={() => removeLineItem(index)} className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg self-end sm:self-center"><Trash2 size={18} /></button></div>))}<button type="button" onClick={addLineItem} className="text-sm text-primary-start hover:underline flex items-center gap-1"><Plus size={14} /> {t('finance.addLine')}</button></div><div className="flex justify-end gap-3"><button type="button" onClick={closeInvoiceModal} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold">{t('general.save')}</button></div></form></div></div>)}
-            {showExpenseModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6"><div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-white flex items-center gap-2"><MinusCircle size={20} className="text-rose-500" /> {editingExpenseId ? t('finance.editExpense') : t('finance.addExpense')}</h2><button onClick={closeExpenseModal} className="text-gray-400 hover:text-white"><X size={24} /></button></div><div className="mb-6"><input type="file" ref={receiptInputRef} className="hidden" accept="image/*,.pdf" onChange={(e) => setExpenseReceipt(e.target.files?.[0] || null)} /><button onClick={() => receiptInputRef.current?.click()} className={`w-full py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${expenseReceipt ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>{expenseReceipt ? (<><CheckCircle size={18} /> {expenseReceipt.name}</>) : (<><Paperclip size={18} /> {t('finance.attachReceipt')}</>)}</button></div><form onSubmit={handleCreateOrUpdateExpense} className="space-y-5"><div><label className="block text-sm text-gray-300 mb-1">{t('finance.expenseCategory')}</label><input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newExpense.category} onChange={e => setNewExpense({...newExpense, category: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('finance.amount')}</label><input required type="number" step="0.01" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: parseFloat(e.target.value)})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('finance.date')}</label><DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" required /></div><div><label className="block text-sm text-gray-300 mb-1">{t('finance.description')}</label><textarea rows={2} className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={newExpense.description} onChange={e => setNewExpense({...newExpense, description: e.target.value})} /></div><div className="flex justify-end gap-3 pt-4"><button type="button" onClick={closeExpenseModal} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold">{t('general.save')}</button></div></form></div></div>)}
-            {showArchiveInvoiceModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2 bg-blue-600 text-white rounded-lg">{t('general.save')}</button></div></div></div>)}
-            {showArchiveExpenseModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2 bg-indigo-600 text-white rounded-lg">{t('general.save')}</button></div></div></div>)}
+            {/* MODALS */}
+            {showInvoiceModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 custom-finance-scroll">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl sm:text-2xl font-bold text-white">{editingInvoiceId ? t('finance.editInvoice') : t('finance.createInvoice')}</h2>
+                            <button onClick={closeInvoiceModal} className="text-gray-400 hover:text-white"><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleCreateOrUpdateInvoice} className="space-y-4 sm:space-y-6">
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-bold text-primary-start uppercase tracking-wider flex items-center gap-2"><User size={16} /> {t('caseCard.client')}</h3>
+                                <div><label className="block text-sm text-gray-300 mb-1">{t('business.clientName')}</label><input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_name} onChange={e => setNewInvoice({...newInvoice, client_name: e.target.value})} /></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-sm text-gray-300 mb-1">{t('business.publicEmail')}</label><input type="email" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_email} onChange={e => setNewInvoice({...newInvoice, client_email: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.phone')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_phone} onChange={e => setNewInvoice({...newInvoice, client_phone: e.target.value})} /></div></div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-sm text-gray-300 mb-1">{t('business.city')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_city} onChange={e => setNewInvoice({...newInvoice, client_city: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.taxId')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_tax_id} onChange={e => setNewInvoice({...newInvoice, client_tax_id: e.target.value})} /></div></div>
+                                <div><label className="block text-sm text-gray-300 mb-1">{t('business.address')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_address} onChange={e => setNewInvoice({...newInvoice, client_address: e.target.value})} /></div>
+                                <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/10"><input type="checkbox" id="vatToggle" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} className="w-4 h-4 text-primary-start rounded border-gray-300 focus:ring-primary-start" /><label htmlFor="vatToggle" className="text-sm text-gray-300 cursor-pointer select-none">{t('finance.applyVat')}</label></div>
+                            </div>
+                            <div className="space-y-3 pt-4 border-t border-white/10">
+                                <h3 className="text-sm font-bold text-primary-start uppercase tracking-wider flex items-center gap-2"><FileText size={16} /> {t('finance.services')}</h3>
+                                {lineItems.map((item, index) => (
+                                    <div key={index} className="flex flex-col sm:flex-row gap-2 items-center border-b border-white/5 pb-2 sm:border-none sm:pb-0">
+                                        <input type="text" placeholder={t('finance.description')} className="flex-1 w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} required />
+                                        <div className="flex gap-2 w-full sm:w-auto">
+                                            <input type="number" placeholder={t('finance.qty')} className="w-1/2 sm:w-20 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))} min="1" />
+                                            <input type="number" placeholder={t('finance.price')} className="w-1/2 sm:w-24 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={item.unit_price} onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))} min="0" />
+                                        </div>
+                                        <button type="button" onClick={() => removeLineItem(index)} className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg self-end sm:self-center"><Trash2 size={18} /></button>
+                                    </div>
+                                ))}
+                                <button type="button" onClick={addLineItem} className="text-sm text-primary-start hover:underline flex items-center gap-1"><Plus size={14} /> {t('finance.addLine')}</button>
+                            </div>
+                            <div className="flex justify-end gap-3"><button type="button" onClick={closeInvoiceModal} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold">{t('general.save')}</button></div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            
+            {showExpenseModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-4 sm:p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2"><MinusCircle size={20} className="text-rose-500" /> {editingExpenseId ? t('finance.editExpense') : t('finance.addExpense')}</h2>
+                            <button onClick={closeExpenseModal} className="text-gray-400 hover:text-white"><X size={24} /></button>
+                        </div>
+                        <div className="mb-6">
+                            <input type="file" ref={receiptInputRef} className="hidden" accept="image/*,.pdf" onChange={(e) => setExpenseReceipt(e.target.files?.[0] || null)} />
+                            <button onClick={() => receiptInputRef.current?.click()} className={`w-full py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${expenseReceipt ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>{expenseReceipt ? (<><CheckCircle size={18} /> {expenseReceipt.name}</>) : (<><Paperclip size={18} /> {t('finance.attachReceipt')}</>)}</button>
+                        </div>
+                        <form onSubmit={handleCreateOrUpdateExpense} className="space-y-4 sm:space-y-5">
+                            <div><label className="block text-sm text-gray-300 mb-1">{t('finance.expenseCategory')}</label><input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newExpense.category} onChange={e => setNewExpense({...newExpense, category: e.target.value})} /></div>
+                            <div><label className="block text-sm text-gray-300 mb-1">{t('finance.amount')}</label><input required type="number" step="0.01" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: parseFloat(e.target.value)})} /></div>
+                            <div><label className="block text-sm text-gray-300 mb-1">{t('finance.date')}</label><DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" required /></div>
+                            <div><label className="block text-sm text-gray-300 mb-1">{t('finance.description')}</label><textarea rows={2} className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newExpense.description} onChange={e => setNewExpense({...newExpense, description: e.target.value})} /></div>
+                            <div className="flex justify-end gap-3 pt-4"><button type="button" onClick={closeExpenseModal} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold">{t('general.save')}</button></div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            
+            {showArchiveInvoiceModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6">
+                        <h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2>
+                        <div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div>
+                        <div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2 bg-blue-600 text-white rounded-lg">{t('general.save')}</button></div>
+                    </div>
+                </div>
+            )}
+            
+            {showArchiveExpenseModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6">
+                        <h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2>
+                        <div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div>
+                        <div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2 bg-indigo-600 text-white rounded-lg">{t('general.save')}</button></div>
+                    </div>
+                </div>
+            )}
+            
             {showImportModal && (<TransactionImporter onClose={() => setShowImportModal(false)} onSuccess={() => { loadInitialData(); setShowImportModal(false); }} t={t} />)}
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} onMinimize={closePreview} t={t} directUrl={viewingUrl} />}
         </motion.div>

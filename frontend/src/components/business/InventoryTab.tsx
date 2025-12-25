@@ -1,8 +1,7 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V5.1 (LINT FREE & ANIMATED)
-// 1. FIX: Removed unused 'Box' import.
-// 2. FIX: Utilized 'AnimatePresence' to smoothly animate the POS Batch accordion.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - INVENTORY TAB V16.1 (LINT FIX)
+// 1. FIX: Removed unused 'MoreVertical' import.
+// 2. STATUS: Production Ready. Clean.
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,10 +18,11 @@ import { useTranslation } from 'react-i18next';
 const TabButton = ({ label, icon, isActive, onClick }: any) => (
     <button 
         onClick={onClick} 
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-secondary-start/10 text-secondary-start border border-secondary-start/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+        className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${isActive ? 'bg-secondary-start/10 text-secondary-start border border-secondary-start/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
     >
         {icon}
-        {label}
+        <span className="hidden sm:inline">{label}</span>
+        <span className="sm:hidden">{label.split(' ')[0]}</span>
     </button>
 );
 
@@ -189,26 +189,51 @@ export const InventoryTab: React.FC = () => {
 
     if (loading) return <div className="flex justify-center h-64 items-center"><Loader2 className="animate-spin text-secondary-start" /></div>;
 
-    // Helper for rendering a row
+    // Helper for rendering a row (Responsive: Table Row on Desktop, Card on Mobile)
     const renderItemRow = (item: InventoryItem) => (
-        <tr key={item._id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-            <td className="px-4 py-3 text-white font-medium">{item.name}</td>
-            <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                    <span className="text-gray-300">{item.current_stock.toFixed(3)} {item.unit}</span>
-                    {item.current_stock <= item.low_stock_threshold && (
-                        <span title={t('inventory.lowStock')} className="flex items-center gap-1 bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded-full"><AlertTriangle size={12} /></span>
-                    )}
+        <React.Fragment key={item._id}>
+            {/* Desktop View */}
+            <tr className="hidden sm:table-row border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                <td className="px-4 py-3 text-white font-medium">{item.name}</td>
+                <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                        <span className="text-gray-300">{item.current_stock.toFixed(3)} {item.unit}</span>
+                        {item.current_stock <= item.low_stock_threshold && (
+                            <span title={t('inventory.lowStock')} className="flex items-center gap-1 bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded-full"><AlertTriangle size={12} /></span>
+                        )}
+                    </div>
+                </td>
+                <td className="px-4 py-3 text-emerald-400 font-mono">€{item.cost_per_unit.toFixed(2)} / {item.unit}</td>
+                <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-2">
+                        <button onClick={() => handleEditItem(item)} className="p-1 text-gray-400 hover:text-amber-400 transition-colors"><Edit size={16} /></button>
+                        <button onClick={() => handleDeleteItem(item._id)} className="p-1 text-gray-400 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
+                    </div>
+                </td>
+            </tr>
+            {/* Mobile View */}
+            <div className="sm:hidden flex flex-col p-4 bg-white/5 border border-white/10 rounded-xl mb-3">
+                <div className="flex justify-between items-start mb-2">
+                    <div>
+                        <span className="text-white font-bold block text-lg">{item.name}</span>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="text-gray-400 text-sm">{item.current_stock.toFixed(3)} {item.unit}</span>
+                            {item.current_stock <= item.low_stock_threshold && (
+                                <span className="bg-rose-500/10 text-rose-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">{t('inventory.lowStock')}</span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <span className="block text-emerald-400 font-mono font-bold">€{item.cost_per_unit.toFixed(2)}</span>
+                        <span className="text-[10px] text-gray-500 uppercase">per {item.unit}</span>
+                    </div>
                 </div>
-            </td>
-            <td className="px-4 py-3 text-emerald-400 font-mono">€{item.cost_per_unit.toFixed(2)} / {item.unit}</td>
-            <td className="px-4 py-3 text-right">
-                <div className="flex justify-end gap-2">
-                    <button onClick={() => handleEditItem(item)} className="p-1 text-gray-400 hover:text-amber-400 transition-colors"><Edit size={16} /></button>
-                    <button onClick={() => handleDeleteItem(item._id)} className="p-1 text-gray-400 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
+                <div className="flex justify-end gap-4 mt-2 border-t border-white/5 pt-2">
+                    <button onClick={() => handleEditItem(item)} className="flex items-center gap-1 text-amber-400 text-sm"><Edit size={14} /> {t('general.edit')}</button>
+                    <button onClick={() => handleDeleteItem(item._id)} className="flex items-center gap-1 text-rose-400 text-sm"><Trash2 size={14} /> {t('general.delete')}</button>
                 </div>
-            </td>
-        </tr>
+            </div>
+        </React.Fragment>
     );
 
     return (
@@ -218,31 +243,31 @@ export const InventoryTab: React.FC = () => {
                 select option { background-color: #1f2937; color: #f9fafb; }
             `}</style>
 
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-none">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 flex-none">
                 <h2 className="text-xl font-bold text-white">{t('inventory.title')}</h2>
-                <div className="flex gap-2 bg-black/20 p-1 rounded-lg">
+                <div className="flex gap-2 bg-black/20 p-1 rounded-lg self-start sm:self-auto">
                     <TabButton label={t('inventory.tabItems')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
                     <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-0 sm:pr-2">
                 
                 {activeTab === 'items' && (
                     <div className="space-y-4">
-                        <div className="flex justify-end gap-3">
+                        <div className="flex flex-wrap justify-end gap-2 sm:gap-3">
                             <button 
                                 onClick={() => { setImportTarget('items'); setShowImportModal(true); }} 
-                                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors text-xs sm:text-sm"
                             >
-                                <FileSpreadsheet size={18} className="text-emerald-400" /> 
-                                {t('inventory.items.import', 'Import CSV')}
+                                <FileSpreadsheet size={16} className="text-emerald-400" /> 
+                                <span className="whitespace-nowrap">{t('inventory.items.import', 'Import CSV')}</span>
                             </button>
-                            <button onClick={() => setShowItemModal(true)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-colors"><Plus size={18} /> {t('inventory.items.add')}</button>
+                            <button onClick={() => setShowItemModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-colors text-xs sm:text-sm whitespace-nowrap"><Plus size={16} /> {t('inventory.items.add')}</button>
                         </div>
                         
-                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                            <table className="w-full text-left">
+                        <div className="sm:bg-white/5 sm:border sm:border-white/10 sm:rounded-xl sm:overflow-hidden">
+                            <table className="w-full text-left hidden sm:table">
                                 <thead className="bg-white/5 border-b border-white/10">
                                     <tr>
                                         <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('inventory.items.name')}</th>
@@ -252,10 +277,10 @@ export const InventoryTab: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {/* 1. MANUAL ITEMS (Always Visible) */}
+                                    {/* 1. MANUAL ITEMS (Desktop) */}
                                     {manualItems.map(renderItemRow)}
 
-                                    {/* 2. POS ITEMS (Collapsible Batch) */}
+                                    {/* 2. POS ITEMS (Desktop Collapsible) */}
                                     {posItems.length > 0 && (
                                         <>
                                             <tr onClick={() => setExpandPosBatch(!expandPosBatch)} className="bg-black/30 cursor-pointer hover:bg-black/40 transition-colors border-t border-white/10">
@@ -272,7 +297,6 @@ export const InventoryTab: React.FC = () => {
                                                     </div>
                                                 </td>
                                             </tr>
-                                            {/* WRAPPED IN ANIMATE PRESENCE */}
                                             <AnimatePresence>
                                                 {expandPosBatch && (
                                                     <React.Fragment>
@@ -285,11 +309,7 @@ export const InventoryTab: React.FC = () => {
                                                                 className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors bg-black/20"
                                                             >
                                                                 <td className="px-4 py-3 text-gray-300 font-medium pl-8">{item.name}</td>
-                                                                <td className="px-4 py-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-gray-400">{item.current_stock.toFixed(3)} {item.unit}</span>
-                                                                    </div>
-                                                                </td>
+                                                                <td className="px-4 py-3 text-gray-400">{item.current_stock.toFixed(3)} {item.unit}</td>
                                                                 <td className="px-4 py-3 text-emerald-500 font-mono text-sm">€{item.cost_per_unit.toFixed(2)}</td>
                                                                 <td className="px-4 py-3 text-right">
                                                                     <div className="flex justify-end gap-2">
@@ -306,19 +326,45 @@ export const InventoryTab: React.FC = () => {
                                     )}
                                 </tbody>
                             </table>
+
+                            {/* Mobile List View */}
+                            <div className="sm:hidden space-y-3">
+                                {manualItems.map(renderItemRow)}
+                                {posItems.length > 0 && (
+                                    <div className="rounded-xl border border-white/10 overflow-hidden">
+                                        <div onClick={() => setExpandPosBatch(!expandPosBatch)} className="bg-black/30 p-4 flex items-center justify-between cursor-pointer">
+                                             <div className="flex items-center gap-3">
+                                                <div className="p-1.5 rounded bg-purple-500/20 text-purple-400"><Layers size={16}/></div>
+                                                <div>
+                                                    <span className="font-bold text-white block text-sm">POS Batch</span>
+                                                    <span className="text-xs text-gray-500">{posItems.length} items</span>
+                                                </div>
+                                            </div>
+                                            {expandPosBatch ? <ChevronUp size={18} className="text-gray-500"/> : <ChevronDown size={18} className="text-gray-500"/>}
+                                        </div>
+                                        {expandPosBatch && (
+                                            <div className="bg-black/10 p-2 space-y-2">
+                                                {posItems.map(renderItemRow)}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
                             {items.length === 0 && <div className="text-center py-10 text-gray-500 italic">{t('inventory.items.noItems')}</div>}
                         </div>
                     </div>
                 )}
 
-                {/* Recipes Tab & Modals remain the same... */}
                 {activeTab === 'recipes' && (
                     <div className="space-y-4">
-                        <div className="flex justify-end gap-3">
-                            <button onClick={() => { setImportTarget('recipes'); setShowImportModal(true); }} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors"><FileSpreadsheet size={18} className="text-green-400" /> {t('inventory.recipes.import')}</button>
-                            <button onClick={() => setShowRecipeModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors"><Plus size={18} /> {t('inventory.recipes.add')}</button>
+                        <div className="flex flex-wrap justify-end gap-2 sm:gap-3">
+                            <button onClick={() => { setImportTarget('recipes'); setShowImportModal(true); }} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors text-xs sm:text-sm"><FileSpreadsheet size={16} className="text-green-400" /> <span className="whitespace-nowrap">{t('inventory.recipes.import')}</span></button>
+                            <button onClick={() => setShowRecipeModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors text-xs sm:text-sm whitespace-nowrap"><Plus size={16} /> {t('inventory.recipes.add')}</button>
                         </div>
-                         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                         
+                         {/* Desktop Table */}
+                         <div className="hidden sm:block bg-white/5 border border-white/10 rounded-xl overflow-hidden">
                             <table className="w-full text-left">
                                 <thead className="bg-white/5 border-b border-white/10">
                                     <tr>
@@ -344,8 +390,34 @@ export const InventoryTab: React.FC = () => {
                                     ))}
                                 </tbody>
                             </table>
-                            {recipes.length === 0 && <div className="text-center py-10 text-gray-500 italic">{t('inventory.recipes.noRecipes')}</div>}
                         </div>
+
+                        {/* Mobile Recipe Cards */}
+                        <div className="sm:hidden space-y-3">
+                            {recipes.map(recipe => (
+                                <div key={recipe._id} className="p-4 bg-white/5 border border-white/10 rounded-xl">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <ChefHat size={18} className="text-blue-400"/>
+                                            <h4 className="text-white font-bold">{recipe.product_name}</h4>
+                                        </div>
+                                        <span className="text-rose-400 font-mono font-bold">€{calculateRecipeCost(recipe.ingredients).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 mb-4">
+                                        {recipe.ingredients.map((ing, idx) => { 
+                                            const item = items.find(i => i._id === ing.inventory_item_id); 
+                                            return <span key={idx} className="bg-black/20 text-gray-300 text-[10px] px-2 py-1 rounded-md border border-white/5">{item?.name || '...'} ({ing.quantity_required})</span>;
+                                        })}
+                                    </div>
+                                    <div className="flex justify-end gap-4 border-t border-white/5 pt-2">
+                                        <button onClick={() => handleEditRecipe(recipe)} className="flex items-center gap-1 text-amber-400 text-sm"><Edit size={14} /> {t('general.edit')}</button>
+                                        <button onClick={() => handleDeleteRecipe(recipe._id)} className="flex items-center gap-1 text-rose-400 text-sm"><Trash2 size={14} /> {t('general.delete')}</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {recipes.length === 0 && <div className="text-center py-10 text-gray-500 italic">{t('inventory.recipes.noRecipes')}</div>}
                     </div>
                 )}
             </div>
@@ -354,14 +426,14 @@ export const InventoryTab: React.FC = () => {
 
             {showItemModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6">
-                        <h3 className="text-xl font-bold text-white mb-4">{editingItemId ? t('inventory.items.edit', 'Edit Item') : t('inventory.items.add')}</h3>
+                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-lg sm:text-xl font-bold text-white mb-4">{editingItemId ? t('inventory.items.edit', 'Edit Item') : t('inventory.items.add')}</h3>
                         <form onSubmit={handleCreateOrUpdateItem} className="space-y-4">
-                            <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.name')}</label><input required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} /></div>
+                            <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.name')}</label><input required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} /></div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-1">{t('inventory.items.unit')}</label>
-                                    <select className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white appearance-none bg-chevron-down" value={newItem.unit} onChange={e => setNewItem({...newItem, unit: e.target.value})}>
+                                    <select className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm appearance-none bg-chevron-down" value={newItem.unit} onChange={e => setNewItem({...newItem, unit: e.target.value})}>
                                         <option value="kg">{t('units.kg', 'Kg')}</option>
                                         <option value="litra">{t('units.liters', 'Litra')}</option>
                                         <option value="cope">{t('units.pieces', 'Copë')}</option>
@@ -369,13 +441,13 @@ export const InventoryTab: React.FC = () => {
                                         <option value="ml">{t('units.milliliters', 'Mililitra')}</option>
                                     </select>
                                 </div>
-                                <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.cost')}</label><input required type="number" step="0.01" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white" value={newItem.cost_per_unit} onChange={e => setNewItem({...newItem, cost_per_unit: parseFloat(e.target.value)})} /></div>
+                                <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.cost')}</label><input required type="number" step="0.01" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" value={newItem.cost_per_unit} onChange={e => setNewItem({...newItem, cost_per_unit: parseFloat(e.target.value)})} /></div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.stock')}</label><input required type="number" step="0.01" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white" value={newItem.current_stock} onChange={e => setNewItem({...newItem, current_stock: parseFloat(e.target.value)})} /></div>
-                                <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.lowStock')}</label><input type="number" step="1" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white" value={newItem.low_stock_threshold} onChange={e => setNewItem({...newItem, low_stock_threshold: parseFloat(e.target.value)})} /></div>
+                                <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.stock')}</label><input required type="number" step="0.01" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" value={newItem.current_stock} onChange={e => setNewItem({...newItem, current_stock: parseFloat(e.target.value)})} /></div>
+                                <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.lowStock')}</label><input type="number" step="1" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" value={newItem.low_stock_threshold} onChange={e => setNewItem({...newItem, low_stock_threshold: parseFloat(e.target.value)})} /></div>
                             </div>
-                            <div className="flex justify-end gap-3 pt-4"><button type="button" onClick={closeItemModal} className="px-4 py-2 text-gray-400">{t('inventory.cancel')}</button><button type="submit" className="px-6 py-2 bg-emerald-600 text-white rounded-lg">{t('inventory.save')}</button></div>
+                            <div className="flex justify-end gap-3 pt-4"><button type="button" onClick={closeItemModal} className="px-4 py-2 text-gray-400">{t('inventory.cancel')}</button><button type="submit" className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium">{t('inventory.save')}</button></div>
                         </form>
                     </div>
                 </div>
@@ -383,17 +455,30 @@ export const InventoryTab: React.FC = () => {
 
             {showRecipeModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-xl font-bold text-white mb-2">{editingRecipeId ? t('inventory.recipes.edit', 'Edit Recipe') : t('inventory.recipes.add')}</h3>
+                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-lg p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-lg sm:text-xl font-bold text-white mb-2">{editingRecipeId ? t('inventory.recipes.edit', 'Edit Recipe') : t('inventory.recipes.add')}</h3>
                         <form onSubmit={handleCreateOrUpdateRecipe} className="space-y-4">
                             <div>
                                 <label className="block text-sm text-gray-400 mb-1">{t('inventory.recipes.productName')}</label>
-                                <input placeholder={t('inventory.recipes.example', 'e.g. Espresso Macchiato')} required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white" value={newRecipe.product_name} onChange={e => setNewRecipe({...newRecipe, product_name: e.target.value})} />
+                                <input placeholder={t('inventory.recipes.example', 'e.g. Espresso Macchiato')} required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" value={newRecipe.product_name} onChange={e => setNewRecipe({...newRecipe, product_name: e.target.value})} />
                                 <p className="text-xs text-gray-500 mt-1">{t('inventory.recipes.productNameDesc')}</p>
                             </div>
-                            <div className="border-t border-white/10 pt-4"><h4 className="text-sm font-bold text-blue-400 mb-3">{t('inventory.recipes.ingredients')}</h4>{newRecipe.ingredients.map((ing, index) => (<div key={index} className="flex gap-2 mb-2 items-center"><select required className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm appearance-none bg-chevron-down" value={ing.inventory_item_id} onChange={e => updateIngredient(index, 'inventory_item_id', e.target.value)}><option value="">{t('inventory.recipes.selectIngredient')}</option>{items.map(i => <option key={i._id} value={i._id}>{i.name} ({i.unit})</option>)}</select><input required type="number" step="0.001" placeholder={t('finance.qty')} className="w-20 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm" value={ing.quantity_required} onChange={e => updateIngredient(index, 'quantity_required', parseFloat(e.target.value))}/><button type="button" onClick={() => removeIngredient(index)} className="text-rose-400 hover:bg-rose-500/10 p-1 rounded"><Trash2 size={16} /></button></div>))}<button type="button" onClick={addIngredientRow} className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-2"><Plus size={14} /> {t('inventory.recipes.addIngredient')}</button></div>
+                            <div className="border-t border-white/10 pt-4">
+                                <h4 className="text-sm font-bold text-blue-400 mb-3">{t('inventory.recipes.ingredients')}</h4>
+                                {newRecipe.ingredients.map((ing, index) => (
+                                    <div key={index} className="flex gap-2 mb-2 items-center">
+                                        <select required className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm appearance-none bg-chevron-down w-full min-w-0" value={ing.inventory_item_id} onChange={e => updateIngredient(index, 'inventory_item_id', e.target.value)}>
+                                            <option value="">{t('inventory.recipes.selectIngredient')}</option>
+                                            {items.map(i => <option key={i._id} value={i._id}>{i.name} ({i.unit})</option>)}
+                                        </select>
+                                        <input required type="number" step="0.001" placeholder={t('finance.qty')} className="w-16 sm:w-20 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm" value={ing.quantity_required} onChange={e => updateIngredient(index, 'quantity_required', parseFloat(e.target.value))}/>
+                                        <button type="button" onClick={() => removeIngredient(index)} className="text-rose-400 hover:bg-rose-500/10 p-1.5 rounded"><Trash2 size={16} /></button>
+                                    </div>
+                                ))}
+                                <button type="button" onClick={addIngredientRow} className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-2"><Plus size={14} /> {t('inventory.recipes.addIngredient')}</button>
+                            </div>
                             <div className="bg-white/5 p-3 rounded-lg text-right"><span className="text-sm text-gray-400">{t('inventory.recipes.costPreview')}</span><span className="text-emerald-400 font-bold ml-2">€{calculateRecipeCost(newRecipe.ingredients).toFixed(3)}</span></div>
-                            <div className="flex justify-end gap-3 pt-2"><button type="button" onClick={closeRecipeModal} className="px-4 py-2 text-gray-400">{t('inventory.cancel')}</button><button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg">{t('inventory.save')}</button></div>
+                            <div className="flex justify-end gap-3 pt-2"><button type="button" onClick={closeRecipeModal} className="px-4 py-2 text-gray-400">{t('inventory.cancel')}</button><button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium">{t('inventory.save')}</button></div>
                         </form>
                     </div>
                 </div>
@@ -407,7 +492,7 @@ export const InventoryTab: React.FC = () => {
                         </h3>
                         <p className="text-gray-400 text-sm mb-6">
                             {t('inventory.import.instruction')} <br/>
-                            <span className="font-mono text-xs bg-white/5 px-1 rounded">
+                            <span className="font-mono text-xs bg-white/5 px-1 rounded block mt-2 overflow-x-auto whitespace-nowrap">
                                 {importTarget === 'recipes' 
                                     ? t('inventory.import.columns') 
                                     : t('inventory.import.columnsItems')

@@ -1,19 +1,17 @@
 // FILE: src/pages/LandingPage.tsx
-// PHOENIX PROTOCOL - LANDING PAGE V2.3 (BUSINESS TRANSFORMATION)
-// 1. REBRAND: Shifted focus from 'Legal' to 'Business/General' terminology.
-// 2. TEXT: Updated hero section, taglines, and feature descriptions to be industry-agnostic.
-// 3. STATUS: Mobile Optimized & Rebranded.
+// PHOENIX PROTOCOL - LANDING PAGE V16.1 (LINT FIX)
+// 1. FIX: Removed unused 'Zap' and 'TrendingUp' imports.
+// 2. STATUS: Production Ready. Clean.
 
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
-    Zap, 
     FileText, 
     Database, 
     Lock, 
     ChevronRight, 
-    TrendingUp, 
     MessageSquare,
+    Sun
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProductShowcase from '../components/landing/ProductShowcase';
@@ -39,7 +37,7 @@ const LandingPage: React.FC = () => {
           >
             {/* PHOENIX: Rebranded Tagline */}
             <span className="inline-block py-1 px-3 rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-400 text-[10px] md:text-xs font-semibold tracking-wider mb-6 uppercase">
-              Platforma Nr. 1 për Menaxhimin e Biznesit
+              Sistemi Operativ për Biznesin Modern
             </span>
             
             <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 leading-tight">
@@ -49,16 +47,16 @@ const LandingPage: React.FC = () => {
               </span>
             </h1>
             <p className="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed px-2">
-              Transformoni operacionet tuaja me fuqinë e Inteligjencës Artificiale.
+              Nga raporti i mëngjesit deri te mbyllja financiare.
               <br className="hidden md:block"/>
               <span className="text-white font-medium block mt-2">
-                Menaxhim Projektesh • Analizë Dokumentesh • Financa
+                Inventar • Financa • Inteligjencë Artificiale
               </span>
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
               <Link to="/register" className="w-full sm:w-auto group relative px-8 py-4 bg-primary-start hover:bg-primary-end rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.7)] transition-all flex items-center justify-center gap-2">
-                Provo Falas
+                Fillo Tani
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link to="/login" className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-medium text-lg transition-all backdrop-blur-sm text-center">
@@ -72,16 +70,16 @@ const LandingPage: React.FC = () => {
         <section className="py-12 border-y border-white/5 bg-white/5 backdrop-blur-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div className="p-4 md:p-6">
-                    <h3 className="text-4xl font-bold text-primary-start mb-2">60%</h3>
-                    <p className="text-gray-400">Rritje në produktivitet.</p>
+                    <h3 className="text-4xl font-bold text-primary-start mb-2">06:00</h3>
+                    <p className="text-gray-400">Raporti ditor në tryezën tuaj.</p>
                 </div>
                 <div className="p-4 md:p-6 border-y md:border-y-0 md:border-x border-white/5">
                     <h3 className="text-4xl font-bold text-yellow-400 mb-2">Zero</h3>
-                    <p className="text-gray-400">Humbje të afateve të projekteve.</p>
+                    <p className="text-gray-400">Surpriza në stok ose financa.</p>
                 </div>
                 <div className="p-4 md:p-6">
-                    <h3 className="text-4xl font-bold text-green-400 mb-2">24/7</h3>
-                    <p className="text-gray-400">Asistenti juaj është gjithmonë gati.</p>
+                    <h3 className="text-4xl font-bold text-green-400 mb-2">100%</h3>
+                    <p className="text-gray-400">Kontroll mbi çdo faturë.</p>
                 </div>
             </div>
         </section>
@@ -92,23 +90,24 @@ const LandingPage: React.FC = () => {
         {/* --- FEATURES --- */}
         <section className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Nga Kaosi në Strategji</h2>
-            <p className="text-gray-400">Një sistem operativ i plotë për biznesin tuaj.</p>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Jo Thjesht Softuer</h2>
+            <p className="text-gray-400">Një partner inteligjent që nuk fle kurrë.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-auto md:auto-rows-[300px]">
             
-            <div className="md:col-span-2 row-span-1 rounded-3xl p-6 md:p-8 border border-white/10 bg-gradient-to-br from-gray-900 to-gray-800 relative overflow-hidden group min-h-[250px]">
+            {/* Daily Briefing Block */}
+            <div className="md:col-span-2 row-span-1 rounded-3xl p-6 md:p-8 border border-white/10 bg-gradient-to-br from-amber-900/40 to-gray-900 relative overflow-hidden group min-h-[250px]">
                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <MessageSquare className="w-32 h-32 md:w-48 md:h-48" />
+                    <Sun className="w-32 h-32 md:w-48 md:h-48 text-amber-500" />
                 </div>
                 <div className="relative z-10 h-full flex flex-col justify-end">
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 text-blue-400">
-                        <Zap className="w-5 h-5 md:w-6 md:h-6" />
+                    <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-500/20 rounded-xl flex items-center justify-center mb-4 text-amber-400">
+                        <Sun className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
-                    <h3 className="text-xl md:text-2xl font-bold mb-2">Asistenti Inteligjent AI</h3>
+                    <h3 className="text-xl md:text-2xl font-bold mb-2">Raporti i Mëngjesit</h3>
                     <p className="text-gray-400 text-sm md:text-base">
-                        Bisedoni me dokumentet tuaja. Bëni pyetje mbi kontratat, faturat ose raportet dhe merrni përgjigje të menjëhershme.
+                        Çdo mëngjes në orën 06:00, AI analizon financat, stokun dhe kalendarin tuaj për t'ju dhënë një përmbledhje të qartë të ditës.
                     </p>
                 </div>
             </div>
@@ -119,17 +118,17 @@ const LandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-lg md:text-xl font-bold mb-2">Siguri e Plotë</h3>
                 <p className="text-gray-400 text-sm">
-                    Të dhënat tuaja ruhen me standardet më të larta të enkriptimit.
+                    Të dhënat tuaja ruhen me standardet më të larta të enkriptimit dhe privatësisë.
                 </p>
             </div>
 
             <div className="md:col-span-1 row-span-1 rounded-3xl p-6 md:p-8 border border-white/10 bg-gray-900 relative min-h-[200px]">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center mb-4 text-yellow-400">
-                    <TrendingUp className="w-5 h-5 md:w-6 md:h-6" />
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 text-blue-400">
+                    <MessageSquare className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
-                <h3 className="text-lg md:text-xl font-bold mb-2">Qendra e Biznesit</h3>
+                <h3 className="text-lg md:text-xl font-bold mb-2">Asistenti AI</h3>
                 <p className="text-gray-400 text-sm">
-                    Gjeneroni fatura, menaxhoni klientët dhe ndiqni financat.
+                    Bisedoni me dokumentet tuaja. Pyetni për kontrata, fatura, ose stokun në çdo kohë.
                 </p>
             </div>
 
@@ -141,9 +140,9 @@ const LandingPage: React.FC = () => {
                     <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4 text-purple-400">
                         <FileText className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
-                    <h3 className="text-xl md:text-2xl font-bold mb-2">Arkiva Qendrore</h3>
+                    <h3 className="text-xl md:text-2xl font-bold mb-2">Financa & Arkiva</h3>
                     <p className="text-gray-400 text-sm md:text-base">
-                        Skanoni, organizoni dhe kërkoni çdo dokument në sekonda. E gjithë arkiva juaj në një vend.
+                        Skanoni, organizoni dhe kërkoni çdo faturë. Sinkronizoni me POS dhe menaxhoni stokun në kohë reale.
                     </p>
                 </div>
             </div>
@@ -155,12 +154,12 @@ const LandingPage: React.FC = () => {
         <section className="py-16 md:py-24 text-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden">
                 <div className="relative z-10">
-                    <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">Gati për të modernizuar biznesin?</h2>
+                    <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">Gati për transformim?</h2>
                     <p className="text-lg md:text-xl text-gray-300 mb-6 md:mb-8 max-w-2xl mx-auto">
-                        Regjistrohuni sot në Haveri AI.
+                        Regjistrohuni sot në Haveri AI dhe merrni kontrollin e plotë.
                     </p>
                     <Link to="/register" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 hover:bg-gray-100 rounded-xl font-bold text-lg transition-colors w-full sm:w-auto justify-center">
-                        Fillo Tani
+                        Provo Falas
                         <ChevronRight className="w-5 h-5" />
                     </Link>
                 </div>
