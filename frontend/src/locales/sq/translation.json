@@ -410,7 +410,7 @@
       "uploadTitle": "Ngarko Skedarin tënd",
       "uploadDesc": "Tërhiq dhe lësho një skedar .csv ose .xlsx, ose kliko për të zgjedhur.",
       "analyzing": "Duke analizuar...",
-      "selectFile": "Zgjidh Skedarin",
+      "selectFile": "Zgjidhni Skedarin",
       "mappingTitle": "Përshtat Kolonat",
       "autoMapInfo": "Ne kemi provuar të gjejmë automatikisht kolonat. Verifiko që çdo fushë e sistemit përputhet me kolonën e duhur nga skedari yt.",
       "columnSelect": "Zgjidh një kolonë...",
@@ -635,6 +635,9 @@
     "tabRecipes": "Recetat",
     "items": {
       "add": "Shto Artikull",
+      "edit": "Ndrysho Artikullin",
+      "import": "Importo Lëndë të Parë",
+      "importedCount": "Artikuj të importuar",
       "noItems": "Nuk ka artikuj në inventar. Shtoni të parin!",
       "name": "Emri i Artikullit",
       "unit": "Njësia Matëse",
@@ -644,9 +647,11 @@
     },
     "recipes": {
       "add": "Krijo Recetë",
+      "edit": "Ndrysho Recetën",
       "import": "Importo Receta",
       "noRecipes": "Nuk keni krijuar asnjë recetë.",
       "productName": "Emri i Produktit",
+      "example": "p.sh. Espresso Macchiato",
       "productNameDesc": "Emri që shfaqet në faturë (p.sh. Espresso)",
       "ingredients": "Përbërësit (Lënda e Parë)",
       "selectIngredient": "Zgjidh Lëndën e Parë",
@@ -659,6 +664,7 @@
     "import": {
       "instruction": "Ngarko një file CSV ose Excel me kolonat:",
       "columns": "Emri i Produktit | Lënda e Parë | Sasia",
+      "columnsItems": "Emri | Njësia | Stoku | Kosto",
       "clickToSelect": "Kliko për të zgjedhur file",
       "button": "Importo"
     },
@@ -667,5 +673,12 @@
     "lowStock": "Stok i pakët",
     "cost": "Kosto",
     "unknownItem": "Artikull i panjohur"
+  },
+  "units": {
+    "kg": "Kg",
+    "liters": "Litra",
+    "pieces": "Copë",
+    "grams": "Gram",
+    "milliliters": "Mililitra"
   }
 }

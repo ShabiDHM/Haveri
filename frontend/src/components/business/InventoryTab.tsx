@@ -1,4 +1,9 @@
 // FILE: src/components/business/InventoryTab.tsx
+// PHOENIX PROTOCOL - COMPONENT V4.3 (I18N FIXES)
+// 1. FIX: Removed hardcoded English fallbacks in Import Modal to enforce strict i18n.
+// 2. FIX: Internationalized Unit dropdown options (Kg, Litra, etc.).
+// 3. FIX: Internationalized input placeholders.
+
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -43,7 +48,6 @@ export const InventoryTab: React.FC = () => {
     // Import State
     const [importFile, setImportFile] = useState<File | null>(null);
     const [importing, setImporting] = useState(false);
-    // PHOENIX FIX: Added state to track which type of import we are doing
     const [importTarget, setImportTarget] = useState<'items' | 'recipes'>('items');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -166,7 +170,6 @@ export const InventoryTab: React.FC = () => {
         if (!importFile) return;
         setImporting(true);
         try {
-            // Check api.ts if this method name is different, typically it is importInventoryItems
             const data = await apiService.importInventoryItems(importFile);
             alert(`${t('inventory.items.importedCount', 'Items Imported')}: ${data.items_created || data.count || 'Success'}`);
             setImportFile(null);
@@ -208,7 +211,6 @@ export const InventoryTab: React.FC = () => {
                 {activeTab === 'items' && (
                     <div className="space-y-4">
                         <div className="flex justify-end gap-3">
-                            {/* PHOENIX FIX: Added Import Button for Inventory Items */}
                             <button 
                                 onClick={() => { setImportTarget('items'); setShowImportModal(true); }} 
                                 className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors"
@@ -259,7 +261,6 @@ export const InventoryTab: React.FC = () => {
                 {activeTab === 'recipes' && (
                     <div className="space-y-4">
                         <div className="flex justify-end gap-3">
-                            {/* PHOENIX FIX: Updated onClick to set target to recipes */}
                             <button onClick={() => { setImportTarget('recipes'); setShowImportModal(true); }} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors"><FileSpreadsheet size={18} className="text-green-400" /> {t('inventory.recipes.import')}</button>
                             <button onClick={() => setShowRecipeModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors"><Plus size={18} /> {t('inventory.recipes.add')}</button>
                         </div>
@@ -304,7 +305,16 @@ export const InventoryTab: React.FC = () => {
                         <form onSubmit={handleCreateOrUpdateItem} className="space-y-4">
                             <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.name')}</label><input required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} /></div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.unit')}</label><select className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white appearance-none bg-chevron-down" value={newItem.unit} onChange={e => setNewItem({...newItem, unit: e.target.value})}><option value="kg">Kg</option><option value="litra">Litra</option><option value="cope">Copë</option><option value="gr">Gram</option><option value="ml">Mililitra</option></select></div>
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-1">{t('inventory.items.unit')}</label>
+                                    <select className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white appearance-none bg-chevron-down" value={newItem.unit} onChange={e => setNewItem({...newItem, unit: e.target.value})}>
+                                        <option value="kg">{t('units.kg', 'Kg')}</option>
+                                        <option value="litra">{t('units.liters', 'Litra')}</option>
+                                        <option value="cope">{t('units.pieces', 'Copë')}</option>
+                                        <option value="gr">{t('units.grams', 'Gram')}</option>
+                                        <option value="ml">{t('units.milliliters', 'Mililitra')}</option>
+                                    </select>
+                                </div>
                                 <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.cost')}</label><input required type="number" step="0.01" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white" value={newItem.cost_per_unit} onChange={e => setNewItem({...newItem, cost_per_unit: parseFloat(e.target.value)})} /></div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -322,7 +332,11 @@ export const InventoryTab: React.FC = () => {
                     <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
                         <h3 className="text-xl font-bold text-white mb-2">{editingRecipeId ? t('inventory.recipes.edit', 'Edit Recipe') : t('inventory.recipes.add')}</h3>
                         <form onSubmit={handleCreateOrUpdateRecipe} className="space-y-4">
-                            <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.recipes.productName')}</label><input placeholder="e.g. Espresso Macchiato" required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white" value={newRecipe.product_name} onChange={e => setNewRecipe({...newRecipe, product_name: e.target.value})} /><p className="text-xs text-gray-500 mt-1">{t('inventory.recipes.productNameDesc')}</p></div>
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-1">{t('inventory.recipes.productName')}</label>
+                                <input placeholder={t('inventory.recipes.example', 'e.g. Espresso Macchiato')} required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white" value={newRecipe.product_name} onChange={e => setNewRecipe({...newRecipe, product_name: e.target.value})} />
+                                <p className="text-xs text-gray-500 mt-1">{t('inventory.recipes.productNameDesc')}</p>
+                            </div>
                             <div className="border-t border-white/10 pt-4"><h4 className="text-sm font-bold text-blue-400 mb-3">{t('inventory.recipes.ingredients')}</h4>{newRecipe.ingredients.map((ing, index) => (<div key={index} className="flex gap-2 mb-2 items-center"><select required className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm appearance-none bg-chevron-down" value={ing.inventory_item_id} onChange={e => updateIngredient(index, 'inventory_item_id', e.target.value)}><option value="">{t('inventory.recipes.selectIngredient')}</option>{items.map(i => <option key={i._id} value={i._id}>{i.name} ({i.unit})</option>)}</select><input required type="number" step="0.001" placeholder={t('finance.qty')} className="w-20 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm" value={ing.quantity_required} onChange={e => updateIngredient(index, 'quantity_required', parseFloat(e.target.value))}/><button type="button" onClick={() => removeIngredient(index)} className="text-rose-400 hover:bg-rose-500/10 p-1 rounded"><Trash2 size={16} /></button></div>))}<button type="button" onClick={addIngredientRow} className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-2"><Plus size={14} /> {t('inventory.recipes.addIngredient')}</button></div>
                             <div className="bg-white/5 p-3 rounded-lg text-right"><span className="text-sm text-gray-400">{t('inventory.recipes.costPreview')}</span><span className="text-emerald-400 font-bold ml-2">€{calculateRecipeCost(newRecipe.ingredients).toFixed(3)}</span></div>
                             <div className="flex justify-end gap-3 pt-2"><button type="button" onClick={closeRecipeModal} className="px-4 py-2 text-gray-400">{t('inventory.cancel')}</button><button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg">{t('inventory.save')}</button></div>
@@ -341,8 +355,8 @@ export const InventoryTab: React.FC = () => {
                             {t('inventory.import.instruction')} <br/>
                             <span className="font-mono text-xs bg-white/5 px-1 rounded">
                                 {importTarget === 'recipes' 
-                                    ? t('inventory.import.columns', 'Product | Ingredient | Qty') 
-                                    : t('inventory.import.columnsItems', 'Product | Category | Stock | Cost | ...')
+                                    ? t('inventory.import.columns') 
+                                    : t('inventory.import.columnsItems')
                                 }
                             </span>
                         </p>
