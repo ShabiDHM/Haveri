@@ -1,7 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V12.2 (POS DELETION ADDED)
-// 1. ADDED: 'deletePosTransaction' method to support deleting imported transactions.
-// 2. STATUS: Fully synchronized with backend finance endpoints.
+// PHOENIX PROTOCOL - API MASTER V12.4 (DEPENDENCY FIX)
+// 1. FIX: Removed broken import of 'DailyBriefingResponse'.
+// 2. FIX: Defined 'DailyBriefingResponse' interface internally to resolve build error.
+// 3. STATUS: API Service is now self-contained and fully typed.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -12,7 +13,14 @@ import type {
     GraphData, ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
     InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction
 } from '../data/types';
-import { DailyBriefingResponse } from '../types/dailyBriefing';
+
+// PHOENIX FIX: Defined internally to remove dependency on missing file
+export interface DailyBriefingResponse {
+    id: string;
+    content: string;
+    created_at: string;
+    tasks_summary?: string;
+}
 
 export interface AuditIssue { id: string; severity: 'CRITICAL' | 'WARNING'; message: string; related_item_id?: string; item_type?: 'INVOICE' | 'EXPENSE'; }
 export interface TaxCalculation { period_month: number; period_year: number; total_sales_gross: number; total_purchases_gross: number; vat_collected: number; vat_deductible: number; net_obligation: number; currency: string; status: string; regime: string; tax_rate_applied: string; description: string; }
@@ -21,6 +29,8 @@ export interface InvoiceUpdate { client_name?: string; client_email?: string; cl
 export interface ImportPreviewResponse { filename: string; headers: string[]; sample_data: Record<string, string>[]; total_rows_estimated: number; }
 export interface ImportResult { status: string; imported_count: number; total_value: number; batch_id: string; }
 export interface RecipeImportResult { recipes_created: number; missing_ingredients: string[]; }
+export interface InventoryImportResult { items_created: number; count?: number; }
+
 interface LoginResponse { access_token: string; }
 interface DocumentContentResponse { text: string; }
 
@@ -132,6 +142,7 @@ class ApiService {
     public async createInventoryItem(data: InventoryItemCreate): Promise<InventoryItem> { const response = await this.axiosInstance.post<InventoryItem>('/inventory/items', data); return response.data; }
     public async updateInventoryItem(id: string, data: InventoryItemCreate): Promise<InventoryItem> { const response = await this.axiosInstance.put<InventoryItem>(`/inventory/items/${id}`, data); return response.data; }
     public async deleteInventoryItem(id: string): Promise<void> { await this.axiosInstance.delete(`/inventory/items/${id}`); }
+    public async importInventoryItems(file: File): Promise<InventoryImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<InventoryImportResult>('/inventory/items/import', formData); return response.data; }
 
     // --- RECIPES ---
     public async getRecipes(): Promise<Recipe[]> { const response = await this.axiosInstance.get<Recipe[]>('/inventory/recipes'); return response.data; }
