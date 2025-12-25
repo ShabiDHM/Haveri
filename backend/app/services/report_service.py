@@ -1,9 +1,8 @@
 # FILE: backend/app/services/report_service.py
-# PHOENIX PROTOCOL - REPORT SERVICE V5.2 (RESTORATION & POLISH)
-# 1. RESTORED: Layout logic reverted to original V4.3 (Logo Left, Firm Right).
-# 2. POLISH: Changed "FATURA" alignment to LEFT to balance the page headers.
-# 3. POLISH: Enforced Vertical Alignment in tables for symmetry.
-# 4. STATUS: Production Ready.
+# PHOENIX PROTOCOL - REPORT SERVICE V5.3 (TABLE SYMMETRY FIX)
+# 1. UI: Fixed Table Header alignment. Numeric headers (Qty, Price, Total) are now Right-Aligned to match data.
+# 2. UI: Adjusted column widths for better visual balance.
+# 3. STATUS: Production Ready.
 
 import io
 import os
@@ -18,7 +17,7 @@ from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph, 
 from reportlab.platypus import Image as ReportLabImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.colors import HexColor, white
-from reportlab.lib.enums import TA_RIGHT, TA_LEFT
+from reportlab.lib.enums import TA_RIGHT, TA_LEFT, TA_CENTER
 from pymongo.database import Database
 from typing import List, Optional
 from bson import ObjectId
@@ -37,13 +36,18 @@ COLOR_BORDER = HexColor("#E5E7EB")
 BRAND_COLOR_DEFAULT = "#4f46e5"
 
 STYLES = getSampleStyleSheet()
-# FIXED: Changed alignment to TA_LEFT to anchor the title properly
+
+# Typography Hierarchy
 STYLES.add(ParagraphStyle(name='H1', parent=STYLES['h1'], fontSize=22, textColor=COLOR_PRIMARY_TEXT, alignment=TA_LEFT, fontName='Helvetica-Bold'))
 STYLES.add(ParagraphStyle(name='MetaLabel', parent=STYLES['Normal'], fontSize=8, textColor=COLOR_SECONDARY_TEXT, alignment=TA_RIGHT))
 STYLES.add(ParagraphStyle(name='MetaValue', parent=STYLES['Normal'], fontSize=10, textColor=COLOR_PRIMARY_TEXT, alignment=TA_RIGHT, spaceBefore=2))
 STYLES.add(ParagraphStyle(name='AddressLabel', parent=STYLES['Normal'], fontName='Helvetica-Bold', fontSize=10, textColor=COLOR_PRIMARY_TEXT, spaceBottom=6))
 STYLES.add(ParagraphStyle(name='AddressText', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_SECONDARY_TEXT, leading=14))
-STYLES.add(ParagraphStyle(name='TableHeader', parent=STYLES['Normal'], fontName='Helvetica-Bold', fontSize=9, textColor=white))
+
+# TABLE STYLES - SYMMETRY FIX
+STYLES.add(ParagraphStyle(name='TableHeaderLeft', parent=STYLES['Normal'], fontName='Helvetica-Bold', fontSize=9, textColor=white, alignment=TA_LEFT))
+STYLES.add(ParagraphStyle(name='TableHeaderRight', parent=STYLES['Normal'], fontName='Helvetica-Bold', fontSize=9, textColor=white, alignment=TA_RIGHT))
+
 STYLES.add(ParagraphStyle(name='TableCell', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_PRIMARY_TEXT))
 STYLES.add(ParagraphStyle(name='TableCellRight', parent=STYLES['TableCell'], alignment=TA_RIGHT))
 STYLES.add(ParagraphStyle(name='TotalLabel', parent=STYLES['TableCellRight']))
@@ -227,7 +231,6 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
         [Spacer(1, 2*mm)],
         [Paragraph(_get_text('date_due', lang), STYLES['MetaLabel'])], [Paragraph(invoice.due_date.strftime("%d/%m/%Y"), STYLES['MetaValue'])],
     ]
-    # FIXED: invoice_title style 'H1' now uses TA_LEFT to balance the layout
     Story.append(Table([[Paragraph(_get_text('invoice_title', lang), STYLES['H1']), Table(meta_data, colWidths=[80*mm], style=[('ALIGN', (0,0), (-1,-1), 'RIGHT')])]], colWidths=[100*mm, 80*mm], style=[('VALIGN', (0,0), (-1,-1), 'TOP')]))
     Story.append(Spacer(1, 15*mm))
 
@@ -265,8 +268,14 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
     Story.append(t_addr)
     Story.append(Spacer(1, 10*mm))
 
-    headers = [_get_text('desc', lang), _get_text('qty', lang), _get_text('price', lang), _get_text('total', lang)]
-    data = [[Paragraph(h, STYLES['TableHeader']) for h in headers]]
+    # --- SYMMETRY FIX: Explicitly Right-Align Numeric Headers ---
+    headers = [
+        Paragraph(_get_text('desc', lang), STYLES['TableHeaderLeft']), 
+        Paragraph(_get_text('qty', lang), STYLES['TableHeaderRight']), 
+        Paragraph(_get_text('price', lang), STYLES['TableHeaderRight']), 
+        Paragraph(_get_text('total', lang), STYLES['TableHeaderRight'])
+    ]
+    data = [headers]
     for item in invoice.items:
         data.append([
             Paragraph(item.description, STYLES['TableCell']),
@@ -274,10 +283,12 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
             Paragraph(f"{item.unit_price:,.2f} EUR", STYLES['TableCellRight']),
             Paragraph(f"{item.total:,.2f} EUR", STYLES['TableCellRight']),
         ])
-    t_items = Table(data, colWidths=[95*mm, 20*mm, 30*mm, 35*mm])
+    
+    # Adjusted Widths: 90 + 25 + 30 + 35 = 180mm
+    t_items = Table(data, colWidths=[90*mm, 25*mm, 30*mm, 35*mm])
     t_items.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), brand_color),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), # FIXED: Better vertical alignment
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('LINEBELOW', (0,-1), (-1,-1), 1, COLOR_BORDER),
         ('TOPPADDING', (0,0), (-1,-1), 8),
         ('BOTTOMPADDING', (0,0), (-1,-1), 8),
@@ -304,7 +315,7 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
 
 def create_pdf_from_text(text: str, document_title: str) -> io.BytesIO:
     buffer = io.BytesIO()
-    doc = _build_doc(buffer, 'report', {"firm_name": "Juristi.tech", "branding_color": "#333333"}, "sq", document_title)
+    doc = _build_doc(buffer, 'report', {"firm_name": "Haveri AI", "branding_color": "#333333"}, "sq", document_title)
     doc.build([Spacer(1, 15*mm), Paragraph(escape(text).replace('\n', '<br/>'), STYLES['Normal'])])
     buffer.seek(0)
     return buffer
