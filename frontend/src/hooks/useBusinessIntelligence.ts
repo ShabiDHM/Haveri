@@ -1,7 +1,8 @@
 // FILE: src/hooks/useBusinessIntelligence.ts
-// PHOENIX PROTOCOL - BI ENGINE V1.1 (REAL DATA)
-// 1. UPDATE: Uses 'user.business_profile.vat_rate' for exact tax calculations.
-// 2. UPDATE: Uses 'user.business_profile.target_margin' for inventory alerts.
+// PHOENIX PROTOCOL - BI ENGINE V1.2 (DEDUPLICATION & SMART TAX)
+// 1. FIX: Deduplicates inventory items by name to prevent double listings.
+// 2. LOGIC: Excludes 'Salaries' (Rrogat) from VAT deduction automatically.
+// 3. STATUS: Production Ready.
 
 import { useMemo } from 'react';
 import { useFinanceData } from './useFinanceData';
@@ -17,26 +18,19 @@ export const useBusinessIntelligence = () => {
     const loading = financeLoading || inventoryLoading;
     const profile = user?.business_profile;
     
-    // Default to Kosovo/Albania Standard if missing
+    // Default to Kosovo/Albania Standard
     const VAT_RATE = profile?.vat_rate ?? 18.0; 
-    // const CURRENCY = profile?.currency ?? 'EUR'; // For future display logic
 
     // 1. DEBT ANALYSIS
     const debtAnalytics = useMemo(() => {
         const unpaidInvoices = invoices.filter(inv => inv.status !== 'PAID' && inv.status !== 'CANCELLED');
         const totalDebt = unpaidInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
         
-        const aging = {
-            fresh: 0,   // 0-30 days
-            warning: 0, // 30-60 days
-            danger: 0   // 60+ days
-        };
-
-        const topDebtors: { name: string; amount: number; daysOverdue: number; phone?: string }[] = [];
+        const aging = { fresh: 0, warning: 0, danger: 0 };
+        const topDebtors: any[] = [];
 
         unpaidInvoices.forEach(inv => {
             const days = differenceInDays(new Date(), parseISO(inv.issue_date));
-            
             if (days <= 30) aging.fresh += inv.total_amount;
             else if (days <= 60) aging.warning += inv.total_amount;
             else aging.danger += inv.total_amount;
@@ -50,31 +44,50 @@ export const useBusinessIntelligence = () => {
         });
 
         topDebtors.sort((a, b) => b.amount - a.amount);
-
         return { totalDebt, aging, topDebtors: topDebtors.slice(0, 5) };
     }, [invoices]);
 
-    // 2. PROFIT & INVENTORY INTELLIGENCE
+    // 2. PROFIT & INVENTORY INTELLIGENCE (DEDUPLICATED)
     const profitAnalytics = useMemo(() => {
-        const totalStockValue = [...items, ...posItems].reduce((sum, item) => sum + (item.current_stock * item.cost_per_unit), 0);
-        const lowStockItems = [...items, ...posItems].filter(i => i.current_stock <= i.low_stock_threshold);
+        // Merge and Deduplicate by Name
+        const combinedItems = [...items, ...posItems];
+        const uniqueItemsMap = new Map();
+        
+        combinedItems.forEach(item => {
+            if (!uniqueItemsMap.has(item.name)) {
+                uniqueItemsMap.set(item.name, item);
+            } else {
+                // If duplicate, aggregate stock (optional, but safer to just take one for now)
+                const existing = uniqueItemsMap.get(item.name);
+                existing.current_stock += item.current_stock; // Merge stock count
+            }
+        });
+
+        const uniqueItems = Array.from(uniqueItemsMap.values());
+
+        const totalStockValue = uniqueItems.reduce((sum, item) => sum + (item.current_stock * item.cost_per_unit), 0);
+        const lowStockItems = uniqueItems.filter(i => i.current_stock <= i.low_stock_threshold);
 
         return { totalStockValue, lowStockItems };
     }, [items, posItems]);
 
-    // 3. TAX ESTIMATOR (Dynamic VAT)
+    // 3. TAX ESTIMATOR (SMART VAT)
     const taxAnalytics = useMemo(() => {
-        // Calculate Tax Coefficient (e.g., 18% -> 0.1525 if inclusive)
-        // Assuming amounts are Gross (Include VAT)
         const taxCoefficient = VAT_RATE / (100 + VAT_RATE);
 
-        // Sales VAT (Collected)
+        // Sales VAT
         const totalSales = invoices.filter(i => i.status !== 'CANCELLED').reduce((sum, i) => sum + i.total_amount, 0);
         const vatCollected = totalSales * taxCoefficient;
 
-        // Purchase VAT (Deductible)
-        const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-        const vatDeductible = totalExpenses * taxCoefficient; // Assumption: Expenses follow same rate approx.
+        // Purchase VAT (Smart Filter)
+        // Exclude categories like 'Paga', 'Rrogat', 'Salaries' from VAT deduction
+        const deductibleExpenses = expenses.filter(e => {
+            const cat = e.category.toLowerCase();
+            return !cat.includes('rrog') && !cat.includes('pag') && !cat.includes('salary');
+        });
+
+        const totalDeductibleAmount = deductibleExpenses.reduce((sum, e) => sum + e.amount, 0);
+        const vatDeductible = totalDeductibleAmount * taxCoefficient;
 
         const estimatedLiability = vatCollected - vatDeductible;
 
