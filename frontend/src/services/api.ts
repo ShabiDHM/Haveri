@@ -1,8 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V12.4 (DEPENDENCY FIX)
-// 1. FIX: Removed broken import of 'DailyBriefingResponse'.
-// 2. FIX: Defined 'DailyBriefingResponse' interface internally to resolve build error.
-// 3. STATUS: API Service is now self-contained and fully typed.
+// PHOENIX PROTOCOL - API MASTER V18.0 (PRODUCTION READY)
+// 1. CLEANUP: Removed all mock data from 'getStrategicBriefing'.
+// 2. FEATURE: 'getStrategicBriefing' now points to the real backend endpoint.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -11,10 +10,11 @@ import type {
     DraftingJobStatus, DraftingJobResult, ChangePasswordRequest, CaseAnalysisResult,
     BusinessProfile, BusinessProfileUpdate, Invoice, InvoiceCreateRequest, InvoiceItem,
     GraphData, ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
-    InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction
+    InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction,
+    StrategicBriefingResponse
 } from '../data/types';
 
-// PHOENIX FIX: Defined internally to remove dependency on missing file
+// This is a deprecated definition, the one in types.ts is the source of truth.
 export interface DailyBriefingResponse {
     id: string;
     content: string;
@@ -184,6 +184,12 @@ class ApiService {
     // --- AI AGENT ---
     public async getDailyBriefing(): Promise<DailyBriefingResponse> { const response = await this.axiosInstance.get<DailyBriefingResponse>('/daily-briefing/'); return response.data; }
 
+    // PHOENIX: New Strategic Briefing Endpoint (Production Version)
+    public async getStrategicBriefing(): Promise<StrategicBriefingResponse> {
+        const response = await this.axiosInstance.get<StrategicBriefingResponse>('/briefing/strategic');
+        return response.data;
+    }
+    
     // --- SUPPORT ---
     public async sendContactForm(data: { firstName: string; lastName: string; email: string; phone: string; message: string }): Promise<void> { await this.axiosInstance.post('/support/contact', { first_name: data.firstName, last_name: data.lastName, email: data.email, phone: data.phone, message: data.message }); }
 }

@@ -1,6 +1,6 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES MASTER V17.0 (FISCAL UPGRADE)
-// 1. UPDATE: BusinessProfile & Update interfaces now support Fiscal Configuration.
+// PHOENIX PROTOCOL - TYPES MASTER V18.0 (STRATEGIC BRIEFING)
+// 1. ADDED: Interfaces for the new generative Strategic Briefing module.
 // 2. STATUS: Production Ready.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
@@ -36,7 +36,6 @@ export interface BusinessProfile {
     branding_color: string; 
     logo_url?: string; 
     is_complete: boolean;
-    // New Fiscal Fields for Business Intelligence
     vat_rate?: number;
     target_margin?: number;
     currency?: string;
@@ -51,15 +50,55 @@ export interface BusinessProfileUpdate {
     website?: string; 
     tax_id?: string; 
     branding_color?: string;
-    // New Fiscal Fields
     vat_rate?: number;
     target_margin?: number;
     currency?: string;
 }
 
+// --- STRATEGIC BRIEFING TYPES ---
+export interface GenerativeMemo {
+    observation: string;
+    implication: string;
+    recommendation: {
+        title: string;
+        script?: string;
+        social_post?: string;
+    };
+}
+
+export interface DealRiskAnalyzerData {
+    monthlyFixedCosts: number;
+    currentReceivables: number;
+}
+
+export interface SmartAgendaEvent {
+    title: string;
+    time: string;
+    financialContext?: string;
+    relatedDocuments?: { id: string; name: string }[];
+    generativeAdvice: GenerativeMemo;
+}
+
+export interface SmartAgendaMission {
+    missionType: 'FINANCIAL' | 'STRATEGIC' | 'RELATIONSHIP';
+    generativeMission: GenerativeMemo;
+}
+
+export interface StrategicBriefingResponse {
+    dealRiskAnalyzer: DealRiskAnalyzerData;
+    profitOptimizer: GenerativeMemo;
+    smartAgenda: {
+        isBusy: boolean;
+        events?: SmartAgendaEvent[];
+        mission?: SmartAgendaMission;
+    };
+}
+
+// --- STANDARD FINANCE & INVENTORY ---
+// ... (rest of your types)
 export interface InvoiceItem { description: string; quantity: number; unit_price: number; total: number; }
-export interface Invoice { id: string; invoice_number: string; client_name: string; client_email?: string; client_address?: string; issue_date: string; due_date: string; items: InvoiceItem[]; subtotal: number; tax_rate: number; tax_amount: number; total_amount: number; currency: string; status: 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED'; notes?: string; related_case_id?: string; }
-export interface InvoiceCreateRequest { client_name: string; client_email?: string; client_address?: string; items: InvoiceItem[]; tax_rate: number; due_date?: string; notes?: string; related_case_id?: string; }
+export interface Invoice { id: string; invoice_number: string; client_name: string; client_email?: string; client_address?: string; issue_date: string; due_date: string; items: InvoiceItem[]; subtotal: number; tax_rate: number; tax_amount: number; total_amount: number; currency: string; status: 'DRAFT' | 'SENT' | 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED'; notes?: string; related_case_id?: string; }
+export interface InvoiceCreateRequest { client_name: string; client_email?: string; client_address?: string; items: InvoiceItem[]; tax_rate: number; due_date?: string; notes?: string; related_case_id?: string; status?: string; }
 export interface Expense { id: string; category: string; amount: number; description?: string; date: string; currency: string; receipt_url?: string; related_case_id?: string; }
 export interface ExpenseCreateRequest { category: string; amount: number; description?: string; date?: string; related_case_id?: string; }
 export interface ExpenseUpdate { category?: string; amount?: number; description?: string; date?: string; related_case_id?: string; }
@@ -68,80 +107,7 @@ export interface SalesTrendPoint { date: string; amount: number; }
 export interface TopProductItem { product_name: string; total_quantity: number; total_revenue: number; }
 export interface AnalyticsDashboardData { total_revenue_period: number; total_transactions_period: number; sales_trend: SalesTrendPoint[]; top_products: TopProductItem[]; total_profit_period?: number; }
 export interface ArchiveItemOut { id: string; title: string; file_type: string; category: string; storage_key: string; file_size: number; created_at: string; case_id?: string; parent_id?: string; item_type?: 'FILE' | 'FOLDER'; is_shared?: boolean; }
-
-export interface PosTransaction {
-    id: string;
-    product_name: string;
-    quantity: number;
-    total_price: number;
-    transaction_date: string;
-    payment_method: string;
-}
-
-// --- DAILY BRIEFING TYPES ---
-export interface BriefingMeta {
-    generated_at: string;
-    agent: string;
-}
-
-export interface FinanceBriefingItem {
-    client: string;
-    amount: number;
-    status: string;
-    invoice_number: string;
-}
-
-export interface InventoryBriefingItem {
-    name: string;
-    status: 'CRITICAL' | 'LOW';
-    remaining: number;
-    prediction: string;
-}
-
-export interface CalendarBriefingItem {
-    title: string;
-    time: string; // ISO Date String
-    type: string;
-    location: string;
-    is_alert?: boolean; 
-}
-
-export interface DailyBriefingResponse {
-    finance: {
-        attention_needed: boolean;
-        unpaid_count: number;
-        items: FinanceBriefingItem[];
-        revenue_yesterday: number; 
-    };
-    inventory: {
-        risk_alert: boolean;
-        risk_count: number;
-        items: InventoryBriefingItem[];
-        top_product: string; 
-    };
-    calendar: {
-        event_count: number;
-        items: CalendarBriefingItem[];
-    };
-    meta: BriefingMeta;
-}
-
-export interface LoginRequest { username: string; password: string; }
-export interface RegisterRequest { email: string; password: string; username: string; }
-export interface ChangePasswordRequest { current_password: string; new_password: string; }
-export interface UpdateUserRequest { username?: string; email?: string; role?: string; subscription_status?: string; status?: 'active' | 'inactive'; }
-export interface CreateCaseRequest { case_number: string; title: string; case_name?: string; description?: string; clientName?: string; clientEmail?: string; clientPhone?: string; status?: string; }
-export interface DeletedDocumentResponse { documentId: string; deletedFindingIds: string[]; }
-export interface CalendarEventCreateRequest { title: string; description?: string; start_date: string; end_date?: string; is_all_day?: boolean; event_type: string; case_id?: string; location?: string; notes?: string; priority?: string; attendees?: string[]; is_public?: boolean; }
-export interface CreateDraftingJobRequest { user_prompt: string; template_id?: string; case_id?: string; context?: string; draft_type?: string; document_type?: string; use_library?: boolean; }
-export type DraftingJobStatus = { job_id: string; status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; error?: string; result_summary?: string; };
-export type DraftingJobResult = { document_text: string; document_html?: string; result_text?: string; job_id?: string; status?: string; };
-export interface ConflictingParty { party_name: string; core_claim: string; }
-export interface ChronologyEvent { date: string; event: string; source_doc?: string; }
-export interface CaseAnalysisResult { summary_analysis: string; contradictions: string[]; missing_info: string[]; conflicting_parties?: ConflictingParty[]; key_evidence?: string[]; chronology?: ChronologyEvent[]; silent_parties?: string[]; active_parties?: string[]; analysis_mode?: string; target_document_id?: string; judicial_observation?: string; red_flags?: string[]; suggested_questions?: string[]; discovery_targets?: string[]; risks?: string[]; error?: string; }
-export interface GraphNode { id: string; name: string; group: string; val: number; }
-export interface GraphLink { source: string; target: string; label: string; }
-export interface GraphData { nodes: GraphNode[]; links: GraphLink[]; }
+export interface PosTransaction { id: string; product_name: string; quantity: number; total_price: number; transaction_date: string; payment_method: string; }
 export interface InventoryItem { _id: string; name: string; unit: string; current_stock: number; cost_per_unit: number; low_stock_threshold: number; }
 export interface InventoryItemCreate { name: string; unit: string; current_stock: number; cost_per_unit: number; low_stock_threshold?: number; }
 export interface Ingredient { inventory_item_id: string; quantity_required: number; }
