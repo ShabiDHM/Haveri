@@ -1,6 +1,6 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V17.4 (UI ALIGNMENT)
-// 1. UI: Applied consistent container styling to inner tabs.
+// PHOENIX PROTOCOL - FINANCE TAB V17.5 (MOBILE ACTION BAR FIX)
+// 1. UI: Added 'flex-nowrap' to the Action Bar to enforce horizontal scrolling on mobile.
 // 2. STATUS: Production Ready.
 
 import React, { useState, useMemo } from 'react';
@@ -216,8 +216,8 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} />} type="expense" />
             </div>
 
-            {/* Action Bar */}
-            <div className="flex overflow-x-auto sm:flex-wrap items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 no-scrollbar mask-linear-fade">
+            {/* PHOENIX UI FIX: Action Bar now forces a single, scrollable line on mobile */}
+            <div className="flex flex-nowrap sm:flex-wrap overflow-x-auto items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 no-scrollbar mask-linear-fade">
                 <ActionButton primary icon={<Plus size={16} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <div className="w-px h-8 bg-white/10 mx-2 hidden sm:block"></div>
                 <ActionButton icon={<FileSpreadsheet size={16} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
@@ -229,7 +229,6 @@ export const FinanceTab: React.FC = () => {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 sm:mb-6 border-b border-white/5 pb-4 sm:pb-6">
                     <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight self-start sm:self-auto">{t('finance.activityAndReports')}</h2>
                     
-                    {/* PHOENIX UI FIX: Container added */}
                     <div className="w-full sm:w-auto flex bg-background-light/10 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md gap-1">
                         <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
                         <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
@@ -245,7 +244,6 @@ export const FinanceTab: React.FC = () => {
                             </div>
                             
                             <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-2">
-                                {/* MODULAR LIST COMPONENT */}
                                 {loading ? (
                                     <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 animate-spin text-primary-start" /></div>
                                 ) : (
