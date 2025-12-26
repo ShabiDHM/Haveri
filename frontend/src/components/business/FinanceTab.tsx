@@ -1,6 +1,6 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V17.3 (FIX MISSING IMPORT)
-// 1. FIX: Added missing 'Loader2' to imports.
+// PHOENIX PROTOCOL - FINANCE TAB V17.4 (UI ALIGNMENT)
+// 1. UI: Applied consistent container styling to inner tabs.
 // 2. STATUS: Production Ready.
 
 import React, { useState, useMemo } from 'react';
@@ -75,16 +75,13 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
     <button 
         onClick={onClick} 
         className={`
-            relative px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2
-            ${isActive ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}
+            flex-1 sm:flex-initial relative px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2
+            ${isActive ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}
         `}
     >
-        {isActive && (
-            <motion.div layoutId="activeTab" className="absolute inset-0 bg-white/10 rounded-xl" initial={false} transition={{ type: "spring", stiffness: 500, damping: 30 }} />
-        )}
         <span className="relative z-10">{icon}</span>
         <span className="relative z-10 hidden sm:inline">{label}</span>
-        <span className="relative z-10 sm:hidden">{label.split(' ')[0]}</span>
+        <span className="relative z-10 sm:hidden">{label}</span>
     </button>
 );
 
@@ -231,9 +228,11 @@ export const FinanceTab: React.FC = () => {
             <div className="bg-white/5 border border-white/10 rounded-3xl p-4 sm:p-6 backdrop-blur-md min-h-[500px] sm:min-h-[600px] flex flex-col">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 sm:mb-6 border-b border-white/5 pb-4 sm:pb-6">
                     <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight self-start sm:self-auto">{t('finance.activityAndReports')}</h2>
-                    <div className="flex items-center gap-1 bg-black/20 p-1 rounded-2xl w-full sm:w-auto">
-                        <div className="flex-1 sm:flex-none"><TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} /></div>
-                        <div className="flex-1 sm:flex-none"><TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} /></div>
+                    
+                    {/* PHOENIX UI FIX: Container added */}
+                    <div className="w-full sm:w-auto flex bg-background-light/10 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md gap-1">
+                        <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
+                        <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
                     </div>
                 </div>
 

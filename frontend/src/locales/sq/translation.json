@@ -685,9 +685,10 @@
     "INACTIVE": "Jo Aktive",
     "TRIAL": "Provë "
   },
-  "inventory": {
+ "inventory": {
     "title": "Menaxhimi i Stokut",
     "tabItems": "Artikujt",
+    "tabItems_short": "Stoku",
     "tabRecipes": "Recetat",
     "lowStock": "Stoku Kritik",
     "cost": "Kosto",
