@@ -1,7 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V17.5 (MOBILE ACTION BAR FIX)
-// 1. UI: Added 'flex-nowrap' to the Action Bar to enforce horizontal scrolling on mobile.
-// 2. STATUS: Production Ready.
+// PHOENIX PROTOCOL - FINANCE TAB V17.6 (ACTION BAR GRID FIX)
+// 1. UI: Changed Action Bar to a responsive grid (2 columns on mobile) to prevent ugly vertical stacking.
+// 2. UI: Removed incorrect horizontal scroll logic.
+// 3. STATUS: Production Ready.
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -205,8 +206,6 @@ export const FinanceTab: React.FC = () => {
                 .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; } 
                 .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
                 select option { background-color: #1f2937; color: #f9fafb; }
-                .no-scrollbar::-webkit-scrollbar { display: none; }
-                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -216,10 +215,9 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} />} type="expense" />
             </div>
 
-            {/* PHOENIX UI FIX: Action Bar now forces a single, scrollable line on mobile */}
-            <div className="flex flex-nowrap sm:flex-wrap overflow-x-auto items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 no-scrollbar mask-linear-fade">
+            {/* PHOENIX UI FIX: Using grid for mobile, flex for desktop */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
                 <ActionButton primary icon={<Plus size={16} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
-                <div className="w-px h-8 bg-white/10 mx-2 hidden sm:block"></div>
                 <ActionButton icon={<FileSpreadsheet size={16} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
                 <ActionButton icon={<MinusCircle size={16} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
                 <ActionButton icon={<Calculator size={16} />} label={t('finance.monthlyClose')} onClick={() => navigate('/finance/wizard')} />
