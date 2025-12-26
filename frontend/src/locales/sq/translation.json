@@ -302,26 +302,39 @@
       "valueDesc": "Para të bllokuara në rafte"
     }
   },
-  "daily_briefing": {
-    "morning_report": "Raporti i Mëngjesit",
-    "run_time": "Gjeneruar në 06:00",
-    "system_optimal": "Sistemet Optimale",
-    "attention_needed": "Veprim i Kërkuar",
-    "finance_summary": "Analiza e faturave të papaguara nga dita e djeshme.",
-    "revenue_yesterday": "Të hyrat dje",
-    "financial_stability": "Stabilitet Financiar",
-    "action_required": "Veprim i kërkuar:",
-    "view_finances": "Shiko Financat",
-    "predictive_stock": "Parashikimi i Stokut",
-    "risk_alert": "Rrezik Mungese",
-    "inventory_prediction": "Bazuar në shitjet e djeshme, këta artikuj rrezikojnë të mbarojnë sot.",
-    "top_product_24h": "Produkti Top (24h)",
-    "stock_remaining": "Mbetur",
-    "predicted_out": "Parashikohet të mbarojë në 14:00",
-    "restock_suggest": "Sugjerohet rifurnizim pasdite",
-    "manage_inventory": "Menaxho Inventarin",
-    "events_count": "{{count}} Ngjarje",
-    "open_calendar": "Hap Kalendarin"
+ "briefing": {
+    "title": "Përmbledhja Strategjike",
+    "subtitle": "Misionet tuaja ditore, gjeneruar nga Këshilltari juaj AI.",
+    "liquidity": {
+      "title": "Likuiditeti & Cash",
+      "subtitle": "Parashikimi 30-ditor",
+      "days_runway": "Ditë Siguri",
+      "bills": "Faturat (Borxhet)",
+      "balance": "Balanca Aktuale",
+      "debt_title": "Borxhe të pambledhura",
+      "debt_status": "(Veresie)",
+      "collect_action": "Mblidh Borxhet",
+      "suggestion": "Sugjerim: Mblidhni 2 fatura sot për të rritur sigurinë."
+    },
+    "market": {
+      "title": "Impakti i Tregut",
+      "subtitle": "Inteligjenca Artificiale",
+      "diaspora_label": "Sezoni i Diasporës",
+      "diaspora_message": "Fluks i lartë pritet këtë fundjavë.",
+      "diaspora_action": "Stoko Premium",
+      "weather_label": "Moti Nesër",
+      "weather_message": "Shi i rrëmbyeshëm. Porositë Delivery +40%.",
+      "weather_action": "Aktivo Promo",
+      "analyze_competitors": "Analizo Konkurencën"
+    },
+    "agenda": {
+      "title": "Axhenda Inteligjente",
+      "subtitle": "Prioritetet e ditës",
+      "view_full": "Shiko Kalendarin",
+      "mock_task_1": "Takim me Furnitorin 'Elkos'",
+      "mock_task_2": "Pagesa e Faturës KEDS",
+      "mock_task_3": "Telefonatë: Klienti VIP"
+    }
   },
   "finance": {
     "income": "Të Hyrat",
@@ -685,7 +698,7 @@
     "INACTIVE": "Jo Aktive",
     "TRIAL": "Provë "
   },
- "inventory": {
+  "inventory": {
     "title": "Menaxhimi i Stokut",
     "tabItems": "Artikujt",
     "tabItems_short": "Stoku",

@@ -1,8 +1,8 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES MASTER V18.1 (RESTORATION & MERGE)
-// 1. RESTORED: All missing types (LoginRequest, CaseAnalysisResult, etc.) have been restored.
-// 2. MERGED: Kept the new StrategicBriefingResponse types.
-// 3. STATUS: This is the complete and correct source of truth for all types.
+// PHOENIX PROTOCOL - TYPES MASTER V19.0 (TACTICAL DASHBOARD ENABLED)
+// 1. UPDATED: StrategicBriefingResponse now supports Liquidity, Market, and Tactical Agenda.
+// 2. CLEANUP: Removed legacy GenerativeMemo and obsolete briefing types.
+// 3. INTEGRITY: All other core system types preserved.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -56,43 +56,33 @@ export interface BusinessProfileUpdate {
     currency?: string;
 }
 
-// --- STRATEGIC BRIEFING TYPES ---
-export interface GenerativeMemo {
-    observation: string;
-    implication: string;
-    recommendation: {
-        title: string;
-        script?: string;
-        social_post?: string;
-    };
-}
-
-export interface DealRiskAnalyzerData {
-    monthlyFixedCosts: number;
-    currentReceivables: number;
-}
-
-export interface SmartAgendaEvent {
-    title: string;
-    time: string;
-    financialContext?: string;
-    relatedDocuments?: { id: string; name: string }[];
-    generativeAdvice: GenerativeMemo;
-}
-
-export interface SmartAgendaMission {
-    missionType: 'FINANCIAL' | 'STRATEGIC' | 'RELATIONSHIP';
-    generativeMission: GenerativeMemo;
-}
-
+// --- NEW TACTICAL BRIEFING TYPES (V19.0) ---
 export interface StrategicBriefingResponse {
-    dealRiskAnalyzer: DealRiskAnalyzerData;
-    profitOptimizer: GenerativeMemo;
-    smartAgenda: {
-        isBusy: boolean;
-        events?: SmartAgendaEvent[];
-        mission?: SmartAgendaMission;
+    liquidity: {
+        status: 'critical' | 'stable' | 'surplus';
+        daysRunway: number;
+        cashOnHand: number;
+        pendingDebts: number; // Veresie
+        upcomingBills: number;
     };
+    market: {
+        signals: Array<{
+            id: number;
+            type: 'diaspora' | 'weather' | 'competitor' | 'holiday';
+            label: string;
+            impact: 'high' | 'medium' | 'low';
+            message: string;
+            action: string;
+        }>;
+    };
+    agenda: Array<{
+        id: string;
+        title: string;
+        time: string;
+        type: 'meeting' | 'payment' | 'deadline' | 'call';
+        priority: 'high' | 'medium' | 'low';
+        isCompleted: boolean;
+    }>;
 }
 
 // --- STANDARD FINANCE & INVENTORY ---

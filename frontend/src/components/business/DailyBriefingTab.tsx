@@ -1,7 +1,6 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - STRATEGIC BRIEFING V18.1
-// 1. CONFIRMED: All paths and hooks are correct for the new backend.
-// 2. STATUS: Production Ready.
+// PHOENIX PROTOCOL - STRATEGIC BRIEFING V19.1 (PROP FIX)
+// 1. FIXED: Changed 'smartAgenda' to 'agenda' to match new Types.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -9,9 +8,9 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 
-// Modules
-import { DealRiskAnalyzerCard } from './briefing/DealRiskAnalyzerCard';
-import { ProfitOptimizerCard } from './briefing/ProfitOptimizerCard';
+// New Innovative Modules
+import { LiquiditySentinelCard } from './briefing/LiquiditySentinelCard';
+import { MarketPulseCard } from './briefing/MarketPulseCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
 
 export const DailyBriefingTab: React.FC = () => {
@@ -19,7 +18,8 @@ export const DailyBriefingTab: React.FC = () => {
     const { data, loading, error } = useStrategicBriefing();
 
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary-start" /></div>;
-    if (error || !data) return <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-center"><AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" /><h3 className="text-white font-bold">{t('error.generic')}</h3><p className="text-gray-400 text-sm mt-1">{t('error.failedToLoad')}</p></div>;
+    
+    if (error) return <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-center"><AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" /><h3 className="text-white font-bold">{t('error.generic')}</h3><p className="text-gray-400 text-sm mt-1">{t('error.failedToLoad')}</p></div>;
 
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 sm:space-y-8 pb-10">
@@ -37,16 +37,20 @@ export const DailyBriefingTab: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* 1. Liquidity Sentinel */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                    <DealRiskAnalyzerCard initialData={data.dealRiskAnalyzer} />
+                    <LiquiditySentinelCard />
                 </motion.div>
                 
+                {/* 2. Market Pulse */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                    <ProfitOptimizerCard memo={data.profitOptimizer} />
+                    <MarketPulseCard />
                 </motion.div>
 
+                {/* 3. Smart Agenda (Tactical) */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                    <SmartAgendaCard agenda={data.smartAgenda} />
+                    {/* FIXED: Using 'data.agenda' instead of 'data.smartAgenda' */}
+                    {data && <SmartAgendaCard agenda={data.agenda} />}
                 </motion.div>
             </div>
         </motion.div>
