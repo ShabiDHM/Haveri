@@ -1,8 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V17.6 (ACTION BAR GRID FIX)
-// 1. UI: Changed Action Bar to a responsive grid (2 columns on mobile) to prevent ugly vertical stacking.
-// 2. UI: Removed incorrect horizontal scroll logic.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - FINANCE TAB V17.7 (BUTTON TEXT WRAP)
+// 1. UI: Removed 'whitespace-nowrap' from ActionButton to allow text wrapping.
+// 2. STATUS: Production Ready.
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -56,11 +55,12 @@ const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amo
     );
 };
 
+// PHOENIX FIX: Removed whitespace-nowrap
 const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean }) => (
     <button 
         onClick={onClick} 
         className={`
-            flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 whitespace-nowrap
+            flex items-center justify-center text-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
             ${primary 
                 ? 'bg-primary-start hover:bg-primary-end text-white shadow-lg shadow-primary-start/20' 
                 : 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 hover:border-white/20'
@@ -215,7 +215,6 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} />} type="expense" />
             </div>
 
-            {/* PHOENIX UI FIX: Using grid for mobile, flex for desktop */}
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
                 <ActionButton primary icon={<Plus size={16} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <ActionButton icon={<FileSpreadsheet size={16} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
