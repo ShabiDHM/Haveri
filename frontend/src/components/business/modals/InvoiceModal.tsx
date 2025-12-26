@@ -1,12 +1,12 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - MODULE EXTRACTION V1.1 (FIX IMPORT)
-// 1. FIX: Imported 'InvoiceUpdate' from api service instead of types.
+// PHOENIX PROTOCOL - INVOICE MODAL V17.3 (SIMPLIFIED STATUS)
+// 1. UPDATE: Restricted status dropdown to 'PENDING' and 'PAID' only.
 // 2. STATUS: Production Ready.
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Invoice, InvoiceItem, InvoiceCreateRequest } from '../../../data/types';
+import { Invoice, InvoiceItem } from '../../../data/types';
 import { apiService, InvoiceUpdate } from '../../../services/api';
 
 interface InvoiceModalProps {
@@ -71,7 +71,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
     const updateLineItem = (i: number, field: keyof InvoiceItem, value: any) => {
         const newItems = [...lineItems];
         newItems[i] = { ...newItems[i], [field]: value };
-        // Recalculate total for row
         newItems[i].total = newItems[i].quantity * newItems[i].unit_price;
         setLineItems(newItems);
     };
@@ -79,7 +78,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            // Prepare payload
             const basePayload = {
                 ...formData,
                 items: lineItems,
@@ -87,7 +85,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
             };
 
             if (invoiceToEdit) {
-                // Update
                 const updatePayload: InvoiceUpdate = {
                     client_name: basePayload.client_name,
                     client_email: basePayload.client_email,
@@ -99,14 +96,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                 };
                 await apiService.updateInvoice(invoiceToEdit.id, updatePayload);
             } else {
-                // Create
-                const createPayload: InvoiceCreateRequest = {
+                const createPayload: any = { 
                     client_name: basePayload.client_name,
                     client_email: basePayload.client_email,
                     client_address: basePayload.client_address,
                     items: basePayload.items,
                     tax_rate: basePayload.tax_rate,
-                    notes: basePayload.notes
+                    notes: basePayload.notes,
+                    status: basePayload.status
                 };
                 await apiService.createInvoice(createPayload);
             }
@@ -174,11 +171,25 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                                 value={formData.client_address} onChange={e => setFormData({...formData, client_address: e.target.value})} 
                             />
                         </div>
-                        <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/10">
-                            <input type="checkbox" id="vatToggle" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} 
-                                className="w-4 h-4 text-primary-start rounded border-gray-300 focus:ring-primary-start" 
-                            />
-                            <label htmlFor="vatToggle" className="text-sm text-gray-300 cursor-pointer select-none">{t('finance.applyVat')}</label>
+                        
+                        {/* SETTINGS ROW: VAT & STATUS */}
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex-1 flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/10">
+                                <input type="checkbox" id="vatToggle" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} 
+                                    className="w-4 h-4 text-primary-start rounded border-gray-300 focus:ring-primary-start" 
+                                />
+                                <label htmlFor="vatToggle" className="text-sm text-gray-300 cursor-pointer select-none">{t('finance.applyVat')}</label>
+                            </div>
+                            <div className="flex-1">
+                                <select 
+                                    value={formData.status} 
+                                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-primary-start outline-none appearance-none cursor-pointer"
+                                >
+                                    <option value="PAID" className="bg-gray-900">{t('status.PAID', 'E Paguar')}</option>
+                                    <option value="PENDING" className="bg-gray-900">{t('status.PENDING', 'Në Pritje')}</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     
