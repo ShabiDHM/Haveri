@@ -1,7 +1,7 @@
 // FILE: src/components/business/briefing/ProfitOptimizerCard.tsx
-// PHOENIX PROTOCOL - MODULE V1.0 (PROFIT OPTIMIZER)
+// PHOENIX PROTOCOL - MODULE V1.1 (FINAL LINT FIX)
+// 1. CLEANUP: Removed unused React import.
 
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Zap, Copy } from 'lucide-react';
 

@@ -1,7 +1,8 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES MASTER V18.0 (STRATEGIC BRIEFING)
-// 1. ADDED: Interfaces for the new generative Strategic Briefing module.
-// 2. STATUS: Production Ready.
+// PHOENIX PROTOCOL - TYPES MASTER V18.1 (RESTORATION & MERGE)
+// 1. RESTORED: All missing types (LoginRequest, CaseAnalysisResult, etc.) have been restored.
+// 2. MERGED: Kept the new StrategicBriefingResponse types.
+// 3. STATUS: This is the complete and correct source of truth for all types.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -95,7 +96,6 @@ export interface StrategicBriefingResponse {
 }
 
 // --- STANDARD FINANCE & INVENTORY ---
-// ... (rest of your types)
 export interface InvoiceItem { description: string; quantity: number; unit_price: number; total: number; }
 export interface Invoice { id: string; invoice_number: string; client_name: string; client_email?: string; client_address?: string; issue_date: string; due_date: string; items: InvoiceItem[]; subtotal: number; tax_rate: number; tax_amount: number; total_amount: number; currency: string; status: 'DRAFT' | 'SENT' | 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED'; notes?: string; related_case_id?: string; }
 export interface InvoiceCreateRequest { client_name: string; client_email?: string; client_address?: string; items: InvoiceItem[]; tax_rate: number; due_date?: string; notes?: string; related_case_id?: string; status?: string; }
@@ -114,3 +114,21 @@ export interface Ingredient { inventory_item_id: string; quantity_required: numb
 export interface Recipe { _id: string; product_name: string; ingredients: Ingredient[]; }
 export interface RecipeCreate { product_name: string; ingredients: Ingredient[]; }
 export interface RecipeImportResult { recipes_created: number; missing_ingredients: string[]; }
+
+// --- RESTORED MISSING TYPES ---
+export interface LoginRequest { username: string; password: string; }
+export interface RegisterRequest { email: string; password: string; username: string; }
+export interface ChangePasswordRequest { current_password: string; new_password: string; }
+export interface UpdateUserRequest { username?: string; email?: string; role?: string; subscription_status?: string; status?: 'active' | 'inactive'; }
+export interface CreateCaseRequest { case_number: string; title: string; case_name?: string; description?: string; clientName?: string; clientEmail?: string; clientPhone?: string; status?: string; }
+export interface DeletedDocumentResponse { documentId: string; deletedFindingIds: string[]; }
+export interface CalendarEventCreateRequest { title: string; description?: string; start_date: string; end_date?: string; is_all_day?: boolean; event_type: string; case_id?: string; location?: string; notes?: string; priority?: string; attendees?: string[]; is_public?: boolean; }
+export interface CreateDraftingJobRequest { user_prompt: string; template_id?: string; case_id?: string; context?: string; draft_type?: string; document_type?: string; use_library?: boolean; }
+export type DraftingJobStatus = { job_id: string; status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; error?: string; result_summary?: string; };
+export type DraftingJobResult = { document_text: string; document_html?: string; result_text?: string; job_id?: string; status?: string; };
+export interface ConflictingParty { party_name: string; core_claim: string; }
+export interface ChronologyEvent { date: string; event: string; source_doc?: string; }
+export interface CaseAnalysisResult { summary_analysis: string; contradictions: string[]; missing_info: string[]; conflicting_parties?: ConflictingParty[]; key_evidence?: string[]; chronology?: ChronologyEvent[]; silent_parties?: string[]; active_parties?: string[]; analysis_mode?: string; target_document_id?: string; judicial_observation?: string; red_flags?: string[]; suggested_questions?: string[]; discovery_targets?: string[]; risks?: string[]; error?: string; }
+export interface GraphNode { id: string; name: string; group: string; val: number; }
+export interface GraphLink { source: string; target: string; label: string; }
+export interface GraphData { nodes: GraphNode[]; links: GraphLink[]; }
