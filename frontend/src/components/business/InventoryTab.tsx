@@ -1,18 +1,20 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V16.1 (LINT FIX)
-// 1. FIX: Removed unused 'MoreVertical' import.
-// 2. STATUS: Production Ready. Clean.
+// PHOENIX PROTOCOL - SYNC V1.2
+// Verified import paths for Modals and Hooks.
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Package, Plus, AlertTriangle, ChefHat, 
-    Trash2, Loader2, FileSpreadsheet, Upload, CheckCircle, Edit,
-    Layers, ChevronDown, ChevronUp
-} from 'lucide-react';
-import { apiService } from '../../services/api';
-import { InventoryItem, Recipe, Ingredient } from '../../data/types';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Package, Plus, ChefHat, Loader2, FileSpreadsheet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { InventoryItem, Recipe } from '../../data/types';
+
+// Modular Imports - Verified Paths
+import { useInventoryData } from '../../hooks/useInventoryData';
+import { InventoryList } from './inventory/InventoryList';
+import { RecipeList } from './inventory/RecipeList';
+import { InventoryItemModal } from './modals/InventoryItemModal';
+import { RecipeModal } from './modals/RecipeModal';
+import { InventoryImportModal } from './modals/InventoryImportModal';
 
 // Sub-component for Tab Buttons
 const TabButton = ({ label, icon, isActive, onClick }: any) => (
@@ -29,221 +31,39 @@ const TabButton = ({ label, icon, isActive, onClick }: any) => (
 export const InventoryTab: React.FC = () => {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<'items' | 'recipes'>('items');
-    const [items, setItems] = useState<InventoryItem[]>([]);
-    const [recipes, setRecipes] = useState<Recipe[]>([]);
-    const [loading, setLoading] = useState(true);
+    
+    // Custom Hook
+    const { 
+        loading, items, recipes, manualItems, posItems, 
+        loadData, deleteItem, deleteRecipe, calculateRecipeCost 
+    } = useInventoryData();
 
-    // Modals
+    // Modals State
     const [showItemModal, setShowItemModal] = useState(false);
     const [showRecipeModal, setShowRecipeModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false); 
-
-    // Form & Edit State - Item
-    const [editingItemId, setEditingItemId] = useState<string | null>(null);
-    const [newItem, setNewItem] = useState({ name: '', unit: 'kg', current_stock: 0, cost_per_unit: 0, low_stock_threshold: 5, source: 'MANUAL' });
-    
-    // Form & Edit State - Recipe
-    const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
-    const [newRecipe, setNewRecipe] = useState<{ product_name: string; ingredients: Ingredient[] }>({ product_name: '', ingredients: [] });
-
-    // Import State
-    const [importFile, setImportFile] = useState<File | null>(null);
-    const [importing, setImporting] = useState(false);
     const [importTarget, setImportTarget] = useState<'items' | 'recipes'>('items');
-    
-    // UI State
-    const [expandPosBatch, setExpandPosBatch] = useState(false);
-    
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const [fetchedItems, fetchedRecipes] = await Promise.all([
-                apiService.getInventoryItems(),
-                apiService.getRecipes()
-            ]);
-            setItems(fetchedItems);
-            setRecipes(fetchedRecipes);
-        } catch (e) { console.error(e); } 
-        finally { setLoading(false); }
-    };
+    // Edit State
+    const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+    const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 
-    useEffect(() => { loadData(); }, []);
+    // Handlers
+    const openCreateItem = () => { setEditingItem(null); setShowItemModal(true); };
+    const openEditItem = (item: InventoryItem) => { setEditingItem(item); setShowItemModal(true); };
+    const handleDeleteItem = async (id: string) => { if (window.confirm(t('general.confirmDelete'))) await deleteItem(id); };
 
-    // --- SPLIT ITEMS LOGIC ---
-    const { manualItems, posItems } = useMemo(() => {
-        const manual = items.filter(i => (i as any).source !== 'POS');
-        const pos = items.filter(i => (i as any).source === 'POS');
-        return { manualItems: manual, posItems: pos };
-    }, [items]);
+    const openCreateRecipe = () => { setEditingRecipe(null); setShowRecipeModal(true); };
+    const openEditRecipe = (recipe: Recipe) => { setEditingRecipe(recipe); setShowRecipeModal(true); };
+    const handleDeleteRecipe = async (id: string) => { if (window.confirm(t('general.confirmDelete'))) await deleteRecipe(id); };
 
-    // --- ITEM CRUD ---
-    const closeItemModal = () => {
-        setShowItemModal(false);
-        setEditingItemId(null);
-        setNewItem({ name: '', unit: 'kg', current_stock: 0, cost_per_unit: 0, low_stock_threshold: 5, source: 'MANUAL' });
-    };
-
-    const handleEditItem = (item: InventoryItem) => {
-        setEditingItemId(item._id);
-        setNewItem({ ...item, source: (item as any).source || 'MANUAL' });
-        setShowItemModal(true);
-    };
-
-    const handleCreateOrUpdateItem = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            if (editingItemId) {
-                const updated = await apiService.updateInventoryItem(editingItemId, newItem);
-                setItems(items.map(i => i._id === editingItemId ? updated : i));
-            } else {
-                const created = await apiService.createInventoryItem(newItem);
-                setItems([...items, created]);
-            }
-            closeItemModal();
-        } catch (error) { alert(t('error.generic')); }
-    };
-
-    const handleDeleteItem = async (itemId: string) => {
-        if (!window.confirm(t('general.confirmDelete'))) return;
-        try {
-            await apiService.deleteInventoryItem(itemId);
-            setItems(items.filter(i => i._id !== itemId));
-        } catch (error) { alert(t('error.generic')); }
-    };
-
-    // --- RECIPE CRUD ---
-    const closeRecipeModal = () => {
-        setShowRecipeModal(false);
-        setEditingRecipeId(null);
-        setNewRecipe({ product_name: '', ingredients: [] });
-    };
-
-    const handleEditRecipe = (recipe: Recipe) => {
-        setEditingRecipeId(recipe._id);
-        setNewRecipe(recipe);
-        setShowRecipeModal(true);
-    };
-
-    const handleCreateOrUpdateRecipe = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            if (editingRecipeId) {
-                const updated = await apiService.updateRecipe(editingRecipeId, newRecipe);
-                setRecipes(recipes.map(r => r._id === editingRecipeId ? updated : r));
-            } else {
-                const created = await apiService.createRecipe(newRecipe);
-                setRecipes([...recipes, created]);
-            }
-            closeRecipeModal();
-        } catch (error) { alert(t('error.generic')); }
-    };
-
-    const handleDeleteRecipe = async (recipeId: string) => {
-        if (!window.confirm(t('general.confirmDelete'))) return;
-        try {
-            await apiService.deleteRecipe(recipeId);
-            setRecipes(recipes.filter(r => r._id !== recipeId));
-        } catch (error) { alert(t('error.generic')); }
-    };
-    
-    // --- IMPORT & HELPERS ---
-    const handleImportSubmit = () => {
-        if (importTarget === 'recipes') handleImportRecipes();
-        else handleImportInventory();
-    };
-
-    const handleImportRecipes = async () => {
-        if (!importFile) return;
-        setImporting(true);
-        try {
-            const data = await apiService.importRecipes(importFile);
-            let message = `${t('inventory.recipes.importedCount')}: ${data.recipes_created}`;
-            if (data.missing_ingredients && data.missing_ingredients.length > 0) {
-                message += `\n\n${t('inventory.recipes.missingItems')}:\n` + data.missing_ingredients.join(', ');
-            }
-            alert(message);
-            setImportFile(null);
-            setShowImportModal(false);
-            loadData(); 
-        } catch (error) { console.error(error); alert(t('error.generic')); } finally { setImporting(false); }
-    };
-
-    const handleImportInventory = async () => {
-        if (!importFile) return;
-        setImporting(true);
-        try {
-            const data = await apiService.importInventoryItems(importFile);
-            alert(`${t('inventory.items.importedCount', 'Items Imported')}: ${data.items_created || data.count || 'Success'}`);
-            setImportFile(null);
-            setShowImportModal(false);
-            loadData();
-        } catch (error) { console.error(error); alert(t('error.generic')); } finally { setImporting(false); }
-    };
-
-    const addIngredientRow = () => setNewRecipe({ ...newRecipe, ingredients: [...newRecipe.ingredients, { inventory_item_id: '', quantity_required: 0 }] });
-    const updateIngredient = (index: number, field: keyof Ingredient, value: any) => { const updated = [...newRecipe.ingredients]; updated[index] = { ...updated[index], [field]: value }; setNewRecipe({ ...newRecipe, ingredients: updated }); };
-    const removeIngredient = (index: number) => { const updated = newRecipe.ingredients.filter((_, i) => i !== index); setNewRecipe({ ...newRecipe, ingredients: updated }); };
-    const calculateRecipeCost = (currentIngredients: Ingredient[]) => { return currentIngredients.reduce((total, ing) => { const item = items.find(i => i._id === ing.inventory_item_id); return total + (item ? item.cost_per_unit * ing.quantity_required : 0); }, 0); };
+    const openImport = (target: 'items' | 'recipes') => { setImportTarget(target); setShowImportModal(true); };
 
     if (loading) return <div className="flex justify-center h-64 items-center"><Loader2 className="animate-spin text-secondary-start" /></div>;
 
-    // Helper for rendering a row (Responsive: Table Row on Desktop, Card on Mobile)
-    const renderItemRow = (item: InventoryItem) => (
-        <React.Fragment key={item._id}>
-            {/* Desktop View */}
-            <tr className="hidden sm:table-row border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                <td className="px-4 py-3 text-white font-medium">{item.name}</td>
-                <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                        <span className="text-gray-300">{item.current_stock.toFixed(3)} {item.unit}</span>
-                        {item.current_stock <= item.low_stock_threshold && (
-                            <span title={t('inventory.lowStock')} className="flex items-center gap-1 bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded-full"><AlertTriangle size={12} /></span>
-                        )}
-                    </div>
-                </td>
-                <td className="px-4 py-3 text-emerald-400 font-mono">€{item.cost_per_unit.toFixed(2)} / {item.unit}</td>
-                <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                        <button onClick={() => handleEditItem(item)} className="p-1 text-gray-400 hover:text-amber-400 transition-colors"><Edit size={16} /></button>
-                        <button onClick={() => handleDeleteItem(item._id)} className="p-1 text-gray-400 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
-                    </div>
-                </td>
-            </tr>
-            {/* Mobile View */}
-            <div className="sm:hidden flex flex-col p-4 bg-white/5 border border-white/10 rounded-xl mb-3">
-                <div className="flex justify-between items-start mb-2">
-                    <div>
-                        <span className="text-white font-bold block text-lg">{item.name}</span>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className="text-gray-400 text-sm">{item.current_stock.toFixed(3)} {item.unit}</span>
-                            {item.current_stock <= item.low_stock_threshold && (
-                                <span className="bg-rose-500/10 text-rose-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">{t('inventory.lowStock')}</span>
-                            )}
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <span className="block text-emerald-400 font-mono font-bold">€{item.cost_per_unit.toFixed(2)}</span>
-                        <span className="text-[10px] text-gray-500 uppercase">per {item.unit}</span>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-4 mt-2 border-t border-white/5 pt-2">
-                    <button onClick={() => handleEditItem(item)} className="flex items-center gap-1 text-amber-400 text-sm"><Edit size={14} /> {t('general.edit')}</button>
-                    <button onClick={() => handleDeleteItem(item._id)} className="flex items-center gap-1 text-rose-400 text-sm"><Trash2 size={14} /> {t('general.delete')}</button>
-                </div>
-            </div>
-        </React.Fragment>
-    );
-
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 h-full flex flex-col">
-            <style>{`
-                .bg-chevron-down { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; }
-                select option { background-color: #1f2937; color: #f9fafb; }
-            `}</style>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 flex-none">
+             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 flex-none">
                 <h2 className="text-xl font-bold text-white">{t('inventory.title')}</h2>
                 <div className="flex gap-2 bg-black/20 p-1 rounded-lg self-start sm:self-auto">
                     <TabButton label={t('inventory.tabItems')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
@@ -252,258 +72,73 @@ export const InventoryTab: React.FC = () => {
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto pr-0 sm:pr-2">
-                
                 {activeTab === 'items' && (
                     <div className="space-y-4">
                         <div className="flex flex-wrap justify-end gap-2 sm:gap-3">
-                            <button 
-                                onClick={() => { setImportTarget('items'); setShowImportModal(true); }} 
-                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors text-xs sm:text-sm"
-                            >
+                            <button onClick={() => openImport('items')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors text-xs sm:text-sm">
                                 <FileSpreadsheet size={16} className="text-emerald-400" /> 
                                 <span className="whitespace-nowrap">{t('inventory.items.import', 'Import CSV')}</span>
                             </button>
-                            <button onClick={() => setShowItemModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-colors text-xs sm:text-sm whitespace-nowrap"><Plus size={16} /> {t('inventory.items.add')}</button>
+                            <button onClick={openCreateItem} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-colors text-xs sm:text-sm whitespace-nowrap">
+                                <Plus size={16} /> {t('inventory.items.add')}
+                            </button>
                         </div>
                         
-                        <div className="sm:bg-white/5 sm:border sm:border-white/10 sm:rounded-xl sm:overflow-hidden">
-                            <table className="w-full text-left hidden sm:table">
-                                <thead className="bg-white/5 border-b border-white/10">
-                                    <tr>
-                                        <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('inventory.items.name')}</th>
-                                        <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('inventory.items.stock')}</th>
-                                        <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('inventory.cost')}/{t('inventory.items.unit')}</th>
-                                        <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">{t('general.actions')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {/* 1. MANUAL ITEMS (Desktop) */}
-                                    {manualItems.map(renderItemRow)}
-
-                                    {/* 2. POS ITEMS (Desktop Collapsible) */}
-                                    {posItems.length > 0 && (
-                                        <>
-                                            <tr onClick={() => setExpandPosBatch(!expandPosBatch)} className="bg-black/30 cursor-pointer hover:bg-black/40 transition-colors border-t border-white/10">
-                                                <td colSpan={4} className="px-4 py-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="p-1.5 rounded bg-purple-500/20 text-purple-400"><Layers size={16}/></div>
-                                                            <div>
-                                                                <span className="font-bold text-white block text-sm">POS Inventory Batch</span>
-                                                                <span className="text-xs text-gray-500">{posItems.length} imported items</span>
-                                                            </div>
-                                                        </div>
-                                                        {expandPosBatch ? <ChevronUp size={18} className="text-gray-500"/> : <ChevronDown size={18} className="text-gray-500"/>}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <AnimatePresence>
-                                                {expandPosBatch && (
-                                                    <React.Fragment>
-                                                        {posItems.map(item => (
-                                                            <motion.tr 
-                                                                key={item._id}
-                                                                initial={{ opacity: 0, height: 0 }}
-                                                                animate={{ opacity: 1, height: 'auto' }}
-                                                                exit={{ opacity: 0, height: 0 }}
-                                                                className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors bg-black/20"
-                                                            >
-                                                                <td className="px-4 py-3 text-gray-300 font-medium pl-8">{item.name}</td>
-                                                                <td className="px-4 py-3 text-gray-400">{item.current_stock.toFixed(3)} {item.unit}</td>
-                                                                <td className="px-4 py-3 text-emerald-500 font-mono text-sm">€{item.cost_per_unit.toFixed(2)}</td>
-                                                                <td className="px-4 py-3 text-right">
-                                                                    <div className="flex justify-end gap-2">
-                                                                        <button onClick={() => handleEditItem(item)} className="p-1 text-gray-500 hover:text-amber-400 transition-colors"><Edit size={14} /></button>
-                                                                        <button onClick={() => handleDeleteItem(item._id)} className="p-1 text-gray-500 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
-                                                                    </div>
-                                                                </td>
-                                                            </motion.tr>
-                                                        ))}
-                                                    </React.Fragment>
-                                                )}
-                                            </AnimatePresence>
-                                        </>
-                                    )}
-                                </tbody>
-                            </table>
-
-                            {/* Mobile List View */}
-                            <div className="sm:hidden space-y-3">
-                                {manualItems.map(renderItemRow)}
-                                {posItems.length > 0 && (
-                                    <div className="rounded-xl border border-white/10 overflow-hidden">
-                                        <div onClick={() => setExpandPosBatch(!expandPosBatch)} className="bg-black/30 p-4 flex items-center justify-between cursor-pointer">
-                                             <div className="flex items-center gap-3">
-                                                <div className="p-1.5 rounded bg-purple-500/20 text-purple-400"><Layers size={16}/></div>
-                                                <div>
-                                                    <span className="font-bold text-white block text-sm">POS Batch</span>
-                                                    <span className="text-xs text-gray-500">{posItems.length} items</span>
-                                                </div>
-                                            </div>
-                                            {expandPosBatch ? <ChevronUp size={18} className="text-gray-500"/> : <ChevronDown size={18} className="text-gray-500"/>}
-                                        </div>
-                                        {expandPosBatch && (
-                                            <div className="bg-black/10 p-2 space-y-2">
-                                                {posItems.map(renderItemRow)}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {items.length === 0 && <div className="text-center py-10 text-gray-500 italic">{t('inventory.items.noItems')}</div>}
-                        </div>
+                        <InventoryList 
+                            manualItems={manualItems} 
+                            posItems={posItems} 
+                            onEdit={openEditItem} 
+                            onDelete={handleDeleteItem} 
+                        />
                     </div>
                 )}
 
                 {activeTab === 'recipes' && (
                     <div className="space-y-4">
                         <div className="flex flex-wrap justify-end gap-2 sm:gap-3">
-                            <button onClick={() => { setImportTarget('recipes'); setShowImportModal(true); }} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors text-xs sm:text-sm"><FileSpreadsheet size={16} className="text-green-400" /> <span className="whitespace-nowrap">{t('inventory.recipes.import')}</span></button>
-                            <button onClick={() => setShowRecipeModal(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors text-xs sm:text-sm whitespace-nowrap"><Plus size={16} /> {t('inventory.recipes.add')}</button>
-                        </div>
-                         
-                         {/* Desktop Table */}
-                         <div className="hidden sm:block bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                            <table className="w-full text-left">
-                                <thead className="bg-white/5 border-b border-white/10">
-                                    <tr>
-                                        <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('inventory.recipes.productName')}</th>
-                                        <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('inventory.recipes.ingredients')}</th>
-                                        <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('inventory.recipes.estCost')}</th>
-                                        <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">{t('general.actions')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {recipes.map(recipe => (
-                                        <tr key={recipe._id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                                            <td className="px-4 py-3 text-white font-medium flex items-center gap-2"><ChefHat size={16} className="text-blue-400 shrink-0"/>{recipe.product_name}</td>
-                                            <td className="px-4 py-3"><div className="flex flex-wrap gap-1">{recipe.ingredients.map((ing, idx) => { const item = items.find(i => i._id === ing.inventory_item_id); return <span key={idx} className="bg-black/20 text-gray-300 text-xs px-2 py-0.5 rounded-full">{item?.name || '...'}</span>;})}</div></td>
-                                            <td className="px-4 py-3 text-rose-400 font-mono">€{calculateRecipeCost(recipe.ingredients).toFixed(2)}</td>
-                                            <td className="px-4 py-3 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button onClick={() => handleEditRecipe(recipe)} className="p-1 text-gray-400 hover:text-amber-400 transition-colors"><Edit size={16} /></button>
-                                                    <button onClick={() => handleDeleteRecipe(recipe._id)} className="p-1 text-gray-400 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                            <button onClick={() => openImport('recipes')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors text-xs sm:text-sm">
+                                <FileSpreadsheet size={16} className="text-green-400" /> 
+                                <span className="whitespace-nowrap">{t('inventory.recipes.import')}</span>
+                            </button>
+                            <button onClick={openCreateRecipe} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors text-xs sm:text-sm whitespace-nowrap">
+                                <Plus size={16} /> {t('inventory.recipes.add')}
+                            </button>
                         </div>
 
-                        {/* Mobile Recipe Cards */}
-                        <div className="sm:hidden space-y-3">
-                            {recipes.map(recipe => (
-                                <div key={recipe._id} className="p-4 bg-white/5 border border-white/10 rounded-xl">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <ChefHat size={18} className="text-blue-400"/>
-                                            <h4 className="text-white font-bold">{recipe.product_name}</h4>
-                                        </div>
-                                        <span className="text-rose-400 font-mono font-bold">€{calculateRecipeCost(recipe.ingredients).toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-1 mb-4">
-                                        {recipe.ingredients.map((ing, idx) => { 
-                                            const item = items.find(i => i._id === ing.inventory_item_id); 
-                                            return <span key={idx} className="bg-black/20 text-gray-300 text-[10px] px-2 py-1 rounded-md border border-white/5">{item?.name || '...'} ({ing.quantity_required})</span>;
-                                        })}
-                                    </div>
-                                    <div className="flex justify-end gap-4 border-t border-white/5 pt-2">
-                                        <button onClick={() => handleEditRecipe(recipe)} className="flex items-center gap-1 text-amber-400 text-sm"><Edit size={14} /> {t('general.edit')}</button>
-                                        <button onClick={() => handleDeleteRecipe(recipe._id)} className="flex items-center gap-1 text-rose-400 text-sm"><Trash2 size={14} /> {t('general.delete')}</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {recipes.length === 0 && <div className="text-center py-10 text-gray-500 italic">{t('inventory.recipes.noRecipes')}</div>}
+                        <RecipeList 
+                            recipes={recipes} 
+                            inventoryItems={items} 
+                            calculateCost={calculateRecipeCost}
+                            onEdit={openEditRecipe}
+                            onDelete={handleDeleteRecipe}
+                        />
                     </div>
                 )}
             </div>
 
-            {/* --- MODALS --- */}
+            {/* MODALS */}
+            <InventoryItemModal 
+                isOpen={showItemModal} 
+                onClose={() => setShowItemModal(false)} 
+                onSuccess={loadData} 
+                itemToEdit={editingItem} 
+            />
 
-            {showItemModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-lg sm:text-xl font-bold text-white mb-4">{editingItemId ? t('inventory.items.edit', 'Edit Item') : t('inventory.items.add')}</h3>
-                        <form onSubmit={handleCreateOrUpdateItem} className="space-y-4">
-                            <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.name')}</label><input required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} /></div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm text-gray-400 mb-1">{t('inventory.items.unit')}</label>
-                                    <select className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm appearance-none bg-chevron-down" value={newItem.unit} onChange={e => setNewItem({...newItem, unit: e.target.value})}>
-                                        <option value="kg">{t('units.kg', 'Kg')}</option>
-                                        <option value="litra">{t('units.liters', 'Litra')}</option>
-                                        <option value="cope">{t('units.pieces', 'Copë')}</option>
-                                        <option value="gr">{t('units.grams', 'Gram')}</option>
-                                        <option value="ml">{t('units.milliliters', 'Mililitra')}</option>
-                                    </select>
-                                </div>
-                                <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.cost')}</label><input required type="number" step="0.01" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" value={newItem.cost_per_unit} onChange={e => setNewItem({...newItem, cost_per_unit: parseFloat(e.target.value)})} /></div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.stock')}</label><input required type="number" step="0.01" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" value={newItem.current_stock} onChange={e => setNewItem({...newItem, current_stock: parseFloat(e.target.value)})} /></div>
-                                <div><label className="block text-sm text-gray-400 mb-1">{t('inventory.items.lowStock')}</label><input type="number" step="1" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" value={newItem.low_stock_threshold} onChange={e => setNewItem({...newItem, low_stock_threshold: parseFloat(e.target.value)})} /></div>
-                            </div>
-                            <div className="flex justify-end gap-3 pt-4"><button type="button" onClick={closeItemModal} className="px-4 py-2 text-gray-400">{t('inventory.cancel')}</button><button type="submit" className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium">{t('inventory.save')}</button></div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <RecipeModal 
+                isOpen={showRecipeModal} 
+                onClose={() => setShowRecipeModal(false)} 
+                onSuccess={loadData} 
+                recipeToEdit={editingRecipe} 
+                inventoryItems={items} 
+                calculateCost={calculateRecipeCost} 
+            />
 
-            {showRecipeModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-lg p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-lg sm:text-xl font-bold text-white mb-2">{editingRecipeId ? t('inventory.recipes.edit', 'Edit Recipe') : t('inventory.recipes.add')}</h3>
-                        <form onSubmit={handleCreateOrUpdateRecipe} className="space-y-4">
-                            <div>
-                                <label className="block text-sm text-gray-400 mb-1">{t('inventory.recipes.productName')}</label>
-                                <input placeholder={t('inventory.recipes.example', 'e.g. Espresso Macchiato')} required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" value={newRecipe.product_name} onChange={e => setNewRecipe({...newRecipe, product_name: e.target.value})} />
-                                <p className="text-xs text-gray-500 mt-1">{t('inventory.recipes.productNameDesc')}</p>
-                            </div>
-                            <div className="border-t border-white/10 pt-4">
-                                <h4 className="text-sm font-bold text-blue-400 mb-3">{t('inventory.recipes.ingredients')}</h4>
-                                {newRecipe.ingredients.map((ing, index) => (
-                                    <div key={index} className="flex gap-2 mb-2 items-center">
-                                        <select required className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm appearance-none bg-chevron-down w-full min-w-0" value={ing.inventory_item_id} onChange={e => updateIngredient(index, 'inventory_item_id', e.target.value)}>
-                                            <option value="">{t('inventory.recipes.selectIngredient')}</option>
-                                            {items.map(i => <option key={i._id} value={i._id}>{i.name} ({i.unit})</option>)}
-                                        </select>
-                                        <input required type="number" step="0.001" placeholder={t('finance.qty')} className="w-16 sm:w-20 bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-white text-sm" value={ing.quantity_required} onChange={e => updateIngredient(index, 'quantity_required', parseFloat(e.target.value))}/>
-                                        <button type="button" onClick={() => removeIngredient(index)} className="text-rose-400 hover:bg-rose-500/10 p-1.5 rounded"><Trash2 size={16} /></button>
-                                    </div>
-                                ))}
-                                <button type="button" onClick={addIngredientRow} className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-2"><Plus size={14} /> {t('inventory.recipes.addIngredient')}</button>
-                            </div>
-                            <div className="bg-white/5 p-3 rounded-lg text-right"><span className="text-sm text-gray-400">{t('inventory.recipes.costPreview')}</span><span className="text-emerald-400 font-bold ml-2">€{calculateRecipeCost(newRecipe.ingredients).toFixed(3)}</span></div>
-                            <div className="flex justify-end gap-3 pt-2"><button type="button" onClick={closeRecipeModal} className="px-4 py-2 text-gray-400">{t('inventory.cancel')}</button><button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium">{t('inventory.save')}</button></div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {showImportModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6 text-center">
-                        <h3 className="text-xl font-bold text-white mb-2">
-                            {importTarget === 'recipes' ? t('inventory.recipes.import') : t('inventory.items.import', 'Import Inventory Items')}
-                        </h3>
-                        <p className="text-gray-400 text-sm mb-6">
-                            {t('inventory.import.instruction')} <br/>
-                            <span className="font-mono text-xs bg-white/5 px-1 rounded block mt-2 overflow-x-auto whitespace-nowrap">
-                                {importTarget === 'recipes' 
-                                    ? t('inventory.import.columns') 
-                                    : t('inventory.import.columnsItems')
-                                }
-                            </span>
-                        </p>
-                        <div className="mb-6"><input type="file" ref={fileInputRef} className="hidden" accept=".csv, .xlsx, .xls" onChange={(e) => setImportFile(e.target.files?.[0] || null)}/><button onClick={() => fileInputRef.current?.click()} className={`w-full py-8 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 transition-all ${importFile ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/5'}`}>{importFile ? (<><CheckCircle size={32} className="text-emerald-400" /><span className="text-emerald-400 font-medium">{importFile.name}</span></>) : (<><Upload size={32} className="text-gray-500" /><span className="text-gray-400 text-sm">{t('inventory.import.clickToSelect')}</span></>)}</button></div>
-                        <div className="flex justify-end gap-3"><button onClick={() => setShowImportModal(false)} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button onClick={handleImportSubmit} disabled={!importFile || importing} className="px-6 py-2 bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700 text-white rounded-lg font-bold flex items-center gap-2">{importing && <Loader2 size={16} className="animate-spin" />}{t('inventory.import.button')}</button></div>
-                    </div>
-                </div>
-            )}
+            <InventoryImportModal 
+                isOpen={showImportModal} 
+                onClose={() => setShowImportModal(false)} 
+                onSuccess={loadData} 
+                target={importTarget} 
+            />
 
         </motion.div>
     );

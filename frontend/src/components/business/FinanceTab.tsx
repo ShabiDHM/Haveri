@@ -1,40 +1,31 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V16.2 (MOBILE LAYOUT FIX)
-// 1. FIX: Tightened mobile layout for Group Headers (Faturat/Shpenzimet Ditore).
-// 2. UI: Added 'min-w-0' and truncation to prevent text overlap on small screens.
-// 3. UI: Adjusted icon sizes and padding for mobile density.
-// 4. STATUS: Production Ready.
+// PHOENIX PROTOCOL - FINANCE TAB V17.3 (FIX MISSING IMPORT)
+// 1. FIX: Added missing 'Loader2' to imports.
+// 2. STATUS: Production Ready.
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { 
-    TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, FileText, 
-    Edit2, Eye, Download, Archive, Trash2, CheckCircle, Paperclip, X, User, Activity, 
-    Loader2, BarChart2, Search,
-    Car, Coffee, Building, Users, Landmark, Zap, Wifi, Utensils,
-    FileSpreadsheet, PiggyBank, ShoppingCart, ArrowUpRight, ArrowDownRight, Calendar,
-    ChevronDown, ChevronUp, Layers, CreditCard
+    TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
+    BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
-import { 
-    Invoice, InvoiceItem, Case, Document, 
-    Expense, ExpenseCreateRequest, AnalyticsDashboardData, PosTransaction
-} from '../../data/types';
+import { Invoice, Expense, Document } from '../../data/types';
 import { useTranslation } from 'react-i18next';
 import PDFViewerModal from '../PDFViewerModal';
 import { TransactionImporter } from './TransactionImporter'; 
-import * as ReactDatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { sq, enUS } from 'date-fns/locale';
 import { 
     BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 
-const DatePicker = (ReactDatePicker as any).default;
+// Import Modular Components
+import { useFinanceData } from '../../hooks/useFinanceData';
+import { InvoiceModal } from './modals/InvoiceModal';
+import { ExpenseModal } from './modals/ExpenseModal';
+import { TransactionList, TransactionItem, GroupedTransaction } from './finance/TransactionList';
 
 // --- MODERN UI COMPONENTS ---
-
 const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amount: string, icon: React.ReactNode, trend?: string, type: 'income' | 'expense' | 'neutral' | 'warning' }) => {
     let colorClass = 'text-blue-400';
     let bgClass = 'bg-blue-500/10';
@@ -97,38 +88,23 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
     </button>
 );
 
-// --- HELPER TYPES FOR GROUPING ---
-type TransactionItem = {
-    id: string;
-    type: 'invoice' | 'expense' | 'pos';
-    date: string;
-    amount: number;
-    label: string;
-    raw: any;
-};
-
-type GroupedTransaction = 
-    | { type: 'single'; data: TransactionItem }
-    | { type: 'group'; date: string; groupType: 'invoice' | 'expense' | 'pos'; totalAmount: number; count: number; items: TransactionItem[] };
-
-
 export const FinanceTab: React.FC = () => {
     type ActiveTab = 'transactions' | 'reports';
 
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const localeMap: { [key: string]: any } = { sq, al: sq, en: enUS };
-    const currentLocale = localeMap[i18n.language] || enUS;
 
-    const [loading, setLoading] = useState(true);
-    const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [posTransactions, setPosTransactions] = useState<PosTransaction[]>([]);
-    const [cases, setCases] = useState<Case[]>([]);
+    // --- HOOKS ---
+    const {
+        loading, invoices, expenses, cases, posTransactions, analyticsData,
+        totalExpenses, displayIncome, displayProfit, costOfGoodsSold,
+        refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos
+    } = useFinanceData();
+
+    // UI State
     const [activeTab, setActiveTab] = useState<ActiveTab>('transactions');
     const [openingDocId, setOpeningDocId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [analyticsData, setAnalyticsData] = useState<AnalyticsDashboardData | null>(null);
     
     // Modals State
     const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -137,63 +113,18 @@ export const FinanceTab: React.FC = () => {
     const [showArchiveInvoiceModal, setShowArchiveInvoiceModal] = useState(false);
     const [showArchiveExpenseModal, setShowArchiveExpenseModal] = useState(false);
     
+    // Selection State
+    const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+    const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
     const [selectedCaseForInvoice, setSelectedCaseForInvoice] = useState<string>("");
-    const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
-    const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+    
+    // Viewing State
     const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
-    // Accordion State
-    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
-    const [newInvoice, setNewInvoice] = useState({ 
-        client_name: '', client_email: '', client_phone: '', client_address: '', 
-        client_city: '', client_tax_id: '', client_website: '', 
-        tax_rate: 18, notes: '', status: 'PAID'
-    });
-    const [includeVat, setIncludeVat] = useState(true);
-
-    const [lineItems, setLineItems] = useState<InvoiceItem[]>([{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
-    const [newExpense, setNewExpense] = useState<Omit<ExpenseCreateRequest, 'related_case_id'>>({ category: '', amount: 0, description: '', date: new Date().toISOString().split('T')[0] });
-    const [expenseDate, setExpenseDate] = useState<Date | null>(new Date());
-    const [expenseReceipt, setExpenseReceipt] = useState<File | null>(null);
-    const receiptInputRef = useRef<HTMLInputElement>(null);
-
-    // --- NEW: Silent Analytics Refresh Helper ---
-    const refreshAnalytics = async () => {
-        try {
-            const analytics = await apiService.getAnalyticsDashboard(30);
-            setAnalyticsData(analytics);
-        } catch (e) {
-            console.error("Failed to refresh analytics:", e);
-        }
-    };
-
-    const loadInitialData = async () => {
-        setLoading(true);
-        try {
-            const [inv, exp, cs, analytics, pos] = await Promise.all([
-                apiService.getInvoices().catch(() => []),
-                apiService.getExpenses().catch(() => []),
-                apiService.getCases().catch(() => []),
-                apiService.getAnalyticsDashboard(30).catch(() => null),
-                apiService.getPosTransactions().catch(() => []),
-            ]);
-            setInvoices(inv); setExpenses(exp); setCases(cs); setAnalyticsData(analytics); setPosTransactions(pos);
-        } catch (e) { console.error("Critical error loading finance data", e); } finally { setLoading(false); }
-    };
-
-    useEffect(() => { loadInitialData(); }, []);
-
-    // Totals
-    const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const displayIncome = analyticsData ? analyticsData.total_revenue_period : 0;
-    const displayProfit = analyticsData?.total_profit_period ?? (displayIncome - totalExpenses);
-    const costOfGoodsSold = analyticsData ? displayIncome - displayProfit : 0;
-
-    // --- LOGIC: Flatten & Sort first ---
+    // --- LOGIC: Flatten & Sort (Presentation Logic) ---
     const allTransactions: TransactionItem[] = useMemo(() => {
         const combined: TransactionItem[] = [
             ...invoices.map(i => ({ id: i.id, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name, raw: i })),
@@ -215,10 +146,9 @@ export const FinanceTab: React.FC = () => {
         });
     }, [invoices, expenses, posTransactions, t]);
 
-    // --- LOGIC: Universal Grouping (Unified Batching) ---
+    // --- LOGIC: Universal Grouping ---
     const groupedList = useMemo(() => {
         const result: GroupedTransaction[] = [];
-        
         allTransactions.forEach(tx => {
             if (searchTerm) {
                 if (tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || tx.amount.toString().includes(searchTerm)) {
@@ -226,68 +156,40 @@ export const FinanceTab: React.FC = () => {
                 }
                 return;
             }
-
             const txDate = new Date(tx.date).toLocaleDateString();
             const lastGroup = result.length > 0 ? result[result.length - 1] : null;
-
             if (lastGroup && lastGroup.type === 'group' && lastGroup.date === txDate && lastGroup.groupType === tx.type) {
                 lastGroup.items.push(tx);
                 lastGroup.totalAmount += tx.amount;
                 lastGroup.count += 1;
             } else {
-                result.push({
-                    type: 'group',
-                    date: txDate,
-                    groupType: tx.type, 
-                    totalAmount: tx.amount,
-                    count: 1,
-                    items: [tx]
-                });
+                result.push({ type: 'group', date: txDate, groupType: tx.type, totalAmount: tx.amount, count: 1, items: [tx] });
             }
         });
-
         return result;
     }, [allTransactions, searchTerm]);
 
-    const getCategoryIcon = (category: string) => { 
-        const cat = category.toLowerCase(); 
-        if (cat.includes('transport') || cat.includes('naft') || cat.includes('vetur')) return <Car size={20} />; 
-        if (cat.includes('ushqim') || cat.includes('drek')) return <Utensils size={20} />; 
-        if (cat.includes('kafe')) return <Coffee size={20} />; 
-        if (cat.includes('zyr') || cat.includes('rent')) return <Building size={20} />; 
-        if (cat.includes('pag') || cat.includes('rrog')) return <Users size={20} />; 
-        if (cat.includes('tatim')) return <Landmark size={20} />; 
-        if (cat.includes('rrym')) return <Zap size={20} />; 
-        if (cat.includes('internet')) return <Wifi size={20} />; 
-        return <ArrowUpRight size={20} />; 
-    };
     
-    // CRUD Handlers
+    // UI Helpers
     const closePreview = () => { if (viewingUrl) window.URL.revokeObjectURL(viewingUrl); setViewingUrl(null); setViewingDoc(null); };
-    const addLineItem = () => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0 }]);
-    const removeLineItem = (i: number) => lineItems.length > 1 && setLineItems(lineItems.filter((_, idx) => idx !== i));
-    const updateLineItem = (i: number, f: keyof InvoiceItem, v: any) => { const n = [...lineItems]; n[i] = { ...n[i], [f]: v }; n[i].total = n[i].quantity * n[i].unit_price; setLineItems(n); };
-    const handleEditInvoice = (invoice: Invoice) => { setEditingInvoiceId(invoice.id); setNewInvoice({ client_name: invoice.client_name, client_email: invoice.client_email || '', client_address: invoice.client_address || '', client_phone: (invoice as any).client_phone || '', client_city: (invoice as any).client_city || '', client_tax_id: (invoice as any).client_tax_id || '', client_website: (invoice as any).client_website || '', tax_rate: invoice.tax_rate, notes: invoice.notes || '', status: invoice.status }); setIncludeVat(invoice.tax_rate > 0); setLineItems(invoice.items); setShowInvoiceModal(true); };
-    const handleCreateOrUpdateInvoice = async (e: React.FormEvent) => { e.preventDefault(); try { const payload = { ...newInvoice, items: lineItems, tax_rate: includeVat ? newInvoice.tax_rate : 0 }; if (editingInvoiceId) { const u = await apiService.updateInvoice(editingInvoiceId, payload); setInvoices(invoices.map(i => i.id === editingInvoiceId ? u : i)); } else { const n = await apiService.createInvoice(payload); setInvoices([n, ...invoices]); } closeInvoiceModal(); await refreshAnalytics(); } catch { alert(t('error.generic')); } };
-    const closeInvoiceModal = () => { setShowInvoiceModal(false); setEditingInvoiceId(null); setNewInvoice({ client_name: '', client_email: '', client_phone: '', client_address: '', client_city: '', client_tax_id: '', client_website: '', tax_rate: 18, notes: '', status: 'PAID' }); setIncludeVat(true); setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0 }]); };
-    const deleteInvoice = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await apiService.deleteInvoice(id); setInvoices(invoices.filter(inv => inv.id !== id)); await refreshAnalytics(); } catch { alert(t('documentsPanel.deleteFailed')); } };
+
+    // ACTION WRAPPERS (Passed to List Component)
+    const handleEditInvoice = (invoice: Invoice) => { setSelectedInvoice(invoice); setShowInvoiceModal(true); };
+    const handleEditExpense = (expense: Expense) => { setSelectedExpense(expense); setShowExpenseModal(true); };
+    
+    const handleDeleteInvoice = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await hookDeleteInvoice(id); } catch { alert(t('documentsPanel.deleteFailed')); } };
+    const handleDeleteExpense = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await hookDeleteExpense(id); } catch { alert(t('error.generic')); } };
+    const handleDeletePos = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await hookDeletePos(id); } catch { alert(t('documentsPanel.deleteFailed')); } };
+
     const handleViewInvoice = async (invoice: Invoice) => { setOpeningDocId(invoice.id); try { const blob = await apiService.getInvoicePdfBlob(invoice.id, i18n.language || 'sq'); const url = window.URL.createObjectURL(blob); setViewingUrl(url); setViewingDoc({ id: invoice.id, file_name: `${t('finance.invoicePrefix')}${invoice.invoice_number}`, mime_type: 'application/pdf', status: 'READY' } as any); } catch { alert(t('error.generic')); } finally { setOpeningDocId(null); } };
-    const downloadInvoice = async (id: string) => { try { await apiService.downloadInvoicePdf(id, i18n.language || 'sq'); } catch { alert(t('error.generic')); } };
-    const handleArchiveInvoiceClick = (id: string) => { setSelectedInvoiceId(id); setShowArchiveInvoiceModal(true); };
-    const submitArchiveInvoice = async () => { if (!selectedInvoiceId) return; try { await apiService.archiveInvoice(selectedInvoiceId, selectedCaseForInvoice || undefined); alert(t('general.saveSuccess')); setShowArchiveInvoiceModal(false); setSelectedCaseForInvoice(""); } catch { alert(t('error.generic')); } };
-    const handleEditExpense = (expense: Expense) => { setEditingExpenseId(expense.id); setNewExpense({ category: expense.category, amount: expense.amount, description: expense.description || '', date: expense.date }); setExpenseDate(new Date(expense.date)); setShowExpenseModal(true); };
-    const handleCreateOrUpdateExpense = async (e: React.FormEvent) => { e.preventDefault(); try { const payload = { ...newExpense, date: expenseDate ? expenseDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0] }; let s: Expense; if (editingExpenseId) { s = await apiService.updateExpense(editingExpenseId, payload); setExpenses(expenses.map(exp => exp.id === editingExpenseId ? s : exp)); } else { s = await apiService.createExpense(payload); setExpenses([s, ...expenses]); } if (expenseReceipt && s.id) { await apiService.uploadExpenseReceipt(s.id, expenseReceipt); const f = { ...s, receipt_url: "PENDING_REFRESH" }; setExpenses(prev => prev.map(exp => exp.id === f.id ? f : exp)); } closeExpenseModal(); await refreshAnalytics(); } catch { alert(t('error.generic')); } };
-    const closeExpenseModal = () => { setShowExpenseModal(false); setEditingExpenseId(null); setNewExpense({ category: '', amount: 0, description: '', date: new Date().toISOString().split('T')[0] }); setExpenseReceipt(null); };
-    const deleteExpense = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await apiService.deleteExpense(id); setExpenses(expenses.filter(e => e.id !== id)); await refreshAnalytics(); } catch { alert(t('error.generic')); } };
-    const deletePosTransaction = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await apiService.deletePosTransaction(id); setPosTransactions(posTransactions.filter(t => (t as any).id !== id && (t as any)._id !== id)); await refreshAnalytics(); } catch { alert(t('documentsPanel.deleteFailed')); } };
+    const handleDownloadInvoice = async (id: string) => { try { await apiService.downloadInvoicePdf(id, i18n.language || 'sq'); } catch { alert(t('error.generic')); } };
+    const handleArchiveInvoice = (id: string) => { setSelectedInvoiceId(id); setShowArchiveInvoiceModal(true); };
+    
+    const handleViewExpense = async (expense: Expense) => { setOpeningDocId(expense.id); try { let url: string, file_name: string, mime_type: string; if (expense.receipt_url) { const { blob, filename } = await apiService.getExpenseReceiptBlob(expense.id); url = window.URL.createObjectURL(blob); file_name = filename; const ext = filename.split('.').pop()?.toLowerCase(); mime_type = ext === 'pdf' ? 'application/pdf' : 'image/jpeg'; } else { const file = generateDigitalReceipt(expense); url = window.URL.createObjectURL(file); file_name = file.name; mime_type = 'text/plain'; } setViewingUrl(url); setViewingDoc({ id: expense.id, file_name, mime_type, status: 'READY' } as any); } catch { alert(t('error.receiptNotFound')); } finally { setOpeningDocId(null); } };
+    const handleDownloadExpense = async (expense: Expense) => { try { let url: string, filename: string; if (expense.receipt_url) { const { blob, filename: fn } = await apiService.getExpenseReceiptBlob(expense.id); url = window.URL.createObjectURL(blob); filename = fn; } else { const file = generateDigitalReceipt(expense); url = window.URL.createObjectURL(file); filename = file.name; } const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); if (!expense.receipt_url) window.URL.revokeObjectURL(url); } catch { alert(t('error.generic')); } };
+    const handleArchiveExpense = (id: string) => { setSelectedExpenseId(id); setShowArchiveExpenseModal(true); };
 
-    const toggleGroup = (key: string) => {
-        const newSet = new Set(expandedGroups);
-        if (newSet.has(key)) newSet.delete(key);
-        else newSet.add(key);
-        setExpandedGroups(newSet);
-    };
-
+    // --- HELPERS ---
     const generateDigitalReceipt = (expense: Expense): File => {
         const content = `${t('finance.digitalReceipt.title')}\n------------------------------------------------\n${t('finance.digitalReceipt.category')}   ${expense.category}\n${t('finance.digitalReceipt.amount')}       €${expense.amount.toFixed(2)}\n${t('finance.digitalReceipt.date')}        ${new Date(expense.date).toLocaleDateString('sq-AL')}\n${t('finance.digitalReceipt.description')}  ${expense.description || t('finance.digitalReceipt.noDescription')}\n------------------------------------------------\n${t('finance.digitalReceipt.generated')}`;
         const blob = new Blob([content], { type: 'text/plain' });
@@ -295,37 +197,8 @@ export const FinanceTab: React.FC = () => {
         return new File([blob], fileName, { type: 'text/plain' });
     };
 
-    const handleViewExpense = async (expense: Expense) => { setOpeningDocId(expense.id); try { let url: string, file_name: string, mime_type: string; if (expense.receipt_url) { const { blob, filename } = await apiService.getExpenseReceiptBlob(expense.id); url = window.URL.createObjectURL(blob); file_name = filename; const ext = filename.split('.').pop()?.toLowerCase(); mime_type = ext === 'pdf' ? 'application/pdf' : 'image/jpeg'; } else { const file = generateDigitalReceipt(expense); url = window.URL.createObjectURL(file); file_name = file.name; mime_type = 'text/plain'; } setViewingUrl(url); setViewingDoc({ id: expense.id, file_name, mime_type, status: 'READY' } as any); } catch { alert(t('error.receiptNotFound')); } finally { setOpeningDocId(null); } };
-    const handleDownloadExpense = async (expense: Expense) => { try { let url: string, filename: string; if (expense.receipt_url) { const { blob, filename: fn } = await apiService.getExpenseReceiptBlob(expense.id); url = window.URL.createObjectURL(blob); filename = fn; } else { const file = generateDigitalReceipt(expense); url = window.URL.createObjectURL(file); filename = file.name; } const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); if (!expense.receipt_url) window.URL.revokeObjectURL(url); } catch { alert(t('error.generic')); } };
-    const handleArchiveExpenseClick = (id: string) => { setSelectedExpenseId(id); setShowArchiveExpenseModal(true); };
+    const submitArchiveInvoice = async () => { if (!selectedInvoiceId) return; try { await apiService.archiveInvoice(selectedInvoiceId, selectedCaseForInvoice || undefined); alert(t('general.saveSuccess')); setShowArchiveInvoiceModal(false); setSelectedCaseForInvoice(""); } catch { alert(t('error.generic')); } };
     const submitArchiveExpense = async () => { if (!selectedExpenseId) return; try { const ex = expenses.find(e => e.id === selectedExpenseId); if (!ex) return; let fileToUpload: File; if (ex.receipt_url) { const { blob, filename } = await apiService.getExpenseReceiptBlob(ex.id); fileToUpload = new File([blob], filename, { type: blob.type }); } else { fileToUpload = generateDigitalReceipt(ex); } await apiService.uploadArchiveItem(fileToUpload, fileToUpload.name, "EXPENSE", selectedCaseForInvoice || undefined, undefined); alert(t('general.saveSuccess')); setShowArchiveExpenseModal(false); setSelectedCaseForInvoice(""); } catch { alert(t('error.generic')); } };
-
-    if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-10 h-10 animate-spin text-primary-start" /></div>;
-    
-    // --- BATCH STYLING HELPER ---
-    const getBatchStyles = (type: 'invoice' | 'expense' | 'pos') => {
-        if (type === 'invoice') return { 
-            bg: 'bg-emerald-500/10', text: 'text-emerald-400', 
-            icon: <FileText className="w-4 h-4 sm:w-5 sm:h-5" />, 
-            title: t('finance.invoiceDailySummary'),
-            amountColor: 'text-emerald-400',
-            labelKey: 'finance.invoiceCount'
-        };
-        if (type === 'expense') return { 
-            bg: 'bg-rose-500/10', text: 'text-rose-400', 
-            icon: <MinusCircle className="w-4 h-4 sm:w-5 sm:h-5" />, 
-            title: t('finance.expenseDailySummary'),
-            amountColor: 'text-rose-400',
-            labelKey: 'finance.expenseCount'
-        };
-        return { 
-            bg: 'bg-purple-500/10', text: 'text-purple-400', 
-            icon: <Layers className="w-4 h-4 sm:w-5 sm:h-5" />, 
-            title: t('finance.posDailySummary'),
-            amountColor: 'text-purple-400',
-            labelKey: 'finance.posCount'
-        };
-    };
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-8">
@@ -334,9 +207,7 @@ export const FinanceTab: React.FC = () => {
                 .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
                 .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; } 
                 .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-                /* Dark dropdown options */
                 select option { background-color: #1f2937; color: #f9fafb; }
-                /* Hide scrollbar for action buttons on mobile */
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
@@ -348,12 +219,12 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} />} type="expense" />
             </div>
 
-            {/* Action Bar: Scrollable on mobile */}
+            {/* Action Bar */}
             <div className="flex overflow-x-auto sm:flex-wrap items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 no-scrollbar mask-linear-fade">
-                <ActionButton primary icon={<Plus size={16} />} label={t('finance.createInvoice')} onClick={() => setShowInvoiceModal(true)} />
+                <ActionButton primary icon={<Plus size={16} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <div className="w-px h-8 bg-white/10 mx-2 hidden sm:block"></div>
                 <ActionButton icon={<FileSpreadsheet size={16} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
-                <ActionButton icon={<MinusCircle size={16} />} label={t('finance.addExpense')} onClick={() => setShowExpenseModal(true)} />
+                <ActionButton icon={<MinusCircle size={16} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
                 <ActionButton icon={<Calculator size={16} />} label={t('finance.monthlyClose')} onClick={() => navigate('/finance/wizard')} />
             </div>
 
@@ -375,126 +246,26 @@ export const FinanceTab: React.FC = () => {
                             </div>
                             
                             <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-2">
-                                {groupedList.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                                        <ShoppingCart size={48} className="mb-4 opacity-20" />
-                                        <p>{t('finance.noTransactions')}</p>
-                                    </div>
-                                ) : groupedList.map((item) => {
-                                    if (item.type === 'single') {
-                                        const tx = item.data;
-                                        return (
-                                            <div key={`${tx.type}-${tx.id}`} className="group flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-transparent hover:border-white/5 cursor-default gap-3">
-                                                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                                                    <div className={`p-2 sm:p-3 rounded-xl flex-shrink-0 ${tx.type === 'invoice' || tx.type === 'pos' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                                        {tx.type === 'invoice' ? <ArrowDownRight className="w-4 h-4 sm:w-5 sm:h-5" /> : tx.type === 'pos' ? <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" /> : getCategoryIcon(tx.label)}
-                                                    </div>
-                                                    <div className="min-w-0 truncate">
-                                                        <h4 className="font-semibold text-white truncate text-sm sm:text-base">{tx.label}</h4>
-                                                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 truncate">
-                                                            <Calendar size={12} />
-                                                            <span>{new Date(tx.date).toLocaleDateString()}</span>
-                                                            <span className="w-1 h-1 rounded-full bg-gray-600 flex-shrink-0"></span>
-                                                            <span className="uppercase text-[10px] tracking-wider bg-white/5 px-1.5 rounded flex-shrink-0">{t(`finance.types.${tx.type}`, tx.type)}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-row sm:items-center justify-between sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto mt-1 sm:mt-0 pl-[52px] sm:pl-0">
-                                                    <span className={`text-base sm:text-lg font-bold font-mono ${tx.type === 'invoice' || tx.type === 'pos' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                        {tx.type === 'invoice' || tx.type === 'pos' ? '+' : '-'}€{(tx.amount || 0).toFixed(2)}
-                                                    </span>
-                                                    <div className="flex items-center gap-1 transition-opacity">
-                                                        {tx.type !== 'pos' ? (
-                                                            <>
-                                                                <button onClick={() => tx.type === 'invoice' ? handleEditInvoice(tx.raw as Invoice) : handleEditExpense(tx.raw as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300" title={t('general.edit')}><Edit2 size={16} /></button>
-                                                                <button onClick={() => tx.type === 'invoice' ? handleViewInvoice(tx.raw as Invoice) : handleViewExpense(tx.raw as Expense)} disabled={openingDocId === tx.id} className="p-2 hover:bg-white/10 rounded-lg text-blue-400 hover:text-blue-300" title={t('general.view')}>{openingDocId === tx.id ? <Loader2 size={16} className="animate-spin"/> : <Eye size={16} />}</button>
-                                                                <button onClick={() => tx.type === 'invoice' ? downloadInvoice(tx.id) : handleDownloadExpense(tx.raw as Expense)} className="p-2 hover:bg-white/10 rounded-lg text-green-400 hover:text-green-300" title={t('general.download')}><Download size={16} /></button>
-                                                                <button onClick={() => tx.type === 'invoice' ? handleArchiveInvoiceClick(tx.id) : handleArchiveExpenseClick(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-indigo-400 hover:text-indigo-300" title={t('general.archive')}><Archive size={16} /></button>
-                                                                <button onClick={() => tx.type === 'invoice' ? deleteInvoice(tx.id) : deleteExpense(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300" title={t('general.delete')}><Trash2 size={16} /></button>
-                                                            </>
-                                                        ) : (
-                                                            <button onClick={() => deletePosTransaction(tx.id)} className="p-2 hover:bg-white/10 rounded-lg text-red-400 hover:text-red-300" title={t('general.delete')}><Trash2 size={16} /></button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    } else {
-                                        // RENDER GROUP BATCH (Unified - Mobile Optimized)
-                                        const isExpanded = expandedGroups.has(item.date + item.groupType);
-                                        const styles = getBatchStyles(item.groupType);
-                                        const isIncome = item.groupType !== 'expense';
-
-                                        return (
-                                            <div key={`group-${item.date}-${item.groupType}`} className="rounded-xl border border-white/10 bg-black/20 overflow-hidden">
-                                                <div 
-                                                    onClick={() => toggleGroup(item.date + item.groupType)}
-                                                    className="flex items-center justify-between p-3 sm:p-4 cursor-pointer hover:bg-white/5 transition-colors gap-2"
-                                                >
-                                                    <div className="flex items-center gap-3 min-w-0">
-                                                        <div className={`p-2 sm:p-3 rounded-xl flex-shrink-0 ${styles.bg} ${styles.text}`}>
-                                                            {styles.icon}
-                                                        </div>
-                                                        <div className="min-w-0 truncate">
-                                                            <h4 className="font-semibold text-white text-sm sm:text-base truncate">{styles.title}</h4>
-                                                            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500 truncate">
-                                                                <span>{item.date}</span>
-                                                                <span className="w-1 h-1 rounded-full bg-gray-600 flex-shrink-0"></span>
-                                                                <span className="text-gray-400 truncate">{t(styles.labelKey, { count: item.count })}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0">
-                                                        <span className={`text-sm sm:text-lg font-bold font-mono ${styles.amountColor}`}>
-                                                            {isIncome ? '+' : '-'}€{item.totalAmount.toFixed(2)}
-                                                        </span>
-                                                        {isExpanded ? <ChevronUp size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
-                                                    </div>
-                                                </div>
-                                                
-                                                <AnimatePresence>
-                                                    {isExpanded && (
-                                                        <motion.div 
-                                                            initial={{ height: 0, opacity: 0 }}
-                                                            animate={{ height: "auto", opacity: 1 }}
-                                                            exit={{ height: 0, opacity: 0 }}
-                                                            className="border-t border-white/10 bg-black/40"
-                                                        >
-                                                            {item.items.map(subTx => (
-                                                                <div key={subTx.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center px-3 sm:px-4 py-3 hover:bg-white/5 border-b border-white/5 last:border-0 pl-14 sm:pl-16">
-                                                                    <div className="flex items-center gap-3 min-w-0">
-                                                                        {subTx.type === 'pos' ? <ShoppingCart size={14} className="text-gray-600 flex-shrink-0" /> : <CreditCard size={14} className="text-gray-600 flex-shrink-0" />}
-                                                                        <span className="text-gray-300 text-xs sm:text-sm font-medium truncate">{subTx.label}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center justify-between sm:justify-end gap-4 mt-2 sm:mt-0">
-                                                                        <span className={`font-mono text-xs sm:text-sm ${subTx.type === 'expense' ? 'text-rose-500' : 'text-emerald-500'}`}>
-                                                                            {subTx.type === 'expense' ? '-' : '+'}€{subTx.amount.toFixed(2)}
-                                                                        </span>
-                                                                        <div className="flex items-center gap-2">
-                                                                            {subTx.type !== 'pos' ? (
-                                                                                <>
-                                                                                    <button onClick={() => subTx.type === 'invoice' ? handleEditInvoice(subTx.raw as Invoice) : handleEditExpense(subTx.raw as Expense)} className="text-gray-500 hover:text-amber-400"><Edit2 size={14} /></button>
-                                                                                    <button onClick={() => subTx.type === 'invoice' ? handleViewInvoice(subTx.raw as Invoice) : handleViewExpense(subTx.raw as Expense)} disabled={openingDocId === subTx.id} className="text-gray-500 hover:text-blue-400">
-                                                                                        {openingDocId === subTx.id ? <Loader2 size={14} className="animate-spin"/> : <Eye size={14} />}
-                                                                                    </button>
-                                                                                    <button onClick={() => subTx.type === 'invoice' ? downloadInvoice(subTx.id) : handleDownloadExpense(subTx.raw as Expense)} className="text-gray-500 hover:text-green-400"><Download size={14} /></button>
-                                                                                    <button onClick={() => subTx.type === 'invoice' ? handleArchiveInvoiceClick(subTx.id) : handleArchiveExpenseClick(subTx.id)} className="text-gray-500 hover:text-indigo-400"><Archive size={14} /></button>
-                                                                                    <button onClick={() => subTx.type === 'invoice' ? deleteInvoice(subTx.id) : deleteExpense(subTx.id)} className="text-gray-500 hover:text-red-400"><Trash2 size={14} /></button>
-                                                                                </>
-                                                                            ) : (
-                                                                                <button onClick={() => deletePosTransaction(subTx.id)} className="text-gray-500 hover:text-red-400"><Trash2 size={14} /></button>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                        );
-                                    }
-                                })}
+                                {/* MODULAR LIST COMPONENT */}
+                                {loading ? (
+                                    <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 animate-spin text-primary-start" /></div>
+                                ) : (
+                                    <TransactionList 
+                                        groupedList={groupedList}
+                                        openingDocId={openingDocId}
+                                        onEditInvoice={handleEditInvoice}
+                                        onEditExpense={handleEditExpense}
+                                        onViewInvoice={handleViewInvoice}
+                                        onViewExpense={handleViewExpense}
+                                        onDownloadInvoice={handleDownloadInvoice}
+                                        onDownloadExpense={handleDownloadExpense}
+                                        onArchiveInvoice={handleArchiveInvoice}
+                                        onArchiveExpense={handleArchiveExpense}
+                                        onDeleteInvoice={handleDeleteInvoice}
+                                        onDeleteExpense={handleDeleteExpense}
+                                        onDeletePos={handleDeletePos}
+                                    />
+                                )}
                             </div>
                         </div>
                     )}
@@ -542,64 +313,9 @@ export const FinanceTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* MODALS */}
-            {showInvoiceModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 custom-finance-scroll">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl sm:text-2xl font-bold text-white">{editingInvoiceId ? t('finance.editInvoice') : t('finance.createInvoice')}</h2>
-                            <button onClick={closeInvoiceModal} className="text-gray-400 hover:text-white"><X size={24} /></button>
-                        </div>
-                        <form onSubmit={handleCreateOrUpdateInvoice} className="space-y-4 sm:space-y-6">
-                            <div className="space-y-4">
-                                <h3 className="text-sm font-bold text-primary-start uppercase tracking-wider flex items-center gap-2"><User size={16} /> {t('caseCard.client')}</h3>
-                                <div><label className="block text-sm text-gray-300 mb-1">{t('business.clientName')}</label><input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_name} onChange={e => setNewInvoice({...newInvoice, client_name: e.target.value})} /></div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-sm text-gray-300 mb-1">{t('business.publicEmail')}</label><input type="email" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_email} onChange={e => setNewInvoice({...newInvoice, client_email: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.phone')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_phone} onChange={e => setNewInvoice({...newInvoice, client_phone: e.target.value})} /></div></div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-sm text-gray-300 mb-1">{t('business.city')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_city} onChange={e => setNewInvoice({...newInvoice, client_city: e.target.value})} /></div><div><label className="block text-sm text-gray-300 mb-1">{t('business.taxId')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_tax_id} onChange={e => setNewInvoice({...newInvoice, client_tax_id: e.target.value})} /></div></div>
-                                <div><label className="block text-sm text-gray-300 mb-1">{t('business.address')}</label><input type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newInvoice.client_address} onChange={e => setNewInvoice({...newInvoice, client_address: e.target.value})} /></div>
-                                <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/10"><input type="checkbox" id="vatToggle" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} className="w-4 h-4 text-primary-start rounded border-gray-300 focus:ring-primary-start" /><label htmlFor="vatToggle" className="text-sm text-gray-300 cursor-pointer select-none">{t('finance.applyVat')}</label></div>
-                            </div>
-                            <div className="space-y-3 pt-4 border-t border-white/10">
-                                <h3 className="text-sm font-bold text-primary-start uppercase tracking-wider flex items-center gap-2"><FileText size={16} /> {t('finance.services')}</h3>
-                                {lineItems.map((item, index) => (
-                                    <div key={index} className="flex flex-col sm:flex-row gap-2 items-center border-b border-white/5 pb-2 sm:border-none sm:pb-0">
-                                        <input type="text" placeholder={t('finance.description')} className="flex-1 w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} required />
-                                        <div className="flex gap-2 w-full sm:w-auto">
-                                            <input type="number" placeholder={t('finance.qty')} className="w-1/2 sm:w-20 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))} min="1" />
-                                            <input type="number" placeholder={t('finance.price')} className="w-1/2 sm:w-24 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={item.unit_price} onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))} min="0" />
-                                        </div>
-                                        <button type="button" onClick={() => removeLineItem(index)} className="p-2 text-red-400 hover:bg-red-900/20 rounded-lg self-end sm:self-center"><Trash2 size={18} /></button>
-                                    </div>
-                                ))}
-                                <button type="button" onClick={addLineItem} className="text-sm text-primary-start hover:underline flex items-center gap-1"><Plus size={14} /> {t('finance.addLine')}</button>
-                            </div>
-                            <div className="flex justify-end gap-3"><button type="button" onClick={closeInvoiceModal} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-green-600 text-white rounded-lg font-bold">{t('general.save')}</button></div>
-                        </form>
-                    </div>
-                </div>
-            )}
-            
-            {showExpenseModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-4 sm:p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2"><MinusCircle size={20} className="text-rose-500" /> {editingExpenseId ? t('finance.editExpense') : t('finance.addExpense')}</h2>
-                            <button onClick={closeExpenseModal} className="text-gray-400 hover:text-white"><X size={24} /></button>
-                        </div>
-                        <div className="mb-6">
-                            <input type="file" ref={receiptInputRef} className="hidden" accept="image/*,.pdf" onChange={(e) => setExpenseReceipt(e.target.files?.[0] || null)} />
-                            <button onClick={() => receiptInputRef.current?.click()} className={`w-full py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${expenseReceipt ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}>{expenseReceipt ? (<><CheckCircle size={18} /> {expenseReceipt.name}</>) : (<><Paperclip size={18} /> {t('finance.attachReceipt')}</>)}</button>
-                        </div>
-                        <form onSubmit={handleCreateOrUpdateExpense} className="space-y-4 sm:space-y-5">
-                            <div><label className="block text-sm text-gray-300 mb-1">{t('finance.expenseCategory')}</label><input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newExpense.category} onChange={e => setNewExpense({...newExpense, category: e.target.value})} /></div>
-                            <div><label className="block text-sm text-gray-300 mb-1">{t('finance.amount')}</label><input required type="number" step="0.01" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: parseFloat(e.target.value)})} /></div>
-                            <div><label className="block text-sm text-gray-300 mb-1">{t('finance.date')}</label><DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" required /></div>
-                            <div><label className="block text-sm text-gray-300 mb-1">{t('finance.description')}</label><textarea rows={2} className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={newExpense.description} onChange={e => setNewExpense({...newExpense, description: e.target.value})} /></div>
-                            <div className="flex justify-end gap-3 pt-4"><button type="button" onClick={closeExpenseModal} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold">{t('general.save')}</button></div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            {/* INJECTED MODALS */}
+            <InvoiceModal isOpen={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
+            <ExpenseModal isOpen={showExpenseModal} onClose={() => setShowExpenseModal(false)} expenseToEdit={selectedExpense} onSuccess={refreshData} />
             
             {showArchiveInvoiceModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -621,7 +337,7 @@ export const FinanceTab: React.FC = () => {
                 </div>
             )}
             
-            {showImportModal && (<TransactionImporter onClose={() => setShowImportModal(false)} onSuccess={() => { loadInitialData(); setShowImportModal(false); }} t={t} />)}
+            {showImportModal && (<TransactionImporter onClose={() => setShowImportModal(false)} onSuccess={() => { refreshData(); setShowImportModal(false); }} t={t} />)}
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} onMinimize={closePreview} t={t} directUrl={viewingUrl} />}
         </motion.div>
     );
