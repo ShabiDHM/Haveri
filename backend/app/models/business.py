@@ -1,7 +1,7 @@
 # FILE: backend/app/models/business.py
-# PHOENIX PROTOCOL - BUSINESS ENTITY (SOURCE OF TRUTH)
-# 1. DEFINES: BusinessProfileUpdate and BusinessProfileInDB.
-# 2. FIX: Explicitly includes 'logo_url' for frontend display.
+# PHOENIX PROTOCOL - BUSINESS ENTITY V17.0 (FISCAL UPGRADE)
+# 1. ADDED: vat_rate, target_margin, currency.
+# 2. RESULT: Database now natively stores fiscal intelligence settings.
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
@@ -17,12 +17,15 @@ class BusinessProfileBase(BaseModel):
     website: Optional[str] = None
     tax_id: Optional[str] = None 
     branding_color: str = "#1f2937"
+    
+    # PHOENIX: Fiscal Configuration for BI Module
+    vat_rate: float = 18.0
+    target_margin: float = 30.0
+    currency: str = "EUR"
 
 class BusinessProfileUpdate(BusinessProfileBase):
     """
     Schema for updating profile details.
-    Inherits fields from Base, all optional by default in Pydantic for updates 
-    if strictly typed, but here we treat Base fields as updatable.
     """
     pass
 

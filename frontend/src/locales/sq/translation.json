@@ -26,7 +26,8 @@
     "view": "Shiko",
     "archive": "Arkivo",
     "delete": "Fshi",
-    "actions": "Veprime"
+    "actions": "Veprime",
+    "allGood": "Gjithçka në rregull!"
   },
   "branding": {
     "default": "Haveri Portal"
@@ -257,6 +258,8 @@
     "profile": "Profili",
     "finance": "Financat",
     "archive": "Arkiva",
+    "insights": "Inteligjenca",
+    "insights_short": "Inteligjenca",
     "briefing": "Përmbledhja",
     "briefing_short": "Ditore",
     "totalCases": "Projekte Totale",
@@ -276,7 +279,28 @@
     "website": "Webfaqja",
     "taxId": "Numri Fiskal / NUI",
     "logoUploadFailed": "Ngarkimi i logos dështoi.",
-    "clientName": "Emri i Klientit"
+    "clientName": "Emri i Klientit",
+    "welcome": "Mirësevini {{name}}"
+  },
+  "insights": {
+    "title": "Inteligjenca e Biznesit",
+    "subtitle": "Analizë e thelluar për të marrë vendime më të zgjuara.",
+    "tip": "Këshillë: Përdorni butonin WhatsApp tek borxhet për të përshpejtuar arkëtimin.",
+    "debt": {
+      "title": "Analiza e Borxheve",
+      "topDebtors": "Klientët me Borxhe",
+      "noDebts": "Asnjë borxh aktiv! Punë e shkëlqyer."
+    },
+    "tax": {
+      "estimator": "Vlerësimi i TVSH-së",
+      "toPay": "Për të paguar (Vlerësim)",
+      "disclaimer": "Ky është vetëm një vlerësim. Konsultohuni me kontabilistin tuaj."
+    },
+    "inventory": {
+      "title": "Inteligjenca e Stokut",
+      "value": "Vlera Totale e Stokut",
+      "valueDesc": "Para të bllokuara në rafte"
+    }
   },
   "daily_briefing": {
     "morning_report": "Raporti i Mëngjesit",
@@ -284,10 +308,15 @@
     "system_optimal": "Sistemet Optimale",
     "attention_needed": "Veprim i Kërkuar",
     "finance_summary": "Analiza e faturave të papaguara nga dita e djeshme.",
+    "revenue_yesterday": "Të hyrat dje",
+    "financial_stability": "Stabilitet Financiar",
+    "action_required": "Veprim i kërkuar:",
     "view_finances": "Shiko Financat",
     "predictive_stock": "Parashikimi i Stokut",
     "risk_alert": "Rrezik Mungese",
     "inventory_prediction": "Bazuar në shitjet e djeshme, këta artikuj rrezikojnë të mbarojnë sot.",
+    "top_product_24h": "Produkti Top (24h)",
+    "stock_remaining": "Mbetur",
     "predicted_out": "Parashikohet të mbarojë në 14:00",
     "restock_suggest": "Sugjerohet rifurnizim pasdite",
     "manage_inventory": "Menaxho Inventarin",
@@ -461,11 +490,11 @@
     "emptyHint": "Filloni duke ngarkuar dokumente ose krijoni nën-dosje për të organizuar punën tuaj.",
     "createFolder": "Krijo Dosje",
     "newFolderTitle": "Krijo Dosje të Re",
-    "folderNamePlaceholder": "Emëro dosjen...",
+    "folderNamePlaceholder": "Emri i Dosjes...",
     "newFolderDefault": "Dosje e Re",
     "upload": "Ngarko",
     "uploadFolder": "Ngarko Dosje",
-    "uploadFolderTooltip": "Ngarko një dosje",
+    "uploadFolderTooltip": "Ngarko një dosje nga kompjuteri",
     "created": "Krijuar",
     "uploaded": "Ngarkuar",
     "details": "Detajet",
@@ -477,6 +506,7 @@
     "sharedTooltip": "Ndarë me klientin",
     "share": "Ndaj me Klientin",
     "unshare": "Hiq Ndarjen",
+    "isShared": "E Ndarë me Klientin",
     "shareCaseTitle": "Ndaj Projektin",
     "shareCaseDesc": "Aktivizoni këtë opsion për të lejuar qasje publike në portalin e klientit për këtë projekt.",
     "sharingEnabled": "Ndarja Publike e Aktivizuar",
@@ -487,8 +517,8 @@
   },
   "category": {
     "general": "Të Përgjithshme",
-    "evidence": "Dëshmi",
-    "legalDocs": "Dokumente",
+    "evidence": "Prova / Dëshmi",
+    "legalDocs": "Dokumente Ligjore",
     "invoices": "Fatura",
     "contracts": "Kontrata"
   },
@@ -555,13 +585,15 @@
     "allTypes": "Të gjitha Llojet",
     "allPriorities": "Të gjitha Prioritetet",
     "noUpcomingEvents": "Nuk ka afate të ardhshme në 7 ditët e ardhshme.",
+    "noEventsToday": "Nuk ka ngjarje për sot.",
+    "focusTime": "Koha për fokus.",
     "upcomingAlerts": "Afatet e Ardhshme",
     "addToCalendar": "Shto në Kalendar",
     "eventSaved": "Ngjarje u ruajt me sukses!",
     "date": "Data",
     "type": "Lloji",
     "title": "Titulli",
-    "deadline": "Afati",
+    "deadline": "AFAT",
     "hearing": "Prezantim",
     "meeting": "Takim",
     "filing": "Dorëzim",
@@ -571,8 +603,10 @@
     "visibilityPublicDesc": "Klienti do ta shohë këtë në portal.",
     "visibilityPrivateDesc": "Kjo ngjarje është e fshehur nga klienti.",
     "clientLabel": "Klienti",
+    "locationOnline": "Online",
     "relatedCase": "Projekti i Lidhur",
     "selectCase": "Zgjidhni një projekt",
+    "events": "Ngjarje",
     "eventTypes": "Llojet e Ngjarjeve",
     "types": {
       "DEADLINE": "Afati",
@@ -636,7 +670,8 @@
     "uploadFailed": "Ngarkimi dështoi",
     "receiptNotFound": "Fatura nuk u gjet.",
     "noReceiptToArchive": "Nuk ka faturë për të arkivuar.",
-    "noReceiptAttached": "Nuk ka faturë të bashkangjitur."
+    "noReceiptAttached": "Nuk ka faturë të bashkangjitur.",
+    "failedToLoad": "Dështoi gjenerimi i raportit."
   },
   "settings": {
     "successMessage": "Cilësimet u ruajtën me sukses!"
@@ -651,55 +686,59 @@
     "TRIAL": "Provë "
   },
   "inventory": {
-    "title": "Inventari & Recetat",
-    "tabItems": "Lënda e Parë",
+    "title": "Menaxhimi i Stokut",
+    "tabItems": "Artikujt",
     "tabRecipes": "Recetat",
+    "lowStock": "Stoku Kritik",
+    "cost": "Kosto",
+    "cancel": "Anulo",
+    "save": "Ruaj",
     "items": {
       "add": "Shto Artikull",
       "edit": "Ndrysho Artikullin",
-      "import": "Importo Lëndë të Parë",
-      "importedCount": "Artikuj të importuar",
-      "noItems": "Nuk ka artikuj në inventar. Shtoni të parin!",
-      "name": "Emri i Artikullit",
-      "unit": "Njësia Matëse",
-      "cost": "Kosto/Njësi",
+      "import": "Importo CSV",
+      "name": "Emri",
+      "unit": "Njësia",
+      "cost": "Kosto për njësi",
       "stock": "Stoku Aktual",
-      "lowStock": "Stok i Ulët"
+      "lowStock": "Pragu i njoftimit",
+      "noItems": "Asnjë artikull në inventar.",
+      "importedCount": "Artikuj të importuar"
     },
     "recipes": {
       "add": "Krijo Recetë",
       "edit": "Ndrysho Recetën",
       "import": "Importo Receta",
-      "noRecipes": "Nuk keni krijuar asnjë recetë.",
       "productName": "Emri i Produktit",
-      "example": "p.sh. Espresso Macchiato",
-      "productNameDesc": "Emri që shfaqet në faturë (p.sh. Espresso)",
-      "ingredients": "Përbërësit (Lënda e Parë)",
-      "selectIngredient": "Zgjidh Lëndën e Parë",
-      "addIngredient": "Shto Përbërës Tjetër",
-      "costPreview": "Kosto e Përllogaritur:",
-      "estCost": "Kosto e Vlerësuar",
+      "productNameDesc": "Emri final në menu (p.sh. Macchiato e Madhe)",
+      "ingredients": "Përbërësit",
+      "estCost": "Kosto e Përllogaritur",
+      "addIngredient": "Shto Përbërës",
+      "selectIngredient": "Zgjidhni artikullin...",
+      "costPreview": "Kosto Totale:",
+      "noRecipes": "Asnjë recetë e krijuar.",
       "importedCount": "Receta të krijuara",
-      "missingItems": "Përbërësit që mungojnë"
+      "missingItems": "Përbërësit që mungojnë",
+      "example": "e.g. Espresso Macchiato"
     },
     "import": {
-      "instruction": "Ngarko një file CSV ose Excel me kolonat:",
-      "columns": "Emri i Produktit | Lënda e Parë | Sasia",
-      "columnsItems": "Emri | Njësia | Stoku | Kosto",
-      "clickToSelect": "Kliko për të zgjedhur file",
-      "button": "Importo"
-    },
-    "save": "Ruaj",
-    "cancel": "Anulo",
-    "lowStock": "Stok i pakët",
-    "cost": "Kosto",
-    "unknownItem": "Artikull i panjohur"
+      "instruction": "Ngarkoni një skedar Excel ose CSV.",
+      "columns": "Kolonat e kërkuara: Product Name, Ingredients (comma separated)",
+      "columnsItems": "Kolonat e kërkuara: Name, Unit, Stock, Cost",
+      "clickToSelect": "Klikoni për të zgjedhur skedarin",
+      "button": "Fillo Importimin"
+    }
   },
   "units": {
-    "kg": "Kg",
-    "liters": "Litra",
-    "pieces": "Copë",
-    "grams": "Gram",
-    "milliliters": "Mililitra"
+    "kg": "Kilogram (kg)",
+    "litra": "Litra (l)",
+    "cope": "Copë (copë)",
+    "grams": "Gram (gr)",
+    "milliliters": "Mililitra (ml)",
+    "liters": "Litra (l)",
+    "pieces": "Copë (copë)"
+  },
+  "time": {
+    "days": "ditë vonesë"
   }
 }

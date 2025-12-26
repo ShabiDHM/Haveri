@@ -1,11 +1,11 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - BUSINESS PAGE V16.0 (LOCALIZATION FIX)
-// 1. LOCALE: Updated welcome message key to 'business.welcome' with Albanian fallback "Mirësevini {{name}}".
-// 2. UI: Adjusted mobile label fallbacks (Ditor -> Ditore) for consistency.
+// PHOENIX PROTOCOL - BUSINESS PAGE V17.0 (INSIGHTS INTEGRATION)
+// 1. FEATURE: Added 'InsightsTab' (Inteligjenca) to navigation.
+// 2. UI: Updated mobile grid to 'grid-cols-3' to handle 6 items gracefully (2 rows).
 // 3. STATUS: Production Ready.
 
 import React, { useState } from 'react';
-import { Building2, FileText, FolderOpen, Package, LayoutDashboard } from 'lucide-react';
+import { Building2, FileText, FolderOpen, Package, LayoutDashboard, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { ProfileTab } from '../components/business/ProfileTab';
@@ -13,8 +13,9 @@ import { FinanceTab } from '../components/business/FinanceTab';
 import { ArchiveTab } from '../components/business/ArchiveTab';
 import { InventoryTab } from '../components/business/InventoryTab';
 import { DailyBriefingTab } from '../components/business/DailyBriefingTab';
+import { InsightsTab } from '../components/business/InsightsTab';
 
-type ActiveTab = 'briefing' | 'finance' | 'inventory' | 'archive' | 'profile';
+type ActiveTab = 'briefing' | 'finance' | 'inventory' | 'archive' | 'insights' | 'profile';
 
 const BusinessPage: React.FC = () => {
   const { t } = useTranslation();
@@ -39,6 +40,8 @@ const BusinessPage: React.FC = () => {
         return <InventoryTab />;
       case 'archive':
         return <ArchiveTab />;
+      case 'insights':
+        return <InsightsTab />;
       case 'profile':
         return <ProfileTab />;
       default:
@@ -60,8 +63,8 @@ const BusinessPage: React.FC = () => {
             </p>
         </div>
         
-        {/* Navigation Grid - 5 Columns */}
-        <div className="w-full sm:w-auto grid grid-cols-5 sm:flex bg-background-light/10 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md gap-1 sm:gap-0">
+        {/* Navigation Grid - 3 Columns on Mobile (2 Rows), Flex on Desktop */}
+        <div className="w-full sm:w-auto grid grid-cols-3 sm:flex bg-background-light/10 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md gap-1 sm:gap-0">
             
             {/* 1. THE DAILY BRIEFING */}
             <button 
@@ -69,8 +72,8 @@ const BusinessPage: React.FC = () => {
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto ${activeTab === 'briefing' ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
                 <LayoutDashboard size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span className="hidden xs:inline truncate">{t('business.briefing', 'Briefing')}</span>
-                <span className="xs:hidden">{t('business.briefing_short', 'Ditore')}</span>
+                <span className="hidden md:inline truncate">{t('business.briefing', 'Briefing')}</span>
+                <span className="md:hidden">{t('business.briefing_short', 'Ditore')}</span>
             </button>
 
             {/* 2. FINANCES */}
@@ -79,8 +82,8 @@ const BusinessPage: React.FC = () => {
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto ${activeTab === 'finance' ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
                 <FileText size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span className="hidden xs:inline truncate">{t('business.finance', 'Financat')}</span>
-                <span className="xs:hidden">{t('business.finance', 'Financat')}</span>
+                <span className="hidden md:inline truncate">{t('business.finance', 'Financat')}</span>
+                <span className="md:hidden">{t('business.finance', 'Financat')}</span>
             </button>
             
             {/* 3. INVENTORY */}
@@ -89,8 +92,8 @@ const BusinessPage: React.FC = () => {
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto ${activeTab === 'inventory' ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
                 <Package size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span className="hidden xs:inline truncate">{t('inventory.title', 'Inventari').split(' ')[0]}</span>
-                <span className="xs:hidden">{t('inventory.title', 'Inventari').split(' ')[0]}</span>
+                <span className="hidden md:inline truncate">{t('inventory.title', 'Inventari').split(' ')[0]}</span>
+                <span className="md:hidden">{t('inventory.title', 'Inventari').split(' ')[0]}</span>
             </button>
 
             {/* 4. ARCHIVE */}
@@ -99,18 +102,28 @@ const BusinessPage: React.FC = () => {
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto ${activeTab === 'archive' ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
                 <FolderOpen size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span className="hidden xs:inline truncate">{t('business.archive', 'Arkiva')}</span>
-                <span className="xs:hidden">{t('business.archive', 'Arkiva')}</span>
+                <span className="hidden md:inline truncate">{t('business.archive', 'Arkiva')}</span>
+                <span className="md:hidden">{t('business.archive', 'Arkiva')}</span>
             </button>
 
-            {/* 5. PROFILE */}
+            {/* 5. INTELLIGENCE (NEW) */}
+            <button 
+                onClick={() => setActiveTab('insights')} 
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto ${activeTab === 'insights' ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+                <Sparkles size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <span className="hidden md:inline truncate">{t('business.insights', 'Inteligjenca')}</span>
+                <span className="md:hidden">{t('business.insights_short', 'Inteligjenca')}</span>
+            </button>
+
+            {/* 6. PROFILE */}
             <button 
                 onClick={() => setActiveTab('profile')} 
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 w-full sm:w-auto ${activeTab === 'profile' ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
             >
                 <Building2 size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span className="hidden xs:inline truncate">{t('business.profile', 'Profili')}</span>
-                <span className="xs:hidden">{t('business.profile', 'Profili')}</span>
+                <span className="hidden md:inline truncate">{t('business.profile', 'Profili')}</span>
+                <span className="md:hidden">{t('business.profile', 'Profili')}</span>
             </button>
         </div>
       </div>

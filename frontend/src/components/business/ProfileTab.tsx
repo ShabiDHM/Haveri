@@ -1,14 +1,14 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V16.0 (MOBILE OPTIMIZED)
-// 1. UI: Responsive padding for cards (p-5 mobile, p-8 desktop).
-// 2. UI: Adjusted logo uploader size for mobile.
-// 3. UI: Optimized form input spacing and density.
-// 4. STATUS: Production Ready.
+// PHOENIX PROTOCOL - PROFILE TAB V17.1 (FULL STACK INTEGRATION)
+// 1. LOGIC: Reads/Writes VAT & Margin directly to Database (via API).
+// 2. CLEANUP: Removed temporary LocalStorage logic.
+// 3. STATUS: Production Ready.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-    Building2, Mail, Phone, Palette, Save, Upload, Loader2, Camera, MapPin, Globe, CreditCard
+    Building2, Mail, Phone, Palette, Save, Upload, Loader2, Camera, MapPin, Globe, CreditCard,
+    TrendingUp, Calculator, Coins
 } from 'lucide-react';
 import { apiService, API_V1_URL } from '../../services/api';
 import { BusinessProfile, BusinessProfileUpdate } from '../../data/types';
@@ -28,7 +28,8 @@ export const ProfileTab: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState<BusinessProfileUpdate>({
-        firm_name: '', email_public: '', phone: '', address: '', city: '', website: '', tax_id: '', branding_color: DEFAULT_COLOR
+        firm_name: '', email_public: '', phone: '', address: '', city: '', website: '', tax_id: '', branding_color: DEFAULT_COLOR,
+        vat_rate: 18, target_margin: 30, currency: 'EUR'
     });
 
     useEffect(() => {
@@ -37,9 +38,17 @@ export const ProfileTab: React.FC = () => {
                 const data = await apiService.getBusinessProfile();
                 setProfile(data);
                 setFormData({
-                    firm_name: data.firm_name || '', email_public: data.email_public || '', phone: data.phone || '',
-                    address: data.address || '', city: data.city || '', website: data.website || '',
-                    tax_id: data.tax_id || '', branding_color: data.branding_color || DEFAULT_COLOR
+                    firm_name: data.firm_name || '', 
+                    email_public: data.email_public || '', 
+                    phone: data.phone || '',
+                    address: data.address || '', 
+                    city: data.city || '', 
+                    website: data.website || '',
+                    tax_id: data.tax_id || '', 
+                    branding_color: data.branding_color || DEFAULT_COLOR,
+                    vat_rate: data.vat_rate ?? 18,
+                    target_margin: data.target_margin ?? 30,
+                    currency: data.currency || 'EUR'
                 });
             } catch (error) { console.error(error); } finally { setLoading(false); }
         };
@@ -52,7 +61,6 @@ export const ProfileTab: React.FC = () => {
             if (url.startsWith('blob:') || url.startsWith('data:')) { setLogoSrc(url); return; }
             setLogoLoading(true);
             apiService.fetchImageBlob(url)
-                // PHOENIX FIX: Corrected the typo from URL.ObjectURL to URL
                 .then((blob: Blob) => setLogoSrc(URL.createObjectURL(blob)))
                 .catch(() => {
                     const cleanBase = API_V1_URL.endsWith('/') ? API_V1_URL.slice(0, -1) : API_V1_URL;
@@ -71,10 +79,11 @@ export const ProfileTab: React.FC = () => {
             const cleanData: BusinessProfileUpdate = { ...formData };
             Object.keys(cleanData).forEach(key => {
                 const k = key as keyof BusinessProfileUpdate;
-                if (cleanData[k] === '') {
+                if (cleanData[k] === '' && k !== 'vat_rate' && k !== 'target_margin') {
                     cleanData[k] = undefined;
                 }
             });
+            
             const updatedProfile = await apiService.updateBusinessProfile(cleanData);
             setProfile(updatedProfile);
             alert(t('settings.successMessage'));
@@ -118,7 +127,7 @@ export const ProfileTab: React.FC = () => {
     if (loading) return <div className="flex justify-center h-64 items-center"><Loader2 className="animate-spin text-primary-start" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 pb-10">
             <div className="space-y-6 sm:space-y-8">
                 {/* LOGO CARD */}
                 <div className="bg-background-dark border border-glass-edge rounded-3xl p-6 sm:p-8 flex flex-col items-center shadow-xl relative overflow-hidden group">
@@ -149,33 +158,68 @@ export const ProfileTab: React.FC = () => {
             </div>
 
             {/* FORM CARD */}
-            <div className="md:col-span-2">
-                <form onSubmit={handleProfileSubmit} className="bg-background-dark border border-glass-edge rounded-3xl p-6 sm:p-8 space-y-6 sm:space-y-8 shadow-xl h-full relative overflow-hidden flex flex-col">
+            <div className="md:col-span-2 space-y-6 sm:space-y-8">
+                <form onSubmit={handleProfileSubmit} className="bg-background-dark border border-glass-edge rounded-3xl p-6 sm:p-8 space-y-6 sm:space-y-8 shadow-xl relative overflow-hidden flex flex-col">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-cyan-500" />
-                    <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-3"><Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary-start" />{t('business.firmData')}</h3>
                     
-                    <div className="flex-grow space-y-4 sm:space-y-6">
-                        <div className="group">
-                            <label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.firmNameLabel')}</label>
-                            <div className="relative">
-                                <Building2 className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" />
-                                <input type="text" name="firm_name" value={formData.firm_name} onChange={(e) => setFormData({ ...formData, firm_name: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" placeholder={t('business.firmNamePlaceholder')} />
+                    {/* SECTION 1: IDENTITY */}
+                    <div>
+                        <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-3 mb-6"><Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary-start" />{t('business.firmData')}</h3>
+                        <div className="space-y-4 sm:space-y-6">
+                            <div className="group">
+                                <label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.firmNameLabel')}</label>
+                                <div className="relative">
+                                    <Building2 className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" />
+                                    <input type="text" name="firm_name" value={formData.firm_name} onChange={(e) => setFormData({ ...formData, firm_name: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" placeholder={t('business.firmNamePlaceholder')} />
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.publicEmail')}</label><div className="relative"><Mail className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" /><input type="email" name="email_public" value={formData.email_public} onChange={(e) => setFormData({ ...formData, email_public: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div></div>
+                                <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.phone')}</label><div className="relative"><Phone className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" /><input type="text" name="phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div></div>
+                            </div>
+                            
+                            <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.address')}</label><div className="relative"><MapPin className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" /><input type="text" name="address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div></div>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.city')}</label><input type="text" name="city" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl px-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div>
+                                <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.website')}</label><div className="relative"><Globe className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" /><input type="text" name="website" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div></div>
+                            </div>
+                            
+                            <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.taxId')}</label><div className="relative"><CreditCard className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" /><input type="text" name="tax_id" value={formData.tax_id} onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div></div>
+                        </div>
+                    </div>
+
+                    {/* SECTION 2: FISCAL CONFIGURATION */}
+                    <div className="pt-6 border-t border-white/5">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-4"><Calculator className="w-5 h-5 text-amber-400" /> Konfigurimi Fiskal & Inteligjenca</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="group">
+                                <label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Norma e TVSH (%)</label>
+                                <div className="relative">
+                                    <input type="number" value={formData.vat_rate} onChange={(e) => setFormData({...formData, vat_rate: parseFloat(e.target.value)})} className="w-full bg-background-light/50 border border-glass-edge rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-amber-400 outline-none transition-all pl-4" />
+                                    <span className="absolute right-4 top-2.5 text-gray-500 font-bold">%</span>
+                                </div>
+                            </div>
+                            <div className="group">
+                                <label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Marzhi i Dëshiruar (%)</label>
+                                <div className="relative">
+                                    <input type="number" value={formData.target_margin} onChange={(e) => setFormData({...formData, target_margin: parseFloat(e.target.value)})} className="w-full bg-background-light/50 border border-glass-edge rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-emerald-400 outline-none transition-all pl-10" />
+                                    <TrendingUp className="absolute left-4 top-2.5 w-4 h-4 text-emerald-500" />
+                                </div>
+                            </div>
+                            <div className="group">
+                                <label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Monedha</label>
+                                <div className="relative">
+                                    <select value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value})} className="w-full bg-background-light/50 border border-glass-edge rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-400 outline-none transition-all pl-10 appearance-none cursor-pointer">
+                                        <option value="EUR">Euro (€)</option>
+                                        <option value="LEK">Lek (ALL)</option>
+                                        <option value="USD">Dollar ($)</option>
+                                    </select>
+                                    <Coins className="absolute left-4 top-2.5 w-4 h-4 text-blue-500" />
+                                </div>
                             </div>
                         </div>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.publicEmail')}</label><div className="relative"><Mail className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" /><input type="email" name="email_public" value={formData.email_public} onChange={(e) => setFormData({ ...formData, email_public: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div></div>
-                            <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.phone')}</label><div className="relative"><Phone className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" /><input type="text" name="phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div></div>
-                        </div>
-                        
-                        <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.address')}</label><div className="relative"><MapPin className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" /><input type="text" name="address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div></div>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.city')}</label><input type="text" name="city" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl px-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div>
-                            <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.website')}</label><div className="relative"><Globe className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" /><input type="text" name="website" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div></div>
-                        </div>
-                        
-                        <div className="group"><label className="block text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 sm:mb-2">{t('business.taxId')}</label><div className="relative"><CreditCard className="absolute left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-gray-500 group-focus-within:text-primary-start transition-colors" /><input type="text" name="tax_id" value={formData.tax_id} onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })} className="w-full bg-background-light/50 border border-glass-edge rounded-xl pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-white focus:ring-2 focus:ring-primary-start outline-none transition-all text-sm sm:text-base" /></div></div>
                     </div>
                     
                     <div className="pt-2 sm:pt-4 flex justify-end">
