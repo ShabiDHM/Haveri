@@ -1,88 +1,33 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES MASTER V19.3
-// 1. UPDATED: StrategicBriefingResponse now uses 'staffPerformance' instead of 'liquidity'.
-// 2. INTEGRITY: Full file preserved.
+// PHOENIX PROTOCOL - TYPES MASTER V19.4 (I18N FIX)
+// 1. UPDATED: mvpInsight is now a structured object for dynamic translation.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
-export interface User { 
-    id: string; 
-    email: string; 
-    username: string; 
-    role: 'ADMIN' | 'LAWYER' | 'CLIENT'; 
-    status: 'active' | 'inactive'; 
-    created_at: string; 
-    token?: string; 
-    subscription_status?: string; 
-    business_profile?: BusinessProfile;
-}
+export interface User { id: string; email: string; username: string; role: 'ADMIN' | 'LAWYER' | 'CLIENT'; status: 'active' | 'inactive'; created_at: string; token?: string; subscription_status?: string; business_profile?: BusinessProfile; }
 export type AdminUser = User;
-
 export interface Case { id: string; case_number: string; case_name: string; title: string; status: 'open' | 'closed' | 'pending' | 'archived'; client?: { name: string; phone: string; email: string; }; opposing_party?: { name: string; lawyer: string; }; court_info?: { name: string; judge: string; }; description: string; created_at: string; updated_at: string; tags: string[]; chat_history?: ChatMessage[]; document_count?: number; alert_count?: number; event_count?: number; is_shared?: boolean; }
 export interface Document { id: string; file_name: string; file_type: string; mime_type?: string; storage_key: string; uploaded_by: string; created_at: string; status: 'UPLOADING' | 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED'; summary?: string; risk_score?: number; ocr_status?: string; processed_text_storage_key?: string; preview_storage_key?: string; error_message?: string; progress_percent?: number; progress_message?: string; is_shared?: boolean; }
 export interface ChatMessage { role: 'user' | 'ai'; content: string; timestamp: string; }
 export interface CalendarEvent { id: string; title: string; description?: string; start_date: string; end_date: string; is_all_day: boolean; event_type: 'HEARING' | 'DEADLINE' | 'MEETING' | 'OTHER' | 'FILING' | 'COURT_DATE' | 'CONSULTATION'; status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE' | 'ARCHIVED'; case_id?: string; document_id?: string; location?: string; notes?: string; priority?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'; attendees?: string[]; is_public?: boolean; }
+export interface BusinessProfile { id: string; firm_name: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color: string; logo_url?: string; is_complete: boolean; vat_rate?: number; target_margin?: number; currency?: string; }
+export interface BusinessProfileUpdate { firm_name?: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color?: string; vat_rate?: number; target_margin?: number; currency?: string; }
 
-// --- BUSINESS PROFILE ---
-export interface BusinessProfile { 
-    id: string; 
-    firm_name: string; 
-    address?: string; 
-    city?: string; 
-    phone?: string; 
-    email_public?: string; 
-    website?: string; 
-    tax_id?: string; 
-    branding_color: string; 
-    logo_url?: string; 
-    is_complete: boolean;
-    vat_rate?: number;
-    target_margin?: number;
-    currency?: string;
-}
-
-export interface BusinessProfileUpdate { 
-    firm_name?: string; 
-    address?: string; 
-    city?: string; 
-    phone?: string; 
-    email_public?: string; 
-    website?: string; 
-    tax_id?: string; 
-    branding_color?: string;
-    vat_rate?: number;
-    target_margin?: number;
-    currency?: string;
-}
-
-// --- TACTICAL BRIEFING TYPES (V19.3 STAFF MVP) ---
+// --- TACTICAL BRIEFING TYPES (V19.4 I18N FIX) ---
 export interface StrategicBriefingResponse {
     staffPerformance: {
         efficiencyStatus: 'sleep' | 'stable' | 'fire';
         efficiencyScore: number;
         mvpName: string;
         mvpTotal: number;
-        mvpInsight: string;
+        mvpInsight: {
+            key: string;
+            values?: Record<string, string | number>;
+        };
         actionBravo: boolean;
     };
-    market: {
-        signals: Array<{
-            id: number;
-            type: 'diaspora' | 'weather' | 'competitor' | 'holiday';
-            label: string;
-            impact: 'high' | 'medium' | 'low';
-            message: string;
-            action: string;
-        }>;
-    };
-    agenda: Array<{
-        id: string;
-        title: string;
-        time: string;
-        type: 'meeting' | 'payment' | 'deadline' | 'call';
-        priority: 'high' | 'medium' | 'low';
-        isCompleted: boolean;
-    }>;
+    market: { signals: Array<{ id: number; type: 'diaspora' | 'weather' | 'competitor' | 'holiday'; label: string; impact: 'high' | 'medium' | 'low'; message: string; action: string; }>; };
+    agenda: Array<{ id: string; title: string; time: string; type: 'meeting' | 'payment' | 'deadline' | 'call'; priority: 'high' | 'medium' | 'low'; isCompleted: boolean; }>;
 }
 
 // --- STANDARD FINANCE & INVENTORY ---
@@ -104,8 +49,6 @@ export interface Ingredient { inventory_item_id: string; quantity_required: numb
 export interface Recipe { _id: string; product_name: string; ingredients: Ingredient[]; }
 export interface RecipeCreate { product_name: string; ingredients: Ingredient[]; }
 export interface RecipeImportResult { recipes_created: number; missing_ingredients: string[]; }
-
-// --- RESTORED SYSTEM TYPES ---
 export interface LoginRequest { username: string; password: string; }
 export interface RegisterRequest { email: string; password: string; username: string; }
 export interface ChangePasswordRequest { current_password: string; new_password: string; }

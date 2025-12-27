@@ -310,7 +310,17 @@
       "status_fire": "🔥 On Fire",
       "status_stable": "Stabil",
       "status_sleep": "Sleep Mode",
-      "send_bravo": "Dërgo 'Bravo' në WhatsApp"
+      "send_bravo": "Dërgo 'Bravo' në WhatsApp",
+      "efficiency": "Efiçenca",
+      "mvp_badge": "MVP",
+      "today": "Sot",
+      "bravo_message": "Bravo {{name}}! Pashë që ke kapur rekordin sot me €{{total}}. Vazhdo kështu! 🚀",
+      "insight": {
+        "analyzing": "Duke analizuar të dhënat...",
+        "no_active_shift": "Nuk ka të dhëna aktive për turnin.",
+        "no_data": "Nuk ka të dhëna.",
+        "avg_ticket_insight": "Mesatarja €{{avg}} për tavolinë."
+      }
     },
     "market": {
       "title": "Impakti i Tregut",
