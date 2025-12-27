@@ -307,9 +307,9 @@
     "subtitle": "Misionet tuaja ditore, gjeneruar nga Këshilltari juaj AI.",
     "staff": {
       "title": "Performanca e Ekipit",
-      "status_fire": "🔥 On Fire",
+      "status_fire": "🔥 Në Kulm",
       "status_stable": "Stabil",
-      "status_sleep": "Sleep Mode",
+      "status_sleep": "Jo Aktiv",
       "send_bravo": "Dërgo 'Bravo' në WhatsApp",
       "efficiency": "Efiçenca",
       "mvp_badge": "MVP",
