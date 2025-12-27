@@ -29,6 +29,10 @@
     "actions": "Veprime",
     "allGood": "Gjithçka në rregull!"
   },
+  "common": {
+    "today": "SOT",
+    "urgent": "Urgjente"
+  },
   "branding": {
     "default": "Haveri Portal"
   },
@@ -250,6 +254,27 @@
     "confirmTemplateSwitch": "Ndryshimi i shabllonit do të zëvendësojë tekstin aktual. Vazhdo?",
     "regenerate": "Rigjenero",
     "clearTitle": "Pastro"
+  },
+  "dashboard": {
+    "businessCenterTitle": "Qendra e Biznesit",
+    "businessCenterSubtitle": "Pasqyra e operacioneve dhe rekomandimet ditore.",
+    "dailyRhythm": "Ritmi i Ditës",
+    "vsAvg": "vs Mesatare",
+    "progress": "Progresi",
+    "closingTime": "Mbyllja: 22:00",
+    "onTrackMessage": "Jeni në rrugë të mbarë për të tejkaluar objektivin ditor.",
+    "contextIntelligence": "Inteligjenca e Kontekstit",
+    "diasporaSeason": "Sezoni i Diasporës",
+    "statusPeak": "PIKU (E Lartë)",
+    "holidayNewYear": "Viti i Ri (3 Ditë)",
+    "statusBuying": "Blerje Masive",
+    "weatherToday": "Moti Sot",
+    "smartAgenda": "Axhenda Inteligjente",
+    "priorityTasks": "Prioritetet e ditës",
+    "taskTax": "Përgatit Deklarimin TVSH",
+    "taskSupplier": "Porosia: Coca Cola",
+    "taskReview": "Mbyllja Ditore",
+    "viewCalendar": "Shiko Kalendarin"
   },
   "business": {
     "title": "Qendra e Biznesit",
