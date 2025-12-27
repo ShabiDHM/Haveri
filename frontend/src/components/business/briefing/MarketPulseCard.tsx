@@ -1,10 +1,17 @@
+// FILE: src/components/business/briefing/MarketPulseCard.tsx
+// PHOENIX PROTOCOL - MARKET PULSE V19.7 (LINT FIX)
+// 1. CLEANUP: Removed unused icons (TrendingUp, Users).
+// 2. STATUS: Clean build.
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Plane, CloudRain, Zap, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const MarketPulseCard: React.FC = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
 
     // Mocking the "External Data" intelligence
     const marketSignals = [
@@ -15,7 +22,8 @@ export const MarketPulseCard: React.FC = () => {
             label: t('briefing.market.diaspora_label'),
             impact: 'high',
             message: t('briefing.market.diaspora_message'),
-            action: t('briefing.market.diaspora_action')
+            action: t('briefing.market.diaspora_action'),
+            target: '/business/inventory'
         },
         {
             id: 2,
@@ -24,9 +32,14 @@ export const MarketPulseCard: React.FC = () => {
             label: t('briefing.market.weather_label'),
             impact: 'medium',
             message: t('briefing.market.weather_message'),
-            action: t('briefing.market.weather_action')
+            action: t('briefing.market.weather_action'),
+            target: '/business/finance'
         }
     ];
+
+    const handleAction = (target: string) => {
+        navigate(target); 
+    };
 
     return (
         <motion.div 
@@ -54,7 +67,10 @@ export const MarketPulseCard: React.FC = () => {
                             <p className="text-gray-400 text-[10px] leading-tight">{signal.message}</p>
                         </div>
                         <div className="text-right">
-                             <button className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-1 rounded-md border border-purple-500/20 hover:bg-purple-500/20 transition-colors">
+                             <button 
+                                onClick={() => handleAction(signal.target)}
+                                className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-1 rounded-md border border-purple-500/20 hover:bg-purple-500/20 transition-colors cursor-pointer"
+                             >
                                 {signal.action}
                              </button>
                         </div>
@@ -63,7 +79,10 @@ export const MarketPulseCard: React.FC = () => {
             </div>
 
             <div className="mt-4 z-10">
-                <button className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-sm font-medium text-gray-300 flex items-center justify-center gap-2 transition-all">
+                <button 
+                    onClick={() => navigate('/business/insights')}
+                    className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-sm font-medium text-gray-300 flex items-center justify-center gap-2 transition-all"
+                >
                     {t('briefing.market.analyze_competitors')} <ArrowRight className="w-4 h-4" />
                 </button>
             </div>
