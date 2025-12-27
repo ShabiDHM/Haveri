@@ -1,12 +1,12 @@
 // FILE: src/components/Sidebar.tsx
-// PHOENIX PROTOCOL - SIDEBAR V2.2 (IMMUTABLE BRAND CLEANUP)
-// 1. REMOVED: No longer passes dynamic branding props to the BrandLogo component.
-// 2. STATUS: Aligned with the new immutable brand identity.
+// PHOENIX PROTOCOL - SIDEBAR V2.3 (UX SIMPLIFICATION)
+// 1. REMOVED: 'Calendar' navigation item to enforce "Dashboard First" workflow.
+// 2. CLEANUP: Removed unused 'Calendar' icon import.
 
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-    Calendar, FileText, MessageSquare, 
+    FileText, MessageSquare, 
     Building2, Shield, LogOut, User as UserIcon, Brain 
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -54,11 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         label: t('sidebar.haveri_ai', 'Haveri AI'), 
         path: haveriAIPath
       },
-      { 
-        icon: Calendar, 
-        label: t('sidebar.calendar', 'Kalendari'), 
-        path: '/calendar' 
-      }, 
+      // PHOENIX: Calendar removed to reduce visual noise. Accessed via Dashboard.
       { 
         icon: FileText, 
         label: t('sidebar.drafting', 'Hartimi'), 
@@ -105,7 +101,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       `}>
           
           <div className="h-16 flex items-center px-6 border-b border-glass-edge bg-background-light/10 flex-shrink-0">
-            {/* PHOENIX: BrandLogo is now self-contained and requires no props. */}
             <BrandLogo />
           </div>
 

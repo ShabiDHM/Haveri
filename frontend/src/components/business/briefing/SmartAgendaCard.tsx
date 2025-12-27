@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // PHOENIX: Added navigation hook
 import { useTranslation } from 'react-i18next';
 import { Calendar, Clock, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -18,6 +19,7 @@ interface SmartAgendaCardProps {
 
 export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda }) => {
     const { t } = useTranslation();
+    const navigate = useNavigate(); // PHOENIX: Initialize navigation
 
     // Default Fallback Data if API fails or is loading
     const defaultAgenda: AgendaItem[] = [
@@ -90,7 +92,10 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda }) => {
                 ))}
             </div>
 
-            <button className="w-full mt-4 py-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2 border border-indigo-500/20">
+            <button 
+                onClick={() => navigate('/calendar')} // PHOENIX: Activated Logic
+                className="w-full mt-4 py-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2 border border-indigo-500/20"
+            >
                 {t('dashboard.viewCalendar', 'Shiko Kalendarin')}
                 <ArrowRight className="w-4 h-4" />
             </button>
