@@ -4,18 +4,19 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Target, AlertTriangle } from 'lucide-react';
 import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 
-// Corrected Imports for the New Architecture
+// Imports
 import { BusinessRhythmCard } from './briefing/BusinessRhythmCard';
-import { ExternalFactorsCard } from './briefing/ExternalFactorsCard';
+import { ProductPerformanceCard } from './briefing/ProductPerformanceCard'; // NEW CARD
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
 
 export const DailyBriefingTab: React.FC = () => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { data, loading, error } = useStrategicBriefing();
 
-    // Dynamic Date Formatting
+    // Force Albanian Locale for Date
     const today = new Date();
-    const dateFormatted = today.toLocaleDateString(i18n.language || 'sq-AL', { day: 'numeric', month: 'short' }).toUpperCase();
+    const dateFormatted = today.toLocaleDateString('sq-AL', { day: 'numeric', month: 'short' }).toUpperCase();
+    // Example Output: "28 DHJ"
 
     if (loading) return (
         <div className="flex justify-center h-96 items-center">
@@ -43,12 +44,13 @@ export const DailyBriefingTab: React.FC = () => {
                 <div className="absolute top-0 right-0 p-40 bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
                 <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
+                        {/* CHANGED TITLE: From "Qendra e Biznesit" to "Pasqyra Ditore" */}
                         <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight flex items-center justify-center sm:justify-start gap-3">
                             <Target className="text-indigo-400 fill-indigo-400/20" /> 
-                            {t('dashboard.businessCenterTitle', 'Qendra e Biznesit')}
+                            {t('dashboard.dailyOverviewTitle', 'Pasqyra Ditore')}
                         </h2>
                         <p className="text-gray-400 text-lg max-w-xl">
-                            {t('dashboard.businessCenterSubtitle', 'Pasqyra e operacioneve dhe rekomandimet ditore.')}
+                            {t('dashboard.dailyOverviewSubtitle', 'Përmbledhja e operacioneve dhe rekomandimet.')}
                         </p>
                     </div>
                     {/* Date Badge */}
@@ -59,20 +61,20 @@ export const DailyBriefingTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* The New Innovative Grid */}
+            {/* The Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* 1. Ritmi i Biznesit (Sales Velocity) - Corrected Import Usage */}
+                {/* 1. Ritmi i Biznesit (Sales Velocity) */}
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                     <BusinessRhythmCard />
                 </motion.div>
                 
-                {/* 2. Faktorët e Jashtëm (Context Intelligence) - Corrected Import Usage */}
+                {/* 2. Produktet & Stoku (NEW LOGIC) */}
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                    <ExternalFactorsCard />
+                    <ProductPerformanceCard />
                 </motion.div>
 
-                {/* 3. Smart Agenda (Existing Logic) */}
+                {/* 3. Smart Agenda */}
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
                     {data && <SmartAgendaCard agenda={data.agenda} />}
                 </motion.div>
