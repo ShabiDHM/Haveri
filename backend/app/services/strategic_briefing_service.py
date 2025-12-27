@@ -1,12 +1,13 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V19.4 (I18N FIX)
-# 1. I18N: Replaced hardcoded 'mvpInsight' text with structured translation keys.
-# 2. STATUS: Production Ready. Fully Localizable.
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V19.5 (I18N FIX)
+# 1. I18N: Replaced hardcoded text with structured translation keys.
+# 2. LOGIC: Maintains 'csv parsing' for [Staff: Name].
 
 import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 import random
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +31,17 @@ class StrategicBriefingService:
             "agenda": agenda_data
         }
 
+    # --- DATA FETCHING ---
     async def _fetch_invoices(self) -> List[Dict]:
         try:
-            yesterday = datetime.utcnow() - timedelta(hours=24)
-            cursor = self.db.invoices.find({"user_id": self.user_id, "created_at": {"$gte": yesterday.isoformat()}})
+            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+            cursor = self.db.invoices.find({
+                "user_id": self.user_id,
+                "$or": [
+                    {"created_at": {"$gte": today_start.isoformat()}},
+                    {"issue_date": {"$gte": today_start.isoformat()}}
+                ]
+            })
             return await cursor.to_list(length=1000)
         except Exception: return []
 
@@ -52,20 +60,28 @@ class StrategicBriefingService:
             return await cursor.to_list(length=50)
         except Exception: return []
 
+    # --- INTELLIGENCE LOGIC ---
+
     def _analyze_staff_performance(self, invoices: List[Dict]) -> Dict[str, Any]:
+        staff_stats = {}
+        
         if not invoices:
             return {
                 "efficiencyStatus": "sleep", 
                 "efficiencyScore": 0,
                 "mvpName": "N/A",
                 "mvpTotal": 0,
-                "mvpInsight": {"key": "no_active_shift"},
+                "mvpInsight": {"key": "no_active_shift", "values": {}},
                 "actionBravo": False
             }
 
-        staff_stats = {}
         for inv in invoices:
-            staff_name = inv.get('waiter_name', inv.get('created_by', 'Stafi (General)'))
+            staff_name = inv.get('waiter_name', inv.get('created_by', 'Stafi'))
+            description = inv.get('notes', '') or inv.get('description', '')
+            match = re.search(r'\[Staff:\s*(.*?)\]', description, re.IGNORECASE)
+            if match:
+                staff_name = match.group(1).strip()
+
             amount = float(inv.get('total_amount', 0))
             if staff_name not in staff_stats:
                 staff_stats[staff_name] = {"total": 0, "count": 0}
@@ -73,21 +89,19 @@ class StrategicBriefingService:
             staff_stats[staff_name]["count"] += 1
 
         if not staff_stats:
-             return {
-                 "efficiencyStatus": "sleep", "efficiencyScore": 0, "mvpName": "N/A", 
-                 "mvpTotal": 0, "mvpInsight": {"key": "no_data"}, "actionBravo": False
-            }
+             return {"efficiencyStatus": "sleep", "efficiencyScore": 0, "mvpName": "N/A", "mvpTotal": 0, "mvpInsight": {"key": "no_data", "values": {}}, "actionBravo": False}
 
         mvp_name = max(staff_stats, key=lambda k: staff_stats[k]['total'])
         mvp_data = staff_stats[mvp_name]
         avg_ticket = mvp_data['total'] / mvp_data['count'] if mvp_data['count'] else 0
         
         total_txs = len(invoices)
-        if total_txs > 20: status = "fire"
+        if total_txs > 15: status = "fire"
         elif total_txs > 5: status = "stable"
         else: status = "sleep"
-        score = int((total_txs / 50) * 100) if total_txs < 50 else 98
+        score = int((total_txs / 30) * 100) if total_txs < 30 else 98
 
+        # RETURN STRUCTURED TRANSLATION KEY
         return {
             "efficiencyStatus": status,
             "efficiencyScore": score,

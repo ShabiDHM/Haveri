@@ -1,6 +1,6 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES MASTER V19.4 (I18N FIX)
-// 1. UPDATED: mvpInsight is now a structured object for dynamic translation.
+// PHOENIX PROTOCOL - TYPES MASTER V19.5 (CORRECTED)
+// 1. FIXED: Corrected 'mvpInsight' structure to allow flexible record values.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -13,7 +13,7 @@ export interface CalendarEvent { id: string; title: string; description?: string
 export interface BusinessProfile { id: string; firm_name: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color: string; logo_url?: string; is_complete: boolean; vat_rate?: number; target_margin?: number; currency?: string; }
 export interface BusinessProfileUpdate { firm_name?: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color?: string; vat_rate?: number; target_margin?: number; currency?: string; }
 
-// --- TACTICAL BRIEFING TYPES (V19.4 I18N FIX) ---
+// --- TACTICAL BRIEFING TYPES (V19.5 CORRECTED) ---
 export interface StrategicBriefingResponse {
     staffPerformance: {
         efficiencyStatus: 'sleep' | 'stable' | 'fire';
@@ -22,6 +22,7 @@ export interface StrategicBriefingResponse {
         mvpTotal: number;
         mvpInsight: {
             key: string;
+            // Allow string OR number to prevent TS errors when passing values like '12.50'
             values?: Record<string, string | number>;
         };
         actionBravo: boolean;
