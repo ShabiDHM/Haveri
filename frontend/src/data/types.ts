@@ -1,8 +1,7 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES MASTER V19.0 (TACTICAL DASHBOARD ENABLED)
-// 1. UPDATED: StrategicBriefingResponse now supports Liquidity, Market, and Tactical Agenda.
-// 2. CLEANUP: Removed legacy GenerativeMemo and obsolete briefing types.
-// 3. INTEGRITY: All other core system types preserved.
+// PHOENIX PROTOCOL - TYPES MASTER V19.3
+// 1. UPDATED: StrategicBriefingResponse now uses 'staffPerformance' instead of 'liquidity'.
+// 2. INTEGRITY: Full file preserved.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -56,14 +55,15 @@ export interface BusinessProfileUpdate {
     currency?: string;
 }
 
-// --- NEW TACTICAL BRIEFING TYPES (V19.0) ---
+// --- TACTICAL BRIEFING TYPES (V19.3 STAFF MVP) ---
 export interface StrategicBriefingResponse {
-    liquidity: {
-        status: 'critical' | 'stable' | 'surplus';
-        daysRunway: number;
-        cashOnHand: number;
-        pendingDebts: number; // Veresie
-        upcomingBills: number;
+    staffPerformance: {
+        efficiencyStatus: 'sleep' | 'stable' | 'fire';
+        efficiencyScore: number;
+        mvpName: string;
+        mvpTotal: number;
+        mvpInsight: string;
+        actionBravo: boolean;
     };
     market: {
         signals: Array<{
@@ -105,7 +105,7 @@ export interface Recipe { _id: string; product_name: string; ingredients: Ingred
 export interface RecipeCreate { product_name: string; ingredients: Ingredient[]; }
 export interface RecipeImportResult { recipes_created: number; missing_ingredients: string[]; }
 
-// --- RESTORED MISSING TYPES ---
+// --- RESTORED SYSTEM TYPES ---
 export interface LoginRequest { username: string; password: string; }
 export interface RegisterRequest { email: string; password: string; username: string; }
 export interface ChangePasswordRequest { current_password: string; new_password: string; }

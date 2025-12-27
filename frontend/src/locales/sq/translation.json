@@ -302,19 +302,15 @@
       "valueDesc": "Para të bllokuara në rafte"
     }
   },
- "briefing": {
+  "briefing": {
     "title": "Përmbledhja Strategjike",
     "subtitle": "Misionet tuaja ditore, gjeneruar nga Këshilltari juaj AI.",
-    "liquidity": {
-      "title": "Likuiditeti & Cash",
-      "subtitle": "Parashikimi 30-ditor",
-      "days_runway": "Ditë Siguri",
-      "bills": "Faturat (Borxhet)",
-      "balance": "Balanca Aktuale",
-      "debt_title": "Borxhe të pambledhura",
-      "debt_status": "(Veresie)",
-      "collect_action": "Mblidh Borxhet",
-      "suggestion": "Sugjerim: Mblidhni 2 fatura sot për të rritur sigurinë."
+    "staff": {
+      "title": "Performanca e Ekipit",
+      "status_fire": "🔥 On Fire",
+      "status_stable": "Stabil",
+      "status_sleep": "Sleep Mode",
+      "send_bravo": "Dërgo 'Bravo' në WhatsApp"
     },
     "market": {
       "title": "Impakti i Tregut",

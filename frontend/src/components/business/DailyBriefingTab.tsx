@@ -1,6 +1,6 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - STRATEGIC BRIEFING V19.1 (PROP FIX)
-// 1. FIXED: Changed 'smartAgenda' to 'agenda' to match new Types.
+// PHOENIX PROTOCOL - STRATEGIC BRIEFING V19.3 (INTEGRATION)
+// 1. STATUS: Replaced LiquidityCard with StaffPerformanceCard.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -8,8 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 
-// New Innovative Modules
-import { LiquiditySentinelCard } from './briefing/LiquiditySentinelCard';
+// Innovative Modules
+import { StaffPerformanceCard } from './briefing/StaffPerformanceCard';
 import { MarketPulseCard } from './briefing/MarketPulseCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
 
@@ -19,6 +19,7 @@ export const DailyBriefingTab: React.FC = () => {
 
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary-start" /></div>;
     
+    // Graceful error handling
     if (error) return <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-center"><AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" /><h3 className="text-white font-bold">{t('error.generic')}</h3><p className="text-gray-400 text-sm mt-1">{t('error.failedToLoad')}</p></div>;
 
     return (
@@ -37,9 +38,9 @@ export const DailyBriefingTab: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* 1. Liquidity Sentinel */}
+                {/* 1. Staff Performance (The AI Floor Manager) */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                    <LiquiditySentinelCard />
+                    {data && <StaffPerformanceCard data={data.staffPerformance} />}
                 </motion.div>
                 
                 {/* 2. Market Pulse */}
@@ -49,7 +50,6 @@ export const DailyBriefingTab: React.FC = () => {
 
                 {/* 3. Smart Agenda (Tactical) */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                    {/* FIXED: Using 'data.agenda' instead of 'data.smartAgenda' */}
                     {data && <SmartAgendaCard agenda={data.agenda} />}
                 </motion.div>
             </div>
