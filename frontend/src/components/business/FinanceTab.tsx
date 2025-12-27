@@ -1,7 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V17.7 (BUTTON TEXT WRAP)
-// 1. UI: Removed 'whitespace-nowrap' from ActionButton to allow text wrapping.
-// 2. STATUS: Production Ready.
+// PHOENIX PROTOCOL - FINANCE TAB V18.0 (TACTICAL UPGRADE)
+// 1. STYLE: Applied Phoenix Glassmorphism (Glows, Gradients) to Stats and Actions.
+// 2. UX: Enhanced hover states for "Tactical Command" feel.
+// 3. CONSISTENCY: Matched visual language with Intelligence Dashboard.
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -25,49 +26,69 @@ import { InvoiceModal } from './modals/InvoiceModal';
 import { ExpenseModal } from './modals/ExpenseModal';
 import { TransactionList, TransactionItem, GroupedTransaction } from './finance/TransactionList';
 
-// --- MODERN UI COMPONENTS ---
-const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amount: string, icon: React.ReactNode, trend?: string, type: 'income' | 'expense' | 'neutral' | 'warning' }) => {
-    let colorClass = 'text-blue-400';
-    let bgClass = 'bg-blue-500/10';
-    let shadowClass = 'shadow-blue-500/20';
+// --- TACTICAL UI COMPONENTS ---
 
-    if (type === 'income') { colorClass = 'text-emerald-400'; bgClass = 'bg-emerald-500/10'; shadowClass = 'shadow-emerald-500/20'; }
-    if (type === 'expense') { colorClass = 'text-rose-400'; bgClass = 'bg-rose-500/10'; shadowClass = 'shadow-rose-500/20'; }
-    if (type === 'warning') { colorClass = 'text-amber-400'; bgClass = 'bg-amber-500/10'; shadowClass = 'shadow-amber-500/20'; }
+const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amount: string, icon: React.ReactNode, trend?: string, type: 'income' | 'expense' | 'neutral' | 'warning' }) => {
+    // Phoenix Gradient Logic
+    let gradient = 'from-blue-500/20 to-blue-500/5';
+    let border = 'border-blue-500/30';
+    let iconColor = 'text-blue-400';
+    let iconBg = 'bg-blue-500/20';
+
+    if (type === 'income') { 
+        gradient = 'from-emerald-500/20 to-emerald-500/5'; 
+        border = 'border-emerald-500/30';
+        iconColor = 'text-emerald-400';
+        iconBg = 'bg-emerald-500/20';
+    }
+    if (type === 'expense') { 
+        gradient = 'from-rose-500/20 to-rose-500/5';
+        border = 'border-rose-500/30';
+        iconColor = 'text-rose-400';
+        iconBg = 'bg-rose-500/20';
+    }
+    if (type === 'warning') { 
+        gradient = 'from-amber-500/20 to-amber-500/5';
+        border = 'border-amber-500/30';
+        iconColor = 'text-amber-400';
+        iconBg = 'bg-amber-500/20';
+    }
 
     return (
-        <div className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 p-5 backdrop-blur-md hover:bg-white/10 transition-all duration-300 group">
-            <div className="flex justify-between items-start mb-3">
-                <div className={`p-2.5 rounded-xl ${bgClass} ${colorClass} shadow-lg ${shadowClass}`}>
+        <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${gradient} border ${border} p-6 backdrop-blur-md hover:scale-[1.02] transition-transform duration-300 group`}>
+            {/* Ambient Glow */}
+            <div className={`absolute -top-10 -right-10 w-32 h-32 ${iconBg} blur-[60px] rounded-full pointer-events-none opacity-50`} />
+            
+            <div className="flex justify-between items-start mb-4 relative z-10">
+                <div className={`p-3 rounded-2xl ${iconBg} ${iconColor} border ${border} shadow-lg`}>
                     {icon}
                 </div>
                 {trend && (
-                    <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-white/5 text-gray-400 border border-white/10">
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-black/40 text-gray-300 border border-white/10 backdrop-blur-sm">
                         {trend}
                     </span>
                 )}
             </div>
-            <div>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">{title}</p>
-                <h3 className="text-2xl font-bold text-white tracking-tight">{amount}</h3>
+            <div className="relative z-10">
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1 opacity-80">{title}</p>
+                <h3 className="text-3xl font-black text-white tracking-tight">{amount}</h3>
             </div>
         </div>
     );
 };
 
-// PHOENIX FIX: Removed whitespace-nowrap
 const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean }) => (
     <button 
         onClick={onClick} 
         className={`
-            flex items-center justify-center text-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
+            flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group
             ${primary 
-                ? 'bg-primary-start hover:bg-primary-end text-white shadow-lg shadow-primary-start/20' 
-                : 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 hover:border-white/20'
+                ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 border border-blue-400/50' 
+                : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10 hover:border-white/20'
             }
         `}
     >
-        {icon}
+        <span className={`transition-transform duration-300 group-hover:scale-110 ${primary ? 'text-white' : 'text-blue-400'}`}>{icon}</span>
         <span>{label}</span>
     </button>
 );
@@ -76,8 +97,11 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
     <button 
         onClick={onClick} 
         className={`
-            flex-1 sm:flex-initial relative px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2
-            ${isActive ? 'bg-primary-start text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}
+            flex-1 sm:flex-initial relative px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2
+            ${isActive 
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
+                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+            }
         `}
     >
         <span className="relative z-10">{icon}</span>
@@ -122,7 +146,7 @@ export const FinanceTab: React.FC = () => {
     const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
-    // --- LOGIC: Flatten & Sort (Presentation Logic) ---
+    // --- LOGIC: Flatten & Sort ---
     const allTransactions: TransactionItem[] = useMemo(() => {
         const combined: TransactionItem[] = [
             ...invoices.map(i => ({ id: i.id, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name, raw: i })),
@@ -167,7 +191,6 @@ export const FinanceTab: React.FC = () => {
         return result;
     }, [allTransactions, searchTerm]);
 
-    
     // UI Helpers
     const closePreview = () => { if (viewingUrl) window.URL.revokeObjectURL(viewingUrl); setViewingUrl(null); setViewingDoc(null); };
 
@@ -199,34 +222,37 @@ export const FinanceTab: React.FC = () => {
     const submitArchiveExpense = async () => { if (!selectedExpenseId) return; try { const ex = expenses.find(e => e.id === selectedExpenseId); if (!ex) return; let fileToUpload: File; if (ex.receipt_url) { const { blob, filename } = await apiService.getExpenseReceiptBlob(ex.id); fileToUpload = new File([blob], filename, { type: blob.type }); } else { fileToUpload = generateDigitalReceipt(ex); } await apiService.uploadArchiveItem(fileToUpload, fileToUpload.name, "EXPENSE", selectedCaseForInvoice || undefined, undefined); alert(t('general.saveSuccess')); setShowArchiveExpenseModal(false); setSelectedCaseForInvoice(""); } catch { alert(t('error.generic')); } };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-8">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
             <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-                select option { background-color: #1f2937; color: #f9fafb; }
+                .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } 
+                .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.5); }
+                select option { background-color: #0f172a; color: #f9fafb; }
             `}</style>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={20} />} type="income" />
-                <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={20} />} type="warning" />
-                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={20} />} type="neutral" trend="+12%"/>
-                <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} />} type="expense" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" />
+                <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" />
+                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={24} />} type="neutral" trend="+12%"/>
+                <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" />
             </div>
 
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
-                <ActionButton primary icon={<Plus size={16} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
-                <ActionButton icon={<FileSpreadsheet size={16} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
-                <ActionButton icon={<MinusCircle size={16} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
-                <ActionButton icon={<Calculator size={16} />} label={t('finance.monthlyClose')} onClick={() => navigate('/finance/wizard')} />
+            <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
+                <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
+                <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
+                <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
+                <ActionButton icon={<Calculator size={20} />} label={t('finance.monthlyClose')} onClick={() => navigate('/finance/wizard')} />
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-4 sm:p-6 backdrop-blur-md min-h-[500px] sm:min-h-[600px] flex flex-col">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 sm:mb-6 border-b border-white/5 pb-4 sm:pb-6">
-                    <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight self-start sm:self-auto">{t('finance.activityAndReports')}</h2>
+            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col shadow-2xl">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
+                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                        <Activity className="text-blue-500" />
+                        {t('finance.activityAndReports')}
+                    </h2>
                     
-                    <div className="w-full sm:w-auto flex bg-background-light/10 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md gap-1">
+                    <div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md gap-1">
                         <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
                         <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
                     </div>
@@ -234,15 +260,15 @@ export const FinanceTab: React.FC = () => {
 
                 <div className="flex-1 overflow-hidden relative">
                     {activeTab === 'transactions' && (
-                        <div className="flex flex-col h-full space-y-4">
-                            <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-                                <input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/20 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-base sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary-start/50 transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        <div className="flex flex-col h-full space-y-6">
+                            <div className="relative group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
+                                <input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-base text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:bg-black/60 transition-all shadow-inner" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-2">
+                            <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-3">
                                 {loading ? (
-                                    <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 animate-spin text-primary-start" /></div>
+                                    <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>
                                 ) : (
                                     <TransactionList 
                                         groupedList={groupedList}
@@ -267,31 +293,31 @@ export const FinanceTab: React.FC = () => {
                     {activeTab === 'reports' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
                             {!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <div className="bg-black/20 rounded-2xl p-4 sm:p-6 border border-white/5">
-                                        <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-2"><TrendingUp size={20} className="text-primary-start" /> {t('finance.analytics.salesTrend')}</h4>
-                                        <div className="h-[250px] sm:h-[300px] w-full">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
+                                        <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-blue-400" /> {t('finance.analytics.salesTrend')}</h4>
+                                        <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <AreaChart data={analyticsData.sales_trend}>
-                                                    <defs><linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/><stop offset="95%" stopColor="#818cf8" stopOpacity={0}/></linearGradient></defs>
+                                                    <defs><linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                                                     <XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} />
                                                     <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} />
-                                                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px' }} itemStyle={{ color: '#fff' }} />
-                                                    <Area type="monotone" dataKey="amount" stroke="#818cf8" strokeWidth={3} fill="url(#colorSales)" />
+                                                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }} itemStyle={{ color: '#fff' }} />
+                                                    <Area type="monotone" dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" />
                                                 </AreaChart>
                                             </ResponsiveContainer>
                                         </div>
                                     </div>
-                                    <div className="bg-black/20 rounded-2xl p-4 sm:p-6 border border-white/5">
-                                        <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-2"><BarChart2 size={20} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
-                                        <div className="h-[250px] sm:h-[300px] w-full">
+                                    <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
+                                        <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
+                                        <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 20 }}>
                                                     <XAxis type="number" hide />
                                                     <YAxis dataKey="product_name" type="category" width={100} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                                                    <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px' }} itemStyle={{ color: '#fff' }} />
-                                                    <Bar dataKey="total_revenue" radius={[0, 6, 6, 0]} barSize={24}>
+                                                    <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} />
+                                                    <Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>
                                                         {analyticsData.top_products.map((_, index) => (
                                                             <Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />
                                                         ))}
@@ -313,20 +339,20 @@ export const FinanceTab: React.FC = () => {
             
             {showArchiveInvoiceModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6">
+                    <div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20">
                         <h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2>
-                        <div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div>
-                        <div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2 bg-blue-600 text-white rounded-lg">{t('general.save')}</button></div>
+                        <div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div>
+                        <div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-500 transition-colors font-bold">{t('general.save')}</button></div>
                     </div>
                 </div>
             )}
             
             {showArchiveExpenseModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-6">
+                    <div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20">
                         <h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2>
-                        <div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div>
-                        <div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2 bg-indigo-600 text-white rounded-lg">{t('general.save')}</button></div>
+                        <div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div>
+                        <div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white shadow-lg hover:bg-indigo-500 transition-colors font-bold">{t('general.save')}</button></div>
                     </div>
                 </div>
             )}

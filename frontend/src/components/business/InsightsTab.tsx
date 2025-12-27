@@ -1,6 +1,7 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS TAB V1.0
-// The "Indispensable" Dashboard for Balkan SMEs.
+// PHOENIX PROTOCOL - INSIGHTS TAB V1.1 (SYMMETRY FIX)
+// 1. LAYOUT: Enforced 3-column grid on 'lg' screens to prevent orphan cards.
+// 2. STYLE: Added h-full and auto-rows-fr to ensure perfect height alignment.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -35,21 +36,36 @@ export const InsightsTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* The Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {/* The Grid - Forced Symmetry */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
                 
-                {/* 1. Cash & Debt (Critical Priority) */}
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                {/* 1. Cash & Debt */}
+                <motion.div 
+                    initial={{ opacity: 0, x: -20 }} 
+                    animate={{ opacity: 1, x: 0 }} 
+                    transition={{ delay: 0.1 }}
+                    className="h-full" // Ensures card stretches to match tallest sibling
+                >
                     <DebtModule data={debtAnalytics} />
                 </motion.div>
 
-                {/* 2. Tax Estimator (Compliance) */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                {/* 2. Tax Estimator */}
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: 0.2 }}
+                    className="h-full"
+                >
                     <TaxModule data={taxAnalytics} />
                 </motion.div>
 
-                {/* 3. Profit & Stock (Efficiency) */}
-                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+                {/* 3. Profit & Stock */}
+                <motion.div 
+                    initial={{ opacity: 0, x: 20 }} 
+                    animate={{ opacity: 1, x: 0 }} 
+                    transition={{ delay: 0.3 }}
+                    className="h-full"
+                >
                     <ProfitModule data={profitAnalytics} />
                 </motion.div>
 

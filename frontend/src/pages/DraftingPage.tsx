@@ -1,16 +1,15 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V6.9 (LAYOUT CONSISTENCY)
-// 1. FIX: Replicated the exact stacking and fixed-height behavior from CaseViewPage.
-// 2. LAYOUT: Input panel is now h-[500px], Result panel is h-[600px] on mobile.
-// 3. STATUS: Consistent with application design patterns.
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.1 (LINT FIX)
+// 1. FIX: Added 'Loader2' to Lucide imports.
+// 2. CLEANUP: Removed unused 'RefreshCw' icon import.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { Case } from '../data/types'; 
 import { 
-  PenTool, Send, Copy, Download, RefreshCw, AlertCircle, CheckCircle, Clock, 
-  FileText, Sparkles, RotateCcw, Trash2, Briefcase, ChevronDown, LayoutTemplate
+  PenTool, Send, Copy, Download, AlertCircle, CheckCircle, Clock, 
+  FileText, Sparkles, RotateCcw, Trash2, Briefcase, ChevronDown, LayoutTemplate, Loader2
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -26,17 +25,7 @@ interface DraftingJobState {
 }
 
 // --- AUTO RESIZE TEXTAREA ---
-interface AutoResizeTextareaProps {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-    placeholder?: string;
-    disabled?: boolean;
-    className?: string;
-    minHeight?: number;
-    maxHeight?: number;
-}
-
-const AutoResizeTextarea: React.FC<AutoResizeTextareaProps> = ({ 
+const AutoResizeTextarea: React.FC<{ value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; placeholder?: string; disabled?: boolean; className?: string; minHeight?: number; maxHeight?: number; }> = ({ 
     value, onChange, placeholder, disabled, className, minHeight = 150, maxHeight = 500 
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -71,23 +60,8 @@ const StreamedMarkdown: React.FC<{ text: string, isNew: boolean, onComplete: () 
     }, [text, isNew, onComplete]);
 
     return (
-        <div className="markdown-content text-gray-300 text-sm leading-relaxed">
-             <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
-                    p: ({node, ...props}) => <p className="mb-4 last:mb-0 text-justify" {...props} />,
-                    strong: ({node, ...props}) => <span className="font-bold text-amber-100" {...props} />,
-                    em: ({node, ...props}) => <span className="italic text-gray-400" {...props} />,
-                    ul: ({node, ...props}) => <ul className="list-disc pl-5 space-y-2 my-3 marker:text-primary-500" {...props} />,
-                    ol: ({node, ...props}) => <ol className="list-decimal pl-5 space-y-2 my-3 marker:text-primary-500" {...props} />,
-                    li: ({node, ...props}) => <li className="pl-1" {...props} />,
-                    h1: ({node, ...props}) => <h1 className="text-xl font-bold text-white mt-6 mb-4 border-b border-white/10 pb-2 uppercase tracking-wide text-center" {...props} />,
-                    h2: ({node, ...props}) => <h2 className="text-lg font-bold text-white mt-5 mb-3" {...props} />,
-                    h3: ({node, ...props}) => <h3 className="text-base font-bold text-gray-200 mt-4 mb-2" {...props} />,
-                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary-500 pl-4 py-2 my-4 bg-white/5 italic text-gray-400" {...props} />,
-                    code: ({node, ...props}) => <code className="bg-black/40 px-1.5 py-0.5 rounded text-xs font-mono text-pink-300" {...props} />,
-                    table: ({node, ...props}) => <div className="overflow-x-auto my-4"><table className="min-w-full border-collapse border border-white/10 text-xs" {...props} /></div>,
-                    th: ({node, ...props}) => <th className="border border-white/10 px-3 py-2 bg-white/5 font-bold text-left" {...props} />,
-                    td: ({node, ...props}) => <td className="border border-white/10 px-3 py-2" {...props} />,
-                }} >{displayedText}</ReactMarkdown>
+        <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-headings:font-black prose-headings:tracking-tight prose-a:text-blue-400 prose-strong:text-amber-300 prose-ul:marker:text-blue-500">
+             <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedText}</ReactMarkdown>
         </div>
     );
 };
@@ -176,86 +150,103 @@ const DraftingPage: React.FC = () => {
 
   const getStatusDisplay = () => {
     switch(currentJob.status) {
-      case 'COMPLETED': case 'SUCCESS': return { text: t('drafting.statusCompleted'), color: 'text-green-400', icon: <CheckCircle className="h-5 w-5 text-green-400" /> };
-      case 'FAILED': case 'FAILURE': return { text: t('drafting.statusFailed'), color: 'text-red-400', icon: <AlertCircle className="h-5 w-5 text-red-400" /> };
-      case 'PROCESSING': case 'PENDING': return { text: t('drafting.statusWorking'), color: 'text-yellow-400', icon: <Clock className="h-5 w-5 animate-pulse text-yellow-400" /> };
+      case 'COMPLETED': case 'SUCCESS': return { text: t('drafting.statusCompleted'), color: 'text-emerald-400', icon: <CheckCircle className="h-5 w-5 text-emerald-400" /> };
+      case 'FAILED': case 'FAILURE': return { text: t('drafting.statusFailed'), color: 'text-rose-400', icon: <AlertCircle className="h-5 w-5 text-rose-400" /> };
+      case 'PROCESSING': case 'PENDING': return { text: t('drafting.statusWorking'), color: 'text-amber-400', icon: <Clock className="h-5 w-5 animate-pulse text-amber-400" /> };
       default: return { text: t('drafting.statusResult'), color: 'text-white', icon: <Sparkles className="h-5 w-5 text-gray-500" /> };
     }
   };
   const statusDisplay = getStatusDisplay();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col h-full">
-      <style>{` .custom-textarea-scroll::-webkit-scrollbar { width: 8px; } .custom-textarea-scroll::-webkit-scrollbar-track { background: transparent; } .custom-textarea-scroll::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 4px; } .custom-textarea-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.3); } `}</style>
+    <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-screen">
+      <style>{` .custom-scrollbar::-webkit-scrollbar { width: 6px; } .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(59, 130, 246, 0.3); border-radius: 3px; } .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(59, 130, 246, 0.5); } select option { background-color: #0f172a; color: #f9fafb; }`}</style>
       
-      <div className="text-center mb-6 flex-shrink-0">
-        <h1 className="text-3xl font-bold text-white mb-1 flex items-center justify-center gap-3"><PenTool className="text-primary-500" />{t('drafting.title')}</h1>
-        <p className="text-gray-400 text-sm">{t('drafting.subtitle')}</p>
+      <div className="text-center mb-8 flex-shrink-0">
+        <h1 className="text-4xl font-black text-white mb-2 flex items-center justify-center gap-4">
+            <PenTool className="text-blue-500" />
+            {t('drafting.title')}
+        </h1>
+        <p className="text-gray-400">{t('drafting.subtitle')}</p>
       </div>
 
-      {/* PHOENIX FIX: Replicated CaseViewPage layout constraints */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-auto lg:h-[700px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1">
         
-        {/* INPUT PANEL - 500px on mobile, full height on desktop */}
-        <div className="flex flex-col h-[500px] lg:h-full bg-background-light/10 backdrop-blur-md rounded-2xl border border-glass-edge p-6 shadow-xl overflow-hidden">
-            <h3 className="text-white font-semibold mb-4 flex items-center gap-2 flex-shrink-0"><FileText className="text-primary-400" size={20} />{t('drafting.configuration')}</h3>
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1 gap-4 min-h-0">
-                <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0">
+        <div className="flex flex-col h-full bg-gray-900/60 backdrop-blur-md rounded-3xl border border-white/10 p-6 shadow-2xl overflow-hidden">
+            <h3 className="text-white font-bold text-xl mb-6 flex items-center gap-3 flex-shrink-0">
+                <FileText className="text-blue-400" size={24} />
+                {t('drafting.configuration')}
+            </h3>
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 gap-6 min-h-0">
+                <div className="flex flex-col sm:flex-row gap-6 flex-shrink-0">
                     <div className='flex-1 min-w-0'>
-                        <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">{t('drafting.caseLabel')}</label>
-                        <div className="relative">
-                            <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"/>
-                            <select value={selectedCaseId || ''} onChange={(e) => setSelectedCaseId(e.target.value || undefined)} disabled={isSubmitting} className="w-full bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:ring-1 focus:ring-primary-500 outline-none text-sm pl-10 pr-10 py-3 appearance-none transition-colors cursor-pointer truncate">
-                                <option value="" className="bg-gray-900 text-gray-400">{t('drafting.noCaseSelected')}</option>
-                                {cases.length > 0 ? ( cases.map(c => (<option key={c.id} value={String(c.id)} className="bg-gray-900 text-white">{getCaseDisplayName(c)}</option>)) ) : ( <option value="" disabled className="bg-gray-900 text-gray-500 italic">{t('drafting.noCasesFound')}</option> )}
+                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">{t('drafting.caseLabel')}</label>
+                        <div className="relative group">
+                            <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors pointer-events-none"/>
+                            <select value={selectedCaseId || ''} onChange={(e) => setSelectedCaseId(e.target.value || undefined)} disabled={isSubmitting} className="w-full bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-sm pl-12 pr-10 py-4 appearance-none transition-colors cursor-pointer truncate">
+                                <option value="" className="text-gray-400">{t('drafting.noCaseSelected')}</option>
+                                {cases.length > 0 ? ( cases.map(c => (<option key={c.id} value={String(c.id)}>{getCaseDisplayName(c)}</option>)) ) : ( <option value="" disabled className="text-gray-500 italic">{t('drafting.noCasesFound')}</option> )}
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"/>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none"/>
                         </div>
                     </div>
                     <div className='flex-1 min-w-0'>
-                        <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">{t('drafting.templateLabel')}</label>
-                        <div className="relative">
-                            <LayoutTemplate className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"/>
-                            <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value as TemplateType)} disabled={isSubmitting} className="w-full bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:ring-1 focus:ring-primary-500 outline-none text-sm pl-10 pr-10 py-3 appearance-none transition-colors cursor-pointer">
-                                <option value="generic" className="bg-gray-900 text-gray-400">{t('drafting.templateGeneric')}</option>
-                                <option value="padi" className="bg-gray-900 text-white">{t('drafting.templatePadi')}</option>
-                                <option value="pergjigje" className="bg-gray-900 text-white">{t('drafting.templatePergjigje')}</option>
-                                <option value="kunderpadi" className="bg-gray-900 text-white">{t('drafting.templateKunderpadi')}</option>
-                                <option value="kontrate" className="bg-gray-900 text-white">{t('drafting.templateKontrate')}</option>
+                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">{t('drafting.templateLabel')}</label>
+                        <div className="relative group">
+                            <LayoutTemplate className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors pointer-events-none"/>
+                            <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value as TemplateType)} disabled={isSubmitting} className="w-full bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-sm pl-12 pr-10 py-4 appearance-none transition-colors cursor-pointer">
+                                <option value="generic">{t('drafting.templateGeneric')}</option>
+                                <option value="padi">{t('drafting.templatePadi')}</option>
+                                <option value="pergjigje">{t('drafting.templatePergjigje')}</option>
+                                <option value="kunderpadi">{t('drafting.templateKunderpadi')}</option>
+                                <option value="kontrate">{t('drafting.templateKontrate')}</option>
                             </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"/>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none"/>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                    <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider flex-shrink-0">{t('drafting.instructionsLabel')}</label>
-                    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-                        <AutoResizeTextarea value={context} onChange={(e) => setContext(e.target.value)} placeholder={t('drafting.promptPlaceholder')} className="w-full p-4 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:ring-1 focus:ring-primary-500 outline-none resize-none text-sm leading-relaxed custom-textarea-scroll custom-scrollbar" disabled={isSubmitting} minHeight={150} maxHeight={500} />
+                    <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider flex-shrink-0">{t('drafting.instructionsLabel')}</label>
+                    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar rounded-xl border border-white/10 bg-black/40 focus-within:border-blue-500/50 transition-colors">
+                        <AutoResizeTextarea value={context} onChange={(e) => setContext(e.target.value)} placeholder={t('drafting.promptPlaceholder')} className="w-full p-4 bg-transparent text-white placeholder-gray-600 outline-none resize-none text-sm leading-relaxed" disabled={isSubmitting} minHeight={200} maxHeight={600} />
                     </div>
                 </div>
 
-                <button type="submit" disabled={isSubmitting || !context.trim()} className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2 flex-shrink-0">
-                  {isSubmitting ? <RefreshCw className="animate-spin" /> : <Send size={18} />}
+                <button type="submit" disabled={isSubmitting || !context.trim()} className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed mt-2 flex-shrink-0 hover:scale-[1.02] active:scale-95">
+                  {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
                   {t('drafting.generateBtn')}
                 </button>
             </form>
         </div>
 
-        {/* RESULT PANEL - 600px on mobile, full height on desktop */}
-        <div className="flex flex-col h-[600px] lg:h-full bg-background-light/10 backdrop-blur-md rounded-2xl border border-glass-edge p-6 shadow-xl overflow-hidden">
-            <div className="flex justify-between items-center mb-4 pb-4 border-b border-white/5 flex-shrink-0">
-                <h3 className="text-white font-semibold flex items-center gap-2">{statusDisplay.icon}<span className={statusDisplay.color}>{statusDisplay.text}</span></h3>
+        <div className="flex flex-col h-full bg-gray-900/60 backdrop-blur-md rounded-3xl border border-white/10 p-6 shadow-2xl overflow-hidden">
+            <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-6 flex-shrink-0">
+                <h3 className="text-white font-bold text-lg flex items-center gap-3">{statusDisplay.icon}<span className={statusDisplay.color}>{statusDisplay.text}</span></h3>
                 <div className="flex gap-2">
-                    <button onClick={runDraftingJob} disabled={!currentJob.result || isSubmitting} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 disabled:opacity-30 transition-colors" title={t('drafting.regenerate')}><RotateCcw size={18}/></button>
-                    <button onClick={handleCopyResult} disabled={!currentJob.result} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 disabled:opacity-30 transition-colors" title={t('drafting.copyTitle')}><Copy size={18}/></button>
-                    <button onClick={handleDownloadResult} disabled={!currentJob.result} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 disabled:opacity-30 transition-colors" title={t('drafting.downloadTitle')}><Download size={18}/></button>
-                    <button onClick={handleClearResult} disabled={!currentJob.result && !currentJob.error} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg disabled:opacity-30 transition-colors border border-red-500/20" title={t('drafting.clearTitle')}><Trash2 size={18}/></button>
+                    <button onClick={runDraftingJob} disabled={!currentJob.result || isSubmitting} className="p-2.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-gray-300 disabled:opacity-30 transition-colors border border-white/10" title={t('drafting.regenerate')}><RotateCcw size={18}/></button>
+                    <button onClick={handleCopyResult} disabled={!currentJob.result} className="p-2.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-gray-300 disabled:opacity-30 transition-colors border border-white/10" title={t('drafting.copyTitle')}><Copy size={18}/></button>
+                    <button onClick={handleDownloadResult} disabled={!currentJob.result} className="p-2.5 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-gray-300 disabled:opacity-30 transition-colors border border-white/10" title={t('drafting.downloadTitle')}><Download size={18}/></button>
+                    <button onClick={handleClearResult} disabled={!currentJob.result && !currentJob.error} className="p-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl disabled:opacity-30 transition-colors border border-rose-500/20" title={t('drafting.clearTitle')}><Trash2 size={18}/></button>
                 </div>
             </div>
-            {currentJob.error && (<div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 mb-4 text-sm text-red-300 flex items-center gap-2 flex-shrink-0"><AlertCircle size={16} />{currentJob.error}</div>)}
-            <div className="flex-1 bg-black/50 rounded-xl border border-white/5 p-4 overflow-y-auto custom-scrollbar relative min-h-0">
-                {currentJob.result ? (<StreamedMarkdown text={currentJob.result} isNew={isResultNew} onComplete={() => setIsResultNew(false)} />) : (<div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600 opacity-50">{isSubmitting || (currentJob.status === 'PENDING' || currentJob.status === 'PROCESSING') ? (<><RefreshCw className="w-12 h-12 animate-spin mb-4 text-primary-500" /><p>{t('drafting.generatingMessage')}</p></>) : (<><FileText className="w-16 h-16 mb-4" /><p>{t('drafting.emptyState')}</p></>)}</div>)}
+            {currentJob.error && (<div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 mb-4 text-sm text-rose-300 flex items-start gap-3 flex-shrink-0"><AlertCircle size={18} className="mt-0.5" />{currentJob.error}</div>)}
+            <div className="flex-1 bg-black/40 rounded-2xl border border-white/10 p-6 overflow-y-auto custom-scrollbar relative min-h-0 shadow-inner">
+                {currentJob.result ? (<StreamedMarkdown text={currentJob.result} isNew={isResultNew} onComplete={() => setIsResultNew(false)} />) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600 opacity-50 p-4 text-center">
+                        {isSubmitting || (currentJob.status === 'PENDING' || currentJob.status === 'PROCESSING') ? (
+                            <>
+                                <Loader2 className="w-12 h-12 animate-spin mb-4 text-blue-500" />
+                                <p className="font-bold">{t('drafting.generatingMessage')}</p>
+                            </>
+                        ) : (
+                            <>
+                                <FileText className="w-16 h-16 mb-4" />
+                                <p className="font-bold">{t('drafting.emptyState')}</p>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
       </div>

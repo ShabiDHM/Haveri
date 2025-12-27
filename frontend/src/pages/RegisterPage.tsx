@@ -1,8 +1,8 @@
 // FILE: src/pages/RegisterPage.tsx
-// PHOENIX PROTOCOL - REGISTER PAGE V2.4 (HAVERI BRANDING)
-// 1. BRANDING: Added <BrandLogo /> with Brain icon.
-// 2. TEXT: Updated success messaging to focus on 'Business Transformation' instead of 'Legal Practice'.
-// 3. STATUS: Rebranded and Mobile Optimized.
+// PHOENIX PROTOCOL - REGISTER PAGE V3.0 (TACTICAL UPGRADE)
+// 1. STYLE: Applied Phoenix Glassmorphism to all panels, inputs, and buttons.
+// 2. CONSISTENCY: Aligned fonts, colors, and spacing with the new LoginPage style.
+// 3. UX: Enhanced visual feedback on all interactive elements.
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { apiService } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { User, Mail, Lock, Loader2, ArrowRight, ShieldAlert, Sparkles } from 'lucide-react';
 import { RegisterRequest } from '../data/types';
-import BrandLogo from '../components/BrandLogo'; // PHOENIX: Import Branding
+import BrandLogo from '../components/BrandLogo';
 
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -66,23 +66,24 @@ const RegisterPage: React.FC = () => {
 
   if (isSuccess) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background-dark px-4">
-            <div className="max-w-md w-full p-8 bg-background-light/10 backdrop-blur-md rounded-2xl border border-glass-edge text-center shadow-2xl">
-                <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="min-h-screen flex items-center justify-center bg-background-dark p-4 font-sans">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-blue-900/10 pointer-events-none" />
+            
+            <div className="relative max-w-md w-full p-8 bg-gray-900/60 backdrop-blur-xl rounded-3xl border border-white/10 text-center shadow-2xl shadow-emerald-900/20">
+                <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                     <Sparkles className="w-10 h-10 text-emerald-400" />
                 </div>
                 
-                <h2 className="text-2xl font-bold text-white mb-3">
+                <h2 className="text-3xl font-black text-white mb-3">
                     {t('auth.welcomeTitle', 'Mirë se erdhët në të ardhmen')}
                 </h2>
                 
-                {/* PHOENIX: Updated text to be Business-centric instead of Legal-centric */}
-                <p className="text-gray-300 mb-8 leading-relaxed">
+                <p className="text-gray-400 mb-8 leading-relaxed">
                     {t('auth.welcomeMessage', 'Llogaria juaj është krijuar. Ndërsa ekipi ynë verifikon të dhënat, ju jeni një hap më afër bashkimit të inteligjencës njerëzore me fuqinë e të dhënave për të transformuar mënyrën se si menaxhoni biznesin.')}
                 </p>
                 
-                <Link to="/login" className="inline-flex items-center px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-primary-500/25">
-                    {t('auth.backToLogin', 'Kthehu te Kyçja')} <ArrowRight className="ml-2 w-4 h-4" />
+                <Link to="/login" className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-blue-600/30 hover:scale-[1.02] active:scale-95">
+                    {t('auth.backToLogin', 'Kthehu te Kyçja')} <ArrowRight className="w-5 h-5" />
                 </Link>
             </div>
         </div>
@@ -90,24 +91,25 @@ const RegisterPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background-dark px-4">
-      <div className="max-w-md w-full p-8 bg-background-light/10 backdrop-blur-md rounded-2xl border border-glass-edge shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-background-dark p-4 font-sans">
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-blue-900/10 pointer-events-none" />
+      
+      <div className="relative max-w-md w-full p-8 bg-gray-900/60 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl shadow-blue-900/20">
         
-        {/* PHOENIX: Added BrandLogo with Brain Icon */}
         <div className="mb-6 flex justify-center">
             <BrandLogo />
         </div>
 
         <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">{t('auth.registerTitle')}</h2>
-            <p className="text-gray-400">{t('auth.registerSubtitle')}</p>
+            <h2 className="text-3xl font-black text-white tracking-tight">{t('auth.registerTitle')}</h2>
+            <p className="text-gray-400 mt-2 text-sm">{t('auth.registerSubtitle')}</p>
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">{t('account.username')}</label>
+            <div className="group">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('account.username')}</label>
                 <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
                     <input 
                         type="text" 
                         required 
@@ -115,30 +117,30 @@ const RegisterPage: React.FC = () => {
                         placeholder={t('auth.usernamePlaceholder')}
                         value={username}
                         onChange={e => setUsername(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+                        className="w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none transition-all"
                     />
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">{t('account.email')}</label>
+            <div className="group">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('account.email')}</label>
                 <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
                     <input 
                         type="email" 
                         required 
                         placeholder={t('auth.emailPlaceholder')}
                         value={email}
                         onChange={e => setEmail(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+                        className="w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none transition-all"
                     />
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">{t('auth.password')}</label>
+            <div className="group">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('auth.password')}</label>
                 <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
                     <input 
                         type="password" 
                         required 
@@ -146,15 +148,15 @@ const RegisterPage: React.FC = () => {
                         placeholder="••••••••"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+                        className="w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none transition-all"
                     />
                 </div>
-                <p className="text-xs text-gray-500 text-right">{t('auth.passwordMinChars')}</p>
+                <p className="text-xs text-gray-500 text-right mt-1">{t('auth.passwordMinChars')}</p>
             </div>
             
             {error && (
-                <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
-                    <ShieldAlert className="w-5 h-5 shrink-0" />
+                <div className="flex items-start gap-3 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-rose-400 text-sm">
+                    <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
                     <span>{error}</span>
                 </div>
             )}
@@ -162,7 +164,7 @@ const RegisterPage: React.FC = () => {
             <button 
                 type="submit" 
                 disabled={isSubmitting} 
-                className="w-full py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 hover:scale-[1.02] active:scale-95"
             >
                 {isSubmitting ? (
                     <>
@@ -175,9 +177,9 @@ const RegisterPage: React.FC = () => {
             </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-400">
+        <div className="mt-8 text-center text-sm text-gray-400">
             {t('auth.hasAccount')}{' '}
-            <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium hover:underline">
+            <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                 {t('auth.signInLink')}
             </Link>
         </div>

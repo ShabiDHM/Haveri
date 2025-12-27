@@ -1,7 +1,8 @@
 // FILE: src/pages/LandingPage.tsx
-// PHOENIX PROTOCOL - LANDING PAGE V16.1 (LINT FIX)
-// 1. FIX: Removed unused 'Zap' and 'TrendingUp' imports.
-// 2. STATUS: Production Ready. Clean.
+// PHOENIX PROTOCOL - LANDING PAGE V17.0 (TACTICAL UPGRADE)
+// 1. STYLE: Applied Phoenix Glassmorphism to all UI elements for consistency.
+// 2. CONSISTENCY: Aligned fonts, colors, and spacing with the new UI standard.
+// 3. UX: Enhanced all interactive elements for a premium, tactical feel.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -18,48 +19,46 @@ import ProductShowcase from '../components/landing/ProductShowcase';
 
 const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#0B1120] text-white overflow-hidden font-sans selection:bg-primary-start selection:text-white">
+    <div className="min-h-screen bg-[#030711] text-white overflow-hidden font-sans selection:bg-blue-500 selection:text-white">
       
       {/* BACKGROUND EFFECTS */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-primary-start/20 rounded-full blur-[80px] md:blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-5%] w-[250px] md:w-[400px] h-[250px] md:h-[400px] bg-secondary-start/20 rounded-full blur-[80px] md:blur-[100px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[10%] right-[-5%] w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[100px]" />
       </div>
 
       <div className="relative z-10">
         
         {/* --- HERO SECTION --- */}
-        <section className="pt-24 md:pt-32 pb-16 md:pb-24 text-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="pt-32 pb-24 text-center max-w-7xl mx-auto px-6">
           <motion.div 
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.6 }}
           >
-            {/* PHOENIX: Rebranded Tagline */}
-            <span className="inline-block py-1 px-3 rounded-full bg-blue-900/30 border border-blue-500/30 text-blue-400 text-[10px] md:text-xs font-semibold tracking-wider mb-6 uppercase">
+            <span className="inline-block py-2 px-4 rounded-full bg-blue-900/40 border border-blue-500/30 text-blue-400 text-xs font-bold tracking-wider mb-6 uppercase shadow-lg">
               Sistemi Operativ për Biznesin Modern
             </span>
             
-            <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 leading-tight">
+            <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight tracking-tight">
               Më i zgjuar. Më i shpejtë.<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-start to-secondary-end">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
                 Haveri AI
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed px-2">
+            <p className="text-lg md:text-xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed">
               Nga raporti i mëngjesit deri te mbyllja financiare.
-              <br className="hidden md:block"/>
               <span className="text-white font-medium block mt-2">
                 Inventar • Financa • Inteligjencë Artificiale
               </span>
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
-              <Link to="/register" className="w-full sm:w-auto group relative px-8 py-4 bg-primary-start hover:bg-primary-end rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:shadow-[0_0_30px_rgba(59,130,246,0.7)] transition-all flex items-center justify-center gap-2">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link to="/register" className="w-full sm:w-auto group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:shadow-blue-600/30 text-white rounded-2xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-3 hover:scale-105 active:scale-95">
                 Fillo Tani
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link to="/login" className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-medium text-lg transition-all backdrop-blur-sm text-center">
+              <Link to="/login" className="w-full sm:w-auto px-8 py-4 bg-gray-900/60 hover:bg-gray-800/60 border border-white/10 rounded-2xl font-medium text-lg transition-all backdrop-blur-md text-center">
                 Hyni në Platformë
               </Link>
             </div>
@@ -67,18 +66,18 @@ const LandingPage: React.FC = () => {
         </section>
 
         {/* --- STATS --- */}
-        <section className="py-12 border-y border-white/5 bg-white/5 backdrop-blur-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                <div className="p-4 md:p-6">
-                    <h3 className="text-4xl font-bold text-primary-start mb-2">06:00</h3>
+        <section className="py-12 border-y border-white/10 bg-gray-900/40 backdrop-blur-sm">
+            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div className="p-6">
+                    <h3 className="text-5xl font-black text-blue-400 mb-2">06:00</h3>
                     <p className="text-gray-400">Raporti ditor në tryezën tuaj.</p>
                 </div>
-                <div className="p-4 md:p-6 border-y md:border-y-0 md:border-x border-white/5">
-                    <h3 className="text-4xl font-bold text-yellow-400 mb-2">Zero</h3>
+                <div className="p-6 border-y md:border-y-0 md:border-x border-white/10">
+                    <h3 className="text-5xl font-black text-amber-400 mb-2">Zero</h3>
                     <p className="text-gray-400">Surpriza në stok ose financa.</p>
                 </div>
-                <div className="p-4 md:p-6">
-                    <h3 className="text-4xl font-bold text-green-400 mb-2">100%</h3>
+                <div className="p-6">
+                    <h3 className="text-5xl font-black text-emerald-400 mb-2">100%</h3>
                     <p className="text-gray-400">Kontroll mbi çdo faturë.</p>
                 </div>
             </div>
@@ -88,82 +87,57 @@ const LandingPage: React.FC = () => {
         <ProductShowcase />
 
         {/* --- FEATURES --- */}
-        <section className="py-16 md:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Jo Thjesht Softuer</h2>
-            <p className="text-gray-400">Një partner inteligjent që nuk fle kurrë.</p>
+        <section className="py-24 max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-5xl font-black mb-4">Jo Thjesht Softuer</h2>
+            <p className="text-lg text-gray-400">Një partner inteligjent që nuk fle kurrë.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-auto md:auto-rows-[300px]">
-            
-            {/* Daily Briefing Block */}
-            <div className="md:col-span-2 row-span-1 rounded-3xl p-6 md:p-8 border border-white/10 bg-gradient-to-br from-amber-900/40 to-gray-900 relative overflow-hidden group min-h-[250px]">
-                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Sun className="w-32 h-32 md:w-48 md:h-48 text-amber-500" />
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 auto-rows-fr">
+            <div className="md:col-span-2 rounded-3xl p-8 border border-white/10 bg-gray-900/60 backdrop-blur-md relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity"><Sun className="w-48 h-48 text-amber-500" /></div>
                 <div className="relative z-10 h-full flex flex-col justify-end">
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-500/20 rounded-xl flex items-center justify-center mb-4 text-amber-400">
-                        <Sun className="w-5 h-5 md:w-6 md:h-6" />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold mb-2">Raporti i Mëngjesit</h3>
-                    <p className="text-gray-400 text-sm md:text-base">
-                        Çdo mëngjes në orën 06:00, AI analizon financat, stokun dhe kalendarin tuaj për t'ju dhënë një përmbledhje të qartë të ditës.
-                    </p>
+                    <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center mb-4 text-amber-400 border border-amber-500/20"><Sun className="w-6 h-6" /></div>
+                    <h3 className="text-2xl font-bold mb-2">Raporti i Mëngjesit</h3>
+                    <p className="text-gray-400 text-base">Çdo mëngjes në orën 06:00, AI analizon financat, stokun dhe kalendarin tuaj për t'ju dhënë një përmbledhje të qartë të ditës.</p>
                 </div>
             </div>
 
-            <div className="md:col-span-1 row-span-1 rounded-3xl p-6 md:p-8 border border-white/10 bg-gray-900 relative group min-h-[200px]">
-                 <div className="w-10 h-10 md:w-12 md:h-12 bg-green-500/20 rounded-xl flex items-center justify-center mb-4 text-green-400">
-                    <Lock className="w-5 h-5 md:w-6 md:h-6" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold mb-2">Siguri e Plotë</h3>
-                <p className="text-gray-400 text-sm">
-                    Të dhënat tuaja ruhen me standardet më të larta të enkriptimit dhe privatësisë.
-                </p>
+            <div className="rounded-3xl p-8 border border-white/10 bg-gray-900/60 backdrop-blur-md">
+                 <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4 text-emerald-400 border border-emerald-500/20"><Lock className="w-6 h-6" /></div>
+                <h3 className="text-xl font-bold mb-2">Siguri e Plotë</h3>
+                <p className="text-gray-400">Të dhënat tuaja ruhen me standardet më të larta të enkriptimit dhe privatësisë.</p>
             </div>
 
-            <div className="md:col-span-1 row-span-1 rounded-3xl p-6 md:p-8 border border-white/10 bg-gray-900 relative min-h-[200px]">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 text-blue-400">
-                    <MessageSquare className="w-5 h-5 md:w-6 md:h-6" />
-                </div>
-                <h3 className="text-lg md:text-xl font-bold mb-2">Asistenti AI</h3>
-                <p className="text-gray-400 text-sm">
-                    Bisedoni me dokumentet tuaja. Pyetni për kontrata, fatura, ose stokun në çdo kohë.
-                </p>
+            <div className="rounded-3xl p-8 border border-white/10 bg-gray-900/60 backdrop-blur-md">
+                <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 text-blue-400 border border-blue-500/20"><MessageSquare className="w-6 h-6" /></div>
+                <h3 className="text-xl font-bold mb-2">Asistenti AI</h3>
+                <p className="text-gray-400">Bisedoni me dokumentet tuaja. Pyetni për kontrata, fatura, ose stokun në çdo kohë.</p>
             </div>
 
-            <div className="md:col-span-2 row-span-1 rounded-3xl p-6 md:p-8 border border-white/10 bg-gradient-to-br from-gray-800 to-gray-900 relative overflow-hidden min-h-[250px]">
-                 <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <Database className="w-32 h-32 md:w-48 md:h-48" />
-                </div>
+            <div className="md:col-span-2 rounded-3xl p-8 border border-white/10 bg-gray-900/60 backdrop-blur-md relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity"><Database className="w-48 h-48" /></div>
                 <div className="relative z-10 h-full flex flex-col justify-end">
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4 text-purple-400">
-                        <FileText className="w-5 h-5 md:w-6 md:h-6" />
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold mb-2">Financa & Arkiva</h3>
-                    <p className="text-gray-400 text-sm md:text-base">
-                        Skanoni, organizoni dhe kërkoni çdo faturë. Sinkronizoni me POS dhe menaxhoni stokun në kohë reale.
-                    </p>
+                    <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4 text-purple-400 border border-purple-500/20"><FileText className="w-6 h-6" /></div>
+                    <h3 className="text-2xl font-bold mb-2">Financa & Arkiva</h3>
+                    <p className="text-gray-400 text-base">Skanoni, organizoni dhe kërkoni çdo faturë. Sinkronizoni me POS dhe menaxhoni stokun në kohë reale.</p>
                 </div>
             </div>
-
           </div>
         </section>
 
         {/* --- CTA --- */}
-        <section className="py-16 md:py-24 text-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden">
+        <section className="py-24 text-center max-w-7xl mx-auto px-6">
+            <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-white/10 rounded-3xl p-12 relative overflow-hidden">
                 <div className="relative z-10">
-                    <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">Gati për transformim?</h2>
-                    <p className="text-lg md:text-xl text-gray-300 mb-6 md:mb-8 max-w-2xl mx-auto">
-                        Regjistrohuni sot në Haveri AI dhe merrni kontrollin e plotë.
-                    </p>
-                    <Link to="/register" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 hover:bg-gray-100 rounded-xl font-bold text-lg transition-colors w-full sm:w-auto justify-center">
+                    <h2 className="text-4xl font-black mb-6">Gati për transformim?</h2>
+                    <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">Regjistrohuni sot në Haveri AI dhe merrni kontrollin e plotë.</p>
+                    <Link to="/register" className="inline-flex items-center gap-3 px-8 py-4 bg-white text-gray-900 hover:bg-gray-200 rounded-2xl font-bold text-lg transition-all w-full sm:w-auto justify-center hover:scale-105 active:scale-95">
                         Provo Falas
                         <ChevronRight className="w-5 h-5" />
                     </Link>
                 </div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-blue-500/20 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none" />
             </div>
         </section>
 

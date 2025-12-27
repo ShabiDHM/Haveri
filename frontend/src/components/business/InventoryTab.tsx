@@ -1,10 +1,12 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - SYNC V1.2
-// Verified import paths for Modals and Hooks.
+// PHOENIX PROTOCOL - INVENTORY TAB V18.0 (TACTICAL UPGRADE)
+// 1. STYLE: Applied Phoenix Glassmorphism to match Finance Tab.
+// 2. UX: Dynamic Action Bar that changes context based on active tab.
+// 3. VISUALS: Deep dark backgrounds, glows, and high-tech borders.
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Plus, ChefHat, Loader2, FileSpreadsheet } from 'lucide-react';
+import { Package, Plus, ChefHat, Loader2, FileSpreadsheet, Box } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InventoryItem, Recipe } from '../../data/types';
 
@@ -16,15 +18,38 @@ import { InventoryItemModal } from './modals/InventoryItemModal';
 import { RecipeModal } from './modals/RecipeModal';
 import { InventoryImportModal } from './modals/InventoryImportModal';
 
-// Sub-component for Tab Buttons
-const TabButton = ({ label, icon, isActive, onClick }: any) => (
+// --- TACTICAL UI COMPONENTS ---
+
+const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean }) => (
     <button 
         onClick={onClick} 
-        className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${isActive ? 'bg-secondary-start/10 text-secondary-start border border-secondary-start/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+        className={`
+            flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group
+            ${primary 
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 border border-emerald-400/50' 
+                : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10 hover:border-white/20'
+            }
+        `}
     >
-        {icon}
-        <span className="hidden sm:inline">{label}</span>
-        <span className="sm:hidden">{label.split(' ')[0]}</span>
+        <span className={`transition-transform duration-300 group-hover:scale-110 ${primary ? 'text-white' : 'text-emerald-400'}`}>{icon}</span>
+        <span>{label}</span>
+    </button>
+);
+
+const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: React.ReactNode, isActive: boolean, onClick: () => void }) => (
+    <button 
+        onClick={onClick} 
+        className={`
+            flex-1 sm:flex-initial relative px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2
+            ${isActive 
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
+                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+            }
+        `}
+    >
+        <span className="relative z-10">{icon}</span>
+        <span className="relative z-10 hidden sm:inline">{label}</span>
+        <span className="relative z-10 sm:hidden">{label}</span>
     </button>
 );
 
@@ -59,61 +84,73 @@ export const InventoryTab: React.FC = () => {
 
     const openImport = (target: 'items' | 'recipes') => { setImportTarget(target); setShowImportModal(true); };
 
-    if (loading) return <div className="flex justify-center h-64 items-center"><Loader2 className="animate-spin text-secondary-start" /></div>;
+    if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-emerald-500" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 h-full flex flex-col">
-             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 flex-none">
-                <h2 className="text-xl font-bold text-white">{t('inventory.title')}</h2>
-                <div className="flex gap-2 bg-black/20 p-1 rounded-lg self-start sm:self-auto">
-                    <TabButton label={t('inventory.tabItems')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
-                    <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
-                </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+             <style>{`
+                .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
+                .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
+                .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.3); border-radius: 10px; } 
+                .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.5); }
+            `}</style>
+
+            {/* DYNAMIC ACTION BAR */}
+            <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
+                {activeTab === 'items' ? (
+                    <>
+                        <ActionButton primary icon={<Plus size={20} />} label={t('inventory.items.add')} onClick={openCreateItem} />
+                        <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.items.import', 'Import CSV')} onClick={() => openImport('items')} />
+                    </>
+                ) : (
+                    <>
+                         <ActionButton primary icon={<Plus size={20} />} label={t('inventory.recipes.add')} onClick={openCreateRecipe} />
+                         <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.recipes.import')} onClick={() => openImport('recipes')} />
+                    </>
+                )}
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto pr-0 sm:pr-2">
-                {activeTab === 'items' && (
-                    <div className="space-y-4">
-                        <div className="flex flex-wrap justify-end gap-2 sm:gap-3">
-                            <button onClick={() => openImport('items')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors text-xs sm:text-sm">
-                                <FileSpreadsheet size={16} className="text-emerald-400" /> 
-                                <span className="whitespace-nowrap">{t('inventory.items.import', 'Import CSV')}</span>
-                            </button>
-                            <button onClick={openCreateItem} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-colors text-xs sm:text-sm whitespace-nowrap">
-                                <Plus size={16} /> {t('inventory.items.add')}
-                            </button>
-                        </div>
-                        
-                        <InventoryList 
-                            manualItems={manualItems} 
-                            posItems={posItems} 
-                            onEdit={openEditItem} 
-                            onDelete={handleDeleteItem} 
-                        />
+            {/* MAIN CONTENT CARD */}
+            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col shadow-2xl">
+                
+                {/* Header & Tabs */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
+                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                        <Box className="text-emerald-500" />
+                        {t('inventory.title')}
+                    </h2>
+                    
+                    <div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md gap-1">
+                        <TabButton label={t('inventory.tabItems')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
+                        <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
                     </div>
-                )}
+                </div>
 
-                {activeTab === 'recipes' && (
-                    <div className="space-y-4">
-                        <div className="flex flex-wrap justify-end gap-2 sm:gap-3">
-                            <button onClick={() => openImport('recipes')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg font-medium transition-colors text-xs sm:text-sm">
-                                <FileSpreadsheet size={16} className="text-green-400" /> 
-                                <span className="whitespace-nowrap">{t('inventory.recipes.import')}</span>
-                            </button>
-                            <button onClick={openCreateRecipe} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors text-xs sm:text-sm whitespace-nowrap">
-                                <Plus size={16} /> {t('inventory.recipes.add')}
-                            </button>
+                {/* Tab Content */}
+                <div className="flex-1 overflow-hidden relative">
+                    {activeTab === 'items' && (
+                        <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
+                            <InventoryList 
+                                manualItems={manualItems} 
+                                posItems={posItems} 
+                                onEdit={openEditItem} 
+                                onDelete={handleDeleteItem} 
+                            />
                         </div>
+                    )}
 
-                        <RecipeList 
-                            recipes={recipes} 
-                            inventoryItems={items} 
-                            calculateCost={calculateRecipeCost}
-                            onEdit={openEditRecipe}
-                            onDelete={handleDeleteRecipe}
-                        />
-                    </div>
-                )}
+                    {activeTab === 'recipes' && (
+                        <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
+                            <RecipeList 
+                                recipes={recipes} 
+                                inventoryItems={items} 
+                                calculateCost={calculateRecipeCost}
+                                onEdit={openEditRecipe}
+                                onDelete={handleDeleteRecipe}
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* MODALS */}

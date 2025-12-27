@@ -1,7 +1,8 @@
 // FILE: src/components/business/TransactionImporter.tsx
-// PHOENIX PROTOCOL - IMPORTER V17.1 (LINT FIX)
-// 1. CLEANUP: Removed unused variables 'ArrowDown', 'rows', and 'reject'.
-// 2. STATUS: Production Ready.
+// PHOENIX PROTOCOL - IMPORTER V18.0 (TACTICAL UPGRADE)
+// 1. STYLE: Applied Phoenix Glassmorphism to match Finance Tab.
+// 2. UX: Enhanced all interactive elements (Buttons, selects, dropzones).
+// 3. CONSISTENCY: Aligned fonts, colors, and spacing with the new UI standard.
 
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -43,7 +44,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
             
             const initialMapping: Record<string, string> = {};
             data.headers.forEach(header => {
-                const h = header.toLowerCase();
+                const h = header.toLowerCase().trim();
                 if (h.includes('shum') || h.includes('amount') || h.includes('price')) initialMapping['amount'] = header;
                 else if (h.includes('dat') || h.includes('date')) initialMapping['date'] = header;
                 else if (h.includes('përsh') || h.includes('desc')) initialMapping['description'] = header;
@@ -171,27 +172,27 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <style>{`select option { background-color: #1f2937; color: #f9fafb; }`}</style>
-            <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <style>{`select option { background-color: #0f172a; color: #f9fafb; }`}</style>
+            <div className="bg-[#0f172a] border border-emerald-500/20 rounded-3xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl shadow-emerald-900/20">
                 
-                <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center">
-                    <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-3">
                         <FileSpreadsheet className="text-emerald-400" />
                         {t('finance.import.title')}
                     </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
+                    <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={24} /></button>
                 </div>
 
-                <div className="p-4 sm:p-6 overflow-y-auto flex-1 custom-finance-scroll">
+                <div className="p-6 overflow-y-auto flex-1 custom-finance-scroll">
                     {step === 'upload' && (
-                        <div className="text-center py-6 sm:py-10 space-y-4">
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto">
-                                <Upload size={28} className="text-emerald-400 sm:w-8 sm:h-8" />
+                        <div className="text-center py-10 space-y-6">
+                            <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto border-2 border-dashed border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                                <Upload size={36} className="text-emerald-400" />
                             </div>
                             <div>
-                                <h3 className="text-base sm:text-lg font-bold text-white">{t('finance.import.uploadTitle')}</h3>
-                                <p className="text-gray-400 text-xs sm:text-sm mt-1">{t('finance.import.uploadDesc')}</p>
+                                <h3 className="text-lg font-bold text-white">{t('finance.import.uploadTitle')}</h3>
+                                <p className="text-gray-400 text-sm mt-1">{t('finance.import.uploadDesc')}</p>
                             </div>
                             
                             <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv" />
@@ -199,7 +200,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                             <button 
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isLoading}
-                                className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mx-auto"
+                                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mx-auto shadow-lg shadow-emerald-600/20 transform hover:scale-[1.02]"
                             >
                                 {isLoading ? <Loader2 className="animate-spin" /> : <Upload size={18} />}
                                 {isLoading ? t('finance.import.analyzing') : t('finance.import.selectFile')}
@@ -209,28 +210,26 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
 
                     {step === 'mapping' && previewData && (
                         <div className="space-y-6">
-                            <div className="bg-blue-500/10 border border-blue-500/20 p-3 sm:p-4 rounded-xl flex gap-3">
-                                <AlertCircle className="text-blue-400 shrink-0" size={20} />
-                                <div className="text-xs sm:text-sm">
-                                    <p className="text-blue-300 font-bold">{t('finance.import.mappingTitle')}</p>
-                                    <p className="text-gray-400">{t('finance.import.autoMapInfo')}</p>
+                            <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex gap-4 items-start">
+                                <AlertCircle className="text-blue-400 shrink-0 mt-0.5" size={20} />
+                                <div>
+                                    <p className="text-blue-300 font-bold text-sm">{t('finance.import.mappingTitle')}</p>
+                                    <p className="text-gray-400 text-xs mt-1">{t('finance.import.autoMapInfo')}</p>
                                 </div>
                             </div>
 
-                            <div className="space-y-3 sm:space-y-4">
+                            <div className="space-y-4">
                                 {requiredFields.map((field) => (
-                                    <div key={field.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 bg-white/5 p-3 rounded-lg border border-white/5">
-                                        <div className="flex-1">
-                                            <p className="font-bold text-white text-sm sm:text-base flex items-center gap-2">
-                                                {field.label}
-                                                {field.required && <span className="text-rose-400 text-xs">*</span>}
-                                            </p>
-                                        </div>
+                                    <div key={field.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-900/40 p-4 rounded-xl border border-white/5">
+                                        <label className="flex-1 font-bold text-white text-sm flex items-center gap-2">
+                                            {field.label}
+                                            {field.required && <span className="text-rose-400 text-xs font-mono">*</span>}
+                                        </label>
                                         <div className="hidden sm:block"><ArrowRight className="text-gray-600" size={16} /></div>
                                         
                                         <div className="flex-1">
                                             <select 
-                                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-emerald-500 outline-none"
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500/50 outline-none transition-all appearance-none cursor-pointer"
                                                 value={getMappedHeader(field.key)}
                                                 onChange={(e) => updateMapping(field.key, e.target.value)}
                                             >
@@ -247,25 +246,25 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                     )}
                     
                     {step === 'processing' && (
-                        <div className="flex flex-col items-center justify-center py-10 space-y-4 text-center">
+                        <div className="flex flex-col items-center justify-center py-10 space-y-6 text-center">
                             <Loader2 size={48} className="animate-spin text-emerald-400" />
                             <h3 className="text-xl font-bold text-white">{t('finance.import.processingTitle')}</h3>
-                            <p className="text-gray-400">{t('finance.import.processingDesc')}</p>
-                            <div className="w-64 h-2 bg-gray-700 rounded-full overflow-hidden mt-4">
+                            <p className="text-gray-400 max-w-sm">{t('finance.import.processingDesc')}</p>
+                            <div className="w-full max-w-md h-2 bg-black/40 rounded-full overflow-hidden mt-4 border border-white/5">
                                 <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${progress}%` }}></div>
                             </div>
-                            <p className="text-xs text-emerald-400">{progress}%</p>
+                            <p className="text-sm text-emerald-400 font-mono">{progress}%</p>
                         </div>
                     )}
                 </div>
 
                 {step === 'mapping' && (
-                    <div className="p-4 sm:p-6 border-t border-white/10 flex justify-end gap-3 bg-black/20">
-                        <button onClick={() => setStep('upload')} className="px-4 py-2 text-gray-400 hover:text-white transition-colors text-sm sm:text-base">{t('finance.import.back')}</button>
+                    <div className="p-6 border-t border-white/10 flex justify-end gap-3 bg-black/30">
+                        <button onClick={() => setStep('upload')} className="px-6 py-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors font-medium">{t('finance.import.back')}</button>
                         <button 
                             onClick={handleSmartImport}
                             disabled={!getMappedHeader('amount')} 
-                            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg font-bold flex items-center gap-2 transition-all text-sm sm:text-base"
+                            className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
                         >
                             <CheckCircle size={18} />
                             {t('finance.import.confirm')}
