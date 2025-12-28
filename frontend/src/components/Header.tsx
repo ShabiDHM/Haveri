@@ -1,7 +1,8 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V4.2 (FINAL NAVIGATION ORDER)
-// 1. REORDER: Navigation is now Brand Logo -> Zyra Ime -> Haveri AI -> Ndihma.
-// 2. CLARITY: Restored 'Haveri AI' as the link text for the main workspace.
+// PHOENIX PROTOCOL - HEADER V5.0 (FINAL LAYOUT)
+// 1. REMOVED: Deleted the standalone BrandLogo component from the header.
+// 2. REORDER: Moved the main <nav> to the far left of the header.
+// 3. STATUS: Final, clean, left-aligned navigation structure.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, LogOut, User as UserIcon, Brain, Building2, MessageSquare } from 'lucide-react';
@@ -10,7 +11,6 @@ import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
 import LanguageSwitcher from './LanguageSwitcher';
-import BrandLogo from './BrandLogo';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -67,11 +67,9 @@ const Header: React.FC = () => {
   return (
     <header className="h-16 bg-background-dark/80 backdrop-blur-md border-b border-glass-edge flex items-center justify-between px-4 sm:px-6 z-40 sticky top-0">
       
+      {/* PHOENIX: Left side is now the primary navigation */}
       <div className="flex items-center gap-6">
-        <Link to="/business">
-          <BrandLogo />
-        </Link>
-        <nav className="hidden lg:flex items-center gap-2">
+        <nav className="flex items-center gap-2">
             {navItems.map(item => {
                 const isActive = (location.pathname.startsWith('/cases') && item.path.startsWith('/cases')) || location.pathname === item.path;
                 return (
@@ -79,7 +77,7 @@ const Header: React.FC = () => {
                         key={item.path}
                         to={item.path}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+                            isActive ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white'
                         }`}
                     >
                         <item.icon size={16} />
@@ -90,6 +88,7 @@ const Header: React.FC = () => {
         </nav>
       </div>
 
+      {/* Right side remains the same */}
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="hidden"><LanguageSwitcher /></div>
         <Link to="/calendar" className="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-lg transition-colors relative" title="Njoftimet">
