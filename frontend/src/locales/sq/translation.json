@@ -152,6 +152,8 @@
     "noFindings": "Asnjë gjetje nuk është identifikuar ende.",
     "findingSource": "Burimi",
     "confidenceScore": "Besueshmëria",
+    "unnamedCase": "Rast pa Emër",
+    "defaultWorkspace": "Hapësira Ime e Punës",
     "statusTypes": {
       "OPEN": "Hapur",
       "CLOSED": "Mbyllur",
@@ -191,9 +193,11 @@
   },
   "chatPanel": {
     "title": "Haveri AI",
+    "titleLegal": "Asistenti Ligjor",
     "inputPlaceholder": "Shtypni pyetjen tuaj këtu...",
     "thinking": "Haveri tu menu...",
-    "welcomeMessage": "Përshëndetje! Unë jam asistenti juaj inteligjent.",
+    "welcomeMessage": "Përshëndetje! Unë jam Këshilltari juaj i Biznesit.",
+    "welcomeLegal": "Përshëndetje! Unë jam Asistenti juaj Ligjor.",
     "statusConnected": "Lidhur",
     "confirmClear": "Pastro bisedën?",
     "contextGeneral": "E gjithë Dosja"
@@ -222,7 +226,7 @@
     "noDiscovery": "Nuk u identifikuan kërkesa të reja."
   },
   "drafting": {
-     "title": "Hartimi Inteligjent",
+    "title": "Hartimi Inteligjent",
     "subtitle": "Krijoni dokumente profesionale me fuqinë e AI.",
     "configuration": "Konfigurimi",
     "selectCaseLabel": "Zgjidhni Projektin",
@@ -278,7 +282,6 @@
     "taskSupplier": "Porosia: Coca Cola",
     "taskReview": "Mbyllja Ditore",
     "viewCalendar": "Shiko Kalendarin"
-
   },
   "business": {
     "title": "Qendra e Biznesit",

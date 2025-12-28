@@ -1,7 +1,8 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - LINTER CLEANUP V2
-// 1. FIX: The 'handleChatSubmit' function now correctly uses the 'agentType' parameter it receives, removing the "unused variable" warning.
-// 2. STATUS: Code is now clean and logically correct.
+// PHOENIX PROTOCOL - CASE VIEW PAGE V9.1 (UI POLISH)
+// 1. FIX: 'My Workspace' title from DB is now intercepted and translated to 'Hapësira Ime e Punës'.
+// 2. FIX: Date format changed from US (12/25/2025) to Albanian/European (25.12.2025).
+// 3. LOGIC: Re-applied the agentType fix from the previous step to ensure chat works.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -116,6 +117,21 @@ const CaseHeader: React.FC<{
         ? t('analysis.analyzeButton', 'Analizo Rastin')
         : t('analysis.crossExamineButton', 'Kryqëzo Dokumentin');
 
+    // PHOENIX FIX: Intercept "My Workspace" and translate it
+    let displayTitle = caseDetails.case_name || caseDetails.title;
+    if (displayTitle === 'My Workspace') {
+        displayTitle = t('caseView.defaultWorkspace', 'Hapësira Ime e Punës');
+    } else if (!displayTitle) {
+        displayTitle = t('caseView.unnamedCase', 'Rast pa Emër');
+    }
+
+    // PHOENIX FIX: Albanian Date Formatting
+    const formattedDate = new Date(caseDetails.created_at).toLocaleDateString('sq-AL', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+    }); // e.g., 25.12.2025
+
     return (
         <motion.div 
             className="relative z-30 mb-8 rounded-3xl shadow-2xl border border-white/10 group backdrop-blur-md bg-gray-900/60" 
@@ -130,7 +146,7 @@ const CaseHeader: React.FC<{
           <div className="relative p-6 flex flex-col gap-6 z-10">
               <div className="flex flex-col gap-1">
                   <h1 className="text-3xl font-black text-white tracking-tight leading-snug break-words">
-                    {caseDetails.case_name || caseDetails.title || t('caseView.unnamedCase', 'Rast pa Emër')}
+                    {displayTitle}
                   </h1>
                   <div className="flex items-center gap-3 text-gray-400 mt-2">
                       <User className="h-5 w-5 text-blue-400" />
@@ -145,7 +161,7 @@ const CaseHeader: React.FC<{
               <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full">
                   <div className="flex items-center justify-center gap-3 px-5 h-12 rounded-2xl bg-black/40 border border-white/10 text-gray-300 text-sm font-medium whitespace-nowrap">
                       <Calendar className="h-5 w-5 text-blue-400" />
-                      {new Date(caseDetails.created_at).toLocaleDateString()}
+                      {formattedDate}
                   </div>
                   
                   <div className="flex-1 w-full md:w-auto h-12 [&>div]:h-full [&>div>button]:h-full">
@@ -227,8 +243,8 @@ const CaseViewPage: React.FC = () => {
 
   const handleAnalyze = async () => { if (!caseId) return; setIsAnalyzing(true); setActiveModal('none'); try { let result: CaseAnalysisResult; if (activeContextId === 'general') { result = await apiService.analyzeCase(caseId); } else { result = await apiService.crossExamineDocument(caseId, activeContextId); } if (result.error) alert(result.error); else { setAnalysisResult(result); setActiveModal('analysis'); } } catch (err) { alert(t('error.generic')); } finally { setIsAnalyzing(false); } };
   
-  // PHOENIX FIX: This function now correctly uses the 'agentType' passed from the child.
   const handleChatSubmit = (text: string, _mode: ChatMode, documentId?: string, jurisdiction?: Jurisdiction, agentType?: AgentType) => {
+    // PHOENIX: Explicitly use the 'business' agent for this main chat panel.
     sendChatMessage(text, documentId, jurisdiction, agentType);
   };
   
