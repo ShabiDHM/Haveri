@@ -1,8 +1,8 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V2.5 (DASHBOARD REMOVAL)
-// 1. REMOVED: The '/dashboard' route has been completely removed from the router.
-// 2. REASON: The DashboardPage is now fully deprecated and has been replaced by the '/business' home base.
-// 3. STATUS: The application's routing is now clean, consistent, and aligned with the Singleton Workspace model.
+// PHOENIX PROTOCOL - ROUTING V3.0 (DRAFTING MERGE)
+// 1. REMOVED: Deleted the '/drafting' route and its component import.
+// 2. REASON: The Drafting page has been merged into the 'AIStudioPanel' in the CaseViewPage.
+// 3. STATUS: The application router is now fully aligned with the streamlined UI.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -12,11 +12,9 @@ import MainLayout from './pages/MainLayout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-// PHOENIX: DashboardPage is no longer a primary route. It can be removed or kept for future development.
-// import DashboardPage from './pages/DashboardPage'; 
 import CaseViewPage from './pages/CaseViewPage';
 import CalendarPage from './pages/CalendarPage';
-import DraftingPage from './pages/DraftingPage';
+// PHOENIX: Removed DraftingPage import
 import SupportPage from './pages/SupportPage';
 import LandingPage from './pages/LandingPage';
 import BusinessPage from './pages/BusinessPage';
@@ -62,7 +60,7 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Public Routes - All redirects point to the new '/business' home base */}
+      {/* Public Routes */}
       <Route path="/" element={isAuthenticated ? <Navigate to="/business" /> : <LandingPage />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/business" /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/business" /> : <RegisterPage />} />
@@ -75,10 +73,9 @@ const AppRoutes: React.FC = () => {
 
       {/* Standard Protected Routes (With Sidebar) */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-        {/* PHOENIX: The /dashboard route has been completely removed. */}
         <Route path="/cases/:caseId" element={<CaseViewPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
-        <Route path="/drafting" element={<DraftingPage />} />
+        {/* PHOENIX: Removed /drafting route */}
         <Route path="/support" element={<SupportPage />} />
         <Route path="/business" element={<BusinessPage />} />
         <Route path="/account" element={<AccountPage />} />

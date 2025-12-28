@@ -1,12 +1,13 @@
 // FILE: src/components/Sidebar.tsx
-// PHOENIX PROTOCOL - SIDEBAR V2.3 (UX SIMPLIFICATION)
-// 1. REMOVED: 'Calendar' navigation item to enforce "Dashboard First" workflow.
-// 2. CLEANUP: Removed unused 'Calendar' icon import.
+// PHOENIX PROTOCOL - SIDEBAR V3.0 (NAVIGATION MERGE)
+// 1. REMOVED: Deleted the 'Hartimi' (Drafting) navigation item.
+// 2. REASON: Drafting is now integrated directly into the Workspace/Case View via the AI Studio.
+// 3. STATUS: Streamlined navigation menu.
 
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
-    FileText, MessageSquare, 
+    MessageSquare, 
     Building2, Shield, LogOut, User as UserIcon, Brain 
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -54,12 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         label: t('sidebar.haveri_ai', 'Haveri AI'), 
         path: haveriAIPath
       },
-      // PHOENIX: Calendar removed to reduce visual noise. Accessed via Dashboard.
-      { 
-        icon: FileText, 
-        label: t('sidebar.drafting', 'Hartimi'), 
-        path: '/drafting' 
-      },
+      // PHOENIX: Removed Drafting (Hartimi) - Now merged into Haveri AI
       { 
         icon: MessageSquare, 
         label: t('sidebar.support', 'Ndihma'), 

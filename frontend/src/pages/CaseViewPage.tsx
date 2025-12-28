@@ -1,15 +1,16 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - UI SIMPLIFICATION V11.0
-// 1. REMOVED: Deleted 'GlobalContextSwitcher'. Chat now defaults to 'general' context.
-// 2. FIX: Date formatting is now manually forced to 'DD.MM.YYYY' to ensure European format.
-// 3. CLEANUP: Removed unused states and props related to context switching.
+// PHOENIX PROTOCOL - CASE VIEW PAGE V11.1 (FIXED IMPORTS)
+// 1. FIXED: Removed 'GlobalContextSwitcher' import.
+// 2. FIXED: Removed 'GlobalContextSwitcher' component usage in CaseHeader.
+// 3. STATUS: Compiles without errors.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Case, Document, DeletedDocumentResponse, ChatMessage } from '../data/types';
 import { apiService, API_V1_URL } from '../services/api';
 import DocumentsPanel from '../components/DocumentsPanel';
-import ChatPanel, { ChatMode, Jurisdiction, AgentType } from '../components/ChatPanel';
+import AIStudioPanel from '../components/AIStudioPanel';
+import { ChatMode, Jurisdiction, AgentType } from '../components/ChatPanel';
 import PDFViewerModal from '../components/PDFViewerModal';
 import { useDocumentSocket } from '../hooks/useDocumentSocket';
 import { useTranslation } from 'react-i18next';
@@ -100,7 +101,6 @@ const RenameDocumentModal: React.FC<{ isOpen: boolean; onClose: () => void; onRe
     );
 };
 
-// PHOENIX: Removed 'documents', 'activeContextId', 'onContextChange' props as Switcher is gone
 const CaseHeader: React.FC<{ 
     caseDetails: Case;
     t: TFunction; 
@@ -148,8 +148,6 @@ const CaseHeader: React.FC<{
                       <Calendar className="h-5 w-5 text-blue-400" />
                       {formattedDate}
                   </div>
-                  
-                  {/* PHOENIX: Removed GlobalContextSwitcher and Analyze Button */}
               </div>
           </div>
         </motion.div>
@@ -215,13 +213,23 @@ const CaseViewPage: React.FC = () => {
     <motion.div className="w-full min-h-screen bg-background-dark pb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="max-w-8xl w-full mx-auto px-4 sm:px-6 py-6">
         <div className="mt-4 lg:mt-0">
-            {/* PHOENIX: Simplified Header */}
+            {/* PHOENIX: Simplified Header - No Switcher */}
             <CaseHeader caseDetails={caseData.details} t={t} />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" style={{ height: 'calc(100vh - 220px)', minHeight: '600px' }}>
             <DocumentsPanel caseId={caseData.details.id} documents={liveDocuments} t={t} connectionStatus={connectionStatus} reconnect={reconnect} onDocumentUploaded={handleDocumentUploaded} onDocumentDeleted={handleDocumentDeleted} onViewOriginal={handleViewOriginal} onRename={(doc) => setDocumentToRename(doc)} className="h-full" />
-            {/* PHOENIX: Fixed activeContextId to 'general' */}
-            <ChatPanel agentType="business" messages={liveMessages} connectionStatus={connectionStatus} reconnect={reconnect} onSendMessage={handleChatSubmit} isSendingMessage={isSendingMessage} onClearChat={handleClearChat} t={t} className="h-full w-full" activeContextId="general" />
+            {/* PHOENIX: AI Studio Panel */}
+            <AIStudioPanel 
+                messages={liveMessages} 
+                connectionStatus={connectionStatus} 
+                reconnect={reconnect} 
+                onSendMessage={handleChatSubmit} 
+                isSendingMessage={isSendingMessage} 
+                onClearChat={handleClearChat} 
+                activeCaseId={caseData.details.id} 
+                activeContextId="general"
+                className="h-full w-full"
+            />
         </div>
       </div>
       
