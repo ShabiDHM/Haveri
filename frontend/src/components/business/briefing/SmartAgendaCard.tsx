@@ -1,52 +1,25 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom'; // PHOENIX: Added navigation hook
-import { useTranslation } from 'react-i18next';
-import { Calendar, Clock, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+// FILE: src/components/business/briefing/SmartAgendaCard.tsx
+// PHOENIX PROTOCOL - LINTER CLEANUP V2.1
+// 1. CLEANUP: Removed unused 'AlertTriangle' and 'CheckCircle2' imports.
+// 2. FIX: Added the missing 'AlertCircle' import.
 
-// Interface defining the agenda structure
-interface AgendaItem {
-    id: string;
-    title: string;
-    time: string;
-    priority: 'high' | 'medium' | 'low';
-    isCompleted: boolean;
-}
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Calendar, Clock, ArrowRight, AlertCircle } from 'lucide-react'; // PHOENIX: Corrected imports
+import { motion } from 'framer-motion';
+import { AgendaItem } from '../../../hooks/useStrategicBriefing';
 
 interface SmartAgendaCardProps {
     agenda?: AgendaItem[];
+    onEventClick: (event: AgendaItem) => void;
 }
 
-export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda }) => {
+export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda, onEventClick }) => {
     const { t } = useTranslation();
-    const navigate = useNavigate(); // PHOENIX: Initialize navigation
+    const navigate = useNavigate();
 
-    // Default Fallback Data if API fails or is loading
-    const defaultAgenda: AgendaItem[] = [
-        { 
-            id: '1', 
-            title: t('dashboard.taskTax', 'Përgatit Deklarimin TVSH'), 
-            time: '14:00', 
-            priority: 'high', 
-            isCompleted: false 
-        },
-        { 
-            id: '2', 
-            title: t('dashboard.taskSupplier', 'Porosia: Coca Cola'), 
-            time: '15:30', 
-            priority: 'medium', 
-            isCompleted: false 
-        },
-        { 
-            id: '3', 
-            title: t('dashboard.taskReview', 'Mbyllja Ditore'), 
-            time: '22:00', 
-            priority: 'low', 
-            isCompleted: false 
-        }
-    ];
-
-    const displayAgenda = agenda || defaultAgenda;
+    const displayAgenda = agenda || [];
 
     return (
         <div className="bg-gray-900/50 border border-white/10 rounded-3xl p-6 h-full flex flex-col hover:border-indigo-500/30 transition-colors duration-500">
@@ -61,17 +34,22 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda }) => {
                 {displayAgenda.map((item, index) => (
                     <motion.div 
                         key={item.id}
+                        onClick={() => onEventClick(item)}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="group flex items-start gap-3 p-3 rounded-xl border border-white/5 bg-gray-800/40 hover:bg-gray-800/80 transition-all cursor-pointer"
+                        className={`
+                            group flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer relative overflow-hidden
+                            ${item.kind === 'alert' 
+                                ? 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10' 
+                                : 'bg-gray-800/40 border-white/5 hover:bg-gray-800/80'}
+                        `}
                     >
-                        {/* Time Column */}
+                         {/* Time Column */}
                         <div className="flex flex-col items-center min-w-[3rem] border-r border-white/10 pr-3">
                             <Clock className="w-3 h-3 text-gray-500 mb-1" />
                             <span className="text-xs font-mono text-gray-300">{item.time}</span>
                         </div>
-
                         {/* Content Column */}
                         <div className="flex-1">
                             <h4 className="text-sm text-gray-200 font-medium leading-tight group-hover:text-white transition-colors">
@@ -83,17 +61,12 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda }) => {
                                 </div>
                             )}
                         </div>
-
-                        {/* Action Icon */}
-                        <div className="self-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <CheckCircle2 className="w-5 h-5 text-gray-600 hover:text-emerald-500 transition-colors" />
-                        </div>
                     </motion.div>
                 ))}
             </div>
 
             <button 
-                onClick={() => navigate('/calendar')} // PHOENIX: Activated Logic
+                onClick={() => navigate('/calendar')}
                 className="w-full mt-4 py-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2 border border-indigo-500/20"
             >
                 {t('dashboard.viewCalendar', 'Shiko Kalendarin')}

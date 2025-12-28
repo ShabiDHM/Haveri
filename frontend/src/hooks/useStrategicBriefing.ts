@@ -1,8 +1,7 @@
 // FILE: src/hooks/useStrategicBriefing.ts
-// PHOENIX PROTOCOL - HOOK V2.5 (TYPE-SAFE MAPPING)
-// 1. FIX: Created a 'mapApiPriority' function to safely convert uppercase API priorities (HIGH, CRITICAL) to lowercase UI priorities (high).
-// 2. FIX: Added explicit type casting to the 'fallbackAgenda' mapping to resolve the 'kind' property mismatch.
-// 3. STATUS: All TypeScript errors resolved.
+// PHOENIX PROTOCOL - HOOK V2.6 (MODAL-READY DATA)
+// 1. ENHANCEMENT: Added 'fullDate' to AgendaItem interface to pass the complete ISO string to the UI.
+// 2. STATUS: Provides all necessary data for the interactive detail modal.
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/api';
@@ -13,17 +12,17 @@ export interface AgendaItem {
     id: string;
     title: string;
     time: string;
+    fullDate: string; // PHOENIX: Added to provide the modal with the complete date string
     priority: 'high' | 'medium' | 'low';
     isCompleted: boolean;
-    kind: 'event' | 'alert'; // 'event' = Appointment/Task, 'alert' = Payment/Tax
-    originalType: string;    // 'APPOINTMENT', 'PAYMENT_DUE', etc.
+    kind: 'event' | 'alert';
+    originalType: string;
 }
 
 interface EnhancedBriefingData extends Omit<StrategicBriefingResponse, 'agenda'> {
     agenda: AgendaItem[];
 }
 
-// PHOENIX FIX: Type-safe function to map API's uppercase priority to UI's lowercase priority.
 const mapApiPriority = (priority: CalendarEvent['priority']): 'high' | 'medium' | 'low' => {
     switch (priority) {
         case 'CRITICAL':
@@ -34,7 +33,7 @@ const mapApiPriority = (priority: CalendarEvent['priority']): 'high' | 'medium' 
         case 'LOW':
             return 'low';
         default:
-            return 'medium'; // Default to medium if undefined
+            return 'medium';
     }
 };
 
@@ -57,7 +56,6 @@ export const useStrategicBriefing = () => {
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
 
-            // 1. Filter & Map Real Events
             const todaysItems: AgendaItem[] = calendarResult
                 .filter((event: CalendarEvent) => {
                     if (!event.start_date) return false;
@@ -66,21 +64,20 @@ export const useStrategicBriefing = () => {
                            eventDate.getMonth() === currentMonth &&
                            eventDate.getFullYear() === currentYear;
                 })
-                .map((event: CalendarEvent): AgendaItem => { // Ensure the return type is AgendaItem
+                .map((event: CalendarEvent): AgendaItem => {
                     const eventDate = new Date(event.start_date);
                     const type = event.event_type?.toUpperCase() || 'TASK';
                     const isAlert = ['PAYMENT_DUE', 'TAX_DEADLINE'].includes(type);
                     const hoursDiff = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
                     let finalPriority = mapApiPriority(event.priority);
-                    if (isAlert) {
-                        finalPriority = 'high'; // Alerts are always high priority
-                    }
+                    if (isAlert) finalPriority = 'high';
 
                     return {
                         id: event.id,
                         title: event.title,
                         time: eventDate.toLocaleTimeString('sq-AL', { hour: '2-digit', minute: '2-digit' }),
+                        fullDate: event.start_date, // PHOENIX: Pass the full ISO string
                         priority: finalPriority,
                         isCompleted: hoursDiff < -1,
                         kind: isAlert ? 'alert' : 'event',
@@ -93,14 +90,14 @@ export const useStrategicBriefing = () => {
                     return a.time.localeCompare(b.time);
                 });
 
-            // 2. Fallback AI Suggestions (if no real data)
-            const fallbackAgenda: AgendaItem[] = (briefingResult.agenda || []).map((item: any): AgendaItem => ({ // PHOENIX FIX: Explicitly cast return object to AgendaItem
+            const fallbackAgenda: AgendaItem[] = (briefingResult.agenda || []).map((item: any): AgendaItem => ({
                 id: item.id || Math.random().toString(),
                 title: item.title,
                 time: item.time,
+                fullDate: new Date().toISOString(), // Provide a fallback date
                 priority: 'medium',
                 isCompleted: false,
-                kind: 'event', // Default to event
+                kind: 'event',
                 originalType: 'SUGGESTION'
             }));
 
