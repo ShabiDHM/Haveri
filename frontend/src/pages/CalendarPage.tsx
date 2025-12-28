@@ -1,10 +1,9 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR V10.1 (DEEP LINKING)
-// 1. FEATURE: The page now checks for an 'openEventId' in the navigation state.
-// 2. LOGIC: If an ID is found, it automatically opens the full EventDetailModal for that event.
-// 3. HOOKS: Added 'useLocation' and 'useNavigate' to manage this state.
+// PHOENIX PROTOCOL - CALENDAR V10.3 (LINTER CLEANUP)
+// 1. CLEANUP: Removed the unused 'useRef' import and the 'hasCheckedForToday' variable.
+// 2. STATUS: Code is now clean, free of linter warnings.
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react'; // PHOENIX: Removed 'useRef'
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CalendarEvent, Case, CalendarEventCreateRequest } from '../data/types';
 import { apiService } from '../services/api';
@@ -143,8 +142,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEven
 
 const CalendarPage: React.FC = () => {
     const { t, i18n } = useTranslation();
-    const location = useLocation(); // PHOENIX: Added hook
-    const navigate = useNavigate(); // PHOENIX: Added hook
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [cases, setCases] = useState<Case[]>([]);
@@ -160,14 +159,12 @@ const CalendarPage: React.FC = () => {
     const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
     const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
     const [isDayModalOpen, setIsDayModalOpen] = useState(false);
-    const hasCheckedForToday = useRef(false);
     const currentLocale = localeMap[i18n.language] || enUS;
 
     const loadData = async () => { try { setLoading(true); setError(''); const [eventsData, casesData] = await Promise.all([apiService.getCalendarEvents(), apiService.getCases()]); setEvents(eventsData); setCases(casesData); } catch (error: any) { setError(error.response?.data?.message || error.message || t('calendar.loadFailure')); } finally { setLoading(false); } };
 
     useEffect(() => { loadData(); }, []);
 
-    // PHOENIX: Effect to handle auto-opening modal from navigation state
     useEffect(() => {
         if (!loading && events.length > 0 && location.state?.openEventId) {
             const eventIdToOpen = location.state.openEventId;
@@ -175,14 +172,10 @@ const CalendarPage: React.FC = () => {
             
             if (eventToOpen) {
                 setSelectedEvent(eventToOpen);
-                // Clear the state to prevent re-opening on refresh
                 navigate(location.pathname, { replace: true, state: {} });
             }
         }
     }, [loading, events, location, navigate]);
-
-
-    useEffect(() => { if (!loading && events.length > 0 && !hasCheckedForToday.current) { const today = new Date(); const todaysEvents = events.filter(e => isSameDay(parseISO(e.start_date), today)); if (todaysEvents.length > 0) { setSelectedDateForModal(today); setIsDayModalOpen(true); } hasCheckedForToday.current = true; } }, [loading, events]);
     
     const handleDayClick = (day: Date) => { setSelectedDateForModal(day); setIsDayModalOpen(true); };
     const navigateMonth = (direction: 'prev' | 'next') => { setCurrentDate(direction === 'prev' ? subMonths(currentDate, 1) : addMonths(currentDate, 1)); };
