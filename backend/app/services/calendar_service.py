@@ -1,7 +1,8 @@
 # FILE: backend/app/services/calendar_service.py
-# PHOENIX PROTOCOL - TYPE CONVERSION FIX
-# 1. FIX: Manually converted ObjectId fields to strings before Pydantic validation.
-# 2. STATUS: Resolves the '500 Internal Server Error' on the calendar page.
+# PHOENIX PROTOCOL - LOGIC CORRECTION
+# 1. FIX: The 'create_event' function now correctly handles events without a 'case_id'.
+# 2. LOGIC: The case ownership check is now conditional, running only if a case_id is provided.
+# 3. STATUS: Resolves '422 Unprocessable Entity' error when creating general business events.
 
 from __future__ import annotations
 from typing import List, Any
@@ -16,21 +17,27 @@ class CalendarService:
         self.db: Any = client.get_default_database()
 
     async def create_event(self, event_data: CalendarEventCreate, user_id: ObjectId) -> CalendarEventInDB:
-        # Verify case ownership
-        case = await self.db.cases.find_one({
-            "_id": event_data.case_id,
-            "owner_id": user_id
-        })
-        if not case:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Case not found or does not belong to the current user."
-            )
+        
+        # PHOENIX FIX: Only verify case ownership if a case_id is actually provided.
+        if event_data.case_id:
+            case = await self.db.cases.find_one({
+                "_id": event_data.case_id,
+                "owner_id": user_id
+            })
+            if not case:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Case not found or does not belong to the current user."
+                )
 
         event_dict = event_data.model_dump()
         event_dict["owner_id"] = user_id
-        event_dict.pop("user_id", None)
-        event_dict["case_id"] = str(event_data.case_id)
+        
+        # Ensure case_id is a string if it exists, otherwise it's None
+        if event_data.case_id:
+            event_dict["case_id"] = str(event_data.case_id)
+        else:
+            event_dict["case_id"] = None
         
         now = datetime.now(timezone.utc)
         event_document = {
@@ -43,7 +50,6 @@ class CalendarService:
         result = await self.db.calendar_events.insert_one(event_document)
         created_event = await self.db.calendar_events.find_one({"_id": result.inserted_id})
         
-        # PHOENIX FIX: Manual conversion after creation
         if created_event:
             created_event['id'] = str(created_event['_id'])
             if 'case_id' in created_event and isinstance(created_event['case_id'], ObjectId):
@@ -58,7 +64,6 @@ class CalendarService:
         events_cursor = self.db.calendar_events.find({"owner_id": user_id}).sort("start_date", 1)
         events = []
         async for event_doc in events_cursor:
-            # PHOENIX FIX: Convert ObjectIds to strings before validation
             event_doc['id'] = str(event_doc['_id'])
             if 'case_id' in event_doc and isinstance(event_doc['case_id'], ObjectId):
                 event_doc['case_id'] = str(event_doc['case_id'])
@@ -76,11 +81,7 @@ class CalendarService:
             raise HTTPException(status_code=404, detail="Event not found.")
         return True
 
-    # --- THE ALERT LOGIC ---
     async def get_upcoming_alerts_count(self, user_id: ObjectId, days: int = 7) -> int:
-        """
-        Returns count of PENDING events starting in the next 'days'.
-        """
         now = datetime.now(timezone.utc)
         future = now + timedelta(days=days)
         
@@ -91,9 +92,7 @@ class CalendarService:
             "owner_id": user_id,
             "status": "PENDING",
             "$or": [
-                # Matches ISO String dates (e.g. from Extraction)
                 {"start_date": {"$gte": now_str, "$lte": future_str}},
-                # Matches DateTime objects (e.g. from Manual Entry)
                 {"start_date": {"$gte": now, "$lte": future}}
             ]
         }
