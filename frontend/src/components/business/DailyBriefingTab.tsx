@@ -13,18 +13,13 @@ export const DailyBriefingTab: React.FC = () => {
     const { t } = useTranslation();
     const { data, loading, error } = useStrategicBriefing();
 
-    // PHOENIX FIX: Full Albanian Date Format (Day Month Year)
-    // explicitly using 'sq-AL' to force Albanian regardless of system language
+    // PHOENIX FIX: Manual Month Mapping to guarantee Albanian "Dhjetor" instead of "December"
+    const months = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
     const today = new Date();
-    const dateFormatted = today.toLocaleDateString('sq-AL', { 
-        day: 'numeric', 
-        month: 'long', 
-        year: 'numeric' 
-    });
-    // Expected output: "28 dhjetor 2025" (Browser dependent capitalization)
-
-    // Capitalize the first letter if the browser returns lowercase
-    const finalDate = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
+    const day = today.getDate();
+    const month = months[today.getMonth()]; // Get Albanian month name
+    const year = today.getFullYear();
+    const finalDate = `${day} ${month} ${year}`; // e.g., "28 Dhjetor 2025"
 
     if (loading) return (
         <div className="flex justify-center h-96 items-center">
@@ -60,7 +55,7 @@ export const DailyBriefingTab: React.FC = () => {
                             {t('dashboard.dailyOverviewSubtitle', 'Përmbledhja e operacioneve dhe rekomandimet.')}
                         </p>
                     </div>
-                    {/* Date Badge - Updated for Full Date */}
+                    {/* Date Badge - Now strictly Albanian */}
                     <div className="hidden sm:block text-right">
                         <div className="text-sm text-gray-500 uppercase tracking-widest font-semibold">{t('common.today', 'SOT')}</div>
                         <div className="text-xl sm:text-2xl text-white font-mono font-bold tracking-tight">{finalDate}</div>
@@ -71,12 +66,12 @@ export const DailyBriefingTab: React.FC = () => {
             {/* The Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* 1. Ritmi i Biznesit (Sales Velocity) */}
+                {/* 1. Ritmi i Biznesit */}
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                     <BusinessRhythmCard />
                 </motion.div>
                 
-                {/* 2. Produktet & Stoku (Sales & Inventory) */}
+                {/* 2. Produktet & Stoku */}
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                     <ProductPerformanceCard />
                 </motion.div>
