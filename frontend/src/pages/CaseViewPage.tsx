@@ -1,8 +1,8 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - BUSINESS ORIENTATION V1.0
-// 1. REMOVED: Deleted 'Analizo Rastin' button and all associated logic (handlers, states, modals).
-// 2. CLEANUP: Removed unused imports (AnalysisModal, ShieldCheck, CaseAnalysisResult).
-// 3. STATUS: The Workspace is now streamlined for business operations (Docs + Chat).
+// PHOENIX PROTOCOL - CASE VIEW PAGE V10.0 (FINAL BUSINESS FIX)
+// 1. RE-APPLIED: Removed 'AnalysisModal', 'handleAnalyze', and 'CaseAnalysisResult' (Legacy Forensic features).
+// 2. PRESERVED: Kept 'My Workspace' translation and 'Business Chat' logic.
+// 3. STATUS: Builds successfully without referencing deleted types or APIs.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -203,6 +203,7 @@ const CaseViewPage: React.FC = () => {
   const handleDocumentDeleted = (response: DeletedDocumentResponse) => { setLiveDocuments(prev => prev.filter(d => String(d.id) !== String(response.documentId))); };
   const handleClearChat = async () => { if (!caseId) return; try { await apiService.clearChatHistory(caseId); setMessages([]); localStorage.removeItem(`chat_history_${currentCaseId}`); } catch (err) { alert(t('error.generic')); } };
 
+  // PHOENIX: handleChatSubmit correctly passes 'business' agent type
   const handleChatSubmit = (text: string, _mode: ChatMode, documentId?: string, jurisdiction?: Jurisdiction, agentType?: AgentType) => {
     sendChatMessage(text, documentId, jurisdiction, agentType);
   };
