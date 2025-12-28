@@ -1,13 +1,12 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V7.3 (LINTER FIX)
-# 1. FIX: Added '# type: ignore' to the ProxyHeadersMiddleware line to silence the false Pylance error.
+# PHOENIX PROTOCOL - MAIN APPLICATION V8.0 (CLEANUP)
+# 1. REMOVED: Deleted 'graph_router' inclusion. The graph visualization endpoints are no longer exposed.
+# 2. STATUS: Application entry point is now aligned with the Business Consultant architecture.
 
 from fastapi import FastAPI, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 import logging
-import os
-import json
 from app.core.lifespan import lifespan
 
 # --- Router Imports ---
@@ -22,7 +21,7 @@ from app.api.endpoints.support import router as support_router
 from app.api.endpoints.business import router as business_router
 from app.api.endpoints.finance import router as finance_router
 from app.api.endpoints import finance_wizard
-from app.api.endpoints.graph import router as graph_router
+# PHOENIX: Removed graph_router import
 from app.api.endpoints.archive import router as archive_router
 from app.api.endpoints.drafting_v2 import router as drafting_v2_router
 from app.api.endpoints.share import router as share_router
@@ -35,7 +34,6 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Haveri AI API", lifespan=lifespan)
 
-# PHOENIX FIX: This comment tells the linter to ignore the false error on this specific line.
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*") # type: ignore
 
 # --- CORS CONFIGURATION ---
@@ -45,8 +43,6 @@ allowed_origins = [
     "https://haveri.tech",
     "https://www.haveri.tech"
 ]
-
-# (Your logic for loading origins from env vars)
 
 app.add_middleware(
     CORSMiddleware,
@@ -72,7 +68,7 @@ api_v1_router.include_router(inventory_router, prefix="/inventory", tags=["Inven
 api_v1_router.include_router(archive_router, prefix="/archive", tags=["Archive"])
 api_v1_router.include_router(daily_briefing_router, prefix="/daily-briefing", tags=["Daily Briefing (Legacy)"])
 api_v1_router.include_router(strategic_briefing_router, prefix="/briefing", tags=["Briefing"])
-api_v1_router.include_router(graph_router, prefix="/graph", tags=["Graph"])
+# PHOENIX: Removed graph router inclusion
 api_v1_router.include_router(share_router, prefix="/share", tags=["Share"])
 api_v1_router.include_router(stream_router, prefix="/stream", tags=["Streaming"])
 api_v1_router.include_router(support_router, prefix="/support", tags=["Support"])

@@ -1,15 +1,25 @@
 // FILE: src/components/landing/ProductShowcase.tsx
-// PHOENIX PROTOCOL - PRODUCT SHOWCASE V16.1 (LINT FIX)
-// 1. FIX: Removed unused 'BrainCircuit' import.
-// 2. STATUS: Production Ready. Clean.
+// PHOENIX PROTOCOL - SHOWCASE V17.0 (BUSINESS ALIGNMENT)
+// 1. REFACTOR: Updated mockups to reflect the new "Business Consultant" features (Rhythm, Inventory, Dual-Agent).
+// 2. VISUALS: Aligned colors and icons with the new Dashboard styling.
+// 3. CONTENT: Features now pitch "Profit", "Velocity", and "Compliance" rather than just "Legal Tech".
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { 
-    FileText, ScanEye, 
-    CheckCircle, PenTool, FolderOpen, 
-    Sparkles, Calculator, TrendingUp, Package, ChefHat, Layers, Sun, Coffee
+    LayoutDashboard, 
+    Calculator, 
+    Package, 
+    BrainCircuit, 
+    Calendar, 
+    FolderSearch,
+    TrendingUp,
+    AlertTriangle,
+    CheckSquare,
+    ChefHat,
+    Scale,
+    MessageSquare
 } from 'lucide-react';
 
 const ProductShowcase = () => {
@@ -27,50 +37,50 @@ const ProductShowcase = () => {
     const features = [
         {
             id: 0,
-            title: t('showcase.daily_title', 'Inteligjenca Ditore'),
-            desc: t('showcase.daily_desc', 'Raporti i mëngjesit që parashikon ditën tuaj.'),
-            icon: <Sun className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-amber-400 to-orange-500",
-            mockup: <BriefingMockup />
+            title: t('showcase.daily_title', 'Ritmi i Ditës'),
+            desc: t('showcase.daily_desc', 'Monitoroni shitjet live krahasuar me targetin ditor.'),
+            icon: <LayoutDashboard className="w-5 h-5 lg:w-6 lg:h-6" />,
+            color: "from-emerald-400 to-green-600",
+            mockup: <RhythmMockup />
         },
         {
             id: 1,
-            title: t('showcase.inventory_title', 'Inventari & Recetat'),
-            desc: t('showcase.inventory_desc', 'Llogaritje kostoje automatike për çdo produkt.'),
+            title: t('showcase.inventory_title', 'Kosto & Receta'),
+            desc: t('showcase.inventory_desc', 'Llogaritje automatike e profitit për çdo artikull.'),
             icon: <Package className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-emerald-500 to-teal-600",
+            color: "from-blue-500 to-indigo-600",
             mockup: <InventoryMockup />
         },
         {
             id: 2,
-            title: t('showcase.finance_title', 'Financa & POS'),
-            desc: t('showcase.finance_desc', 'Sinkronizim me pikat e shitjes dhe raporte tatimore.'),
-            icon: <Calculator className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-blue-500 to-indigo-600",
-            mockup: <FinanceMockup />
+            title: t('showcase.ai_title', 'Konsulenti AI'),
+            desc: t('showcase.ai_desc', 'Dy agjentë: Një për biznes, një për çështje ligjore.'),
+            icon: <BrainCircuit className="w-5 h-5 lg:w-6 lg:h-6" />,
+            color: "from-violet-500 to-purple-600",
+            mockup: <DualAgentMockup />
         },
         {
             id: 3,
-            title: t('showcase.scan_title', 'Deep Scan OCR'),
-            desc: t('showcase.scan_desc', 'Lexon dhe indekson faturat fizike në sekonda.'),
-            icon: <ScanEye className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-purple-500 to-fuchsia-600",
-            mockup: <DeepScanMockup />
+            title: t('showcase.finance_title', 'Financa & TVSH'),
+            desc: t('showcase.finance_desc', 'Përgatitje automatike për deklarimin tatimor.'),
+            icon: <Calculator className="w-5 h-5 lg:w-6 lg:h-6" />,
+            color: "from-amber-400 to-orange-500",
+            mockup: <FinanceMockup />
         },
         {
             id: 4,
-            title: t('showcase.draft_title', 'Draftim Ligjor AI'),
-            desc: t('showcase.draft_desc', 'Kontrata komplekse të gjeneruara nga AI.'),
-            icon: <PenTool className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-rose-500 to-pink-600",
-            mockup: <DraftingMockup />
+            title: t('showcase.calendar_title', 'Kalendari Smart'),
+            desc: t('showcase.calendar_desc', 'Njoftime për pagesa faturash dhe afate tatimore.'),
+            icon: <Calendar className="w-5 h-5 lg:w-6 lg:h-6" />,
+            color: "from-rose-500 to-red-600",
+            mockup: <CalendarMockup />
         },
         {
             id: 5,
-            title: t('showcase.archive_title', 'Arkiva e Gjallë'),
-            desc: t('showcase.archive_desc', 'Të gjitha dokumentet në një vend të sigurt.'),
-            icon: <FolderOpen className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-cyan-500 to-blue-500",
+            title: t('showcase.archive_title', 'Arkiva Inteligjente'),
+            desc: t('showcase.archive_desc', 'Gjen çdo dokument në sekonda me kërkim semantik.'),
+            icon: <FolderSearch className="w-5 h-5 lg:w-6 lg:h-6" />,
+            color: "from-cyan-500 to-sky-600",
             mockup: <ArchiveMockup />
         }
     ];
@@ -86,14 +96,14 @@ const ProductShowcase = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="text-center mb-10 lg:mb-16">
                     <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                        {t('showcase.title', 'Jo Thjesht Softuer. Partneri Juaj.')}
+                        {t('showcase.title', 'Sistemi Operativ për Biznesin Tuaj')}
                     </h2>
                     <p className="text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto">
-                        {t('showcase.subtitle', 'Sistem operativ komplet për biznesin modern.')}
+                        {t('showcase.subtitle', 'Nga menaxhimi i stokut tek inteligjenca artificiale – gjithçka në një vend.')}
                     </p>
                 </div>
 
-                {/* --- MOBILE NAVIGATION (Horizontal Scroll) --- */}
+                {/* --- MOBILE NAVIGATION --- */}
                 <div className="lg:hidden flex overflow-x-auto gap-3 mb-8 no-scrollbar pb-2 px-2">
                     {features.map((feature, index) => (
                         <button
@@ -164,7 +174,7 @@ const ProductShowcase = () => {
                                     </div>
                                     
                                     {/* Mockup Body */}
-                                    <div className="p-4 lg:p-6 flex-1 bg-gradient-to-b from-gray-900 to-gray-800 relative overflow-hidden">
+                                    <div className="p-4 lg:p-6 flex-1 bg-gradient-to-b from-gray-900 to-gray-800 relative overflow-hidden flex items-center justify-center">
                                         {features[activeTab].mockup}
                                     </div>
 
@@ -186,158 +196,206 @@ const ProductShowcase = () => {
 
 // --- MOCKUPS ---
 
-const BriefingMockup = () => (
-    <div className="flex flex-col h-full justify-center space-y-4">
-        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 p-4 rounded-xl">
-            <div className="flex items-center gap-3 mb-2">
-                <Sun className="text-amber-400" size={24} />
+const RhythmMockup = () => (
+    <div className="w-full max-w-sm space-y-4">
+        <div className="bg-gray-800/80 border border-white/10 rounded-2xl p-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full" />
+            <div className="flex justify-between items-start mb-4 relative z-10">
                 <div>
-                    <h4 className="text-white font-bold text-sm">Raporti i Mëngjesit</h4>
-                    <p className="text-gray-400 text-xs">E Enjte, 24 Tetor • 06:00</p>
+                    <h3 className="text-gray-400 text-xs uppercase font-bold tracking-wider flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-emerald-400" /> Ritmi i Ditës
+                    </h3>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-3xl font-bold text-white">€850.00</span>
+                        <span className="text-xs text-gray-500">/ €1,200.00</span>
+                    </div>
+                </div>
+                <div className="px-2 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+                    🔥 +15% vs Avg
                 </div>
             </div>
-            <p className="text-gray-300 text-sm italic">"Mirëmëngjes. Sot keni 3 fatura të prapambetura dhe stoku i 'Kafe Espresso' është kritik."</p>
+            <div className="space-y-2 relative z-10">
+                <div className="flex justify-between text-xs text-gray-400">
+                    <span>Progresi (71%)</span>
+                    <span>16:30 PM</span>
+                </div>
+                <div className="h-3 w-full bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: "71%" }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]"
+                    />
+                </div>
+            </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                <p className="text-gray-500 text-xs uppercase font-bold mb-1">Të Hyrat Dje</p>
-                <p className="text-emerald-400 font-mono text-lg font-bold">+€1,240.50</p>
-            </div>
-            <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-                <p className="text-gray-500 text-xs uppercase font-bold mb-1">Evente Sot</p>
-                <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                    <p className="text-white text-sm font-bold">2 Takime</p>
+
+        <div className="bg-gray-800/80 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">#1</div>
+                <div>
+                    <p className="text-sm text-white font-bold">Espresso Macchiato</p>
+                    <p className="text-xs text-gray-400">142 të shitura</p>
                 </div>
             </div>
+            <TrendingUp size={16} className="text-emerald-500" />
         </div>
     </div>
 );
 
 const InventoryMockup = () => (
-    <div className="flex flex-col h-full gap-4">
-        {/* Recipe Card */}
-        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+    <div className="w-full max-w-sm space-y-4">
+        <div className="bg-gray-800/80 border border-white/10 rounded-2xl p-5">
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-teal-500/20 rounded-lg"><ChefHat className="text-teal-400" size={20} /></div>
+                    <div className="p-2 bg-indigo-500/20 rounded-xl"><ChefHat className="text-indigo-400" size={20} /></div>
                     <div>
-                        <h4 className="text-white font-bold">Espresso Macchiato</h4>
-                        <span className="text-xs text-gray-400">Recipe #104</span>
+                        <h4 className="text-white font-bold">Mish Viçi (Biftek)</h4>
+                        <span className="text-xs text-gray-400">Receta #104</span>
                     </div>
                 </div>
                 <div className="text-right">
-                    <span className="block text-emerald-400 font-mono font-bold text-lg">€0.18</span>
-                    <span className="text-[10px] text-gray-500 uppercase">Kosto për njësi</span>
+                    <span className="block text-emerald-400 font-mono font-bold text-lg">€3.50</span>
+                    <span className="text-[10px] text-gray-500 uppercase">Kosto</span>
                 </div>
             </div>
             <div className="space-y-2">
-                <div className="flex justify-between text-xs p-2 bg-black/20 rounded">
-                    <span className="text-gray-300">Kafe Kokërr (18g)</span>
-                    <span className="text-gray-500">€0.12</span>
+                <div className="flex justify-between text-xs p-2 bg-black/20 rounded-lg">
+                    <span className="text-gray-300">Furnizimi (1kg)</span>
+                    <span className="text-gray-500">€12.00</span>
                 </div>
-                <div className="flex justify-between text-xs p-2 bg-black/20 rounded">
-                    <span className="text-gray-300">Qumësht (30ml)</span>
-                    <span className="text-gray-500">€0.06</span>
+                <div className="flex justify-between text-xs p-2 bg-black/20 rounded-lg">
+                    <span className="text-gray-300">Pocioni (250g)</span>
+                    <span className="text-gray-500">€3.00</span>
                 </div>
             </div>
         </div>
         
-        {/* Low Stock Alert */}
         <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
             className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-center gap-3"
         >
-            <div className="p-1.5 bg-rose-500/20 rounded-full"><TrendingUp size={16} className="text-rose-400 rotate-180" /></div>
+            <AlertTriangle size={18} className="text-rose-400" />
             <div>
-                <p className="text-rose-200 text-xs font-bold">STOKU KRITIK</p>
-                <p className="text-rose-400 text-sm">Qumësht: Mbetur 2.5 Litra</p>
+                <p className="text-rose-200 text-xs font-bold">NJOFTIM STOKU</p>
+                <p className="text-rose-400 text-sm">Coca Cola 0.33l: Mbetur 1 arkë</p>
+            </div>
+        </motion.div>
+    </div>
+);
+
+const DualAgentMockup = () => (
+    <div className="w-full max-w-sm space-y-4">
+        {/* Business Agent */}
+        <motion.div 
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="flex gap-3 items-end"
+        >
+            <div className="w-8 h-8 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
+                <BrainCircuit size={16} className="text-violet-400" />
+            </div>
+            <div className="bg-violet-500/10 border border-violet-500/20 p-3 rounded-2xl rounded-bl-none text-sm text-violet-200">
+                <p className="font-bold text-xs mb-1 uppercase text-violet-400">Këshilltari i Biznesit</p>
+                "Sugjeroj të rrisim stokun për vikend bazuar në motin me shi."
+            </div>
+        </motion.div>
+
+        {/* Legal Agent */}
+        <motion.div 
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="flex gap-3 items-end flex-row-reverse"
+        >
+            <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                <Scale size={16} className="text-amber-400" />
+            </div>
+            <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl rounded-br-none text-sm text-amber-200 text-right">
+                <p className="font-bold text-xs mb-1 uppercase text-amber-400">Hartuesi Ligjor</p>
+                "Kontrata e punës u gjenerua sipas Ligjit të Punës Nr. 03/L-212."
             </div>
         </motion.div>
     </div>
 );
 
 const FinanceMockup = () => (
-    <div className="h-full flex flex-col gap-4 justify-center animate-in fade-in zoom-in-95 duration-500">
-        <div className="flex gap-3">
-            <div className="flex-1 bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-2 text-blue-400 font-bold text-[10px] uppercase"><Layers size={12} /> POS Batch</div>
-                <div className="text-lg lg:text-xl font-mono text-white">45 Trans.</div>
+    <div className="w-full max-w-sm grid grid-cols-2 gap-3">
+        <div className="col-span-2 bg-gray-800/80 border border-white/10 rounded-2xl p-4 flex justify-between items-center">
+            <div>
+                <p className="text-gray-400 text-xs font-bold uppercase">Fitimi Neto (Sot)</p>
+                <p className="text-2xl font-mono font-bold text-white">€420.50</p>
             </div>
-            <div className="flex-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-2 text-emerald-400 font-bold text-[10px] uppercase"><TrendingUp size={12} /> Profit</div>
-                <div className="text-lg lg:text-xl font-mono text-white">€ 340.50</div>
+            <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <TrendingUp size={20} />
             </div>
         </div>
-        
-        <div className="bg-gray-800/50 border border-white/10 rounded-xl p-4">
-            <div className="flex justify-between items-center mb-3">
-                <span className="text-gray-400 text-xs uppercase font-bold tracking-wider">Top Produkti</span>
-                <span className="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">Sot</span>
-            </div>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <Coffee size={16} className="text-orange-400" />
-                    <span className="text-white font-medium">Cappuccino</span>
-                </div>
-                <span className="text-emerald-400 font-mono font-bold">+€120</span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-1.5 mt-3">
-                <motion.div initial={{ width: 0 }} animate={{ width: "75%" }} transition={{ duration: 1.5 }} className="bg-orange-400 h-1.5 rounded-full"></motion.div>
-            </div>
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
+            <p className="text-blue-300 text-xs font-bold mb-1">POS Transaksione</p>
+            <p className="text-xl font-mono text-white">45</p>
+        </div>
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+            <p className="text-amber-300 text-xs font-bold mb-1">TVSH e Mbledhur</p>
+            <p className="text-xl font-mono text-white">€75.60</p>
+        </div>
+        <div className="col-span-2 bg-gray-900/50 border border-dashed border-gray-600 rounded-xl p-3 flex items-center justify-center gap-2 text-gray-400 text-sm">
+            <Calculator size={16} />
+            <span>Llogaritja automatike aktive</span>
         </div>
     </div>
 );
 
-const DeepScanMockup = () => (
-    <div className="space-y-2 lg:space-y-3 h-full flex flex-col justify-center">
-        {[1, 2, 3].map((i) => (
-            <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.2 }} className="flex items-center justify-between p-2 lg:p-3 bg-white/5 border border-white/5 rounded-lg">
-                <div className="flex items-center gap-3">
-                    <div className="p-1.5 lg:p-2 bg-purple-500/10 rounded"><FileText className="w-3 h-3 lg:w-4 lg:h-4 text-purple-400" /></div>
-                    <div className="space-y-1"><div className="h-1.5 lg:h-2 w-16 lg:w-24 bg-gray-700 rounded" /><div className="h-1 lg:h-1.5 w-10 lg:w-16 bg-gray-800 rounded" /></div>
-                </div>
-                <div className="flex items-center gap-2 lg:gap-3">
-                    <div className="w-16 lg:w-24 h-1 lg:h-1.5 bg-gray-800 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 1.5, delay: i * 0.2 }} className="h-full bg-green-500" /></div>
-                    <CheckCircle className="w-3 h-3 lg:w-4 lg:h-4 text-green-500" />
-                </div>
-            </motion.div>
-        ))}
-    </div>
-);
-
-const DraftingMockup = () => (
-    <div className="relative h-full flex flex-col justify-center p-2">
-        <div className="space-y-3 p-4 bg-white/5 rounded-xl border border-white/5 relative overflow-hidden">
-            <motion.div initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 2 }} className="absolute top-0 left-0 h-1 bg-gradient-to-r from-pink-500 to-rose-500" />
-            <div className="flex gap-2">
-                <div className="w-2/3 h-2 bg-gray-700 rounded animate-pulse" />
+const CalendarMockup = () => (
+    <div className="w-full max-w-sm space-y-3">
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-center gap-3">
+            <div className="p-2 bg-rose-500/20 rounded-lg text-rose-400">
+                <AlertTriangle size={20} />
             </div>
-            <div className="space-y-2">
-                <div className="w-full h-1.5 bg-gray-800 rounded" />
-                <div className="w-5/6 h-1.5 bg-gray-800 rounded" />
-                <div className="w-4/6 h-1.5 bg-gray-800 rounded" />
+            <div className="flex-1">
+                <p className="text-white font-bold text-sm">Deklarimi i TVSH</p>
+                <p className="text-rose-300 text-xs">Afati: 15 Janar (3 ditë)</p>
+            </div>
+            <div className="px-2 py-1 bg-rose-500 text-white text-[10px] font-bold rounded uppercase">
+                Urgjente
             </div>
         </div>
-        <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }} 
-            animate={{ scale: 1, opacity: 1 }} 
-            transition={{ delay: 1 }}
-            className="absolute -bottom-2 -right-2 bg-rose-600 text-white text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-1"
-        >
-            <Sparkles size={12} /> AI Generated
-        </motion.div>
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3">
+            <div className="p-2 bg-amber-500/20 rounded-lg text-amber-400">
+                <LayoutDashboard size={20} />
+            </div>
+            <div className="flex-1">
+                <p className="text-white font-bold text-sm">Pagesa e Qirasë</p>
+                <p className="text-amber-300 text-xs">Afati: 01 Shkurt</p>
+            </div>
+            <div className="px-2 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold rounded uppercase">
+                Vjen së shpejti
+            </div>
+        </div>
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 flex items-center gap-3 opacity-60">
+            <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
+                <MessageSquare size={20} />
+            </div>
+            <div className="flex-1">
+                <p className="text-white font-bold text-sm">Takim me Furnitorin</p>
+                <p className="text-blue-300 text-xs">Sot, 14:00</p>
+            </div>
+        </div>
     </div>
 );
 
 const ArchiveMockup = () => (
-    <div className="grid grid-cols-2 gap-3 lg:gap-4 h-full content-center">
-        {[1, 2, 3, 4].map(i => (
-            <motion.div key={i} whileHover={{ scale: 1.05 }} className="aspect-square bg-gray-800/50 border border-white/5 rounded-xl p-3 lg:p-4 flex flex-col items-center justify-center gap-2 lg:gap-3 cursor-pointer">
-                <FolderOpen className={`w-8 h-8 lg:w-10 lg:h-10 ${i === 1 ? 'text-cyan-500' : 'text-blue-500'}`} />
-                <div className="h-1.5 lg:h-2 w-12 lg:w-16 bg-gray-700 rounded" />
+    <div className="w-full max-w-sm grid grid-cols-2 gap-3">
+        {['Faturat', 'Kontratat', 'Oferta', 'Raporte'].map((label, i) => (
+            <motion.div 
+                key={i} 
+                whileHover={{ scale: 1.05 }} 
+                className="bg-gray-800/60 border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-gray-700/60 transition-colors"
+            >
+                <FolderSearch className={`w-8 h-8 ${i % 2 === 0 ? 'text-cyan-400' : 'text-sky-500'}`} />
+                <span className="text-gray-300 text-sm font-medium">{label}</span>
             </motion.div>
         ))}
     </div>

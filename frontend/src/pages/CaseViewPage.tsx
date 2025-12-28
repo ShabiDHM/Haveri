@@ -1,8 +1,8 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - CASE VIEW PAGE V10.0 (FINAL BUSINESS FIX)
-// 1. RE-APPLIED: Removed 'AnalysisModal', 'handleAnalyze', and 'CaseAnalysisResult' (Legacy Forensic features).
-// 2. PRESERVED: Kept 'My Workspace' translation and 'Business Chat' logic.
-// 3. STATUS: Builds successfully without referencing deleted types or APIs.
+// PHOENIX PROTOCOL - UI SIMPLIFICATION V11.0
+// 1. REMOVED: Deleted 'GlobalContextSwitcher'. Chat now defaults to 'general' context.
+// 2. FIX: Date formatting is now manually forced to 'DD.MM.YYYY' to ensure European format.
+// 3. CLEANUP: Removed unused states and props related to context switching.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -11,7 +11,6 @@ import { apiService, API_V1_URL } from '../services/api';
 import DocumentsPanel from '../components/DocumentsPanel';
 import ChatPanel, { ChatMode, Jurisdiction, AgentType } from '../components/ChatPanel';
 import PDFViewerModal from '../components/PDFViewerModal';
-import GlobalContextSwitcher from '../components/GlobalContextSwitcher';
 import { useDocumentSocket } from '../hooks/useDocumentSocket';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
@@ -101,13 +100,11 @@ const RenameDocumentModal: React.FC<{ isOpen: boolean; onClose: () => void; onRe
     );
 };
 
+// PHOENIX: Removed 'documents', 'activeContextId', 'onContextChange' props as Switcher is gone
 const CaseHeader: React.FC<{ 
     caseDetails: Case;
-    documents: Document[];
-    activeContextId: string;
-    onContextChange: (id: string) => void;
     t: TFunction; 
-}> = ({ caseDetails, documents, activeContextId, onContextChange, t }) => {
+}> = ({ caseDetails, t }) => {
     
     let displayTitle = caseDetails.case_name || caseDetails.title;
     if (displayTitle === 'My Workspace') {
@@ -116,11 +113,9 @@ const CaseHeader: React.FC<{
         displayTitle = t('caseView.unnamedCase', 'Rast pa Emër');
     }
 
-    const formattedDate = new Date(caseDetails.created_at).toLocaleDateString('sq-AL', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric' 
-    });
+    // PHOENIX FIX: Manual strict formatting for date (DD.MM.YYYY)
+    const d = new Date(caseDetails.created_at);
+    const formattedDate = `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`;
 
     return (
         <motion.div 
@@ -154,9 +149,7 @@ const CaseHeader: React.FC<{
                       {formattedDate}
                   </div>
                   
-                  <div className="flex-1 w-full md:w-auto h-12 [&>div]:h-full [&>div>button]:h-full">
-                     <GlobalContextSwitcher documents={documents} activeContextId={activeContextId} onContextChange={onContextChange} className="w-full h-full" />
-                  </div>
+                  {/* PHOENIX: Removed GlobalContextSwitcher and Analyze Button */}
               </div>
           </div>
         </motion.div>
@@ -177,7 +170,8 @@ const CaseViewPage: React.FC = () => {
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
   const [documentToRename, setDocumentToRename] = useState<Document | null>(null);
-  const [activeContextId, setActiveContextId] = useState<string>('general');
+  
+  // PHOENIX: Removed activeContextId state. Defaults to 'general' implicitly.
 
   const currentCaseId = useMemo(() => caseId || '', [caseId]);
   const { documents: liveDocuments, setDocuments: setLiveDocuments, messages: liveMessages, setMessages, connectionStatus, reconnect, sendChatMessage, isSendingMessage } = useDocumentSocket(currentCaseId);
@@ -203,7 +197,6 @@ const CaseViewPage: React.FC = () => {
   const handleDocumentDeleted = (response: DeletedDocumentResponse) => { setLiveDocuments(prev => prev.filter(d => String(d.id) !== String(response.documentId))); };
   const handleClearChat = async () => { if (!caseId) return; try { await apiService.clearChatHistory(caseId); setMessages([]); localStorage.removeItem(`chat_history_${currentCaseId}`); } catch (err) { alert(t('error.generic')); } };
 
-  // PHOENIX: handleChatSubmit correctly passes 'business' agent type
   const handleChatSubmit = (text: string, _mode: ChatMode, documentId?: string, jurisdiction?: Jurisdiction, agentType?: AgentType) => {
     sendChatMessage(text, documentId, jurisdiction, agentType);
   };
@@ -222,11 +215,13 @@ const CaseViewPage: React.FC = () => {
     <motion.div className="w-full min-h-screen bg-background-dark pb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="max-w-8xl w-full mx-auto px-4 sm:px-6 py-6">
         <div className="mt-4 lg:mt-0">
-            <CaseHeader caseDetails={caseData.details} documents={liveDocuments} activeContextId={activeContextId} onContextChange={setActiveContextId} t={t} />
+            {/* PHOENIX: Simplified Header */}
+            <CaseHeader caseDetails={caseData.details} t={t} />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" style={{ height: 'calc(100vh - 220px)', minHeight: '600px' }}>
             <DocumentsPanel caseId={caseData.details.id} documents={liveDocuments} t={t} connectionStatus={connectionStatus} reconnect={reconnect} onDocumentUploaded={handleDocumentUploaded} onDocumentDeleted={handleDocumentDeleted} onViewOriginal={handleViewOriginal} onRename={(doc) => setDocumentToRename(doc)} className="h-full" />
-            <ChatPanel agentType="business" messages={liveMessages} connectionStatus={connectionStatus} reconnect={reconnect} onSendMessage={handleChatSubmit} isSendingMessage={isSendingMessage} onClearChat={handleClearChat} t={t} className="h-full w-full" activeContextId={activeContextId} />
+            {/* PHOENIX: Fixed activeContextId to 'general' */}
+            <ChatPanel agentType="business" messages={liveMessages} connectionStatus={connectionStatus} reconnect={reconnect} onSendMessage={handleChatSubmit} isSendingMessage={isSendingMessage} onClearChat={handleClearChat} t={t} className="h-full w-full" activeContextId="general" />
         </div>
       </div>
       

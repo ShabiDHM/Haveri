@@ -1,8 +1,8 @@
 # FILE: backend/app/models/case.py
-# PHOENIX PROTOCOL - CASE MODEL V2.1 (SINGLETON WORKSPACE SUPPORT)
-# 1. ADDED: 'case_name' field to CaseBase and CaseCreate.
-# 2. REASON: Required by user_service to create the default workspace with a specific name.
-# 3. STATUS: Model is now consistent with new backend logic.
+# PHOENIX PROTOCOL - CASE MODEL V3.0 (BUSINESS CLEANUP)
+# 1. REMOVED: Deleted legacy litigation fields (court_name, judge_name, opponent_name).
+# 2. REMOVED: Deleted 'finding_count' as forensic analysis is deprecated.
+# 3. STATUS: Clean, business-focused data model.
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Dict, Any
@@ -25,14 +25,12 @@ class ChatMessage(BaseModel):
 class CaseBase(BaseModel):
     case_number: Optional[str] = None 
     title: str
-    case_name: Optional[str] = None # PHOENIX: Added for explicit naming
+    case_name: Optional[str] = None
     description: Optional[str] = None
     status: str = "OPEN"
     client_id: Optional[PyObjectId] = None 
     
-    court_name: Optional[str] = None
-    judge_name: Optional[str] = None
-    opponent_name: Optional[str] = None
+    # PHOENIX: Removed court_name, judge_name, opponent_name
 
 # Create - Accepts Form Data
 class CaseCreate(CaseBase):
@@ -45,9 +43,6 @@ class CaseUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
-    court_name: Optional[str] = None
-    judge_name: Optional[str] = None
-    opponent_name: Optional[str] = None
     client: Optional[ClientData] = None
 
 # DB Model
@@ -76,7 +71,7 @@ class CaseOut(CaseBase):
     document_count: int = 0
     alert_count: int = 0
     event_count: int = 0
-    finding_count: int = 0
+    # PHOENIX: Removed finding_count
 
     model_config = ConfigDict(
         populate_by_name=True,

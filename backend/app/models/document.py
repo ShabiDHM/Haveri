@@ -1,3 +1,8 @@
+# FILE: backend/app/models/document.py
+# PHOENIX PROTOCOL - DOCUMENT MODEL V3.0 (CLEANUP)
+# 1. REMOVED: Deleted 'litigation_analysis' field.
+# 2. STATUS: Model is now strictly for document management and business metadata.
+
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Dict, List, Any
 from datetime import datetime
@@ -26,9 +31,6 @@ class DocumentInDB(DocumentBase):
     preview_storage_key: Optional[str] = None
     error_message: Optional[str] = None
     category: Optional[str] = None
-    
-    # PHOENIX ENGINE: Persisted Strategic Analysis
-    litigation_analysis: Optional[Dict[str, Any]] = None
     
     model_config = ConfigDict(
         populate_by_name=True,
