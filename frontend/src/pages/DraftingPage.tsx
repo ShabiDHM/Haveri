@@ -1,7 +1,8 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.1 (LINT FIX)
-// 1. FIX: Added 'Loader2' to Lucide imports.
-// 2. CLEANUP: Removed unused 'RefreshCw' icon import.
+// PHOENIX PROTOCOL - DUAL-AGENT UI INTEGRATION
+// 1. FEATURE: The template dropdown now includes new business-oriented templates ('email', 'marketing_post').
+// 2. UX: Templates are grouped into "Legal" and "Business" categories for clarity.
+// 3. LOGIC: The component now fully supports triggering both the 'Legal Drafter' and 'Business Consultant' AI agents.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../services/api';
@@ -15,7 +16,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'SUCCESS' | 'FAILED' | 'FAILURE';
-type TemplateType = 'generic' | 'padi' | 'pergjigje' | 'kunderpadi' | 'kontrate';
+// PHOENIX: Added new business template types
+type TemplateType = 'generic' | 'padi' | 'pergjigje' | 'kunderpadi' | 'kontrate' | 'email' | 'marketing_post';
 
 interface DraftingJobState {
   jobId: string | null;
@@ -24,7 +26,6 @@ interface DraftingJobState {
   error: string | null;
 }
 
-// --- AUTO RESIZE TEXTAREA ---
 const AutoResizeTextarea: React.FC<{ value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; placeholder?: string; disabled?: boolean; className?: string; minHeight?: number; maxHeight?: number; }> = ({ 
     value, onChange, placeholder, disabled, className, minHeight = 150, maxHeight = 500 
 }) => {
@@ -43,7 +44,6 @@ const AutoResizeTextarea: React.FC<{ value: string; onChange: (e: React.ChangeEv
     );
 };
 
-// --- STREAMING MARKDOWN ---
 const StreamedMarkdown: React.FC<{ text: string, isNew: boolean, onComplete: () => void }> = ({ text, isNew, onComplete }) => {
     const [displayedText, setDisplayedText] = useState(isNew ? "" : text);
     useEffect(() => {
@@ -160,7 +160,7 @@ const DraftingPage: React.FC = () => {
 
   return (
     <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-screen">
-      <style>{` .custom-scrollbar::-webkit-scrollbar { width: 6px; } .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(59, 130, 246, 0.3); border-radius: 3px; } .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(59, 130, 246, 0.5); } select option { background-color: #0f172a; color: #f9fafb; }`}</style>
+      <style>{` .custom-scrollbar::-webkit-scrollbar { width: 6px; } .custom-scrollbar::-webkit-scrollbar-track { background: transparent; } .custom-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(59, 130, 246, 0.3); border-radius: 3px; } .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(59, 130, 246, 0.5); } select option, select optgroup { background-color: #0f172a; color: #f9fafb; }`}</style>
       
       <div className="text-center mb-8 flex-shrink-0">
         <h1 className="text-4xl font-black text-white mb-2 flex items-center justify-center gap-4">
@@ -196,10 +196,16 @@ const DraftingPage: React.FC = () => {
                             <LayoutTemplate className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors pointer-events-none"/>
                             <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value as TemplateType)} disabled={isSubmitting} className="w-full bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-sm pl-12 pr-10 py-4 appearance-none transition-colors cursor-pointer">
                                 <option value="generic">{t('drafting.templateGeneric')}</option>
-                                <option value="padi">{t('drafting.templatePadi')}</option>
-                                <option value="pergjigje">{t('drafting.templatePergjigje')}</option>
-                                <option value="kunderpadi">{t('drafting.templateKunderpadi')}</option>
-                                <option value="kontrate">{t('drafting.templateKontrate')}</option>
+                                <optgroup label={t('drafting.groupBusiness', 'Hartime Biznesi')}>
+                                    <option value="email">{t('drafting.templateEmail', 'Email Profesional')}</option>
+                                    <option value="marketing_post">{t('drafting.templateMarketingPost', 'Postim Marketingu')}</option>
+                                </optgroup>
+                                <optgroup label={t('drafting.groupLegal', 'Hartime Ligjore')}>
+                                    <option value="padi">{t('drafting.templatePadi')}</option>
+                                    <option value="pergjigje">{t('drafting.templatePergjigje')}</option>
+                                    <option value="kunderpadi">{t('drafting.templateKunderpadi')}</option>
+                                    <option value="kontrate">{t('drafting.templateKontrate')}</option>
+                                </optgroup>
                             </select>
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none"/>
                         </div>

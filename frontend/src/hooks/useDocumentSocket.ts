@@ -1,12 +1,11 @@
 // FILE: src/hooks/useDocumentSocket.ts
-// PHOENIX PROTOCOL - TYPE ALIGNMENT
-// 1. FIX: Replaced 'sender' with 'role' in all ChatMessage objects to match types.ts.
-// 2. STATUS: Build-ready and type-safe.
+// PHOENIX PROTOCOL - AGENT-AWARE HOOK V2
+// 1. FEATURE: The 'sendChatMessage' function now accepts and passes the 'agentType' to the apiService.
 
 import { useState, useEffect, useRef, useCallback, Dispatch, SetStateAction } from 'react';
 import { Document, ChatMessage, ConnectionStatus } from '../data/types';
 import { apiService, API_V1_URL } from '../services/api';
-import { Jurisdiction } from '../components/ChatPanel';
+import { Jurisdiction, AgentType } from '../components/ChatPanel';
 
 interface UseDocumentSocketReturn {
   documents: Document[];
@@ -15,7 +14,7 @@ interface UseDocumentSocketReturn {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   connectionStatus: ConnectionStatus;
   reconnect: () => void;
-  sendChatMessage: (content: string, documentId?: string, jurisdiction?: Jurisdiction) => void;
+  sendChatMessage: (content: string, documentId?: string, jurisdiction?: Jurisdiction, agentType?: AgentType) => void;
   isSendingMessage: boolean;
 }
 
@@ -88,7 +87,6 @@ export const useDocumentSocket = (caseId: string | undefined): UseDocumentSocket
                     }
 
                     if (payload.type === 'CHAT_MESSAGE' && payload.case_id === caseId) {
-                         // PHOENIX FIX: Changed 'sender' to 'role'
                          setMessages(prev => [...prev, {
                              role: 'ai',
                              content: payload.content,
@@ -120,18 +118,16 @@ export const useDocumentSocket = (caseId: string | undefined): UseDocumentSocket
     setReconnectCounter(prev => prev + 1); 
   }, []);
   
-  const sendChatMessage = useCallback(async (content: string, documentId?: string, jurisdiction?: Jurisdiction) => {
+  const sendChatMessage = useCallback(async (content: string, documentId?: string, jurisdiction?: Jurisdiction, agentType: AgentType = 'business') => {
     if (!content.trim() || !caseId) return;
     
     setIsSendingMessage(true);
-    // PHOENIX FIX: Changed 'sender' to 'role'
     setMessages(prev => [...prev, { role: 'user', content, timestamp: new Date().toISOString() }]);
     
     try {
-        await apiService.sendChatMessage(caseId, content, documentId, jurisdiction);
+        await apiService.sendChatMessage(caseId, content, documentId, jurisdiction, agentType);
     } catch (error) {
         console.error("Message send failed:", error);
-        // PHOENIX FIX: Changed 'sender' to 'role'
         setMessages(prev => [...prev, { role: 'ai', content: "Dështoi dërgimi i mesazhit.", timestamp: new Date().toISOString() }]);
     } finally {
         setIsSendingMessage(false);

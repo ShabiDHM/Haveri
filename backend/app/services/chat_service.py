@@ -1,12 +1,14 @@
 # FILE: backend/app/services/chat_service.py
-# PHOENIX PROTOCOL - CHAT SERVICE V20.1 (IMPORT FIX)
-# 1. FIXED: Added missing 'import asyncio'.
-# 2. STATUS: Fully functional and type-safe.
+# PHOENIX PROTOCOL - PERSONA TRANSFORMATION (BUSINESS CONSULTANT)
+# 1. REFACTOR: Replaced the 'Juristi AI' persona with the 'Këshilltari i Biznesit' (Business Consultant) persona.
+# 2. PROMPT: The new system prompt instructs the AI to be a helpful, encouraging business advisor for SMEs in Kosovo.
+# 3. CONSTITUTION: Swapped the hardcoded STRICT_FORENSIC_RULES with the new BUSINESS_CONSULTANT_RULES from the llm_service.
+# 4. STATUS: The main chat AI is now a Business Consultant. The Legal Agent is isolated to legal-specific tasks.
 
 from __future__ import annotations
 import os
 import logging
-import asyncio # <--- PHOENIX FIX
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Optional, List, Dict, cast
 
@@ -18,7 +20,8 @@ from openai.types.chat import ChatCompletionMessageParam
 
 from app.models.case import ChatMessage
 import app.services.vector_store_service as vector_store_service
-from app.services.llm_service import STRICT_FORENSIC_RULES
+# PHOENIX: Import the new Business Constitution from the central LLM service
+from app.services.llm_service import BUSINESS_CONSULTANT_RULES
 
 logger = logging.getLogger(__name__)
 
@@ -27,35 +30,17 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODEL = "deepseek/deepseek-chat" 
 
-# --- PHOENIX V19.5: BLOCKQUOTE HIGHLIGHT PROMPT ---
-SYSTEM_PROMPT_FORENSIC = f"""
-Ti je "Juristi AI - Auditori Forensik".
-Përdoruesi është Avokati. Qëllimi yt është saktësia absolute, analiza e thellë dhe prezantimi vizual i bukur.
+# --- PHOENIX: NEW BUSINESS CONSULTANT PERSONA ---
+SYSTEM_PROMPT_BUSINESS = f"""
+Ti je "Këshilltari i Biznesit AI".
+Përdoruesi është pronari i një biznesi të vogël ose të mesëm në Kosovë. Qëllimi yt është të ofrosh këshilla praktike, të qarta dhe motivuese.
 
-{STRICT_FORENSIC_RULES}
+{BUSINESS_CONSULTANT_RULES}
 
-UDHËZIME PËR FORMATIM VIZUAL (E DETYRUESHME):
-
-1. PREZANTIMI I LIGJEVE (THEKSIMI I BUKUR):
-   - Për çdo nen ligjor, përdor këtë strukturë me bllok (Blockquote):
-   
-     **[Emri i Nenit/Ligjit]**:
-     > "[Teksti ose shpjegimi i nenit këtu brenda bllokut]"
-
-   - Kjo është kritike për t'i dhënë "highlight" tekstit ligjor.
-
-2. CITIMI I BURIMEVE:
-   - Në fund të faktit, shto burimin në kllapa të dyfishta: [[Burimi: Emri_i_Dokumentit]].
-
-3. STRUKTURA:
-   - Përdor pika (bullet points).
-   - Ndaj seksionet me hapësirë.
-
-4. PAANËSIA:
-   - Prezanto konfliktin: "Paditësi thotë X, i Padituri thotë Y".
-
-5. MOS SHPIK:
-   - Nëse informacioni mungon, thuaj qartë "Nuk ka të dhëna në dosje".
+UDHËZIME PËR FORMATIM:
+- Përdor pika (bullet points) për t'i bërë këshillat të lehta për t'u lexuar.
+- Përdor **bold** për të theksuar konceptet më të rëndësishme.
+- Jepi përgjigjes strukturë logjike dhe të lehtë për t'u ndjekur.
 """
 
 async def get_http_chat_response(
@@ -67,7 +52,7 @@ async def get_http_chat_response(
     jurisdiction: Optional[str] = 'ks'
 ) -> str:
     """
-    Orchestrates the Strict Forensic Chat using Direct Vector Access.
+    Orchestrates the Business Consultant Chat using RAG.
     """
     try:
         oid = ObjectId(case_id)
@@ -90,9 +75,7 @@ async def get_http_chat_response(
             for msg in recent_history:
                 raw_role = msg.get('role') if isinstance(msg, dict) else getattr(msg, 'role', 'user')
                 content = msg.get('content') if isinstance(msg, dict) else getattr(msg, 'content', '')
-                
                 api_role = "assistant" if raw_role == "ai" else "user"
-                
                 if content:
                     message = cast(ChatCompletionMessageParam, {"role": api_role, "content": str(content)})
                     memory_messages.append(message)
@@ -110,9 +93,8 @@ async def get_http_chat_response(
     
     response_text: str = "" 
     try:
-        # 4. RETRIEVAL STEP (MULTI-TENANT RAG)
-        
-        # PHOENIX FIX: Direct call to the new Multi-Tenant Vector Store
+        # 4. RETRIEVAL STEP (RAG)
+        # Querying with a business context
         rag_results = await asyncio.to_thread(
             vector_store_service.query_mixed_intelligence,
             user_id=user_id,
@@ -121,26 +103,25 @@ async def get_http_chat_response(
             case_context_id=case_id 
         )
         
-        # Format Results for LLM
         context_parts = []
         if rag_results:
             for item in rag_results:
-                source = item.get("source", "Unknown")
+                source = item.get("source", "I panjohur")
                 text = item.get("text", "")
-                type_ = item.get("type", "DATA")
-                context_parts.append(f"--- {type_} (Burimi: {source}) ---\n{text}")
+                context_parts.append(f"--- Kontekst nga '{source}' ---\n{text}")
             
             context_dossier = "\n\n".join(context_parts)
         else:
-            context_dossier = "NUK U GJET ASNJË DOKUMENT OSE FAKT PËRKATËS NË DOSJE PËR KËTË ÇËSHTJE."
+            context_dossier = "Nuk u gjet informacion relevant në dokumentet tuaja."
 
-        # 5. GENERATION STEP (Strict LLM)
+        # 5. GENERATION STEP (Business Consultant LLM)
         final_user_prompt = (
-            f"=== KONTEKSTI NGA DOSJA (RAG) ===\n{context_dossier}\n\n"
-            f"=== PYETJA E AVOKATIT ===\n{user_query}"
+            f"=== Informacioni relevant nga dokumentet tuaja ===\n{context_dossier}\n\n"
+            f"=== Pyetja e Pronarit të Biznesit ===\n{user_query}"
         )
 
-        messages_payload: List[ChatCompletionMessageParam] = [cast(ChatCompletionMessageParam, {"role": "system", "content": SYSTEM_PROMPT_FORENSIC})]
+        # PHOENIX: Use the new Business System Prompt
+        messages_payload: List[ChatCompletionMessageParam] = [cast(ChatCompletionMessageParam, {"role": "system", "content": SYSTEM_PROMPT_BUSINESS})]
         
         if memory_messages:
             messages_payload.extend(memory_messages)
@@ -154,9 +135,9 @@ async def get_http_chat_response(
             completion = await client.chat.completions.create(
                 model=OPENROUTER_MODEL,
                 messages=messages_payload,
-                temperature=0.0,
+                temperature=0.2, # Slightly more creative for business advice
                 max_tokens=1500, 
-                extra_headers={"HTTP-Referer": "https://juristi.tech", "X-Title": "Juristi AI Chat"}
+                extra_headers={"HTTP-Referer": "https://haveri.tech", "X-Title": "Haveri AI Business Chat"}
             )
             
             content = completion.choices[0].message.content
@@ -166,7 +147,7 @@ async def get_http_chat_response(
 
     except Exception as e:
         logger.error(f"AI Error: {e}", exc_info=True)
-        response_text = "Kërkoj ndjesë, ndodhi një problem teknik gjatë auditimit."
+        response_text = "Kërkoj ndjesë, ndodhi një problem teknik gjatë procesimit të kërkesës suaj."
 
     # 6. Save AI Response
     try:

@@ -1,15 +1,14 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - CASE VIEW PAGE V9.0 (TACTICAL UPGRADE)
-// 1. STYLE: Applied Phoenix Glassmorphism to Header, Docked Viewer, and Modals.
-// 2. LAYOUT: Widened main container and standardized spacing for a premium feel.
-// 3. CONSISTENCY: Aligned all visual elements with the new application-wide theme.
+// PHOENIX PROTOCOL - LINTER CLEANUP V2
+// 1. FIX: The 'handleChatSubmit' function now correctly uses the 'agentType' parameter it receives, removing the "unused variable" warning.
+// 2. STATUS: Code is now clean and logically correct.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Case, Document, DeletedDocumentResponse, CaseAnalysisResult, ChatMessage } from '../data/types';
 import { apiService, API_V1_URL } from '../services/api';
 import DocumentsPanel from '../components/DocumentsPanel';
-import ChatPanel, { ChatMode, Jurisdiction } from '../components/ChatPanel';
+import ChatPanel, { ChatMode, Jurisdiction, AgentType } from '../components/ChatPanel';
 import PDFViewerModal from '../components/PDFViewerModal';
 import AnalysisModal from '../components/AnalysisModal';
 import GlobalContextSwitcher from '../components/GlobalContextSwitcher';
@@ -26,7 +25,6 @@ type CaseData = {
 };
 type ActiveModal = 'none' | 'analysis';
 
-// --- PHOENIX: TACTICAL DOCKED PDF COMPONENT ---
 const DockedPDFViewer: React.FC<{ document: Document; onExpand: () => void; onClose: () => void; }> = ({ document, onExpand, onClose }) => {
     const { t } = useTranslation();
     return (
@@ -70,7 +68,6 @@ const extractAndNormalizeHistory = (data: any): ChatMessage[] => {
     }).filter(msg => msg.content.trim() !== '');
 };
 
-// --- PHOENIX: TACTICAL RENAME MODAL ---
 const RenameDocumentModal: React.FC<{ isOpen: boolean; onClose: () => void; onRename: (newName: string) => Promise<void>; currentName: string; t: TFunction; }> = ({ isOpen, onClose, onRename, currentName, t }) => {
     const [name, setName] = useState(currentName);
     const [isSaving, setIsSaving] = useState(false);
@@ -105,7 +102,6 @@ const RenameDocumentModal: React.FC<{ isOpen: boolean; onClose: () => void; onRe
     );
 };
 
-// --- PHOENIX: TACTICAL CASE HEADER ---
 const CaseHeader: React.FC<{ 
     caseDetails: Case;
     documents: Document[];
@@ -230,7 +226,11 @@ const CaseViewPage: React.FC = () => {
   const handleClearChat = async () => { if (!caseId) return; try { await apiService.clearChatHistory(caseId); setMessages([]); localStorage.removeItem(`chat_history_${currentCaseId}`); } catch (err) { alert(t('error.generic')); } };
 
   const handleAnalyze = async () => { if (!caseId) return; setIsAnalyzing(true); setActiveModal('none'); try { let result: CaseAnalysisResult; if (activeContextId === 'general') { result = await apiService.analyzeCase(caseId); } else { result = await apiService.crossExamineDocument(caseId, activeContextId); } if (result.error) alert(result.error); else { setAnalysisResult(result); setActiveModal('analysis'); } } catch (err) { alert(t('error.generic')); } finally { setIsAnalyzing(false); } };
-  const handleChatSubmit = (text: string, _mode: ChatMode, documentId?: string, jurisdiction?: Jurisdiction) => { sendChatMessage(text, documentId, jurisdiction); };
+  
+  // PHOENIX FIX: This function now correctly uses the 'agentType' passed from the child.
+  const handleChatSubmit = (text: string, _mode: ChatMode, documentId?: string, jurisdiction?: Jurisdiction, agentType?: AgentType) => {
+    sendChatMessage(text, documentId, jurisdiction, agentType);
+  };
   
   const handleViewOriginal = (doc: Document) => { const url = `${API_V1_URL}/cases/${caseId}/documents/${doc.id}/preview`; setViewingUrl(url); setViewingDocument(doc); setMinimizedDocument(null); };
   const handleCloseViewer = () => { setViewingDocument(null); setViewingUrl(null); };
@@ -250,7 +250,7 @@ const CaseViewPage: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" style={{ height: 'calc(100vh - 220px)', minHeight: '600px' }}>
             <DocumentsPanel caseId={caseData.details.id} documents={liveDocuments} t={t} connectionStatus={connectionStatus} reconnect={reconnect} onDocumentUploaded={handleDocumentUploaded} onDocumentDeleted={handleDocumentDeleted} onViewOriginal={handleViewOriginal} onRename={(doc) => setDocumentToRename(doc)} className="h-full" />
-            <ChatPanel messages={liveMessages} connectionStatus={connectionStatus} reconnect={reconnect} onSendMessage={handleChatSubmit} isSendingMessage={isSendingMessage} onClearChat={handleClearChat} t={t} className="h-full w-full" activeContextId={activeContextId} />
+            <ChatPanel agentType="business" messages={liveMessages} connectionStatus={connectionStatus} reconnect={reconnect} onSendMessage={handleChatSubmit} isSendingMessage={isSendingMessage} onClearChat={handleClearChat} t={t} className="h-full w-full" activeContextId={activeContextId} />
         </div>
       </div>
       

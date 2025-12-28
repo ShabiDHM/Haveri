@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V18.0 (PRODUCTION READY)
-// 1. CLEANUP: Removed all mock data from 'getStrategicBriefing'.
-// 2. FEATURE: 'getStrategicBriefing' now points to the real backend endpoint.
+// PHOENIX PROTOCOL - API MASTER V19.0 (AGENT-AWARE CHAT)
+// 1. FEATURE: The 'sendChatMessage' function now accepts an 'agentType' parameter.
+// 2. LOGIC: This parameter is included in the POST request to the backend, allowing the server to select the correct AI persona.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -100,7 +100,18 @@ class ApiService {
     public async getCaseGraph(caseId: string): Promise<GraphData> { const response = await this.axiosInstance.get<GraphData>(`/graph/graph/${caseId}`); return response.data; }
     public async analyzeCase(caseId: string): Promise<CaseAnalysisResult> { const response = await this.axiosInstance.post<CaseAnalysisResult>(`/cases/${caseId}/analyze`); return response.data; }
     public async crossExamineDocument(caseId: string, documentId: string): Promise<CaseAnalysisResult> { const response = await this.axiosInstance.post<CaseAnalysisResult>(`/cases/${caseId}/documents/${documentId}/cross-examine`); return response.data; }
-    public async sendChatMessage(caseId: string, message: string, documentId?: string, jurisdiction?: string): Promise<string> { const response = await this.axiosInstance.post<{ response: string }>(`/chat/case/${caseId}`, { message, document_id: documentId || null, jurisdiction: jurisdiction || 'ks' }); return response.data.response; }
+    
+    // PHOENIX: Added agentType to signature and payload
+    public async sendChatMessage(caseId: string, message: string, documentId?: string, jurisdiction?: string, agentType: string = 'business'): Promise<string> {
+        const response = await this.axiosInstance.post<{ response: string }>(`/chat/case/${caseId}`, { 
+            message, 
+            document_id: documentId || null, 
+            jurisdiction: jurisdiction || 'ks',
+            agent_type: agentType
+        });
+        return response.data.response;
+    }
+    
     public async clearChatHistory(caseId: string): Promise<void> { await this.axiosInstance.delete(`/chat/case/${caseId}/history`); }
 
     public async getAnalyticsDashboard(days: number = 30): Promise<AnalyticsDashboardData> { const response = await this.axiosInstance.get<AnalyticsDashboardData>(`/finance/analytics/dashboard`, { params: { days } }); return response.data; }
@@ -137,21 +148,18 @@ class ApiService {
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
     public async confirmImport(file: File, mapping: Record<string, string>): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); formData.append('mapping', JSON.stringify(mapping)); const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData); return response.data; }
     
-    // --- INVENTORY ---
     public async getInventoryItems(): Promise<InventoryItem[]> { const response = await this.axiosInstance.get<InventoryItem[]>('/inventory/items'); return response.data; }
     public async createInventoryItem(data: InventoryItemCreate): Promise<InventoryItem> { const response = await this.axiosInstance.post<InventoryItem>('/inventory/items', data); return response.data; }
     public async updateInventoryItem(id: string, data: InventoryItemCreate): Promise<InventoryItem> { const response = await this.axiosInstance.put<InventoryItem>(`/inventory/items/${id}`, data); return response.data; }
     public async deleteInventoryItem(id: string): Promise<void> { await this.axiosInstance.delete(`/inventory/items/${id}`); }
     public async importInventoryItems(file: File): Promise<InventoryImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<InventoryImportResult>('/inventory/items/import', formData); return response.data; }
 
-    // --- RECIPES ---
     public async getRecipes(): Promise<Recipe[]> { const response = await this.axiosInstance.get<Recipe[]>('/inventory/recipes'); return response.data; }
     public async createRecipe(data: RecipeCreate): Promise<Recipe> { const response = await this.axiosInstance.post<Recipe>('/inventory/recipes', data); return response.data; }
     public async updateRecipe(id: string, data: RecipeCreate): Promise<Recipe> { const response = await this.axiosInstance.put<Recipe>(`/inventory/recipes/${id}`, data); return response.data; }
     public async deleteRecipe(id: string): Promise<void> { await this.axiosInstance.delete(`/inventory/recipes/${id}`); }
     public async importRecipes(file: File): Promise<RecipeImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<RecipeImportResult>('/inventory/recipes/import', formData); return response.data; }
 
-    // --- ARCHIVE ---
     public async getArchiveItems(category?: string, caseId?: string, parentId?: string): Promise<ArchiveItemOut[]> { const params: any = {}; if (category) params.category = category; if (caseId) params.case_id = caseId; if (parentId) params.parent_id = parentId; const response = await this.axiosInstance.get<{items: ArchiveItemOut[]}>('/archive/items', { params }); return Array.isArray(response.data) ? response.data : (response.data?.items || []); }
     public async createArchiveFolder(title: string, parentId?: string, caseId?: string, category?: string): Promise<ArchiveItemOut> { const formData = new FormData(); formData.append('title', title); if (parentId) formData.append('parent_id', parentId); if (caseId) formData.append('case_id', caseId); if (category) formData.append('category', category); const response = await this.axiosInstance.post<ArchiveItemOut>('/archive/folder', formData); return response.data; }
     public async uploadArchiveItem(file: File, title: string, category: string, caseId?: string, parentId?: string): Promise<ArchiveItemOut> { const formData = new FormData(); formData.append('file', file); formData.append('title', title); formData.append('category', category); if (caseId) formData.append('case_id', caseId); if (parentId) formData.append('parent_id', parentId); const response = await this.axiosInstance.post<ArchiveItemOut>('/archive/upload', formData); return response.data; }
@@ -163,34 +171,28 @@ class ApiService {
     public async updateCaseShareStatus(caseId: string, isShared: boolean): Promise<any> { const response = await this.axiosInstance.put(`/share/case/${caseId}`, { is_shared: isShared }); return response.data; }
     public async shareArchiveItem(itemId: string, isShared: boolean): Promise<ArchiveItemOut> { const response = await this.axiosInstance.put<ArchiveItemOut>(`/archive/items/${itemId}/share`, { is_shared: isShared }); return response.data; }
     
-    // --- CALENDAR ---
     public async getCalendarEvents(): Promise<CalendarEvent[]> { const response = await this.axiosInstance.get<any>('/calendar/events'); return Array.isArray(response.data) ? response.data : (response.data?.events || []); }
     public async createCalendarEvent(data: CalendarEventCreateRequest): Promise<CalendarEvent> { const response = await this.axiosInstance.post<CalendarEvent>('/calendar/events', data); return response.data; }
     public async deleteCalendarEvent(eventId: string): Promise<void> { await this.axiosInstance.delete(`/calendar/events/${eventId}`); }
     public async getAlertsCount(): Promise<{ count: number }> { const response = await this.axiosInstance.get<{ count: number }>('/calendar/alerts'); return response.data; }
     
-    // --- DRAFTING ---
     public async initiateDraftingJob(data: CreateDraftingJobRequest): Promise<DraftingJobStatus> { const response = await this.axiosInstance.post<DraftingJobStatus>(`${API_V2_URL}/drafting/jobs`, data); return response.data; }
     public async getDraftingJobStatus(jobId: string): Promise<DraftingJobStatus> { const response = await this.axiosInstance.get<DraftingJobStatus>(`${API_V2_URL}/drafting/jobs/${jobId}/status`); return response.data; }
     public async getDraftingJobResult(jobId: string): Promise<DraftingJobResult> { const response = await this.axiosInstance.get<DraftingJobResult>(`${API_V2_URL}/drafting/jobs/${jobId}/result`); return response.data; }
     
-    // --- BUSINESS ---
     public async getBusinessProfile(): Promise<BusinessProfile> { const response = await this.axiosInstance.get<BusinessProfile>('/business/profile'); return response.data; }
     public async updateBusinessProfile(data: BusinessProfileUpdate): Promise<BusinessProfile> { const response = await this.axiosInstance.put<BusinessProfile>('/business/profile', data); return response.data; }
     public async uploadBusinessLogo(file: File): Promise<BusinessProfile> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.put<BusinessProfile>('/business/logo', formData); return response.data; }
     
     public async fetchImageBlob(url: string): Promise<Blob> { const response = await this.axiosInstance.get(url, { responseType: 'blob' }); return response.data; }
 
-    // --- AI AGENT ---
     public async getDailyBriefing(): Promise<DailyBriefingResponse> { const response = await this.axiosInstance.get<DailyBriefingResponse>('/daily-briefing/'); return response.data; }
 
-    // PHOENIX: New Strategic Briefing Endpoint (Production Version)
     public async getStrategicBriefing(): Promise<StrategicBriefingResponse> {
         const response = await this.axiosInstance.get<StrategicBriefingResponse>('/briefing/strategic');
         return response.data;
     }
     
-    // --- SUPPORT ---
     public async sendContactForm(data: { firstName: string; lastName: string; email: string; phone: string; message: string }): Promise<void> { await this.axiosInstance.post('/support/contact', { first_name: data.firstName, last_name: data.lastName, email: data.email, phone: data.phone, message: data.message }); }
 }
 
