@@ -1,10 +1,11 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR V10.0 (BUSINESS REFACTOR)
-// 1. REFACTOR: Replaced Legal types (HEARING, FILING) with Business types (APPOINTMENT, TASK, PAYMENT_DUE).
-// 2. LOGIC: Updated 'getEventStyle' to visually distinguish 'Alerts' (Payments/Tax) from 'Events' (Tasks/Appointments).
-// 3. FILTER: The 'upcomingAlerts' filter now correctly targets 'PAYMENT_DUE' and 'TAX_DEADLINE'.
+// PHOENIX PROTOCOL - CALENDAR V10.1 (DEEP LINKING)
+// 1. FEATURE: The page now checks for an 'openEventId' in the navigation state.
+// 2. LOGIC: If an ID is found, it automatically opens the full EventDetailModal for that event.
+// 3. HOOKS: Added 'useLocation' and 'useNavigate' to manage this state.
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { CalendarEvent, Case, CalendarEventCreateRequest } from '../data/types';
 import { apiService } from '../services/api';
 import { useTranslation } from 'react-i18next';
@@ -31,13 +32,10 @@ interface EventDetailModalProps { event: CalendarEvent; onClose: () => void; onU
 interface CreateEventModalProps { cases: Case[]; existingEvents: CalendarEvent[]; onClose: () => void; onCreate: () => void; }
 type ViewMode = 'month' | 'list';
 
-// PHOENIX: Business-centric styling logic. "Alerts" are red/amber, "Events" are blue/green.
 const getEventStyle = (type: string) => {
     switch (type) {
-      // Alerts (Risk-based)
       case 'TAX_DEADLINE': return { border: 'border-rose-500/50', bg: 'bg-rose-500/10 hover:bg-rose-500/20', text: 'text-rose-300', indicator: 'bg-rose-500', icon: <ShieldAlert size={12} className="text-rose-400" /> };
       case 'PAYMENT_DUE': return { border: 'border-amber-500/50', bg: 'bg-amber-500/10 hover:bg-amber-500/20', text: 'text-amber-300', indicator: 'bg-amber-500', icon: <DollarSign size={12} className="text-amber-400" /> };
-      // Events (Time-based)
       case 'APPOINTMENT': return { border: 'border-blue-500/50', bg: 'bg-blue-500/10 hover:bg-blue-500/20', text: 'text-blue-300', indicator: 'bg-blue-500', icon: <Handshake size={12} className="text-blue-400" /> };
       case 'TASK': return { border: 'border-emerald-500/50', bg: 'bg-emerald-500/10 hover:bg-emerald-500/20', text: 'text-emerald-300', indicator: 'bg-emerald-500', icon: <CheckSquare size={12} className="text-emerald-400" /> };
       case 'PERSONAL': return { border: 'border-gray-500/50', bg: 'bg-gray-500/10 hover:bg-gray-500/20', text: 'text-gray-300', indicator: 'bg-gray-500', icon: <Users size={12} className="text-gray-400" /> };
@@ -145,6 +143,9 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEven
 
 const CalendarPage: React.FC = () => {
     const { t, i18n } = useTranslation();
+    const location = useLocation(); // PHOENIX: Added hook
+    const navigate = useNavigate(); // PHOENIX: Added hook
+
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [cases, setCases] = useState<Case[]>([]);
     const [loading, setLoading] = useState(true);
@@ -162,14 +163,31 @@ const CalendarPage: React.FC = () => {
     const hasCheckedForToday = useRef(false);
     const currentLocale = localeMap[i18n.language] || enUS;
 
-    useEffect(() => { loadData(); }, []);
-    useEffect(() => { if (!loading && events.length > 0 && !hasCheckedForToday.current) { const today = new Date(); const todaysEvents = events.filter(e => isSameDay(parseISO(e.start_date), today)); if (todaysEvents.length > 0) { setSelectedDateForModal(today); setIsDayModalOpen(true); } hasCheckedForToday.current = true; } }, [loading, events]);
     const loadData = async () => { try { setLoading(true); setError(''); const [eventsData, casesData] = await Promise.all([apiService.getCalendarEvents(), apiService.getCases()]); setEvents(eventsData); setCases(casesData); } catch (error: any) { setError(error.response?.data?.message || error.message || t('calendar.loadFailure')); } finally { setLoading(false); } };
+
+    useEffect(() => { loadData(); }, []);
+
+    // PHOENIX: Effect to handle auto-opening modal from navigation state
+    useEffect(() => {
+        if (!loading && events.length > 0 && location.state?.openEventId) {
+            const eventIdToOpen = location.state.openEventId;
+            const eventToOpen = events.find(e => getEventId(e) === eventIdToOpen);
+            
+            if (eventToOpen) {
+                setSelectedEvent(eventToOpen);
+                // Clear the state to prevent re-opening on refresh
+                navigate(location.pathname, { replace: true, state: {} });
+            }
+        }
+    }, [loading, events, location, navigate]);
+
+
+    useEffect(() => { if (!loading && events.length > 0 && !hasCheckedForToday.current) { const today = new Date(); const todaysEvents = events.filter(e => isSameDay(parseISO(e.start_date), today)); if (todaysEvents.length > 0) { setSelectedDateForModal(today); setIsDayModalOpen(true); } hasCheckedForToday.current = true; } }, [loading, events]);
+    
     const handleDayClick = (day: Date) => { setSelectedDateForModal(day); setIsDayModalOpen(true); };
     const navigateMonth = (direction: 'prev' | 'next') => { setCurrentDate(direction === 'prev' ? subMonths(currentDate, 1) : addMonths(currentDate, 1)); };
     const filteredEvents = events.filter(event => { const searchContent = `${event.title} ${event.description || ''} ${event.location || ''}`.toLowerCase(); return searchContent.includes(searchTerm.toLowerCase()) && (filterType === 'ALL' || event.event_type === filterType) && (filterPriority === 'ALL' || event.priority === filterPriority); });
     
-    // PHOENIX: Filter for upcoming "Alerts" based on the new business logic.
     const upcomingAlerts = events.filter(event => {
         if (!['PAYMENT_DUE', 'TAX_DEADLINE'].includes(event.event_type)) return false;
         const eventDate = parseISO(event.start_date); const today = new Date(); today.setHours(0, 0, 0, 0); const sevenDaysFromNow = new Date(today); sevenDaysFromNow.setDate(today.getDate() + 7); sevenDaysFromNow.setHours(23, 59, 59, 999);
