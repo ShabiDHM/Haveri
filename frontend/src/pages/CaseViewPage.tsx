@@ -1,8 +1,8 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - CASE VIEW PAGE V11.1 (FIXED IMPORTS)
-// 1. FIXED: Removed 'GlobalContextSwitcher' import.
-// 2. FIXED: Removed 'GlobalContextSwitcher' component usage in CaseHeader.
-// 3. STATUS: Compiles without errors.
+// PHOENIX PROTOCOL - UI MINIMALISM V12.0
+// 1. REMOVED: Deleted the entire 'CaseHeader' component.
+// 2. LAYOUT: Adjusted main grid to fill the entire page height for a focused view.
+// 3. STATUS: Final streamlined Workspace UI.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -16,7 +16,7 @@ import { useDocumentSocket } from '../hooks/useDocumentSocket';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, User, Loader2, X, Save, FileText, Maximize2, Calendar } from 'lucide-react';
+import { AlertCircle, Loader2, X, Save, FileText, Maximize2 } from 'lucide-react';
 import { sanitizeDocument } from '../utils/documentUtils';
 import { TFunction } from 'i18next';
 
@@ -28,27 +28,9 @@ const DockedPDFViewer: React.FC<{ document: Document; onExpand: () => void; onCl
     const { t } = useTranslation();
     return (
         <AnimatePresence>
-            <motion.div
-                initial={{ y: "100%", opacity: 0 }}
-                animate={{ y: "0%", opacity: 1 }}
-                exit={{ y: "100%", opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed bottom-6 right-6 z-[9998] w-80 bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex items-center justify-between p-4"
-            >
-                <div className="flex items-center gap-4 min-w-0">
-                    <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                        <FileText className="h-6 w-6 text-red-400 flex-shrink-0" />
-                    </div>
-                    <p className="text-sm font-medium text-gray-200 truncate">{document.file_name}</p>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                    <button onClick={onExpand} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors" title={t('general.expand', 'Zgjero')}>
-                        <Maximize2 size={18} />
-                    </button>
-                    <button onClick={onClose} className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-400 transition-colors" title={t('general.close', 'Mbyll')}>
-                        <X size={18} />
-                    </button>
-                </div>
+            <motion.div initial={{ y: "100%", opacity: 0 }} animate={{ y: "0%", opacity: 1 }} exit={{ y: "100%", opacity: 0 }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="fixed bottom-6 right-6 z-[9998] w-80 bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex items-center justify-between p-4" >
+                <div className="flex items-center gap-4 min-w-0"> <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20"> <FileText className="h-6 w-6 text-red-400 flex-shrink-0" /> </div> <p className="text-sm font-medium text-gray-200 truncate">{document.file_name}</p> </div>
+                <div className="flex items-center gap-1 flex-shrink-0"> <button onClick={onExpand} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors" title={t('general.expand', 'Zgjero')}> <Maximize2 size={18} /> </button> <button onClick={onClose} className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-400 transition-colors" title={t('general.close', 'Mbyll')}> <X size={18} /> </button> </div>
             </motion.div>
         </AnimatePresence>
     );
@@ -59,10 +41,10 @@ const extractAndNormalizeHistory = (data: any): ChatMessage[] => {
     const rawArray = data.chat_history || data.chatHistory || data.history || data.messages || [];
     if (!Array.isArray(rawArray)) return [];
     return rawArray.map((item: any) => {
-        const rawRole = (item.role || item.sender || item.author || 'user').toString().toLowerCase();
-        const role: 'user' | 'ai' = (rawRole.includes('ai') || rawRole.includes('assistant') || rawRole.includes('system')) ? 'ai' : 'user';
-        const content = item.content || item.message || item.text || '';
-        const timestamp = item.timestamp || item.created_at || new Date().toISOString();
+        const rawRole = (item.role || 'user').toString().toLowerCase();
+        const role: 'user' | 'ai' = (rawRole.includes('ai') || rawRole.includes('assistant')) ? 'ai' : 'user';
+        const content = item.content || '';
+        const timestamp = item.timestamp || new Date().toISOString();
         return { role, content, timestamp };
     }).filter(msg => msg.content.trim() !== '');
 };
@@ -71,86 +53,18 @@ const RenameDocumentModal: React.FC<{ isOpen: boolean; onClose: () => void; onRe
     const [name, setName] = useState(currentName);
     const [isSaving, setIsSaving] = useState(false);
     useEffect(() => { setName(currentName); }, [currentName]);
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault(); if (!name.trim()) return; setIsSaving(true);
-        try { await onRename(name); onClose(); } finally { setIsSaving(false); }
-    };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); if (!name.trim()) return; setIsSaving(true); try { await onRename(name); onClose(); } finally { setIsSaving(false); } };
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
             <div className="bg-[#0f172a] border border-blue-500/20 rounded-3xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-white">{t('documentsPanel.renameTitle')}</h3>
-                    <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={24} /></button>
-                </div>
+                <div className="flex justify-between items-center mb-6"><h3 className="text-xl font-bold text-white">{t('documentsPanel.renameTitle')}</h3><button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={24} /></button></div>
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-6">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('documentsPanel.newName')}</label>
-                        <input autoFocus type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all" />
-                    </div>
-                    <div className="flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors font-medium">{t('general.cancel')}</button>
-                        <button type="submit" disabled={isSaving} className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold flex items-center gap-2 hover:shadow-lg hover:shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-95">
-                            {isSaving ? <Loader2 className="animate-spin h-5 w-5" /> : <Save size={18} />}
-                            {t('general.save')}
-                        </button>
-                    </div>
+                    <div className="mb-6"><label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('documentsPanel.newName')}</label><input autoFocus type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all" /></div>
+                    <div className="flex justify-end gap-3"><button type="button" onClick={onClose} className="px-6 py-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors font-medium">{t('general.cancel')}</button><button type="submit" disabled={isSaving} className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold flex items-center gap-2 hover:shadow-lg hover:shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-95">{isSaving ? <Loader2 className="animate-spin h-5 w-5" /> : <Save size={18} />}{t('general.save')}</button></div>
                 </form>
             </div>
         </div>
-    );
-};
-
-const CaseHeader: React.FC<{ 
-    caseDetails: Case;
-    t: TFunction; 
-}> = ({ caseDetails, t }) => {
-    
-    let displayTitle = caseDetails.case_name || caseDetails.title;
-    if (displayTitle === 'My Workspace') {
-        displayTitle = t('caseView.defaultWorkspace', 'Hapësira Ime e Punës');
-    } else if (!displayTitle) {
-        displayTitle = t('caseView.unnamedCase', 'Rast pa Emër');
-    }
-
-    // PHOENIX FIX: Manual strict formatting for date (DD.MM.YYYY)
-    const d = new Date(caseDetails.created_at);
-    const formattedDate = `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`;
-
-    return (
-        <motion.div 
-            className="relative z-30 mb-8 rounded-3xl shadow-2xl border border-white/10 group backdrop-blur-md bg-gray-900/60" 
-            initial={{ opacity: 0, y: -20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 0.5, ease: "circOut" }}
-        >
-          <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
-              <div className="absolute top-0 right-0 p-32 bg-blue-500/10 blur-[100px] rounded-full" />
-          </div>
-
-          <div className="relative p-6 flex flex-col gap-6 z-10">
-              <div className="flex flex-col gap-1">
-                  <h1 className="text-3xl font-black text-white tracking-tight leading-snug break-words">
-                    {displayTitle}
-                  </h1>
-                  <div className="flex items-center gap-3 text-gray-400 mt-2">
-                      <User className="h-5 w-5 text-blue-400" />
-                      <span className="text-base font-medium">
-                          {caseDetails.client?.name || t('caseCard.unknownClient', 'Klient i Panjohur')}
-                      </span>
-                  </div>
-              </div>
-
-              <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
-              <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full">
-                  <div className="flex items-center justify-center gap-3 px-5 h-12 rounded-2xl bg-black/40 border border-white/10 text-gray-300 text-sm font-medium whitespace-nowrap">
-                      <Calendar className="h-5 w-5 text-blue-400" />
-                      {formattedDate}
-                  </div>
-              </div>
-          </div>
-        </motion.div>
     );
 };
 
@@ -168,8 +82,6 @@ const CaseViewPage: React.FC = () => {
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
   const [documentToRename, setDocumentToRename] = useState<Document | null>(null);
-  
-  // PHOENIX: Removed activeContextId state. Defaults to 'general' implicitly.
 
   const currentCaseId = useMemo(() => caseId || '', [caseId]);
   const { documents: liveDocuments, setDocuments: setLiveDocuments, messages: liveMessages, setMessages, connectionStatus, reconnect, sendChatMessage, isSendingMessage } = useDocumentSocket(currentCaseId);
@@ -211,14 +123,10 @@ const CaseViewPage: React.FC = () => {
 
   return (
     <motion.div className="w-full min-h-screen bg-background-dark pb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="max-w-8xl w-full mx-auto px-4 sm:px-6 py-6">
-        <div className="mt-4 lg:mt-0">
-            {/* PHOENIX: Simplified Header - No Switcher */}
-            <CaseHeader caseDetails={caseData.details} t={t} />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" style={{ height: 'calc(100vh - 220px)', minHeight: '600px' }}>
+      {/* PHOENIX: Adjusted padding and layout for headerless view */}
+      <div className="max-w-8xl w-full mx-auto px-4 sm:px-6 py-6 h-screen">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
             <DocumentsPanel caseId={caseData.details.id} documents={liveDocuments} t={t} connectionStatus={connectionStatus} reconnect={reconnect} onDocumentUploaded={handleDocumentUploaded} onDocumentDeleted={handleDocumentDeleted} onViewOriginal={handleViewOriginal} onRename={(doc) => setDocumentToRename(doc)} className="h-full" />
-            {/* PHOENIX: AI Studio Panel */}
             <AIStudioPanel 
                 messages={liveMessages} 
                 connectionStatus={connectionStatus} 
@@ -235,7 +143,6 @@ const CaseViewPage: React.FC = () => {
       
       {viewingDocument && (<PDFViewerModal documentData={viewingDocument} caseId={caseData.details.id} onClose={handleCloseViewer} onMinimize={handleMinimizeViewer} t={t} directUrl={viewingUrl} isAuth={true} />)}
       {minimizedDocument && <DockedPDFViewer document={minimizedDocument} onExpand={handleExpandViewer} onClose={() => setMinimizedDocument(null)} />}
-
       <RenameDocumentModal isOpen={!!documentToRename} onClose={() => setDocumentToRename(null)} onRename={handleRename} currentName={documentToRename?.file_name || ''} t={t} />
     </motion.div>
   );
