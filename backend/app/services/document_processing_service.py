@@ -1,7 +1,7 @@
 # FILE: backend/app/services/document_processing_service.py
-# PHOENIX PROTOCOL - DOCUMENT PIPELINE V9.0 (MULTI-TENANT)
-# 1. UPDATE: Passes 'user_id' to vector store for private collection storage.
-# 2. STATUS: Fully Integrated with Multi-Tenant Architecture.
+# PHOENIX PROTOCOL - PIPELINE ALIGNMENT V2.0
+# 1. REFACTOR: Called 'prepare_document_text' instead of the legacy 'sterilize_legal_text'.
+# 2. VERIFIED: Ensures the pipeline uses the Business Summarizer from llm_service.
 
 import os
 import tempfile
@@ -99,9 +99,10 @@ def orchestrate_document_processing_mongo(
         if not raw_text or not raw_text.strip():
             raise ValueError("OCR dështoi: Dokumenti duket bosh.")
 
-        _emit_progress(redis_client, user_id, document_id_str, "Sterilizimi Ligjor...", 28)
-        extracted_text = llm_service.sterilize_legal_text(raw_text)
-        logger.info(f"✅ Document {document_id_str} sterilized.")
+        _emit_progress(redis_client, user_id, document_id_str, "Përgatitja e tekstit...", 28)
+        # PHOENIX FIX: Call the renamed, generic method
+        extracted_text = llm_service.prepare_document_text(raw_text)
+        logger.info(f"✅ Document {document_id_str} prepared for analysis.")
         
         _emit_progress(redis_client, user_id, document_id_str, "Klasifikimi...", 30)
         is_albanian = AlbanianLanguageDetector.detect_language(extracted_text)
@@ -126,7 +127,7 @@ def orchestrate_document_processing_mongo(
                 enriched_chunks = EnhancedDocumentProcessor.process_document(text_content=extracted_text, document_metadata=base_doc_metadata, is_albanian=is_albanian)
                 
                 vector_store_service.create_and_store_embeddings_from_chunks(
-                    user_id=user_id, # PHOENIX FIX: Added user_id for Private Apartment
+                    user_id=user_id,
                     document_id=document_id_str, case_id=case_id_str, file_name=doc_name,
                     chunks=[c.content for c in enriched_chunks],
                     metadatas=[c.metadata for c in enriched_chunks]
@@ -145,6 +146,7 @@ def orchestrate_document_processing_mongo(
                 _emit_progress(redis_client, user_id, document_id_str, "Gjenerimi i Përmbledhjes...", 60)
                 limit = 35000
                 optimized = extracted_text[:limit] if len(extracted_text) > limit else extracted_text
+                # PHOENIX: Calls the new Business Summarizer
                 return llm_service.generate_summary(optimized)
             except Exception: return "Përmbledhja nuk është e disponueshme."
 

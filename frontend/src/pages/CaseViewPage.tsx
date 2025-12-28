@@ -1,30 +1,28 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - CASE VIEW PAGE V9.1 (UI POLISH)
-// 1. FIX: 'My Workspace' title from DB is now intercepted and translated to 'Hapësira Ime e Punës'.
-// 2. FIX: Date format changed from US (12/25/2025) to Albanian/European (25.12.2025).
-// 3. LOGIC: Re-applied the agentType fix from the previous step to ensure chat works.
+// PHOENIX PROTOCOL - BUSINESS ORIENTATION V1.0
+// 1. REMOVED: Deleted 'Analizo Rastin' button and all associated logic (handlers, states, modals).
+// 2. CLEANUP: Removed unused imports (AnalysisModal, ShieldCheck, CaseAnalysisResult).
+// 3. STATUS: The Workspace is now streamlined for business operations (Docs + Chat).
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Case, Document, DeletedDocumentResponse, CaseAnalysisResult, ChatMessage } from '../data/types';
+import { Case, Document, DeletedDocumentResponse, ChatMessage } from '../data/types';
 import { apiService, API_V1_URL } from '../services/api';
 import DocumentsPanel from '../components/DocumentsPanel';
 import ChatPanel, { ChatMode, Jurisdiction, AgentType } from '../components/ChatPanel';
 import PDFViewerModal from '../components/PDFViewerModal';
-import AnalysisModal from '../components/AnalysisModal';
 import GlobalContextSwitcher from '../components/GlobalContextSwitcher';
 import { useDocumentSocket } from '../hooks/useDocumentSocket';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, User, ShieldCheck, Loader2, X, Save, FileText, Maximize2, Calendar } from 'lucide-react';
+import { AlertCircle, User, Loader2, X, Save, FileText, Maximize2, Calendar } from 'lucide-react';
 import { sanitizeDocument } from '../utils/documentUtils';
 import { TFunction } from 'i18next';
 
 type CaseData = {
     details: Case | null;
 };
-type ActiveModal = 'none' | 'analysis';
 
 const DockedPDFViewer: React.FC<{ document: Document; onExpand: () => void; onClose: () => void; }> = ({ document, onExpand, onClose }) => {
     const { t } = useTranslation();
@@ -109,15 +107,8 @@ const CaseHeader: React.FC<{
     activeContextId: string;
     onContextChange: (id: string) => void;
     t: TFunction; 
-    onAnalyze: () => void;
-    isAnalyzing: boolean; 
-}> = ({ caseDetails, documents, activeContextId, onContextChange, t, onAnalyze, isAnalyzing }) => {
+}> = ({ caseDetails, documents, activeContextId, onContextChange, t }) => {
     
-    const analyzeButtonText = activeContextId === 'general' 
-        ? t('analysis.analyzeButton', 'Analizo Rastin')
-        : t('analysis.crossExamineButton', 'Kryqëzo Dokumentin');
-
-    // PHOENIX FIX: Intercept "My Workspace" and translate it
     let displayTitle = caseDetails.case_name || caseDetails.title;
     if (displayTitle === 'My Workspace') {
         displayTitle = t('caseView.defaultWorkspace', 'Hapësira Ime e Punës');
@@ -125,12 +116,11 @@ const CaseHeader: React.FC<{
         displayTitle = t('caseView.unnamedCase', 'Rast pa Emër');
     }
 
-    // PHOENIX FIX: Albanian Date Formatting
     const formattedDate = new Date(caseDetails.created_at).toLocaleDateString('sq-AL', { 
         day: '2-digit', 
         month: '2-digit', 
         year: 'numeric' 
-    }); // e.g., 25.12.2025
+    });
 
     return (
         <motion.div 
@@ -167,30 +157,6 @@ const CaseHeader: React.FC<{
                   <div className="flex-1 w-full md:w-auto h-12 [&>div]:h-full [&>div>button]:h-full">
                      <GlobalContextSwitcher documents={documents} activeContextId={activeContextId} onContextChange={onContextChange} className="w-full h-full" />
                   </div>
-                  
-                  <button 
-                      onClick={onAnalyze} 
-                      disabled={isAnalyzing} 
-                      className={`
-                          w-full md:w-auto px-8 h-12 rounded-2xl 
-                          flex items-center justify-center gap-3 
-                          text-sm font-bold text-white shadow-lg transition-all duration-300 whitespace-nowrap
-                          ${isAnalyzing ? 'bg-gray-800/50 border border-white/10 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:shadow-blue-600/30 hover:scale-[1.02] active:scale-95 border border-blue-400/50'}
-                      `}
-                      type="button"
-                  >
-                      {isAnalyzing ? (
-                          <>
-                              <Loader2 className="h-5 w-5 animate-spin text-white/70" />
-                              <span className="text-white/70">{t('analysis.analyzing')}...</span>
-                          </>
-                      ) : (
-                          <>
-                              <ShieldCheck className="h-5 w-5" />
-                              <span>{analyzeButtonText}</span>
-                          </>
-                      )}
-                  </button>
               </div>
           </div>
         </motion.div>
@@ -210,11 +176,7 @@ const CaseViewPage: React.FC = () => {
   const [minimizedDocument, setMinimizedDocument] = useState<Document | null>(null);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<CaseAnalysisResult | null>(null);
-  const [activeModal, setActiveModal] = useState<ActiveModal>('none');
   const [documentToRename, setDocumentToRename] = useState<Document | null>(null);
-  
   const [activeContextId, setActiveContextId] = useState<string>('general');
 
   const currentCaseId = useMemo(() => caseId || '', [caseId]);
@@ -241,10 +203,7 @@ const CaseViewPage: React.FC = () => {
   const handleDocumentDeleted = (response: DeletedDocumentResponse) => { setLiveDocuments(prev => prev.filter(d => String(d.id) !== String(response.documentId))); };
   const handleClearChat = async () => { if (!caseId) return; try { await apiService.clearChatHistory(caseId); setMessages([]); localStorage.removeItem(`chat_history_${currentCaseId}`); } catch (err) { alert(t('error.generic')); } };
 
-  const handleAnalyze = async () => { if (!caseId) return; setIsAnalyzing(true); setActiveModal('none'); try { let result: CaseAnalysisResult; if (activeContextId === 'general') { result = await apiService.analyzeCase(caseId); } else { result = await apiService.crossExamineDocument(caseId, activeContextId); } if (result.error) alert(result.error); else { setAnalysisResult(result); setActiveModal('analysis'); } } catch (err) { alert(t('error.generic')); } finally { setIsAnalyzing(false); } };
-  
   const handleChatSubmit = (text: string, _mode: ChatMode, documentId?: string, jurisdiction?: Jurisdiction, agentType?: AgentType) => {
-    // PHOENIX: Explicitly use the 'business' agent for this main chat panel.
     sendChatMessage(text, documentId, jurisdiction, agentType);
   };
   
@@ -262,7 +221,7 @@ const CaseViewPage: React.FC = () => {
     <motion.div className="w-full min-h-screen bg-background-dark pb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="max-w-8xl w-full mx-auto px-4 sm:px-6 py-6">
         <div className="mt-4 lg:mt-0">
-            <CaseHeader caseDetails={caseData.details} documents={liveDocuments} activeContextId={activeContextId} onContextChange={setActiveContextId} t={t} onAnalyze={handleAnalyze} isAnalyzing={isAnalyzing} />
+            <CaseHeader caseDetails={caseData.details} documents={liveDocuments} activeContextId={activeContextId} onContextChange={setActiveContextId} t={t} />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" style={{ height: 'calc(100vh - 220px)', minHeight: '600px' }}>
             <DocumentsPanel caseId={caseData.details.id} documents={liveDocuments} t={t} connectionStatus={connectionStatus} reconnect={reconnect} onDocumentUploaded={handleDocumentUploaded} onDocumentDeleted={handleDocumentDeleted} onViewOriginal={handleViewOriginal} onRename={(doc) => setDocumentToRename(doc)} className="h-full" />
@@ -273,7 +232,6 @@ const CaseViewPage: React.FC = () => {
       {viewingDocument && (<PDFViewerModal documentData={viewingDocument} caseId={caseData.details.id} onClose={handleCloseViewer} onMinimize={handleMinimizeViewer} t={t} directUrl={viewingUrl} isAuth={true} />)}
       {minimizedDocument && <DockedPDFViewer document={minimizedDocument} onExpand={handleExpandViewer} onClose={() => setMinimizedDocument(null)} />}
 
-      {analysisResult && (<AnalysisModal isOpen={activeModal === 'analysis'} onClose={() => setActiveModal('none')} result={analysisResult} />)}
       <RenameDocumentModal isOpen={!!documentToRename} onClose={() => setDocumentToRename(null)} onRename={handleRename} currentName={documentToRename?.file_name || ''} t={t} />
     </motion.div>
   );

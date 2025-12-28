@@ -1,9 +1,8 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - DUAL-AGENT ARCHITECTURE V1
-# 1. ARCHITECTURE: Refactored to support distinct 'legal' and 'business' agent personas.
-# 2. FEATURE: Added a "Business Constitution" and prompts for the Business Consultant agent.
-# 3. LOGIC: The core '_call_deepseek' function now accepts an 'agent_type' to select the correct persona.
-# 4. REFACTOR: Created new public methods for drafting to separate legal and business logic.
+# PHOENIX PROTOCOL - PIPELINE RESTORATION V3.0
+# 1. ADDED: 'generate_summary' is back, but now uses a "Business Assistant" prompt.
+# 2. REFACTOR: Renamed 'sterilize_legal_text' to 'prepare_document_text' for general business use.
+# 3. STATUS: Fully supports the background document processing pipeline.
 
 import os
 import json
@@ -41,7 +40,6 @@ RREGULLAT E KËSHILLIMIT (PRAKTIKA MË E MIRË):
 2. GJUHA E THJESHTË: Shmangu zhargonin. Komuniko qartë dhe drejtpërdrejt.
 3. INKURAJIM DHE MOTIVIM: Përdor një ton pozitiv dhe mbështetës.
 4. KONTEKSTI LOKAL: Mbaj parasysh sfidat dhe mundësitë e tregut në Kosovë.
-5. MOS JEP KËSHILLA LIGJORE: Nëse pyetja kërkon ekspertizë ligjore, udhëzo përdoruesin të përdorë modulin e Hartimit për kontrata.
 """
 
 def get_deepseek_client() -> Optional[OpenAI]:
@@ -76,8 +74,63 @@ def _call_deepseek(system_prompt: str, user_prompt: str, json_mode: bool = False
         logger.warning(f"⚠️ DeepSeek Call Failed: {e}")
         return None
 
+def _call_local_llm(prompt: str) -> str:
+    try:
+        payload = {"model": LOCAL_MODEL_NAME, "prompt": prompt, "stream": False}
+        with httpx.Client(timeout=45.0) as client:
+            response = client.post(OLLAMA_URL, json=payload)
+            return response.json().get("response", "")
+    except Exception: return ""
+
+# --- PUBLIC SERVICES ---
+
+# PHOENIX: Renamed from 'sterilize_legal_text' to match business context
+def prepare_document_text(text: str) -> str:
+    if not text: return ""
+    text = sterilize_text_for_llm(text, redact_names=False)
+    # Maintain pagination for references
+    text = re.sub(r'--- \[Page (\d+)\] ---', r'--- [FAQJA \1] ---', text)
+    return text
+
+# PHOENIX: Restored and Refactored for Business
+def generate_summary(text: str) -> str:
+    clean_text = prepare_document_text(text[:20000])
+    system_prompt = """
+    Ti je 'Asistenti Inteligjent i Biznesit'.
+    DETYRA: Krijo një përmbledhje ekzekutive të këtij dokumenti për pronarin e biznesit.
+    1. Identifiko llojin e dokumentit (Faturë, Kontratë, Ofertë, Raport).
+    2. Nxirr pikat kyçe: Datat, Shumat Monetare, Palët e Përfshira.
+    3. Përdor gjuhë të thjeshtë dhe direkte në Shqip.
+    """
+    user_prompt = f"DOKUMENTI PËR ANALIZË:\n{clean_text}"
+    
+    # Try Local LLM first for speed/cost, fallback to DeepSeek
+    res = _call_local_llm(f"{system_prompt}\n\n{user_prompt}")
+    if not res or len(res) < 50: 
+        res = _call_deepseek(system_prompt, user_prompt, agent_type='business')
+    return res or "Nuk u gjenerua përmbledhje."
+
+def analyze_business_document(text: str) -> Dict[str, Any]:
+    clean_text = prepare_document_text(text[:15000])
+    system_prompt = """
+    Ti je 'Këshilltari Kryesor i Biznesit'. Ndihmo pronarin të kuptojë këtë dokument.
+    FORMATI JSON (Strict):
+    {
+        "document_type": "Lloji i dokumentit",
+        "key_figures": [{"label": "P.sh. Totali", "value": "€..."}],
+        "action_items": ["Detyrat (p.sh. Afati i pagesës)"],
+        "insights": "Vlerësim i shkurtër."
+    }
+    """
+    user_prompt = f"DOKUMENTI:\n{clean_text}"
+    content = _call_deepseek(system_prompt, user_prompt, json_mode=True, agent_type='business')
+    return _parse_json_safely(content) if content else {}
+
 def draft_legal_document(system_prompt: str, full_prompt: str) -> Optional[str]:
     return _call_deepseek(system_prompt, full_prompt, json_mode=False, agent_type='legal')
 
 def draft_business_document(system_prompt: str, full_prompt: str) -> Optional[str]:
     return _call_deepseek(system_prompt, full_prompt, json_mode=False, agent_type='business')
+
+# Placeholder for graph extraction
+def extract_graph_data(text: str) -> Dict[str, List[Dict]]: return {"entities": [], "relations": []}

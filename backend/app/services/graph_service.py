@@ -1,8 +1,8 @@
 # FILE: backend/app/services/graph_service.py
-# PHOENIX PROTOCOL - GRAPH SERVICE V8 (LEGAL ENTITY AWARE)
-# 1. NEW NODES: Added 'Court', 'Judge', and 'CaseNumber' as first-class citizens.
-# 2. NEW RELATIONSHIP: Added ':ISSUED_BY' to link Documents to Courts.
-# 3. CAPABILITY: Enables queries like "Find all cases from Gjykata Themelore".
+# PHOENIX PROTOCOL - GRAPH SERVICE V9.0 (BUSINESS INTELLIGENCE)
+# 1. REFACTOR: Transformed from "Litigation Engine" to "Business Ecosystem Graph".
+# 2. NODES: Now models Clients, Suppliers, Products, and Transactions.
+# 3. RELATIONS: Tracks commercial relationships (SOLD_TO, ISSUED_BY, CONTAINS_ITEM).
 
 import os
 import structlog
@@ -39,7 +39,7 @@ class GraphService:
             self._driver.close()
 
     # ==============================================================================
-    # SECTION 1: MAINTENANCE & VISUALIZATION (V5)
+    # SECTION 1: MAINTENANCE & VISUALIZATION
     # ==============================================================================
 
     def delete_document_nodes(self, document_id: str):
@@ -57,9 +57,10 @@ class GraphService:
         self._connect()
         if not self._driver: return {"nodes": [], "links": []}
         
+        # PHOENIX: Updated query for business relationships
         query = """
         MATCH (d:Document {case_id: $case_id})
-        OPTIONAL MATCH (d)-[:MENTIONS|ISSUED_BY]->(e)
+        OPTIONAL MATCH (d)-[:MENTIONS|ISSUED_BY|BILLED_TO]->(e)
         WITH collect(DISTINCT d) + collect(DISTINCT e) as nodes
         UNWIND nodes as n
         OPTIONAL MATCH (n)-[r]-(m)
@@ -101,12 +102,12 @@ class GraphService:
             return {"nodes": [], "links": []}
 
     # ==============================================================================
-    # SECTION 2: DATA INGESTION (ENTITIES & RELATIONSHIPS)
+    # SECTION 2: DATA INGESTION (BUSINESS ENTITIES)
     # ==============================================================================
 
     def ingest_entities_and_relations(self, case_id: str, document_id: str, doc_name: str, entities: List[Dict], relations: List[Dict], doc_metadata: Optional[Dict] = None):
         """
-        Ingests People, Money, Orgs, AND rich legal metadata (Court, Judge).
+        Ingests business entities: Clients, Suppliers, Money, Products.
         """
         self._connect()
         if not self._driver: return
@@ -117,34 +118,35 @@ class GraphService:
                 SET d.case_id = $case_id, d.name = $doc_name, d.group = 'DOCUMENT'
             """, doc_id=d_id, case_id=c_id, doc_name=d_name)
 
-            # PHOENIX UPGRADE: Ingest rich legal metadata first
+            # PHOENIX: Business Metadata Ingestion
             if meta:
-                if meta.get("court"):
+                # If metadata identifies a 'Supplier' or 'Issuer'
+                if meta.get("issuer") or meta.get("supplier"):
+                    name = meta.get("issuer") or meta.get("supplier")
                     tx.run("""
-                        MERGE (c:Court {name: $court_name, group: 'COURT'})
+                        MERGE (c:Company {name: $name, group: 'SUPPLIER'})
                         MERGE (d:Document {id: $doc_id})
-                        MERGE (d)-[:ISSUED_BY]->(c)
-                    """, court_name=meta["court"], doc_id=d_id)
-                if meta.get("judge"):
+                        MERGE (c)-[:ISSUED]->(d)
+                    """, name=name, doc_id=d_id)
+                
+                # If metadata identifies a 'Client' or 'Customer'
+                if meta.get("client") or meta.get("customer"):
+                    name = meta.get("client") or meta.get("customer")
                     tx.run("""
-                        MERGE (j:Judge {name: $judge_name, group: 'JUDGE'})
+                        MERGE (c:Company {name: $name, group: 'CLIENT'})
                         MERGE (d:Document {id: $doc_id})
-                        MERGE (d)-[:MENTIONS]->(j)
-                    """, judge_name=meta["judge"], doc_id=d_id)
-                if meta.get("case_number"):
-                    tx.run("""
-                        MERGE (cn:CaseNumber {name: $case_num, group: 'CASE_NUMBER'})
-                        MERGE (d:Document {id: $doc_id})
-                        MERGE (d)-[:MENTIONS]->(cn)
-                    """, case_num=meta["case_number"], doc_id=d_id)
+                        MERGE (d)-[:BILLED_TO]->(c)
+                    """, name=name, doc_id=d_id)
 
             # Ingest standard entities from LLM
             for ent in ents:
                 raw_label = ent.get("type", "Entity").strip().capitalize()
                 label = "ENTITY"
+                # Map LLM types to Business Graph Labels
                 if raw_label in ["Person", "People"]: label = "PERSON"
-                elif raw_label in ["Organization", "Company"]: label = "ORGANIZATION"
-                elif raw_label in ["Money", "Amount"]: label = "MONEY"
+                elif raw_label in ["Organization", "Company", "Business"]: label = "COMPANY"
+                elif raw_label in ["Money", "Amount", "Price"]: label = "MONEY"
+                elif raw_label in ["Product", "Item", "Service"]: label = "PRODUCT"
                 elif raw_label in ["Date", "Time"]: label = "DATE"
                 
                 name = ent.get("name", "").strip().title()
@@ -157,6 +159,7 @@ class GraphService:
                 MERGE (d)-[:MENTIONS]->(e)
                 """, name=name, doc_id=d_id)
 
+            # Ingest Relationships
             for rel in rels:
                 subj = rel.get("subject", "").strip().title()
                 obj = rel.get("object", "").strip().title()
@@ -176,47 +179,13 @@ class GraphService:
             logger.error(f"Graph Ingestion Error: {e}")
 
     # ==============================================================================
-    # SECTION 3: LITIGATION ENGINE (V6 - CLAIMS & CONTRADICTIONS)
-    # ==============================================================================
-
-    def ingest_legal_analysis(self, case_id: str, doc_id: str, analysis: List[Dict]):
-        self._connect()
-        if not self._driver: return
-        def _tx_ingest_legal(tx, c_id, d_id, items):
-            tx.run("MERGE (d:Document {id: $d_id}) SET d.case_id = $c_id", d_id=d_id, c_id=c_id)
-            for item in items:
-                if item.get('type') == 'ACCUSATION':
-                    accuser = item.get('source', 'Unknown').title()
-                    accused = item.get('target', 'Unknown').title()
-                    claim_text = item.get('text', 'Unspecified Claim')
-                    tx.run("""
-                    MERGE (p1:Person {name: $accuser})
-                    MERGE (p2:Person {name: $accused})
-                    MERGE (c:Claim {text: $claim_text, case_id: $case_id})
-                    MERGE (p1)-[:ACCUSES]->(p2)
-                    MERGE (p1)-[:ASSERTS]->(c)
-                    MERGE (c)-[:CONCERNS]->(p2)
-                    MERGE (d:Document {id: $doc_id})-[:RECORDS]->(c)
-                    """, accuser=accuser, accused=accused, claim_text=claim_text, case_id=c_id, doc_id=d_id)
-                elif item.get('type') == 'CONTRADICTION':
-                    tx.run("""
-                    MERGE (c:Claim {text: $claim_text})
-                    MERGE (e:Evidence {text: $evidence_text})
-                    MERGE (d:Document {id: $doc_id})-[:CONTAINS]->(e)
-                    MERGE (e)-[:CONTRADICTS]->(c)
-                    """, claim_text=item.get('claim_text'), evidence_text=item.get('evidence_text'), doc_id=d_id)
-        try:
-            with self._driver.session() as session:
-                session.execute_write(_tx_ingest_legal, case_id, doc_id, analysis)
-            logger.info("⚖️ Legal Graph Ingestion Complete")
-        except Exception as e:
-            logger.error(f"Legal Ingestion Failed: {e}")
-
-    # ==============================================================================
-    # SECTION 4: INTELLIGENCE QUERIES (DETECTIVE TOOLS)
+    # SECTION 3: BUSINESS INTELLIGENCE QUERIES (V9)
     # ==============================================================================
 
     def find_hidden_connections(self, query_term: str) -> List[str]:
+        """
+        Finds business connections. E.g., "Show me everything related to 'Elkos'".
+        """
         self._connect()
         if not self._driver: return []
         query = """
@@ -235,41 +204,10 @@ class GraphService:
         except Exception:
             return []
 
+    # PHOENIX: Removed 'find_contradictions' and 'get_accusation_chain' as they are legacy legal tools.
+    # We can add 'find_pricing_trends' or 'find_top_suppliers' here in the future.
     def find_contradictions(self, case_id: str) -> str:
-        self._connect()
-        if not self._driver: return ""
-        query = """
-        MATCH (e:Evidence)-[:CONTRADICTS]->(c:Claim)<-[:ASSERTS]-(p:Person)
-        WHERE c.case_id = $case_id
-        RETURN p.name as liar, c.text as lie, e.text as proof
-        """
-        try:
-            with self._driver.session() as session:
-                result = session.run(query, case_id=case_id)
-                summary = []
-                for r in result:
-                    summary.append(f"⚠️ FALSE CLAIM: {r['liar']} claimed '{r['lie']}', but evidence '{r['proof']}' contradicts this.")
-                return "\n".join(summary) if summary else "No direct contradictions found in the graph."
-        except Exception:
-            return ""
-
-    def get_accusation_chain(self, person_name: str) -> List[str]:
-        self._connect()
-        if not self._driver: return []
-        query = """
-        MATCH (accuser:Person)-[:ACCUSES]->(target:Person {name: $name})
-        MATCH (accuser)-[:ASSERTS]->(c:Claim)-[:CONCERNS]->(target)
-        RETURN accuser.name, c.text
-        """
-        results = []
-        try:
-            with self._driver.session() as session:
-                res = session.run(query, name=person_name.title())
-                for r in res:
-                    results.append(f"{r['accuser.name']} accused {person_name} of: {r['c.text']}")
-            return results
-        except Exception:
-            return []
+        return "Graph analysis disabled for business mode."
 
 # Global Instance
 graph_service = GraphService()

@@ -1,20 +1,19 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API MASTER V19.0 (AGENT-AWARE CHAT)
-// 1. FEATURE: The 'sendChatMessage' function now accepts an 'agentType' parameter.
-// 2. LOGIC: This parameter is included in the POST request to the backend, allowing the server to select the correct AI persona.
+// PHOENIX PROTOCOL - API CLEANUP V2.0
+// 1. REMOVED: Deleted legacy forensic endpoints (analyzeCase, crossExamineDocument, getCaseGraph).
+// 2. STATUS: API definition is now clean and business-focused.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
     LoginRequest, RegisterRequest, Case, CreateCaseRequest, Document, User, UpdateUserRequest,
     DeletedDocumentResponse, CalendarEvent, CalendarEventCreateRequest, CreateDraftingJobRequest,
-    DraftingJobStatus, DraftingJobResult, ChangePasswordRequest, CaseAnalysisResult,
+    DraftingJobStatus, DraftingJobResult, ChangePasswordRequest,
     BusinessProfile, BusinessProfileUpdate, Invoice, InvoiceCreateRequest, InvoiceItem,
-    GraphData, ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
+    ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
     InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction,
     StrategicBriefingResponse
 } from '../data/types';
 
-// This is a deprecated definition, the one in types.ts is the source of truth.
 export interface DailyBriefingResponse {
     id: string;
     content: string;
@@ -97,11 +96,6 @@ class ApiService {
     public async archiveCaseDocument(caseId: string, documentId: string): Promise<ArchiveItemOut> { const response = await this.axiosInstance.post<ArchiveItemOut>(`/cases/${caseId}/documents/${documentId}/archive`); return response.data; }
     public async renameDocument(caseId: string, docId: string, newName: string): Promise<void> { await this.axiosInstance.put(`/cases/${caseId}/documents/${docId}/rename`, { new_name: newName }); }
     
-    public async getCaseGraph(caseId: string): Promise<GraphData> { const response = await this.axiosInstance.get<GraphData>(`/graph/graph/${caseId}`); return response.data; }
-    public async analyzeCase(caseId: string): Promise<CaseAnalysisResult> { const response = await this.axiosInstance.post<CaseAnalysisResult>(`/cases/${caseId}/analyze`); return response.data; }
-    public async crossExamineDocument(caseId: string, documentId: string): Promise<CaseAnalysisResult> { const response = await this.axiosInstance.post<CaseAnalysisResult>(`/cases/${caseId}/documents/${documentId}/cross-examine`); return response.data; }
-    
-    // PHOENIX: Added agentType to signature and payload
     public async sendChatMessage(caseId: string, message: string, documentId?: string, jurisdiction?: string, agentType: string = 'business'): Promise<string> {
         const response = await this.axiosInstance.post<{ response: string }>(`/chat/case/${caseId}`, { 
             message, 
@@ -111,7 +105,6 @@ class ApiService {
         });
         return response.data.response;
     }
-    
     public async clearChatHistory(caseId: string): Promise<void> { await this.axiosInstance.delete(`/chat/case/${caseId}/history`); }
 
     public async getAnalyticsDashboard(days: number = 30): Promise<AnalyticsDashboardData> { const response = await this.axiosInstance.get<AnalyticsDashboardData>(`/finance/analytics/dashboard`, { params: { days } }); return response.data; }

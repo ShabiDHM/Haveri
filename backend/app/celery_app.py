@@ -1,7 +1,7 @@
 # FILE: backend/app/celery_app.py
-# PHOENIX PROTOCOL - CELERY ROBUSTNESS (TYPE FIX)
-# 1. FIX: Used conf.update() instead of direct assignment to satisfy Pylance.
-# 2. STATUS: Type-safe and decoupled configuration.
+# PHOENIX PROTOCOL - CELERY CONFIG V3.0 (CLEANUP)
+# 1. REMOVED: Deleted 'app.tasks.findings_extraction' from autodiscover to prevent import errors.
+# 2. STATUS: Configuration is now free of zombie task references.
 
 from celery import Celery
 import logging
@@ -39,7 +39,7 @@ def configure_celery_app():
     celery_app.autodiscover_tasks([
         'app.tasks.document_processing',
         'app.tasks.deadline_extraction',
-        'app.tasks.findings_extraction',
+        # 'app.tasks.findings_extraction', # PHOENIX: REMOVED LEGACY TASK
         'app.tasks.chat_tasks',
         'app.tasks.drafting_tasks',
     ])

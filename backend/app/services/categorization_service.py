@@ -1,8 +1,8 @@
 # FILE: backend/app/services/categorization_service.py
-# PHOENIX PROTOCOL - CATEGORIZATION ENGINE V4.1
-# 1. ENGINE: DeepSeek V3 (OpenRouter) for "Semantic Understanding" classification.
-# 2. HIERARCHY: Cloud API -> Local Microservice -> Local LLM.
-# 3. LABELS: Optimized for Kosovo Legal System.
+# PHOENIX PROTOCOL - CATEGORIZATION ENGINE V5.0 (BUSINESS EDITION)
+# 1. REFACTOR: Shifted from "Legal Categories" to "Business Operations Categories".
+# 2. LABELS: Optimized for SMEs (Invoices, Offers, Reports, Contracts).
+# 3. PERSONA: The AI is now a "Business Archivist" instead of a Legal Clerk.
 
 import os
 import httpx
@@ -42,16 +42,15 @@ class CategorizationService:
         else:
             self.client = None
 
-        # Standardized Categories for Kosovo Law
+        # PHOENIX: Standardized Categories for Business Operations
         self.default_labels = [
-            "Kontratë",                 
-            "Vendim Gjyqësor",          
-            "Padi / Kërkesëpadi",      
-            "Ankesë",
-            "Provë Materiale",
-            "Ligj / Akt Nënligjor",      
-            "Faturë / Financat",
-            "Korrespondencë Zyrtare"
+            "Faturë / Invoice",
+            "Ofertë / Propozim",
+            "Kontratë / Marrëveshje",
+            "Raport Financiar",
+            "Email / Komunikim",
+            "Dokument Zyrtar (ATK/ARBK)",
+            "Tjetër"
         ]
 
     def _categorize_with_deepseek(self, text: str, labels: List[str]) -> Optional[str]:
@@ -64,8 +63,9 @@ class CategorizationService:
         truncated_text = text[:3000] 
         labels_str = ", ".join([f'"{l}"' for l in labels])
 
+        # PHOENIX: Updated Persona
         system_prompt = f"""
-        Ti je "Juristi AI - Arkivisti", një ekspert për klasifikimin e dokumenteve ligjore.
+        Ti je "Arkivisti i Biznesit", një ekspert për klasifikimin e dokumenteve komerciale.
         
         DETYRA:
         Analizo tekstin e dhënë dhe caktoje në SAKTËSISHT NJË nga kategoritë e mëposhtme:
@@ -87,8 +87,8 @@ class CategorizationService:
                 temperature=0.1, # Deterministic
                 response_format={"type": "json_object"},
                 extra_headers={
-                    "HTTP-Referer": "https://juristi.tech", 
-                    "X-Title": "Juristi AI Categorization"
+                    "HTTP-Referer": "https://haveri.tech", 
+                    "X-Title": "Haveri Categorization"
                 }
             )
             

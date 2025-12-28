@@ -1,7 +1,11 @@
 # FILE: backend/app/services/__init__.py
+# PHOENIX PROTOCOL - SERVICES INIT CLEANUP
+# 1. REMOVED: Deleted 'analysis_service' from imports as the file was deleted.
+# 2. STATUS: Prevents ImportError on server startup.
+
 from . import (
     admin_service,
-    analysis_service,
+    # analysis_service, # PHOENIX: Removed deleted service
     business_service,
     calendar_service,
     case_service,
@@ -30,7 +34,7 @@ from . import (
     pdf_service,
     social_service,
     inventory_service,
-    daily_briefing_service, # <-- NEW AGENT SERVICE
+    daily_briefing_service,
     parsing_service,
     share_service,
     

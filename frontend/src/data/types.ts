@@ -1,8 +1,7 @@
-
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES MASTER V20.0 (BUSINESS CALENDAR REFACTOR)
-// 1. REFACTOR: Updated CalendarEvent.event_type to use business-centric types (APPOINTMENT, TASK, etc.) instead of legal types.
-// 2. STATUS: Aligned with the new Business Calendar Model.
+// PHOENIX PROTOCOL - TYPES CLEANUP V2.0
+// 1. REMOVED: Deleted all types related to the legacy forensic analysis module (CaseAnalysisResult, GraphData, etc.).
+// 2. STATUS: Clean types definition file.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -12,7 +11,6 @@ export interface Case { id: string; case_number: string; case_name: string; titl
 export interface Document { id: string; file_name: string; file_type: string; mime_type?: string; storage_key: string; uploaded_by: string; created_at: string; status: 'UPLOADING' | 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED'; summary?: string; risk_score?: number; ocr_status?: string; processed_text_storage_key?: string; preview_storage_key?: string; error_message?: string; progress_percent?: number; progress_message?: string; is_shared?: boolean; }
 export interface ChatMessage { role: 'user' | 'ai'; content: string; timestamp: string; }
 
-// PHOENIX: Refactored event_type to match the new Business Model
 export interface CalendarEvent { 
     id: string; 
     title: string; 
@@ -34,7 +32,6 @@ export interface CalendarEvent {
 export interface BusinessProfile { id: string; firm_name: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color: string; logo_url?: string; is_complete: boolean; vat_rate?: number; target_margin?: number; currency?: string; }
 export interface BusinessProfileUpdate { firm_name?: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color?: string; vat_rate?: number; target_margin?: number; currency?: string; }
 
-// --- TACTICAL BRIEFING TYPES (V19.5 CORRECTED) ---
 export interface StrategicBriefingResponse {
     staffPerformance: {
         efficiencyStatus: 'sleep' | 'stable' | 'fire';
@@ -51,7 +48,6 @@ export interface StrategicBriefingResponse {
     agenda: Array<{ id: string; title: string; time: string; type: 'meeting' | 'payment' | 'deadline' | 'call'; priority: 'high' | 'medium' | 'low'; isCompleted: boolean; }>;
 }
 
-// --- STANDARD FINANCE & INVENTORY ---
 export interface InvoiceItem { description: string; quantity: number; unit_price: number; total: number; }
 export interface Invoice { id: string; invoice_number: string; client_name: string; client_email?: string; client_address?: string; issue_date: string; due_date: string; items: InvoiceItem[]; subtotal: number; tax_rate: number; tax_amount: number; total_amount: number; currency: string; status: 'DRAFT' | 'SENT' | 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED'; notes?: string; related_case_id?: string; }
 export interface InvoiceCreateRequest { client_name: string; client_email?: string; client_address?: string; items: InvoiceItem[]; tax_rate: number; due_date?: string; notes?: string; related_case_id?: string; status?: string; }
@@ -80,9 +76,3 @@ export interface CalendarEventCreateRequest { title: string; description?: strin
 export interface CreateDraftingJobRequest { user_prompt: string; template_id?: string; case_id?: string; context?: string; draft_type?: string; document_type?: string; use_library?: boolean; }
 export type DraftingJobStatus = { job_id: string; status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; error?: string; result_summary?: string; };
 export type DraftingJobResult = { document_text: string; document_html?: string; result_text?: string; job_id?: string; status?: string; };
-export interface ConflictingParty { party_name: string; core_claim: string; }
-export interface ChronologyEvent { date: string; event: string; source_doc?: string; }
-export interface CaseAnalysisResult { summary_analysis: string; contradictions: string[]; missing_info: string[]; conflicting_parties?: ConflictingParty[]; key_evidence?: string[]; chronology?: ChronologyEvent[]; silent_parties?: string[]; active_parties?: string[]; analysis_mode?: string; target_document_id?: string; judicial_observation?: string; red_flags?: string[]; suggested_questions?: string[]; discovery_targets?: string[]; risks?: string[]; error?: string; }
-export interface GraphNode { id: string; name: string; group: string; val: number; }
-export interface GraphLink { source: string; target: string; label: string; }
-export interface GraphData { nodes: GraphNode[]; links: GraphLink[]; }
