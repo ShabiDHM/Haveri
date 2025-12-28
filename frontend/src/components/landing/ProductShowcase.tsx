@@ -1,8 +1,7 @@
 // FILE: src/components/landing/ProductShowcase.tsx
-// PHOENIX PROTOCOL - SHOWCASE V17.0 (BUSINESS ALIGNMENT)
-// 1. REFACTOR: Updated mockups to reflect the new "Business Consultant" features (Rhythm, Inventory, Dual-Agent).
-// 2. VISUALS: Aligned colors and icons with the new Dashboard styling.
-// 3. CONTENT: Features now pitch "Profit", "Velocity", and "Compliance" rather than just "Legal Tech".
+// PHOENIX PROTOCOL - SHOWCASE V17.2 (LINT FIX)
+// 1. CLEANUP: Removed unused 'CheckSquare' import.
+// 2. STATUS: Build-ready.
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,7 +15,6 @@ import {
     FolderSearch,
     TrendingUp,
     AlertTriangle,
-    CheckSquare,
     ChefHat,
     Scale,
     MessageSquare

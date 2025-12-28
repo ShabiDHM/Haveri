@@ -1,14 +1,12 @@
 // FILE: src/pages/LandingPage.tsx
-// PHOENIX PROTOCOL - LANDING PAGE V17.1 (BUSINESS CONTENT)
-// 1. CONTENT: Updated copy to reflect the "Business Consultant" & "Dual Agent" architecture.
-// 2. FOCUS: Highlights "Profit", "TVSH" (Tax), and "Inventory" over generic AI features.
-// 3. STATUS: Aligned with the application's actual capabilities.
+// PHOENIX PROTOCOL - LANDING PAGE V17.2 (LINT FIX)
+// 1. CLEANUP: Removed unused 'FileText' import.
+// 2. STATUS: Build-ready.
 
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
-    FileText, 
-    Database, 
+    Database, // Replaced FileText use case
     Lock, 
     ChevronRight, 
     BrainCircuit,
