@@ -1,6 +1,7 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V4.1 (REDUNDANCY FIX)
-// 1. RENAMED: 'Haveri AI' nav link is now 'Workspace' to be more specific and avoid duplication with the brand logo.
+// PHOENIX PROTOCOL - HEADER V4.2 (FINAL NAVIGATION ORDER)
+// 1. REORDER: Navigation is now Brand Logo -> Zyra Ime -> Haveri AI -> Ndihma.
+// 2. CLARITY: Restored 'Haveri AI' as the link text for the main workspace.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, LogOut, User as UserIcon, Brain, Building2, MessageSquare } from 'lucide-react';
@@ -59,37 +60,35 @@ const Header: React.FC = () => {
   
   const navItems = [
       { label: t('sidebar.business', 'Zyra Ime'), path: '/business', icon: Building2 },
-      // PHOENIX: Renamed for clarity
-      { label: t('sidebar.workspace', 'Workspace'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
+      { label: t('sidebar.haveri_ai', 'Haveri AI'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
       { label: t('sidebar.support', 'Ndihma'), path: '/support', icon: MessageSquare },
   ];
 
   return (
     <header className="h-16 bg-background-dark/80 backdrop-blur-md border-b border-glass-edge flex items-center justify-between px-4 sm:px-6 z-40 sticky top-0">
       
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-6">
         <Link to="/business">
           <BrandLogo />
         </Link>
+        <nav className="hidden lg:flex items-center gap-2">
+            {navItems.map(item => {
+                const isActive = (location.pathname.startsWith('/cases') && item.path.startsWith('/cases')) || location.pathname === item.path;
+                return (
+                    <NavLink
+                        key={item.path}
+                        to={item.path}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+                        }`}
+                    >
+                        <item.icon size={16} />
+                        <span>{item.label}</span>
+                    </NavLink>
+                )
+            })}
+        </nav>
       </div>
-
-      <nav className="hidden lg:flex items-center gap-2 p-1 bg-black/30 border border-glass-edge rounded-full">
-        {navItems.map(item => {
-            const isActive = (location.pathname.startsWith('/cases') && item.path.startsWith('/cases')) || location.pathname === item.path;
-            return (
-                <NavLink
-                    key={item.path}
-                    to={item.path}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-colors ${
-                        isActive ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/10'
-                    }`}
-                >
-                    <item.icon size={16} />
-                    <span>{item.label}</span>
-                </NavLink>
-            )
-        })}
-      </nav>
 
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="hidden"><LanguageSwitcher /></div>

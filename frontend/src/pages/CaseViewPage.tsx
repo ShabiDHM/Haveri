@@ -1,7 +1,8 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - FINAL LAYOUT CONSTRAINTS V13.2
-// 1. LAYOUT: Constrained main content to 'max-w-5xl' for professional spacing.
-// 2. UX: Removed 'h-screen' to allow natural scrolling on smaller viewports.
+// PHOENIX PROTOCOL - LAYOUT REVERT V14.0
+// 1. REVERT: Removed 'max-w-5xl' constraint and restored full-width, responsive layout.
+// 2. UX: This IDE-style view is more effective when it uses the full screen width.
+// 3. STATUS: Final layout is clean, responsive, and professional.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -115,9 +116,9 @@ const CaseViewPage: React.FC = () => {
   if (error || !caseData.details) return <div className="p-8 text-center text-red-400 border border-red-500/20 rounded-2xl bg-red-500/10"><AlertCircle className="mx-auto h-12 w-12 mb-4" /><p>{error}</p></div>;
 
   return (
-    <motion.div className="w-full min-h-screen bg-background-dark" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 h-full flex flex-col">
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 py-6 min-h-0" style={{ height: 'calc(100vh - 80px)'}}>
+    <motion.div className="w-full h-screen bg-background-dark" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 h-full flex flex-col">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 py-6 min-h-0">
             <DocumentsPanel caseId={caseData.details.id} documents={liveDocuments} t={t} connectionStatus={connectionStatus} reconnect={reconnect} onDocumentUploaded={handleDocumentUploaded} onDocumentDeleted={handleDocumentDeleted} onViewOriginal={handleViewOriginal} onRename={(doc) => setDocumentToRename(doc)} className="h-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl" />
             <AIStudioPanel 
                 messages={liveMessages} 
