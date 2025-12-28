@@ -1,9 +1,10 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR V10.3 (LINTER CLEANUP)
-// 1. CLEANUP: Removed the unused 'useRef' import and the 'hasCheckedForToday' variable.
-// 2. STATUS: Code is now clean, free of linter warnings.
+// PHOENIX PROTOCOL - CALENDAR V10.4 (FINAL UX STREAMLINING)
+// 1. REMOVED: The legacy useEffect that automatically opened the 'DayEventsModal' on load has been deleted.
+// 2. FEATURE: The page now checks for 'scrollToToday' in the navigation state and centers the view on the current date if true.
+// 3. STATUS: All navigation paths are now clean, direct, and intelligent.
 
-import React, { useState, useEffect } from 'react'; // PHOENIX: Removed 'useRef'
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CalendarEvent, Case, CalendarEventCreateRequest } from '../data/types';
 import { apiService } from '../services/api';
@@ -165,15 +166,22 @@ const CalendarPage: React.FC = () => {
 
     useEffect(() => { loadData(); }, []);
 
+    // PHOENIX: Handles all incoming navigation states
     useEffect(() => {
-        if (!loading && events.length > 0 && location.state?.openEventId) {
-            const eventIdToOpen = location.state.openEventId;
-            const eventToOpen = events.find(e => getEventId(e) === eventIdToOpen);
-            
-            if (eventToOpen) {
-                setSelectedEvent(eventToOpen);
-                navigate(location.pathname, { replace: true, state: {} });
+        if (!loading && events.length > 0 && location.state) {
+            const { openEventId, scrollToToday } = location.state;
+
+            if (openEventId) {
+                const eventToOpen = events.find(e => getEventId(e) === openEventId);
+                if (eventToOpen) {
+                    setSelectedEvent(eventToOpen);
+                }
+            } else if (scrollToToday) {
+                setCurrentDate(new Date());
             }
+            
+            // Clear the state to prevent re-triggering on refresh
+            navigate(location.pathname, { replace: true, state: {} });
         }
     }, [loading, events, location, navigate]);
     
