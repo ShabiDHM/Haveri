@@ -1,8 +1,8 @@
 # FILE: backend/app/models/calendar.py
-# PHOENIX PROTOCOL - MODEL ALIGNMENT
-# 1. RENAMED: 'user_id' -> 'owner_id' to match Service layer and DB schema.
-# 2. TYPE FIX: 'case_id' -> 'str' in DB model to match dashboard counting logic.
-# 3. ADDED: 'document_id' field for tracking source documents.
+# PHOENIX PROTOCOL - BUSINESS MODEL ALIGNMENT V2
+# 1. REFACTOR: Replaced the 'EventType' Enum with business-centric types (APPOINTMENT, TASK, etc.).
+# 2. DEFAULT: Changed the default event_type to 'TASK'.
+# 3. STATUS: Backend validation is now fully synchronized with the frontend Business Calendar Model.
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional, List
@@ -12,13 +12,13 @@ from bson import ObjectId
 
 from app.models.common import PyObjectId 
 
+# PHOENIX: Refactored Enum to match the Business Model
 class EventType(str, Enum):
-    DEADLINE = "DEADLINE"
-    HEARING = "HEARING"
-    MEETING = "MEETING"
-    FILING = "FILING"
-    COURT_DATE = "COURT_DATE"
-    CONSULTATION = "CONSULTATION"
+    APPOINTMENT = "APPOINTMENT"
+    TASK = "TASK"
+    PAYMENT_DUE = "PAYMENT_DUE"
+    TAX_DEADLINE = "TAX_DEADLINE"
+    PERSONAL = "PERSONAL"
     OTHER = "OTHER"
 
 class EventPriority(str, Enum):
@@ -39,19 +39,22 @@ class CalendarEventBase(BaseModel):
     start_date: datetime
     end_date: Optional[datetime] = None
     is_all_day: bool = False
-    event_type: EventType = EventType.MEETING
+    event_type: EventType = EventType.TASK # PHOENIX: Changed default to a more neutral business type
     priority: EventPriority = EventPriority.MEDIUM
     location: Optional[str] = Field(None, max_length=100)
     attendees: Optional[List[str]] = None
     notes: Optional[str] = Field(None, max_length=1000)
 
 class CalendarEventCreate(CalendarEventBase):
-    case_id: PyObjectId
+    case_id: Optional[PyObjectId] = None # Optional for non-case related tasks
 
     @field_validator('case_id', mode='before')
     @classmethod
     def validate_case_id(cls, v):
+        if v is None:
+            return None
         if isinstance(v, str):
+            if not v.strip(): return None # Allow empty string
             try:
                 return ObjectId(v)
             except Exception:
@@ -63,9 +66,9 @@ class CalendarEventCreate(CalendarEventBase):
 
 class CalendarEventInDB(CalendarEventBase):
     id: PyObjectId = Field(alias="_id")
-    owner_id: PyObjectId # PHOENIX FIX: Renamed from user_id to match DB
-    case_id: str # PHOENIX FIX: Changed to str to match dashboard counters
-    document_id: Optional[str] = None # Added for reference
+    owner_id: PyObjectId
+    case_id: Optional[str] = None # Optional to allow general business events
+    document_id: Optional[str] = None
     status: EventStatus = EventStatus.PENDING
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -73,5 +76,6 @@ class CalendarEventInDB(CalendarEventBase):
     model_config = ConfigDict(populate_by_name=True)
 
 class CalendarEventOut(CalendarEventInDB):
-    # Inherits serialization logic from InDB
+    # This model is sent to the frontend. Ensure fields are what frontend expects.
+    # The 'id' field will be serialized from the PyObjectId aliased from '_id'.
     pass

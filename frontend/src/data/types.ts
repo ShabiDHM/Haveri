@@ -1,6 +1,8 @@
+
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES MASTER V19.5 (CORRECTED)
-// 1. FIXED: Corrected 'mvpInsight' structure to allow flexible record values.
+// PHOENIX PROTOCOL - TYPES MASTER V20.0 (BUSINESS CALENDAR REFACTOR)
+// 1. REFACTOR: Updated CalendarEvent.event_type to use business-centric types (APPOINTMENT, TASK, etc.) instead of legal types.
+// 2. STATUS: Aligned with the new Business Calendar Model.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -9,7 +11,26 @@ export type AdminUser = User;
 export interface Case { id: string; case_number: string; case_name: string; title: string; status: 'open' | 'closed' | 'pending' | 'archived'; client?: { name: string; phone: string; email: string; }; opposing_party?: { name: string; lawyer: string; }; court_info?: { name: string; judge: string; }; description: string; created_at: string; updated_at: string; tags: string[]; chat_history?: ChatMessage[]; document_count?: number; alert_count?: number; event_count?: number; is_shared?: boolean; }
 export interface Document { id: string; file_name: string; file_type: string; mime_type?: string; storage_key: string; uploaded_by: string; created_at: string; status: 'UPLOADING' | 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED'; summary?: string; risk_score?: number; ocr_status?: string; processed_text_storage_key?: string; preview_storage_key?: string; error_message?: string; progress_percent?: number; progress_message?: string; is_shared?: boolean; }
 export interface ChatMessage { role: 'user' | 'ai'; content: string; timestamp: string; }
-export interface CalendarEvent { id: string; title: string; description?: string; start_date: string; end_date: string; is_all_day: boolean; event_type: 'HEARING' | 'DEADLINE' | 'MEETING' | 'OTHER' | 'FILING' | 'COURT_DATE' | 'CONSULTATION'; status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE' | 'ARCHIVED'; case_id?: string; document_id?: string; location?: string; notes?: string; priority?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'; attendees?: string[]; is_public?: boolean; }
+
+// PHOENIX: Refactored event_type to match the new Business Model
+export interface CalendarEvent { 
+    id: string; 
+    title: string; 
+    description?: string; 
+    start_date: string; 
+    end_date: string; 
+    is_all_day: boolean; 
+    event_type: 'APPOINTMENT' | 'TASK' | 'PAYMENT_DUE' | 'TAX_DEADLINE' | 'PERSONAL' | 'OTHER'; 
+    status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE' | 'ARCHIVED'; 
+    case_id?: string; 
+    document_id?: string; 
+    location?: string; 
+    notes?: string; 
+    priority?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'; 
+    attendees?: string[]; 
+    is_public?: boolean; 
+}
+
 export interface BusinessProfile { id: string; firm_name: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color: string; logo_url?: string; is_complete: boolean; vat_rate?: number; target_margin?: number; currency?: string; }
 export interface BusinessProfileUpdate { firm_name?: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color?: string; vat_rate?: number; target_margin?: number; currency?: string; }
 
@@ -22,7 +43,6 @@ export interface StrategicBriefingResponse {
         mvpTotal: number;
         mvpInsight: {
             key: string;
-            // Allow string OR number to prevent TS errors when passing values like '12.50'
             values?: Record<string, string | number>;
         };
         actionBravo: boolean;

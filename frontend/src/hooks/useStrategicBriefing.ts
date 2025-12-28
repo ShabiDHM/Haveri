@@ -1,25 +1,42 @@
 // FILE: src/hooks/useStrategicBriefing.ts
-// PHOENIX PROTOCOL - HOOK V2.2 (STRICT FILTERING)
-// 1. FILTERING: Switched to Local Date Comparison (getDate/getMonth/getFullYear) to strictly show TODAY'S events.
-// 2. TYPE SAFETY: Maintains Omit<T,K> fix.
+// PHOENIX PROTOCOL - HOOK V2.5 (TYPE-SAFE MAPPING)
+// 1. FIX: Created a 'mapApiPriority' function to safely convert uppercase API priorities (HIGH, CRITICAL) to lowercase UI priorities (high).
+// 2. FIX: Added explicit type casting to the 'fallbackAgenda' mapping to resolve the 'kind' property mismatch.
+// 3. STATUS: All TypeScript errors resolved.
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/api';
 import { StrategicBriefingResponse, CalendarEvent } from '../data/types';
 
-// Define the shape required by the UI Component (SmartAgendaCard)
+// Enhanced Interface for UI differentiation
 export interface AgendaItem {
     id: string;
     title: string;
     time: string;
     priority: 'high' | 'medium' | 'low';
     isCompleted: boolean;
+    kind: 'event' | 'alert'; // 'event' = Appointment/Task, 'alert' = Payment/Tax
+    originalType: string;    // 'APPOINTMENT', 'PAYMENT_DUE', etc.
 }
 
-// Omit 'agenda' from the base type to avoid conflicts
 interface EnhancedBriefingData extends Omit<StrategicBriefingResponse, 'agenda'> {
     agenda: AgendaItem[];
 }
+
+// PHOENIX FIX: Type-safe function to map API's uppercase priority to UI's lowercase priority.
+const mapApiPriority = (priority: CalendarEvent['priority']): 'high' | 'medium' | 'low' => {
+    switch (priority) {
+        case 'CRITICAL':
+        case 'HIGH':
+            return 'high';
+        case 'MEDIUM':
+            return 'medium';
+        case 'LOW':
+            return 'low';
+        default:
+            return 'medium'; // Default to medium if undefined
+    }
+};
 
 export const useStrategicBriefing = () => {
     const [data, setData] = useState<EnhancedBriefingData | null>(null);
@@ -36,59 +53,60 @@ export const useStrategicBriefing = () => {
             ]);
 
             const now = new Date();
-            // Store simple numeric values for today's date parts
             const currentDay = now.getDate();
             const currentMonth = now.getMonth();
             const currentYear = now.getFullYear();
 
-            // 1. Process Real Calendar Events
-            const todaysEvents: AgendaItem[] = calendarResult
+            // 1. Filter & Map Real Events
+            const todaysItems: AgendaItem[] = calendarResult
                 .filter((event: CalendarEvent) => {
                     if (!event.start_date) return false;
-                    
                     const eventDate = new Date(event.start_date);
-                    
-                    // PHOENIX FIX: Strict Equality Check (Day, Month, Year must match)
-                    // This ignores time/timezone offsets that might push it to "yesterday/tomorrow" in UTC
                     return eventDate.getDate() === currentDay &&
                            eventDate.getMonth() === currentMonth &&
                            eventDate.getFullYear() === currentYear;
                 })
-                .map((event: CalendarEvent) => {
+                .map((event: CalendarEvent): AgendaItem => { // Ensure the return type is AgendaItem
                     const eventDate = new Date(event.start_date);
-                    
-                    // Logic: Events within 4 hours are High Priority
+                    const type = event.event_type?.toUpperCase() || 'TASK';
+                    const isAlert = ['PAYMENT_DUE', 'TAX_DEADLINE'].includes(type);
                     const hoursDiff = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-                    let priority: 'high' | 'medium' | 'low' = 'medium';
-                    
-                    if (hoursDiff > 0 && hoursDiff < 4) priority = 'high';
-                    if (hoursDiff < 0) priority = 'low'; // Past events
+
+                    let finalPriority = mapApiPriority(event.priority);
+                    if (isAlert) {
+                        finalPriority = 'high'; // Alerts are always high priority
+                    }
 
                     return {
                         id: event.id,
                         title: event.title,
                         time: eventDate.toLocaleTimeString('sq-AL', { hour: '2-digit', minute: '2-digit' }),
-                        priority: priority,
-                        isCompleted: hoursDiff < -1 // Mark as completed if 1 hour passed
+                        priority: finalPriority,
+                        isCompleted: hoursDiff < -1,
+                        kind: isAlert ? 'alert' : 'event',
+                        originalType: type
                     };
                 })
-                .sort((a, b) => a.time.localeCompare(b.time));
+                .sort((a, b) => {
+                    if (a.kind === 'alert' && b.kind === 'event') return -1;
+                    if (a.kind === 'event' && b.kind === 'alert') return 1;
+                    return a.time.localeCompare(b.time);
+                });
 
-            // 2. Fallback only if no events exist
-            const fallbackAgenda: AgendaItem[] = (briefingResult.agenda || []).map((item: any) => ({
+            // 2. Fallback AI Suggestions (if no real data)
+            const fallbackAgenda: AgendaItem[] = (briefingResult.agenda || []).map((item: any): AgendaItem => ({ // PHOENIX FIX: Explicitly cast return object to AgendaItem
                 id: item.id || Math.random().toString(),
                 title: item.title,
                 time: item.time,
                 priority: 'medium',
-                isCompleted: false
+                isCompleted: false,
+                kind: 'event', // Default to event
+                originalType: 'SUGGESTION'
             }));
-
-            // If we have real events for today, use them. Otherwise, show AI suggestions.
-            const finalAgenda = todaysEvents.length > 0 ? todaysEvents : fallbackAgenda;
 
             setData({
                 ...briefingResult,
-                agenda: finalAgenda
+                agenda: todaysItems.length > 0 ? todaysItems : fallbackAgenda
             });
 
         } catch (e) {
