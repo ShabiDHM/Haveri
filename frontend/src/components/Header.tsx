@@ -1,11 +1,11 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - TOP NAVIGATION V1.0
-// 1. INTEGRATION: Main navigation links ('Zyra Ime', 'Haveri AI') are now part of the header.
-// 2. REMOVED: Deleted the mobile 'toggleSidebar' button.
-// 3. RESPONSIVE: The new navigation is hidden on mobile for a clean look.
+// PHOENIX PROTOCOL - HEADER V4.0 (FINAL POLISH)
+// 1. REMOVED: Deleted the global search bar to simplify the UI.
+// 2. ADDED: Re-introduced the 'BrandLogo' as the primary navigation link to the '/business' home page.
+// 3. STATUS: Final, clean header for the top-navigation layout.
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Search, LogOut, User as UserIcon, Brain, Building2, MessageSquare } from 'lucide-react';
+import { Bell, LogOut, User as UserIcon, Brain, Building2, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
@@ -68,17 +68,14 @@ const Header: React.FC = () => {
   return (
     <header className="h-16 bg-background-dark/80 backdrop-blur-md border-b border-glass-edge flex items-center justify-between px-4 sm:px-6 z-40 sticky top-0">
       
+      {/* PHOENIX: Left side now contains the BrandLogo, linked to home */}
       <div className="flex items-center gap-4">
-        <div className="lg:hidden">
-            <BrandLogo />
-        </div>
-        <div className="relative hidden sm:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary h-4 w-4" />
-          <input type="text" placeholder={t('header.searchPlaceholder')} className="bg-background-light/10 border border-glass-edge rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:ring-1 focus:ring-primary-start outline-none w-64 transition-all focus:w-80" />
-        </div>
+        <Link to="/business">
+          <BrandLogo />
+        </Link>
       </div>
 
-      {/* PHOENIX: Centered Navigation for Desktop */}
+      {/* Centered Navigation for Desktop */}
       <nav className="hidden lg:flex items-center gap-2 p-1 bg-black/30 border border-glass-edge rounded-full">
         {navItems.map(item => {
             const isActive = location.pathname.startsWith('/cases') && item.path.startsWith('/cases') || location.pathname === item.path;
@@ -97,6 +94,7 @@ const Header: React.FC = () => {
         })}
       </nav>
 
+      {/* Right side: Actions & Profile */}
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="hidden"><LanguageSwitcher /></div>
 
