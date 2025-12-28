@@ -1,8 +1,6 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V4.0 (FINAL POLISH)
-// 1. REMOVED: Deleted the global search bar to simplify the UI.
-// 2. ADDED: Re-introduced the 'BrandLogo' as the primary navigation link to the '/business' home page.
-// 3. STATUS: Final, clean header for the top-navigation layout.
+// PHOENIX PROTOCOL - HEADER V4.1 (REDUNDANCY FIX)
+// 1. RENAMED: 'Haveri AI' nav link is now 'Workspace' to be more specific and avoid duplication with the brand logo.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, LogOut, User as UserIcon, Brain, Building2, MessageSquare } from 'lucide-react';
@@ -61,24 +59,23 @@ const Header: React.FC = () => {
   
   const navItems = [
       { label: t('sidebar.business', 'Zyra Ime'), path: '/business', icon: Building2 },
-      { label: t('sidebar.haveri_ai', 'Haveri AI'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
+      // PHOENIX: Renamed for clarity
+      { label: t('sidebar.workspace', 'Workspace'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
       { label: t('sidebar.support', 'Ndihma'), path: '/support', icon: MessageSquare },
   ];
 
   return (
     <header className="h-16 bg-background-dark/80 backdrop-blur-md border-b border-glass-edge flex items-center justify-between px-4 sm:px-6 z-40 sticky top-0">
       
-      {/* PHOENIX: Left side now contains the BrandLogo, linked to home */}
       <div className="flex items-center gap-4">
         <Link to="/business">
           <BrandLogo />
         </Link>
       </div>
 
-      {/* Centered Navigation for Desktop */}
       <nav className="hidden lg:flex items-center gap-2 p-1 bg-black/30 border border-glass-edge rounded-full">
         {navItems.map(item => {
-            const isActive = location.pathname.startsWith('/cases') && item.path.startsWith('/cases') || location.pathname === item.path;
+            const isActive = (location.pathname.startsWith('/cases') && item.path.startsWith('/cases')) || location.pathname === item.path;
             return (
                 <NavLink
                     key={item.path}
@@ -94,17 +91,13 @@ const Header: React.FC = () => {
         })}
       </nav>
 
-      {/* Right side: Actions & Profile */}
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="hidden"><LanguageSwitcher /></div>
-
         <Link to="/calendar" className="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-lg transition-colors relative" title="Njoftimet">
           <Bell size={20} />
           {alertCount > 0 && (<span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>)}
         </Link>
-        
         <div className="h-6 w-px bg-glass-edge/50"></div>
-
         <div className="relative">
           <button ref={buttonRef} onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-3 hover:bg-white/5 p-1.5 rounded-xl transition-colors border border-transparent hover:border-glass-edge">
             <div className="text-right hidden sm:block">
