@@ -33,14 +33,107 @@
     "today": "SOT",
     "urgent": "Urgjente"
   },
+  "branding": {
+    "default": "Haveri Portal"
+  },
+  "portal": {
+    "secure_connection": "Lidhje e Sigurt",
+    "client_label": "Klient",
+    "status_label": "Statusi i Projektit",
+    "timeline": "Kronologjia",
+    "documents": "Dokumentet",
+    "finances": "Financat",
+    "empty_timeline": "Nuk ka ngjarje në kronologji.",
+    "empty_documents": "Nuk ka dokumente të ndara me ju.",
+    "empty_invoices": "Nuk ka fatura aktive.",
+    "invoice_prefix": "Fatura #",
+    "archive": "Arkivë",
+    "access_denied": "Qasja u Refuzua",
+    "error_not_found": "Dosja nuk u gjet ose nuk keni qasje.",
+    "loading": "Duke ngarkuar të dhënat..."
+  },
+  "actions": {
+    "view": "Shiko",
+    "download": "Shkarko"
+  },
+  "status": {
+    "OPEN": "E Hapur",
+    "CLOSED": "E Mbyllur",
+    "PAID": "E Paguar",
+    "SENT": "E Dërguar",
+    "DRAFT": "Draft",
+    "PENDING": "Në Pritje"
+  },
+  "locale": {
+    "date": "sq-AL"
+  },
+  "auth": {
+    "loginTitle": "Hyni në Haveri",
+    "loginSubtitle": "Menaxhoni projektet tuaja me inteligjencë.",
+    "usernameOrEmail": "Përdoruesi ose Email",
+    "usernameOrEmailPlaceholder": "psh: blerim ose blerim@example.com",
+    "password": "Fjalëkalimi",
+    "loginButton": "Hyni",
+    "noAccount": "Nuk keni llogari?",
+    "registerLink": "Regjistrohu",
+    "loginFailed": "Hyrja dështoi. Ju lutemi kontrolloni kredencialet tuaja.",
+    "registerTitle": "Krijoni Llogari",
+    "registerSubtitle": "Bashkohuni me platformën më të avancuar.",
+    "usernamePlaceholder": "psh: blerim",
+    "emailPlaceholder": "psh: blerim@example.com",
+    "passwordMinChars": "Min. 8 karaktere",
+    "createAccount": "Krijo Llogari",
+    "processing": "Duke procesuar...",
+    "hasAccount": "Tashmë keni një llogari?",
+    "signInLink": "Hyni",
+    "usernameTooShort": "Përdoruesi duhet të ketë të paktën 3 karaktere.",
+    "passwordTooShort": "Fjalëkalimi duhet të ketë të paktën 8 karaktere.",
+    "registerFailed": "Regjistrimi dështoi. Ju lutemi provoni përsëri.",
+    "successTitle": "Llogaria u Krijua",
+    "successMessage": "Llogaria juaj është krijuar me sukses.",
+    "loginNow": "Vazhdoni te Hyrja",
+    "welcomeTitle": "Mirë se erdhët në të ardhmen",
+    "welcomeMessage": "Llogaria juaj është krijuar. Ndërsa ekipi ynë verifikon të dhënat, ju jeni një hap më afër bashkimit të inteligjencës njerëzore me fuqinë e të dhënave për të transformuar mënyrën se si menaxhoni biznesin.",
+    "backToLogin": "Kthehu te Kyçja"
+  },
+  "landing": {
+    "heroTitle": "Inteligjenca Artificiale",
+    "heroHighlight": "për Profesionistët",
+    "heroSubtitle": "Analizoni dokumente, menaxhoni projekte dhe gjeneroni raporte me fuqinë e AI.",
+    "getStarted": "Fillo Falas",
+    "feature1Title": "Analizë e Sigurt",
+    "feature1Desc": "Skanoni dokumente për rreziqe dhe të dhëna kritike.",
+    "feature2Title": "AI",
+    "feature2Desc": "Bisedoni me dokumentet tuaja. Bëni pyetje dhe merrni përgjigje me citime.",
+    "feature3Title": "Hartim Inteligjent",
+    "feature3Desc": "Krijoni dokumente dhe raporte të personalizuara bazuar në shabllone."
+  },
+  "showcase": {
+    "title": "Jo Thjesht Softuer. Partneri Juaj.",
+    "subtitle": "Platforma e vetme që kombinon Inteligjencën Artificiale me rrjedhën tuaj të punës.",
+    "slide1_title": "Dhoma e Strategjisë",
+    "slide1_desc": "Gjeni mospërputhjet automatikisht. AI kryqëzon të dhënat dhe zbulon çdo kontradiktë.",
+    "slide2_title": "Skanim I Thellë OCR",
+    "slide2_desc": "Skanoni dokumente. Teknologjia jonë 'Hawk-Eye' lexon edhe skanimet më të dobëta.",
+    "slide3_title": "Hartim i Shpejtë",
+    "slide3_desc": "Ju shkruani strategjinë, ne shkruajmë detajet. Gjeneroni dokumente profesionale.",
+    "slide4_title": "Arkiva e Gjallë",
+    "slide4_desc": "Mos kërkoni kurrë më nëpër dosje fizike. Çdo dokument indeksohet dhe ruhet.",
+    "slide5_title": "Menaxhimi Financiar",
+    "slide5_desc": "Menaxhoni financat, faturat dhe llogaritni shpenzimet automatikisht."
+  },
   "sidebar": {
-    "business": "Zyra Ime",
+    "dashboard": "Haveri AI",
+    "juristi_ai": "Haveri AI",
     "haveri_ai": "Haveri AI",
-    "workspace": "Workspace",
+    "calendar": "Kalendari",
+    "drafting": "Hartimi",
+    "business": "Zyra Ime",
     "support": "Ndihma",
     "admin": "Admin Panel",
     "logout": "Dilni",
-    "account": "Llogaria Ime"
+    "account": "Llogaria Ime",
+    "workspace": "Workspace"
   },
   "header": {
     "searchPlaceholder": "Kërko...",
@@ -48,10 +141,20 @@
     "settings": "Cilësimet",
     "logout": "Dilni"
   },
+  "caseCard": {
+    "client": "Klienti"
+  },
   "caseView": {
-    "defaultWorkspace": "Hapësira Ime e Punës",
+    "backToDashboard": "Kthehu te Haveri AI",
+    "statusLabel": "Statusi",
+    "findingsTitle": "Gjetjet",
+    "errorLoadingTitle": "Gabim",
+    "genericError": "Ndodhi një gabim gjatë ngarkimit.",
+    "noFindings": "Asnjë gjetje nuk është identifikuar ende.",
+    "findingSource": "Burimi",
+    "confidenceScore": "Besueshmëria",
     "unnamedCase": "Projekt pa Emër",
-    "unknownClient": "Klient i Panjohur",
+    "defaultWorkspace": "Hapësira Ime e Punës",
     "statusTypes": {
       "OPEN": "Hapur",
       "CLOSED": "Mbyllur",
@@ -71,6 +174,7 @@
     "statusConnecting": "Duke u lidhur...",
     "statusDisconnected": "Shkëputur",
     "statusError": "Gabim",
+    "crossExamine": "Kryqëzo Të Dhënat",
     "archive": "Arkivo",
     "reconnect": "Rilidhu",
     "viewOriginal": "Shiko Originalin",
@@ -82,6 +186,8 @@
     "rename": "Riemërto",
     "renameTitle": "Riemërto Dokumentin",
     "newName": "Emri i ri",
+    "archiveSuccess": "Dokumenti u arkivua me sukses!",
+    "archiveFailed": "Arkivimi dështoi.",
     "share": "Ndaj me Klientin",
     "unshare": "Hiq Ndarjen",
     "shared": "Ndarë me klientin"
@@ -93,10 +199,37 @@
     "thinking": "Duke menduar...",
     "welcomeMessage": "Përshëndetje! Unë jam Këshilltari juaj i Biznesit.",
     "welcomeLegal": "Përshëndetje! Unë jam Asistenti juaj Ligjor.",
-    "confirmClear": "Pastro bisedën?"
+    "statusConnected": "Lidhur",
+    "confirmClear": "Pastro bisedën?",
+    "contextGeneral": "E gjithë Dosja"
+  },
+  "analysis": {
+    "analyzeButton": "Analizo Projektin",
+    "crossExamineButton": "Kryqëzo Dokumentin",
+    "warRoomTitle": "Dhoma e Strategjisë",
+    "modeAudit": "AUDITIM I PLOTË",
+    "modeCross": "KRYQËZIM DOKUMENTESH",
+    "modeStandard": "ANALIZË STANDARDE",
+    "auditing": "Duke Audituar Projektin...",
+    "aiWorking": "Inteligjenca Artificiale po verifikon të dhënat.",
+    "tabFactual": "Analiza Faktike",
+    "tabStrategy": "Strategjia",
+    "judicialObservation": "Vlerësimi Logjik",
+    "redFlags": "Sinjale Rreziku (Red Flags)",
+    "warningMissingInfo": "Kujdes: Mungesë Informacioni",
+    "silentParties": "Palët e Përfshira",
+    "executiveSummary": "Përmbledhje Ekzekutive",
+    "verifiedChronology": "Kronologjia e Verifikuar",
+    "contradictions": "Kontradikta / Mospërputhje",
+    "witnessQuestions": "Pyetje Kyçe",
+    "noQuestions": "Nuk u gjeneruan pyetje specifike.",
+    "discoveryRequests": "Kërkesa për Informacion",
+    "noDiscovery": "Nuk u identifikuan kërkesa të reja."
   },
   "drafting": {
     "title": "Harto",
+    "subtitle": "Krijoni dokumente profesionale me fuqinë e AI.",
+    "configuration": "Konfigurimi",
     "instructionsLabel": "Udhëzimet",
     "promptPlaceholder": "P.sh: Krijo një kontratë pune për një menaxher marketingu...",
     "generateBtn": "Gjenero",
@@ -118,6 +251,9 @@
     "templateMarketingPost": "Postim Marketingu",
     "groupLegal": "Hartime Ligjore",
     "groupBusiness": "Hartime Biznesi",
+    "caseLabel": "Konteksti (Projekti)",
+    "noCaseSelected": "Pa Kontekst (Gjenerik)",
+    "noCasesFound": "Asnjë projekt i gjetur",
     "regenerate": "Rigjenero",
     "clearTitle": "Pastro"
   },
@@ -156,6 +292,38 @@
     "tax": { "estimator": "Vlerësimi i TVSH-së" },
     "inventory": { "title": "Inteligjenca e Stokut" }
   },
+  "finance": {
+    "income": "Të Hyrat",
+    "expense": "Shpenzimet",
+    "balance": "Bilanci",
+    "cogs": "Kosto e Mallrave të Shitura",
+    "createInvoice": "Krijo Faturë",
+    "addExpense": "Shto Shpenzim",
+    "import": { "title": "Importo Transaksione" },
+    "monthlyClose": "Mbyllja Mujore",
+    "activityAndReports": "Aktiviteti & Raportet",
+    "tabTransactions": "Transaksionet",
+    "tabReports": "Raportet",
+    "noTransactions": "Nuk ka transaksione për këtë periudhë.",
+    "categories": {
+        "rent": "Qira", "salary": "Paga", "supplies": "Furnizime",
+        "transport": "Transport", "utilities": "Shërbime (Rrymë/Ujë)",
+        "marketing": "Marketing", "tax": "Tatime", "other": "Tjetër"
+    },
+    "status": {
+        "draft": "Draft", "sent": "E Dërguar", "paid": "E Paguar",
+        "overdue": "E Vonuar", "cancelled": "E Anuluar"
+    }
+  },
+  "inventory": {
+    "title": "Menaxhimi i Stokut",
+    "tabItems_short": "Stoku",
+    "tabRecipes": "Recetat",
+    "lowStock": "Stoku Kritik",
+    "items": { "add": "Shto Artikull" },
+    "recipes": { "add": "Krijo Recetë" },
+    "units": { "kg": "kg", "litra": "l", "cope": "copë" }
+  },
   "calendar": {
     "loadFailure": "Dështoi ngarkimi i të dhënave të kalendarit.",
     "noEventsFound": "Nuk u gjetën ngjarje.",
@@ -173,40 +341,22 @@
     "upcomingAlerts": "Alarmet e Ardhshme",
     "eventTypes": "Llojet e Ngjarjeve",
     "types": {
-      "APPOINTMENT": "Takim",
-      "TASK": "Detyrë",
-      "PAYMENT_DUE": "Pagesë",
-      "TAX_DEADLINE": "Afat Tatimor",
-      "PERSONAL": "Personale"
+      "APPOINTMENT": "Takim", "TASK": "Detyrë", "PAYMENT_DUE": "Pagesë",
+      "TAX_DEADLINE": "Afat Tatimor", "PERSONAL": "Personale"
     },
-    "priorities": {
-      "HIGH": "Lartë",
-      "MEDIUM": "Mesatare",
-      "LOW": "Ulët"
-    },
+    "priorities": { "HIGH": "Lartë", "MEDIUM": "Mesatare", "LOW": "Ulët" },
     "detailModal": {
       "deleteConfirm": "Jeni i sigurt që doni të fshini këtë ngjarje?",
       "deleteFailed": "Fshirja e ngjarjes dështoi.",
-      "description": "Përshkrimi",
-      "startDate": "Data e Fillimit",
-      "endDate": "Data e Mbarimit",
-      "location": "Vendndodhja",
-      "attendees": "Pjesëmarrësit",
-      "notes": "Shënime",
-      "close": "Mbyll",
-      "deleting": "Duke fshirë...",
-      "delete": "Fshij"
+      "description": "Përshkrimi", "startDate": "Data e Fillimit",
+      "location": "Vendndodhja", "attendees": "Pjesëmarrësit",
+      "notes": "Shënime", "close": "Mbyll", "delete": "Fshij"
     },
     "createModal": {
-      "createFailed": "Krijimi i ngjarjes dështoi.",
-      "title": "Krijo Ngjarje të Re",
-      "eventTitle": "Titulli i Ngjarjes",
-      "eventType": "Lloji i Ngjarjes",
-      "priority": "Prioriteti",
-      "eventDate": "Data e Ngjarjes",
-      "cancel": "Anulo",
-      "creating": "Duke krijuar...",
-      "create": "Krijo Ngjarje"
+      "createFailed": "Krijimi i ngjarjes dështoi.", "title": "Krijo Ngjarje të Re",
+      "eventTitle": "Titulli i Ngjarjes", "eventType": "Lloji i Ngjarjes",
+      "priority": "Prioriteti", "eventDate": "Data e Ngjarjes",
+      "cancel": "Anulo", "create": "Krijo Ngjarje"
     }
   },
   "error": {
