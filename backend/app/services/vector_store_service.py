@@ -1,8 +1,8 @@
 # FILE: backend/app/services/vector_store_service.py
-# PHOENIX PROTOCOL - DUAL KNOWLEDGE BASE ARCHITECTURE
-# 1. ARCHITECTURE: Added support for a new 'business_knowledge_base' collection.
-# 2. REFACTOR: 'query_mixed_intelligence' now accepts an 'agent_type' ('legal' or 'business').
-# 3. LOGIC: Based on the agent_type, the service now queries the correct public knowledge base (Legal or Business).
+# PHOENIX PROTOCOL - VECTOR STORE V3.0 (AGENTIC TOOLS)
+# 1. REFACTOR: Exposed 'query_private_diary' and 'query_public_library' as distinct functions.
+# 2. TYPE SAFETY: Added 'cast' to handle Pylance strict typing for ChromaDB filters.
+# 3. ARCHITECTURE: Supports the Agent's ability to choose which DB to query.
 
 from __future__ import annotations
 import os
@@ -19,16 +19,13 @@ logger = logging.getLogger(__name__)
 CHROMA_HOST = os.getenv("CHROMA_HOST", "chroma")
 CHROMA_PORT = int(os.getenv("CHROMA_PORT", 8000))
 
-# PHOENIX: Define collection names for both knowledge bases
 LEGAL_KB_COLLECTION_NAME = "legal_knowledge_base"
 BUSINESS_KB_COLLECTION_NAME = "business_knowledge_base"
 
 _client: Optional[ClientAPI] = None
 _legal_kb_collection: Optional[Collection] = None
 _business_kb_collection: Optional[Collection] = None
-
 _active_user_collections: Dict[str, Collection] = {}
-VECTOR_WRITE_BATCH_SIZE = 64
 
 def connect_chroma_db():
     global _client, _legal_kb_collection, _business_kb_collection
@@ -44,11 +41,10 @@ def connect_chroma_db():
             if not _legal_kb_collection:
                 _legal_kb_collection = _client.get_or_create_collection(name=LEGAL_KB_COLLECTION_NAME)
             
-            # PHOENIX: Initialize the new business knowledge base collection
             if not _business_kb_collection:
                 _business_kb_collection = _client.get_or_create_collection(name=BUSINESS_KB_COLLECTION_NAME)
 
-            logger.info("✅ Connected to ChromaDB & All Public Libraries (Legal & Business).")
+            logger.info("✅ Connected to ChromaDB (Agentic Mode Ready).")
             return
         except Exception as e:
             retries -= 1
@@ -65,7 +61,6 @@ def get_legal_kb_collection() -> Collection:
     if _legal_kb_collection is None: connect_chroma_db()
     return _legal_kb_collection # type: ignore
 
-# PHOENIX: New accessor for the business KB
 def get_business_kb_collection() -> Collection:
     if _business_kb_collection is None: connect_chroma_db()
     return _business_kb_collection # type: ignore
@@ -79,6 +74,86 @@ def get_private_collection(user_id: str) -> Collection:
     _active_user_collections[user_id] = collection
     return collection
 
+# --- AGENT TOOL 1: PRIVATE DIARY ---
+def query_private_diary(
+    user_id: str,
+    query_text: str,
+    n_results: int = 5,
+    case_context_id: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """
+    Searches the user's private, isolated data.
+    """
+    from . import embedding_service
+    embedding = embedding_service.generate_embedding(query_text)
+    if not embedding: return []
+
+    results = []
+    try:
+        user_coll = get_private_collection(user_id)
+        # Optional: Filter by specific case if provided by the agent
+        where_filter = {"case_id": {"$eq": str(case_context_id)}} if case_context_id else {}
+        
+        # Cast to Any to satisfy Pylance strict typing
+        final_where = cast(Any, where_filter) if where_filter else None
+
+        res = user_coll.query(
+            query_embeddings=[embedding], 
+            n_results=n_results, 
+            where=final_where
+        ) # type: ignore
+
+        if res and res['documents'] and res['documents'][0]:
+            docs = res['documents'][0]
+            metas = res['metadatas'][0] if res['metadatas'] else [{}] * len(docs)
+            
+            for d, m in zip(docs, metas):
+                results.append({
+                    "content": d,
+                    "source": (m or {}).get("file_name", "Private Doc"),
+                    "type": "PRIVATE_DATA"
+                })
+    except Exception as e:
+        logger.warning(f"Private Diary Query failed for {user_id}: {e}")
+    
+    return results
+
+# --- AGENT TOOL 2: PUBLIC LIBRARY ---
+def query_public_library(
+    query_text: str,
+    n_results: int = 5,
+    agent_type: str = 'business' # 'business' or 'legal'
+) -> List[Dict[str, Any]]:
+    """
+    Searches the shared public knowledge base (Laws or Business Regs).
+    """
+    from . import embedding_service
+    embedding = embedding_service.generate_embedding(query_text)
+    if not embedding: return []
+
+    results = []
+    try:
+        target_collection = get_legal_kb_collection() if agent_type == 'legal' else get_business_kb_collection()
+        source_label = "Ligj/Rregullore" if agent_type == 'legal' else "Artikull Biznesi"
+
+        res = target_collection.query(query_embeddings=[embedding], n_results=n_results) # type: ignore
+        
+        if res and res['documents'] and res['documents'][0]:
+            docs = res['documents'][0]
+            metas = res['metadatas'][0] if res['metadatas'] else [{}] * len(docs)
+            
+            for d, m in zip(docs, metas):
+                results.append({
+                    "content": d,
+                    "source": (m or {}).get("source", source_label),
+                    "type": "PUBLIC_KNOWLEDGE"
+                })
+    except Exception as e:
+        logger.warning(f"Public Library Query failed: {e}")
+
+    return results
+
+# --- WRITE OPERATIONS (Unchanged) ---
 def create_and_store_embeddings_from_chunks(user_id: str, document_id: str, case_id: str, file_name: str, chunks: List[str], metadatas: Sequence[Dict[str, Any]]) -> bool:
     from . import embedding_service
     try: collection = get_private_collection(user_id)
@@ -105,63 +180,15 @@ def create_and_store_embeddings_from_chunks(user_id: str, document_id: str, case
     try: collection.add(embeddings=embeddings, documents=processed_chunks, metadatas=final_metadatas, ids=ids); return True # type: ignore
     except Exception as e: logger.error(f"Batch Add Failed for User {user_id}: {e}", exc_info=True); return False
 
-# PHOENIX: Refactored to accept agent_type
-def query_mixed_intelligence(
-    user_id: str,
-    query_text: str,
-    agent_type: str = 'business', # Default to business for chat
-    n_results: int = 10,
-    case_context_id: Optional[str] = None
-) -> List[Dict[str, Any]]:
-    from . import embedding_service
-    embedding = embedding_service.generate_embedding(query_text)
-    if not embedding: return []
-
-    combined_results = []
-
-    # 1. Query Private Data (Always runs)
-    try:
-        user_coll = get_private_collection(user_id)
-        where_filter = {"case_id": {"$eq": str(case_context_id)}} if case_context_id and case_context_id != "general" else {}
-        private_res = user_coll.query(query_embeddings=[embedding], n_results=n_results, where=where_filter if where_filter else None) # type: ignore
-        if private_res and private_res['documents'] and private_res['documents'][0]:
-            docs, metas = private_res['documents'][0], private_res['metadatas'][0] if private_res['metadatas'] else [{}] * len(private_res['documents'][0])
-            for d, m in zip(docs, metas): combined_results.append({"text": d, "source": (m or {}).get("file_name", "Dokument Privat"), "type": "PRIVATE_DATA"})
-    except Exception as e: logger.warning(f"Private Query failed for {user_id}: {e}")
-
-    # 2. Query Public Library (Switches based on agent)
-    try:
-        public_collection, source_name, where_clause = None, "Burim", {}
-        if agent_type == 'legal':
-            public_collection = get_legal_kb_collection()
-            source_name = "Ligj"
-            where_clause = {"jurisdiction": {"$eq": 'ks'}}
-        else: # business
-            public_collection = get_business_kb_collection()
-            source_name = "Artikull Biznesi"
-            # We can add metadata filters for business docs too, e.g., by category
-            where_clause = {} 
-
-        kb_res = public_collection.query(query_embeddings=[embedding], n_results=5, where=where_clause if where_clause else None) # type: ignore
-        
-        if kb_res and kb_res['documents'] and kb_res['documents'][0]:
-            docs, metas = kb_res['documents'][0], kb_res['metadatas'][0] if kb_res['metadatas'] else [{}] * len(kb_res['documents'][0])
-            for d, m in zip(docs, metas): combined_results.append({"text": d, "source": (m or {}).get("source", source_name), "type": "PUBLIC_KNOWLEDGE"})
-    except Exception as e: logger.warning(f"Public KB Query failed for agent {agent_type}: {e}")
-
-    return combined_results
-
 def delete_user_collection(user_id: str):
     client = get_client()
     try:
         client.delete_collection(name=f"user_{user_id}")
         if user_id in _active_user_collections: del _active_user_collections[user_id]
-        logger.info(f"🗑️ Deleted Collection for User: {user_id}")
     except Exception as e: logger.warning(f"Failed to delete user collection: {e}")
 
 def delete_document_embeddings(user_id: str, document_id: str):
     try: 
         coll = get_private_collection(user_id)
         coll.delete(where={"source_document_id": str(document_id)})
-        logger.info(f"🗑️ Deleted Vectors for Doc: {document_id} (User: {user_id})")
     except Exception as e: logger.warning(f"Failed to delete vectors: {e}")
