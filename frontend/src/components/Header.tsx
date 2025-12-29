@@ -1,15 +1,16 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V5.0 (FINAL LAYOUT)
-// 1. REMOVED: Deleted the standalone BrandLogo component from the header.
-// 2. REORDER: Moved the main <nav> to the far left of the header.
-// 3. STATUS: Final, clean, left-aligned navigation structure.
+// PHOENIX PROTOCOL - HEADER V5.1 (RESPONSIVE FIX)
+// 1. RESPONSIVE: Main navigation is now hidden on mobile screens.
+// 2. ADDED: Re-introduced BrandLogo for consistent branding.
+// 3. ADDED: A 'Menu' button is now shown on mobile to handle navigation.
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, LogOut, User as UserIcon, Brain, Building2, MessageSquare } from 'lucide-react';
+import { Bell, LogOut, User as UserIcon, Brain, Building2, MessageSquare, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
+import BrandLogo from './BrandLogo';
 import LanguageSwitcher from './LanguageSwitcher';
 
 const Header: React.FC = () => {
@@ -67,9 +68,13 @@ const Header: React.FC = () => {
   return (
     <header className="h-16 bg-background-dark/80 backdrop-blur-md border-b border-glass-edge flex items-center justify-between px-4 sm:px-6 z-40 sticky top-0">
       
-      {/* PHOENIX: Left side is now the primary navigation */}
+      {/* Left side: Brand and Navigation */}
       <div className="flex items-center gap-6">
-        <nav className="flex items-center gap-2">
+        <Link to="/business" className="flex-shrink-0">
+          <BrandLogo />
+        </Link>
+        {/* PHOENIX: Hide navigation on mobile */}
+        <nav className="hidden lg:flex items-center gap-2">
             {navItems.map(item => {
                 const isActive = (location.pathname.startsWith('/cases') && item.path.startsWith('/cases')) || location.pathname === item.path;
                 return (
@@ -88,7 +93,7 @@ const Header: React.FC = () => {
         </nav>
       </div>
 
-      {/* Right side remains the same */}
+      {/* Right side: Actions, Profile, and Mobile Menu */}
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="hidden"><LanguageSwitcher /></div>
         <Link to="/calendar" className="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-lg transition-colors relative" title="Njoftimet">
@@ -113,6 +118,10 @@ const Header: React.FC = () => {
             </div>
           )}
         </div>
+        {/* PHOENIX: Mobile Menu Button */}
+        <button className="p-2 text-gray-400 hover:text-white lg:hidden">
+            <Menu size={24} />
+        </button>
       </div>
     </header>
   );

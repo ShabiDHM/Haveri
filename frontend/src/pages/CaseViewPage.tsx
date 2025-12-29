@@ -1,8 +1,8 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - LAYOUT REVERT V14.0
-// 1. REVERT: Removed 'max-w-5xl' constraint and restored full-width, responsive layout.
-// 2. UX: This IDE-style view is more effective when it uses the full screen width.
-// 3. STATUS: Final layout is clean, responsive, and professional.
+// PHOENIX PROTOCOL - LAYOUT CONSTRAINTS V14.1
+// 1. LAYOUT: Main panels now have a minimum height of 500px and a maximum of 700px.
+// 2. UX: Panels will grow with screen height within this range, then enable internal scrolling.
+// 3. CENTERING: Panels are now vertically centered on very tall screens for better aesthetics.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -118,8 +118,11 @@ const CaseViewPage: React.FC = () => {
   return (
     <motion.div className="w-full h-screen bg-background-dark" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 h-full flex flex-col">
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 py-6 min-h-0">
-            <DocumentsPanel caseId={caseData.details.id} documents={liveDocuments} t={t} connectionStatus={connectionStatus} reconnect={reconnect} onDocumentUploaded={handleDocumentUploaded} onDocumentDeleted={handleDocumentDeleted} onViewOriginal={handleViewOriginal} onRename={(doc) => setDocumentToRename(doc)} className="h-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl" />
+        {/* PHOENIX: Added items-center to vertically center panels on tall screens */}
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 py-6 min-h-0 items-center">
+            {/* PHOENIX: Replaced h-full with height constraints */}
+            <DocumentsPanel caseId={caseData.details.id} documents={liveDocuments} t={t} connectionStatus={connectionStatus} reconnect={reconnect} onDocumentUploaded={handleDocumentUploaded} onDocumentDeleted={handleDocumentDeleted} onViewOriginal={handleViewOriginal} onRename={(doc) => setDocumentToRename(doc)} className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-auto min-h-[500px] max-h-[700px]" />
+            {/* PHOENIX: Replaced h-full with height constraints */}
             <AIStudioPanel 
                 messages={liveMessages} 
                 connectionStatus={connectionStatus} 
@@ -129,7 +132,7 @@ const CaseViewPage: React.FC = () => {
                 onClearChat={handleClearChat} 
                 activeCaseId={caseData.details.id} 
                 activeContextId="general"
-                className="h-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl"
+                className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-auto min-h-[500px] max-h-[700px]"
             />
         </div>
       </div>

@@ -1,7 +1,8 @@
 // FILE: src/components/DraftingPanel.tsx
-// PHOENIX PROTOCOL - DRAFTING PANEL V1.1 (LINT FIX)
-// 1. CLEANUP: Removed unused icon imports (AlertCircle, Clock, Sparkles, RotateCcw).
-// 2. STATUS: Clean and build-ready.
+// PHOENIX PROTOCOL - DYNAMIC TEXTAREA V2.0
+// 1. FEATURE: Textarea now expands on focus for a better writing experience.
+// 2. STATE: Added 'isInputActive' to control the component's collapsed/expanded state.
+// 3. UX: Textarea collapses automatically after submitting the draft request.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../services/api';
@@ -57,6 +58,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('generic');
   const [isResultNew, setIsResultNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInputActive, setIsInputActive] = useState(false); // PHOENIX: State for textarea size
   const pollingIntervalRef = useRef<number | null>(null);
 
   useEffect(() => { return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); }; }, []);
@@ -93,6 +95,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const runDraftingJob = async () => {
     if (!context.trim()) return;
     setIsSubmitting(true);
+    setIsInputActive(false); // PHOENIX: Collapse textarea on submit
     setCurrentJob({ jobId: null, status: 'PENDING', result: null, error: null });
     setIsResultNew(false);
     try {
@@ -118,7 +121,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const handleClearResult = () => { if (window.confirm(t('drafting.confirmClear'))) { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); setCurrentJob({ jobId: null, status: null, result: null, error: null }); setIsResultNew(false); } };
 
   return (
-    <div className={`flex flex-col relative bg-background-dark/40 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl overflow-hidden h-full w-full ${className}`}>
+    <div className={`flex flex-col relative bg-transparent overflow-hidden h-full w-full ${className}`}>
         <div className="flex flex-col gap-4 p-4 border-b border-white/10 bg-white/5 z-20">
             <div className="flex gap-4">
                 <div className='flex-1 relative group min-w-0'>
@@ -140,7 +143,16 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
             
             {!currentJob.result && (
                 <form onSubmit={handleSubmit} className="flex gap-2 items-end">
-                    <textarea value={context} onChange={(e) => setContext(e.target.value)} placeholder={t('drafting.promptPlaceholder')} disabled={isSubmitting} rows={3} className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-sm resize-none custom-scrollbar" />
+                    <textarea 
+                        value={context} 
+                        onChange={(e) => setContext(e.target.value)} 
+                        onFocus={() => setIsInputActive(true)}
+                        onBlur={() => { if(!context) setIsInputActive(false) }}
+                        placeholder={t('drafting.promptPlaceholder')} 
+                        disabled={isSubmitting} 
+                        rows={isInputActive ? 8 : 3} // PHOENIX: Dynamic rows
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-sm resize-none custom-scrollbar transition-all duration-300" 
+                    />
                     <button type="submit" disabled={isSubmitting || !context.trim()} className="h-full px-4 bg-primary-start hover:bg-primary-end text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center">
                         {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
                     </button>
