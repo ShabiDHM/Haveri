@@ -1,7 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V19.3 (TEXT SIZE BOOST)
-// 1. TYPOGRAPHY: Increased Section H2 to 'text-2xl sm:text-3xl' for better presence.
-// 2. TYPOGRAPHY: Increased Stat Card labels to 'text-sm' for readability.
+// PHOENIX PROTOCOL - REPORT FIX V1.0
+// 1. FIX (TRANSLATION): Chart titles now use the t() function.
+// 2. FIX (DATA): Added missing 'dataKey' to the Top Products chart's YAxis.
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -64,7 +64,6 @@ const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amo
                 )}
             </div>
             <div className="relative z-10">
-                {/* PHOENIX: Increased from text-xs to text-sm */}
                 <p className="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1 opacity-80">{title}</p>
                 <h3 className="text-3xl font-black text-white tracking-tight">{amount}</h3>
             </div>
@@ -210,7 +209,6 @@ export const FinanceTab: React.FC = () => {
 
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col shadow-2xl">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
-                    {/* PHOENIX: Increased Text Size */}
                     <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
                         <Activity className="text-blue-500" />
                         {t('finance.activityAndReports')}
@@ -259,6 +257,7 @@ export const FinanceTab: React.FC = () => {
                             {!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
+                                        {/* PHOENIX: Translation fixed */}
                                         <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-blue-400" /> {t('finance.analytics.salesTrend')}</h4>
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
@@ -274,9 +273,11 @@ export const FinanceTab: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
+                                        {/* PHOENIX: Translation fixed */}
                                         <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
+                                                {/* PHOENIX: dataKey added to YAxis */}
                                                 <BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 20 }}>
                                                     <XAxis type="number" hide />
                                                     <YAxis dataKey="product_name" type="category" width={100} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />

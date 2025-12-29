@@ -1,9 +1,16 @@
+// FILE: src/components/business/briefing/ProductPerformanceCard.tsx
+// PHOENIX PROTOCOL - NAVIGATION FIX V1.0
+// 1. FIX: The 'Stoku Kritik' alert is now a clickable button.
+// 2. LOGIC: It now correctly navigates to the '/business/inventory' route.
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Package, TrendingUp, AlertCircle, ArrowRight } from 'lucide-react';
 
 export const ProductPerformanceCard: React.FC = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate(); // PHOENIX: Added navigate hook
 
     // Mock Data - In real app, fetch from /api/stats/products
     const topProducts = [
@@ -50,9 +57,12 @@ export const ProductPerformanceCard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Low Stock Alert - Critical */}
-                <div className="mt-2">
-                    <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                {/* Low Stock Alert - PHOENIX: Now a fully clickable button */}
+                <button 
+                    onClick={() => navigate('/business/inventory')}
+                    className="w-full text-left mt-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors group"
+                >
+                    <div className="flex items-center gap-2">
                         <AlertCircle className="w-5 h-5 text-red-400" />
                         <div className="flex-1">
                             <p className="text-xs text-red-300 font-bold uppercase">{t('dashboard.lowStockAlert', 'Stoku Kritik')}</p>
@@ -60,11 +70,11 @@ export const ProductPerformanceCard: React.FC = () => {
                                 {lowStock.name} <span className="text-gray-400 text-xs">({t('dashboard.only', 'vetëm')} {lowStock.remaining} {lowStock.unit})</span>
                             </p>
                         </div>
-                        <button className="p-2 hover:bg-red-500/20 rounded-lg transition-colors">
+                        <div className="p-2 bg-red-500/10 group-hover:bg-red-500/30 rounded-lg transition-colors">
                             <ArrowRight className="w-4 h-4 text-red-400" />
-                        </button>
+                        </div>
                     </div>
-                </div>
+                </button>
             </div>
         </div>
     );
