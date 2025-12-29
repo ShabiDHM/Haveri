@@ -1,13 +1,16 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - FINAL TYPE FIX
-// 1. FIX: Removed the unsafe type cast as the modal now correctly accepts the UIAgendaItem type.
+// PHOENIX PROTOCOL - PROP COMPLETION V1.0
+// 1. DATA: Added state and useEffect to fetch 'cases'.
+// 2. FIX: Passed the required 'cases' prop to EventDetailModal.
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Target, AlertTriangle } from 'lucide-react';
 import { useStrategicBriefing, UIAgendaItem } from '../../hooks/useStrategicBriefing';
 import { EventDetailModal } from '../modals/EventDetailModal';
+import { apiService } from '../../services/api';
+import { Case } from '../../data/types';
 
 // Imports
 import { BusinessRhythmCard } from './briefing/BusinessRhythmCard';
@@ -18,6 +21,7 @@ export const DailyBriefingTab: React.FC = () => {
     const { t } = useTranslation();
     const { data, loading, error, refreshData } = useStrategicBriefing();
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
+    const [cases, setCases] = useState<Case[]>([]); // PHOENIX: Added cases state
 
     const months = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
     const today = new Date();
@@ -26,6 +30,19 @@ export const DailyBriefingTab: React.FC = () => {
     const year = today.getFullYear();
     const finalDate = `${day} ${month} ${year}`;
     
+    // PHOENIX: Fetch cases to pass to the modal
+    useEffect(() => {
+        const loadCases = async () => {
+            try {
+                const casesData = await apiService.getCases();
+                setCases(casesData);
+            } catch (err) {
+                console.error("Failed to load cases for modal context", err);
+            }
+        };
+        loadCases();
+    }, []);
+
     const handleEventUpdate = () => {
         if(refreshData) refreshData();
     };
@@ -41,6 +58,7 @@ export const DailyBriefingTab: React.FC = () => {
                         event={selectedEvent}
                         onClose={() => setSelectedEvent(null)}
                         onUpdate={handleEventUpdate}
+                        cases={cases} // PHOENIX: Passed cases prop
                     />
                 )}
             </AnimatePresence>
