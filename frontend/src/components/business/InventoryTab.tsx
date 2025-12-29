@@ -1,16 +1,15 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V18.0 (TACTICAL UPGRADE)
-// 1. STYLE: Applied Phoenix Glassmorphism to match Finance Tab.
-// 2. UX: Dynamic Action Bar that changes context based on active tab.
-// 3. VISUALS: Deep dark backgrounds, glows, and high-tech borders.
+// PHOENIX PROTOCOL - INVENTORY TAB V19.0 (TACTICAL UI)
+// 1. VISUALS: Deepened background, improved action bar spacing.
+// 2. LAYOUT: Switched to responsive container queries logic via CSS classes.
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Plus, ChefHat, Loader2, FileSpreadsheet, Box } from 'lucide-react';
+import { Package, Plus, ChefHat, Loader2, FileSpreadsheet, Box, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InventoryItem, Recipe } from '../../data/types';
 
-// Modular Imports - Verified Paths
+// Modular Imports
 import { useInventoryData } from '../../hooks/useInventoryData';
 import { InventoryList } from './inventory/InventoryList';
 import { RecipeList } from './inventory/RecipeList';
@@ -56,20 +55,19 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
 export const InventoryTab: React.FC = () => {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<'items' | 'recipes'>('items');
+    const [searchTerm, setSearchTerm] = useState('');
     
-    // Custom Hook
     const { 
         loading, items, recipes, manualItems, posItems, 
         loadData, deleteItem, deleteRecipe, calculateRecipeCost 
     } = useInventoryData();
 
-    // Modals State
+    // Modals
     const [showItemModal, setShowItemModal] = useState(false);
     const [showRecipeModal, setShowRecipeModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false); 
     const [importTarget, setImportTarget] = useState<'items' | 'recipes'>('items');
 
-    // Edit State
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
     const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 
@@ -83,6 +81,10 @@ export const InventoryTab: React.FC = () => {
     const handleDeleteRecipe = async (id: string) => { if (window.confirm(t('general.confirmDelete'))) await deleteRecipe(id); };
 
     const openImport = (target: 'items' | 'recipes') => { setImportTarget(target); setShowImportModal(true); };
+
+    // Filter Logic
+    const filteredManual = manualItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredPos = posItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-emerald-500" /></div>;
 
@@ -126,13 +128,25 @@ export const InventoryTab: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Tab Content */}
-                <div className="flex-1 overflow-hidden relative">
+                <div className="flex-1 overflow-hidden relative flex flex-col">
+                    {/* Search Bar */}
+                    <div className="relative group mb-6">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-emerald-400 transition-colors" />
+                        <input 
+                            type="text" 
+                            placeholder={t('header.searchPlaceholder')} 
+                            className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-base text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 focus:bg-black/60 transition-all shadow-inner" 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                        />
+                    </div>
+
+                    {/* Tab Content */}
                     {activeTab === 'items' && (
-                        <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
+                        <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2">
                             <InventoryList 
-                                manualItems={manualItems} 
-                                posItems={posItems} 
+                                manualItems={filteredManual} 
+                                posItems={filteredPos} 
                                 onEdit={openEditItem} 
                                 onDelete={handleDeleteItem} 
                             />
@@ -140,7 +154,7 @@ export const InventoryTab: React.FC = () => {
                     )}
 
                     {activeTab === 'recipes' && (
-                        <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
+                        <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2">
                             <RecipeList 
                                 recipes={recipes} 
                                 inventoryItems={items} 
@@ -154,28 +168,9 @@ export const InventoryTab: React.FC = () => {
             </div>
 
             {/* MODALS */}
-            <InventoryItemModal 
-                isOpen={showItemModal} 
-                onClose={() => setShowItemModal(false)} 
-                onSuccess={loadData} 
-                itemToEdit={editingItem} 
-            />
-
-            <RecipeModal 
-                isOpen={showRecipeModal} 
-                onClose={() => setShowRecipeModal(false)} 
-                onSuccess={loadData} 
-                recipeToEdit={editingRecipe} 
-                inventoryItems={items} 
-                calculateCost={calculateRecipeCost} 
-            />
-
-            <InventoryImportModal 
-                isOpen={showImportModal} 
-                onClose={() => setShowImportModal(false)} 
-                onSuccess={loadData} 
-                target={importTarget} 
-            />
+            <InventoryItemModal isOpen={showItemModal} onClose={() => setShowItemModal(false)} onSuccess={loadData} itemToEdit={editingItem} />
+            <RecipeModal isOpen={showRecipeModal} onClose={() => setShowRecipeModal(false)} onSuccess={loadData} recipeToEdit={editingRecipe} inventoryItems={items} calculateCost={calculateRecipeCost} />
+            <InventoryImportModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} onSuccess={loadData} target={importTarget} />
 
         </motion.div>
     );
