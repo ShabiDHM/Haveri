@@ -1,8 +1,7 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V3.0 (DRAFTING MERGE)
-// 1. REMOVED: Deleted the '/drafting' route and its component import.
-// 2. REASON: The Drafting page has been merged into the 'AIStudioPanel' in the CaseViewPage.
-// 3. STATUS: The application router is now fully aligned with the streamlined UI.
+// PHOENIX PROTOCOL - ROUTING V3.1 (BUSINESS SUB-ROUTES)
+// 1. ROUTING: Added explicit sub-routes for Business sections to support Global Header navigation.
+// 2. LOGIC: BusinessPage now accepts a 'view' prop instead of managing internal state.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -14,7 +13,6 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CaseViewPage from './pages/CaseViewPage';
 import CalendarPage from './pages/CalendarPage';
-// PHOENIX: Removed DraftingPage import
 import SupportPage from './pages/SupportPage';
 import LandingPage from './pages/LandingPage';
 import BusinessPage from './pages/BusinessPage';
@@ -75,10 +73,16 @@ const AppRoutes: React.FC = () => {
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="/cases/:caseId" element={<CaseViewPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
-        {/* PHOENIX: Removed /drafting route */}
         <Route path="/support" element={<SupportPage />} />
-        <Route path="/business" element={<BusinessPage />} />
         <Route path="/account" element={<AccountPage />} />
+
+        {/* Business Sub-Routes (Mapped to Global Header) */}
+        <Route path="/business" element={<BusinessPage view="briefing" />} />
+        <Route path="/business/finance" element={<BusinessPage view="finance" />} />
+        <Route path="/business/inventory" element={<BusinessPage view="inventory" />} />
+        <Route path="/business/archive" element={<BusinessPage view="archive" />} />
+        <Route path="/business/insights" element={<BusinessPage view="insights" />} />
+        <Route path="/business/profile" element={<BusinessPage view="profile" />} />
       </Route>
 
       {/* Admin Protected Route */}
