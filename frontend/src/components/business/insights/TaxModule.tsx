@@ -1,10 +1,12 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX MODULE V2.1 (ALIGNMENT)
-// 1. LAYOUT: h-auto for mobile, fixed h-[540px] for desktop consistency.
+// PHOENIX PROTOCOL - TAX MODULE V3.0 (FEATURE MERGE)
+// 1. ACTION: Added "Mbyllja Mujore" button (Relocated from FinanceTab).
+// 2. LAYOUT: Pushed disclaimer further down to accommodate the new button.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Landmark, TrendingDown, TrendingUp } from 'lucide-react';
+import { Landmark, TrendingDown, TrendingUp, Calculator } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface TaxModuleProps {
     data: {
@@ -16,6 +18,7 @@ interface TaxModuleProps {
 
 export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const { vatCollected, vatDeductible, estimatedLiability } = data;
 
     return (
@@ -47,6 +50,17 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                         </div>
                         <p className="text-xl font-mono text-white">€{vatDeductible.toFixed(2)}</p>
                     </div>
+                </div>
+
+                {/* NEW: Monthly Close Button */}
+                <div className="px-4">
+                    <button 
+                        onClick={() => navigate('/finance/wizard')}
+                        className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95"
+                    >
+                        <Calculator size={18} />
+                        {t('finance.monthlyClose', 'Mbyllja Mujore')}
+                    </button>
                 </div>
             </div>
             

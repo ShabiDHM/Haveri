@@ -1,7 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V18.1 (RAW DATA PASS)
-// 1. DATA: Removed 'groupedList' pre-calculation. Now passing 'allTransactions' directly to TransactionList.
-// 2. LOGIC: Simplified render cycle to allow the child component to handle hierarchical grouping.
+// PHOENIX PROTOCOL - FINANCE TAB V19.1 (CLEANUP)
+// 1. CLEANUP: Removed unused 'useNavigate' hook.
+// 2. STATUS: Warning free.
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -9,7 +9,7 @@ import {
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+// PHOENIX: Removed unused useNavigate import
 import { apiService } from '../../services/api';
 import { Invoice, Expense, Document } from '../../data/types';
 import { useTranslation } from 'react-i18next';
@@ -19,11 +19,9 @@ import {
     BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 
-// Import Modular Components
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { InvoiceModal } from './modals/InvoiceModal';
 import { ExpenseModal } from './modals/ExpenseModal';
-// PHOENIX: Updated import to reflect prop change
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 
 // --- TACTICAL UI COMPONENTS ---
@@ -111,39 +109,33 @@ export const FinanceTab: React.FC = () => {
     type ActiveTab = 'transactions' | 'reports';
 
     const { t, i18n } = useTranslation();
-    const navigate = useNavigate();
+    // PHOENIX: Removed const navigate = useNavigate();
 
-    // --- HOOKS ---
     const {
         loading, invoices, expenses, cases, posTransactions, analyticsData,
         totalExpenses, displayIncome, displayProfit, costOfGoodsSold,
         refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos
     } = useFinanceData();
 
-    // UI State
     const [activeTab, setActiveTab] = useState<ActiveTab>('transactions');
     const [openingDocId, setOpeningDocId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     
-    // Modals State
     const [showInvoiceModal, setShowInvoiceModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false); 
     const [showArchiveInvoiceModal, setShowArchiveInvoiceModal] = useState(false);
     const [showArchiveExpenseModal, setShowArchiveExpenseModal] = useState(false);
     
-    // Selection State
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
     const [selectedCaseForInvoice, setSelectedCaseForInvoice] = useState<string>("");
     
-    // Viewing State
     const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
-    // --- LOGIC: Flatten & Sort (Still needed to combine types) ---
     const allTransactions: TransactionItem[] = useMemo(() => {
         const combined: TransactionItem[] = [
             ...invoices.map(i => ({ id: i.id, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name, raw: i })),
@@ -158,7 +150,6 @@ export const FinanceTab: React.FC = () => {
             })),
         ];
         
-        // PHOENIX: Filter applied here to ensure hierarchy receives filtered data
         const filtered = combined.filter(tx => {
             if (!searchTerm) return true;
             return tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -168,10 +159,8 @@ export const FinanceTab: React.FC = () => {
         return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [invoices, expenses, posTransactions, searchTerm, t]);
 
-    // UI Helpers
     const closePreview = () => { if (viewingUrl) window.URL.revokeObjectURL(viewingUrl); setViewingUrl(null); setViewingDoc(null); };
 
-    // ACTION WRAPPERS (Passed to List Component)
     const handleEditInvoice = (invoice: Invoice) => { setSelectedInvoice(invoice); setShowInvoiceModal(true); };
     const handleEditExpense = (expense: Expense) => { setSelectedExpense(expense); setShowExpenseModal(true); };
     
@@ -187,7 +176,6 @@ export const FinanceTab: React.FC = () => {
     const handleDownloadExpense = async (expense: Expense) => { try { let url: string, filename: string; if (expense.receipt_url) { const { blob, filename: fn } = await apiService.getExpenseReceiptBlob(expense.id); url = window.URL.createObjectURL(blob); filename = fn; } else { const file = generateDigitalReceipt(expense); url = window.URL.createObjectURL(file); filename = file.name; } const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); if (!expense.receipt_url) window.URL.revokeObjectURL(url); } catch { alert(t('error.generic')); } };
     const handleArchiveExpense = (id: string) => { setSelectedExpenseId(id); setShowArchiveExpenseModal(true); };
 
-    // --- HELPERS ---
     const generateDigitalReceipt = (expense: Expense): File => {
         const content = `${t('finance.digitalReceipt.title')}\n------------------------------------------------\n${t('finance.digitalReceipt.category')}   ${expense.category}\n${t('finance.digitalReceipt.amount')}       €${expense.amount.toFixed(2)}\n${t('finance.digitalReceipt.date')}        ${new Date(expense.date).toLocaleDateString('sq-AL')}\n${t('finance.digitalReceipt.description')}  ${expense.description || t('finance.digitalReceipt.noDescription')}\n------------------------------------------------\n${t('finance.digitalReceipt.generated')}`;
         const blob = new Blob([content], { type: 'text/plain' });
@@ -215,11 +203,10 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" />
             </div>
 
-            <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
                 <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
                 <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
-                <ActionButton icon={<Calculator size={20} />} label={t('finance.monthlyClose')} onClick={() => navigate('/finance/wizard')} />
             </div>
 
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col shadow-2xl">
@@ -247,7 +234,6 @@ export const FinanceTab: React.FC = () => {
                                 {loading ? (
                                     <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>
                                 ) : (
-                                    // PHOENIX: Now passing full list instead of grouped list
                                     <TransactionList 
                                         allTransactions={allTransactions}
                                         openingDocId={openingDocId}
@@ -270,7 +256,6 @@ export const FinanceTab: React.FC = () => {
 
                     {activeTab === 'reports' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
-                            {/* ... (Existing Reports Code) ... */}
                             {!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
