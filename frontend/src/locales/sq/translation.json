@@ -296,6 +296,7 @@
     "income": "Të Hyrat",
     "expense": "Shpenzimet",
     "balance": "Bilanci",
+    "balanceSub": "Fitimi Neto",
     "cogs": "Kosto e Mallrave të Shitura",
     "createInvoice": "Krijo Faturë",
     "addExpense": "Shto Shpenzim",
@@ -313,15 +314,20 @@
     "status": {
         "draft": "Draft", "sent": "E Dërguar", "paid": "E Paguar",
         "overdue": "E Vonuar", "cancelled": "E Anuluar"
+    },
+    "analytics": {
+        "salesTrend": "Trendi i Shitjeve",
+        "topProducts": "Produktet Kryesore"
     }
   },
   "inventory": {
     "title": "Menaxhimi i Stokut",
+    "tabItems": "Artikujt",
     "tabItems_short": "Stoku",
     "tabRecipes": "Recetat",
     "lowStock": "Stoku Kritik",
-    "items": { "add": "Shto Artikull" },
-    "recipes": { "add": "Krijo Recetë" },
+    "items": { "add": "Shto Artikull", "import": "Importo CSV" },
+    "recipes": { "add": "Krijo Recetë", "import": "Importo CSV" },
     "units": { "kg": "kg", "litra": "l", "cope": "copë" }
   },
   "calendar": {
