@@ -1,7 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V19.1 (CLEANUP)
-// 1. CLEANUP: Removed unused 'useNavigate' hook.
-// 2. STATUS: Warning free.
+// PHOENIX PROTOCOL - FINANCE TAB V19.2 (TYPOGRAPHY FIX)
+// 1. TYPOGRAPHY: Downgraded H2 to 'text-xl sm:text-2xl font-bold' for consistency.
+// 2. UI: Increased Action Button text to 'text-base'.
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -9,7 +9,6 @@ import {
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2
 } from 'lucide-react';
-// PHOENIX: Removed unused useNavigate import
 import { apiService } from '../../services/api';
 import { Invoice, Expense, Document } from '../../data/types';
 import { useTranslation } from 'react-i18next';
@@ -76,7 +75,7 @@ const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.R
     <button 
         onClick={onClick} 
         className={`
-            flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group
+            flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group
             ${primary 
                 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 border border-blue-400/50' 
                 : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10 hover:border-white/20'
@@ -109,7 +108,6 @@ export const FinanceTab: React.FC = () => {
     type ActiveTab = 'transactions' | 'reports';
 
     const { t, i18n } = useTranslation();
-    // PHOENIX: Removed const navigate = useNavigate();
 
     const {
         loading, invoices, expenses, cases, posTransactions, analyticsData,
@@ -211,7 +209,8 @@ export const FinanceTab: React.FC = () => {
 
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col shadow-2xl">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
-                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                    {/* PHOENIX: Standardized Header */}
+                    <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-3">
                         <Activity className="text-blue-500" />
                         {t('finance.activityAndReports')}
                     </h2>

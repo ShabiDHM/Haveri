@@ -1,8 +1,7 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - BUSINESS PAGE V18.0 (ROUTE DRIVEN)
-// 1. STATE REMOVAL: Removed internal 'activeTab' state. Content is now driven by URL 'view' prop.
-// 2. LAYOUT: Removed the button grid (moved to Header.tsx).
-// 3. CLEANUP: Simplified render logic.
+// PHOENIX PROTOCOL - BUSINESS PAGE V18.1 (TYPOGRAPHY FIX)
+// 1. TYPOGRAPHY: Upgraded H1 to 'text-3xl sm:text-4xl font-black' for clear hierarchy.
+// 2. LAYOUT: Adjusted margins to breathe better with larger text.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +13,6 @@ import { InventoryTab } from '../components/business/InventoryTab';
 import { DailyBriefingTab } from '../components/business/DailyBriefingTab';
 import { InsightsTab } from '../components/business/InsightsTab';
 
-// Define the valid views supported by the Router
 type BusinessView = 'briefing' | 'finance' | 'inventory' | 'archive' | 'insights' | 'profile';
 
 interface BusinessPageProps {
@@ -47,16 +45,17 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6">
-      <div className="mb-6 sm:mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+      <div className="mb-8 sm:mb-12">
+          {/* PHOENIX: Upgraded Typography for Hierarchy */}
+          <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight">
               {t('business.welcome', 'Mirësevini {{name}}', { name: capitalize(user?.username) })}
           </h1>
-          <p className="text-gray-400 text-sm sm:text-base">
+          <p className="text-gray-400 text-base sm:text-lg font-medium">
               {t('business.title', 'Qendra e Biznesit')}
           </p>
       </div>
 
-      <div className="min-h-[500px]">
+      <div className="min-h-[500px] animate-in fade-in slide-in-from-bottom-4 duration-500">
         {renderActiveTab()}
       </div>
     </div>

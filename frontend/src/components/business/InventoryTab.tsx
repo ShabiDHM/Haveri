@@ -1,7 +1,7 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V19.1 (I18N FIX)
-// 1. FIX: Added fallback text for 'inventory.tabItems' to fix broken key display.
-// 2. UI: Maintained tactical layout.
+// PHOENIX PROTOCOL - INVENTORY TAB V19.2 (TYPOGRAPHY FIX)
+// 1. TYPOGRAPHY: Downgraded H2 to 'text-xl sm:text-2xl font-bold' to sit below H1.
+// 2. UI: Increased Action Button text to 'text-base' for better readability.
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -9,7 +9,6 @@ import { Package, Plus, ChefHat, Loader2, FileSpreadsheet, Box, Search } from 'l
 import { useTranslation } from 'react-i18next';
 import { InventoryItem, Recipe } from '../../data/types';
 
-// Modular Imports
 import { useInventoryData } from '../../hooks/useInventoryData';
 import { InventoryList } from './inventory/InventoryList';
 import { RecipeList } from './inventory/RecipeList';
@@ -23,7 +22,7 @@ const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.R
     <button 
         onClick={onClick} 
         className={`
-            flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group
+            flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group
             ${primary 
                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 border border-emerald-400/50' 
                 : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10 hover:border-white/20'
@@ -62,7 +61,6 @@ export const InventoryTab: React.FC = () => {
         loadData, deleteItem, deleteRecipe, calculateRecipeCost 
     } = useInventoryData();
 
-    // Modals
     const [showItemModal, setShowItemModal] = useState(false);
     const [showRecipeModal, setShowRecipeModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false); 
@@ -71,7 +69,6 @@ export const InventoryTab: React.FC = () => {
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
     const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
 
-    // Handlers
     const openCreateItem = () => { setEditingItem(null); setShowItemModal(true); };
     const openEditItem = (item: InventoryItem) => { setEditingItem(item); setShowItemModal(true); };
     const handleDeleteItem = async (id: string) => { if (window.confirm(t('general.confirmDelete'))) await deleteItem(id); };
@@ -82,7 +79,6 @@ export const InventoryTab: React.FC = () => {
 
     const openImport = (target: 'items' | 'recipes') => { setImportTarget(target); setShowImportModal(true); };
 
-    // Filter Logic
     const filteredManual = manualItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const filteredPos = posItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -97,7 +93,6 @@ export const InventoryTab: React.FC = () => {
                 .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.5); }
             `}</style>
 
-            {/* DYNAMIC ACTION BAR */}
             <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
                 {activeTab === 'items' ? (
                     <>
@@ -112,25 +107,22 @@ export const InventoryTab: React.FC = () => {
                 )}
             </div>
 
-            {/* MAIN CONTENT CARD */}
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col shadow-2xl">
                 
-                {/* Header & Tabs */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
-                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                    {/* PHOENIX: Standardized Section Header */}
+                    <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-3">
                         <Box className="text-emerald-500" />
                         {t('inventory.title')}
                     </h2>
                     
                     <div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md gap-1">
-                        {/* PHOENIX: Added fallback text 'Artikujt' */}
                         <TabButton label={t('inventory.tabItems', 'Artikujt')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
                         <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
                     </div>
                 </div>
 
                 <div className="flex-1 overflow-hidden relative flex flex-col">
-                    {/* Search Bar */}
                     <div className="relative group mb-6">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-emerald-400 transition-colors" />
                         <input 
@@ -142,7 +134,6 @@ export const InventoryTab: React.FC = () => {
                         />
                     </div>
 
-                    {/* Tab Content */}
                     {activeTab === 'items' && (
                         <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2">
                             <InventoryList 
@@ -168,7 +159,6 @@ export const InventoryTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* MODALS */}
             <InventoryItemModal isOpen={showItemModal} onClose={() => setShowItemModal(false)} onSuccess={loadData} itemToEdit={editingItem} />
             <RecipeModal isOpen={showRecipeModal} onClose={() => setShowRecipeModal(false)} onSuccess={loadData} recipeToEdit={editingRecipe} inventoryItems={items} calculateCost={calculateRecipeCost} />
             <InventoryImportModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} onSuccess={loadData} target={importTarget} />
