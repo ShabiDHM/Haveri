@@ -1,6 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V18.1 (LINT FIX)
-// 1. CLEANUP: Removed unused 'Home' icon import.
+// PHOENIX PROTOCOL - ARCHIVE TAB V19.0 (TRANSLATION FIX)
+// 1. I18N: Added 'translateSystemName' helper to auto-translate backend folder names like "My Workspace".
+// 2. UX: Ensured consistent language display regardless of database values.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,7 +51,6 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
             onClick={onClick} 
             className={`group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-3xl transition-all duration-300 cursor-pointer bg-gray-900/60 backdrop-blur-md border border-white/10 shadow-xl hover:shadow-2xl hover:border-indigo-500/30`}
         >
-            {/* Ambient Hover Glow */}
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             
             <div>
@@ -152,13 +152,22 @@ export const ArchiveTab: React.FC = () => {
     const folderInputRef = useRef<HTMLInputElement>(null);
     const archiveInputRef = useRef<HTMLInputElement>(null);
 
+    // PHOENIX: Translation Helper for System Folders
+    const translateSystemName = (name: string) => {
+        if (name === "My Workspace") return t('archive.myWorkspace', 'Hapësira e Punës');
+        if (name === "General") return t('category.general', 'Të Përgjithshme');
+        return name;
+    };
+
     useEffect(() => { loadCases(); }, []);
     useEffect(() => { fetchArchiveContent(); }, [breadcrumbs]);
 
     const loadCases = async () => { try { const c = await apiService.getCases(); setCases(c); } catch {} };
     const fetchArchiveContent = async () => { const active = breadcrumbs[breadcrumbs.length - 1]; setLoading(true); try { if (active.type === 'ROOT') setArchiveItems(await apiService.getArchiveItems(undefined, undefined, "null")); else if (active.type === 'CASE') setArchiveItems(await apiService.getArchiveItems(undefined, active.id!, "null")); else if (active.type === 'FOLDER') setArchiveItems(await apiService.getArchiveItems(undefined, undefined, active.id!)); } catch {} finally { setLoading(false); } };
     const handleNavigate = (_: Breadcrumb, index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
-    const handleEnterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name, type }]);
+    // PHOENIX: Apply translation when entering folders too
+    const handleEnterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name: translateSystemName(name), type }]);
+    
     const handleCreateFolder = async (e: React.FormEvent) => { e.preventDefault(); const active = breadcrumbs[breadcrumbs.length - 1]; try { await apiService.createArchiveFolder(newFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, newFolderCategory); setShowFolderModal(false); fetchArchiveContent(); } catch { alert(t('error.generic')); } };
     const handleSmartUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if(!f) return; setIsUploading(true); const active = breadcrumbs[breadcrumbs.length - 1]; try { await apiService.uploadArchiveItem(f, f.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, active.type === 'FOLDER' ? active.id! : undefined); fetchArchiveContent(); } catch { alert(t('error.uploadFailed')); } finally { setIsUploading(false); } };
     const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { const files = e.target.files; if (!files || files.length === 0) return; setIsUploading(true); const active = breadcrumbs[breadcrumbs.length - 1]; try { const firstPath = files[0].webkitRelativePath || ""; const rootFolderName = firstPath.split('/')[0] || t('archive.newFolderDefault'); const newFolder = await apiService.createArchiveFolder(rootFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, "GENERAL"); if (!newFolder || !newFolder.id) throw new Error("Failed to create folder"); const uploadPromises = Array.from(files).map(file => { if (file.name.startsWith('.')) return Promise.resolve(); return apiService.uploadArchiveItem(file, file.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, newFolder.id); }); await Promise.all(uploadPromises); fetchArchiveContent(); } catch { alert(t('error.uploadFailed')); } finally { setIsUploading(false); if (folderInputRef.current) folderInputRef.current.value = ''; } };
@@ -182,7 +191,6 @@ export const ArchiveTab: React.FC = () => {
             <style>{`
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                /* Custom scrollbar for consistency */
                 ::-webkit-scrollbar { width: 6px; } 
                 ::-webkit-scrollbar-track { background: transparent; } 
                 ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 10px; } 
@@ -193,7 +201,6 @@ export const ArchiveTab: React.FC = () => {
             {/* TACTICAL ACTION BAR */}
             <div className="bg-gray-900/40 p-6 rounded-3xl border border-white/5 backdrop-blur-md">
                  <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Search Area */}
                     <div className="flex-1 relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-indigo-400 transition-colors" />
                         <input 
@@ -205,7 +212,6 @@ export const ArchiveTab: React.FC = () => {
                         />
                     </div>
 
-                    {/* Actions Grid */}
                     <div className="flex flex-wrap gap-3 w-full lg:w-auto">
                         {isInsideCase && currentView.id && (
                              <ActionButton 
@@ -214,24 +220,19 @@ export const ArchiveTab: React.FC = () => {
                                 onClick={() => setShowShareModal(true)} 
                             />
                         )}
-                        
                         <ActionButton 
                             icon={<FolderPlus size={20} />} 
                             label="Krijo Dosje" 
                             onClick={() => setShowFolderModal(true)} 
                         />
-                        
-                        {/* Hidden Inputs for Uploads */}
                         <input type="file" ref={folderInputRef} onChange={handleFolderUpload} className="hidden" {...({ webkitdirectory: "", directory: "" } as any)} multiple />
                         <input type="file" ref={archiveInputRef} className="hidden" onChange={handleSmartUpload} />
-
                         <ActionButton 
                             icon={<FolderUp size={20} />} 
                             label={t('archive.uploadFolderTooltip')} 
                             onClick={() => folderInputRef.current?.click()} 
                             disabled={isUploading}
                         />
-                        
                         <ActionButton 
                             primary
                             icon={isUploading ? <Loader2 className="animate-spin" size={20} /> : <FileUp size={20} />} 
@@ -258,7 +259,8 @@ export const ArchiveTab: React.FC = () => {
                             `}
                         >
                             {crumb.type === 'ROOT' ? <Archive size={16} /> : crumb.type === 'CASE' ? <Briefcase size={16} /> : <FolderOpen size={16} />}
-                            {crumb.name}
+                            {/* PHOENIX: Translate displayed name */}
+                            {translateSystemName(crumb.name)}
                         </button>
                         {index < breadcrumbs.length - 1 && <ChevronRight size={16} className="text-gray-700 flex-shrink-0" />}
                     </React.Fragment>
@@ -294,7 +296,8 @@ export const ArchiveTab: React.FC = () => {
                                 return (
                                     <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} key={item.id} className="h-full">
                                         <ArchiveCard 
-                                            title={item.title} 
+                                            // PHOENIX: Translate Title if it's a known system folder
+                                            title={translateSystemName(item.title)} 
                                             subtitle={isFolder ? t('archive.caseFolders') : `${fileExt} Dokument`} 
                                             type={isFolder ? 'Folder' : fileExt} 
                                             date={new Date(item.created_at).toLocaleDateString()} 
@@ -322,7 +325,6 @@ export const ArchiveTab: React.FC = () => {
                 )}
             </div>
             
-            {/* MODALS (Styled) */}
             {showFolderModal && ( 
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <div className="bg-[#0f172a] border border-indigo-500/20 rounded-3xl w-full max-w-sm p-6 shadow-2xl shadow-indigo-900/20">
