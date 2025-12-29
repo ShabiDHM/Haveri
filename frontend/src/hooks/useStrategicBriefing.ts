@@ -1,6 +1,6 @@
 // FILE: src/hooks/useStrategicBriefing.ts
-// PHOENIX PROTOCOL - TYPE CONSISTENCY V3.5
-// 1. FIX: Standardized 'event_type' to 'type' in the final UIAgendaItem object to match the modal's expectation.
+// PHOENIX PROTOCOL - DELETION & SCROLL FIX (PART 1)
+// 1. FIX (ID): Correctly map the event ID by checking for '_id' from MongoDB first, then 'id'. This fixes the deletion error.
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/api';
@@ -14,7 +14,7 @@ export interface UIAgendaItem {
     end_date: string;
     is_all_day: boolean;
     status: CalendarEvent['status'];
-    type: CalendarEvent['event_type']; // Standardized to 'type'
+    type: CalendarEvent['event_type'];
     attendees?: string[];
     location?: string;
     notes?: string;
@@ -57,12 +57,12 @@ export const useStrategicBriefing = () => {
             const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
             const todaysEvents: UIAgendaItem[] = calendarResult
-                .filter((event: CalendarEvent) => {
+                .filter((event: any) => { // Use 'any' temporarily for robust ID checking
                     if (!event.start_date) return false;
                     const eventDate = new Date(event.start_date);
                     return eventDate >= todayStart && eventDate < new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
                 })
-                .map((event: CalendarEvent): UIAgendaItem => {
+                .map((event: any): UIAgendaItem => {
                     const eventDate = new Date(event.start_date);
                     const eventType = event.event_type?.toUpperCase() as UIAgendaItem['type'] || 'TASK';
                     const isAlert = ['PAYMENT_DUE', 'TAX_DEADLINE'].includes(eventType);
@@ -71,15 +71,24 @@ export const useStrategicBriefing = () => {
                     if (isAlert) finalPriority = 'high';
 
                     return {
-                        id: event.id, title: event.title, description: event.description,
-                        start_date: event.start_date, end_date: event.end_date, is_all_day: event.is_all_day,
+                        // PHOENIX FIX: Prioritize '_id' from MongoDB, then fall back to 'id'
+                        id: event._id || event.id, 
+                        title: event.title, 
+                        description: event.description,
+                        start_date: event.start_date, 
+                        end_date: event.end_date, 
+                        is_all_day: event.is_all_day,
                         status: event.status, 
-                        type: event.event_type, // PHOENIX: Standardized to 'type'
+                        type: event.event_type,
                         attendees: event.attendees,
-                        location: event.location, notes: event.notes, case_id: event.case_id,
+                        location: event.location, 
+                        notes: event.notes, 
+                        case_id: event.case_id,
                         time: eventDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-                        priority: finalPriority, isCompleted: hoursDiff < -1, kind: isAlert ? 'alert' : 'event',
-                        raw: event, 
+                        priority: finalPriority, 
+                        isCompleted: hoursDiff < -1, 
+                        kind: isAlert ? 'alert' : 'event',
+                        raw: event as CalendarEvent, 
                     };
                 })
                 .sort((a, b) => a.time.localeCompare(b.time));

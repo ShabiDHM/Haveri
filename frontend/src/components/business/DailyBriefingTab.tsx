@@ -1,7 +1,6 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - PROP COMPLETION V1.0
-// 1. DATA: Added state and useEffect to fetch 'cases'.
-// 2. FIX: Passed the required 'cases' prop to EventDetailModal.
+// PHOENIX PROTOCOL - DELETION & SCROLL FIX (PART 2)
+// 1. FIX (SCROLL): Added 'auto-rows-fr' to the grid. This makes all cards stretch to the height of the tallest card, enabling internal flex scrolling.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +11,6 @@ import { EventDetailModal } from '../modals/EventDetailModal';
 import { apiService } from '../../services/api';
 import { Case } from '../../data/types';
 
-// Imports
 import { BusinessRhythmCard } from './briefing/BusinessRhythmCard';
 import { ProductPerformanceCard } from './briefing/ProductPerformanceCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
@@ -21,7 +19,7 @@ export const DailyBriefingTab: React.FC = () => {
     const { t } = useTranslation();
     const { data, loading, error, refreshData } = useStrategicBriefing();
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
-    const [cases, setCases] = useState<Case[]>([]); // PHOENIX: Added cases state
+    const [cases, setCases] = useState<Case[]>([]);
 
     const months = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
     const today = new Date();
@@ -30,7 +28,6 @@ export const DailyBriefingTab: React.FC = () => {
     const year = today.getFullYear();
     const finalDate = `${day} ${month} ${year}`;
     
-    // PHOENIX: Fetch cases to pass to the modal
     useEffect(() => {
         const loadCases = async () => {
             try {
@@ -58,7 +55,7 @@ export const DailyBriefingTab: React.FC = () => {
                         event={selectedEvent}
                         onClose={() => setSelectedEvent(null)}
                         onUpdate={handleEventUpdate}
-                        cases={cases} // PHOENIX: Passed cases prop
+                        cases={cases}
                     />
                 )}
             </AnimatePresence>
@@ -77,7 +74,8 @@ export const DailyBriefingTab: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* PHOENIX FIX: Added 'auto-rows-fr' to make cards equal height */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}><BusinessRhythmCard /></motion.div>
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}><ProductPerformanceCard /></motion.div>
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
