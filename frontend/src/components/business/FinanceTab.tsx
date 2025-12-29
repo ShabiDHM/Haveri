@@ -1,7 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V19.2 (TYPOGRAPHY FIX)
-// 1. TYPOGRAPHY: Downgraded H2 to 'text-xl sm:text-2xl font-bold' for consistency.
-// 2. UI: Increased Action Button text to 'text-base'.
+// PHOENIX PROTOCOL - FINANCE TAB V19.3 (TEXT SIZE BOOST)
+// 1. TYPOGRAPHY: Increased Section H2 to 'text-2xl sm:text-3xl' for better presence.
+// 2. TYPOGRAPHY: Increased Stat Card labels to 'text-sm' for readability.
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -64,7 +64,8 @@ const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amo
                 )}
             </div>
             <div className="relative z-10">
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1 opacity-80">{title}</p>
+                {/* PHOENIX: Increased from text-xs to text-sm */}
+                <p className="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1 opacity-80">{title}</p>
                 <h3 className="text-3xl font-black text-white tracking-tight">{amount}</h3>
             </div>
         </div>
@@ -209,8 +210,8 @@ export const FinanceTab: React.FC = () => {
 
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col shadow-2xl">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
-                    {/* PHOENIX: Standardized Header */}
-                    <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+                    {/* PHOENIX: Increased Text Size */}
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
                         <Activity className="text-blue-500" />
                         {t('finance.activityAndReports')}
                     </h2>

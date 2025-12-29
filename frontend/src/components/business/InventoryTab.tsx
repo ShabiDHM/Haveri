@@ -1,7 +1,6 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V19.2 (TYPOGRAPHY FIX)
-// 1. TYPOGRAPHY: Downgraded H2 to 'text-xl sm:text-2xl font-bold' to sit below H1.
-// 2. UI: Increased Action Button text to 'text-base' for better readability.
+// PHOENIX PROTOCOL - INVENTORY TAB V19.3 (TEXT SIZE BOOST)
+// 1. TYPOGRAPHY: Increased Section H2 to 'text-2xl sm:text-3xl' for consistency with Finance.
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -110,8 +109,8 @@ export const InventoryTab: React.FC = () => {
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col shadow-2xl">
                 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
-                    {/* PHOENIX: Standardized Section Header */}
-                    <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+                    {/* PHOENIX: Increased Text Size */}
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
                         <Box className="text-emerald-500" />
                         {t('inventory.title')}
                     </h2>
