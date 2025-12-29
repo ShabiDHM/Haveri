@@ -1,7 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V19.0 (TRANSLATION FIX)
-// 1. I18N: Added 'translateSystemName' helper to auto-translate backend folder names like "My Workspace".
-// 2. UX: Ensured consistent language display regardless of database values.
+// PHOENIX PROTOCOL - ARCHIVE TAB V19.1 (TRANSLATION FIX FINAL)
+// 1. FIX: Applied translation logic to Case Cards (Projects) to catch "My Workspace".
+// 2. LOGIC: Added case-insensitive check for robustness.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -152,10 +152,12 @@ export const ArchiveTab: React.FC = () => {
     const folderInputRef = useRef<HTMLInputElement>(null);
     const archiveInputRef = useRef<HTMLInputElement>(null);
 
-    // PHOENIX: Translation Helper for System Folders
+    // PHOENIX: Translation Helper with Case Insensitivity
     const translateSystemName = (name: string) => {
-        if (name === "My Workspace") return t('archive.myWorkspace', 'Hapësira e Punës');
-        if (name === "General") return t('category.general', 'Të Përgjithshme');
+        if (!name) return "";
+        const lowerName = name.toLowerCase().trim();
+        if (lowerName === "my workspace") return t('archive.myWorkspace', 'Hapësira e Punës');
+        if (lowerName === "general") return t('category.general', 'Të Përgjithshme');
         return name;
     };
 
@@ -165,7 +167,6 @@ export const ArchiveTab: React.FC = () => {
     const loadCases = async () => { try { const c = await apiService.getCases(); setCases(c); } catch {} };
     const fetchArchiveContent = async () => { const active = breadcrumbs[breadcrumbs.length - 1]; setLoading(true); try { if (active.type === 'ROOT') setArchiveItems(await apiService.getArchiveItems(undefined, undefined, "null")); else if (active.type === 'CASE') setArchiveItems(await apiService.getArchiveItems(undefined, active.id!, "null")); else if (active.type === 'FOLDER') setArchiveItems(await apiService.getArchiveItems(undefined, undefined, active.id!)); } catch {} finally { setLoading(false); } };
     const handleNavigate = (_: Breadcrumb, index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
-    // PHOENIX: Apply translation when entering folders too
     const handleEnterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name: translateSystemName(name), type }]);
     
     const handleCreateFolder = async (e: React.FormEvent) => { e.preventDefault(); const active = breadcrumbs[breadcrumbs.length - 1]; try { await apiService.createArchiveFolder(newFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, newFolderCategory); setShowFolderModal(false); fetchArchiveContent(); } catch { alert(t('error.generic')); } };
@@ -198,7 +199,6 @@ export const ArchiveTab: React.FC = () => {
                 select option { background-color: #0f172a; color: #f9fafb; }
             `}</style>
             
-            {/* TACTICAL ACTION BAR */}
             <div className="bg-gray-900/40 p-6 rounded-3xl border border-white/5 backdrop-blur-md">
                  <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1 relative group">
@@ -244,7 +244,6 @@ export const ArchiveTab: React.FC = () => {
                  </div>
             </div>
 
-            {/* BREADCRUMBS */}
             <div className="flex items-center gap-2 overflow-x-auto text-sm no-scrollbar pb-2">
                 {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={crumb.id || 'root'}>
@@ -259,7 +258,6 @@ export const ArchiveTab: React.FC = () => {
                             `}
                         >
                             {crumb.type === 'ROOT' ? <Archive size={16} /> : crumb.type === 'CASE' ? <Briefcase size={16} /> : <FolderOpen size={16} />}
-                            {/* PHOENIX: Translate displayed name */}
                             {translateSystemName(crumb.name)}
                         </button>
                         {index < breadcrumbs.length - 1 && <ChevronRight size={16} className="text-gray-700 flex-shrink-0" />}
@@ -267,14 +265,14 @@ export const ArchiveTab: React.FC = () => {
                 ))}
             </div>
             
-            {/* CONTENT GRID */}
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] shadow-2xl">
                 {currentView.type === 'ROOT' && filteredCases.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredCases.map(c => (
                             <div key={c.id} className="h-full">
                                 <ArchiveCard 
-                                    title={c.title || `Projekti #${c.case_number}`} 
+                                    // PHOENIX: Translation Logic Applied HERE
+                                    title={translateSystemName(c.title || `Projekti #${c.case_number}`)} 
                                     subtitle={c.case_number || 'Pa numër'} 
                                     type="Dosje Projekti" 
                                     date={new Date(c.created_at).toLocaleDateString()} 
@@ -296,7 +294,6 @@ export const ArchiveTab: React.FC = () => {
                                 return (
                                     <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} key={item.id} className="h-full">
                                         <ArchiveCard 
-                                            // PHOENIX: Translate Title if it's a known system folder
                                             title={translateSystemName(item.title)} 
                                             subtitle={isFolder ? t('archive.caseFolders') : `${fileExt} Dokument`} 
                                             type={isFolder ? 'Folder' : fileExt} 
