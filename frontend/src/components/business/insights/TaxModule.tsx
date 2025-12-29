@@ -1,7 +1,6 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX MODULE V3.0 (FEATURE MERGE)
-// 1. ACTION: Added "Mbyllja Mujore" button (Relocated from FinanceTab).
-// 2. LAYOUT: Pushed disclaimer further down to accommodate the new button.
+// PHOENIX PROTOCOL - TAX MODULE V3.1 (TYPOGRAPHY)
+// 1. TYPOGRAPHY: Upgraded Header to 'text-2xl'.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,11 +22,11 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
 
     return (
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md h-auto lg:h-[540px] flex flex-col">
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2 flex-shrink-0">
+            {/* PHOENIX: Increased text size */}
+            <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2 flex-shrink-0">
                 <Landmark className="text-blue-400" /> {t('insights.tax.estimator', 'Vlerësimi i TVSH-së')}
             </h3>
 
-            {/* Main Content Centered */}
             <div className="flex-1 flex flex-col justify-center">
                 <div className="relative pt-4 pb-8 text-center">
                     <p className="text-gray-400 text-sm mb-1">{t('insights.tax.toPay', 'Për të paguar (Vlerësim)')}</p>
@@ -52,7 +51,6 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                     </div>
                 </div>
 
-                {/* NEW: Monthly Close Button */}
                 <div className="px-4">
                     <button 
                         onClick={() => navigate('/finance/wizard')}
@@ -64,7 +62,6 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                 </div>
             </div>
             
-            {/* Footer pinned to bottom */}
             <p className="text-[10px] text-gray-500 mt-auto text-center italic border-t border-white/5 pt-3 flex-shrink-0">
                 * {t('insights.tax.disclaimer', 'Ky është vetëm një vlerësim. Konsultohuni me kontabilistin tuaj.')}
             </p>

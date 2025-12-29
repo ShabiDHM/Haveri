@@ -1,6 +1,6 @@
 // FILE: src/components/business/insights/DebtModule.tsx
-// PHOENIX PROTOCOL - DEBT MODULE V2.1 (MOBILE & SCROLL)
-// 1. LAYOUT: h-auto for mobile, fixed h-[540px] for desktop.
+// PHOENIX PROTOCOL - DEBT MODULE V2.2 (TYPOGRAPHY)
+// 1. TYPOGRAPHY: Upgraded Header to 'text-2xl' for consistency.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -28,11 +28,11 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md h-auto lg:h-[540px] flex flex-col">
             
             <div className="flex-shrink-0">
-                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                {/* PHOENIX: Increased text size */}
+                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
                     <AlertTriangle className="text-rose-500" /> {t('insights.debt.title', 'Analiza e Borxheve')}
                 </h3>
 
-                {/* Aging Bar */}
                 <div className="mb-8">
                     <div className="flex justify-between text-sm mb-2 text-gray-400">
                         <span>Totali i Borxhit</span>
@@ -53,7 +53,6 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
                 <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">{t('insights.debt.topDebtors', 'Klientët me Borxhe')}</h4>
             </div>
 
-            {/* Scrollable List - Desktop (flex-1) & Mobile (max-h restricted if needed, but flex handles it) */}
             <div className="flex-1 overflow-y-auto pr-2 min-h-0 space-y-3 custom-scrollbar max-h-[300px] lg:max-h-none">
                 {topDebtors.length === 0 ? (
                     <p className="text-gray-500 text-sm italic">{t('insights.debt.noDebts', 'Asnjë borxh aktiv!')}</p>

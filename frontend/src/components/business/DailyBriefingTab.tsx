@@ -1,8 +1,6 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - UX STREAMLINING
-// 1. REMOVED: The intermediate 'BriefingEventModal' has been completely removed.
-// 2. REWIRED: The 'onEventClick' prop now directly navigates to the calendar page with the event context.
-// 3. SIMPLIFIED: Removed all unnecessary state and modal-related code for a cleaner component.
+// PHOENIX PROTOCOL - DAILY BRIEFING V2.0 (TYPOGRAPHY)
+// 1. TYPOGRAPHY: Refined Header scale to match new system.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -11,14 +9,13 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, Target, AlertTriangle } from 'lucide-react';
 import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 
-// Imports
 import { BusinessRhythmCard } from './briefing/BusinessRhythmCard';
 import { ProductPerformanceCard } from './briefing/ProductPerformanceCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
 
 export const DailyBriefingTab: React.FC = () => {
     const { t } = useTranslation();
-    const navigate = useNavigate(); // PHOENIX: For direct navigation
+    const navigate = useNavigate();
     const { data, loading, error } = useStrategicBriefing();
 
     const months = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
@@ -63,14 +60,13 @@ export const DailyBriefingTab: React.FC = () => {
                     </div>
                     <div className="hidden sm:block text-right">
                         <div className="text-sm text-gray-500 uppercase tracking-widest font-semibold">{t('common.today', 'SOT')}</div>
-                        <div className="text-xl sm:text-2xl text-white font-mono font-bold tracking-tight">{finalDate}</div>
+                        {/* PHOENIX: Increased date size for tactical feel */}
+                        <div className="text-2xl text-white font-mono font-bold tracking-tight">{finalDate}</div>
                     </div>
                 </div>
             </div>
 
-            {/* The Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                     <BusinessRhythmCard />
                 </motion.div>
@@ -80,7 +76,6 @@ export const DailyBriefingTab: React.FC = () => {
                 </motion.div>
 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-                    {/* PHOENIX: onEventClick now triggers direct navigation */}
                     {data && 
                         <SmartAgendaCard 
                             agenda={data.agenda} 

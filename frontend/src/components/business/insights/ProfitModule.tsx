@@ -1,7 +1,6 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - PROFIT MODULE V2.1 (MOBILE & SCROLL)
-// 1. LAYOUT: h-auto for mobile, fixed h-[540px] for desktop.
-// 2. SCROLL: List now scrolls internally on desktop to prevent growing.
+// PHOENIX PROTOCOL - PROFIT MODULE V2.2 (TYPOGRAPHY)
+// 1. TYPOGRAPHY: Upgraded Header to 'text-2xl'.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,29 +18,25 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
     const { totalStockValue, lowStockItems } = data;
 
     return (
-        // Mobile: Auto height. Desktop: Fixed 540px height to match neighbors.
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md h-auto lg:h-[540px] flex flex-col">
             
-            {/* Header - Fixed */}
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2 flex-shrink-0">
+            {/* PHOENIX: Increased text size */}
+            <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2 flex-shrink-0">
                 <Package className="text-purple-400" /> {t('insights.inventory.title', 'Inteligjenca e Stokut')}
             </h3>
 
-            {/* Stats Card - Fixed */}
             <div className="mb-6 p-4 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-xl flex-shrink-0">
                 <p className="text-gray-400 text-xs uppercase tracking-wider font-bold mb-1">{t('insights.inventory.value', 'Vlera Totale e Stokut')}</p>
                 <p className="text-2xl font-mono font-bold text-white">€{totalStockValue.toFixed(2)}</p>
                 <p className="text-[10px] text-gray-500 mt-1">{t('insights.inventory.valueDesc', 'Para të bllokuara në rafte')}</p>
             </div>
 
-            {/* List Container - Flexible */}
             <div className="flex-1 flex flex-col min-h-0">
                 <div className="flex justify-between items-center mb-3 flex-shrink-0">
                     <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider">{t('inventory.lowStock', 'Stoku Kritik')}</h4>
                     <span className="bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded-full font-bold">{lowStockItems.length} Artikuj</span>
                 </div>
                 
-                {/* Scrollable List Area */}
                 <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2 max-h-[200px] lg:max-h-none">
                     {lowStockItems.length === 0 ? (
                         <p className="text-gray-500 text-sm italic mt-2">{t('general.allGood', 'Gjithçka në rregull!')}</p>
