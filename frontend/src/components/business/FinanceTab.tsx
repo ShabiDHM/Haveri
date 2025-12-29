@@ -1,8 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V18.0 (TACTICAL UPGRADE)
-// 1. STYLE: Applied Phoenix Glassmorphism (Glows, Gradients) to Stats and Actions.
-// 2. UX: Enhanced hover states for "Tactical Command" feel.
-// 3. CONSISTENCY: Matched visual language with Intelligence Dashboard.
+// PHOENIX PROTOCOL - FINANCE TAB V18.1 (RAW DATA PASS)
+// 1. DATA: Removed 'groupedList' pre-calculation. Now passing 'allTransactions' directly to TransactionList.
+// 2. LOGIC: Simplified render cycle to allow the child component to handle hierarchical grouping.
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -24,12 +23,12 @@ import {
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { InvoiceModal } from './modals/InvoiceModal';
 import { ExpenseModal } from './modals/ExpenseModal';
-import { TransactionList, TransactionItem, GroupedTransaction } from './finance/TransactionList';
+// PHOENIX: Updated import to reflect prop change
+import { TransactionList, TransactionItem } from './finance/TransactionList';
 
 // --- TACTICAL UI COMPONENTS ---
 
 const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amount: string, icon: React.ReactNode, trend?: string, type: 'income' | 'expense' | 'neutral' | 'warning' }) => {
-    // Phoenix Gradient Logic
     let gradient = 'from-blue-500/20 to-blue-500/5';
     let border = 'border-blue-500/30';
     let iconColor = 'text-blue-400';
@@ -56,9 +55,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amo
 
     return (
         <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${gradient} border ${border} p-6 backdrop-blur-md hover:scale-[1.02] transition-transform duration-300 group`}>
-            {/* Ambient Glow */}
             <div className={`absolute -top-10 -right-10 w-32 h-32 ${iconBg} blur-[60px] rounded-full pointer-events-none opacity-50`} />
-            
             <div className="flex justify-between items-start mb-4 relative z-10">
                 <div className={`p-3 rounded-2xl ${iconBg} ${iconColor} border ${border} shadow-lg`}>
                     {icon}
@@ -146,7 +143,7 @@ export const FinanceTab: React.FC = () => {
     const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
-    // --- LOGIC: Flatten & Sort ---
+    // --- LOGIC: Flatten & Sort (Still needed to combine types) ---
     const allTransactions: TransactionItem[] = useMemo(() => {
         const combined: TransactionItem[] = [
             ...invoices.map(i => ({ id: i.id, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name, raw: i })),
@@ -161,35 +158,15 @@ export const FinanceTab: React.FC = () => {
             })),
         ];
         
-        return combined.sort((a, b) => {
-            const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
-            if (dateDiff !== 0) return dateDiff;
-            return a.type.localeCompare(b.type);
+        // PHOENIX: Filter applied here to ensure hierarchy receives filtered data
+        const filtered = combined.filter(tx => {
+            if (!searchTerm) return true;
+            return tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                   tx.amount.toString().includes(searchTerm);
         });
-    }, [invoices, expenses, posTransactions, t]);
 
-    // --- LOGIC: Universal Grouping ---
-    const groupedList = useMemo(() => {
-        const result: GroupedTransaction[] = [];
-        allTransactions.forEach(tx => {
-            if (searchTerm) {
-                if (tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || tx.amount.toString().includes(searchTerm)) {
-                    result.push({ type: 'single', data: tx });
-                }
-                return;
-            }
-            const txDate = new Date(tx.date).toLocaleDateString();
-            const lastGroup = result.length > 0 ? result[result.length - 1] : null;
-            if (lastGroup && lastGroup.type === 'group' && lastGroup.date === txDate && lastGroup.groupType === tx.type) {
-                lastGroup.items.push(tx);
-                lastGroup.totalAmount += tx.amount;
-                lastGroup.count += 1;
-            } else {
-                result.push({ type: 'group', date: txDate, groupType: tx.type, totalAmount: tx.amount, count: 1, items: [tx] });
-            }
-        });
-        return result;
-    }, [allTransactions, searchTerm]);
+        return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [invoices, expenses, posTransactions, searchTerm, t]);
 
     // UI Helpers
     const closePreview = () => { if (viewingUrl) window.URL.revokeObjectURL(viewingUrl); setViewingUrl(null); setViewingDoc(null); };
@@ -270,8 +247,9 @@ export const FinanceTab: React.FC = () => {
                                 {loading ? (
                                     <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>
                                 ) : (
+                                    // PHOENIX: Now passing full list instead of grouped list
                                     <TransactionList 
-                                        groupedList={groupedList}
+                                        allTransactions={allTransactions}
                                         openingDocId={openingDocId}
                                         onEditInvoice={handleEditInvoice}
                                         onEditExpense={handleEditExpense}
@@ -292,6 +270,7 @@ export const FinanceTab: React.FC = () => {
 
                     {activeTab === 'reports' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
+                            {/* ... (Existing Reports Code) ... */}
                             {!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
@@ -333,7 +312,6 @@ export const FinanceTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* INJECTED MODALS */}
             <InvoiceModal isOpen={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
             <ExpenseModal isOpen={showExpenseModal} onClose={() => setShowExpenseModal(false)} expenseToEdit={selectedExpense} onSuccess={refreshData} />
             
