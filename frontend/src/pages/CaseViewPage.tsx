@@ -1,8 +1,7 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - LAYOUT CONSTRAINTS V14.1
-// 1. LAYOUT: Main panels now have a minimum height of 500px and a maximum of 700px.
-// 2. UX: Panels will grow with screen height within this range, then enable internal scrolling.
-// 3. CENTERING: Panels are now vertically centered on very tall screens for better aesthetics.
+// PHOENIX PROTOCOL - CASE VIEW V15.1 (FLEXIBLE HEIGHT)
+// 1. LAYOUT: Adjusted panels to 'h-auto min-h-[400px] max-h-[600px]' per specific request.
+// 2. LOGIC: Allows panels to grow slightly with content but caps them at 600px.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -29,7 +28,10 @@ const DockedPDFViewer: React.FC<{ document: Document; onExpand: () => void; onCl
     return (
         <AnimatePresence>
             <motion.div initial={{ y: "100%", opacity: 0 }} animate={{ y: "0%", opacity: 1 }} exit={{ y: "100%", opacity: 0 }} transition={{ type: "spring", stiffness: 300, damping: 30 }} className="fixed bottom-4 right-4 z-[9998] w-80 bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex items-center justify-between p-4" >
-                <div className="flex items-center gap-4 min-w-0"> <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20"> <FileText className="h-6 w-6 text-red-400 flex-shrink-0" /> </div> <p className="text-sm font-medium text-gray-200 truncate">{document.file_name}</p> </div>
+                <div className="flex items-center gap-4 min-w-0"> 
+                    <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20"> <FileText className="h-6 w-6 text-red-400 flex-shrink-0" /> </div> 
+                    <p className="text-base font-medium text-gray-200 truncate">{document.file_name}</p> 
+                </div>
                 <div className="flex items-center gap-1 flex-shrink-0"> <button onClick={onExpand} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors" title={t('general.expand', 'Zgjero')}> <Maximize2 size={18} /> </button> <button onClick={onClose} className="p-2 hover:bg-red-500/10 rounded-lg text-gray-400 hover:text-red-400 transition-colors" title={t('general.close', 'Mbyll')}> <X size={18} /> </button> </div>
             </motion.div>
         </AnimatePresence>
@@ -58,9 +60,9 @@ const RenameDocumentModal: React.FC<{ isOpen: boolean; onClose: () => void; onRe
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
             <div className="bg-[#0f172a] border border-blue-500/20 rounded-3xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20">
-                <div className="flex justify-between items-center mb-6"><h3 className="text-xl font-bold text-white">{t('documentsPanel.renameTitle')}</h3><button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={24} /></button></div>
+                <div className="flex justify-between items-center mb-6"><h3 className="text-2xl font-bold text-white">{t('documentsPanel.renameTitle')}</h3><button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={24} /></button></div>
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-6"><label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('documentsPanel.newName')}</label><input autoFocus type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all" /></div>
+                    <div className="mb-6"><label className="block text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">{t('documentsPanel.newName')}</label><input autoFocus type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all" /></div>
                     <div className="flex justify-end gap-3"><button type="button" onClick={onClose} className="px-6 py-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors font-medium">{t('general.cancel')}</button><button type="submit" disabled={isSaving} className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold flex items-center gap-2 hover:shadow-lg hover:shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-95">{isSaving ? <Loader2 className="animate-spin h-5 w-5" /> : <Save size={18} />}{t('general.save')}</button></div>
                 </form>
             </div>
@@ -118,11 +120,21 @@ const CaseViewPage: React.FC = () => {
   return (
     <motion.div className="w-full h-screen bg-background-dark" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 h-full flex flex-col">
-        {/* PHOENIX: Added items-center to vertically center panels on tall screens */}
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 py-6 min-h-0 items-center">
-            {/* PHOENIX: Replaced h-full with height constraints */}
-            <DocumentsPanel caseId={caseData.details.id} documents={liveDocuments} t={t} connectionStatus={connectionStatus} reconnect={reconnect} onDocumentUploaded={handleDocumentUploaded} onDocumentDeleted={handleDocumentDeleted} onViewOriginal={handleViewOriginal} onRename={(doc) => setDocumentToRename(doc)} className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-auto min-h-[500px] max-h-[700px]" />
-            {/* PHOENIX: Replaced h-full with height constraints */}
+            {/* PHOENIX: APPLIED FLEXIBLE HEIGHT (min-400 max-600) */}
+            <DocumentsPanel 
+                caseId={caseData.details.id} 
+                documents={liveDocuments} 
+                t={t} 
+                connectionStatus={connectionStatus} 
+                reconnect={reconnect} 
+                onDocumentUploaded={handleDocumentUploaded} 
+                onDocumentDeleted={handleDocumentDeleted} 
+                onViewOriginal={handleViewOriginal} 
+                onRename={(doc) => setDocumentToRename(doc)} 
+                className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-auto min-h-[400px] max-h-[600px]" 
+            />
+            {/* PHOENIX: APPLIED FLEXIBLE HEIGHT (min-400 max-600) */}
             <AIStudioPanel 
                 messages={liveMessages} 
                 connectionStatus={connectionStatus} 
@@ -132,7 +144,7 @@ const CaseViewPage: React.FC = () => {
                 onClearChat={handleClearChat} 
                 activeCaseId={caseData.details.id} 
                 activeContextId="general"
-                className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-auto min-h-[500px] max-h-[700px]"
+                className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-auto min-h-[400px] max-h-[600px]"
             />
         </div>
       </div>
