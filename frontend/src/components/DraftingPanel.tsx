@@ -1,8 +1,7 @@
 // FILE: src/components/DraftingPanel.tsx
-// PHOENIX PROTOCOL - DYNAMIC TEXTAREA V2.0
-// 1. FEATURE: Textarea now expands on focus for a better writing experience.
-// 2. STATE: Added 'isInputActive' to control the component's collapsed/expanded state.
-// 3. UX: Textarea collapses automatically after submitting the draft request.
+// PHOENIX PROTOCOL - DRAFTING PANEL V1.3 (TEMPLATE CLEANUP)
+// 1. CLEANUP: Removed obsolete legal templates ('padi', 'pergjigje', 'kunderpadi') from the UI.
+// 2. FOCUS: The 'Legal' drafting group now only contains 'Kontratë'.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../services/api';
@@ -14,8 +13,9 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+// PHOENIX: Removed obsolete types
 type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'SUCCESS' | 'FAILED' | 'FAILURE';
-type TemplateType = 'generic' | 'padi' | 'pergjigje' | 'kunderpadi' | 'kontrate' | 'email' | 'marketing_post';
+type TemplateType = 'generic' | 'kontrate' | 'email' | 'marketing_post';
 
 interface DraftingJobState {
   jobId: string | null;
@@ -58,7 +58,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('generic');
   const [isResultNew, setIsResultNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isInputActive, setIsInputActive] = useState(false); // PHOENIX: State for textarea size
+  const [isInputActive, setIsInputActive] = useState(false);
   const pollingIntervalRef = useRef<number | null>(null);
 
   useEffect(() => { return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); }; }, []);
@@ -95,7 +95,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const runDraftingJob = async () => {
     if (!context.trim()) return;
     setIsSubmitting(true);
-    setIsInputActive(false); // PHOENIX: Collapse textarea on submit
+    setIsInputActive(false);
     setCurrentJob({ jobId: null, status: 'PENDING', result: null, error: null });
     setIsResultNew(false);
     try {
@@ -122,6 +122,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
 
   return (
     <div className={`flex flex-col relative bg-transparent overflow-hidden h-full w-full ${className}`}>
+        <style>{` select option, select optgroup { background-color: #0f172a; color: #f9fafb; } `}</style>
         <div className="flex flex-col gap-4 p-4 border-b border-white/10 bg-white/5 z-20">
             <div className="flex gap-4">
                 <div className='flex-1 relative group min-w-0'>
@@ -134,8 +135,6 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
                         </optgroup>
                         <optgroup label={t('drafting.groupLegal')}>
                             <option value="kontrate">{t('drafting.templateKontrate')}</option>
-                            <option value="padi">{t('drafting.templatePadi')}</option>
-                            <option value="pergjigje">{t('drafting.templatePergjigje')}</option>
                         </optgroup>
                     </select>
                 </div>
@@ -150,7 +149,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
                         onBlur={() => { if(!context) setIsInputActive(false) }}
                         placeholder={t('drafting.promptPlaceholder')} 
                         disabled={isSubmitting} 
-                        rows={isInputActive ? 8 : 3} // PHOENIX: Dynamic rows
+                        rows={isInputActive ? 8 : 3}
                         className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-sm resize-none custom-scrollbar transition-all duration-300" 
                     />
                     <button type="submit" disabled={isSubmitting || !context.trim()} className="h-full px-4 bg-primary-start hover:bg-primary-end text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center">

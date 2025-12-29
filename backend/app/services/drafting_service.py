@@ -1,8 +1,8 @@
 # FILE: backend/app/services/drafting_service.py
-# PHOENIX PROTOCOL - DEPENDENCY CLEANUP
-# 1. FIX: Removed the invalid 'db_services' import that was causing a Pylance error.
-# 2. REFACTOR: Simplified the service by assuming a pre-initialized 'rag_service' instance is available, improving architecture.
-# 3. STATUS: Clean, correct, and architecturally sound.
+# PHOENIX PROTOCOL - LEGAL SCOPE REDUCTION
+# 1. CLEANUP: Removed obsolete litigation draft types ('padi', 'pergjigje', 'kunderpadi').
+# 2. FOCUS: The 'Legal Drafter' agent is now exclusively for 'kontrate' (contracts).
+# 3. STATUS: Aligned with the streamlined business-focused UI.
 
 import asyncio
 import structlog
@@ -13,31 +13,22 @@ from ..models.user import UserInDB
 from .text_sterilization_service import sterilize_text_for_llm 
 from .albanian_rag_service import AlbanianRAGService
 from . import llm_service
-from . import vector_store_service # Import the actual service
+from . import vector_store_service
 
 logger = structlog.get_logger(__name__)
 
-LEGAL_DRAFT_TYPES = ["kontrate", "padi", "pergjigje", "kunderpadi"]
+# PHOENIX: Simplified list to only include 'kontrate'
+LEGAL_DRAFT_TYPES = ["kontrate"]
 
-# --- DEPENDENCY INJECTION (Placeholder) ---
-# In a full FastAPI app, you would "inject" this dependency.
-# For now, we create a single, shared instance.
-# This assumes your DB connection is managed and passed during app startup.
-
-# This is a simplified way to create a singleton instance for our service.
 class RagServiceSingleton:
     _instance: Optional[AlbanianRAGService] = None
-
     def get_instance(self, db: Database) -> AlbanianRAGService:
         if self._instance is None:
-            # The RAG service needs the vector store service, which is now stateless
             self._instance = AlbanianRAGService(vector_store=vector_store_service, db=db)
             logger.info("Initialized Singleton: AlbanianRAGService")
         return self._instance
 
 rag_singleton = RagServiceSingleton()
-# --- END DEPENDENCY INJECTION ---
-
 
 async def _build_legal_prompt_components(user: UserInDB, sanitized_prompt: str, case_id: Optional[str], rag_service: AlbanianRAGService) -> Dict[str, str]:
     system_prompt = "Ti je 'Juristi AI', Avokat Ekspert për legjislacionin e KOSOVËS. Harto dokumentin e kërkuar me saktësi maksimale."
@@ -59,7 +50,6 @@ async def generate_draft_stream(
     sanitized_prompt = sterilize_text_for_llm(prompt_text)
     is_legal_task = draft_type in LEGAL_DRAFT_TYPES
     
-    # PHOENIX: Get the initialized RAG service instance
     rag_service = rag_singleton.get_instance(db)
     
     if is_legal_task:
