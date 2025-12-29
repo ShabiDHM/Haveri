@@ -1,7 +1,7 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V19.0 (TACTICAL UI)
-// 1. VISUALS: Deepened background, improved action bar spacing.
-// 2. LAYOUT: Switched to responsive container queries logic via CSS classes.
+// PHOENIX PROTOCOL - INVENTORY TAB V19.1 (I18N FIX)
+// 1. FIX: Added fallback text for 'inventory.tabItems' to fix broken key display.
+// 2. UI: Maintained tactical layout.
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -123,7 +123,8 @@ export const InventoryTab: React.FC = () => {
                     </h2>
                     
                     <div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md gap-1">
-                        <TabButton label={t('inventory.tabItems')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
+                        {/* PHOENIX: Added fallback text 'Artikujt' */}
+                        <TabButton label={t('inventory.tabItems', 'Artikujt')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
                         <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
                     </div>
                 </div>
