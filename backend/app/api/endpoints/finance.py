@@ -1,15 +1,14 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V13.4 (SMART ANALYTICS)
-# 1. FIX: Added 'Smart Window' logic to analytics dashboard.
-# 2. BEHAVIOR: If no data exists in the last 30 days, looks back to the last active transaction date.
-# 3. STATUS: Production Ready.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V14.0 (SERVICE REFACTOR)
+# 1. REFACTOR: The get_analytics_dashboard endpoint now uses the clean AnalyticsService.
+# 2. FIX: This eliminates the "Imported Item" bug by removing the old, complex aggregation logic.
+# 3. CLEANUP: Removed over 50 lines of legacy pipeline code.
 
 import asyncio
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
-from typing import List, Annotated, Optional, Any, Dict
-from datetime import datetime, timedelta
+from typing import List, Annotated, Optional, Any
 from bson import ObjectId
 from pymongo.database import Database
 import pymongo 
@@ -18,14 +17,15 @@ from app.models.user import UserInDB
 from app.models.finance import (
     InvoiceCreate, InvoiceOut, InvoiceUpdate, 
     ExpenseCreate, ExpenseOut, ExpenseUpdate,
-    AnalyticsDashboardData, SalesTrendPoint, TopProductItem,
-    CaseFinancialSummary, PosTransactionOut
+    AnalyticsDashboardData, CaseFinancialSummary, PosTransactionOut
 )
 from app.models.archive import ArchiveItemOut 
 from app.services.finance_service import FinanceService
 from app.services.archive_service import ArchiveService
 from app.services.parsing_service import ParsingService 
 from app.services import report_service
+# PHOENIX: Import the new service
+from app.services.analytics_service import AnalyticsService
 from app.api.endpoints.dependencies import get_current_user, get_db, get_async_db, get_current_active_user
 
 router = APIRouter(tags=["Finance"])
@@ -48,9 +48,6 @@ async def get_imported_transactions(
     current_user: Annotated[UserInDB, Depends(get_current_active_user)],
     db: Any = Depends(get_async_db)
 ):
-    """
-    Retrieves all imported POS transactions for the current user.
-    """
     user_id_str = str(current_user.id)
     cursor = db["transactions"].find({"user_id": user_id_str}).sort("date", pymongo.DESCENDING)
     transactions = await cursor.to_list(length=None) 
@@ -62,9 +59,6 @@ def delete_transaction(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db)
 ):
-    """
-    Deletes a specific POS transaction by ID.
-    """
     FinanceService(db).delete_pos_transaction(str(current_user.id), transaction_id)
 
 # --- ANALYTICS ENDPOINTS ---
@@ -89,114 +83,20 @@ async def get_case_financial_summaries(current_user: Annotated[UserInDB, Depends
             summaries.append(CaseFinancialSummary(case_id=case_id, case_title=case_map[case_id].get("title", "Pa Titull"), case_number=case_map[case_id].get("case_number", ""), total_billed=billed, total_expenses=expenses, net_balance=billed - expenses))
     return sorted(summaries, key=lambda s: s.total_billed, reverse=True)
 
+# PHOENIX: Refactored Endpoint
 @router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
 async def get_analytics_dashboard(
     current_user: Annotated[UserInDB, Depends(get_current_active_user)],
     db: Any = Depends(get_async_db),
     days: int = 30
 ):
-    user_oid = ObjectId(current_user.id)
-    user_id_str = str(current_user.id)
-    
-    # --- SMART WINDOW LOGIC ---
-    # 1. Determine the "Anchor Date" (End Date)
-    # We prefer 'Now'. But if there is no recent data, we look for the Last Active Transaction.
-    anchor_date = datetime.utcnow()
-    
-    # Check if there is ANY activity in the last 30 days
-    check_start = anchor_date - timedelta(days=30)
-    
-    recent_count = await db["transactions"].count_documents({
-        "user_id": user_id_str, 
-        "date": {"$gte": check_start}
-    })
-    
-    # If no recent data, find the absolute last transaction date
-    if recent_count == 0:
-        last_tx = await db["transactions"].find_one(
-            {"user_id": user_id_str},
-            sort=[("date", pymongo.DESCENDING)]
-        )
-        if last_tx and "date" in last_tx:
-            # Shift the anchor to the last active day
-            anchor_date = last_tx["date"]
-            # Add 23:59:59 to capture that full day
-            anchor_date = anchor_date.replace(hour=23, minute=59, second=59)
-
-    end_date = anchor_date
-    start_date = end_date - timedelta(days=days)
-
-    # 1. Manual Invoices (Profit = Revenue for services)
-    inv_pipeline = [
-        {"$match": {"user_id": user_oid, "issue_date": {"$gte": start_date, "$lte": end_date}, "status": {"$ne": "CANCELLED"}}},
-        {"$unwind": "$items"},
-        {"$project": {"date": "$issue_date", "amount": {"$multiply": ["$items.quantity", "$items.unit_price"]}, "product": "$items.description", "quantity": "$items.quantity"}}
-    ]
-    # 2. Manual Expenses (Negative impact)
-    exp_pipeline = [
-        {"$match": {"user_id": user_oid, "date": {"$gte": start_date, "$lte": end_date}}},
-        {"$project": {"date": "$date", "amount": {"$multiply": ["$amount", -1]}}}
-    ]
-    # 3. POS Transactions (Includes 'net_profit' field from inventory engine)
-    pos_pipeline = [
-        {"$match": {"user_id": str(user_oid), "date": {"$gte": start_date, "$lte": end_date}}},
-        {"$project": {
-            "date": "$date", 
-            "amount": "$amount", 
-            "net_profit": "$net_profit", # Fetch real profit
-            "product": "$description", 
-            "quantity": "$quantity"
-        }}
-    ]
-    
-    inv_data, exp_data, pos_data = await asyncio.gather(
-        db["invoices"].aggregate(inv_pipeline).to_list(length=None),
-        db["expenses"].aggregate(exp_pipeline).to_list(length=None),
-        db["transactions"].aggregate(pos_pipeline).to_list(length=None)
-    )
-    
-    # --- PROFIT CALCULATION ENGINE ---
-    inv_revenue = sum(item['amount'] for item in inv_data)
-    pos_revenue = sum(item['amount'] for item in pos_data)
-    pos_profit = sum(item.get('net_profit', item['amount']) for item in pos_data)
-    expenses_total = sum(item['amount'] for item in exp_data) # This is negative
-    total_revenue = inv_revenue + pos_revenue
-    total_count = len(inv_data) + len(pos_data)
-    total_net_profit = inv_revenue + pos_profit + expenses_total
-
-    # --- Trend & Product Logic ---
-    all_income = inv_data + pos_data 
-    trend_map: Dict[str, float] = {}
-    product_map: Dict[str, Dict[str, float]] = {}
-
-    for item in all_income:
-        d = item["date"]
-        if isinstance(d, str): d = datetime.fromisoformat(d)
-        date_key = d.strftime("%Y-%m-%d")
-        trend_map[date_key] = trend_map.get(date_key, 0.0) + item['amount']
-        
-        prod_name = item.get("product", "Shërbim")
-        if prod_name not in product_map: product_map[prod_name] = {"qty": 0, "rev": 0.0}
-        product_map[prod_name]["qty"] += item.get('quantity', 0)
-        product_map[prod_name]["rev"] += item['amount']
-
-    for exp in exp_data:
-        d = exp["date"]
-        if isinstance(d, str): d = datetime.fromisoformat(d)
-        date_key = d.strftime("%Y-%m-%d")
-        trend_map[date_key] = trend_map.get(date_key, 0.0) + exp['amount']
-
-    sales_trend = [SalesTrendPoint(date=k, amount=round(v, 2)) for k, v in sorted(trend_map.items())]
-    sorted_products = sorted(product_map.items(), key=lambda i: i[1]['rev'], reverse=True)[:5]
-    top_products = [TopProductItem(product_name=k, total_quantity=v['qty'], total_revenue=round(v['rev'], 2)) for k, v in sorted_products]
-
-    return AnalyticsDashboardData(
-        total_revenue_period=round(total_revenue, 2),
-        total_transactions_period=total_count,
-        sales_trend=sales_trend,
-        top_products=top_products,
-        total_profit_period=round(total_net_profit, 2)
-    )
+    """
+    Retrieves dashboard analytics using the dedicated AnalyticsService.
+    This includes sales trends and top-selling products from POS data.
+    """
+    analytics_service = AnalyticsService(db)
+    dashboard_data = await analytics_service.get_dashboard_data(user_id=str(current_user.id), days=days)
+    return dashboard_data
 
 # --- INVOICES ---
 @router.get("/invoices", response_model=List[InvoiceOut])
