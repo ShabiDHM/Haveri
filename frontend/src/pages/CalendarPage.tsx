@@ -1,8 +1,7 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR V10.4 (FINAL UX STREAMLINING)
-// 1. REMOVED: The legacy useEffect that automatically opened the 'DayEventsModal' on load has been deleted.
-// 2. FEATURE: The page now checks for 'scrollToToday' in the navigation state and centers the view on the current date if true.
-// 3. STATUS: All navigation paths are now clean, direct, and intelligent.
+// PHOENIX PROTOCOL - TYPE TRANSFORMATION FIX
+// 1. FIX: Added 'transformToUIAgendaItem' to convert API 'CalendarEvent' to the expected 'UIAgendaItem' for the modal.
+// 2. LOGIC: The 'selectedEvent' state now holds the transformed object, resolving the type error.
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -16,19 +15,19 @@ import {
 } from 'date-fns';
 import { sq, enUS } from 'date-fns/locale'; 
 import {
-  Calendar as CalendarIcon, Clock, MapPin, Users, AlertCircle, Plus, ChevronLeft, ChevronRight,
-  Search, Briefcase, Bell, ChevronDown, Eye, EyeOff, ShieldAlert, X,
+  Calendar as CalendarIcon, Users, AlertCircle, Plus, ChevronLeft, ChevronRight,
+  Search, Bell, ChevronDown, Eye, EyeOff, ShieldAlert, X,
   DollarSign, CheckSquare, Handshake
 } from 'lucide-react';
 import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/DatePicker.css';
 import DayEventsModal from '../components/DayEventsModal';
+import { EventDetailModal, UIAgendaItem } from '../components/modals/EventDetailModal';
 
 const DatePicker = (ReactDatePicker as any).default;
 const localeMap: { [key: string]: Locale } = { sq: sq, al: sq, en: enUS };
 
-interface EventDetailModalProps { event: CalendarEvent; onClose: () => void; onUpdate: () => void; cases: Case[] }
 interface CreateEventModalProps { cases: Case[]; existingEvents: CalendarEvent[]; onClose: () => void; onCreate: () => void; }
 type ViewMode = 'month' | 'list';
 
@@ -44,56 +43,6 @@ const getEventStyle = (type: string) => {
 };
 
 const getEventId = (event: CalendarEvent): string => (event as any).id || (event as any)._id || '';
-
-const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, onUpdate, cases }) => {
-    const { t, i18n } = useTranslation();
-    const currentLocale = localeMap[i18n.language] || enUS; 
-    const [isDeleting, setIsDeleting] = useState(false);
-    
-    const isMidnight = (dateString: string) => { const d = parseISO(dateString); return d.getHours() === 0 && d.getMinutes() === 0; };
-    const formatEventDate = (dateString: string) => { const date = parseISO(dateString); const formatStr = (event.is_all_day || isMidnight(dateString)) ? 'dd MMMM yyyy' : 'dd MMMM yyyy, HH:mm'; return format(date, formatStr, { locale: currentLocale }); };
-    
-    const handleDelete = async () => { if (!window.confirm(t('calendar.detailModal.deleteConfirm'))) return; const eventId = getEventId(event); if (!eventId) return; setIsDeleting(true); try { await apiService.deleteCalendarEvent(eventId); onUpdate(); onClose(); } catch (error: any) { alert(error.response?.data?.message || t('calendar.detailModal.deleteFailed')); } finally { setIsDeleting(false); } };
-    
-    const style = getEventStyle(event.event_type);
-    const relatedCase = cases.find(c => c.id === event.case_id);
-    
-    return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-            <div className="bg-[#0f172a] border border-blue-500/20 rounded-3xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl shadow-blue-900/20 custom-scrollbar">
-                <div className="flex items-start justify-between mb-8">
-                    <div className="flex items-start space-x-5">
-                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border ${style.border} ${style.bg}`}>{React.cloneElement(style.icon as React.ReactElement, { size: 32, className: style.text.replace('text-', 'text-') })}</div>
-                        <div>
-                            <h2 className="text-2xl font-bold text-white mb-2">{event.title}</h2>
-                            <div className="flex flex-wrap gap-2">
-                                <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${style.bg} ${style.text} border ${style.border}`}>{t(`calendar.types.${event.event_type}`, event.event_type)}</span>
-                                {event.priority && <span className="text-xs px-3 py-1 rounded-full border border-white/10 bg-black/20 text-gray-300 font-bold uppercase tracking-wider">{t(`calendar.priorities.${event.priority}`, event.priority)}</span>}
-                                {relatedCase && <span className="text-xs px-3 py-1 rounded-full border border-white/10 bg-black/20 text-gray-300 font-bold flex items-center gap-2"><Briefcase size={14}/> {relatedCase.title}</span>}
-                            </div>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-500 hover:text-white"><X size={24} /></button>
-                </div>
-
-                <div className="space-y-6">
-                    {event.description && (<div className="bg-black/30 p-4 rounded-xl border border-white/10"><h3 className="text-xs font-bold text-gray-500 uppercase mb-2">{t('calendar.detailModal.description')}</h3><p className="text-gray-200 text-sm leading-relaxed">{event.description}</p></div>)}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div><h3 className="text-xs font-bold text-gray-500 uppercase mb-1">{t('calendar.detailModal.startDate')}</h3><div className="flex items-center text-white gap-3"><Clock className="h-4 w-4 text-blue-400" />{formatEventDate(event.start_date)}</div></div>
-                        {event.end_date && event.end_date !== event.start_date && <div><h3 className="text-xs font-bold text-gray-500 uppercase mb-1">{t('calendar.detailModal.endDate')}</h3><div className="flex items-center text-white gap-3"><Clock className="h-4 w-4 text-blue-400" />{formatEventDate(event.end_date)}</div></div>}
-                    </div>
-                    {event.location && <div><h3 className="text-xs font-bold text-gray-500 uppercase mb-1">{t('calendar.detailModal.location')}</h3><div className="flex items-center text-white gap-3"><MapPin className="h-4 w-4 text-blue-400" />{event.location}</div></div>}
-                    {event.attendees && event.attendees.length > 0 && (<div><h3 className="text-xs font-bold text-gray-500 uppercase mb-1">{t('calendar.detailModal.attendees')}</h3><div className="flex flex-wrap gap-2 mt-2">{event.attendees.map((att, i) => (<span key={i} className="flex items-center text-sm bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 text-gray-300"><Users className="h-4 w-4 mr-2" />{att}</span>))}</div></div>)}
-                    {event.notes && (<div><h3 className="text-xs font-bold text-gray-500 uppercase mb-2">{t('calendar.detailModal.notes')}</h3><p className="text-gray-400 italic text-sm">{event.notes}</p></div>)}
-                </div>
-                <div className="flex space-x-4 mt-10 pt-6 border-t border-white/10">
-                    <button onClick={onClose} className="flex-1 px-4 py-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition font-medium">{t('calendar.detailModal.close')}</button>
-                    <button onClick={handleDelete} disabled={isDeleting} className="flex-1 px-4 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl transition font-medium disabled:opacity-50">{isDeleting ? t('calendar.detailModal.deleting') : t('calendar.detailModal.delete')}</button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEvents, onClose, onCreate }) => {
     const { t, i18n } = useTranslation();
@@ -141,6 +90,21 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEven
     );
 };
 
+// PHOENIX: Transformation Function
+const transformToUIAgendaItem = (event: CalendarEvent): UIAgendaItem => {
+    const isTask = event.event_type === 'TASK';
+    return {
+        id: getEventId(event),
+        title: event.title,
+        time: event.is_all_day ? 'All Day' : format(parseISO(event.start_date), 'HH:mm'),
+        type: event.event_type,
+        priority: event.priority || 'MEDIUM',
+        isCompleted: event.status === 'COMPLETED',
+        kind: isTask ? 'task' : 'event',
+        raw: event // Keep the original object for updates
+    };
+};
+
 const CalendarPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const location = useLocation();
@@ -152,7 +116,7 @@ const CalendarPage: React.FC = () => {
     const [error, setError] = useState('');
     const [viewMode, setViewMode] = useState<ViewMode>('month');
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+    const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null); // PHOENIX: State now holds the UI type
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState<string>('ALL');
@@ -166,21 +130,17 @@ const CalendarPage: React.FC = () => {
 
     useEffect(() => { loadData(); }, []);
 
-    // PHOENIX: Handles all incoming navigation states
     useEffect(() => {
         if (!loading && events.length > 0 && location.state) {
             const { openEventId, scrollToToday } = location.state;
-
             if (openEventId) {
                 const eventToOpen = events.find(e => getEventId(e) === openEventId);
                 if (eventToOpen) {
-                    setSelectedEvent(eventToOpen);
+                    setSelectedEvent(transformToUIAgendaItem(eventToOpen)); // PHOENIX: Transform on open
                 }
             } else if (scrollToToday) {
                 setCurrentDate(new Date());
             }
-            
-            // Clear the state to prevent re-triggering on refresh
             navigate(location.pathname, { replace: true, state: {} });
         }
     }, [loading, events, location, navigate]);
@@ -197,7 +157,11 @@ const CalendarPage: React.FC = () => {
     
     const selectedDayEvents = filteredEvents.filter(e => selectedDateForModal && isSameDay(parseISO(e.start_date), selectedDateForModal));
     
-    const renderListView = () => (<div className="bg-gray-900/60 backdrop-blur-md border border-white/10 rounded-3xl shadow-2xl overflow-hidden">{filteredEvents.length === 0 ? (<div className="p-8 text-center text-gray-500">{t('calendar.noEventsFound')}</div>) : (<div className="divide-y divide-white/10">{filteredEvents.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()).map(event => { const style = getEventStyle(event.event_type); return (<div key={getEventId(event)} onClick={() => setSelectedEvent(event)} className="p-5 hover:bg-black/20 cursor-pointer transition-colors flex items-center justify-between group"><div className="flex items-start space-x-5"><div className="flex-shrink-0 mt-1 text-center min-w-[60px]"><div className="text-sm text-gray-400 uppercase">{format(parseISO(event.start_date), 'MMM', { locale: currentLocale })}</div><div className={`text-2xl font-bold text-white`}>{format(parseISO(event.start_date), 'dd')}</div></div><div><div className="flex items-center gap-3"><h4 className="text-base font-bold text-white group-hover:text-blue-400 transition-colors">{event.title}</h4>{event.is_public && <div title={t('calendar.clientLabel')}><Eye size={14} className="text-emerald-400" /></div>}</div><div className="flex items-center gap-2 mt-2"><span className={`text-xs px-2.5 py-1 rounded-md border ${style.border} ${style.bg} ${style.text} flex items-center gap-2 font-medium`}>{style.icon} {t(`calendar.types.${event.event_type}`, event.event_type)}</span><span className="text-xs text-gray-500 truncate max-w-[200px]">{event.description}</span></div></div></div></div>);})}</div>)}</div>);
+    const handleEventClick = (event: CalendarEvent) => {
+        setSelectedEvent(transformToUIAgendaItem(event));
+    };
+
+    const renderListView = () => (<div className="bg-gray-900/60 backdrop-blur-md border border-white/10 rounded-3xl shadow-2xl overflow-hidden">{filteredEvents.length === 0 ? (<div className="p-8 text-center text-gray-500">{t('calendar.noEventsFound')}</div>) : (<div className="divide-y divide-white/10">{filteredEvents.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()).map(event => { const style = getEventStyle(event.event_type); return (<div key={getEventId(event)} onClick={() => handleEventClick(event)} className="p-5 hover:bg-black/20 cursor-pointer transition-colors flex items-center justify-between group"><div className="flex items-start space-x-5"><div className="flex-shrink-0 mt-1 text-center min-w-[60px]"><div className="text-sm text-gray-400 uppercase">{format(parseISO(event.start_date), 'MMM', { locale: currentLocale })}</div><div className={`text-2xl font-bold text-white`}>{format(parseISO(event.start_date), 'dd')}</div></div><div><div className="flex items-center gap-3"><h4 className="text-base font-bold text-white group-hover:text-blue-400 transition-colors">{event.title}</h4>{event.is_public && <div title={t('calendar.clientLabel')}><Eye size={14} className="text-emerald-400" /></div>}</div><div className="flex items-center gap-2 mt-2"><span className={`text-xs px-2.5 py-1 rounded-md border ${style.border} ${style.bg} ${style.text} flex items-center gap-2 font-medium`}>{style.icon} {t(`calendar.types.${event.event_type}`, event.event_type)}</span><span className="text-xs text-gray-500 truncate max-w-[200px]">{event.description}</span></div></div></div></div>);})}</div>)}</div>);
 
     const renderMonthView = () => {
         const monthStart = startOfMonth(currentDate); const daysInMonth = getDaysInMonth(currentDate); const weekStartsOn = currentLocale?.options?.weekStartsOn ?? 1; const firstDayOfMonth = getDay(monthStart); const startingDayIndex = (firstDayOfMonth - weekStartsOn + 7) % 7;
@@ -212,7 +176,7 @@ const CalendarPage: React.FC = () => {
                   const style = getEventStyle(event.event_type); const eventId = getEventId(event); const isHovered = hoveredEventId === eventId;
                   return (
                     <div key={eventId} className="relative w-full">
-                        <button onClick={(e) => { e.stopPropagation(); setSelectedEvent(event); }} onMouseEnter={() => setHoveredEventId(eventId)} onMouseLeave={() => setHoveredEventId(null)} className={`w-full text-left px-2 py-1.5 rounded-md border flex items-center gap-2 transition-all duration-200 shadow-sm ${style.bg} ${style.border} group-hover:shadow-lg ${isHovered ? 'scale-[1.05] z-10 ring-2 ring-white/50' : ''}`}><div className={`w-2 h-2 rounded-full ${style.indicator} shadow-[0_0_6px_currentColor]`} /><span className={`text-xs font-bold truncate ${style.text} flex-1`}>{event.title}</span>{event.is_public && <Eye size={10} className="text-emerald-400 ml-auto" />}</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleEventClick(event); }} onMouseEnter={() => setHoveredEventId(eventId)} onMouseLeave={() => setHoveredEventId(null)} className={`w-full text-left px-2 py-1.5 rounded-md border flex items-center gap-2 transition-all duration-200 shadow-sm ${style.bg} ${style.border} group-hover:shadow-lg ${isHovered ? 'scale-[1.05] z-10 ring-2 ring-white/50' : ''}`}><div className={`w-2 h-2 rounded-full ${style.indicator} shadow-[0_0_6px_currentColor]`} /><span className={`text-xs font-bold truncate ${style.text} flex-1`}>{event.title}</span>{event.is_public && <Eye size={10} className="text-emerald-400 ml-auto" />}</button>
                         <AnimatePresence>{isHovered && (<motion.div initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 5 }} transition={{ duration: 0.15 }} className="absolute left-0 top-full mt-2 z-[999] w-72 bg-[#1e293b]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl"><div className="absolute -top-1.5 left-4 w-3 h-3 bg-[#1e293b] border-t border-l border-white/10 transform rotate-45" /><div className="relative z-10"><div className={`text-xs font-bold uppercase mb-2 flex items-center gap-2 ${style.text}`}>{style.icon} {t(`calendar.types.${event.event_type}`, event.event_type)}</div><div className="text-white font-bold text-base mb-2 line-clamp-2 leading-tight">{event.title}</div><div className="text-gray-400 text-sm mb-3 line-clamp-2">{event.description || t('general.notAvailable')}</div><div className="pt-3 border-t border-white/10 text-gray-500 text-xs flex justify-between font-mono"><span>{format(parseISO(event.start_date), 'HH:mm')}</span>{event.priority && <span className={`text-gray-400`}>{t(`calendar.priorities.${event.priority}`, event.priority)}</span>}</div></div></motion.div>)}</AnimatePresence>
                     </div>
                   );
@@ -254,7 +218,7 @@ const CalendarPage: React.FC = () => {
                         <div className="bg-gray-900/60 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><Bell size={80} /></div>
                             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3"><Bell className="text-amber-400" size={20} />{t('calendar.upcomingAlerts')}</h3>
-                            <div className="space-y-4">{upcomingAlerts.length === 0 ? (<p className="text-gray-500 text-sm text-center py-6">{t('calendar.noUpcomingEvents')}</p>) : (upcomingAlerts.map(ev => { const style = getEventStyle(ev.event_type); return (<button key={getEventId(ev)} onClick={() => setSelectedEvent(ev)} className="w-full flex gap-4 items-start group text-left p-3 rounded-xl hover:bg-white/5 transition-colors"><div className={`mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${style.indicator}`} /><div className="min-w-0"><h4 className="text-sm font-bold text-gray-200 group-hover:text-blue-400 transition-colors truncate">{ev.title}</h4><p className="text-xs text-gray-400 mt-1 flex items-center gap-3">{format(parseISO(ev.start_date), 'dd MMM')} <span className={`text-[10px] px-2 py-0.5 rounded-md border ${style.border} ${style.bg} ${style.text} uppercase font-medium`}>{t(`calendar.types.${ev.event_type}`, ev.event_type)}</span></p></div></button>)}))}</div>
+                            <div className="space-y-4">{upcomingAlerts.length === 0 ? (<p className="text-gray-500 text-sm text-center py-6">{t('calendar.noUpcomingEvents')}</p>) : (upcomingAlerts.map(ev => { const style = getEventStyle(ev.event_type); return (<button key={getEventId(ev)} onClick={() => handleEventClick(ev)} className="w-full flex gap-4 items-start group text-left p-3 rounded-xl hover:bg-white/5 transition-colors"><div className={`mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${style.indicator}`} /><div className="min-w-0"><h4 className="text-sm font-bold text-gray-200 group-hover:text-blue-400 transition-colors truncate">{ev.title}</h4><p className="text-xs text-gray-400 mt-1 flex items-center gap-3">{format(parseISO(ev.start_date), 'dd MMM')} <span className={`text-[10px] px-2 py-0.5 rounded-md border ${style.border} ${style.bg} ${style.text} uppercase font-medium`}>{t(`calendar.types.${ev.event_type}`, ev.event_type)}</span></p></div></button>)}))}</div>
                         </div>
                         <div className="bg-gray-900/60 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-2xl">
                             <h3 className="text-xl font-bold text-white mb-6">{t('calendar.eventTypes')}</h3>
@@ -264,7 +228,10 @@ const CalendarPage: React.FC = () => {
                 </div>
             </div>
 
-            {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={loadData} cases={cases} />}
+            <AnimatePresence>
+              {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={loadData} cases={cases} />}
+            </AnimatePresence>
+            
             {isCreateModalOpen && <CreateEventModal cases={cases} existingEvents={events} onClose={() => setIsCreateModalOpen(false)} onCreate={loadData} />}
             <DayEventsModal isOpen={isDayModalOpen} onClose={() => setIsDayModalOpen(false)} date={selectedDateForModal} events={selectedDayEvents} t={t} onAddEvent={() => { setIsDayModalOpen(false); setIsCreateModalOpen(true); }} />
         </div>

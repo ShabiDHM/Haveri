@@ -1,39 +1,41 @@
 // FILE: src/hooks/useStrategicBriefing.ts
-// PHOENIX PROTOCOL - HOOK V2.6 (MODAL-READY DATA)
-// 1. ENHANCEMENT: Added 'fullDate' to AgendaItem interface to pass the complete ISO string to the UI.
-// 2. STATUS: Provides all necessary data for the interactive detail modal.
+// PHOENIX PROTOCOL - TYPE CONSISTENCY V3.5
+// 1. FIX: Standardized 'event_type' to 'type' in the final UIAgendaItem object to match the modal's expectation.
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/api';
 import { StrategicBriefingResponse, CalendarEvent } from '../data/types';
 
-// Enhanced Interface for UI differentiation
-export interface AgendaItem {
+export interface UIAgendaItem {
     id: string;
     title: string;
+    description?: string;
+    start_date: string;
+    end_date: string;
+    is_all_day: boolean;
+    status: CalendarEvent['status'];
+    type: CalendarEvent['event_type']; // Standardized to 'type'
+    attendees?: string[];
+    location?: string;
+    notes?: string;
+    case_id?: string;
     time: string;
-    fullDate: string; // PHOENIX: Added to provide the modal with the complete date string
     priority: 'high' | 'medium' | 'low';
     isCompleted: boolean;
     kind: 'event' | 'alert';
-    originalType: string;
+    raw: CalendarEvent;
 }
 
 interface EnhancedBriefingData extends Omit<StrategicBriefingResponse, 'agenda'> {
-    agenda: AgendaItem[];
+    agenda: UIAgendaItem[];
 }
 
-const mapApiPriority = (priority: CalendarEvent['priority']): 'high' | 'medium' | 'low' => {
+const mapApiPriority = (priority?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'): 'high' | 'medium' | 'low' => {
     switch (priority) {
-        case 'CRITICAL':
-        case 'HIGH':
-            return 'high';
-        case 'MEDIUM':
-            return 'medium';
-        case 'LOW':
-            return 'low';
-        default:
-            return 'medium';
+        case 'CRITICAL': case 'HIGH': return 'high';
+        case 'MEDIUM': return 'medium';
+        case 'LOW': return 'low';
+        default: return 'medium';
     }
 };
 
@@ -52,59 +54,37 @@ export const useStrategicBriefing = () => {
             ]);
 
             const now = new Date();
-            const currentDay = now.getDate();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-            const todaysItems: AgendaItem[] = calendarResult
+            const todaysEvents: UIAgendaItem[] = calendarResult
                 .filter((event: CalendarEvent) => {
                     if (!event.start_date) return false;
                     const eventDate = new Date(event.start_date);
-                    return eventDate.getDate() === currentDay &&
-                           eventDate.getMonth() === currentMonth &&
-                           eventDate.getFullYear() === currentYear;
+                    return eventDate >= todayStart && eventDate < new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
                 })
-                .map((event: CalendarEvent): AgendaItem => {
+                .map((event: CalendarEvent): UIAgendaItem => {
                     const eventDate = new Date(event.start_date);
-                    const type = event.event_type?.toUpperCase() || 'TASK';
-                    const isAlert = ['PAYMENT_DUE', 'TAX_DEADLINE'].includes(type);
+                    const eventType = event.event_type?.toUpperCase() as UIAgendaItem['type'] || 'TASK';
+                    const isAlert = ['PAYMENT_DUE', 'TAX_DEADLINE'].includes(eventType);
                     const hoursDiff = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-
                     let finalPriority = mapApiPriority(event.priority);
                     if (isAlert) finalPriority = 'high';
 
                     return {
-                        id: event.id,
-                        title: event.title,
-                        time: eventDate.toLocaleTimeString('sq-AL', { hour: '2-digit', minute: '2-digit' }),
-                        fullDate: event.start_date, // PHOENIX: Pass the full ISO string
-                        priority: finalPriority,
-                        isCompleted: hoursDiff < -1,
-                        kind: isAlert ? 'alert' : 'event',
-                        originalType: type
+                        id: event.id, title: event.title, description: event.description,
+                        start_date: event.start_date, end_date: event.end_date, is_all_day: event.is_all_day,
+                        status: event.status, 
+                        type: event.event_type, // PHOENIX: Standardized to 'type'
+                        attendees: event.attendees,
+                        location: event.location, notes: event.notes, case_id: event.case_id,
+                        time: eventDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+                        priority: finalPriority, isCompleted: hoursDiff < -1, kind: isAlert ? 'alert' : 'event',
+                        raw: event, 
                     };
                 })
-                .sort((a, b) => {
-                    if (a.kind === 'alert' && b.kind === 'event') return -1;
-                    if (a.kind === 'event' && b.kind === 'alert') return 1;
-                    return a.time.localeCompare(b.time);
-                });
+                .sort((a, b) => a.time.localeCompare(b.time));
 
-            const fallbackAgenda: AgendaItem[] = (briefingResult.agenda || []).map((item: any): AgendaItem => ({
-                id: item.id || Math.random().toString(),
-                title: item.title,
-                time: item.time,
-                fullDate: new Date().toISOString(), // Provide a fallback date
-                priority: 'medium',
-                isCompleted: false,
-                kind: 'event',
-                originalType: 'SUGGESTION'
-            }));
-
-            setData({
-                ...briefingResult,
-                agenda: todaysItems.length > 0 ? todaysItems : fallbackAgenda
-            });
+            setData({ ...briefingResult, agenda: todaysEvents });
 
         } catch (e) {
             console.error("Failed to load strategic briefing & calendar:", e);
@@ -114,9 +94,7 @@ export const useStrategicBriefing = () => {
         }
     }, []);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    return { data, loading, error, refresh: fetchData };
+    return { data, loading, error, refreshData: fetchData };
 };
