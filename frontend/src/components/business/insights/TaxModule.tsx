@@ -1,7 +1,6 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX MODULE V2.0 (SYMMETRY FILL)
-// 1. LAYOUT: Added h-full and flex-col to match neighbors.
-// 2. ALIGNMENT: Pushed disclaimer to bottom using mt-auto.
+// PHOENIX PROTOCOL - TAX MODULE V2.1 (ALIGNMENT)
+// 1. LAYOUT: h-auto for mobile, fixed h-[540px] for desktop consistency.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,8 +19,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
     const { vatCollected, vatDeductible, estimatedLiability } = data;
 
     return (
-        // Added: h-full flex flex-col to fill the grid cell height
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md h-full flex flex-col">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md h-auto lg:h-[540px] flex flex-col">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2 flex-shrink-0">
                 <Landmark className="text-blue-400" /> {t('insights.tax.estimator', 'Vlerësimi i TVSH-së')}
             </h3>
