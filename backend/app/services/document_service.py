@@ -1,8 +1,8 @@
 # FILE: backend/app/services/document_service.py
-# PHOENIX PROTOCOL - DOCUMENT SERVICE V6.5 (DIRECT CASCADE)
-# 1. FIXED: Findings deletion logic moved INSIDE this service (No dependency on findings_service).
-# 2. LOGIC: Ensures complete cleanup (S3 + Vector + Mongo Findings + Calendar + Graph).
-# 3. STATUS: Robust & Independent.
+# PHOENIX PROTOCOL - DOCUMENT SERVICE V7.0 (SMART DELETE)
+# 1. MODIFIED: Delete logic now PRESERVES Findings and Calendar Events.
+# 2. REASONING: Business users want to keep extracted intelligence (deadlines, insights) even if they delete the source PDF.
+# 3. CLEANUP: Still removes S3 files and Vector Embeddings to prevent "Ghost References" in chat.
 
 import logging
 import datetime
@@ -128,8 +128,9 @@ def get_document_content_by_key(storage_key: str) -> Optional[str]:
 
 def delete_document_by_id(db: Database, redis_client: redis.Redis, doc_id: ObjectId, owner: UserInDB) -> List[str]:
     """
-    MASTER DELETE FUNCTION
-    Removes: DB Record, S3 Files, Findings, Vector Embeddings, Calendar Events, Graph Nodes.
+    SMART DELETE FUNCTION
+    Removes: DB Record, S3 Files, Vector Embeddings (AI Memory).
+    PRESERVES: Findings & Calendar Events (Extracted Intelligence).
     """
     document_to_delete = db.documents.find_one({"_id": doc_id, "owner_id": owner.id})
     if not document_to_delete:
@@ -140,56 +141,17 @@ def delete_document_by_id(db: Database, redis_client: redis.Redis, doc_id: Objec
     processed_key = document_to_delete.get("processed_text_storage_key")
     preview_key = document_to_delete.get("preview_storage_key")
 
-    mixed_id_query = {"$in": [doc_id, doc_id_str]}
-    
-    # 1. DELETE FINDINGS (Direct DB Access)
-    # We no longer rely on 'findings_service', we just wipe the data.
-    deleted_finding_ids = []
-    try:
-        findings_query = {"document_id": mixed_id_query}
-        # Capture IDs first for frontend update
-        findings_cursor = db.findings.find(findings_query, {"_id": 1})
-        deleted_finding_ids = [str(f["_id"]) for f in findings_cursor]
-        
-        # Execute Delete
-        db.findings.delete_many(findings_query)
-        logger.info(f"Cascading delete: Removed findings for doc {doc_id}")
-    except Exception as e:
-        logger.error(f"Error deleting findings for doc {doc_id}: {e}")
-    
-    # 2. DELETE CALENDAR EVENTS & ALERTS
-    link_query = {
-        "$or": [
-            {"document_id": mixed_id_query},
-            {"documentId": mixed_id_query}
-        ]
-    }
-    
-    try:
-        db.calendar_events.delete_many(link_query)
-        if "alerts" in db.list_collection_names():
-            db.alerts.delete_many(link_query)
-    except Exception as e:
-        logger.error(f"Error deleting events/alerts for doc {doc_id}: {e}")
-
-    # 3. DELETE GRAPH NODES
-    try:
-        graph_service_module = importlib.import_module("app.services.graph_service")
-        if hasattr(graph_service_module, "graph_service"):
-            graph_service_module.graph_service.delete_document_nodes(doc_id_str)
-    except Exception as e:
-        logger.warning(f"Graph cleanup failed (non-critical): {e}")
-
-    # 4. DELETE VECTOR EMBEDDINGS (AI Memory)
+    # 1. DELETE VECTOR EMBEDDINGS (AI Memory)
+    # We remove this so the AI doesn't hallucinate by quoting text from a deleted file.
     try:
         vector_store_service.delete_document_embeddings(
-            user_id=str(owner.id), # Multi-Tenant Aware
+            user_id=str(owner.id),
             document_id=doc_id_str
         )
     except Exception as e:
         logger.error(f"Vector store cleanup failed: {e}")
     
-    # 5. DELETE S3 FILES
+    # 2. DELETE S3 FILES (Storage Cleanup)
     if storage_key: 
         try: storage_service.delete_file(storage_key=storage_key)
         except: pass
@@ -199,11 +161,15 @@ def delete_document_by_id(db: Database, redis_client: redis.Redis, doc_id: Objec
     if preview_key: 
         try: storage_service.delete_file(storage_key=preview_key)
         except: pass
+
+    # PHOENIX CHANGE: Findings and Calendar Events are NOT deleted.
+    # This preserves the "Business Intelligence" even if the raw file is removed.
     
-    # 6. DELETE DOCUMENT RECORD
+    # 3. DELETE DOCUMENT RECORD
     db.documents.delete_one({"_id": doc_id})
     
-    return deleted_finding_ids
+    # Return empty list as we didn't delete findings
+    return []
 
 def bulk_delete_documents(db: Database, redis_client: redis.Redis, document_ids: List[str], owner: UserInDB) -> Dict[str, Any]:
     deleted_count = 0

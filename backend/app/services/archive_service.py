@@ -1,7 +1,8 @@
 # FILE: backend/app/services/archive_service.py
-# PHOENIX PROTOCOL - ARCHIVE V2.5 (GENERATED FILES FIX)
-# 1. FIX: 'save_generated_file' now forces PDF conversion.
-# 2. RESULT: Wizard-generated receipts are saved as PDF, not TXT.
+# PHOENIX PROTOCOL - SMART ARCHIVE V3.0 (ASYNC PIPELINE)
+# 1. INGESTION: All file additions now trigger an async Celery task ('process_archive_document').
+# 2. MEMORY: The Archive now feeds the 'Private Diary' (Vector DB) in the background.
+# 3. CLEANUP: Deleting an item triggers 'vector_store_service.delete_document_embeddings'.
 
 import os
 import logging
@@ -17,6 +18,10 @@ from ..models.archive import ArchiveItemInDB
 from .storage_service import get_s3_client, transfer_config
 from .pdf_service import pdf_service 
 
+# PHOENIX IMPORTS
+from ..celery_app import celery_app
+from . import vector_store_service
+
 logger = logging.getLogger(__name__)
 
 B2_BUCKET_NAME = os.getenv("B2_BUCKET_NAME")
@@ -31,25 +36,24 @@ class ArchiveService:
         except (InvalidId, TypeError):
             raise HTTPException(status_code=400, detail=f"Invalid ObjectId format: {id_str}")
 
-    # ... [Previous methods create_folder, add_file_to_archive remain the same as V2.4] ...
-    # ... [Included here for context, ensure you keep the V2.4 versions of other methods] ...
-
-    # --- FOLDER MANAGEMENT (Retained from previous fix) ---
-    def create_folder(self, user_id: str, title: str, parent_id: Optional[str] = None, case_id: Optional[str] = None) -> ArchiveItemInDB:
+    def create_folder(self, user_id: str, title: str, parent_id: Optional[str] = None, case_id: Optional[str] = None, category: str = "GENERAL") -> ArchiveItemInDB:
         folder_data = {
-            "user_id": self._to_oid(user_id), "title": title, "item_type": "FOLDER", "file_type": "FOLDER", "category": "FOLDER",
+            "user_id": self._to_oid(user_id), "title": title, "item_type": "FOLDER", "file_type": "FOLDER", "category": category,
             "created_at": datetime.now(timezone.utc), "storage_key": None, "file_size": 0, "description": "", "is_shared": False 
         }
         if parent_id and parent_id.strip() and parent_id != "null":
             folder_data["parent_id"] = self._to_oid(parent_id)
         if case_id and case_id.strip() and case_id != "null":
             folder_data["case_id"] = self._to_oid(case_id)
+            
         result = self.db.archives.insert_one(folder_data)
         folder_data["_id"] = result.inserted_id
         return ArchiveItemInDB(**folder_data)
 
     async def add_file_to_archive(self, user_id: str, file: UploadFile, category: str, title: str, case_id: Optional[str] = None, parent_id: Optional[str] = None) -> ArchiveItemInDB:
         s3_client = get_s3_client()
+        
+        # 1. Normalize/Convert to PDF
         try:
             file_obj, final_filename = await pdf_service.convert_upload_to_pdf(file)
         except Exception as e:
@@ -60,46 +64,73 @@ class ArchiveService:
         timestamp = int(datetime.now().timestamp())
         storage_key = f"archive/{user_id}/{timestamp}_{final_filename}"
         
+        # 2. Upload to S3
         try:
             file_obj.seek(0, 2); file_size = file_obj.tell(); file_obj.seek(0)
-        except: file_size = 0
-            
-        try:
             s3_client.upload_fileobj(file_obj, B2_BUCKET_NAME, storage_key, Config=transfer_config)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Storage Upload Failed: {str(e)}")
         
+        # 3. DB Insert
         doc_data = {
             "user_id": self._to_oid(user_id), "title": title or final_filename, "item_type": "FILE", "file_type": file_ext,
             "category": category, "storage_key": storage_key, "file_size": file_size, "created_at": datetime.now(timezone.utc),
-            "description": "", "is_shared": False
+            "description": "", "is_shared": False, "indexing_status": "PENDING"
         }
         if case_id and case_id.strip() and case_id != "null": doc_data["case_id"] = self._to_oid(case_id)
         if parent_id and parent_id.strip() and parent_id != "null": doc_data["parent_id"] = self._to_oid(parent_id)
         
-        self.db.archives.insert_one(doc_data)
+        result = self.db.archives.insert_one(doc_data)
+        
+        # 4. PHOENIX ASYNC: Dispatch to Knowledge Base
+        try:
+            celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(result.inserted_id)])
+            logger.info(f"Queued archive item {result.inserted_id} for embedding.")
+        except Exception as e:
+            logger.error(f"Failed to queue archive indexing: {e}")
+
+        doc_data["_id"] = result.inserted_id
         return ArchiveItemInDB(**doc_data)
 
     def get_archive_items(self, user_id: str, category: Optional[str] = None, case_id: Optional[str] = None, parent_id: Optional[str] = None) -> List[ArchiveItemInDB]:
         query: Dict[str, Any] = {"user_id": self._to_oid(user_id)}
-        if parent_id and parent_id.strip() and parent_id != "null": query["parent_id"] = self._to_oid(parent_id)
+        
+        if parent_id and parent_id.strip() and parent_id != "null": 
+            query["parent_id"] = self._to_oid(parent_id)
         else:
             if not category or category == "ALL": query["parent_id"] = None
+
         if category and category != "ALL": query["category"] = category
         if case_id and case_id.strip() and case_id != "null": query["case_id"] = self._to_oid(case_id)
+        
         cursor = self.db.archives.find(query).sort([("item_type", -1), ("created_at", -1)])
         return [ArchiveItemInDB(**doc) for doc in cursor]
 
     def delete_archive_item(self, user_id: str, item_id: str):
         oid_user = self._to_oid(user_id); oid_item = self._to_oid(item_id)
+        
         item = self.db.archives.find_one({"_id": oid_item, "user_id": oid_user})
         if not item: raise HTTPException(status_code=404, detail="Item not found")
+
+        # Recursive Folder Delete
         if item.get("item_type") == "FOLDER":
             children = self.db.archives.find({"parent_id": oid_item, "user_id": oid_user})
             for child in children: self.delete_archive_item(user_id, str(child["_id"]))
-        if item.get("item_type") == "FILE" and item.get("storage_key"):
-            try: get_s3_client().delete_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
-            except: pass
+
+        # File Cleanup
+        if item.get("item_type") == "FILE":
+            # 1. Delete from S3
+            if item.get("storage_key"):
+                try: get_s3_client().delete_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
+                except: pass
+            
+            # 2. PHOENIX CASCADE: Delete from Knowledge Base
+            try:
+                vector_store_service.delete_document_embeddings(user_id, str(item_id))
+                logger.info(f"Wiped vector memory for archive item: {item_id}")
+            except Exception as e:
+                logger.error(f"Failed to wipe vector memory: {e}")
+
         self.db.archives.delete_one({"_id": oid_item})
 
     def rename_item(self, user_id: str, item_id: str, new_title: str) -> None:
@@ -123,14 +154,11 @@ class ArchiveService:
             return response['Body'], item["title"]
         except: raise HTTPException(500, "Stream failed")
 
-    # --- PHOENIX FIX: INTERNAL GENERATION CONVERSION ---
     async def save_generated_file(self, user_id: str, filename: str, content: bytes, category: str, title: str, case_id: Optional[str] = None) -> ArchiveItemInDB:
         s3_client = get_s3_client()
         timestamp = int(datetime.now().timestamp())
         
-        # 1. Convert Content to PDF if it's text
         pdf_content, final_filename = pdf_service.convert_bytes_to_pdf(content, filename)
-        
         storage_key = f"archive/{user_id}/{timestamp}_{final_filename}"
         
         try:
@@ -144,26 +172,35 @@ class ArchiveService:
             "user_id": self._to_oid(user_id),
             "title": title,
             "item_type": "FILE",
-            "file_type": file_ext, # PDF
+            "file_type": file_ext,
             "category": category,
             "storage_key": storage_key,
             "file_size": len(pdf_content),
             "created_at": datetime.now(timezone.utc),
             "description": "Generated System Document",
-            "is_shared": False
+            "is_shared": False,
+            "indexing_status": "PENDING"
         }
         
         if case_id and case_id.strip() and case_id != "null":
             doc_data["case_id"] = self._to_oid(case_id)
         
-        self.db.archives.insert_one(doc_data)
+        result = self.db.archives.insert_one(doc_data)
+        
+        # PHOENIX ASYNC: Index Generated Files too!
+        try:
+            celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(result.inserted_id)])
+        except Exception:
+            logger.warning("Failed to queue generated file for indexing.")
+
+        doc_data["_id"] = result.inserted_id
         return ArchiveItemInDB(**doc_data)
     
     async def archive_existing_document(self, user_id: str, case_id: str, source_key: str, filename: str, category: str = "CASE_FILE", original_doc_id: Optional[str] = None) -> ArchiveItemInDB:
-        # Existing logic for moving S3 objects (assumes they are already valid files)
         s3_client = get_s3_client()
         timestamp = int(datetime.now().timestamp())
         dest_key = f"archive/{user_id}/{timestamp}_{filename}"
+        
         try:
             copy_source = {'Bucket': B2_BUCKET_NAME, 'Key': source_key}
             s3_client.copy(copy_source, B2_BUCKET_NAME, dest_key)
@@ -184,7 +221,16 @@ class ArchiveService:
             "file_size": file_size,
             "created_at": datetime.now(timezone.utc),
             "description": "Archived from Case",
-            "is_shared": False
+            "is_shared": False,
+            "indexing_status": "PENDING"
         }
-        self.db.archives.insert_one(doc_data)
+        
+        result = self.db.archives.insert_one(doc_data)
+
+        # PHOENIX ASYNC: Re-index the archived copy
+        try:
+            celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(result.inserted_id)])
+        except Exception: pass
+
+        doc_data["_id"] = result.inserted_id
         return ArchiveItemInDB(**doc_data)
