@@ -1,7 +1,7 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V9.3 (ID VALIDATION FIX)
-# 1. FIX: Added 'default=None' to the 'id' field in 'PosTransactionOut'. This resolves the 'ResponseValidationError' (Input should be an instance of ObjectId) that was causing the 500 error.
-# 2. STATUS: Production Ready.
+# PHOENIX PROTOCOL - FINANCE MODELS V9.4 (PRODUCT NAME FIX)
+# 1. FIX: Added the 'product_name' field to the 'Transaction' model.
+# 2. STATUS: This resolves the 'No parameter named product_name' Pylance error in the parsing service.
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
@@ -40,6 +40,7 @@ class Transaction(BaseModel):
     type: str = "income"
     category: str = "Uncategorized"
     description: str
+    product_name: Optional[str] = None  # PHOENIX FIX: Added this field
     quantity: float = 1.0
     unit_price: Optional[float] = None
     original_row_data: Optional[Dict[str, Any]] = None
@@ -48,7 +49,6 @@ class Transaction(BaseModel):
 
 # PHOENIX: ROBUST RESPONSE MODEL FOR POS TRANSACTIONS
 class PosTransactionOut(BaseModel):
-    # Added default=None to prevent validation crashes on ID
     id: Optional[PyObjectId] = Field(alias="_id", serialization_alias="id", default=None)
     
     product_name: Optional[str] = Field(alias="description", default="Produkt i panjohur")
