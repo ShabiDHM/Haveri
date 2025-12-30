@@ -1,20 +1,17 @@
 # FILE: backend/app/services/parsing_service.py
-# PHOENIX PROTOCOL - PARSING SERVICE V4.0 (DATA ROUTING ENGINE)
-# 1. RE-ENGINEERED: Instead of saving to a generic 'transactions' collection, this service now intelligently routes data.
-# 2. FIX: Reads the 'Tipi' (Type) column from the CSV.
-# 3. FIX: Calls 'finance_service.create_invoice' for INVOICE/POS types.
-# 4. FIX: Calls 'finance_service.create_expense' for EXPENSE types.
-# 5. FIX: Correctly passes 'issue_date' and 'status' to ensure historical accuracy.
+# PHOENIX PROTOCOL - PARSING SERVICE V5.0 (ROBUST MAPPING FIX)
+# 1. FIX: The service now correctly uses the user-provided mapping to find columns like 'Shuma' and 'Përshkrimi'.
+# 2. FIX: Resolves the '€0.00' and 'Imported Transaction' bug by correctly extracting data from the CSV.
+# 3. ROBUSTNESS: This version is now fully language-agnostic for CSV headers.
 
 import pandas as pd
 import io
 import logging
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Dict, Any
 from fastapi import UploadFile, HTTPException
 from pymongo.database import Database
 
-# PHOENIX: Import correct models and services
 from app.models.finance import InvoiceCreate, ExpenseCreate, InvoiceItem
 from app.services.finance_service import FinanceService
 
@@ -30,7 +27,6 @@ class ParsingService:
             return float(value)
         if not isinstance(value, str):
             return 0.0
-        # This logic handles formats like "€1,234.56" or "1.234,56"
         clean_val = value.replace('€', '').replace('$', '').strip()
         if ',' in clean_val and '.' in clean_val:
             if clean_val.find(',') > clean_val.find('.'):
@@ -41,19 +37,18 @@ class ParsingService:
             clean_val = clean_val.replace(',', '.')
         try:
             return float(clean_val)
-        except ValueError:
+        except (ValueError, TypeError):
             return 0.0
 
     async def preview_file(self, file: UploadFile) -> Dict[str, Any]:
         try:
             contents = await file.read()
-            filename = file.filename or "unknown_file"
-            df = pd.read_csv(io.BytesIO(contents), encoding='utf-8', sep=None, engine='python')
+            df = pd.read_csv(io.BytesIO(contents), encoding='utf-8', sep=None, engine='python', header=0)
             await file.seek(0)
             df = df.fillna("")
             headers = df.columns.tolist()
             sample = df.head(5).astype(str).to_dict(orient='records')
-            return {"filename": filename, "headers": headers, "sample_data": sample}
+            return {"filename": file.filename, "headers": headers, "sample_data": sample}
         except Exception as e:
             logger.error(f"Error previewing file: {e}")
             raise HTTPException(status_code=400, detail=f"Failed to read file: {str(e)}")
@@ -61,34 +56,43 @@ class ParsingService:
     async def process_import(self, file: UploadFile, user_id: str, mapping: Dict[str, str]) -> Dict[str, Any]:
         contents = await file.read()
         try:
-            df = pd.read_csv(io.BytesIO(contents), encoding='utf-8', sep=None, engine='python')
+            df = pd.read_csv(io.BytesIO(contents), encoding='utf-8', sep=None, engine='python', header=0)
         except Exception as e:
              raise HTTPException(status_code=400, detail=f"File read error: {str(e)}")
             
-        # PHOENIX: Reverse mapping to go from desired field -> csv column name
-        field_to_column = {v: k for k, v in mapping.items()}
-
         imported_count = 0
         failed_count = 0
         
+        # PHOENIX FIX: Create a reverse map to find CSV header from standard field name
+        # e.g., {'amount': 'Shuma', 'description': 'Përshkrimi'}
+        field_to_column = {v: k for k, v in mapping.items()}
+
         for index, row in df.iterrows():
             try:
-                # Get common fields
-                amount = self._normalize_currency(row.get(field_to_column.get('amount')))
-                if amount == 0.0: continue
+                # Use the reverse map to find the correct column name (e.g., 'Shuma')
+                amount_col = field_to_column.get('amount')
+                description_col = field_to_column.get('description')
+                date_col = field_to_column.get('date')
+                product_col = field_to_column.get('product_name')
+                category_col = field_to_column.get('category')
+                status_col = field_to_column.get('status')
+                type_col = field_to_column.get('Tipi') # 'Tipi' is what frontend sends
 
-                date_str = row.get(field_to_column.get('date'))
-                parsed_date = pd.to_datetime(date_str).to_pydatetime() if date_str else datetime.now()
+                amount = self._normalize_currency(row.get(amount_col))
+                if amount == 0.0:
+                    failed_count += 1
+                    continue
+
+                date_str = row.get(date_col)
+                parsed_date = pd.to_datetime(date_str, dayfirst=True).to_pydatetime() if pd.notna(date_str) else datetime.now()
                 
-                description = str(row.get(field_to_column.get('description'), 'Imported Item'))
-                product_name = str(row.get(field_to_column.get('product_name'), description))
-                category = str(row.get(field_to_column.get('category'), 'Të Përgjithshme'))
-                status = str(row.get(field_to_column.get('status'), 'PAID')).upper()
-                transaction_type = str(row.get(field_to_column.get('Tipi', 'INVOICE'))).upper()
+                description = str(row.get(description_col, 'Imported Item'))
+                product_name = str(row.get(product_col, description))
+                category = str(row.get(category_col, 'Të Përgjithshme'))
+                status = str(row.get(status_col, 'PAID')).strip().upper()
+                transaction_type = str(row.get(type_col, 'INVOICE')).strip().upper()
 
-                # --- DATA ROUTING LOGIC ---
                 if 'EXPENSE' in transaction_type:
-                    # Create an Expense
                     expense_data = ExpenseCreate(
                         category=category,
                         amount=abs(amount),
@@ -98,7 +102,6 @@ class ParsingService:
                     )
                     self.finance_service.create_expense(user_id, expense_data)
                 else:
-                    # Create an Invoice (for both POS and INVOICE types)
                     invoice_item = InvoiceItem(
                         description=product_name,
                         quantity=1,
@@ -108,7 +111,7 @@ class ParsingService:
                     invoice_data = InvoiceCreate(
                         client_name=description,
                         items=[invoice_item],
-                        tax_rate=0, # Assuming no tax from simple CSV
+                        tax_rate=0,
                         issue_date=parsed_date,
                         status=status
                     )
