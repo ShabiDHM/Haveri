@@ -1,7 +1,9 @@
 // FILE: src/components/business/TransactionImporter.tsx
-// PHOENIX PROTOCOL - IMPORTER V18.2 (FULL I18N STANDARDIZATION)
-// 1. FIX: Removed hardcoded Albanian strings.
-// 2. FEATURE: Fully integrated with translation keys.
+// PHOENIX PROTOCOL - IMPORTER V20.0 (BACKEND DELEGATION FIX)
+// 1. FIX: Deactivated the flawed 'processFileClientSide' function.
+// 2. FIX: Rewired 'handleSmartImport' to correctly call the backend endpoint 'apiService.confirmImport'.
+// 3. FIX: Ensures the 'mapping' object is sent in the correct format for the backend parsing service.
+// 4. STATUS: This is the definitive fix that aligns frontend actions with backend capabilities.
 
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -17,19 +19,18 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
     const [step, setStep] = useState<'upload' | 'mapping' | 'processing'>('upload');
     const [file, setFile] = useState<File | null>(null);
     const [previewData, setPreviewData] = useState<ImportPreviewResponse | null>(null);
+    // PHOENIX: Mapping state will be { [csvHeader]: dbField } e.g. { "Shuma": "amount" }
     const [mapping, setMapping] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
-    const [progress, setProgress] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // PHOENIX: All labels now use translation keys
     const requiredFields = [
         { key: 'amount', label: t('finance.amount'), required: true },
         { key: 'date', label: t('finance.date'), required: false },
         { key: 'description', label: t('finance.description'), required: false },
         { key: 'product_name', label: t('finance.import.productName'), required: false }, 
         { key: 'category', label: t('finance.expenseCategory'), required: false },
-        { key: 'type', label: t('finance.import.typeLabel'), required: false },
+        { key: 'Tipi', label: t('finance.import.typeLabel'), required: false }, // Note: Key is 'Tipi' to match backend
         { key: 'status', label: t('finance.import.statusLabel'), required: false }
     ];
 
@@ -46,20 +47,17 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
             const initialMapping: Record<string, string> = {};
             data.headers.forEach(header => {
                 const h = header.toLowerCase().trim();
-                if (h.includes('shum') || h.includes('amount') || h.includes('price')) initialMapping['amount'] = header;
-                else if (h.includes('dat') || h.includes('date')) initialMapping['date'] = header;
-                else if (h.includes('përsh') || h.includes('desc')) initialMapping['description'] = header;
-                else if (h.includes('produkt') || h.includes('product') || h.includes('artikull')) initialMapping['product_name'] = header;
-                else if (h.includes('kat') || h.includes('cat')) initialMapping['category'] = header;
-                else if (h.includes('tip') || h.includes('type')) initialMapping['type'] = header;
-                else if (h.includes('stat') || h.includes('status')) initialMapping['status'] = header;
+                // Auto-map based on common Albanian/English headers
+                if (h.includes('shum') || h.includes('amount') || h.includes('price')) initialMapping[header] = 'amount';
+                else if (h.includes('dat') || h.includes('date')) initialMapping[header] = 'date';
+                else if (h.includes('përshkrim') || h.includes('desc')) initialMapping[header] = 'description';
+                else if (h.includes('produkt') || h.includes('product')) initialMapping[header] = 'product_name';
+                else if (h.includes('kategori') || h.includes('cat')) initialMapping[header] = 'category';
+                else if (h.includes('tipi') || h.includes('type')) initialMapping[header] = 'Tipi';
+                else if (h.includes('status')) initialMapping[header] = 'status';
             });
             
-            const apiReadyMapping: Record<string, string> = {};
-            Object.entries(initialMapping).forEach(([dbField, csvHeader]) => {
-                apiReadyMapping[csvHeader] = dbField;
-            });
-            setMapping(apiReadyMapping);
+            setMapping(initialMapping);
             setStep('mapping');
         } catch (error) {
             alert(t('error.generic'));
@@ -69,110 +67,44 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
         }
     };
     
+    // PHOENIX: Rewired to use the robust backend importer
     const handleSmartImport = async () => {
-        if (!file) return;
+        if (!file || Object.keys(mapping).length === 0) return;
         setIsLoading(true);
         setStep('processing');
         
         try {
-            await processFileClientSide(file);
+            // This is the correct, robust backend-driven import
+            await apiService.confirmImport(file, mapping);
             onSuccess();
             onClose();
         } catch (error) {
-            console.error(error);
+            console.error("Backend import failed:", error);
             alert(t('finance.import.importFailed'));
-            setStep('mapping');
+            setStep('mapping'); // Go back to mapping on failure
         } finally {
             setIsLoading(false);
         }
     };
 
-    const processFileClientSide = (file: File): Promise<void> => {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const text = e.target?.result as string;
-                if (!text) return resolve();
-                
-                const lines = text.split('\n').filter(l => l.trim());
-                const headers = lines[0].split(',').map(h => h.trim());
-                const dataRows = lines.slice(1);
-                
-                const fieldIndices: Record<string, number> = {};
-                Object.entries(mapping).forEach(([csvHeader, dbField]) => {
-                    const index = headers.indexOf(csvHeader);
-                    if (index !== -1) fieldIndices[dbField] = index;
-                });
-
-                let processedCount = 0;
-                
-                for (const rowStr of dataRows) {
-                    const cols = rowStr.split(',').map(c => c.trim());
-                    if (cols.length < headers.length) continue;
-
-                    const amount = parseFloat(cols[fieldIndices['amount']] || '0');
-                    const date = cols[fieldIndices['date']] || new Date().toISOString();
-                    const desc = cols[fieldIndices['description']] || 'Imported Transaction';
-                    
-                    const productName = cols[fieldIndices['product_name']] || desc;
-
-                    const cat = cols[fieldIndices['category']] || 'General';
-                    const typeRaw = fieldIndices['type'] !== undefined ? cols[fieldIndices['type']].toUpperCase() : '';
-                    const status = fieldIndices['status'] !== undefined ? cols[fieldIndices['status']].toUpperCase() : 'PAID';
-
-                    let isExpense = false;
-                    if (typeRaw === 'EXPENSE' || amount < 0) isExpense = true;
-                    
-                    const absAmount = Math.abs(amount);
-
-                    try {
-                        if (isExpense) {
-                            await apiService.createExpense({
-                                category: cat,
-                                amount: absAmount,
-                                description: desc,
-                                date: date.includes('/') ? convertDate(date) : date
-                            });
-                        } else {
-                            await apiService.createInvoice({
-                                client_name: desc, 
-                                tax_rate: 18,
-                                items: [{ description: productName, quantity: 1, unit_price: absAmount, total: absAmount }],
-                                status: status === 'PENDING' ? 'PENDING' : 'PAID',
-                                notes: 'Imported via CSV'
-                            } as any);
-                        }
-                    } catch (err) {
-                        console.error("Row failed", rowStr, err);
-                    }
-                    
-                    processedCount++;
-                    setProgress(Math.round((processedCount / dataRows.length) * 100));
-                }
-                resolve();
-            };
-            reader.readAsText(file);
-        });
-    };
-
-    const convertDate = (dateStr: string) => {
-        const parts = dateStr.split('/');
-        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
-        return new Date().toISOString();
-    };
-
     const updateMapping = (dbField: string, csvHeader: string) => {
+        // Find if another dbField is using this csvHeader and clear it
         const newMapping = { ...mapping };
         Object.keys(newMapping).forEach(key => {
-            if (newMapping[key] === dbField) delete newMapping[key];
+            if (newMapping[key] === dbField) {
+                delete newMapping[key];
+            }
         });
+
+        // Set the new mapping if a column is selected
         if (csvHeader) {
             newMapping[csvHeader] = dbField;
         }
         setMapping(newMapping);
     };
-
+    
     const getMappedHeader = (dbField: string) => {
+        // Find which CSV header is mapped to our desired database field
         return Object.keys(mapping).find(key => mapping[key] === dbField) || "";
     };
 
@@ -255,10 +187,6 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                             <Loader2 size={48} className="animate-spin text-emerald-400" />
                             <h3 className="text-xl font-bold text-white">{t('finance.import.processingTitle')}</h3>
                             <p className="text-gray-400 max-w-sm">{t('finance.import.processingDesc')}</p>
-                            <div className="w-full max-w-md h-2 bg-black/40 rounded-full overflow-hidden mt-4 border border-white/5">
-                                <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${progress}%` }}></div>
-                            </div>
-                            <p className="text-sm text-emerald-400 font-mono">{progress}%</p>
                         </div>
                     )}
                 </div>
