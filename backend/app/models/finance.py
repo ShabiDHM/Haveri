@@ -1,16 +1,56 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V9.4 (PRODUCT NAME FIX)
-# 1. FIX: Added the 'product_name' field to the 'Transaction' model.
-# 2. STATUS: This resolves the 'No parameter named product_name' Pylance error in the parsing service.
+# PHOENIX PROTOCOL - FINANCE MODELS V11.0 (SELF-CONTAINED FIX)
+# 1. FIX: Inlined 'PyObjectId' to prevent ImportErrors from missing common.py.
+# 2. FIX: Defined ALL models (Invoice, Expense, Analytics, Wizard) in one place to resolve Pylance errors.
+# 3. STATUS: Robust and dependency-free.
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field, ConfigDict, GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import core_schema
+from typing import List, Optional, Dict, Any, Annotated
 from datetime import datetime
-from .common import PyObjectId
+from bson import ObjectId
+
+# --- ROBUST PYOBJECTID (Inlined for Safety) ---
+class _ObjectIdPydanticAnnotation:
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: GetJsonSchemaHandler
+    ) -> core_schema.CoreSchema:
+        def validate_from_str(value: str) -> ObjectId:
+            return ObjectId(value)
+
+        from_str_schema = core_schema.chain_schema(
+            [
+                core_schema.str_schema(),
+                core_schema.no_info_plain_validator_function(validate_from_str),
+            ]
+        )
+
+        return core_schema.json_or_python_schema(
+            json_schema=from_str_schema,
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(ObjectId),
+                    from_str_schema,
+                ]
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda instance: str(instance)
+            ),
+        )
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return handler(core_schema.str_schema())
+
+PyObjectId = Annotated[ObjectId, _ObjectIdPydanticAnnotation]
 
 # --- IMPORT BATCH (AUDIT TRAIL) ---
 class ImportBatch(BaseModel):
-    id: PyObjectId = Field(alias="_id", default=None)
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     user_id: str
     business_id: Optional[str] = None
     filename: str
@@ -24,7 +64,7 @@ class ImportBatch(BaseModel):
 
 # --- POS TRANSACTION (OPERATIONAL DATA) ---
 class Transaction(BaseModel):
-    id: PyObjectId = Field(alias="_id", default=None)
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     user_id: str
     business_id: Optional[str] = None
     batch_id: Optional[str] = None
@@ -32,7 +72,6 @@ class Transaction(BaseModel):
     date: datetime
     amount: float
     
-    # PROFITABILITY ENGINE FIELDS
     cost: float = 0.0
     net_profit: float = 0.0
     is_inventory_processed: bool = False
@@ -40,17 +79,15 @@ class Transaction(BaseModel):
     type: str = "income"
     category: str = "Uncategorized"
     description: str
-    product_name: Optional[str] = None  # PHOENIX FIX: Added this field
+    product_name: Optional[str] = None 
     quantity: float = 1.0
     unit_price: Optional[float] = None
     original_row_data: Optional[Dict[str, Any]] = None
     
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
-# PHOENIX: ROBUST RESPONSE MODEL FOR POS TRANSACTIONS
 class PosTransactionOut(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", serialization_alias="id", default=None)
-    
     product_name: Optional[str] = Field(alias="description", default="Produkt i panjohur")
     quantity: Optional[float] = Field(default=1.0)
     total_price: Optional[float] = Field(alias="amount", default=0.0)
@@ -99,6 +136,8 @@ class InvoiceCreate(BaseModel):
     items: List[InvoiceItem]
     tax_rate: float = 0.0
     due_date: Optional[datetime] = None
+    issue_date: Optional[datetime] = None  # Crucial for Import
+    status: Optional[str] = None           # Crucial for Import
     notes: Optional[str] = None
     related_case_id: Optional[str] = None
 
@@ -119,14 +158,14 @@ class InvoiceUpdate(BaseModel):
     related_case_id: Optional[str] = None
 
 class InvoiceInDB(InvoiceBase):
-    id: PyObjectId = Field(alias="_id", default=None)
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     user_id: PyObjectId
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
 class InvoiceOut(InvoiceInDB):
-    id: PyObjectId = Field(alias="_id", serialization_alias="id", default=None)
+    id: Optional[PyObjectId] = Field(alias="_id", serialization_alias="id", default=None)
 
 # --- EXPENSE MODELS ---
 class ExpenseBase(BaseModel):
@@ -151,18 +190,19 @@ class ExpenseUpdate(BaseModel):
     is_locked: Optional[bool] = None
 
 class ExpenseInDB(ExpenseBase):
-    id: PyObjectId = Field(alias="_id", default=None)
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     user_id: PyObjectId
     created_at: datetime = Field(default_factory=datetime.utcnow)
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
 class ExpenseOut(ExpenseInDB):
-    id: PyObjectId = Field(alias="_id", serialization_alias="id", default=None)
+    id: Optional[PyObjectId] = Field(alias="_id", serialization_alias="id", default=None)
 
-# --- ANALYTICS & CASE SUMMARY MODELS ---
+# --- ANALYTICS MODELS (Re-defined here to ensure Availability) ---
 class SalesTrendPoint(BaseModel):
     date: str
     amount: float
+    count: int = 0
 
 class TopProductItem(BaseModel):
     product_name: str
@@ -184,7 +224,7 @@ class CaseFinancialSummary(BaseModel):
     total_expenses: float
     net_balance: float
 
-# --- TAX ENGINE MODELS ---
+# --- TAX WIZARD MODELS ---
 class TaxCalculation(BaseModel):
     period_month: int
     period_year: int

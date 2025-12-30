@@ -1,8 +1,7 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE LOGIC V5.6 (POS DELETION ADDED)
-# 1. NEW: Added 'delete_pos_transaction' method.
-# 2. LOGIC: Uses string-based 'user_id' to match 'transactions' collection schema.
-# 3. STATUS: Fully functional and type-safe.
+# PHOENIX PROTOCOL - FINANCE LOGIC V6.0 (HISTORICAL DATA FIX)
+# 1. FIX: 'create_invoice' now respects 'issue_date' from payload if provided.
+# 2. STATUS: Fully enables historical data imports.
 
 import structlog
 from datetime import datetime, timezone
@@ -88,16 +87,19 @@ class FinanceService:
         tax_amount = (subtotal * data.tax_rate) / 100
         total_amount = subtotal + tax_amount
         
+        # PHOENIX FIX: Respect provided issue_date for imports
+        issue_date = data.issue_date or datetime.now(timezone.utc)
+        
         invoice_doc = data.model_dump()
         invoice_doc.update({
             "user_id": ObjectId(user_id),
             "invoice_number": self._generate_invoice_number(user_id),
-            "issue_date": datetime.now(timezone.utc),
-            "due_date": data.due_date or datetime.now(timezone.utc),
+            "issue_date": issue_date,
+            "due_date": data.due_date or issue_date,
             "subtotal": subtotal,
             "tax_amount": tax_amount,
             "total_amount": total_amount,
-            "status": "DRAFT",
+            "status": data.status or "DRAFT", # Respect provided status (e.g. PAID from CSV)
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
         })
