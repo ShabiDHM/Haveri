@@ -1,8 +1,7 @@
 // FILE: src/components/business/TransactionImporter.tsx
-// PHOENIX PROTOCOL - IMPORTER V18.0 (TACTICAL UPGRADE)
-// 1. STYLE: Applied Phoenix Glassmorphism to match Finance Tab.
-// 2. UX: Enhanced all interactive elements (Buttons, selects, dropzones).
-// 3. CONSISTENCY: Aligned fonts, colors, and spacing with the new UI standard.
+// PHOENIX PROTOCOL - IMPORTER V18.1 (PRODUCT NAME FIX)
+// 1. FIX: Added 'product_name' to mapping and processing logic.
+// 2. LOGIC: Falls back to 'description' if no explicit product name column is mapped.
 
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -27,6 +26,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
         { key: 'amount', label: t('finance.amount'), required: true },
         { key: 'date', label: t('finance.date'), required: false },
         { key: 'description', label: t('finance.description'), required: false },
+        { key: 'product_name', label: 'Emri i Produktit', required: false }, // PHOENIX: Added explicit field
         { key: 'category', label: t('finance.expenseCategory'), required: false },
         { key: 'type', label: 'Tipi (Invoice/Expense)', required: false },
         { key: 'status', label: 'Statusi (Paid/Pending)', required: false }
@@ -48,6 +48,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                 if (h.includes('shum') || h.includes('amount') || h.includes('price')) initialMapping['amount'] = header;
                 else if (h.includes('dat') || h.includes('date')) initialMapping['date'] = header;
                 else if (h.includes('përsh') || h.includes('desc')) initialMapping['description'] = header;
+                else if (h.includes('produkt') || h.includes('product') || h.includes('artikull')) initialMapping['product_name'] = header; // PHOENIX: Auto-detect product
                 else if (h.includes('kat') || h.includes('cat')) initialMapping['category'] = header;
                 else if (h.includes('tip') || h.includes('type')) initialMapping['type'] = header;
                 else if (h.includes('stat')) initialMapping['status'] = header;
@@ -111,6 +112,10 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                     const amount = parseFloat(cols[fieldIndices['amount']] || '0');
                     const date = cols[fieldIndices['date']] || new Date().toISOString();
                     const desc = cols[fieldIndices['description']] || 'Imported Transaction';
+                    
+                    // PHOENIX: Map product name, fallback to description
+                    const productName = cols[fieldIndices['product_name']] || desc;
+
                     const cat = cols[fieldIndices['category']] || 'General';
                     const typeRaw = fieldIndices['type'] !== undefined ? cols[fieldIndices['type']].toUpperCase() : '';
                     const status = fieldIndices['status'] !== undefined ? cols[fieldIndices['status']].toUpperCase() : 'PAID';
@@ -129,10 +134,11 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                                 date: date.includes('/') ? convertDate(date) : date
                             });
                         } else {
+                            // PHOENIX: Pass product name in description to ensure analytics picks it up
                             await apiService.createInvoice({
-                                client_name: desc,
+                                client_name: desc, // Client is the transaction description
                                 tax_rate: 18,
-                                items: [{ description: 'Imported Item', quantity: 1, unit_price: absAmount, total: absAmount }],
+                                items: [{ description: productName, quantity: 1, unit_price: absAmount, total: absAmount }],
                                 status: status === 'PENDING' ? 'PENDING' : 'PAID',
                                 notes: 'Imported via CSV'
                             } as any);
