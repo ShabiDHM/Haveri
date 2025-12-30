@@ -1,7 +1,6 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - REPORT FIX V1.0
-// 1. FIX (TRANSLATION): Chart titles now use the t() function.
-// 2. FIX (DATA): Added missing 'dataKey' to the Top Products chart's YAxis.
+// PHOENIX PROTOCOL - REPORT FIX V1.1 (CORRECT DATA BINDING)
+// 1. FIX (CHART): Ensured the Bar component uses 'total_revenue' and the YAxis uses 'product_name'.
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -22,8 +21,6 @@ import { useFinanceData } from '../../hooks/useFinanceData';
 import { InvoiceModal } from './modals/InvoiceModal';
 import { ExpenseModal } from './modals/ExpenseModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
-
-// --- TACTICAL UI COMPONENTS ---
 
 const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amount: string, icon: React.ReactNode, trend?: string, type: 'income' | 'expense' | 'neutral' | 'warning' }) => {
     let gradient = 'from-blue-500/20 to-blue-500/5';
@@ -257,7 +254,6 @@ export const FinanceTab: React.FC = () => {
                             {!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
-                                        {/* PHOENIX: Translation fixed */}
                                         <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-blue-400" /> {t('finance.analytics.salesTrend')}</h4>
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
@@ -273,13 +269,12 @@ export const FinanceTab: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
-                                        {/* PHOENIX: Translation fixed */}
                                         <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
-                                                {/* PHOENIX: dataKey added to YAxis */}
                                                 <BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 20 }}>
                                                     <XAxis type="number" hide />
+                                                    {/* PHOENIX: dataKey added to YAxis */}
                                                     <YAxis dataKey="product_name" type="category" width={100} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                                                     <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} />
                                                     <Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>
