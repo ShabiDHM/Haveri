@@ -1,7 +1,7 @@
 # FILE: backend/app/services/parsing_service.py
-# PHOENIX PROTOCOL - PARSING SERVICE V3.4 (CONSISTENCY)
-# 1. VERIFIED: Robust date parsing and currency normalization.
-# 2. STATUS: Production Ready.
+# PHOENIX PROTOCOL - PARSING SERVICE V3.5 (DATA INTEGRITY FIX)
+# 1. FIX: Added 'product_name' to the Transaction model creation.
+# 2. LOGIC: Now correctly maps the product name from the user's CSV mapping, fixing the "Imported Item" bug in analytics.
 
 import pandas as pd
 import io
@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 class ParsingService:
     def __init__(self, db: Any):
-        # Using Any to support Async Motor database connection
         self.db = db
 
     def _normalize_currency(self, value) -> float:
@@ -28,7 +27,6 @@ class ParsingService:
 
         clean_val = value.replace('€', '').replace('$', '').strip()
         
-        # EU (1.000,00) vs US (1,000.00) logic
         if ',' in clean_val and '.' in clean_val:
             if clean_val.find(',') > clean_val.find('.'):
                 clean_val = clean_val.replace('.', '').replace(',', '.')
@@ -107,13 +105,23 @@ class ParsingService:
                 else: parsed_date = datetime.now()
 
                 description = str(row.get('description', 'POS Import'))
+                # PHOENIX: Get product name from the mapped column, fallback to description
+                product_name = str(row.get('product_name', description))
+
                 try: qty = float(row.get('quantity', 1.0))
                 except: qty = 1.0
                 
                 tx = Transaction(
-                    user_id=user_id, batch_id=batch_id, date=parsed_date, amount=amount,
-                    description=description, quantity=qty, category=str(row.get('category', 'Sales')),
-                    original_row_data=row.to_dict(), is_inventory_processed=False
+                    user_id=user_id,
+                    batch_id=batch_id,
+                    date=parsed_date,
+                    amount=amount,
+                    description=description,
+                    product_name=product_name, # PHOENIX FIX: Added product_name field
+                    quantity=qty,
+                    category=str(row.get('category', 'Sales')),
+                    original_row_data=row.to_dict(),
+                    is_inventory_processed=False
                 )
                 
                 tx_dict = tx.model_dump(by_alias=True)
