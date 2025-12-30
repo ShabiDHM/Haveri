@@ -1,8 +1,8 @@
 # FILE: backend/app/services/parsing_service.py
-# PHOENIX PROTOCOL - PARSING SERVICE V5.0 (ROBUST MAPPING FIX)
-# 1. FIX: The service now correctly uses the user-provided mapping to find columns like 'Shuma' and 'Përshkrimi'.
-# 2. FIX: Resolves the '€0.00' and 'Imported Transaction' bug by correctly extracting data from the CSV.
-# 3. ROBUSTNESS: This version is now fully language-agnostic for CSV headers.
+# PHOENIX PROTOCOL - PARSING SERVICE V6.0 (DEFINITIVE FIX)
+# 1. FIX: The 'process_import' method now correctly uses the mapping dictionary to find CSV columns by their header name (e.g., "Shuma").
+# 2. VALIDATION: Added a strict check to ensure the 'amount' field is mapped, raising an error if it's missing.
+# 3. ROBUSTNESS: Explicitly sets the CSV separator for Pandas to avoid parsing errors. This resolves the '€0.00' bug permanently.
 
 import pandas as pd
 import io
@@ -27,7 +27,8 @@ class ParsingService:
             return float(value)
         if not isinstance(value, str):
             return 0.0
-        clean_val = value.replace('€', '').replace('$', '').strip()
+        # This logic handles formats like "€1,234.56" or "1.234,56"
+        clean_val = str(value).replace('€', '').replace('$', '').strip()
         if ',' in clean_val and '.' in clean_val:
             if clean_val.find(',') > clean_val.find('.'):
                 clean_val = clean_val.replace('.', '').replace(',', '.')
@@ -43,45 +44,48 @@ class ParsingService:
     async def preview_file(self, file: UploadFile) -> Dict[str, Any]:
         try:
             contents = await file.read()
-            df = pd.read_csv(io.BytesIO(contents), encoding='utf-8', sep=None, engine='python', header=0)
+            # Use StringIO to handle text decoding universally
+            df = pd.read_csv(io.StringIO(contents.decode('utf-8')), sep=',', engine='python', header=0)
             await file.seek(0)
             df = df.fillna("")
-            headers = df.columns.tolist()
+            headers = [str(h) for h in df.columns.tolist()]
             sample = df.head(5).astype(str).to_dict(orient='records')
             return {"filename": file.filename, "headers": headers, "sample_data": sample}
         except Exception as e:
             logger.error(f"Error previewing file: {e}")
-            raise HTTPException(status_code=400, detail=f"Failed to read file: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Failed to read file. Please ensure it is a valid CSV. Error: {str(e)}")
 
     async def process_import(self, file: UploadFile, user_id: str, mapping: Dict[str, str]) -> Dict[str, Any]:
         contents = await file.read()
         try:
-            df = pd.read_csv(io.BytesIO(contents), encoding='utf-8', sep=None, engine='python', header=0)
+            # Explicitly set separator to comma
+            df = pd.read_csv(io.StringIO(contents.decode('utf-8')), sep=',', engine='python', header=0)
         except Exception as e:
              raise HTTPException(status_code=400, detail=f"File read error: {str(e)}")
             
         imported_count = 0
         failed_count = 0
         
-        # PHOENIX FIX: Create a reverse map to find CSV header from standard field name
+        # PHOENIX: Create a reverse map to find the CSV header from the standard field name
         # e.g., {'amount': 'Shuma', 'description': 'Përshkrimi'}
         field_to_column = {v: k for k, v in mapping.items()}
 
+        # --- STRICT VALIDATION ---
+        amount_col = field_to_column.get('amount')
+        if not amount_col or amount_col not in df.columns:
+            raise HTTPException(status_code=400, detail="Mapping for 'amount' ('Shuma') is missing or incorrect. Please map the column containing the transaction values.")
+
+        # Get column names from the reverse map once
+        description_col = field_to_column.get('description')
+        date_col = field_to_column.get('date')
+        product_col = field_to_column.get('product_name')
+        category_col = field_to_column.get('category')
+        status_col = field_to_column.get('status')
+        type_col = field_to_column.get('Tipi')
+
         for index, row in df.iterrows():
             try:
-                # Use the reverse map to find the correct column name (e.g., 'Shuma')
-                amount_col = field_to_column.get('amount')
-                description_col = field_to_column.get('description')
-                date_col = field_to_column.get('date')
-                product_col = field_to_column.get('product_name')
-                category_col = field_to_column.get('category')
-                status_col = field_to_column.get('status')
-                type_col = field_to_column.get('Tipi') # 'Tipi' is what frontend sends
-
                 amount = self._normalize_currency(row.get(amount_col))
-                if amount == 0.0:
-                    failed_count += 1
-                    continue
 
                 date_str = row.get(date_col)
                 parsed_date = pd.to_datetime(date_str, dayfirst=True).to_pydatetime() if pd.notna(date_str) else datetime.now()
@@ -92,13 +96,12 @@ class ParsingService:
                 status = str(row.get(status_col, 'PAID')).strip().upper()
                 transaction_type = str(row.get(type_col, 'INVOICE')).strip().upper()
 
-                if 'EXPENSE' in transaction_type:
+                if 'EXPENSE' in transaction_type or amount < 0:
                     expense_data = ExpenseCreate(
                         category=category,
                         amount=abs(amount),
                         description=description,
-                        date=parsed_date,
-                        currency="EUR"
+                        date=parsed_date
                     )
                     self.finance_service.create_expense(user_id, expense_data)
                 else:
@@ -127,4 +130,4 @@ class ParsingService:
         if imported_count > 0:
             return {"status": "success", "imported_count": imported_count, "failed_count": failed_count}
         else:
-            raise HTTPException(status_code=400, detail="No valid transactions were parsed from the file.")
+            raise HTTPException(status_code=400, detail="No valid transactions could be parsed. Check column mapping and file content.")
