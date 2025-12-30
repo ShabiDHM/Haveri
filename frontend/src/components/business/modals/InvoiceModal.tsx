@@ -1,7 +1,7 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V17.3 (SIMPLIFIED STATUS)
-// 1. UPDATE: Restricted status dropdown to 'PENDING' and 'PAID' only.
-// 2. STATUS: Production Ready.
+// PHOENIX PROTOCOL - INVOICE MODAL V18.0 (I18N FIX)
+// 1. FIX: Mapped all labels to specific translation keys.
+// 2. FIX: Status dropdown uses translation keys.
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2 } from 'lucide-react';
@@ -186,8 +186,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                                     onChange={(e) => setFormData({...formData, status: e.target.value})}
                                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:ring-2 focus:ring-primary-start outline-none appearance-none cursor-pointer"
                                 >
-                                    <option value="PAID" className="bg-gray-900">{t('status.PAID', 'E Paguar')}</option>
-                                    <option value="PENDING" className="bg-gray-900">{t('status.PENDING', 'Në Pritje')}</option>
+                                    <option value="PAID" className="bg-gray-900">{t('status.PAID')}</option>
+                                    <option value="PENDING" className="bg-gray-900">{t('status.PENDING')}</option>
                                 </select>
                             </div>
                         </div>

@@ -231,6 +231,7 @@
     "subtitle": "Krijoni dokumente profesionale me fuqinë e AI.",
     "configuration": "Konfigurimi",
     "instructionsLabel": "Udhëzimet",
+    "selectCaseLabel": "Zgjidhni Projektin",
     "promptPlaceholder": "P.sh: Krijo një kontratë pune për një menaxher marketingu...",
     "generateBtn": "Gjenero",
     "statusCompleted": "Përfunduar",
@@ -283,7 +284,13 @@
     "finance": "Financat",
     "archive": "Arkiva",
     "insights": "Inteligjenca",
-    "welcome": "Mirësevini {{name}}"
+    "welcome": "Mirësevini {{name}}",
+    "clientName": "Emri i Klientit",
+    "publicEmail": "Email Publik",
+    "phone": "Numri i Telefonit",
+    "city": "Qyteti",
+    "taxId": "Numri Fiskal",
+    "address": "Adresa"
   },
   "insights": {
     "title": "Inteligjenca e Biznesit",
@@ -299,11 +306,23 @@
     "balanceSub": "Fitimi Neto",
     "cogs": "Kosto e Mallrave të Shitura",
     "createInvoice": "Krijo Faturë",
+    "editInvoice": "Ndrysho Faturën",
+    "editExpense": "Ndrysho Shpenzimin",
     "addExpense": "Shto Shpenzim",
+    "attachReceipt": "Bashkangjit Faturën/Dëshminë",
+    "posSale": "Shitje POS",
+    "invoicePrefix": "Fatura #",
+    "archiveInvoice": "Arkivo Faturën",
+    "archiveExpenseTitle": "Arkivo Shpenzimin",
     "date": "Data",
     "amount": "Shuma",
     "description": "Përshkrimi",
     "expenseCategory": "Kategoria",
+    "applyVat": "Apliko TVSH (18%)",
+    "services": "Shërbimet / Produktet",
+    "qty": "Sasia",
+    "price": "Çmimi",
+    "addLine": "Shto Rresht",
     "import": { 
       "title": "Importo Transaksione",
       "uploadTitle": "Ngarko CSV/Excel",
@@ -316,7 +335,21 @@
       "processingTitle": "Duke Procesuar...",
       "processingDesc": "Po importojmë dhe kategorizojmë transaksionet tuaja.",
       "back": "Kthehu",
-      "confirm": "Konfirmo Importin"
+      "confirm": "Konfirmo Importin",
+      "productName": "Emri i Produktit",
+      "typeLabel": "Lloji (Faturë/Shpenzim)",
+      "statusLabel": "Statusi",
+      "importFailed": "Importi dështoi. Kontrolloni konsolën."
+    },
+    "digitalReceipt": {
+      "title": "Dëshmi Digjitale",
+      "category": "Kategoria:",
+      "amount": "Shuma:",
+      "date": "Data:",
+      "description": "Përshkrimi:",
+      "noDescription": "Pa përshkrim",
+      "generated": "Gjeneruar automatikisht nga Haveri AI",
+      "fileNamePrefix": "Deshmi_Digjitale"
     },
     "monthlyClose": "Mbyllja Mujore",
     "activityAndReports": "Aktiviteti & Raportet",
@@ -335,6 +368,9 @@
     "analytics": {
         "salesTrend": "Trendi i Shitjeve",
         "topProducts": "Produktet Kryesore"
+    },
+    "reports": {
+      "noData": "Nuk ka të dhëna analitike për këtë periudhë."
     }
   },
   "inventory": {
@@ -343,8 +379,31 @@
     "tabItems_short": "Stoku",
     "tabRecipes": "Recetat",
     "lowStock": "Stoku Kritik",
-    "items": { "add": "Shto Artikull", "import": "Importo CSV" },
-    "recipes": { "add": "Krijo Recetë", "import": "Importo CSV" },
+    "cancel": "Anulo",
+    "save": "Ruaj",
+    "items": { 
+        "add": "Shto Artikull", 
+        "edit": "Ndrysho Artikullin",
+        "import": "Importo CSV",
+        "name": "Emri i Artikullit",
+        "unit": "Njësia",
+        "cost": "Kosto për Njësi (€)",
+        "stock": "Stoku Aktual",
+        "lowStock": "Pragu i Stokut Kritik",
+        "importedCount": "Artikuj të importuar"
+    },
+    "recipes": { 
+        "add": "Krijo Recetë", 
+        "import": "Importo CSV",
+        "importedCount": "Receta të importuara"
+    },
+    "import": {
+        "instruction": "Ngarkoni një skedar CSV ose Excel për të importuar të dhënat.",
+        "columns": "Kolonat e kërkuara: Emri, Përbërësit...",
+        "columnsItems": "Kolonat e kërkuara: Emri, Njësia, Kosto, Stoku...",
+        "clickToSelect": "Klikoni për të zgjedhur skedarin",
+        "button": "Importo Tani"
+    },
     "units": { "kg": "kg", "litra": "l", "cope": "copë" },
     "posBatch": "Import POS",
     "itemsCount": "artikuj"
@@ -394,7 +453,8 @@
     "uploadFolderTooltip": "Ngarko Dosje",
     "emptyFolder": "Ky folder është bosh.",
     "isShared": "E Ndarë",
-    "newFolderDefault": "Dosje e Re"
+    "newFolderDefault": "Dosje e Re",
+    "generalNoCase": "E Përgjithshme (Pa Projekt)"
   },
   "category": {
     "general": "Të Përgjithshme",
@@ -402,6 +462,13 @@
     "legalDocs": "Dokumente Ligjore",
     "invoices": "Fatura",
     "contracts": "Kontrata"
+  },
+  "units": {
+      "kg": "Kilogram (kg)",
+      "liters": "Litra (l)",
+      "pieces": "Copë",
+      "grams": "Gram (g)",
+      "milliliters": "Mililitra (ml)"
   },
   "error": {
     "generic": "Ndodhi një gabim. Ju lutemi provoni përsëri.",

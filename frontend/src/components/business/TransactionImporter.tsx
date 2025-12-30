@@ -1,7 +1,7 @@
 // FILE: src/components/business/TransactionImporter.tsx
-// PHOENIX PROTOCOL - IMPORTER V18.1 (PRODUCT NAME FIX)
-// 1. FIX: Added 'product_name' to mapping and processing logic.
-// 2. LOGIC: Falls back to 'description' if no explicit product name column is mapped.
+// PHOENIX PROTOCOL - IMPORTER V18.2 (FULL I18N STANDARDIZATION)
+// 1. FIX: Removed hardcoded Albanian strings.
+// 2. FEATURE: Fully integrated with translation keys.
 
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -22,14 +22,15 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
     const [progress, setProgress] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // PHOENIX: All labels now use translation keys
     const requiredFields = [
         { key: 'amount', label: t('finance.amount'), required: true },
         { key: 'date', label: t('finance.date'), required: false },
         { key: 'description', label: t('finance.description'), required: false },
-        { key: 'product_name', label: 'Emri i Produktit', required: false }, // PHOENIX: Added explicit field
+        { key: 'product_name', label: t('finance.import.productName'), required: false }, 
         { key: 'category', label: t('finance.expenseCategory'), required: false },
-        { key: 'type', label: 'Tipi (Invoice/Expense)', required: false },
-        { key: 'status', label: 'Statusi (Paid/Pending)', required: false }
+        { key: 'type', label: t('finance.import.typeLabel'), required: false },
+        { key: 'status', label: t('finance.import.statusLabel'), required: false }
     ];
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,10 +49,10 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                 if (h.includes('shum') || h.includes('amount') || h.includes('price')) initialMapping['amount'] = header;
                 else if (h.includes('dat') || h.includes('date')) initialMapping['date'] = header;
                 else if (h.includes('përsh') || h.includes('desc')) initialMapping['description'] = header;
-                else if (h.includes('produkt') || h.includes('product') || h.includes('artikull')) initialMapping['product_name'] = header; // PHOENIX: Auto-detect product
+                else if (h.includes('produkt') || h.includes('product') || h.includes('artikull')) initialMapping['product_name'] = header;
                 else if (h.includes('kat') || h.includes('cat')) initialMapping['category'] = header;
                 else if (h.includes('tip') || h.includes('type')) initialMapping['type'] = header;
-                else if (h.includes('stat')) initialMapping['status'] = header;
+                else if (h.includes('stat') || h.includes('status')) initialMapping['status'] = header;
             });
             
             const apiReadyMapping: Record<string, string> = {};
@@ -79,7 +80,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
             onClose();
         } catch (error) {
             console.error(error);
-            alert("Import failed via Client-Side Processor. Check console.");
+            alert(t('finance.import.importFailed'));
             setStep('mapping');
         } finally {
             setIsLoading(false);
@@ -113,7 +114,6 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                     const date = cols[fieldIndices['date']] || new Date().toISOString();
                     const desc = cols[fieldIndices['description']] || 'Imported Transaction';
                     
-                    // PHOENIX: Map product name, fallback to description
                     const productName = cols[fieldIndices['product_name']] || desc;
 
                     const cat = cols[fieldIndices['category']] || 'General';
@@ -134,9 +134,8 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                                 date: date.includes('/') ? convertDate(date) : date
                             });
                         } else {
-                            // PHOENIX: Pass product name in description to ensure analytics picks it up
                             await apiService.createInvoice({
-                                client_name: desc, // Client is the transaction description
+                                client_name: desc, 
                                 tax_rate: 18,
                                 items: [{ description: productName, quantity: 1, unit_price: absAmount, total: absAmount }],
                                 status: status === 'PENDING' ? 'PENDING' : 'PAID',
