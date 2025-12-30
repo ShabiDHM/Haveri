@@ -394,7 +394,15 @@
     },
     "recipes": { 
         "add": "Krijo Recetë", 
+        "edit": "Ndrysho Recetën",
         "import": "Importo CSV",
+        "productName": "Emri i Produktit",
+        "productNameDesc": "Ky emër do të shfaqet në pikën e shitjes (POS).",
+        "example": "psh. Espresso Macchiato",
+        "ingredients": "Përbërësit",
+        "addIngredient": "Shto Përbërës",
+        "selectIngredient": "Zgjidh Përbërësin",
+        "costPreview": "Kosto e vlerësuar:",
         "importedCount": "Receta të importuara"
     },
     "import": {
@@ -404,7 +412,13 @@
         "clickToSelect": "Klikoni për të zgjedhur skedarin",
         "button": "Importo Tani"
     },
-    "units": { "kg": "kg", "litra": "l", "cope": "copë" },
+    "units": { 
+        "kg": "Kilogram (kg)", 
+        "liters": "Litra (l)", 
+        "pieces": "Copë", 
+        "grams": "Gram (g)", 
+        "milliliters": "Mililitra (ml)" 
+    },
     "posBatch": "Import POS",
     "itemsCount": "artikuj"
   },
@@ -462,13 +476,6 @@
     "legalDocs": "Dokumente Ligjore",
     "invoices": "Fatura",
     "contracts": "Kontrata"
-  },
-  "units": {
-      "kg": "Kilogram (kg)",
-      "liters": "Litra (l)",
-      "pieces": "Copë",
-      "grams": "Gram (g)",
-      "milliliters": "Mililitra (ml)"
   },
   "error": {
     "generic": "Ndodhi një gabim. Ju lutemi provoni përsëri.",

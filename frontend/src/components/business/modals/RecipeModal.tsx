@@ -1,6 +1,7 @@
 // FILE: src/components/business/modals/RecipeModal.tsx
-// PHOENIX PROTOCOL - COMPONENT EXTRACTION V1.0
-// Handles Create/Update for Recipes and Ingredient mapping.
+// PHOENIX PROTOCOL - RECIPE MODAL V15.2 (I18N FIX)
+// 1. FIX: Mapped all labels to specific translation keys.
+// 2. FIX: Removed hardcoded English fallbacks.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -72,12 +73,12 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-lg p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
                 <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
-                    {recipeToEdit ? t('inventory.recipes.edit', 'Edit Recipe') : t('inventory.recipes.add')}
+                    {recipeToEdit ? t('inventory.recipes.edit') : t('inventory.recipes.add')}
                 </h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-sm text-gray-400 mb-1">{t('inventory.recipes.productName')}</label>
-                        <input placeholder={t('inventory.recipes.example', 'e.g. Espresso Macchiato')} required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" 
+                        <input placeholder={t('inventory.recipes.example')} required type="text" className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-white text-base sm:text-sm" 
                             value={formData.product_name} onChange={e => setFormData({...formData, product_name: e.target.value})} 
                         />
                         <p className="text-xs text-gray-500 mt-1">{t('inventory.recipes.productNameDesc')}</p>
