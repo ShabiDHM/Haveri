@@ -1,6 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - REPORT FIX V1.1 (CORRECT DATA BINDING)
-// 1. FIX (CHART): Ensured the Bar component uses 'total_revenue' and the YAxis uses 'product_name'.
+// PHOENIX PROTOCOL - VISUAL FIX V2.0
+// 1. VISUAL: Increased Top Products Y-Axis width to 150px to prevent text clipping.
+// 2. LOGIC: Filtered out 0-revenue products from the chart to remove "ghost" labels.
+// 3. STYLE: Improved chart gradients and grid visibility.
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -154,6 +156,12 @@ export const FinanceTab: React.FC = () => {
         return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [invoices, expenses, posTransactions, searchTerm, t]);
 
+    // PHOENIX: Filter ghost products (0 revenue)
+    const cleanTopProducts = useMemo(() => {
+        if (!analyticsData?.top_products) return [];
+        return analyticsData.top_products.filter(p => p.total_revenue > 0);
+    }, [analyticsData]);
+
     const closePreview = () => { if (viewingUrl) window.URL.revokeObjectURL(viewingUrl); setViewingUrl(null); setViewingDoc(null); };
 
     const handleEditInvoice = (invoice: Invoice) => { setSelectedInvoice(invoice); setShowInvoiceModal(true); };
@@ -258,12 +266,12 @@ export const FinanceTab: React.FC = () => {
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <AreaChart data={analyticsData.sales_trend}>
-                                                    <defs><linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                                    <defs><linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
                                                     <XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} />
                                                     <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} />
                                                     <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }} itemStyle={{ color: '#fff' }} />
-                                                    <Area type="monotone" dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" />
+                                                    <Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" />
                                                 </AreaChart>
                                             </ResponsiveContainer>
                                         </div>
@@ -272,13 +280,13 @@ export const FinanceTab: React.FC = () => {
                                         <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 20 }}>
+                                                <BarChart data={cleanTopProducts} layout="vertical" margin={{ left: 10 }}>
                                                     <XAxis type="number" hide />
-                                                    {/* PHOENIX: dataKey added to YAxis */}
-                                                    <YAxis dataKey="product_name" type="category" width={100} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                                                    {/* PHOENIX: Increased Width to 150 to fit 'Espresso Macchiato' */}
+                                                    <YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                                                     <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} />
                                                     <Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>
-                                                        {analyticsData.top_products.map((_, index) => (
+                                                        {cleanTopProducts.map((_, index) => (
                                                             <Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />
                                                         ))}
                                                     </Bar>
