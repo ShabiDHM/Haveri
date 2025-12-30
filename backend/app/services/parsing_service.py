@@ -1,8 +1,7 @@
 # FILE: backend/app/services/parsing_service.py
-# PHOENIX PROTOCOL - PARSING SERVICE V6.0 (DEFINITIVE FIX)
-# 1. FIX: The 'process_import' method now correctly uses the mapping dictionary to find CSV columns by their header name (e.g., "Shuma").
-# 2. VALIDATION: Added a strict check to ensure the 'amount' field is mapped, raising an error if it's missing.
-# 3. ROBUSTNESS: Explicitly sets the CSV separator for Pandas to avoid parsing errors. This resolves the '€0.00' bug permanently.
+# PHOENIX PROTOCOL - DIAGNOSTIC TRACER V1.0
+# THIS IS A TEMPORARY FILE FOR LOGGING. DO NOT DEPLOY.
+# It adds print statements to trace the data flow during import.
 
 import pandas as pd
 import io
@@ -22,29 +21,21 @@ class ParsingService:
         self.db = db
         self.finance_service = FinanceService(db)
 
+    # ... (helper functions like _normalize_currency and preview_file remain the same) ...
     def _normalize_currency(self, value) -> float:
-        if isinstance(value, (int, float)):
-            return float(value)
-        if not isinstance(value, str):
-            return 0.0
-        # This logic handles formats like "€1,234.56" or "1.234,56"
+        if isinstance(value, (int, float)): return float(value)
+        if not isinstance(value, str): return 0.0
         clean_val = str(value).replace('€', '').replace('$', '').strip()
         if ',' in clean_val and '.' in clean_val:
-            if clean_val.find(',') > clean_val.find('.'):
-                clean_val = clean_val.replace('.', '').replace(',', '.')
-            else:
-                clean_val = clean_val.replace(',', '')
-        elif ',' in clean_val:
-            clean_val = clean_val.replace(',', '.')
-        try:
-            return float(clean_val)
-        except (ValueError, TypeError):
-            return 0.0
+            if clean_val.find(',') > clean_val.find('.'): clean_val = clean_val.replace('.', '').replace(',', '.')
+            else: clean_val = clean_val.replace(',', '')
+        elif ',' in clean_val: clean_val = clean_val.replace(',', '.')
+        try: return float(clean_val)
+        except (ValueError, TypeError): return 0.0
 
     async def preview_file(self, file: UploadFile) -> Dict[str, Any]:
         try:
             contents = await file.read()
-            # Use StringIO to handle text decoding universally
             df = pd.read_csv(io.StringIO(contents.decode('utf-8')), sep=',', engine='python', header=0)
             await file.seek(0)
             df = df.fillna("")
@@ -55,79 +46,54 @@ class ParsingService:
             logger.error(f"Error previewing file: {e}")
             raise HTTPException(status_code=400, detail=f"Failed to read file. Please ensure it is a valid CSV. Error: {str(e)}")
 
+
     async def process_import(self, file: UploadFile, user_id: str, mapping: Dict[str, str]) -> Dict[str, Any]:
-        contents = await file.read()
+        print("\n--- [PHOENIX TRACE] STARTING IMPORT PROCESS ---")
         try:
-            # Explicitly set separator to comma
+            # --- TRACE POINT 1: RAW MAPPING ---
+            print(f"--- [PHOENIX TRACE] 1. Received Mapping: {mapping}")
+
+            contents = await file.read()
             df = pd.read_csv(io.StringIO(contents.decode('utf-8')), sep=',', engine='python', header=0)
-        except Exception as e:
-             raise HTTPException(status_code=400, detail=f"File read error: {str(e)}")
             
-        imported_count = 0
-        failed_count = 0
-        
-        # PHOENIX: Create a reverse map to find the CSV header from the standard field name
-        # e.g., {'amount': 'Shuma', 'description': 'Përshkrimi'}
-        field_to_column = {v: k for k, v in mapping.items()}
+            # --- TRACE POINT 2: DATAFRAME HEAD ---
+            print(f"--- [PHOENIX TRACE] 2. DataFrame Head:\n{df.head(2).to_string()}")
 
-        # --- STRICT VALIDATION ---
-        amount_col = field_to_column.get('amount')
-        if not amount_col or amount_col not in df.columns:
-            raise HTTPException(status_code=400, detail="Mapping for 'amount' ('Shuma') is missing or incorrect. Please map the column containing the transaction values.")
+            field_to_column = {v: k for k, v in mapping.items()}
+            # --- TRACE POINT 3: REVERSED MAPPING ---
+            print(f"--- [PHOENIX TRACE] 3. Reversed Mapping (field -> column): {field_to_column}")
 
-        # Get column names from the reverse map once
-        description_col = field_to_column.get('description')
-        date_col = field_to_column.get('date')
-        product_col = field_to_column.get('product_name')
-        category_col = field_to_column.get('category')
-        status_col = field_to_column.get('status')
-        type_col = field_to_column.get('Tipi')
+            amount_col = field_to_column.get('amount')
+            if not amount_col or amount_col not in df.columns:
+                print(f"--- [PHOENIX TRACE] ERROR: 'amount' column ('{amount_col}') not found in DataFrame columns: {df.columns.tolist()}")
+                raise HTTPException(status_code=400, detail="Mapping for 'amount' is missing or incorrect.")
 
-        for index, row in df.iterrows():
-            try:
-                amount = self._normalize_currency(row.get(amount_col))
+            # --- TRACE POINT 4: PROCESSING FIRST ROW ---
+            print("\n--- [PHOENIX TRACE] 4. Processing First Data Row...")
+            first_row = df.iloc[0]
+            
+            amount_val = first_row.get(field_to_column.get('amount'))
+            desc_val = first_row.get(field_to_column.get('description'))
+            date_val = first_row.get(field_to_column.get('date'))
 
-                date_str = row.get(date_col)
-                parsed_date = pd.to_datetime(date_str, dayfirst=True).to_pydatetime() if pd.notna(date_str) else datetime.now()
-                
-                description = str(row.get(description_col, 'Imported Item'))
-                product_name = str(row.get(product_col, description))
-                category = str(row.get(category_col, 'Të Përgjithshme'))
-                status = str(row.get(status_col, 'PAID')).strip().upper()
-                transaction_type = str(row.get(type_col, 'INVOICE')).strip().upper()
+            print(f"    - Raw Amount Value ('{field_to_column.get('amount')}'): {amount_val}")
+            print(f"    - Raw Description Value ('{field_to_column.get('description')}'): {desc_val}")
+            print(f"    - Raw Date Value ('{field_to_column.get('date')}'): {date_val}")
 
-                if 'EXPENSE' in transaction_type or amount < 0:
-                    expense_data = ExpenseCreate(
-                        category=category,
-                        amount=abs(amount),
-                        description=description,
-                        date=parsed_date
-                    )
-                    self.finance_service.create_expense(user_id, expense_data)
-                else:
-                    invoice_item = InvoiceItem(
-                        description=product_name,
-                        quantity=1,
-                        unit_price=abs(amount),
-                        total=abs(amount)
-                    )
-                    invoice_data = InvoiceCreate(
-                        client_name=description,
-                        items=[invoice_item],
-                        tax_rate=0,
-                        issue_date=parsed_date,
-                        status=status
-                    )
-                    self.finance_service.create_invoice(user_id, invoice_data)
-                
-                imported_count += 1
+            normalized_amount = self._normalize_currency(amount_val)
+            print(f"    - Normalized Amount: {normalized_amount}")
+            
+            # This part is just for the log, the real loop will process all rows
+            if normalized_amount > 0:
+                print("--- [PHOENIX TRACE] SUCCESS: First row seems processable.")
+            else:
+                print("--- [PHOENIX TRACE] WARNING: First row amount is zero or invalid.")
 
-            except Exception as row_error:
-                failed_count += 1
-                logger.warning(f"Skipping row {index}: {row_error} | Data: {row.to_dict()}")
-                continue
+        except Exception as e:
+            print(f"--- [PHOENIX TRACE] CRITICAL ERROR during trace: {e}")
+            raise HTTPException(status_code=500, detail=f"Internal Server Error during diagnostics: {e}")
 
-        if imported_count > 0:
-            return {"status": "success", "imported_count": imported_count, "failed_count": failed_count}
-        else:
-            raise HTTPException(status_code=400, detail="No valid transactions could be parsed. Check column mapping and file content.")
+        # The rest of the function will not run for this diagnostic test.
+        # We only want the log output.
+        print("--- [PHOENIX TRACE] DIAGNOSTIC RUN COMPLETE. ---")
+        raise HTTPException(status_code=418, detail="Diagnostic run complete. Check backend logs.")
