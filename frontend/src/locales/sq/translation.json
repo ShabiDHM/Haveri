@@ -196,7 +196,7 @@
     "title": "Bisedo",
     "titleLegal": "Hartuesi Ligjor",
     "inputPlaceholder": "Shtypni pyetjen tuaj këtu...",
-    "thinking": "Haveri po  menduar...",
+    "thinking": "Duke menduar...",
     "welcomeMessage": "Përshëndetje! Unë jam Këshilltari juaj i Biznesit.",
     "welcomeLegal": "Përshëndetje! Unë jam Asistenti juaj Ligjor.",
     "statusConnected": "Lidhur",
@@ -300,7 +300,24 @@
     "cogs": "Kosto e Mallrave të Shitura",
     "createInvoice": "Krijo Faturë",
     "addExpense": "Shto Shpenzim",
-    "import": { "title": "Importo Transaksione" },
+    "date": "Data",
+    "amount": "Shuma",
+    "description": "Përshkrimi",
+    "expenseCategory": "Kategoria",
+    "import": { 
+      "title": "Importo Transaksione",
+      "uploadTitle": "Ngarko CSV/Excel",
+      "uploadDesc": "Ngarkoni raportin e shitjeve nga POS ose banka juaj.",
+      "selectFile": "Zgjidhni Skedarin",
+      "analyzing": "Duke analizuar...",
+      "mappingTitle": "Përputhni Kolonat",
+      "autoMapInfo": "Sistemi ka sugjeruar lidhjet. Ju lutemi verifikoni ato.",
+      "columnSelect": "Zgjidhni kolonën...",
+      "processingTitle": "Duke Procesuar...",
+      "processingDesc": "Po importojmë dhe kategorizojmë transaksionet tuaja.",
+      "back": "Kthehu",
+      "confirm": "Konfirmo Importin"
+    },
     "monthlyClose": "Mbyllja Mujore",
     "activityAndReports": "Aktiviteti & Raportet",
     "tabTransactions": "Transaksionet",
@@ -328,7 +345,9 @@
     "lowStock": "Stoku Kritik",
     "items": { "add": "Shto Artikull", "import": "Importo CSV" },
     "recipes": { "add": "Krijo Recetë", "import": "Importo CSV" },
-    "units": { "kg": "kg", "litra": "l", "cope": "copë" }
+    "units": { "kg": "kg", "litra": "l", "cope": "copë" },
+    "posBatch": "Import POS",
+    "itemsCount": "artikuj"
   },
   "calendar": {
     "loadFailure": "Dështoi ngarkimi i të dhënave të kalendarit.",
@@ -365,8 +384,29 @@
       "cancel": "Anulo", "create": "Krijo Ngjarje"
     }
   },
+  "archive": {
+    "myWorkspace": "Hapësira e Punës",
+    "caseFolders": "Dosje Projektesh",
+    "openFolder": "Hap Dosjen",
+    "share": "Ndaj",
+    "newFolderTitle": "Krijo Dosje të Re",
+    "folderNamePlaceholder": "Emri i Dosjes",
+    "uploadFolderTooltip": "Ngarko Dosje",
+    "emptyFolder": "Ky folder është bosh.",
+    "isShared": "E Ndarë",
+    "newFolderDefault": "Dosje e Re"
+  },
+  "category": {
+    "general": "Të Përgjithshme",
+    "evidence": "Prova",
+    "legalDocs": "Dokumente Ligjore",
+    "invoices": "Fatura",
+    "contracts": "Kontrata"
+  },
   "error": {
     "generic": "Ndodhi një gabim. Ju lutemi provoni përsëri.",
-    "failedToLoadCase": "Dështoi ngarkimi i të dhënave të projektit."
+    "failedToLoadCase": "Dështoi ngarkimi i të dhënave të projektit.",
+    "uploadFailed": "Ngarkimi dështoi.",
+    "receiptNotFound": "Fatura/Dëshmia nuk u gjet."
   }
 }
