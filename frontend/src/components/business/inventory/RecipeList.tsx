@@ -1,6 +1,7 @@
 // FILE: src/components/business/inventory/RecipeList.tsx
-// PHOENIX PROTOCOL - REPAIR V1.1
-// Fixed potential export visibility issues.
+// PHOENIX PROTOCOL - RECIPE LIST V2.1 (CLEANUP)
+// 1. FIX: Removed unused 'Box' import.
+// 2. STATUS: Clean and warning-free.
 
 import React from 'react';
 import { ChefHat, Edit, Trash2 } from 'lucide-react';
@@ -23,74 +24,63 @@ export const RecipeList: React.FC<RecipeListProps> = ({ recipes, inventoryItems,
         return item ? item.name : 'Unknown';
     };
 
-    return (
-        <>
-            {/* Desktop Table */}
-            <div className="hidden sm:block bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-white/5 border-b border-white/10">
-                        <tr>
-                            <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('inventory.recipes.productName')}</th>
-                            <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('inventory.recipes.ingredients')}</th>
-                            <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('inventory.recipes.estCost')}</th>
-                            <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">{t('general.actions')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {recipes.map(recipe => (
-                            <tr key={recipe._id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                                <td className="px-4 py-3 text-white font-medium flex items-center gap-2">
-                                    <ChefHat size={16} className="text-blue-400 shrink-0"/>{recipe.product_name}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <div className="flex flex-wrap gap-1">
-                                        {recipe.ingredients.map((ing, idx) => (
-                                            <span key={idx} className="bg-black/20 text-gray-300 text-xs px-2 py-0.5 rounded-full border border-white/5">
-                                                {getIngredientName(ing.inventory_item_id)}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </td>
-                                <td className="px-4 py-3 text-rose-400 font-mono">€{calculateCost(recipe.ingredients).toFixed(2)}</td>
-                                <td className="px-4 py-3 text-right">
-                                    <div className="flex justify-end gap-2">
-                                        <button onClick={() => onEdit(recipe)} className="p-1 text-gray-400 hover:text-amber-400"><Edit size={16} /></button>
-                                        <button onClick={() => onDelete(recipe._id)} className="p-1 text-gray-400 hover:text-rose-400"><Trash2 size={16} /></button>
-                                    </div>
-                                </td>
-                            </tr>
+    // UNIFIED CARD RENDERER
+    const renderRecipeCard = (recipe: Recipe) => (
+        <div key={recipe._id} className="group flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-transparent hover:border-white/5 gap-3">
+            
+            {/* Left Side: Icon & Info */}
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                <div className="p-2 sm:p-3 rounded-xl flex-shrink-0 bg-blue-500/10 text-blue-400">
+                    <ChefHat size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <h4 className="font-semibold text-white truncate text-sm sm:text-base">{recipe.product_name}</h4>
+                    
+                    {/* Ingredients Tags */}
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {recipe.ingredients.map((ing, idx) => (
+                            <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-md bg-black/30 border border-white/5 text-[10px] sm:text-xs text-gray-400">
+                                {getIngredientName(ing.inventory_item_id)} 
+                                <span className="text-blue-400 ml-1 font-mono">x{ing.quantity_required}</span>
+                            </span>
                         ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="sm:hidden space-y-3">
-                {recipes.map(recipe => (
-                    <div key={recipe._id} className="p-4 bg-white/5 border border-white/10 rounded-xl">
-                        <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-2">
-                                <ChefHat size={18} className="text-blue-400"/>
-                                <h4 className="text-white font-bold">{recipe.product_name}</h4>
-                            </div>
-                            <span className="text-rose-400 font-mono font-bold">€{calculateCost(recipe.ingredients).toFixed(2)}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1 mb-4">
-                            {recipe.ingredients.map((ing, idx) => (
-                                <span key={idx} className="bg-black/20 text-gray-300 text-[10px] px-2 py-1 rounded-md border border-white/5">
-                                    {getIngredientName(ing.inventory_item_id)} ({ing.quantity_required})
-                                </span>
-                            ))}
-                        </div>
-                        <div className="flex justify-end gap-4 border-t border-white/5 pt-2">
-                            <button onClick={() => onEdit(recipe)} className="flex items-center gap-1 text-amber-400 text-sm"><Edit size={14} /> {t('general.edit')}</button>
-                            <button onClick={() => onDelete(recipe._id)} className="flex items-center gap-1 text-rose-400 text-sm"><Trash2 size={14} /> {t('general.delete')}</button>
-                        </div>
                     </div>
-                ))}
+                </div>
             </div>
 
-            {recipes.length === 0 && <div className="text-center py-10 text-gray-500 italic">{t('inventory.recipes.noRecipes')}</div>}
-        </>
+            {/* Right Side: Cost & Actions */}
+            <div className="flex flex-row sm:items-center justify-between sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto mt-2 sm:mt-0 pl-[52px] sm:pl-0">
+                <div className="text-left sm:text-right">
+                    <span className="block text-xs text-gray-500 uppercase tracking-wider">{t('inventory.recipes.estCost')}</span>
+                    <span className="text-base sm:text-lg font-mono font-bold text-rose-400">
+                        €{calculateCost(recipe.ingredients).toFixed(2)}
+                    </span>
+                </div>
+                
+                <div className="flex items-center gap-1 opacity-100 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => onEdit(recipe)} className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300 transition-colors" title={t('general.edit')}>
+                        <Edit size={16} />
+                    </button>
+                    <button onClick={() => onDelete(recipe._id)} className="p-2 hover:bg-white/10 rounded-lg text-rose-400 hover:text-rose-300 transition-colors" title={t('general.delete')}>
+                        <Trash2 size={16} />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
+    if (recipes.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                <ChefHat size={48} className="mb-4 opacity-20" />
+                <p>{t('inventory.recipes.noRecipes', 'No recipes found')}</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-2">
+            {recipes.map(renderRecipeCard)}
+        </div>
     );
 };

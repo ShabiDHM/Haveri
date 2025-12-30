@@ -1,7 +1,7 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V2.1 (BATCH DATE)
-// 1. CLARITY: Added dynamic date display to the POS Batch header.
-// 2. LOGIC: Calculates the most recent 'created_at' or 'updated_at' date from the batch items.
+// PHOENIX PROTOCOL - INVENTORY LIST V2.2 (ACTIONS UNLOCKED)
+// 1. FIX: Removed the '!isPos' restriction. Now you can Edit and Delete imported items too.
+// 2. UX: Actions are always visible for better control.
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,16 +20,12 @@ export const InventoryList: React.FC<InventoryListProps> = ({ manualItems, posIt
     const { t } = useTranslation();
     const [expandPosBatch, setExpandPosBatch] = useState(false);
 
-    // LOGIC: Find the most relevant date for the batch (Latest Created/Updated)
     const batchDate = useMemo(() => {
         if (posItems.length === 0) return null;
         const latest = posItems.reduce((max, item) => {
-            // Check possible date fields, fallback to 0
             const itemDate = new Date((item as any).updated_at || (item as any).created_at || (item as any).date || 0);
             return itemDate > max ? itemDate : max;
         }, new Date(0));
-        
-        // If no valid date found (epoch 0), return null or today's date if preferred
         return latest.getTime() === 0 ? new Date() : latest;
     }, [posItems]);
 
@@ -60,17 +56,14 @@ export const InventoryList: React.FC<InventoryListProps> = ({ manualItems, posIt
                     €{item.cost_per_unit.toFixed(2)}
                 </span>
                 
-                <div className="flex items-center gap-1 transition-opacity">
-                    {!isPos && (
-                        <>
-                            <button onClick={() => onEdit(item)} className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300 transition-colors" title={t('general.edit')}>
-                                <Edit size={16} />
-                            </button>
-                            <button onClick={() => onDelete(item._id)} className="p-2 hover:bg-white/10 rounded-lg text-rose-400 hover:text-rose-300 transition-colors" title={t('general.delete')}>
-                                <Trash2 size={16} />
-                            </button>
-                        </>
-                    )}
+                {/* PHOENIX: Removed !isPos check. Buttons are now always available */}
+                <div className="flex items-center gap-1 opacity-100 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => onEdit(item)} className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300 transition-colors" title={t('general.edit')}>
+                        <Edit size={16} />
+                    </button>
+                    <button onClick={() => onDelete(item._id)} className="p-2 hover:bg-white/10 rounded-lg text-rose-400 hover:text-rose-300 transition-colors" title={t('general.delete')}>
+                        <Trash2 size={16} />
+                    </button>
                 </div>
             </div>
         </div>
