@@ -1,7 +1,7 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V19.5 (I18N FIX)
-# 1. I18N: Replaced hardcoded text with structured translation keys.
-# 2. LOGIC: Maintains 'csv parsing' for [Staff: Name].
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V20.0 (MTD FIX)
+# 1. FIX: Modified '_fetch_invoices' to query from the start of the current month instead of the start of today.
+# 2. LOGIC: This changes the "Ritmi i Ditës" metric to a "Month-to-Date" (MTD) revenue figure.
 
 import logging
 from typing import Dict, Any, List, Optional
@@ -17,6 +17,7 @@ class StrategicBriefingService:
         self.user_id = user_id
 
     async def generate_strategic_briefing(self) -> Dict[str, Any]:
+        # PHOENIX: Now fetches Month-to-Date invoices
         invoices = await self._fetch_invoices()
         expenses = await self._fetch_expenses()
         events = await self._fetch_todays_events()
@@ -34,16 +35,17 @@ class StrategicBriefingService:
     # --- DATA FETCHING ---
     async def _fetch_invoices(self) -> List[Dict]:
         try:
-            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+            # PHOENIX FIX: Calculate the start of the current month
+            now = datetime.utcnow()
+            month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            
             cursor = self.db.invoices.find({
                 "user_id": self.user_id,
-                "$or": [
-                    {"created_at": {"$gte": today_start.isoformat()}},
-                    {"issue_date": {"$gte": today_start.isoformat()}}
-                ]
+                "issue_date": {"$gte": month_start.isoformat()}
             })
-            return await cursor.to_list(length=1000)
-        except Exception: return []
+            return await cursor.to_list(length=2000) # Increased length for month's data
+        except Exception: 
+            return []
 
     async def _fetch_expenses(self) -> List[Dict]:
         try:
@@ -65,12 +67,15 @@ class StrategicBriefingService:
     def _analyze_staff_performance(self, invoices: List[Dict]) -> Dict[str, Any]:
         staff_stats = {}
         
+        # PHOENIX: Calculate total revenue from all fetched (MTD) invoices
+        total_revenue_mtd = sum(float(inv.get('total_amount', 0)) for inv in invoices)
+        
         if not invoices:
             return {
                 "efficiencyStatus": "sleep", 
                 "efficiencyScore": 0,
                 "mvpName": "N/A",
-                "mvpTotal": 0,
+                "mvpTotal": 0, # MTD Revenue
                 "mvpInsight": {"key": "no_active_shift", "values": {}},
                 "actionBravo": False
             }
@@ -89,24 +94,27 @@ class StrategicBriefingService:
             staff_stats[staff_name]["count"] += 1
 
         if not staff_stats:
-             return {"efficiencyStatus": "sleep", "efficiencyScore": 0, "mvpName": "N/A", "mvpTotal": 0, "mvpInsight": {"key": "no_data", "values": {}}, "actionBravo": False}
+             return {"efficiencyStatus": "sleep", "efficiencyScore": 0, "mvpName": "N/A", "mvpTotal": total_revenue_mtd, "mvpInsight": {"key": "no_data", "values": {}}, "actionBravo": False}
 
         mvp_name = max(staff_stats, key=lambda k: staff_stats[k]['total'])
         mvp_data = staff_stats[mvp_name]
         avg_ticket = mvp_data['total'] / mvp_data['count'] if mvp_data['count'] else 0
         
-        total_txs = len(invoices)
-        if total_txs > 15: status = "fire"
-        elif total_txs > 5: status = "stable"
+        # Base the status on today's activity, not the whole month's
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_txs_count = len([i for i in invoices if i.get('issue_date', '') >= today_start.isoformat()])
+        
+        if today_txs_count > 15: status = "fire"
+        elif today_txs_count > 5: status = "stable"
         else: status = "sleep"
-        score = int((total_txs / 30) * 100) if total_txs < 30 else 98
+        score = int((today_txs_count / 30) * 100) if today_txs_count < 30 else 98
 
         # RETURN STRUCTURED TRANSLATION KEY
         return {
             "efficiencyStatus": status,
             "efficiencyScore": score,
             "mvpName": mvp_name,
-            "mvpTotal": int(mvp_data['total']),
+            "mvpTotal": total_revenue_mtd, # PHOENIX: This is now MTD revenue
             "mvpInsight": {
                 "key": "avg_ticket_insight",
                 "values": { "avg": f"{avg_ticket:.2f}" }
