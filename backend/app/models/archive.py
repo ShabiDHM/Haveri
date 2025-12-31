@@ -1,6 +1,7 @@
 # FILE: backend/app/models/archive.py
-# PHOENIX PROTOCOL - ARCHIVE V2.1 (SHARE LOGIC)
-# 1. ADDED: 'is_shared' field to ArchiveItemOut model. This is the critical fix to allow the share status to be sent to the frontend.
+# PHOENIX PROTOCOL - ARCHIVE V3.0 (STATUS TRACKING)
+# 1. ADDED: 'indexing_status' field to ArchiveItemInDB and ArchiveItemOut.
+# 2. EFFECT: This allows the AI processing status (PENDING, PROCESSING, READY) to be sent to the frontend.
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
@@ -27,7 +28,10 @@ class ArchiveItemInDB(ArchiveItemBase):
     id: PyObjectId = Field(alias="_id", default=None)
     user_id: PyObjectId
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    is_shared: bool = False # Default share status
+    is_shared: bool = False
+    
+    # PHOENIX: Added status field
+    indexing_status: str = Field(default="PENDING")
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -38,4 +42,7 @@ class ArchiveItemOut(ArchiveItemInDB):
     id: PyObjectId = Field(alias="_id", serialization_alias="id", default=None)
     case_id: Optional[PyObjectId] = Field(default=None)
     parent_id: Optional[PyObjectId] = Field(default=None)
-    is_shared: bool = False # PHOENIX FIX: Expose share status to the frontend
+    is_shared: bool = False
+    
+    # PHOENIX: Expose status to the frontend
+    indexing_status: str = Field(default="PENDING")

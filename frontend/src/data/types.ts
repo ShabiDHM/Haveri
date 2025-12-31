@@ -1,7 +1,6 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES CLEANUP V2.0
-// 1. REMOVED: Deleted all types related to the legacy forensic analysis module (CaseAnalysisResult, GraphData, etc.).
-// 2. STATUS: Clean types definition file.
+// PHOENIX PROTOCOL - TYPES V2.1 (ARCHIVE STATUS)
+// 1. ADDED: 'indexing_status' to the ArchiveItemOut interface to track AI processing.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -58,7 +57,22 @@ export interface CaseFinancialSummary { case_id: string; case_title: string; cas
 export interface SalesTrendPoint { date: string; amount: number; }
 export interface TopProductItem { product_name: string; total_quantity: number; total_revenue: number; }
 export interface AnalyticsDashboardData { total_revenue_period: number; total_transactions_period: number; sales_trend: SalesTrendPoint[]; top_products: TopProductItem[]; total_profit_period?: number; }
-export interface ArchiveItemOut { id: string; title: string; file_type: string; category: string; storage_key: string; file_size: number; created_at: string; case_id?: string; parent_id?: string; item_type?: 'FILE' | 'FOLDER'; is_shared?: boolean; }
+
+export interface ArchiveItemOut { 
+    id: string; 
+    title: string; 
+    file_type: string; 
+    category: string; 
+    storage_key: string; 
+    file_size: number; 
+    created_at: string; 
+    case_id?: string; 
+    parent_id?: string; 
+    item_type?: 'FILE' | 'FOLDER'; 
+    is_shared?: boolean; 
+    indexing_status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED'; // <-- PHOENIX FIX
+}
+
 export interface PosTransaction { id: string; product_name: string; quantity: number; total_price: number; transaction_date: string; payment_method: string; }
 export interface InventoryItem { _id: string; name: string; unit: string; current_stock: number; cost_per_unit: number; low_stock_threshold: number; }
 export interface InventoryItemCreate { name: string; unit: string; current_stock: number; cost_per_unit: number; low_stock_threshold?: number; }
