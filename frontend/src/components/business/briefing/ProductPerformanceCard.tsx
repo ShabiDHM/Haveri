@@ -1,24 +1,33 @@
 // FILE: src/components/business/briefing/ProductPerformanceCard.tsx
-// PHOENIX PROTOCOL - NAVIGATION FIX V1.0
-// 1. FIX: The 'Stoku Kritik' alert is now a clickable button.
-// 2. LOGIC: It now correctly navigates to the '/business/inventory' route.
+// PHOENIX PROTOCOL - COMPONENT V2.0 (DYNAMIC DATA)
+// 1. FIX: Replaced mock arrays with props receiving live 'signals' from the API.
+// 2. LOGIC: Filters signals for 'bestseller' and 'low_stock' types.
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Package, TrendingUp, AlertCircle, ArrowRight } from 'lucide-react';
 
-export const ProductPerformanceCard: React.FC = () => {
+interface Signal {
+    id: number;
+    type: string;
+    label: string;
+    impact: string;
+    message: string;
+    action: string;
+}
+
+interface ProductPerformanceCardProps {
+    signals?: Signal[];
+}
+
+export const ProductPerformanceCard: React.FC<ProductPerformanceCardProps> = ({ signals = [] }) => {
     const { t } = useTranslation();
-    const navigate = useNavigate(); // PHOENIX: Added navigate hook
+    const navigate = useNavigate();
 
-    // Mock Data - In real app, fetch from /api/stats/products
-    const topProducts = [
-        { name: "Espresso Macchiato", count: 142, trend: "+12%" },
-        { name: "Coca Cola 0.33l", count: 98, trend: "+5%" }
-    ];
-
-    const lowStock = { name: "Red Bull", remaining: 12, unit: "copë" };
+    // PHOENIX: Filter live data from the signals array
+    const bestSellers = useMemo(() => signals.filter(s => s.type === 'bestseller').slice(0, 2), [signals]);
+    const lowStockItem = useMemo(() => signals.find(s => s.type === 'low_stock'), [signals]);
 
     return (
         <div className="bg-gray-900/50 border border-white/10 rounded-3xl p-6 h-full flex flex-col hover:border-blue-500/30 transition-colors duration-500 relative overflow-hidden">
@@ -38,44 +47,61 @@ export const ProductPerformanceCard: React.FC = () => {
                 <div>
                     <p className="text-xs text-gray-500 mb-2 font-medium">{t('dashboard.bestSellers', 'Më të shiturat sot')}</p>
                     <div className="space-y-2">
-                        {topProducts.map((product, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 rounded-xl bg-gray-800/40 border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs">
-                                        #{index + 1}
+                        {bestSellers.length > 0 ? (
+                            bestSellers.map((product, index) => (
+                                <div key={product.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-800/40 border border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xs">
+                                            #{index + 1}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-white font-medium truncate max-w-[120px]" title={product.label}>{product.label}</p>
+                                            <p className="text-xs text-gray-400">{product.message}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-sm text-white font-medium">{product.name}</p>
-                                        <p className="text-xs text-gray-400">{product.count} {t('dashboard.soldUnits', 'të shitura')}</p>
+                                    <div className="text-xs text-emerald-400 font-medium flex items-center gap-1">
+                                        <TrendingUp className="w-3 h-3" />
                                     </div>
                                 </div>
-                                <div className="text-xs text-emerald-400 font-medium flex items-center gap-1">
-                                    <TrendingUp className="w-3 h-3" /> {product.trend}
-                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-4 text-gray-500 text-xs italic">
+                                {t('finance.noTransactions', 'Nuk ka të dhëna')}
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
 
-                {/* Low Stock Alert - PHOENIX: Now a fully clickable button */}
-                <button 
-                    onClick={() => navigate('/business/inventory')}
-                    className="w-full text-left mt-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors group"
-                >
-                    <div className="flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5 text-red-400" />
-                        <div className="flex-1">
-                            <p className="text-xs text-red-300 font-bold uppercase">{t('dashboard.lowStockAlert', 'Stoku Kritik')}</p>
-                            <p className="text-sm text-white font-medium">
-                                {lowStock.name} <span className="text-gray-400 text-xs">({t('dashboard.only', 'vetëm')} {lowStock.remaining} {lowStock.unit})</span>
-                            </p>
+                {/* Low Stock Alert */}
+                {lowStockItem ? (
+                    <button 
+                        onClick={() => navigate('/business/inventory')}
+                        className="w-full text-left mt-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors group"
+                    >
+                        <div className="flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5 text-red-400" />
+                            <div className="flex-1">
+                                <p className="text-xs text-red-300 font-bold uppercase">{t('dashboard.lowStockAlert', 'Stoku Kritik')}</p>
+                                <p className="text-sm text-white font-medium">
+                                    {lowStockItem.label} <span className="text-gray-400 text-xs">({lowStockItem.message})</span>
+                                </p>
+                            </div>
+                            <div className="p-2 bg-red-500/10 group-hover:bg-red-500/30 rounded-lg transition-colors">
+                                <ArrowRight className="w-4 h-4 text-red-400" />
+                            </div>
                         </div>
-                        <div className="p-2 bg-red-500/10 group-hover:bg-red-500/30 rounded-lg transition-colors">
-                            <ArrowRight className="w-4 h-4 text-red-400" />
-                        </div>
+                    </button>
+                ) : (
+                    <div className="mt-auto pt-2 text-center">
+                        <span className="text-xs text-emerald-500 flex items-center justify-center gap-1">
+                            <CheckCircle size={12} className="inline" /> Stoku OK
+                        </span>
                     </div>
-                </button>
+                )}
             </div>
         </div>
     );
 };
+
+// Internal icon for stock ok state
+import { CheckCircle } from 'lucide-react';

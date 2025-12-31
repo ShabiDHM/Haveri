@@ -1,6 +1,8 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DELETION & SCROLL FIX (PART 2)
-// 1. FIX (SCROLL): Added 'auto-rows-fr' to the grid. This makes all cards stretch to the height of the tallest card, enabling internal flex scrolling.
+// PHOENIX PROTOCOL - TAB V2.0 (DATA WIRING)
+// 1. FIX: Passes 'data.staffPerformance.mvpTotal' to BusinessRhythmCard.
+// 2. FIX: Passes 'data.market.signals' to ProductPerformanceCard.
+// 3. EFFECT: The dashboard is now fully driven by the backend.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -74,10 +76,17 @@ export const DailyBriefingTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* PHOENIX FIX: Added 'auto-rows-fr' to make cards equal height */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}><BusinessRhythmCard /></motion.div>
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}><ProductPerformanceCard /></motion.div>
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+                    {/* PHOENIX FIX: Passing live MTD revenue */}
+                    <BusinessRhythmCard currentSales={data?.staffPerformance.mvpTotal} /> 
+                </motion.div>
+                
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+                    {/* PHOENIX FIX: Passing live market signals */}
+                    <ProductPerformanceCard signals={data?.market.signals} />
+                </motion.div>
+                
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
                     {data && <SmartAgendaCard agenda={data.agenda} onEventClick={(event) => setSelectedEvent(event)} />}
                 </motion.div>

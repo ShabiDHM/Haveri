@@ -1,16 +1,27 @@
+// FILE: src/components/business/briefing/BusinessRhythmCard.tsx
+// PHOENIX PROTOCOL - COMPONENT V2.0 (DYNAMIC DATA)
+// 1. FIX: Removed hardcoded values.
+// 2. FEATURE: Now accepts 'currentSales' as a prop to display live MTD revenue.
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { TrendingUp } from 'lucide-react';
 
-export const BusinessRhythmCard: React.FC = () => {
+interface BusinessRhythmCardProps {
+    currentSales?: number;
+    dailyTarget?: number;
+}
+
+export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({ 
+    currentSales = 0, 
+    dailyTarget = 1000 // Default target if not provided
+}) => {
     const { t } = useTranslation();
     
-    // TODO: Connect to Real-time API
-    const currentSales = 420.50;
-    const dailyTarget = 600.00;
     const progress = Math.min((currentSales / dailyTarget) * 100, 100);
-    const isTrendingUp = true;
+    // Simple trending logic: if above 50% of target, show positive trend
+    const isTrendingUp = progress > 50;
 
     return (
         <div className="bg-gray-900/50 border border-white/10 rounded-3xl p-6 relative overflow-hidden h-full flex flex-col justify-between group hover:border-emerald-500/30 transition-colors duration-500">
@@ -27,9 +38,9 @@ export const BusinessRhythmCard: React.FC = () => {
                         <span className="text-sm text-gray-500">/ €{dailyTarget}</span>
                     </div>
                 </div>
-                {/* Badge */}
+                {/* Dynamic Badge */}
                 <div className={`px-3 py-1 rounded-full text-xs font-bold border ${isTrendingUp ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                    {isTrendingUp ? '🔥 +15%' : '❄️ -5%'} {t('dashboard.vsAvg', 'vs Avg')}
+                    {isTrendingUp ? '🔥 +On Track' : '❄️ Catch Up'}
                 </div>
             </div>
 
@@ -48,7 +59,9 @@ export const BusinessRhythmCard: React.FC = () => {
                     />
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                    {t('dashboard.onTrackMessage', 'Jeni në rrugë të mbarë për të tejkaluar objektivin ditor.')}
+                    {progress >= 100 
+                        ? t('general.allGood', 'Objektivi u arrit!') 
+                        : t('dashboard.onTrackMessage', 'Jeni në rrugë të mbarë për të tejkaluar objektivin.')}
                 </p>
             </div>
         </div>
