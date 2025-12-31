@@ -1,7 +1,6 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - COMPONENT V2.0 (DYNAMIC DATA)
-// 1. FIX: Removed hardcoded values.
-// 2. FEATURE: Now accepts 'currentSales' as a prop to display live MTD revenue.
+// PHOENIX PROTOCOL - COMPONENT V2.1 (TEXT FIX)
+// 1. UPDATE: Changed default fallback to 'Mbyllja' without time.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -48,7 +47,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
             <div className="space-y-2 relative z-10">
                 <div className="flex justify-between text-xs text-gray-400">
                     <span>{t('dashboard.progress', 'Progresi')} ({progress.toFixed(0)}%)</span>
-                    <span>{t('dashboard.closingTime', 'Mbyllja: 22:00')}</span>
+                    <span>{t('dashboard.closingTime', 'Mbyllja')}</span>
                 </div>
                 <div className="h-4 w-full bg-gray-800 rounded-full overflow-hidden border border-white/5">
                     <motion.div 

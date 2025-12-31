@@ -264,7 +264,7 @@
     "dailyRhythm": "Ritmi i Ditës",
     "vsAvg": "vs Mesatare",
     "progress": "Progresi",
-    "closingTime": "Mbyllja: 22:00",
+    "closingTime": "Mbyllja",
     "onTrackMessage": "Jeni në rrugë të mbarë për të tejkaluar objektivin ditor.",
     "productsTitle": "Lëvizjet e Stokut",
     "bestSellers": "Më të shiturat sot",
@@ -505,7 +505,11 @@
     "emptyFolder": "Ky folder është bosh.",
     "isShared": "E Ndarë",
     "newFolderDefault": "Dosje e Re",
-    "generalNoCase": "E Përgjithshme (Pa Projekt)"
+    "generalNoCase": "E Përgjithshme (Pa Projekt)",
+    "statusReady": "Gati për AI",
+    "statusProcessing": "Duke procesuar...",
+    "statusPending": "Në pritje",
+    "statusFailed": "Dështoi"
   },
   "category": {
     "general": "Të Përgjithshme",
@@ -518,6 +522,7 @@
     "generic": "Ndodhi një gabim. Ju lutemi provoni përsëri.",
     "failedToLoadCase": "Dështoi ngarkimi i të dhënave të projektit.",
     "uploadFailed": "Ngarkimi dështoi.",
-    "receiptNotFound": "Fatura/Dëshmia nuk u gjet."
+    "receiptNotFound": "Fatura/Dëshmia nuk u gjet.",
+    "failedToLoad": "Dështoi ngarkimi i të dhënave."
   }
 }
