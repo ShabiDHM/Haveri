@@ -1,6 +1,6 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V2.1 (ARCHIVE STATUS)
-// 1. ADDED: 'indexing_status' to the ArchiveItemOut interface to track AI processing.
+// PHOENIX PROTOCOL - TYPES V2.3 (ARCHIVE STATUS FIX)
+// 1. FIX: Added the missing 'indexing_status' property to the ArchiveItemOut interface.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -28,6 +28,26 @@ export interface CalendarEvent {
     is_public?: boolean; 
 }
 
+export interface UIAgendaItem {
+    id: string;
+    title: string;
+    description?: string;
+    start_date: string;
+    end_date: string;
+    is_all_day: boolean;
+    status: CalendarEvent['status'];
+    type: CalendarEvent['event_type'];
+    attendees?: string[];
+    location?: string;
+    notes?: string;
+    case_id?: string;
+    time: string;
+    priority: 'high' | 'medium' | 'low';
+    isCompleted: boolean;
+    kind: 'event' | 'alert';
+    raw: any;
+}
+
 export interface BusinessProfile { id: string; firm_name: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color: string; logo_url?: string; is_complete: boolean; vat_rate?: number; target_margin?: number; currency?: string; }
 export interface BusinessProfileUpdate { firm_name?: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color?: string; vat_rate?: number; target_margin?: number; currency?: string; }
 
@@ -43,8 +63,17 @@ export interface StrategicBriefingResponse {
         };
         actionBravo: boolean;
     };
-    market: { signals: Array<{ id: number; type: 'diaspora' | 'weather' | 'competitor' | 'holiday'; label: string; impact: 'high' | 'medium' | 'low'; message: string; action: string; }>; };
-    agenda: Array<{ id: string; title: string; time: string; type: 'meeting' | 'payment' | 'deadline' | 'call'; priority: 'high' | 'medium' | 'low'; isCompleted: boolean; }>;
+    market: { 
+        signals: Array<{ 
+            id: number; 
+            type: 'bestseller' | 'low_stock' | 'diaspora' | 'weather' | 'competitor' | 'holiday';
+            label: string; 
+            impact: 'high' | 'medium' | 'low'; 
+            message: string; 
+            action: string; 
+        }>; 
+    };
+    agenda: UIAgendaItem[];
 }
 
 export interface InvoiceItem { description: string; quantity: number; unit_price: number; total: number; }
