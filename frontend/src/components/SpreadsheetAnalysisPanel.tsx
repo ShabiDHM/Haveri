@@ -1,0 +1,303 @@
+// FILE: frontend/src/components/SpreadsheetAnalysisPanel.tsx
+// PHOENIX PROTOCOL - SMART ANALYST UI
+// 1. FIX: Removed unused 'AnimatePresence' import.
+// 2. LOGIC: Maintained 'motion' for chart animations.
+
+import React, { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import { 
+    UploadCloud, 
+    FileSpreadsheet, 
+    Loader2, 
+    CheckCircle2, 
+    AlertTriangle, 
+    TrendingUp, 
+    DollarSign, 
+    Activity,
+    FileText,
+    X
+} from 'lucide-react';
+import { API_V1_URL } from '../services/api';
+
+// --- TYPES ---
+interface Anomaly {
+    type: string;
+    severity: 'low' | 'medium' | 'high';
+    description: string;
+    row_id: number;
+}
+
+interface ChartItem {
+    label: string;
+    value: number;
+}
+
+interface AnalysisResult {
+    summary: string;
+    stats: {
+        total_sum: number;
+        transaction_count: number;
+        average: number;
+    };
+    chart_data: ChartItem[];
+    anomalies: Anomaly[];
+}
+
+// --- COMPONENT ---
+const SpreadsheetAnalysisPanel: React.FC = () => {
+    const { t } = useTranslation();
+    const [file, setFile] = useState<File | null>(null);
+    const [status, setStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'complete' | 'error'>('idle');
+    const [result, setResult] = useState<AnalysisResult | null>(null);
+    const [errorMsg, setErrorMsg] = useState<string>('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // --- HANDLERS ---
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+            handleUpload(e.target.files[0]);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            setFile(e.dataTransfer.files[0]);
+            handleUpload(e.dataTransfer.files[0]);
+        }
+    };
+
+    const handleUpload = async (selectedFile: File) => {
+        setStatus('uploading');
+        setErrorMsg('');
+        
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        try {
+            // UX: Fake "Processing" steps to build trust
+            setTimeout(() => setStatus('analyzing'), 800);
+
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_V1_URL}/analysis/analyze-spreadsheet`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.detail || 'Analysis failed');
+            }
+
+            const data = await response.json();
+            setResult(data);
+            setStatus('complete');
+
+        } catch (err: any) {
+            console.error(err);
+            setStatus('error');
+            setErrorMsg(err.message || "Failed to analyze file.");
+        }
+    };
+
+    const reset = () => {
+        setFile(null);
+        setResult(null);
+        setStatus('idle');
+    };
+
+    // --- RENDERERS ---
+
+    // 1. UPLOAD STATE
+    if (status === 'idle') {
+        return (
+            <div 
+                className="h-[500px] flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-3xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+            >
+                <div className="p-6 rounded-full bg-blue-500/10 group-hover:bg-blue-500/20 transition-all mb-6">
+                    <UploadCloud className="w-16 h-16 text-blue-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">{t('analyst.dropTitle', 'Ngarko Skedarin Financiar')}</h3>
+                <p className="text-gray-400 mb-8 max-w-md text-center">
+                    {t('analyst.dropDesc', 'Tërhiqni një skedar Excel (.xlsx) ose CSV. AI do të analizojë transaksionet, do të zbulojë anomali dhe do të krijojë raporte.')}
+                </p>
+                <button className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">
+                    {t('analyst.selectButton', 'Zgjidh Skedarin')}
+                </button>
+                <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileSelect} 
+                    className="hidden" 
+                    accept=".csv, .xlsx, .xls"
+                />
+            </div>
+        );
+    }
+
+    // 2. PROCESSING STATE
+    if (status === 'uploading' || status === 'analyzing') {
+        return (
+            <div className="h-[500px] flex flex-col items-center justify-center bg-gray-900/50 rounded-3xl">
+                <div className="relative mb-8">
+                    <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 animate-pulse"></div>
+                    <Loader2 className="w-20 h-20 text-blue-400 animate-spin relative z-10" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                    {status === 'uploading' ? 'Duke lexuar strukturën e të dhënave...' : 'Duke kërkuar për anomali financiare...'}
+                </h3>
+                <p className="text-gray-400 text-sm animate-pulse">
+                    {file?.name}
+                </p>
+            </div>
+        );
+    }
+
+    // 3. ERROR STATE
+    if (status === 'error') {
+        return (
+            <div className="h-[500px] flex flex-col items-center justify-center bg-red-500/5 border border-red-500/20 rounded-3xl text-center p-8">
+                <AlertTriangle className="w-16 h-16 text-red-400 mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">Gabim në Analizë</h3>
+                <p className="text-red-300 mb-6 max-w-lg">{errorMsg}</p>
+                <button onClick={reset} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors">
+                    Provo Përsëri
+                </button>
+            </div>
+        );
+    }
+
+    // 4. DASHBOARD (SUCCESS)
+    if (status === 'complete' && result) {
+        // Find max value for chart scaling
+        const maxChartValue = Math.max(...result.chart_data.map(d => d.value));
+
+        return (
+            <div className="bg-gray-900 p-6 sm:p-8 min-h-[600px] text-white overflow-y-auto max-h-[800px]">
+                
+                {/* Header Actions */}
+                <div className="flex justify-between items-start mb-8">
+                    <div>
+                        <h2 className="text-2xl font-bold flex items-center gap-2">
+                            <FileSpreadsheet className="text-blue-400" />
+                            Raporti i Analizës
+                        </h2>
+                        <p className="text-gray-400 text-sm mt-1">{file?.name} • {new Date().toLocaleDateString()}</p>
+                    </div>
+                    <button onClick={reset} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                        <div className="flex items-center gap-3 mb-2 text-gray-400 text-sm font-medium uppercase tracking-wider">
+                            <DollarSign size={16} /> Total Volum
+                        </div>
+                        <div className="text-2xl font-bold text-emerald-400">
+                            €{result.stats.total_sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                    <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                        <div className="flex items-center gap-3 mb-2 text-gray-400 text-sm font-medium uppercase tracking-wider">
+                            <Activity size={16} /> Transaksione
+                        </div>
+                        <div className="text-2xl font-bold text-white">
+                            {result.stats.transaction_count}
+                        </div>
+                    </div>
+                    <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                        <div className="flex items-center gap-3 mb-2 text-gray-400 text-sm font-medium uppercase tracking-wider">
+                            <TrendingUp size={16} /> Mesatarja
+                        </div>
+                        <div className="text-2xl font-bold text-blue-400">
+                            €{result.stats.average.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* AI Narrative */}
+                <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 p-6 rounded-2xl border border-blue-500/20 mb-8 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10"><FileText size={100} /></div>
+                    <h3 className="text-lg font-bold text-blue-300 mb-3 flex items-center gap-2">
+                        <CheckCircle2 size={18} /> Përmbledhja Ekzekutive
+                    </h3>
+                    <p className="text-gray-200 leading-relaxed whitespace-pre-line relative z-10">
+                        {result.summary}
+                    </p>
+                </div>
+
+                {/* Charts & Anomalies Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    {/* CSS Bar Chart */}
+                    <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
+                        <h3 className="font-bold text-gray-200 mb-6">Trendi i Shpenzimeve</h3>
+                        <div className="h-48 flex items-end gap-2">
+                            {result.chart_data.map((item, idx) => (
+                                <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
+                                    <div className="w-full relative bg-gray-700/50 rounded-t-sm overflow-hidden h-full flex items-end">
+                                        <motion.div 
+                                            initial={{ height: 0 }}
+                                            animate={{ height: `${(item.value / maxChartValue) * 100}%` }}
+                                            transition={{ duration: 0.8, delay: idx * 0.1 }}
+                                            className="w-full bg-blue-500 hover:bg-blue-400 transition-colors"
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-gray-500 truncate w-full text-center">{item.label}</span>
+                                    {/* Tooltip */}
+                                    <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 bg-black text-xs px-2 py-1 rounded text-white pointer-events-none transition-opacity">
+                                        €{item.value.toLocaleString()}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Anomalies List */}
+                    <div className="bg-white/5 p-6 rounded-2xl border border-white/10">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-bold text-gray-200">Anomali & Të Dyshimta</h3>
+                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full font-bold">
+                                {result.anomalies.length} Gjetje
+                            </span>
+                        </div>
+                        
+                        <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                            {result.anomalies.length === 0 ? (
+                                <p className="text-gray-500 text-center py-8 italic">Nuk u gjetën anomali.</p>
+                            ) : (
+                                result.anomalies.map((ano, i) => (
+                                    <div key={i} className="flex gap-3 p-3 bg-red-500/5 border border-red-500/10 rounded-xl hover:bg-red-500/10 transition-colors">
+                                        <AlertTriangle className={`flex-shrink-0 w-5 h-5 ${
+                                            ano.severity === 'high' ? 'text-red-500' : 
+                                            ano.severity === 'medium' ? 'text-orange-400' : 'text-yellow-400'
+                                        }`} />
+                                        <div>
+                                            <p className="text-sm text-gray-200 font-medium">{ano.type}</p>
+                                            <p className="text-xs text-gray-400">{ano.description}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        );
+    }
+
+    return null;
+};
+
+export default SpreadsheetAnalysisPanel;

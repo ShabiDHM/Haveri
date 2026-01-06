@@ -1,7 +1,7 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V8.0 (CLEANUP)
-# 1. REMOVED: Deleted 'graph_router' inclusion. The graph visualization endpoints are no longer exposed.
-# 2. STATUS: Application entry point is now aligned with the Business Consultant architecture.
+# PHOENIX PROTOCOL - MAIN APPLICATION V9.0 (ANALYSIS INTEGRATION)
+# 1. FEATURE: Added 'analysis' router for the new Smart Spreadsheet Analyst.
+# 2. STATUS: Application now supports financial file processing endpoints.
 
 from fastapi import FastAPI, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,13 +21,14 @@ from app.api.endpoints.support import router as support_router
 from app.api.endpoints.business import router as business_router
 from app.api.endpoints.finance import router as finance_router
 from app.api.endpoints import finance_wizard
-# PHOENIX: Removed graph_router import
 from app.api.endpoints.archive import router as archive_router
 from app.api.endpoints.drafting_v2 import router as drafting_v2_router
 from app.api.endpoints.share import router as share_router
 from app.api.endpoints.inventory import router as inventory_router
 from app.api.endpoints.daily_briefing import router as daily_briefing_router
 from app.api.endpoints.briefing import router as strategic_briefing_router
+# PHOENIX: New Analysis Router Import
+from app.api.endpoints.analysis import router as analysis_router 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -68,11 +69,12 @@ api_v1_router.include_router(inventory_router, prefix="/inventory", tags=["Inven
 api_v1_router.include_router(archive_router, prefix="/archive", tags=["Archive"])
 api_v1_router.include_router(daily_briefing_router, prefix="/daily-briefing", tags=["Daily Briefing (Legacy)"])
 api_v1_router.include_router(strategic_briefing_router, prefix="/briefing", tags=["Briefing"])
-# PHOENIX: Removed graph router inclusion
 api_v1_router.include_router(share_router, prefix="/share", tags=["Share"])
 api_v1_router.include_router(stream_router, prefix="/stream", tags=["Streaming"])
 api_v1_router.include_router(support_router, prefix="/support", tags=["Support"])
 api_v1_router.include_router(finance_wizard.router, prefix="/finance/wizard", tags=["Finance Wizard"])
+# PHOENIX: Register Analysis Router
+api_v1_router.include_router(analysis_router, prefix="/analysis", tags=["Smart Analysis"]) 
 
 api_v2_router = APIRouter(prefix="/api/v2")
 api_v2_router.include_router(drafting_v2_router, prefix="/drafting", tags=["Drafting V2"])
