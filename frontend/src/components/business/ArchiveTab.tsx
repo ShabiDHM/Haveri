@@ -1,19 +1,18 @@
 // FILE: src/components/business/ArchiveTab.tsx
 // PHOENIX PROTOCOL - CUMULATIVE FIXES
 // ---
-// FIX V27.0: ROBUST DATA SANITIZATION & FINALIZATION
-// 1. ROOT CAUSE: The "disappearing item" bug persisted because the `uploadArchiveItem` API endpoint returns the MongoDB `_id` as an OBJECT (e.g., `{$oid: "..."}`), not a string. My previous sanitization was too shallow, leading to an unstable React key `[object Object]`.
-// 2. FIX: Implemented a robust `sanitizeArchiveItem` utility function. This function intelligently inspects the incoming item for `id` or `_id`, and correctly extracts the string identifier even if `_id` is an object.
-// 3. LOGIC: This sanitizer is now used on ALL data entering the state, both from the bulk `fetchArchiveContent` and the single-item `handleSmartUpload`/`handleCreateFolder` handlers. This guarantees every item in the state has a valid, stable, string `id` key.
-// 4. STATUS: This is the definitive fix that resolves the data inconsistency issue and stabilizes the UI. All state mutations are now verifiably safe.
+// FIX V29.0: DEAD CODE ELIMINATION
+// 1. ROOT CAUSE: The V28.0 refactoring to a single-project view left behind unused code artifacts: the 'Case' type import, the 'cases' state variable, and the 'loadCases' function. This resulted in a TypeScript compiler warning (ts6133).
+// 2. FIX: Surgically removed the unused 'Case' type import and the 'cases' state management logic.
+// 3. STATUS: The component is now free of dead code, resolving all compiler warnings and finalizing the single-project architectural refactoring. The system is clean.
 // ---
-// FIX V26.0: ATOMIC DELETE & PARTIAL SANITIZATION
-// 1. ROOT CAUSE: Missing `key` prop after atomic add; refetch on delete.
-// 2. FIX: Added shallow sanitization and converted delete to an atomic operation.
+// FIX V28.0: SINGLE-PROJECT UI FLATTENING
+// 1. ROOT CAUSE: Component was designed for a multi-case system, creating a redundant UI layer.
+// 2. FIX: Reworked initialization to bypass the root view and start directly inside the primary project.
 // ---
-// FIX V25.0: ELIMINATE UPLOAD/CREATE RACE CONDITION
-// 1. ROOT CAUSE: Post-upload refetch created a race condition with the SSE stream.
-// 2. FIX: Used the direct API return value for an atomic state update.
+// FIX V27.0: ROBUST DATA SANITIZATION
+// 1. ROOT CAUSE: API returned inconsistent `_id` field (string vs. object), causing unstable React keys.
+// 2. FIX: Implemented a robust `sanitizeArchiveItem` utility to guarantee a stable string `id`.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,7 +22,7 @@ import {
     FolderUp, FileUp, Search, Share2, Link as LinkIcon, Archive, Zap, CheckCircle, AlertCircle
 } from 'lucide-react';
 import { apiService, API_V1_URL } from '../../services/api';
-import { ArchiveItemOut, Case, Document } from '../../data/types';
+import { ArchiveItemOut, Document } from '../../data/types'; // PHOENIX FIX V29.0: Removed unused 'Case' import
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import PDFViewerModal from '../PDFViewerModal';
@@ -31,14 +30,13 @@ import ShareModal from '../ShareModal';
 
 type Breadcrumb = { id: string | null; name: string; type: 'ROOT' | 'CASE' | 'FOLDER'; };
 
-// PHOENIX FIX V27.0: Centralized, robust sanitization utility.
 const sanitizeArchiveItem = (item: any): ArchiveItemOut => {
     let itemId = item.id;
     if (!itemId) {
         if (typeof item._id === 'string') {
             itemId = item._id;
         } else if (typeof item._id === 'object' && item._id !== null && '$oid' in item._id) {
-            itemId = item._id.$oid; // Handles MongoDB ObjectId object
+            itemId = item._id.$oid;
         }
     }
     return { ...item, id: itemId };
@@ -56,7 +54,7 @@ export const ArchiveTab: React.FC = () => {
     const { isAuthenticated } = useAuth();
     const [loading, setLoading] = useState(true);
     const [archiveItems, setArchiveItems] = useState<ArchiveItemOut[]>([]);
-    const [cases, setCases] = useState<Case[]>([]);
+    // PHOENIX FIX V29.0: Removed unused 'cases' state.
     const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([{ id: null, name: t('business.archive'), type: 'ROOT' }]);
     const [isUploading, setIsUploading] = useState(false);
     const [showFolderModal, setShowFolderModal] = useState(false);
@@ -74,8 +72,33 @@ export const ArchiveTab: React.FC = () => {
 
     const translateSystemName = (name: string) => { if (!name) return ""; const lowerName = name.toLowerCase().trim(); if (lowerName === "my workspace") return t('archive.myWorkspace', 'Hapësira e Punës'); if (lowerName === "general") return t('category.general', 'Të Përgjithshme'); return name; };
 
-    useEffect(() => { loadCases(); }, []);
-    useEffect(() => { fetchArchiveContent(); }, [breadcrumbs]);
+    useEffect(() => {
+        const initializeArchive = async () => {
+            if (!isAuthenticated) return;
+            setLoading(true);
+            try {
+                const cases = await apiService.getCases();
+                const primaryCase = cases.length > 0 ? cases[0] : null;
+
+                if (primaryCase) {
+                    setBreadcrumbs([{ id: primaryCase.id, name: primaryCase.title, type: 'CASE' }]);
+                } else {
+                    setLoading(false);
+                }
+            } catch (error) {
+                console.error("Failed to initialize archive:", error);
+                setLoading(false);
+            }
+        };
+
+        initializeArchive();
+    }, [isAuthenticated]);
+
+    useEffect(() => {
+        if (breadcrumbs[0]?.type !== 'ROOT') {
+            fetchArchiveContent();
+        }
+    }, [breadcrumbs]);
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -103,19 +126,22 @@ export const ArchiveTab: React.FC = () => {
         return () => { eventSource.close(); };
     }, [isAuthenticated]);
 
-    const loadCases = async () => { try { const c = await apiService.getCases(); setCases(c); } catch {} };
     const fetchArchiveContent = async () => {
         const active = breadcrumbs[breadcrumbs.length - 1];
+        if (!active || active.type === 'ROOT') {
+            setLoading(false);
+            return;
+        }
         if (!loading) setLoading(true);
         try {
             let rawItems: any[] = [];
-            if (active.type === 'ROOT') rawItems = await apiService.getArchiveItems(undefined, undefined, "null");
-            else if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
+            if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
             else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
-            const sanitizedItems = rawItems.filter(item => item).map(sanitizeArchiveItem); // PHOENIX FIX V27.0
+            const sanitizedItems = rawItems.filter(item => item).map(sanitizeArchiveItem);
             setArchiveItems(sanitizedItems);
         } catch(e) { console.error("Failed to fetch archive content:", e); } finally { setLoading(false); }
     };
+
     const handleNavigate = (_: Breadcrumb, index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
     const handleEnterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name: translateSystemName(name), type }]);
     
@@ -125,7 +151,7 @@ export const ArchiveTab: React.FC = () => {
         const active = breadcrumbs[breadcrumbs.length - 1];
         try {
             const rawFolder = await apiService.createArchiveFolder(newFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, newFolderCategory);
-            const newFolder = sanitizeArchiveItem(rawFolder); // PHOENIX FIX V27.0
+            const newFolder = sanitizeArchiveItem(rawFolder);
             setArchiveItems(prev => [newFolder, ...prev]);
             setShowFolderModal(false);
             setNewFolderName("");
@@ -141,7 +167,7 @@ export const ArchiveTab: React.FC = () => {
         const active = breadcrumbs[breadcrumbs.length - 1];
         try {
             const rawItem = await apiService.uploadArchiveItem(f, f.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, active.type === 'FOLDER' ? active.id! : undefined);
-            const newItem = sanitizeArchiveItem(rawItem); // PHOENIX FIX V27.0
+            const newItem = sanitizeArchiveItem(rawItem);
             setArchiveItems(prevItems => [newItem, ...prevItems]);
         } catch {
             alert(t('error.uploadFailed'));
@@ -159,7 +185,7 @@ export const ArchiveTab: React.FC = () => {
             const firstPath = files[0].webkitRelativePath || "";
             const rootFolderName = firstPath.split('/')[0] || t('archive.newFolderDefault');
             const rawFolder = await apiService.createArchiveFolder(rootFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, "GENERAL");
-            const newFolder = sanitizeArchiveItem(rawFolder); // PHOENIX FIX V27.0
+            const newFolder = sanitizeArchiveItem(rawFolder);
             if (!newFolder || !newFolder.id) throw new Error("Failed to create folder");
             setArchiveItems(prev => [newFolder, ...prev]);
             const uploadPromises = Array.from(files).map(file => {
@@ -167,7 +193,7 @@ export const ArchiveTab: React.FC = () => {
                 return apiService.uploadArchiveItem(file, file.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, newFolder.id);
             });
             await Promise.all(uploadPromises);
-            fetchArchiveContent(); // Refetch is acceptable here to simplify logic
+            fetchArchiveContent();
         } catch {
             alert(t('error.uploadFailed'));
         } finally {
@@ -195,9 +221,8 @@ export const ArchiveTab: React.FC = () => {
     const handleShareItem = async (item: ArchiveItemOut) => { try { const newStatus = !item.is_shared; await apiService.shareArchiveItem(item.id, newStatus); setArchiveItems(prev => prev.map(i => i.id === item.id ? { ...i, is_shared: newStatus } : i)); } catch (e) { alert(t('error.generic')); } };
     
     const currentView = breadcrumbs[breadcrumbs.length - 1];
-    const isInsideCase = currentView.type === 'CASE'; 
-    const filteredCases = cases.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.case_number.toLowerCase().includes(searchTerm.toLowerCase()));
-    const filteredItems = archiveItems.filter(item => { if (currentView.type === 'ROOT' && item.case_id) return false; return item.title.toLowerCase().includes(searchTerm.toLowerCase()); });
+    const isInsideCase = currentView?.type === 'CASE'; 
+    const filteredItems = archiveItems.filter(item => { return item.title.toLowerCase().includes(searchTerm.toLowerCase()); });
     
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
 
@@ -235,11 +260,6 @@ export const ArchiveTab: React.FC = () => {
             </div>
             
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] shadow-2xl">
-                {currentView.type === 'ROOT' && filteredCases.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredCases.map(c => ( <div key={c.id} className="h-full"> <ArchiveCard title={translateSystemName(c.title || `Projekti #${c.case_number}`)} subtitle={c.case_number || 'Pa numër'} type="Dosje Projekti" date={new Date(c.created_at).toLocaleDateString()} icon={<Briefcase className="w-6 h-6 text-indigo-400" />} isFolder={true} isShared={c.is_shared} onClick={() => handleEnterFolder(c.id, c.title, 'CASE')} /> </div> ))}
-                    </div>
-                )}
                 {filteredItems.length > 0 && (
                     <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         <AnimatePresence>
@@ -271,7 +291,7 @@ export const ArchiveTab: React.FC = () => {
                         </AnimatePresence>
                     </motion.div>
                 )}
-                {filteredCases.length === 0 && filteredItems.length === 0 && (
+                {filteredItems.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-96 text-gray-500">
                         <FolderOpen size={64} className="mb-4 opacity-20" />
                         <p>{t('archive.emptyFolder')}</p>
@@ -282,7 +302,7 @@ export const ArchiveTab: React.FC = () => {
             {showFolderModal && ( <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"> <div className="bg-[#0f172a] border border-indigo-500/20 rounded-3xl w-full max-w-sm p-6 shadow-2xl shadow-indigo-900/20"> <div className="flex justify-between items-center mb-6"> <h3 className="text-xl font-bold text-white">{t('archive.newFolderTitle')}</h3> <button onClick={() => setShowFolderModal(false)} className="text-gray-500 hover:text-white"><X size={24}/></button> </div> <form onSubmit={handleCreateFolder}> <div className="relative mb-5"> <FolderOpen className="absolute left-4 top-3.5 w-6 h-6 text-amber-500" /> <input autoFocus type="text" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} placeholder={t('archive.folderNamePlaceholder')} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white text-base focus:border-indigo-500/50 outline-none transition-all placeholder:text-gray-600" /> </div> <div className="relative mb-8"> <Tag className="absolute left-4 top-3.5 w-5 h-5 text-gray-500" /> <select value={newFolderCategory} onChange={(e) => setNewFolderCategory(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-gray-300 focus:border-indigo-500/50 outline-none appearance-none cursor-pointer text-base"> <option value="GENERAL">{t('category.general')}</option> <option value="EVIDENCE">{t('category.evidence')}</option> <option value="LEGAL_DOCS">{t('category.legalDocs')}</option> <option value="INVOICES">{t('category.invoices')}</option> <option value="CONTRACTS">{t('category.contracts')}</option> </select> </div> <div className="flex justify-end gap-3"> <button type="button" onClick={() => setShowFolderModal(false)} className="px-6 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors font-medium">{t('general.cancel')}</button> <button type="submit" className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white rounded-xl font-bold shadow-lg shadow-amber-500/20 transition-all transform hover:scale-[1.02]">{t('general.create')}</button> </div> </form> </div> </div> )}
             {itemToRename && ( <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"> <div className="bg-[#0f172a] border border-blue-500/20 rounded-3xl w-full max-w-sm p-6 shadow-2xl"> <div className="flex justify-between items-center mb-6"> <h3 className="text-xl font-bold text-white">{t('documentsPanel.renameTitle')}</h3> <button onClick={() => setItemToRename(null)} className="text-gray-500 hover:text-white"><X size={24}/></button> </div> <form onSubmit={submitRename}> <div className="relative mb-5"> <Pencil className="absolute left-4 top-3.5 w-5 h-5 text-blue-400" /> <input autoFocus type="text" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white text-base focus:border-blue-500/50 outline-none transition-all" /> </div> <div className="flex justify-end gap-3"> <button type="button" onClick={() => setItemToRename(null)} className="px-6 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors font-medium">{t('general.cancel')}</button> <button type="submit" className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02] flex items-center gap-2"><Save size={16} /> {t('general.save')}</button> </div> </form> </div> </div> )}
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} onMinimize={closePreview} t={t} directUrl={viewingUrl} />}
-            {isInsideCase && currentView.id && ( <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={currentView.id} caseTitle={currentView.name} /> )}
+            {isInsideCase && currentView?.id && ( <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={currentView.id} caseTitle={currentView.name} /> )}
         </motion.div>
     );
 };
