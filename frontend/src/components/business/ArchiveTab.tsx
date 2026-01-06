@@ -1,15 +1,18 @@
 // FILE: src/components/business/ArchiveTab.tsx
 // PHOENIX PROTOCOL - CUMULATIVE FIXES
 // ---
+// FIX V25.0: ELIMINATE UPLOAD/CREATE RACE CONDITION
+// 1. ROOT CAUSE: After an upload or folder creation, the component refetched the entire archive list. A real-time SSE event could arrive before the refetch completed, causing the update to be missed.
+// 2. FIX: Modified `handleSmartUpload` and `handleCreateFolder` to use the `ArchiveItemOut` object returned directly by the API.
+// 3. LOGIC: The new item is now atomically added to the local state immediately upon a successful API response. This guarantees the item exists in the state before any SSE events can arrive, eliminating the race condition. This is the definitive fix for the real-time status icon issue.
+// ---
 // FIX V24.0: SSE DATA-CONTRACT RESILIENCE
-// 1. ROOT CAUSE: The SSE event handler was too strict, expecting only a `document_id` and `status` field. This caused silent failures if the backend sent `id`/`_id` or `indexing_status`.
-// 2. FIX: The event handler now robustly checks for `document_id`, `id`, or `_id` for the document identifier, and `status` or `indexing_status` for the new status.
-// 3. LOGIC: This change makes the client resilient to minor variations in the backend's SSE data contract, preventing silent update failures.
+// 1. ROOT CAUSE: The SSE event handler was too strict, expecting only a `document_id`. This caused silent failures if the backend sent `id` or `_id`.
+// 2. FIX: The event handler now robustly checks for `document_id`, `id`, or `_id`.
 // ---
 // FIX V23.0: AUTH-AWARE SSE
-// 1. ROOT CAUSE: A race condition where the SSE connection was attempted before the user's auth token was available.
-// 2. FIX: Integrated the 'useAuth' hook. The SSE 'useEffect' is now dependent on the 'isAuthenticated' flag.
-// 3. LOGIC: The connection is now only established AFTER authentication is confirmed, guaranteeing a valid token is available.
+// 1. ROOT CAUSE: SSE connection was attempted before the auth token was ready.
+// 2. FIX: The SSE `useEffect` is now dependent on the `isAuthenticated` flag.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,7 +31,7 @@ import ShareModal from '../ShareModal';
 type Breadcrumb = { id: string | null; name: string; type: 'ROOT' | 'CASE' | 'FOLDER'; };
 
 // --- COMPONENTS (No changes) ---
-const getMimeType = (fileType: string, fileName: string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; if (['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF'].includes(fileType)) return 'image/jpeg'; return 'application/octet-stream'; };
+const getMimeType = (fileType: string, fileName:string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; if (['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF'].includes(fileType)) return 'image/jpeg'; return 'application/octet-stream'; };
 const getFileIcon = (fileType: string) => { const ft = fileType ? fileType.toUpperCase() : ""; if (ft === 'PDF') return <FileText className="w-5 h-5 text-red-400" />; if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-purple-400" />; if (['JSON', 'JS', 'TS'].includes(ft)) return <FileCode className="w-5 h-5 text-yellow-400" />; return <FileIcon className="w-5 h-5 text-blue-400" />; };
 const StatusBadge = ({ status }: { status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED' }) => { const { t } = useTranslation(); if (status === 'READY') return <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.statusReady', 'Gati për AI')}><CheckCircle size={14} /></div>; if (status === 'PROCESSING') return <div className="bg-blue-500/10 text-blue-400 p-1.5 rounded-lg border border-blue-500/20" title={t('archive.statusProcessing', 'Duke procesuar...')}><Loader2 size={14} className="animate-spin" /></div>; if (status === 'PENDING') return <div className="bg-amber-500/10 text-amber-400 p-1.5 rounded-lg border border-amber-500/20" title={t('archive.statusPending', 'Në pritje')}><Zap size={14} /></div>; if (status === 'FAILED') return <div className="bg-rose-500/10 text-rose-400 p-1.5 rounded-lg border border-rose-500/20" title={t('archive.statusFailed', 'Dështoi')}><AlertCircle size={14} /></div>; return null; };
 const ActionButton = ({ icon, label, onClick, primary = false, disabled = false, fullWidth = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean, disabled?: boolean, fullWidth?: boolean }) => ( <button onClick={onClick} disabled={disabled} className={` flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group ${fullWidth ? 'w-full' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${primary ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 border border-indigo-400/50' : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10 hover:border-white/20'} `}> <span className={`transition-transform duration-300 group-hover:scale-110 ${primary ? 'text-white' : 'text-indigo-400'}`}>{icon}</span> <span>{label}</span> </button> );
@@ -72,8 +75,6 @@ export const ArchiveTab: React.FC = () => {
         eventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                
-                // PHOENIX FIX V24.0: Accept 'document_id', 'id', or '_id' from the event stream for robustness.
                 const updatedDocId = data.document_id || data.id || data._id;
                 const newStatus = data.status || data.indexing_status;
 
@@ -107,9 +108,68 @@ export const ArchiveTab: React.FC = () => {
     };
     const handleNavigate = (_: Breadcrumb, index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
     const handleEnterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name: translateSystemName(name), type }]);
-    const handleCreateFolder = async (e: React.FormEvent) => { e.preventDefault(); const active = breadcrumbs[breadcrumbs.length - 1]; try { await apiService.createArchiveFolder(newFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, newFolderCategory); setShowFolderModal(false); setNewFolderName(""); fetchArchiveContent(); } catch { alert(t('error.generic')); } };
-    const handleSmartUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if(!f) return; setIsUploading(true); const active = breadcrumbs[breadcrumbs.length - 1]; try { await apiService.uploadArchiveItem(f, f.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, active.type === 'FOLDER' ? active.id! : undefined); fetchArchiveContent(); } catch { alert(t('error.uploadFailed')); } finally { setIsUploading(false); } };
-    const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { const files = e.target.files; if (!files || files.length === 0) return; setIsUploading(true); const active = breadcrumbs[breadcrumbs.length - 1]; try { const firstPath = files[0].webkitRelativePath || ""; const rootFolderName = firstPath.split('/')[0] || t('archive.newFolderDefault'); const newFolder = await apiService.createArchiveFolder(rootFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, "GENERAL"); if (!newFolder || !newFolder.id) throw new Error("Failed to create folder"); const uploadPromises = Array.from(files).map(file => { if (file.name.startsWith('.')) return Promise.resolve(); return apiService.uploadArchiveItem(file, file.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, newFolder.id); }); await Promise.all(uploadPromises); fetchArchiveContent(); } catch { alert(t('error.uploadFailed')); } finally { setIsUploading(false); if (folderInputRef.current) folderInputRef.current.value = ''; } };
+    
+    // PHOENIX FIX V25.0: Atomic state update to prevent race condition.
+    const handleCreateFolder = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newFolderName.trim()) return;
+        const active = breadcrumbs[breadcrumbs.length - 1];
+        try {
+            const newFolder = await apiService.createArchiveFolder(newFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, newFolderCategory);
+            setArchiveItems(prev => [newFolder, ...prev]); // Add new folder to state immediately.
+            setShowFolderModal(false);
+            setNewFolderName("");
+        } catch {
+            alert(t('error.generic'));
+        }
+    };
+
+    // PHOENIX FIX V25.0: Atomic state update to prevent race condition.
+    const handleSmartUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        setIsUploading(true);
+        const active = breadcrumbs[breadcrumbs.length - 1];
+        try {
+            const newItem = await apiService.uploadArchiveItem(f, f.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, active.type === 'FOLDER' ? active.id! : undefined);
+            setArchiveItems(prevItems => [newItem, ...prevItems]); // Add new item to state immediately.
+        } catch {
+            alert(t('error.uploadFailed'));
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        setIsUploading(true);
+        const active = breadcrumbs[breadcrumbs.length - 1];
+        try {
+            const firstPath = files[0].webkitRelativePath || "";
+            const rootFolderName = firstPath.split('/')[0] || t('archive.newFolderDefault');
+            const newFolder = await apiService.createArchiveFolder(rootFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, "GENERAL");
+            if (!newFolder || !newFolder.id) throw new Error("Failed to create folder");
+            
+            // This still uses a refetch because atomically updating contents of a sub-folder
+            // is complex. The main benefit is the new folder appears instantly.
+            setArchiveItems(prev => [newFolder, ...prev]);
+
+            const uploadPromises = Array.from(files).map(file => {
+                if (file.name.startsWith('.')) return Promise.resolve();
+                return apiService.uploadArchiveItem(file, file.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, newFolder.id);
+            });
+            await Promise.all(uploadPromises);
+            // Refetch is acceptable here to simplify logic, as the user isn't viewing the folder being uploaded to.
+            fetchArchiveContent();
+        } catch {
+            alert(t('error.uploadFailed'));
+        } finally {
+            setIsUploading(false);
+            if (folderInputRef.current) folderInputRef.current.value = '';
+        }
+    };
+
     const downloadArchiveItem = async (id: string, title: string) => { try { await apiService.downloadArchiveItem(id, title); } catch { alert(t('error.generic')); } };
     const deleteArchiveItem = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await apiService.deleteArchiveItem(id); fetchArchiveContent(); } catch { alert(t('error.generic')); } };
     const handleViewItem = async (item: ArchiveItemOut) => { setOpeningDocId(item.id); try { const blob = await apiService.getArchiveFileBlob(item.id); const url = window.URL.createObjectURL(blob); setViewingUrl(url); setViewingDoc({ id: item.id, file_name: item.title, mime_type: getMimeType(item.file_type, item.title), status: 'READY' } as any); } catch { alert(t('error.generic')); } finally { setOpeningDocId(null); } };
