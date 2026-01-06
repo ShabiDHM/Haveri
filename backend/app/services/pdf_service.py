@@ -1,13 +1,15 @@
 # FILE: backend/app/services/pdf_service.py
-# PHOENIX PROTOCOL - PDF SERVICE V3.3 (BYTES CONVERSION)
-# 1. FEATURE: Added 'convert_bytes_to_pdf' for internally generated files.
-# 2. LOGIC: Converts text/image bytes to PDF in memory.
-# 3. USE CASE: Fixes "Generated Expense Receipt" saving as .txt.
+# PHOENIX PROTOCOL - ROBUST EXCEL HANDLING V4.1
+# 1. FIX: Added a "Guard Clause" to check if 'workbook.active' returns a valid sheet.
+# 2. LOGIC: If an Excel file is empty or has no active sheet, the function now gracefully exits instead of crashing.
+# 3. STATUS: This resolves the Pylance 'reportOptionalMemberAccess' error and makes the pipeline resilient to empty Excel files.
 
 import io
 import os
 import tempfile
 import shutil
+import csv
+import openpyxl
 from pypdf import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm, mm
@@ -24,9 +26,6 @@ class PDFProcessor:
     async def process_and_brand_pdf(
         file: UploadFile, case_id: Optional[str] = "N/A"
     ) -> Tuple[bytes, str]:
-        """
-        Orchestrates the conversion, branding, and watermarking of any uploaded document.
-        """
         original_ext = os.path.splitext(file.filename or ".tmp")[1]
         with tempfile.NamedTemporaryFile(delete=False, suffix=original_ext) as tmp_file:
             shutil.copyfileobj(file.file, tmp_file)
@@ -45,73 +44,89 @@ class PDFProcessor:
             
             branded_pdf_bytes = PDFProcessor._apply_branding(pdf_bytes, str(case_id))
             return branded_pdf_bytes, final_pdf_name
-
         finally:
             if os.path.exists(source_path): os.remove(source_path)
             if converted_pdf_path and os.path.exists(converted_pdf_path): os.remove(converted_pdf_path)
 
     @staticmethod
     async def convert_upload_to_pdf(file: UploadFile) -> Tuple[io.BytesIO, str]:
-        """Converts an UploadFile to PDF stream."""
         content = await file.read()
         await file.seek(0)
-        
-        # Delegate to bytes converter
         pdf_bytes, new_name = PDFProcessor.convert_bytes_to_pdf(content, file.filename or "doc")
         return io.BytesIO(pdf_bytes), new_name
 
     @staticmethod
     def convert_bytes_to_pdf(content: bytes, filename: str) -> Tuple[bytes, str]:
-        """
-        PHOENIX FIX: Converts raw bytes (Text/Image) to PDF bytes.
-        Used for internally generated files (like placeholder receipts).
-        """
         ext = filename.split('.')[-1].lower() if '.' in filename else ""
         base_name = os.path.splitext(filename)[0]
         new_filename = f"{base_name}.pdf"
 
-        # 1. Text to PDF
-        if ext == "txt":
+        text_content_for_pdf = ""
+
+        if ext == "csv":
             try:
-                text_str = content.decode('utf-8', errors='replace')
+                text_stream = io.StringIO(content.decode('utf-8', errors='ignore'))
+                reader = csv.reader(text_stream)
+                lines = [f"Rreshti {i+1}: {', '.join(row)}" for i, row in enumerate(reader)]
+                text_content_for_pdf = "\n".join(lines)
+            except Exception as e:
+                print(f"CSV to Text conversion failed: {e}")
+                return content, filename
+        
+        elif ext == "xlsx":
+            try:
+                workbook = openpyxl.load_workbook(io.BytesIO(content))
+                sheet = workbook.active
+                
+                # PHOENIX FIX: Guard against empty or invalid Excel files.
+                if not sheet:
+                    print("XLSX conversion failed: No active sheet found.")
+                    return content, filename
+                
+                lines = []
+                for i, row in enumerate(sheet.iter_rows(values_only=True), 1):
+                    str_row = [str(cell) for cell in row if cell is not None]
+                    if str_row:
+                        lines.append(f"Rreshti {i}: {', '.join(str_row)}")
+                text_content_for_pdf = "\n".join(lines)
+            except Exception as e:
+                print(f"XLSX to Text conversion failed: {e}")
+                return content, filename
+        
+        elif ext == "txt":
+            text_content_for_pdf = content.decode('utf-8', errors='replace')
+
+        if text_content_for_pdf:
+            try:
                 pdf_buffer = io.BytesIO()
                 c = canvas.Canvas(pdf_buffer, pagesize=A4)
-                
                 text_obj = c.beginText(15 * mm, 280 * mm)
-                text_obj.setFont("Helvetica", 10)
+                text_obj.setFont("Helvetica", 9)
                 
-                # Header
                 c.setFont("Helvetica-Bold", 12)
-                c.drawString(15 * mm, 290 * mm, "Expense Note / Shënim Shpenzimi")
+                c.drawString(15 * mm, 290 * mm, f"Dokument: {base_name}")
                 c.line(15 * mm, 288 * mm, 195 * mm, 288 * mm)
                 
-                for line in text_str.split('\n'):
-                    if len(line) > 95:
-                        for i in range(0, len(line), 95):
-                            text_obj.textLine(line[i:i+95])
-                    else:
-                        text_obj.textLine(line)
-                        
+                for line in text_content_for_pdf.split('\n'):
+                    for i in range(0, len(line), 100):
+                        text_obj.textLine(line[i:i+100])
                     if text_obj.getY() < 20 * mm:
                         c.drawText(text_obj)
                         c.showPage()
                         text_obj = c.beginText(15 * mm, 280 * mm)
-                        text_obj.setFont("Helvetica", 10)
+                        text_obj.setFont("Helvetica", 9)
                 
                 c.drawText(text_obj)
                 c.save()
                 return pdf_buffer.getvalue(), new_filename
             except Exception as e:
-                print(f"Text bytes conversion failed: {e}")
+                print(f"Text bytes to PDF conversion failed: {e}")
                 return content, filename
 
-        # 2. Image to PDF
         if ext in ['jpg', 'jpeg', 'png', 'webp', 'bmp']:
             try:
                 img = PILImage.open(io.BytesIO(content))
-                if img.mode in ("RGBA", "P"):
-                    img = img.convert("RGB")
-                
+                if img.mode in ("RGBA", "P"): img = img.convert("RGB")
                 pdf_buffer = io.BytesIO()
                 img.save(pdf_buffer, "PDF", resolution=100.0)
                 return pdf_buffer.getvalue(), new_filename
@@ -119,7 +134,6 @@ class PDFProcessor:
                 print(f"Image bytes conversion failed: {e}")
                 return content, filename
 
-        # 3. Default: Return original
         return content, filename
 
     @staticmethod
