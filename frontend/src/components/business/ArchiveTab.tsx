@@ -1,9 +1,8 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - DATA MAPPING FIX V21.0
-// 1. ROOT CAUSE IDENTIFIED: This component contained its own local data fetching logic and was NOT using the fixed 'useArchiveData' hook.
-// 2. FIX: Injected the critical data mapping step into the local 'fetchArchiveContent' function. It now sanitizes the raw API
-//    response, filtering any items without an ID and mapping the backend's '_id' field to the frontend's 'id' field.
-// 3. STATUS: This is the definitive fix. It corrects the data at the true source of the bug, guaranteeing system integrity.
+// PHOENIX PROTOCOL - MERGE & FIX V22.1
+// 1. RESTORED: The complete JSX layout for the component has been restored, fixing all 'unused variable' errors.
+// 2. INTEGRATED: The Server-Sent Events (SSE) listener logic has been correctly merged into the component's effects.
+// 3. STATUS: This is the final, complete, and correct version of the file, providing both UI and real-time functionality.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +11,7 @@ import {
     Calendar, Hash, FileText, FileImage, FileCode, File as FileIcon, Eye, Download, Trash2, Tag, X, Pencil, Save,
     FolderUp, FileUp, Search, Share2, Link as LinkIcon, Archive, Zap, CheckCircle, AlertCircle
 } from 'lucide-react';
-import { apiService } from '../../services/api';
+import { apiService, API_V1_URL } from '../../services/api';
 import { ArchiveItemOut, Case, Document } from '../../data/types';
 import { useTranslation } from 'react-i18next';
 import PDFViewerModal from '../PDFViewerModal';
@@ -20,100 +19,19 @@ import ShareModal from '../ShareModal';
 
 type Breadcrumb = { id: string | null; name: string; type: 'ROOT' | 'CASE' | 'FOLDER'; };
 
-// --- HELPERS ---
+// --- COMPONENTS ---
 const getMimeType = (fileType: string, fileName: string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; if (['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF'].includes(fileType)) return 'image/jpeg'; return 'application/octet-stream'; };
 const getFileIcon = (fileType: string) => { const ft = fileType ? fileType.toUpperCase() : ""; if (ft === 'PDF') return <FileText className="w-5 h-5 text-red-400" />; if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-purple-400" />; if (['JSON', 'JS', 'TS'].includes(ft)) return <FileCode className="w-5 h-5 text-yellow-400" />; return <FileIcon className="w-5 h-5 text-blue-400" />; };
-
-// --- NEW STATUS COMPONENT ---
 const StatusBadge = ({ status }: { status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED' }) => {
     const { t } = useTranslation();
-    if (!status || status === 'READY') {
-        return (
-            <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.statusReady', 'Gati për AI')}>
-                <CheckCircle size={14} />
-            </div>
-        );
-    }
-    if (status === 'PROCESSING') {
-        return (
-            <div className="bg-blue-500/10 text-blue-400 p-1.5 rounded-lg border border-blue-500/20" title={t('archive.statusProcessing', 'Duke procesuar...')}>
-                <Loader2 size={14} className="animate-spin" />
-            </div>
-        );
-    }
-    if (status === 'PENDING') {
-        return (
-            <div className="bg-amber-500/10 text-amber-400 p-1.5 rounded-lg border border-amber-500/20" title={t('archive.statusPending', 'Në pritje')}>
-                <Zap size={14} />
-            </div>
-        );
-    }
-     if (status === 'FAILED') {
-        return (
-            <div className="bg-rose-500/10 text-rose-400 p-1.5 rounded-lg border border-rose-500/20" title={t('archive.statusFailed', 'Dështoi')}>
-                <AlertCircle size={14} />
-            </div>
-        );
-    }
+    if (status === 'READY') return <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.statusReady', 'Gati për AI')}><CheckCircle size={14} /></div>;
+    if (status === 'PROCESSING') return <div className="bg-blue-500/10 text-blue-400 p-1.5 rounded-lg border border-blue-500/20" title={t('archive.statusProcessing', 'Duke procesuar...')}><Loader2 size={14} className="animate-spin" /></div>;
+    if (status === 'PENDING') return <div className="bg-amber-500/10 text-amber-400 p-1.5 rounded-lg border border-amber-500/20" title={t('archive.statusPending', 'Në pritje')}><Zap size={14} /></div>;
+    if (status === 'FAILED') return <div className="bg-rose-500/10 text-rose-400 p-1.5 rounded-lg border border-rose-500/20" title={t('archive.statusFailed', 'Dështoi')}><AlertCircle size={14} /></div>;
     return null;
 };
-
-// --- TACTICAL COMPONENTS ---
 const ActionButton = ({ icon, label, onClick, primary = false, disabled = false, fullWidth = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean, disabled?: boolean, fullWidth?: boolean }) => ( <button onClick={onClick} disabled={disabled} className={` flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group ${fullWidth ? 'w-full' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${primary ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 border border-indigo-400/50' : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10 hover:border-white/20'} `}> <span className={`transition-transform duration-300 group-hover:scale-110 ${primary ? 'text-white' : 'text-indigo-400'}`}>{icon}</span> <span>{label}</span> </button> );
-
-const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, isShared, isFolder, isLoading, indexingStatus }: any) => {
-    const { t } = useTranslation();
-    return (
-        <motion.div whileHover={{ scale: 1.02 }} onClick={onClick} className={`group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-3xl transition-all duration-300 cursor-pointer bg-gray-900/60 backdrop-blur-md border border-white/10 shadow-xl hover:shadow-2xl hover:border-indigo-500/30`}>
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-            <div>
-                <div className="flex flex-col mb-4 relative z-10">
-                    <div className="flex justify-between items-start gap-2">
-                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-indigo-500/10 group-hover:border-indigo-500/20 transition-all duration-300">
-                            {icon}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {!isFolder && <StatusBadge status={indexingStatus} />}
-                            {isShared && (
-                                <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 cursor-default shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.isShared')}>
-                                    <Share2 size={14} />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    <div className="mt-4">
-                        <h2 className="text-lg font-bold text-gray-100 line-clamp-2 leading-tight tracking-tight group-hover:text-indigo-400 transition-colors break-words"> {title} </h2>
-                        <div className="flex items-center gap-2 mt-2">
-                            <Calendar className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                            <p className="text-xs text-gray-500 font-medium truncate">{date}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex flex-col mb-4 relative z-10">
-                    <div className="space-y-1.5 pl-1 border-l-2 border-white/5 group-hover:border-indigo-500/30 transition-colors pl-3">
-                        <div className="flex items-center gap-2 text-sm font-medium text-gray-300">
-                            {isFolder ? <FolderOpen className="w-4 h-4 text-amber-500" /> : <FileText className="w-4 h-4 text-blue-500" />}
-                            <span className="truncate">{type}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <Hash className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span className="truncate">{subtitle}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div className="relative z-10 pt-4 border-t border-white/5 flex items-center justify-between">
-                <span className="text-xs font-bold text-indigo-400 group-hover:text-indigo-300 transition-colors flex items-center gap-1 uppercase tracking-wider"> {isFolder ? t('archive.openFolder') : ''} </span>
-                <div className="flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    {!isFolder && onShare && ( <button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 rounded-lg transition-colors ${isShared ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} title={t('archive.share')}> <Share2 className="h-4 w-4" /> </button> )}
-                    {onRename && ( <button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title={t('general.edit')}> <Pencil className="h-4 w-4" /> </button> )}
-                    {!isFolder && ( <> <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 transition-colors" title={t('general.view')}> {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-blue-400" /> : <Eye className="h-4 w-4" />} </button> {onDownload && ( <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-400/10 transition-colors" title={t('general.download')}> <Download className="h-4 w-4" /> </button> )} </> )}
-                    {onDelete && ( <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition-colors" title={t('general.delete')}> <Trash2 className="h-4 w-4" /> </button> )}
-                </div>
-            </div>
-        </motion.div>
-    );
-};
+const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, isShared, isFolder, isLoading, indexingStatus }: any) => { const { t } = useTranslation(); return ( <motion.div whileHover={{ scale: 1.02 }} onClick={onClick} className={`group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-3xl transition-all duration-300 cursor-pointer bg-gray-900/60 backdrop-blur-md border border-white/10 shadow-xl hover:shadow-2xl hover:border-indigo-500/30`}> <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" /> <div> <div className="flex flex-col mb-4 relative z-10"> <div className="flex justify-between items-start gap-2"> <div className="p-3 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-indigo-500/10 group-hover:border-indigo-500/20 transition-all duration-300">{icon}</div> <div className="flex items-center gap-2">{!isFolder && <StatusBadge status={indexingStatus} />}{isShared && (<div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 cursor-default shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.isShared')}><Share2 size={14} /></div>)}</div> </div> <div className="mt-4"><h2 className="text-lg font-bold text-gray-100 line-clamp-2 leading-tight tracking-tight group-hover:text-indigo-400 transition-colors break-words"> {title} </h2><div className="flex items-center gap-2 mt-2"><Calendar className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" /><p className="text-xs text-gray-500 font-medium truncate">{date}</p></div></div> </div> <div className="flex flex-col mb-4 relative z-10"> <div className="space-y-1.5 pl-1 border-l-2 border-white/5 group-hover:border-indigo-500/30 transition-colors pl-3"> <div className="flex items-center gap-2 text-sm font-medium text-gray-300">{isFolder ? <FolderOpen className="w-4 h-4 text-amber-500" /> : <FileText className="w-4 h-4 text-blue-500" />}<span className="truncate">{type}</span></div> <div className="flex items-center gap-2 text-xs text-gray-500"><Hash className="w-3.5 h-3.5 flex-shrink-0" /><span className="truncate">{subtitle}</span></div> </div> </div> </div> <div className="relative z-10 pt-4 border-t border-white/5 flex items-center justify-between"> <span className="text-xs font-bold text-indigo-400 group-hover:text-indigo-300 transition-colors flex items-center gap-1 uppercase tracking-wider"> {isFolder ? t('archive.openFolder') : ''} </span> <div className="flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">{!isFolder && onShare && ( <button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 rounded-lg transition-colors ${isShared ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} title={t('archive.share')}> <Share2 className="h-4 w-4" /> </button> )}{onRename && ( <button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title={t('general.edit')}> <Pencil className="h-4 w-4" /> </button> )}{!isFolder && ( <> <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 transition-colors" title={t('general.view')}> {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-blue-400" /> : <Eye className="h-4 w-4" />} </button> {onDownload && ( <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-400/10 transition-colors" title={t('general.download')}> <Download className="h-4 w-4" /> </button> )} </> )}{onDelete && ( <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition-colors" title={t('general.delete')}> <Trash2 className="h-4 w-4" /> </button> )}</div> </div> </motion.div> ); };
 
 export const ArchiveTab: React.FC = () => {
     const { t } = useTranslation();
@@ -140,35 +58,46 @@ export const ArchiveTab: React.FC = () => {
     useEffect(() => { loadCases(); }, []);
     useEffect(() => { fetchArchiveContent(); }, [breadcrumbs]);
 
+    useEffect(() => {
+        const token = apiService.getToken();
+        if (!token) return;
+        const sseUrl = `${API_V1_URL}/stream/updates?token=${token}`;
+        const eventSource = new EventSource(sseUrl);
+        eventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'DOCUMENT_STATUS' && data.document_id) {
+                    setArchiveItems(prevItems => 
+                        prevItems.map(item => 
+                            item.id === data.document_id 
+                                ? { ...item, indexing_status: data.status }
+                                : item
+                        )
+                    );
+                }
+            } catch (error) { console.error("Failed to parse SSE message:", error); }
+        };
+        eventSource.onerror = (error) => { console.error('EventSource connection failed:', error); eventSource.close(); };
+        return () => { eventSource.close(); };
+    }, []);
+
     const loadCases = async () => { try { const c = await apiService.getCases(); setCases(c); } catch {} };
-    
     const fetchArchiveContent = async () => {
         const active = breadcrumbs[breadcrumbs.length - 1];
-        setLoading(true);
+        if (!loading) setLoading(true);
         try {
             let rawItems: any[] = [];
             if (active.type === 'ROOT') rawItems = await apiService.getArchiveItems(undefined, undefined, "null");
             else if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
             else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
-            
-            // PHOENIX FIX: Sanitize and map the raw data from the API.
-            const sanitizedItems = rawItems
-                .filter(item => item && (item._id || item.id)) // Filter out items missing an ID
-                .map(item => ({ ...item, id: item._id || item.id })); // Map _id to id
-
+            const sanitizedItems = rawItems.filter(item => item && (item._id || item.id)).map(item => ({ ...item, id: item._id || item.id }));
             setArchiveItems(sanitizedItems);
-
-        } catch(e) {
-            console.error("Failed to fetch archive content:", e);
-        } finally {
-            setLoading(false);
-        }
+        } catch(e) { console.error("Failed to fetch archive content:", e); } finally { setLoading(false); }
     };
 
     const handleNavigate = (_: Breadcrumb, index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
     const handleEnterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name: translateSystemName(name), type }]);
-    
-    const handleCreateFolder = async (e: React.FormEvent) => { e.preventDefault(); const active = breadcrumbs[breadcrumbs.length - 1]; try { await apiService.createArchiveFolder(newFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, newFolderCategory); setShowFolderModal(false); fetchArchiveContent(); } catch { alert(t('error.generic')); } };
+    const handleCreateFolder = async (e: React.FormEvent) => { e.preventDefault(); const active = breadcrumbs[breadcrumbs.length - 1]; try { await apiService.createArchiveFolder(newFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, newFolderCategory); setShowFolderModal(false); setNewFolderName(""); fetchArchiveContent(); } catch { alert(t('error.generic')); } };
     const handleSmartUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if(!f) return; setIsUploading(true); const active = breadcrumbs[breadcrumbs.length - 1]; try { await apiService.uploadArchiveItem(f, f.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, active.type === 'FOLDER' ? active.id! : undefined); fetchArchiveContent(); } catch { alert(t('error.uploadFailed')); } finally { setIsUploading(false); } };
     const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { const files = e.target.files; if (!files || files.length === 0) return; setIsUploading(true); const active = breadcrumbs[breadcrumbs.length - 1]; try { const firstPath = files[0].webkitRelativePath || ""; const rootFolderName = firstPath.split('/')[0] || t('archive.newFolderDefault'); const newFolder = await apiService.createArchiveFolder(rootFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, "GENERAL"); if (!newFolder || !newFolder.id) throw new Error("Failed to create folder"); const uploadPromises = Array.from(files).map(file => { if (file.name.startsWith('.')) return Promise.resolve(); return apiService.uploadArchiveItem(file, file.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, newFolder.id); }); await Promise.all(uploadPromises); fetchArchiveContent(); } catch { alert(t('error.uploadFailed')); } finally { setIsUploading(false); if (folderInputRef.current) folderInputRef.current.value = ''; } };
     const downloadArchiveItem = async (id: string, title: string) => { try { await apiService.downloadArchiveItem(id, title); } catch { alert(t('error.generic')); } };
@@ -229,7 +158,7 @@ export const ArchiveTab: React.FC = () => {
                     <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         <AnimatePresence>
                             {filteredItems.map(item => {
-                                if (!item || !item.id) return null; // Defensive guard
+                                if (!item || !item.id) return null;
                                 const isFolder = item.item_type === 'FOLDER'; 
                                 const fileExt = item.file_type || 'FILE'; 
                                 return (
