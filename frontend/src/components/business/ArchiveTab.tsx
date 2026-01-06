@@ -1,9 +1,15 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - AUTH-AWARE SSE FIX V23.0
-// 1. ROOT CAUSE IDENTIFIED: A race condition where the SSE connection was attempted before the user's auth token was ready.
+// PHOENIX PROTOCOL - CUMULATIVE FIXES
+// ---
+// FIX V24.0: SSE DATA-CONTRACT RESILIENCE
+// 1. ROOT CAUSE: The SSE event handler was too strict, expecting only a `document_id` and `status` field. This caused silent failures if the backend sent `id`/`_id` or `indexing_status`.
+// 2. FIX: The event handler now robustly checks for `document_id`, `id`, or `_id` for the document identifier, and `status` or `indexing_status` for the new status.
+// 3. LOGIC: This change makes the client resilient to minor variations in the backend's SSE data contract, preventing silent update failures.
+// ---
+// FIX V23.0: AUTH-AWARE SSE
+// 1. ROOT CAUSE: A race condition where the SSE connection was attempted before the user's auth token was available.
 // 2. FIX: Integrated the 'useAuth' hook. The SSE 'useEffect' is now dependent on the 'isAuthenticated' flag.
-// 3. LOGIC: The real-time connection is now only established AFTER the AuthContext confirms the user is authenticated, guaranteeing a valid token is available.
-// 4. STATUS: This is the definitive fix that resolves the race condition and completes the real-time, end-to-end data flow.
+// 3. LOGIC: The connection is now only established AFTER authentication is confirmed, guaranteeing a valid token is available.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,7 +21,7 @@ import {
 import { apiService, API_V1_URL } from '../../services/api';
 import { ArchiveItemOut, Case, Document } from '../../data/types';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../context/AuthContext'; // PHOENIX FIX: Import useAuth
+import { useAuth } from '../../context/AuthContext';
 import PDFViewerModal from '../PDFViewerModal';
 import ShareModal from '../ShareModal';
 
@@ -30,7 +36,7 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
 
 export const ArchiveTab: React.FC = () => {
     const { t } = useTranslation();
-    const { isAuthenticated } = useAuth(); // PHOENIX FIX: Get isAuthenticated status
+    const { isAuthenticated } = useAuth();
     const [loading, setLoading] = useState(true);
     const [archiveItems, setArchiveItems] = useState<ArchiveItemOut[]>([]);
     const [cases, setCases] = useState<Case[]>([]);
@@ -54,9 +60,7 @@ export const ArchiveTab: React.FC = () => {
     useEffect(() => { loadCases(); }, []);
     useEffect(() => { fetchArchiveContent(); }, [breadcrumbs]);
 
-    // PHOENIX FIX: SSE listener is now auth-aware.
     useEffect(() => {
-        // Only attempt to connect if the user is authenticated.
         if (!isAuthenticated) return;
 
         const token = apiService.getToken();
@@ -68,11 +72,16 @@ export const ArchiveTab: React.FC = () => {
         eventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                if (data.type === 'DOCUMENT_STATUS' && data.document_id) {
+                
+                // PHOENIX FIX V24.0: Accept 'document_id', 'id', or '_id' from the event stream for robustness.
+                const updatedDocId = data.document_id || data.id || data._id;
+                const newStatus = data.status || data.indexing_status;
+
+                if (data.type === 'DOCUMENT_STATUS' && updatedDocId && newStatus) {
                     setArchiveItems(prevItems => 
                         prevItems.map(item => 
-                            item.id === data.document_id 
-                                ? { ...item, indexing_status: data.status }
+                            item.id === updatedDocId 
+                                ? { ...item, indexing_status: newStatus }
                                 : item
                         )
                     );
@@ -81,7 +90,7 @@ export const ArchiveTab: React.FC = () => {
         };
         eventSource.onerror = (error) => { console.error('EventSource connection failed:', error); eventSource.close(); };
         return () => { eventSource.close(); };
-    }, [isAuthenticated]); // PHOENIX FIX: Re-run this effect if isAuthenticated changes.
+    }, [isAuthenticated]);
 
     const loadCases = async () => { try { const c = await apiService.getCases(); setCases(c); } catch {} };
     const fetchArchiveContent = async () => {
