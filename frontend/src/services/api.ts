@@ -1,7 +1,6 @@
 // FILE: src/services/api.ts
 // PHOENIX PROTOCOL - API CLEANUP V2.0
 // 1. REMOVED: Deleted legacy forensic endpoints (analyzeCase, crossExamineDocument, getCaseGraph).
-// 2. STATUS: API definition is now clean and business-focused.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
