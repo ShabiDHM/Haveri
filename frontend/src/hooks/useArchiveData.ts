@@ -1,6 +1,8 @@
 // FILE: src/hooks/useArchiveData.ts
-// PHOENIX PROTOCOL - HOOK EXTRACTION V1.0
-// Centralizes Archive navigation, data fetching, and file operations.
+// PHOENIX PROTOCOL - DATA MAPPING FIX V2.0
+// 1. FIX: Added a data mapping step in 'fetchArchiveContent' to transform the backend's '_id' field 
+//    to the frontend's expected 'id' field.
+// 2. STATUS: This resolves the 'DELETE /api/v1/archive/items/undefined' error by ensuring a valid ID is always present.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -29,10 +31,14 @@ export const useArchiveData = () => {
         const active = breadcrumbs[breadcrumbs.length - 1];
         setLoading(true);
         try {
-            let items: ArchiveItemOut[] = [];
-            if (active.type === 'ROOT') items = await apiService.getArchiveItems(undefined, undefined, "null");
-            else if (active.type === 'CASE') items = await apiService.getArchiveItems(undefined, active.id!, "null");
-            else if (active.type === 'FOLDER') items = await apiService.getArchiveItems(undefined, undefined, active.id!);
+            let rawItems: any[] = [];
+            if (active.type === 'ROOT') rawItems = await apiService.getArchiveItems(undefined, undefined, "null");
+            else if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
+            else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
+            
+            // PHOENIX FIX: Map the backend's '_id' to the frontend's 'id'
+            const items: ArchiveItemOut[] = rawItems.map(item => ({ ...item, id: item._id || item.id }));
+            
             setArchiveItems(items);
         } catch (e) {
             console.error("Failed to load archive content", e);
