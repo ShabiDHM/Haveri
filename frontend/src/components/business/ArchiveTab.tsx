@@ -1,8 +1,9 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V20.0 (STATUS INDICATORS)
-// 1. NEW: Added a 'StatusBadge' component to visually show the AI indexing status.
-// 2. MODIFIED: The 'ArchiveCard' now accepts and displays the 'indexing_status'.
-// 3. EFFECT: Users can now see which archive files are PENDING, PROCESSING, or READY for AI query.
+// PHOENIX PROTOCOL - DATA MAPPING FIX V21.0
+// 1. ROOT CAUSE IDENTIFIED: This component contained its own local data fetching logic and was NOT using the fixed 'useArchiveData' hook.
+// 2. FIX: Injected the critical data mapping step into the local 'fetchArchiveContent' function. It now sanitizes the raw API
+//    response, filtering any items without an ID and mapping the backend's '_id' field to the frontend's 'id' field.
+// 3. STATUS: This is the definitive fix. It corrects the data at the true source of the bug, guaranteeing system integrity.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -140,7 +141,30 @@ export const ArchiveTab: React.FC = () => {
     useEffect(() => { fetchArchiveContent(); }, [breadcrumbs]);
 
     const loadCases = async () => { try { const c = await apiService.getCases(); setCases(c); } catch {} };
-    const fetchArchiveContent = async () => { const active = breadcrumbs[breadcrumbs.length - 1]; setLoading(true); try { if (active.type === 'ROOT') setArchiveItems(await apiService.getArchiveItems(undefined, undefined, "null")); else if (active.type === 'CASE') setArchiveItems(await apiService.getArchiveItems(undefined, active.id!, "null")); else if (active.type === 'FOLDER') setArchiveItems(await apiService.getArchiveItems(undefined, undefined, active.id!)); } catch {} finally { setLoading(false); } };
+    
+    const fetchArchiveContent = async () => {
+        const active = breadcrumbs[breadcrumbs.length - 1];
+        setLoading(true);
+        try {
+            let rawItems: any[] = [];
+            if (active.type === 'ROOT') rawItems = await apiService.getArchiveItems(undefined, undefined, "null");
+            else if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
+            else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
+            
+            // PHOENIX FIX: Sanitize and map the raw data from the API.
+            const sanitizedItems = rawItems
+                .filter(item => item && (item._id || item.id)) // Filter out items missing an ID
+                .map(item => ({ ...item, id: item._id || item.id })); // Map _id to id
+
+            setArchiveItems(sanitizedItems);
+
+        } catch(e) {
+            console.error("Failed to fetch archive content:", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleNavigate = (_: Breadcrumb, index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
     const handleEnterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name: translateSystemName(name), type }]);
     
@@ -204,7 +228,8 @@ export const ArchiveTab: React.FC = () => {
                 {filteredItems.length > 0 && (
                     <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         <AnimatePresence>
-                            {filteredItems.map(item => { 
+                            {filteredItems.map(item => {
+                                if (!item || !item.id) return null; // Defensive guard
                                 const isFolder = item.item_type === 'FOLDER'; 
                                 const fileExt = item.file_type || 'FILE'; 
                                 return (
