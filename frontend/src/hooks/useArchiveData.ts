@@ -1,8 +1,9 @@
 // FILE: src/hooks/useArchiveData.ts
-// PHOENIX PROTOCOL - DATA MAPPING FIX V2.0
-// 1. FIX: Added a data mapping step in 'fetchArchiveContent' to transform the backend's '_id' field 
-//    to the frontend's expected 'id' field.
-// 2. STATUS: This resolves the 'DELETE /api/v1/archive/items/undefined' error by ensuring a valid ID is always present.
+// PHOENIX PROTOCOL - DEFENSIVE DATA SANITIZATION V3.0
+// 1. FIX: Implemented a two-stage data sanitization process in 'fetchArchiveContent'.
+//    a. FILTER: It first removes any item from the API response that lacks an '_id' or 'id' property.
+//    b. MAP: It then maps the remaining valid items to ensure the 'id' field is correctly populated from '_id'.
+// 2. STATUS: This makes the frontend resilient to malformed backend data and permanently resolves the 'DELETE .../undefined' error.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -36,8 +37,12 @@ export const useArchiveData = () => {
             else if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
             else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
             
-            // PHOENIX FIX: Map the backend's '_id' to the frontend's 'id'
-            const items: ArchiveItemOut[] = rawItems.map(item => ({ ...item, id: item._id || item.id }));
+            // PHOENIX FIX: Sanitize the data from the backend.
+            const items: ArchiveItemOut[] = rawItems
+                // 1. Filter out any items that are missing an identifier.
+                .filter(item => item && (item._id || item.id))
+                // 2. Map the valid items to the expected frontend structure.
+                .map(item => ({ ...item, id: item._id || item.id }));
             
             setArchiveItems(items);
         } catch (e) {
