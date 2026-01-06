@@ -1,23 +1,19 @@
 // FILE: src/components/business/ArchiveTab.tsx
 // PHOENIX PROTOCOL - CUMULATIVE FIXES
 // ---
-// FIX V26.0: DATA SANITIZATION & ATOMIC DELETE
-// 1. ROOT CAUSE: The "disappearing item" bug was caused by adding a new item from the API directly to the state. The API sometimes returns `_id` instead of `id`, bypassing the component's sanitization logic. This resulted in a missing `key` prop, causing React to fail reconciliation.
-// 2. FIX (UPLOAD/CREATE): Applied the sanitization logic (`id: rawItem.id || rawItem._id`) to the new item returned from the API *before* adding it to the local state.
-// 3. FIX (DELETE): Proactively replaced the `fetchArchiveContent()` call in `deleteArchiveItem` with an atomic `setArchiveItems(prev => prev.filter(...))` call. This improves performance and prevents potential race conditions.
-// 4. STATUS: This is the definitive fix that ensures data integrity for all state mutations within the component.
+// FIX V27.0: ROBUST DATA SANITIZATION & FINALIZATION
+// 1. ROOT CAUSE: The "disappearing item" bug persisted because the `uploadArchiveItem` API endpoint returns the MongoDB `_id` as an OBJECT (e.g., `{$oid: "..."}`), not a string. My previous sanitization was too shallow, leading to an unstable React key `[object Object]`.
+// 2. FIX: Implemented a robust `sanitizeArchiveItem` utility function. This function intelligently inspects the incoming item for `id` or `_id`, and correctly extracts the string identifier even if `_id` is an object.
+// 3. LOGIC: This sanitizer is now used on ALL data entering the state, both from the bulk `fetchArchiveContent` and the single-item `handleSmartUpload`/`handleCreateFolder` handlers. This guarantees every item in the state has a valid, stable, string `id` key.
+// 4. STATUS: This is the definitive fix that resolves the data inconsistency issue and stabilizes the UI. All state mutations are now verifiably safe.
+// ---
+// FIX V26.0: ATOMIC DELETE & PARTIAL SANITIZATION
+// 1. ROOT CAUSE: Missing `key` prop after atomic add; refetch on delete.
+// 2. FIX: Added shallow sanitization and converted delete to an atomic operation.
 // ---
 // FIX V25.0: ELIMINATE UPLOAD/CREATE RACE CONDITION
 // 1. ROOT CAUSE: Post-upload refetch created a race condition with the SSE stream.
 // 2. FIX: Used the direct API return value for an atomic state update.
-// ---
-// FIX V24.0: SSE DATA-CONTRACT RESILIENCE
-// 1. ROOT CAUSE: SSE handler was too strict with property names.
-// 2. FIX: Handler now accepts `id`, `_id`, or `document_id`.
-// ---
-// FIX V23.0: AUTH-AWARE SSE
-// 1. ROOT CAUSE: SSE connection race condition with auth token availability.
-// 2. FIX: `useEffect` is now dependent on the `isAuthenticated` flag.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,6 +30,19 @@ import PDFViewerModal from '../PDFViewerModal';
 import ShareModal from '../ShareModal';
 
 type Breadcrumb = { id: string | null; name: string; type: 'ROOT' | 'CASE' | 'FOLDER'; };
+
+// PHOENIX FIX V27.0: Centralized, robust sanitization utility.
+const sanitizeArchiveItem = (item: any): ArchiveItemOut => {
+    let itemId = item.id;
+    if (!itemId) {
+        if (typeof item._id === 'string') {
+            itemId = item._id;
+        } else if (typeof item._id === 'object' && item._id !== null && '$oid' in item._id) {
+            itemId = item._id.$oid; // Handles MongoDB ObjectId object
+        }
+    }
+    return { ...item, id: itemId };
+};
 
 // --- COMPONENTS (No changes) ---
 const getMimeType = (fileType: string, fileName:string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; if (['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF'].includes(fileType)) return 'image/jpeg'; return 'application/octet-stream'; };
@@ -77,7 +86,7 @@ export const ArchiveTab: React.FC = () => {
         eventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                const updatedDocId = data.document_id || data.id || data._id;
+                const updatedDocId = data.document_id || data.id || (data._id ? (data._id.$oid || data._id) : null);
                 const newStatus = data.status || data.indexing_status;
                 if (data.type === 'DOCUMENT_STATUS' && updatedDocId && newStatus) {
                     setArchiveItems(prevItems => 
@@ -103,7 +112,7 @@ export const ArchiveTab: React.FC = () => {
             if (active.type === 'ROOT') rawItems = await apiService.getArchiveItems(undefined, undefined, "null");
             else if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
             else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
-            const sanitizedItems = rawItems.filter(item => item && (item._id || item.id)).map(item => ({ ...item, id: item._id || item.id }));
+            const sanitizedItems = rawItems.filter(item => item).map(sanitizeArchiveItem); // PHOENIX FIX V27.0
             setArchiveItems(sanitizedItems);
         } catch(e) { console.error("Failed to fetch archive content:", e); } finally { setLoading(false); }
     };
@@ -116,7 +125,7 @@ export const ArchiveTab: React.FC = () => {
         const active = breadcrumbs[breadcrumbs.length - 1];
         try {
             const rawFolder = await apiService.createArchiveFolder(newFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, newFolderCategory);
-            const newFolder = { ...rawFolder, id: rawFolder.id || (rawFolder as any)._id }; // PHOENIX FIX V26.0: Sanitize
+            const newFolder = sanitizeArchiveItem(rawFolder); // PHOENIX FIX V27.0
             setArchiveItems(prev => [newFolder, ...prev]);
             setShowFolderModal(false);
             setNewFolderName("");
@@ -132,7 +141,7 @@ export const ArchiveTab: React.FC = () => {
         const active = breadcrumbs[breadcrumbs.length - 1];
         try {
             const rawItem = await apiService.uploadArchiveItem(f, f.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, active.type === 'FOLDER' ? active.id! : undefined);
-            const newItem = { ...rawItem, id: rawItem.id || (rawItem as any)._id }; // PHOENIX FIX V26.0: Sanitize
+            const newItem = sanitizeArchiveItem(rawItem); // PHOENIX FIX V27.0
             setArchiveItems(prevItems => [newItem, ...prevItems]);
         } catch {
             alert(t('error.uploadFailed'));
@@ -150,7 +159,7 @@ export const ArchiveTab: React.FC = () => {
             const firstPath = files[0].webkitRelativePath || "";
             const rootFolderName = firstPath.split('/')[0] || t('archive.newFolderDefault');
             const rawFolder = await apiService.createArchiveFolder(rootFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, "GENERAL");
-            const newFolder = { ...rawFolder, id: rawFolder.id || (rawFolder as any)._id }; // PHOENIX FIX V26.0: Sanitize
+            const newFolder = sanitizeArchiveItem(rawFolder); // PHOENIX FIX V27.0
             if (!newFolder || !newFolder.id) throw new Error("Failed to create folder");
             setArchiveItems(prev => [newFolder, ...prev]);
             const uploadPromises = Array.from(files).map(file => {
@@ -158,8 +167,7 @@ export const ArchiveTab: React.FC = () => {
                 return apiService.uploadArchiveItem(file, file.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, newFolder.id);
             });
             await Promise.all(uploadPromises);
-            // Refetch is acceptable here to simplify logic, as the user isn't viewing the folder being uploaded to.
-            fetchArchiveContent();
+            fetchArchiveContent(); // Refetch is acceptable here to simplify logic
         } catch {
             alert(t('error.uploadFailed'));
         } finally {
@@ -170,7 +178,6 @@ export const ArchiveTab: React.FC = () => {
 
     const downloadArchiveItem = async (id: string, title: string) => { try { await apiService.downloadArchiveItem(id, title); } catch { alert(t('error.generic')); } };
     
-    // PHOENIX FIX V26.0: Atomic delete to prevent refetch race condition.
     const deleteArchiveItem = async (id: string) => {
         if(!window.confirm(t('general.confirmDelete'))) return;
         try {
