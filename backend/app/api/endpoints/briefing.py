@@ -1,6 +1,5 @@
 # FILE: backend/app/api/endpoints/briefing.py
 # PHOENIX PROTOCOL - STRATEGIC BRIEFING ROUTER V1.0
-# 1. ENDPOINT: Exposes the new generative briefing service at /briefing/strategic.
 
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
