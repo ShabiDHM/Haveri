@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/chat.py
-# PHOENIX PROTOCOL - CHAT ENDPOINT V2.0
-# 1. CLEANUP: Removed redundant manual Redis broadcasting.
-# 2. LOGIC: Delegates all broadcasting/persistence to the robust chat_service.
+# PHOENIX PROTOCOL - CHAT ENDPOINT V3.0 (PERSONA ROUTING)
+# 1. FEATURE: Added 'agent_type' to the request model.
+# 2. LOGIC: Passes the 'agent_type' to the chat service, allowing it to select the 'Business Consultant' persona.
 
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from typing import Annotated, Any, Optional
@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 class ChatMessageRequest(BaseModel):
     message: str
     document_id: Optional[str] = None
-    jurisdiction: Optional[str] = 'ks' 
+    jurisdiction: Optional[str] = 'ks'
+    # PHOENIX: Added to select the correct AI persona
+    agent_type: str = 'business' 
 
 class ChatResponse(BaseModel):
     response: str
@@ -33,30 +35,26 @@ async def handle_chat_message(
 ):
     """
     Sends a message to the AI Case Chat.
-    Delegates to the Agentic Chat Service for processing and broadcasting.
+    Delegates to the Chat Service for processing and broadcasting.
     """
     if not chat_request.message: 
         raise HTTPException(status_code=400, detail="Empty message")
         
-    # Debug Log for context
     scope_log = f"Document {chat_request.document_id}" if chat_request.document_id else "Full Case"
-    jur_log = chat_request.jurisdiction.upper() if chat_request.jurisdiction else 'KS'
-    logger.info(f"📨 API Recv: Chat from User {current_user.id} [Scope: {scope_log}] [Jurisdiction: {jur_log}]")
+    agent_log = chat_request.agent_type.upper()
+    logger.info(f"📨 API Recv: Chat from User {current_user.id} [Agent: {agent_log}] [Scope: {scope_log}]")
 
     try:
-        # Call the Agentic Service
-        # The service now handles AI generation, persistence, AND SSE broadcasting.
+        # Call the refactored service with the agent_type parameter
         response_text = await chat_service.get_http_chat_response(
             db=db, 
             case_id=case_id, 
             user_query=chat_request.message, 
             user_id=str(current_user.id),
             document_id=chat_request.document_id,
-            jurisdiction=chat_request.jurisdiction
+            jurisdiction=chat_request.jurisdiction,
+            agent_type=chat_request.agent_type # PHOENIX: Pass the agent type
         )
-        
-        # PHOENIX FIX: Removed manual Redis publish here to avoid double messages.
-        # The chat_service now handles this via 'broadcast_message'.
             
         return ChatResponse(response=response_text)
         

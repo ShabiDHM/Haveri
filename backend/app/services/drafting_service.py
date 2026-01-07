@@ -1,8 +1,8 @@
 # FILE: backend/app/services/drafting_service.py
-# PHOENIX PROTOCOL - DRAFTING SERVICE V8.0 (BUSINESS-FIRST)
-# 1. LOGIC: Uses 'ask_business_consultant' logic (User Data + Law) to frame drafts.
-# 2. PROMPT: Optimized for "Business Consultant" output (Professional Albanian).
-# 3. STREAMING: Retained generator structure for frontend compatibility.
+# PHOENIX PROTOCOL - DRAFTING SERVICE V8.1 (CONTEXT INJECTION FIX)
+# 1. FIX: Re-engineered the final user prompt to explicitly instruct the LLM to USE the provided context.
+# 2. LOGIC: Separated "Facts" from the "Task" to prevent the AI from ignoring the data.
+# 3. RESULT: Drafts will now be pre-filled with specific names, dates, and amounts found in the RAG context.
 
 import asyncio
 import structlog
@@ -20,17 +20,14 @@ logger = structlog.get_logger(__name__)
 async def _retrieve_drafting_context(query: str, user_id: str, agent_type: str) -> str:
     """
     Directly queries the Vector Store Tools to gather context for the draft.
-    Prioritizes User Data (Internal) over Public Data (External).
     """
-    # 1. Private Data (Internal Docs/Templates)
     private_results = await asyncio.to_thread(
         vector_store_service.query_private_diary,
         user_id=user_id,
         query_text=query,
-        n_results=3
+        n_results=5 # Increased results for better context fill
     )
     
-    # 2. Public Data (Laws/Regulations for Compliance)
     public_results = await asyncio.to_thread(
         vector_store_service.query_public_library,
         query_text=query,
@@ -41,15 +38,15 @@ async def _retrieve_drafting_context(query: str, user_id: str, agent_type: str) 
     context_parts = []
     
     if private_results:
-        private_text = "\n".join([f"- {r['source']}: {r['content']}" for r in private_results])
-        context_parts.append(f"### TË DHËNAT E BRENDSHME TË BIZNESIT:\n{private_text}")
+        private_text = "\n".join([f"- Nga dokumenti '{r.get('source', 'Unknown')}': {r.get('content', '')}" for r in private_results])
+        context_parts.append(f"### FAKTE NGA DOKUMENTET E TUA:\n{private_text}")
 
     if public_results:
-        public_text = "\n".join([f"- {r['source']}: {r['content']}" for r in public_results])
-        context_parts.append(f"### BAZA LIGJORE DHE RREGULLATORE:\n{public_text}")
+        public_text = "\n".join([f"- Nga burimi '{r.get('source', 'Unknown')}': {r.get('content', '')}" for r in public_results])
+        context_parts.append(f"### INFORMACION NGA LIGJET DHE RREGULLORET:\n{public_text}")
 
     if not context_parts:
-        return "Nuk u gjet informacion shtesë. Përdor njohuritë e përgjithshme."
+        return "Nuk u gjet informacion relevant. Përdor njohuritë e përgjithshme."
     
     return "\n\n".join(context_parts)
 
@@ -59,23 +56,28 @@ async def _build_business_prompt(user: UserInDB, sanitized_prompt: str) -> Dict[
     context = await _retrieve_drafting_context(query=sanitized_prompt, user_id=str(user.id), agent_type='business')
     
     system_prompt = """
-    Ti je 'Haveri', Konsulenti Inteligjent i Biznesit.
-    DETYRA: Harto një dokument/email profesional biznesi në gjuhën Shqipe.
+    Ti je 'Haveri', një Asistent AI ekspert në hartimin e dokumenteve të biznesit në Shqip, i specializuar për tregun e Kosovës.
+    DETYRA JOTE: Harto një dokument profesional bazuar në kërkesën e përdoruesit dhe faktet e ofruara. MOS PËRDOR PLACEHOLDERS.
     
-    UDHËZIME:
-    1. Përdor 'TË DHËNAT E BRENDSHME' për të mbushur detajet (emra, shuma, data).
-    2. Sigurohu që dokumenti të jetë në përputhje me 'BAZËN LIGJORE'.
-    3. Stili duhet të jetë formal, i qartë dhe bindës.
+    RREGULLA KRITIKE:
+    1.  **INJEKTO FAKTET:** Zbato faktet specifike (emra, data, shuma) nga seksioni "FAKTE NGA DOKUMENTET E TUA" në draftin përfundimtar.
+    2.  **MOS HAMENDËSO:** Nëse një fakt specifik mungon (p.sh., arsyeja për shtyrje), lëre bosh ose kërkoje në mënyrë profesionale, por mos shpik të dhëna.
+    3.  **SIGURO KONFORMITETIN:** Sigurohu që drafti të jetë në përputhje me "INFORMACIONIN NGA LIGJET".
+    4.  **TONI:** Ruaj një ton formal dhe profesional.
     """
     
+    # PHOENIX FIX: Restructured prompt for better context injection
     full_prompt = f"""
-    === KONTEKSTI ===
+    --- FAKTE TË MBLEDHURA ---
     {context}
+    --- FUNDI I FAKTEVE ---
 
-    === KËRKESA E PËRDORUESIT ===
+    --- DETYRA ---
+    Hartoni një dokument bazuar në kërkesën e mëposhtme:
     "{sanitized_prompt}"
+    --- FUNDI I DETYRës ---
 
-    DRAFTI PËRFUNDIMTAR (Në Shqip):
+    Tani, gjenero draftin përfundimtar, duke integruar faktet e mësipërme direkt në tekst.
     """
     return {"system": system_prompt, "user": full_prompt}
 
@@ -88,10 +90,9 @@ async def generate_draft_stream(
     
     sanitized_prompt = sterilize_text_for_llm(prompt_text)
     
-    logger.info("Starting Business Drafting Job...")
+    logger.info("Starting Business Drafting Job with Enhanced Context Injection...")
     prompts = await _build_business_prompt(user, sanitized_prompt)
     
-    # We use the business document drafter from LLM Service
     llm_response = await asyncio.to_thread(
         llm_service.draft_business_document,
         prompts["system"], 
@@ -99,7 +100,6 @@ async def generate_draft_stream(
     )
 
     if llm_response:
-        # Simulate streaming to keep frontend happy
         chunk_size = 10
         for i in range(0, len(llm_response), chunk_size):
             yield llm_response[i:i+chunk_size]
