@@ -1,29 +1,88 @@
 # FILE: backend/app/services/spreadsheet_service.py
-# PHOENIX PROTOCOL - REVISION V8 (ALBANIAN LOCALIZATION)
-# 1. LOCALIZATION: All hardcoded strings and AI prompts converted to Albanian.
-# 2. LOGIC: Retains the robust OpenRouter/Priority logic from V7.
+# PHOENIX PROTOCOL - REVISION V9 (MOBILE SCANNING)
+# 1. FEATURE: Added `analyze_scanned_image` function to process images with a vision LLM.
+# 2. ARCHITECTURE: The image analysis function performs OCR and then pipes the resulting CSV data into the existing `analyze_financial_spreadsheet` function for maximum code reuse.
+# 3. REFACTOR: Moved OpenAI client initialization into a helper function (`_get_client`).
 
 import pandas as pd
 import io
 import os
 import re
-import numpy as np
+import base64
 from app.core.config import settings
 from openai import OpenAI
 from typing import Dict, Any, List, Tuple
 
+def _get_client() -> OpenAI | None:
+    """Helper to initialize and return an OpenAI client."""
+    api_key = getattr(settings, 'OPENAI_API_KEY', None) or os.getenv('OPENAI_API_KEY')
+    base_url = getattr(settings, 'OPENAI_BASE_URL', "https://api.openai.com/v1")
+    if not api_key:
+        return None
+    return OpenAI(api_key=str(api_key), base_url=base_url)
+
+def analyze_scanned_image(file_contents: bytes) -> Dict[str, Any]:
+    """
+    Uses a vision model to perform OCR on an image of a financial document,
+    converts it to a CSV string, and then analyzes it.
+    """
+    client = _get_client()
+    if not client:
+        return {"error": "Gabim Konfigurimi: Mungon çelësi API."}
+
+    model_name = getattr(settings, 'OPENAI_MODEL', "gpt-4o")
+    
+    # Encode the image to base64
+    base64_image = base64.b64encode(file_contents).decode('utf-8')
+
+    try:
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert OCR and data extraction agent. Your task is to analyze an image of a financial document (like a bank statement or invoice list) and convert its tabular data into a clean, standard CSV format. Use commas as delimiters. Include a header row. Respond ONLY with the raw CSV data and nothing else."
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Please extract the data from this financial document into CSV format."},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=2000,
+        )
+        
+        csv_data_string = response.choices[0].message.content
+        if not csv_data_string or not isinstance(csv_data_string, str):
+             return {"error": "AI nuk arriti të nxirrte të dhëna nga imazhi."}
+
+        # Clean potential markdown code blocks from the response
+        csv_data_string = csv_data_string.strip().replace("```csv", "").replace("```", "").strip()
+
+        # Convert the CSV string to bytes to pass to the spreadsheet analyzer
+        csv_bytes = csv_data_string.encode('utf-8')
+
+        # PHOENIX: REUSE existing analysis logic
+        return analyze_financial_spreadsheet(file_contents=csv_bytes, filename="skanim.csv")
+
+    except Exception as e:
+        print(f"Image Analysis Error: {e}")
+        return {"error": f"Analiza e imazhit dështoi: {str(e)}"}
+
 def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[str, Any]:
     try:
-        # --- OPENROUTER / OPENAI CONNECTION ---
-        api_key = getattr(settings, 'OPENAI_API_KEY', None) or os.getenv('OPENAI_API_KEY')
-        base_url = getattr(settings, 'OPENAI_BASE_URL', "https://api.openai.com/v1")
-        model_name = getattr(settings, 'OPENAI_MODEL', "gpt-4o")
-
-        if not api_key:
+        client = _get_client()
+        if not client:
             return {"error": "Gabim Konfigurimi: Mungon çelësi API."}
         
-        client = OpenAI(api_key=str(api_key), base_url=base_url)
-        # --------------------------------------
+        model_name = getattr(settings, 'OPENAI_MODEL', "gpt-4o")
 
         # 1. LOAD DATA
         if filename.endswith('.csv'):
@@ -72,39 +131,36 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
         # 5. ANOMALY DETECTION (TRANSLATED)
         anomalies: List[Dict[str, Any]] = []
         
-        # Rule A: Round Numbers
         suspicious_round = df[(df[amount_col] > 50) & (df[amount_col] % 50 == 0) & (df[amount_col] != 0)]
         for idx, row in suspicious_round.head(3).iterrows():
             anomalies.append({
-                "type": "Numër i Rrumbullakët", # ALBANIAN
+                "type": "Numër i Rrumbullakët",
                 "severity": "medium",
-                "description": f"Rreshti {idx}: Shumë e plotë prej {row[amount_col]:.2f} (Dyshim për vlerësim/manipulim)", # ALBANIAN
+                "description": f"Rreshti {idx}: Shumë e plotë prej {row[amount_col]:.2f} (Dyshim për vlerësim/manipulim)",
                 "row_id": int(idx)
             })
 
-        # Rule B: Weekend Transactions
         if has_dates and date_col:
             weekend_tx = df[df[date_col].dt.dayofweek >= 5]
             for idx, row in weekend_tx.head(3).iterrows():
                 try:
                     date_str = row[date_col].strftime('%Y-%m-%d')
                     anomalies.append({
-                        "type": "Aktivitet në Fundjavë", # ALBANIAN
+                        "type": "Aktivitet në Fundjavë",
                         "severity": "low",
-                        "description": f"Rreshti {idx}: Transaksion i kryer në fundjavë ({date_str})", # ALBANIAN
+                        "description": f"Rreshti {idx}: Transaksion i kryer në fundjavë ({date_str})",
                         "row_id": int(idx)
                     })
                 except: continue
 
-        # Rule C: Outliers
         if transaction_count > 5:
             cutoff = df[amount_col].std() * 3
             outliers = df[df[amount_col] > (avg_transaction + cutoff)]
             for idx, row in outliers.head(3).iterrows():
                  anomalies.append({
-                    "type": "Vlerë e Jashtëzakonshme", # ALBANIAN
+                    "type": "Vlerë e Jashtëzakonshme",
                     "severity": "high",
-                    "description": f"Rreshti {idx}: Shuma {row[amount_col]:.2f} është jashtëzakonisht e lartë krahasuar me mesataren.", # ALBANIAN
+                    "description": f"Rreshti {idx}: Shuma {row[amount_col]:.2f} është jashtëzakonisht e lartë krahasuar me mesataren.",
                     "row_id": int(idx)
                 })
 
@@ -123,28 +179,9 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
                 counts = df['category'].value_counts()
                 chart_data = [{"label": str(label), "value": int(counts.get(label, 0))} for label in labels]
 
-        # 7. AI NARRATIVE (TRANSLATED PROMPT)
-        system_prompt = """
-        Ti je një Ekspert i Forenzikës Financiare dhe Auditues.
-        Analizo të dhënat statistikore të mëposhtme nga një skedar financiar.
-        
-        Detyra jote:
-        1. Shkruaj një përmbledhje ekzekutive të shkurtër dhe profesionale në gjuhën SHQIPE (Albanian).
-        2. Mos përmend termat teknikë si "DataFrame" apo "Pandas".
-        3. Përmend volumin total dhe numrin e transaksioneve.
-        4. Thekso anomalitë kryesore nëse ka.
-        
-        Stili: Profesional, i drejtpërdrejtë, për një pronar biznesi.
-        Maksimumi 3 fjali.
-        """
-        
-        user_content = f"""
-        Emri i Skedarit: {filename}
-        Nr. Rreshtave: {transaction_count}
-        Totali: {total_sum:.2f}
-        Anomali të gjetura: {len(anomalies)}
-        Anomalitë kryesore: {[a['description'] for a in anomalies[:2]]}
-        """
+        # 7. AI NARRATIVE
+        system_prompt = "Ti je një Ekspert i Forenzikës Financiare. Analizo të dhënat statistikore dhe shkruaj një përmbledhje ekzekutive të shkurtër (max 3 fjali) në gjuhën SHQIPE, duke theksuar volumin total, numrin e transaksioneve, dhe anomalitë kryesore."
+        user_content = f"Emri i Skedarit: {filename}, Rreshta: {transaction_count}, Totali: {total_sum:.2f}, Anomali: {len(anomalies)}, Detaje: {[a['description'] for a in anomalies[:2]]}"
 
         response = client.chat.completions.create(
             model=model_name,
@@ -154,21 +191,13 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
             ],
             temperature=0.3
         )
-        
         narrative = response.choices[0].message.content
 
         return {
-            "status": "success",
-            "summary": narrative,
-            "stats": {
-                "total_sum": total_sum,
-                "transaction_count": transaction_count,
-                "average": avg_transaction
-            },
-            "chart_data": chart_data,
-            "anomalies": anomalies
+            "status": "success", "summary": narrative,
+            "stats": { "total_sum": total_sum, "transaction_count": transaction_count, "average": avg_transaction },
+            "chart_data": chart_data, "anomalies": anomalies
         }
-
     except Exception as e:
         print(f"Analysis Error: {e}")
         return {"error": f"Analiza dështoi: {str(e)}"}
@@ -181,25 +210,17 @@ def smart_detect_columns(df: pd.DataFrame) -> Tuple[Any, Any]:
     high_priority_amount = ['total', 'shuma', 'amount', 'vlera', 'sum', 'balance']
     low_priority_amount = ['price', 'cmimi', 'cost', 'vlere', 'credit', 'debit']
     ignore = ['id', 'code', 'zip', 'phone', 'vat', 'tvsh', 'qty', 'sasia']
-
-    date_col = None
-    amount_col = None
-    best_amount_score = -1
+    date_col, amount_col, best_amount_score = None, None, -1
 
     for i, col_name in enumerate(cols_lower):
-        if not date_col and any(k in col_name for k in date_keywords):
-            date_col = cols[i]
-        
+        if not date_col and any(k in col_name for k in date_keywords): date_col = cols[i]
         if any(bad in col_name for bad in ignore): continue
-
         score = 0
         if any(k in col_name for k in high_priority_amount): score = 2
         elif any(k in col_name for k in low_priority_amount): score = 1
-        
         if score > best_amount_score:
             best_amount_score = score
             amount_col = cols[i]
-
     if not date_col:
         for col in cols:
             sample = df[col].dropna().head(20).astype(str)
@@ -207,22 +228,18 @@ def smart_detect_columns(df: pd.DataFrame) -> Tuple[Any, Any]:
             try:
                 converted = pd.to_datetime(sample, dayfirst=True, errors='coerce')
                 if converted.notna().mean() > 0.8:
-                    date_col = col
-                    break
+                    date_col = col; break
             except: continue
-
     if not amount_col:
         max_mean = -1
         for col in cols:
             if col == date_col: continue
             try:
-                clean_series = df[col].astype(str).str.replace(r'[^\d,.-]', '', regex=True).str.replace(',', '.')
-                numeric_series = pd.to_numeric(clean_series, errors='coerce')
+                numeric_series = pd.to_numeric(df[col].astype(str).str.replace(r'[^\d,.-]', '', regex=True).str.replace(',', '.'), errors='coerce')
                 if numeric_series.notna().mean() > 0.8:
                     current_mean = numeric_series.mean()
                     if current_mean > max_mean:
                         max_mean = current_mean
                         amount_col = col
             except: continue
-
     return date_col, amount_col
