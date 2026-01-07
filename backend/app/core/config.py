@@ -1,8 +1,7 @@
 # FILE: backend/app/core/config.py
-# PHOENIX PROTOCOL - CONFIGURATION V6.1 (CLEANUP)
-# 1. CLEANUP: Removed dead 'GROQ_API_KEY' and 'GROQ_MODEL' fields.
-# 2. UPDATE: Added 'DEEPSEEK_API_KEY' and 'LOCAL_LLM_URL' to the schema.
-# 3. TYPE SAFETY: Maintains Pydantic strict validation.
+# PHOENIX PROTOCOL - CONFIGURATION V7.1 (OPENROUTER SUPPORT)
+# 1. FEATURE: Added 'OPENAI_API_KEY' and 'OPENAI_BASE_URL'.
+# 2. REASONING: Required to prevent Pydantic from stripping the OpenRouter credentials.
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Union
@@ -44,7 +43,13 @@ class Settings(BaseSettings):
     B2_ENDPOINT_URL: str = ""
     B2_BUCKET_NAME: str = ""
 
-    # --- AI Engines (Hybrid Architecture) ---
+    # --- AI Engines (OpenRouter / OpenAI / DeepSeek) ---
+    # Put your OpenRouter Key here
+    OPENAI_API_KEY: str = "" 
+    # Defaults to OpenAI, but you can set this to "https://openrouter.ai/api/v1" in .env
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    OPENAI_MODEL: str = "gpt-4o" # Model to use via OpenRouter
+
     DEEPSEEK_API_KEY: str = ""
     LOCAL_LLM_URL: str = "http://host.docker.internal:11434/api/generate"
     HF_TOKEN: str = ""

@@ -1,7 +1,7 @@
 # FILE: backend/app/services/spreadsheet_service.py
-# PHOENIX PROTOCOL - REVISION V5 (PRIORITY SCORING)
-# 1. FEATURE: Column Priority Scoring (Totals > Unit Prices).
-# 2. FIX: Explicit support for 'Vlera' (Albanian) and 'EUR' suffixes.
+# PHOENIX PROTOCOL - REVISION V7 (OPENROUTER COMPATIBLE)
+# 1. FEATURE: Uses 'OPENAI_BASE_URL' to support OpenRouter/Custom Proxies.
+# 2. LOGIC: Maintains Priority Scoring & Deep Scan for columns.
 
 import pandas as pd
 import io
@@ -14,29 +14,30 @@ from typing import Dict, Any, List, Tuple
 
 def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[str, Any]:
     try:
-        # --- SAFE CLIENT INITIALIZATION ---
+        # --- OPENROUTER / OPENAI CONNECTION ---
         api_key = getattr(settings, 'OPENAI_API_KEY', None) or os.getenv('OPENAI_API_KEY')
+        base_url = getattr(settings, 'OPENAI_BASE_URL', "https://api.openai.com/v1")
+        model_name = getattr(settings, 'OPENAI_MODEL', "gpt-4o")
+
         if not api_key:
             return {"error": "Server Configuration Error: OPENAI_API_KEY is missing."}
-        client = OpenAI(api_key=str(api_key))
-        # ----------------------------------
+        
+        # Connect using the config (works for OpenRouter if base_url is set correctly)
+        client = OpenAI(api_key=str(api_key), base_url=base_url)
+        # --------------------------------------
 
         # 1. LOAD DATA (SMART READ)
         if filename.endswith('.csv'):
             try:
-                # Method 1: Try default (comma)
                 df = pd.read_csv(io.BytesIO(file_contents))
-                
-                # Method 2: If only 1 column found, try Semicolon (European Standard)
                 if len(df.columns) < 2:
-                    file_contents_copy = io.BytesIO(file_contents) # Reset pointer
+                    file_contents_copy = io.BytesIO(file_contents) 
                     df = pd.read_csv(file_contents_copy, sep=';')
             except UnicodeDecodeError:
                 df = pd.read_csv(io.BytesIO(file_contents), sep=';', encoding='latin1')
         else:
             df = pd.read_excel(io.BytesIO(file_contents))
 
-        # Basic Cleanup
         df.columns = df.columns.astype(str).str.strip()
         
         # 2. SMART COLUMN DETECTION
@@ -46,43 +47,34 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
             return {"error": "Could not identify an Amount/Total column. Ensure your file has headers like 'Vlera', 'Shuma', or 'Total'."}
 
         # 3. NORMALIZE DATA
-        # Clean numeric data
         def clean_currency(val):
             val = str(val)
-            val = re.sub(r'[^\d.,-]', '', val) # Keep numbers, dots, commas, minus
+            val = re.sub(r'[^\d.,-]', '', val) 
             if not val: return 0
-            
-            # Smart European Handling
             if ',' in val and '.' in val:
-                if val.rfind(',') > val.rfind('.'): # 1.000,00
-                    val = val.replace('.', '').replace(',', '.')
-                else: # 1,000.00
-                    val = val.replace(',', '')
-            elif ',' in val: # 10,50
-                val = val.replace(',', '.')
-            
+                if val.rfind(',') > val.rfind('.'): val = val.replace('.', '').replace(',', '.')
+                else: val = val.replace(',', '')
+            elif ',' in val: val = val.replace(',', '.')
             try: return float(val)
             except: return 0
 
         df[amount_col] = df[amount_col].apply(clean_currency)
 
-        # Clean Date (if detected)
         has_dates = False
         if date_col:
             df[date_col] = pd.to_datetime(df[date_col], dayfirst=True, errors='coerce')
             has_dates = True
 
-        # 4. PERFORM STATISTICAL ANALYSIS
+        # 4. STATISTICS
         total_sum = float(df[amount_col].sum())
         avg_transaction = float(df[amount_col].mean())
         transaction_count = int(len(df))
 
         # 5. ANOMALY DETECTION
         anomalies: List[Dict[str, Any]] = []
-
-        # Rule A: Round Numbers
-        round_number_mask = (df[amount_col] > 50) & (df[amount_col] % 50 == 0) & (df[amount_col] != 0)
-        suspicious_round = df[round_number_mask]
+        
+        # Round Numbers
+        suspicious_round = df[(df[amount_col] > 50) & (df[amount_col] % 50 == 0) & (df[amount_col] != 0)]
         for idx, row in suspicious_round.head(3).iterrows():
             anomalies.append({
                 "type": "Round Number",
@@ -91,10 +83,9 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
                 "row_id": int(idx)
             })
 
-        # Rule B: Weekend Transactions
+        # Weekend
         if has_dates and date_col:
-            weekend_mask = df[date_col].dt.dayofweek >= 5 
-            weekend_tx = df[weekend_mask]
+            weekend_tx = df[df[date_col].dt.dayofweek >= 5]
             for idx, row in weekend_tx.head(3).iterrows():
                 try:
                     date_str = row[date_col].strftime('%Y-%m-%d')
@@ -106,10 +97,9 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
                     })
                 except: continue
 
-        # Rule C: Outliers
+        # Outliers
         if transaction_count > 5:
-            std_dev = df[amount_col].std()
-            cutoff = std_dev * 3
+            cutoff = df[amount_col].std() * 3
             outliers = df[df[amount_col] > (avg_transaction + cutoff)]
             for idx, row in outliers.head(3).iterrows():
                  anomalies.append({
@@ -151,7 +141,7 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
         """
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=model_name,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
@@ -178,44 +168,32 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
         return {"error": f"Analysis failed: {str(e)}"}
 
 def smart_detect_columns(df: pd.DataFrame) -> Tuple[Any, Any]:
-    # 1. PREPARE
     cols = df.columns
     cols_lower = cols.str.lower()
     
     date_keywords = ['date', 'data', 'time', 'koha', 'day', 'dita']
-    
-    # Priority Scoring for Amounts
-    # We prefer 'Total' over 'Price' to avoid picking Unit Prices
     high_priority_amount = ['total', 'shuma', 'amount', 'vlera', 'sum', 'balance']
     low_priority_amount = ['price', 'cmimi', 'cost', 'vlere', 'credit', 'debit']
-    
     ignore = ['id', 'code', 'zip', 'phone', 'vat', 'tvsh', 'qty', 'sasia']
 
     date_col = None
     amount_col = None
     best_amount_score = -1
 
-    # 2. HEADER SCORING LOOP
     for i, col_name in enumerate(cols_lower):
-        # Date Logic
         if not date_col and any(k in col_name for k in date_keywords):
             date_col = cols[i]
         
-        # Amount Logic
-        if any(bad in col_name for bad in ignore):
-            continue
+        if any(bad in col_name for bad in ignore): continue
 
         score = 0
-        if any(k in col_name for k in high_priority_amount):
-            score = 2
-        elif any(k in col_name for k in low_priority_amount):
-            score = 1
+        if any(k in col_name for k in high_priority_amount): score = 2
+        elif any(k in col_name for k in low_priority_amount): score = 1
         
         if score > best_amount_score:
             best_amount_score = score
             amount_col = cols[i]
 
-    # 3. CONTENT SEARCH FALLBACK (If Headers Failed)
     if not date_col:
         for col in cols:
             sample = df[col].dropna().head(20).astype(str)
@@ -228,15 +206,12 @@ def smart_detect_columns(df: pd.DataFrame) -> Tuple[Any, Any]:
             except: continue
 
     if not amount_col:
-        # Fallback to finding the numeric column with highest mean (likely the total)
         max_mean = -1
         for col in cols:
             if col == date_col: continue
             try:
-                clean_series = df[col].astype(str).str.replace(r'[^\d,.-]', '', regex=True)
-                clean_series = clean_series.str.replace(',', '.')
+                clean_series = df[col].astype(str).str.replace(r'[^\d,.-]', '', regex=True).str.replace(',', '.')
                 numeric_series = pd.to_numeric(clean_series, errors='coerce')
-                
                 if numeric_series.notna().mean() > 0.8:
                     current_mean = numeric_series.mean()
                     if current_mean > max_mean:
