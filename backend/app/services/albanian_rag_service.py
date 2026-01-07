@@ -1,23 +1,21 @@
 # FILE: backend/app/services/albanian_rag_service.py
-# PHOENIX PROTOCOL - AGENTIC RAG SERVICE V2.0 (REFLECTION PATTERN)
-# 1. ARCHITECTURE: Implements the "Researcher + Critic" Reflection Pattern.
-# 2. TOOLS: Defines 'query_private_diary' and 'query_public_library' as LangChain tools.
-# 3. REASONING: Orchestrates the draft -> critique -> revise loop for high-quality answers.
+# PHOENIX PROTOCOL - AGENTIC RAG SERVICE V2.3 (PYDANTIC V1 COMPATIBILITY)
+# 1. CRITICAL FIX: Imported 'SecretStr' from 'pydantic.v1' to match LangChain's dependency.
+# 2. EFFECT: Resolves the 'pydantic.v1.types.SecretStr' type mismatch error, fixing the Pylance warning and ensuring runtime stability.
 
 import os
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Any
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.tools import tool
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field, SecretStr # PHOENIX FIX: Import from pydantic.v1
 from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION ---
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODEL = "deepseek/deepseek-chat" 
 
@@ -34,6 +32,8 @@ def query_private_diary_tool(query: str, user_id: str) -> str:
     Use this FIRST to find specific details about the user's business, past cases, or documents.
     """
     from . import vector_store_service
+    if not user_id or user_id == 'undefined':
+        return "CRITICAL ERROR: user_id was not provided to the tool."
     results = vector_store_service.query_private_diary(user_id=user_id, query_text=query)
     if not results:
         return "No private records found."
@@ -49,7 +49,6 @@ def query_public_library_tool(query: str) -> str:
     Use this to verify legal compliance, finding labor laws, tax codes, or official procedures.
     """
     from . import vector_store_service
-    # Defaulting to 'business' context for this application
     results = vector_store_service.query_public_library(query_text=query, agent_type='business')
     if not results:
         return "No public records found."
@@ -62,12 +61,13 @@ class AlbanianRAGService:
         self.db = db
         self.tools = [query_private_diary_tool, query_public_library_tool]
         
-        if DEEPSEEK_API_KEY:
-            # Set env var for LangChain compatibility
-            os.environ["OPENAI_API_KEY"] = DEEPSEEK_API_KEY
+        api_key = os.environ.get("OPENAI_API_KEY")
+        
+        if api_key:
             self.llm = ChatOpenAI(
-                model=OPENROUTER_MODEL,
-                base_url=OPENROUTER_BASE_URL,
+                model=os.environ.get("OPENAI_MODEL", OPENROUTER_MODEL),
+                api_key=SecretStr(api_key), 
+                base_url=os.environ.get("OPENAI_BASE_URL", OPENROUTER_BASE_URL),
                 temperature=0.0,
                 streaming=False
             )
@@ -78,10 +78,7 @@ class AlbanianRAGService:
         # -- RESEARCHER PROMPT (ReAct) --
         researcher_template = """
         You are a smart business assistant for a company in Kosovo. Answer the user's question in Albanian.
-        
-        You have access to two "Brains":
-        1. Private Diary: The user's own documents. CHECK THIS FIRST.
-        2. Public Library: Official laws and regulations. Check this for compliance.
+        When using 'query_private_diary', you MUST use the provided 'user_id'.
 
         Tools Available:
         {tools}
@@ -90,15 +87,15 @@ class AlbanianRAGService:
         Question: the input question
         Thought: you should always think about what to do
         Action: the action to take, should be one of [{tool_names}]
-        Action Input: the input to the action
+        Action Input: the input to the action in JSON format, including the 'user_id' for private queries.
         Observation: the result of the action
-        ... (repeat Thought/Action/Observation as needed)
         Thought: I know the final answer
         Final Answer: the final answer to the original input question
 
         Begin!
 
         Question: {input}
+        (The User ID for this query is: {user_id})
         Thought: {agent_scratchpad}
         """
         self.researcher_prompt = PromptTemplate.from_template(researcher_template)
@@ -124,56 +121,41 @@ class AlbanianRAGService:
             return ""
 
     async def chat(self, query: str, user_id: str, case_id: Optional[str] = None) -> str:
-        """
-        Orchestrates the Reflection Pattern: Draft -> Critique -> Revise.
-        """
         if not self.researcher_executor or not self.llm:
             return "Sistemi AI nuk është konfiguruar. Ju lutem kontrolloni API Key."
 
-        # 1. Prepare Context
         case_summary = await self._get_case_summary(case_id) if case_id else ""
         context_input = f"{case_summary}\n\nUSER QUESTION: {query}"
 
         try:
-            # --- STEP 1: RESEARCHER (The Draft) ---
             logger.info(f"🤖 Agent Researcher starting for User: {user_id}")
             
-            # Helper to ensure user_id is available to the tool via the LLM's generated input
-            agent_input = f"{context_input}\n(System Note: The current user_id is '{user_id}')"
-            
             draft_result = await self.researcher_executor.ainvoke({
-                "input": agent_input,
+                "input": context_input,
+                "user_id": user_id,
                 "chat_history": [] 
             })
             draft_answer = draft_result.get("output", "Nuk u gjenerua përgjigje.")
 
-            # --- STEP 2: CRITIC (The Review) ---
             logger.info("🧐 Agent Critic reviewing...")
             critic_prompt = f"""
-            You are a Senior Business Consultant in Kosovo. Review this draft answer provided by a junior assistant.
-            
+            You are a Senior Business Consultant in Kosovo. Review this draft answer.
             Original Question: {query}
             Draft Answer: {draft_answer}
-            
-            Identify any logical gaps, missing legal warnings, or unprofessional tone.
-            If it is good, say "OK". If not, provide specific critique in Albanian.
+            Identify gaps or unprofessional tone. If good, say "OK". Otherwise, provide critique in Albanian.
             """
             critic_response = await self.llm.ainvoke(critic_prompt)
             critique = critic_response.content
 
-            # --- STEP 3: REVISER (The Final Polish) ---
             if "OK" in str(critique) and len(str(critique)) < 10:
-                return draft_answer # Draft was good enough
+                return draft_answer
 
             logger.info("✍️ Agent Reviser polishing...")
             revision_prompt = f"""
-            You are the Final Editor. Rewrite the draft to address the critique.
-            Ensure the tone is professional, encouraging, and helpful for a Kosovo business owner.
-            
-            Original Draft: {draft_answer}
+            Rewrite the draft to address the critique, in Albanian.
+            Draft: {draft_answer}
             Critique: {critique}
-            
-            Final Answer (in Albanian):
+            Final Answer:
             """
             final_response = await self.llm.ainvoke(revision_prompt)
             return str(final_response.content)
