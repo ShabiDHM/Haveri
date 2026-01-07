@@ -1,8 +1,8 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - PIPELINE RESTORATION V3.0
-# 1. ADDED: 'generate_summary' is back, but now uses a "Business Assistant" prompt.
-# 2. REFACTOR: Renamed 'sterilize_legal_text' to 'prepare_document_text' for general business use.
-# 3. STATUS: Fully supports the background document processing pipeline.
+# PHOENIX PROTOCOL - BUSINESS INTELLIGENCE V4.0
+# 1. NEW: Implemented 'ask_business_consultant' (The RAG Engine).
+# 2. LOGIC: Performs Hybrid Retrieval (User Data + Public Laws) and synthesizes answers.
+# 3. PERSONA: Enforces a professional, Albanian-speaking Business Consultant persona.
 
 import os
 import json
@@ -13,6 +13,7 @@ from typing import List, Dict, Any, Optional
 from openai import OpenAI 
 
 from .text_sterilization_service import sterilize_text_for_llm
+from . import vector_store_service # PHOENIX: Added to enable RAG
 
 logger = logging.getLogger(__name__)
 
@@ -27,19 +28,14 @@ _deepseek_client: Optional[OpenAI] = None
 
 # --- AGENT CONSTITUTIONS ---
 
-STRICT_FORENSIC_RULES = """
-RREGULLAT E AUDITIMIT (STRICT LIABILITY):
-1. ZERO HALUCINACIONE: Nëse fakti nuk ekziston në tekst, shkruaj "NUK KA TË DHËNA". Mos hamendëso asgjë.
-2. CITIM I DETYRUESHËM: Çdo pretendim faktik duhet të ketë referencën: [Fq. X].
-3. JURIDIKSIONI: Republika e Kosovës.
-"""
-
 BUSINESS_CONSULTANT_RULES = """
 RREGULLAT E KËSHILLIMIT (PRAKTIKA MË E MIRË):
-1. FOKUSI TEK VEPRIMI: Jep këshilla praktike dhe të zbatueshme për një biznes të vogël në Kosovë.
-2. GJUHA E THJESHTË: Shmangu zhargonin. Komuniko qartë dhe drejtpërdrejt.
-3. INKURAJIM DHE MOTIVIM: Përdor një ton pozitiv dhe mbështetës.
-4. KONTEKSTI LOKAL: Mbaj parasysh sfidat dhe mundësitë e tregut në Kosovë.
+1. ROLI: Ti je Këshilltar Biznesi për NVM-të në Kosovë.
+2. BURIMET:
+   - "TË DHËNAT E PËRDORUESIT": Janë faktet absolute për biznesin e klientit.
+   - "LIGJET DHE RREGULLORET": Përdori për të validuar nëse veprimet e klientit janë të ligjshme.
+3. STIILI: Profesional, i qartë, në gjuhën Shqipe. Shmangu zhargonin e panevojshëm.
+4. REFUZIMI: Nëse pyetja është jashtë fushës së biznesit/ligjit, thuaj që nuk mund të përgjigjesh.
 """
 
 def get_deepseek_client() -> Optional[OpenAI]:
@@ -59,14 +55,14 @@ def _parse_json_safely(content: str) -> Dict[str, Any]:
             except: pass
         return {}
 
-def _call_deepseek(system_prompt: str, user_prompt: str, json_mode: bool = False, agent_type: str = 'legal') -> Optional[str]:
+def _call_deepseek(system_prompt: str, user_prompt: str, json_mode: bool = False, agent_type: str = 'business') -> Optional[str]:
     client = get_deepseek_client()
     if not client: return None
     try:
-        constitution = BUSINESS_CONSULTANT_RULES if agent_type == 'business' else STRICT_FORENSIC_RULES
+        constitution = BUSINESS_CONSULTANT_RULES 
         full_system_prompt = f"{system_prompt}\n\n{constitution}"
         
-        kwargs = {"model": OPENROUTER_MODEL, "messages": [{"role": "system", "content": full_system_prompt}, {"role": "user", "content": user_prompt}], "temperature": 0.0, "extra_headers": {"HTTP-Referer": "https://haveri.tech", "X-Title": "Haveri AI"}}
+        kwargs = {"model": OPENROUTER_MODEL, "messages": [{"role": "system", "content": full_system_prompt}, {"role": "user", "content": user_prompt}], "temperature": 0.3, "extra_headers": {"HTTP-Referer": "https://haveri.tech", "X-Title": "Haveri AI"}}
         if json_mode: kwargs["response_format"] = {"type": "json_object"}
         response = client.chat.completions.create(**kwargs)
         return response.choices[0].message.content
@@ -82,17 +78,62 @@ def _call_local_llm(prompt: str) -> str:
             return response.json().get("response", "")
     except Exception: return ""
 
-# --- PUBLIC SERVICES ---
+# --- RAG ENGINE: BUSINESS CONSULTANT ---
 
-# PHOENIX: Renamed from 'sterilize_legal_text' to match business context
+def ask_business_consultant(user_id: str, query: str, context_filter: Optional[Dict] = None) -> str:
+    """
+    The Core Intelligence Function.
+    1. Retrieves relevant documents from User KB.
+    2. Retrieves relevant laws from Public KB.
+    3. Synthesizes an answer.
+    """
+    # 1. Retrieve User Context (Private)
+    user_docs = vector_store_service.query_private_diary(user_id, query, n_results=4)
+    user_context_str = "\n".join([f"- [DOKUMENTI I BRENDSHËM: {d['source']}]: {d['content']}" for d in user_docs])
+    
+    # 2. Retrieve Public Context (Laws)
+    # We query both business and legal collections to be safe
+    public_docs_biz = vector_store_service.query_public_library(query, n_results=2, agent_type='business')
+    public_docs_legal = vector_store_service.query_public_library(query, n_results=2, agent_type='legal')
+    public_context_str = "\n".join([f"- [LIGJI/RREGULLORE: {d['source']}]: {d['content']}" for d in (public_docs_biz + public_docs_legal)])
+
+    if not user_context_str and not public_context_str:
+        return "Nuk gjeta asnjë informacion relevant në dokumentet tuaja apo në bazën ligjore për këtë pyetje."
+
+    # 3. Construct Prompt
+    system_prompt = """
+    Ti je Këshilltari i Biznesit 'Haveri'.
+    Përdor kontekstin e mëposhtëm për t'iu përgjigjur pyetjes së përdoruesit.
+    
+    UDHËZIME SPECIFIKE:
+    1. Jep përparësi informacioneve nga 'TË DHËNAT E PËRDORUESIT'.
+    2. Përdor 'LIGJET' për të shpjeguar ose validuar të dhënat e përdoruesit.
+    3. Nëse informacioni mungon, thuaj qartë 'Nuk kam informacion të mjaftueshëm në dokumentet e tua'.
+    4. Përgjigju gjithmonë në Shqip.
+    """
+    
+    user_prompt = f"""
+    PYETJA E PËRDORUESIT: {query}
+
+    --- TË DHËNAT E PËRDORUESIT (PRIVATE) ---
+    {user_context_str}
+
+    --- LIGJET DHE RREGULLORET (PUBLIKE) ---
+    {public_context_str}
+    """
+
+    # 4. Generate Answer
+    response = _call_deepseek(system_prompt, user_prompt, agent_type='business')
+    return response or "Më vjen keq, sistemi është momentalisht i ngarkuar."
+
+# --- DOCUMENT UTILITIES ---
+
 def prepare_document_text(text: str) -> str:
     if not text: return ""
     text = sterilize_text_for_llm(text, redact_names=False)
-    # Maintain pagination for references
     text = re.sub(r'--- \[Page (\d+)\] ---', r'--- [FAQJA \1] ---', text)
     return text
 
-# PHOENIX: Restored and Refactored for Business
 def generate_summary(text: str) -> str:
     clean_text = prepare_document_text(text[:20000])
     system_prompt = """
@@ -104,7 +145,6 @@ def generate_summary(text: str) -> str:
     """
     user_prompt = f"DOKUMENTI PËR ANALIZË:\n{clean_text}"
     
-    # Try Local LLM first for speed/cost, fallback to DeepSeek
     res = _call_local_llm(f"{system_prompt}\n\n{user_prompt}")
     if not res or len(res) < 50: 
         res = _call_deepseek(system_prompt, user_prompt, agent_type='business')
@@ -125,9 +165,6 @@ def analyze_business_document(text: str) -> Dict[str, Any]:
     user_prompt = f"DOKUMENTI:\n{clean_text}"
     content = _call_deepseek(system_prompt, user_prompt, json_mode=True, agent_type='business')
     return _parse_json_safely(content) if content else {}
-
-def draft_legal_document(system_prompt: str, full_prompt: str) -> Optional[str]:
-    return _call_deepseek(system_prompt, full_prompt, json_mode=False, agent_type='legal')
 
 def draft_business_document(system_prompt: str, full_prompt: str) -> Optional[str]:
     return _call_deepseek(system_prompt, full_prompt, json_mode=False, agent_type='business')

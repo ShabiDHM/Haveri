@@ -1,22 +1,21 @@
 # FILE: backend/app/services/chat_service.py
-# PHOENIX PROTOCOL - CHAT SERVICE V3.0 (AGENT INTEGRATION)
-# 1. REFACTOR: Removed manual RAG logic.
-# 2. INTEGRATION: Instantiates AlbanianRAGService and calls agent.chat().
-# 3. STREAMING: Preserved SSE broadcasting for real-time UI updates.
+# PHOENIX PROTOCOL - CHAT SERVICE V4.1 (TYPE FIX)
+# 1. FIX: Corrected type hint for 'history' from List[ChatMessage] to List[dict].
+#    - REASON: MongoDB returns raw dictionaries, not Pydantic instances. Pylance correctly flagged the mismatch.
+# 2. SAFETY: Used .get() for dictionary access to prevent potential KeyErrors on malformed history.
 
 from __future__ import annotations
 import logging
 import asyncio
 from datetime import datetime, timezone
-from typing import Any, Optional, cast
+from typing import Any, Optional, List, Dict
 
 from fastapi import HTTPException
 from bson import ObjectId
 from bson.errors import InvalidId
 
 from app.models.case import ChatMessage
-# PHOENIX: Import the new Agent Service
-from app.services.albanian_rag_service import AlbanianRAGService
+from app.services import llm_service
 from app.services.streaming_service import broadcast_message
 
 logger = logging.getLogger(__name__)
@@ -40,34 +39,40 @@ async def get_http_chat_response(
     if not case:
         raise HTTPException(status_code=404, detail="Case not found.")
 
-    # 2. Save User Message
+    # 2. Get Short-Term History (Last 3 interactions)
+    # PHOENIX FIX: Typed as List[Dict] because MongoDB returns dicts, not Pydantic objects.
+    history: List[Dict[str, Any]] = case.get("chat_history", [])[-6:] 
+    history_context = "\n".join([f"{msg.get('role', 'UNKNOWN').upper()}: {msg.get('content', '')}" for msg in history])
+
+    # 3. Save User Message
     await db.cases.update_one(
         {"_id": oid},
         {"$push": {"chat_history": ChatMessage(role="user", content=user_query, timestamp=datetime.now(timezone.utc)).model_dump()}}
     )
     
-    # 3. Execute Agentic Workflow
+    # 4. Execute Business Intelligence Engine
     response_text: str = "" 
     try:
-        # Initialize Agent
-        rag_agent = AlbanianRAGService(db)
+        # Combine history with current query for the RAG Engine
+        full_query = f"KONTEKSTI I BISEDËS:\n{history_context}\n\nPYETJA E RE:\n{user_query}"
         
-        # Call the Agent's Chat (This runs the Researcher -> Critic -> Reviser loop)
-        response_text = await rag_agent.chat(
-            query=user_query,
+        # This calls the Dual-Source RAG (User Data + Public Laws) from llm_service
+        response_text = await asyncio.to_thread(
+            llm_service.ask_business_consultant,
             user_id=user_id,
-            case_id=case_id
+            query=full_query
         )
 
     except Exception as e:
-        logger.error(f"Agent Error: {e}", exc_info=True)
-        response_text = "Kërkoj ndjesë, agjenti hasi në një problem."
+        logger.error(f"AI Engine Error: {e}", exc_info=True)
+        response_text = "Më vjen keq, nuk munda të procesoj kërkesën tuaj momentalisht."
 
-    # 4. Save & Broadcast AI Response
+    # 5. Save & Broadcast AI Response
     try:
+        timestamp = datetime.now(timezone.utc)
         await db.cases.update_one(
             {"_id": oid},
-            {"$push": {"chat_history": ChatMessage(role="ai", content=response_text, timestamp=datetime.now(timezone.utc)).model_dump()}}
+            {"$push": {"chat_history": ChatMessage(role="ai", content=response_text, timestamp=timestamp).model_dump()}}
         )
 
         await broadcast_message(
@@ -75,7 +80,8 @@ async def get_http_chat_response(
             message_data={
                 "type": "CHAT_MESSAGE",
                 "case_id": case_id,
-                "content": response_text
+                "content": response_text,
+                "timestamp": timestamp.isoformat()
             }
         )
         
