@@ -1,8 +1,8 @@
 # FILE: backend/app/tasks/document_processing.py
-# PHOENIX PROTOCOL - UNIFIED ARCHIVE WORKER V10.0 (CLEAN)
-# 1. CLEANUP: Removed legacy 'process_document_task' as the Case Document Panel is deprecated.
-# 2. CORE LOGIC: 'process_archive_document' is now the SINGLE source of truth for all ingestion.
-# 3. FEATURES: Includes Text Extraction, Vector Store Injection, and Real-Time SSE (Green Check).
+# PHOENIX PROTOCOL - UNIFIED ARCHIVE WORKER V10.0
+# 1. CLEANUP: Removed legacy 'process_document_task' (Dead Logic).
+# 2. CORE: 'process_archive_document' is now the sole ingestion engine.
+# 3. TRIGGER: Implements the Redis Publish logic to turn the icon GREEN.
 
 import logging
 import io
@@ -52,12 +52,24 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 150) -> List[st
 
 def publish_sse_update(user_id: str, data: Dict[str, Any]):
     """Publishes a message to the user's SSE channel via Redis."""
+    # Ensure Redis connection exists
+    if db.redis_sync_client is None:
+        try:
+            db.connect_to_redis()
+        except Exception as e:
+            logger.error(f"Failed to connect to Redis for SSE: {e}")
+            return
+
     if db.redis_sync_client:
-        channel = f"user:{user_id}:updates"
-        message = json.dumps(data)
-        db.redis_sync_client.publish(channel, message)
+        try:
+            channel = f"user:{user_id}:updates"
+            message = json.dumps(data)
+            db.redis_sync_client.publish(channel, message)
+            logger.info(f"📡 SSE Sent to {channel}: {data.get('status')}")
+        except Exception as e:
+            logger.error(f"Failed to publish SSE: {e}")
     else:
-        logger.warning("Redis client not available for SSE update.")
+        logger.warning("Redis client unavailable. SSE skipped.")
 
 # --- THE SINGLE INGESTION TASK ---
 
@@ -70,8 +82,9 @@ def publish_sse_update(user_id: str, data: Dict[str, Any]):
 def process_archive_document(self, archive_item_id: str):
     """
     The Single Source of Truth for Document Ingestion.
-    Processes items from the 'archives' collection (User Knowledge Base).
+    Processes items from the 'archives' collection and updates the UI in Real-Time.
     """
+    # Ensure DB Connections
     if db.db_instance is None: db.connect_to_mongo()
     if db.redis_sync_client is None: db.connect_to_redis()
     
@@ -87,7 +100,6 @@ def process_archive_document(self, archive_item_id: str):
             return
 
         user_id = str(archive_item["user_id"])
-        # Support case linking if the archive item is tagged with a case_id
         case_id = str(archive_item.get("case_id", ""))
         storage_key = archive_item.get("storage_key")
         file_name = archive_item.get("title", "Untitled")
