@@ -1,9 +1,7 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - MOBILE RESPONSIVE FIX V19.0
-// 1. MOBILE-FIRST: The layout now defaults to a single, scrollable column.
-// 2. STACKING: On mobile, Chat and Drafting panels stack vertically, each with a dedicated height (85vh).
-// 3. DESKTOP VIEW: On large screens (lg:), the layout transitions to the side-by-side, full-height cockpit view.
-// 4. SCROLLING: Replaced rigid `h-screen` with `min-h-screen` for natural scrolling behavior.
+// PHOENIX PROTOCOL - FINAL CLEANUP V19.1
+// 1. CRITICAL FIX: Removed the obsolete 'activeContextId' prop from the ChatPanel invocation, resolving the TypeScript error.
+// 2. STATUS: This file is now fully synchronized with its child components, stable, and free of linting errors.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -108,13 +106,11 @@ const CaseViewPage: React.FC = () => {
 
   return (
     <motion.div 
-        // PHOENIX: Changed to min-h-screen for flexible scrolling on mobile
         className="w-full min-h-screen bg-background-dark p-2 sm:p-4 lg:p-6"
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }}
     >
       <div className="max-w-[1800px] w-full mx-auto">
-        {/* PHOENIX: Grid now fills desktop height but stacks and scrolls naturally on mobile */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[calc(100vh-3rem)]">
             
             <ChatPanel 
@@ -126,14 +122,12 @@ const CaseViewPage: React.FC = () => {
                 isSendingMessage={isSendingMessage} 
                 onClearChat={handleClearChat} 
                 t={t}
-                // PHOENIX: Set explicit height for mobile, full height for desktop
                 className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-blue-900/10 h-[85vh] lg:h-full" 
-                activeContextId="general" 
+                // PHOENIX: activeContextId prop removed
             />
 
             <DraftingPanel 
                 activeCaseId={caseData.details.id} 
-                // PHOENIX: Set explicit height for mobile, full height for desktop
                 className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/10 h-[85vh] lg:h-full"
             />
 

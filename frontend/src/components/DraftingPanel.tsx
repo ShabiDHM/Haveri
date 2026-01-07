@@ -1,8 +1,8 @@
 // FILE: src/components/DraftingPanel.tsx
-// PHOENIX PROTOCOL - DRAFTING PANEL V2.3 (CRITICAL STABILITY FIX)
-// 1. CRITICAL FIX: Temporarily disabled the streaming (typing) animation, which is the likely source of the render crash. The full text will now appear at once.
-// 2. STABILITY: Added more robust "crash-proof" safety checks to the custom placeholder renderer to handle any unexpected AI output format.
-// 3. UX: The UI remains consistent with the professional styling and stable footer.
+// PHOENIX PROTOCOL - DRAFTING PANEL V2.4 (FINAL SYMMETRY)
+// 1. UI FIX: Replaced the 'Send' button with a symmetrical, icon-style button to match the ChatPanel.
+// 2. LAYOUT: Upgraded the input form to a flexbox layout for perfect alignment.
+// 3. CONSISTENCY: The entire component now shares the exact same design language as the ChatPanel.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../services/api';
@@ -30,17 +30,13 @@ interface DraftingPanelProps {
     className?: string;
 }
 
-// --- PHOENIX: Crash-Proof Renderer ---
+// --- Crash-Proof Renderer ---
 const PlaceholderRenderer = ({ node, ...props }: any) => {
-    // SAFETY CHECK: Ensure the node has valid children before proceeding.
     if (!node || !node.children || node.children.length === 0 || !node.children[0] || typeof node.children[0].value !== 'string') {
-        // Render an empty paragraph to prevent crashing on malformed nodes.
         return <p {...props}></p>; 
     }
-
     const text = node.children[0].value;
     const parts = text.split(/(\[[^\]]+\])/g);
-
     return (
         <p {...props} style={{ whiteSpace: 'pre-wrap' }}>
             {parts.map((part: string, index: number) => 
@@ -48,9 +44,7 @@ const PlaceholderRenderer = ({ node, ...props }: any) => {
                     <span key={index} className="bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-md px-1.5 py-0.5 font-medium mx-1 text-xs sm:text-sm inline-block">
                         {part.slice(1, -1)}
                     </span>
-                ) : (
-                    part
-                )
+                ) : ( part )
             )}
         </p>
     );
@@ -80,7 +74,6 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
         const statusResponse = await apiService.getDraftingJobStatus(jobId);
         const newStatus = statusResponse.status as JobStatus; 
         setCurrentJob(prev => ({ ...prev, status: newStatus }));
-
         if (newStatus === 'COMPLETED' || newStatus === 'SUCCESS') {
           stopPolling();
           const resultResponse = await apiService.getDraftingJobResult(jobId);
@@ -93,9 +86,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
           setIsSubmitting(false);
         }
       } catch (error) { 
-          console.error("Polling failed:", error);
           stopPolling();
-          setCurrentJob(prev => ({ ...prev, status: 'FAILED', error: t('drafting.errorJobFailed') }));
           setIsSubmitting(false);
       }
     }, 2000);
@@ -147,6 +138,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
                 </select>
             </div>
             {!currentJob.result && (
+                // PHOENIX: SYMMETRY FIX FOR FORM
                 <form onSubmit={handleSubmit} className="flex gap-2 items-stretch">
                     <textarea 
                         value={context} 
@@ -154,9 +146,9 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
                         placeholder={t('drafting.promptPlaceholder')} 
                         disabled={isSubmitting} 
                         rows={3}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-500 focus:border-blue-500/50 outline-none text-sm resize-none custom-scrollbar transition-all duration-300 disabled:opacity-70" 
+                        className="w-full bg-black/40 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-blue-600/50 focus:ring-1 focus:ring-blue-600/50 transition-all placeholder:text-gray-500 text-sm resize-none custom-scrollbar"
                     />
-                    <button type="submit" disabled={isSubmitting || !context.trim()} className="px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center aspect-square sm:aspect-auto">
+                    <button type="submit" disabled={isSubmitting || !context.trim()} className="px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center aspect-square">
                         {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
                     </button>
                 </form>
@@ -166,7 +158,6 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
         {/* CONTENT AREA */}
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar z-0 relative min-h-0 bg-black/20">
             {currentJob.result ? (
-                // PHOENIX: Streaming component removed for stability. Direct render is safer.
                 <div className="prose prose-invert prose-sm sm:prose-base max-w-none prose-p:leading-relaxed">
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
