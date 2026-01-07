@@ -1,8 +1,8 @@
 // FILE: src/components/DraftingPanel.tsx
-// PHOENIX PROTOCOL - DRAFTING PANEL V2.0 (PROFESSIONAL STYLING)
-// 1. FEATURE: Custom Markdown renderer highlights placeholders like [Emri] as fillable fields.
-// 2. UI: Polished headers, footers, and buttons for a premium, symmetrical look.
-// 3. MOBILE: Adjusted padding and text sizes for mobile responsiveness.
+// PHOENIX PROTOCOL - DRAFTING PANEL V2.1 (UI STATE FIX)
+// 1. FIX: The footer is now always visible; buttons are conditionally disabled.
+// 2. UX: Added a live status indicator ("Generating...", "Ready", "Completed").
+// 3. STYLE: Retains professional placeholder rendering and symmetrical design.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../services/api';
@@ -30,10 +30,9 @@ interface DraftingPanelProps {
     className?: string;
 }
 
-// --- PHOENIX: Custom Renderer for Placeholders ---
+// --- Custom Renderer for Placeholders ---
 const PlaceholderRenderer = ({ node, ...props }: any) => {
     const text = node.children[0].value;
-    // Regex to find placeholders like [Your Name]
     const parts = text.split(/(\[[^\]]+\])/g);
 
     return (
@@ -75,10 +74,7 @@ const StreamedMarkdown: React.FC<{ text: string, isNew: boolean, onComplete: () 
         <div className="prose prose-invert prose-sm sm:prose-base max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-headings:text-white prose-a:text-blue-400 prose-strong:text-amber-200">
              <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
-                components={{
-                    // Use our custom renderer for paragraphs
-                    p: PlaceholderRenderer,
-                }}
+                components={{ p: PlaceholderRenderer }}
             >
                 {displayedText}
             </ReactMarkdown>
@@ -90,7 +86,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const { t } = useTranslation();
   const [context, setContext] = useState('');
   const [currentJob, setCurrentJob] = useState<DraftingJobState>({ jobId: null, status: null, result: null, error: null });
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('generic');
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('kontrate');
   const [isResultNew, setIsResultNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const pollingIntervalRef = useRef<number | null>(null);
@@ -151,48 +147,38 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const handleClearResult = () => { if (window.confirm(t('drafting.confirmClear'))) { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); setCurrentJob({ jobId: null, status: null, result: null, error: null }); setIsResultNew(false); } };
 
   return (
-    // PHOENIX: Removed extra background colors to inherit from parent.
     <div className={`flex flex-col relative overflow-hidden h-full w-full ${className}`}>
         <style>{` select option, select optgroup { background-color: #0f172a; color: #f9fafb; } `}</style>
         
         {/* HEADER AREA */}
         <div className="flex flex-col gap-4 p-3 sm:p-4 border-b border-white/10 bg-white/5 z-20">
-            {currentJob.result ? (
-                 <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2 text-sm font-bold text-gray-200">
-                        <FileText size={16} className="text-blue-400"/>
-                        {t('drafting.documentReady', 'Dokument i Përgatitur')}
-                    </div>
-                 </div>
-            ) : (
-                <>
-                    <div className='relative group min-w-0'>
-                        <LayoutTemplate className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-blue-400 transition-colors pointer-events-none"/>
-                        <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value as TemplateType)} disabled={isSubmitting} className="w-full bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-xs pl-10 pr-4 py-3 appearance-none transition-colors cursor-pointer font-medium">
-                            <optgroup label={t('drafting.groupBusiness')}>
-                                <option value="email">{t('drafting.templateEmail')}</option>
-                                <option value="marketing_post">{t('drafting.templateMarketingPost')}</option>
-                                <option value="generic">{t('drafting.templateGeneric')}</option>
-                            </optgroup>
-                            <optgroup label={t('drafting.groupLegal')}>
-                                <option value="kontrate">{t('drafting.templateKontrate')}</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                    <form onSubmit={handleSubmit} className="flex gap-2 items-stretch">
-                        <textarea 
-                            value={context} 
-                            onChange={(e) => setContext(e.target.value)} 
-                            placeholder={t('drafting.promptPlaceholder')} 
-                            disabled={isSubmitting} 
-                            rows={3}
-                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-500 focus:border-blue-500/50 outline-none text-sm resize-none custom-scrollbar transition-all duration-300" 
-                        />
-                        <button type="submit" disabled={isSubmitting || !context.trim()} className="px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center aspect-square sm:aspect-auto">
-                            {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
-                        </button>
-                    </form>
-                </>
+            <div className='relative group min-w-0'>
+                <LayoutTemplate className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-blue-400 transition-colors pointer-events-none"/>
+                <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value as TemplateType)} disabled={isSubmitting || !!currentJob.result} className="w-full bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-xs pl-10 pr-4 py-3 appearance-none transition-colors cursor-pointer font-medium disabled:opacity-70">
+                    <optgroup label={t('drafting.groupBusiness')}>
+                        <option value="email">{t('drafting.templateEmail')}</option>
+                        <option value="marketing_post">{t('drafting.templateMarketingPost')}</option>
+                    </optgroup>
+                    <optgroup label={t('drafting.groupLegal')}>
+                        <option value="kontrate">{t('drafting.templateKontrate')}</option>
+                        <option value="generic">{t('drafting.templateGeneric')}</option>
+                    </optgroup>
+                </select>
+            </div>
+            {!currentJob.result && (
+                <form onSubmit={handleSubmit} className="flex gap-2 items-stretch">
+                    <textarea 
+                        value={context} 
+                        onChange={(e) => setContext(e.target.value)} 
+                        placeholder={t('drafting.promptPlaceholder')} 
+                        disabled={isSubmitting} 
+                        rows={3}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-500 focus:border-blue-500/50 outline-none text-sm resize-none custom-scrollbar transition-all duration-300 disabled:opacity-70" 
+                    />
+                    <button type="submit" disabled={isSubmitting || !context.trim()} className="px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center aspect-square sm:aspect-auto">
+                        {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+                    </button>
+                </form>
             )}
         </div>
 
@@ -203,25 +189,29 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
             ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center opacity-30">
                     <FileText size={48} className="mb-4 text-gray-500" />
-                    <p className="text-sm text-gray-400 max-w-xs">{ isSubmitting ? t('drafting.loadingState') : t('drafting.emptyState')}</p>
+                    <p className="text-sm text-gray-400 max-w-xs">{ isSubmitting ? t('drafting.loadingState', 'Duke gjeneruar dokumentin...') : t('drafting.emptyState', 'Rezultati do të shfaqet këtu.')}</p>
                     {currentJob.error && <p className="text-red-400 text-xs mt-2">{currentJob.error}</p>}
                 </div>
             )}
         </div>
 
-        {/* FOOTER AREA */}
-        {currentJob.result && (
-            <div className="p-3 border-t border-white/10 bg-white/5 flex justify-between items-center z-20">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
-                    <CheckCircle size={14} /> {t('drafting.statusCompleted')}
-                </div>
-                <div className="flex gap-1 sm:gap-2">
-                    <button onClick={handleCopyResult} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 transition-colors" title={t('drafting.copyTitle')}><Copy size={16}/></button>
-                    <button onClick={handleDownloadResult} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 transition-colors" title={t('drafting.downloadTitle')}><Download size={16}/></button>
-                    <button onClick={handleClearResult} className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors" title={t('drafting.clearTitle')}><Trash2 size={16}/></button>
-                </div>
+        {/* FOOTER AREA - PHOENIX FIX */}
+        <div className="p-3 border-t border-white/10 bg-white/5 flex justify-between items-center z-20">
+            <div className="flex items-center gap-2 text-xs font-bold">
+                {currentJob.result ? (
+                    <span className="text-emerald-400 flex items-center gap-2"><CheckCircle size={14} /> {t('drafting.statusCompleted', 'Përfunduar')}</span>
+                ) : isSubmitting ? (
+                    <span className="text-blue-400 flex items-center gap-2 animate-pulse"><Loader2 size={14} className="animate-spin" /> {t('drafting.statusGenerating', 'Duke Gjeneruar...')}</span>
+                ) : (
+                    <span className="text-gray-400">{t('drafting.statusReady', 'Gati')}</span>
+                )}
             </div>
-        )}
+            <div className="flex gap-1 sm:gap-2">
+                <button onClick={handleCopyResult} disabled={!currentJob.result} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title={t('drafting.copyTitle')}><Copy size={16}/></button>
+                <button onClick={handleDownloadResult} disabled={!currentJob.result} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title={t('drafting.downloadTitle')}><Download size={16}/></button>
+                <button onClick={handleClearResult} disabled={!currentJob.result} className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title={t('drafting.clearTitle')}><Trash2 size={16}/></button>
+            </div>
+        </div>
     </div>
   );
 };
