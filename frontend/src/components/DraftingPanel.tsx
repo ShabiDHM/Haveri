@@ -1,8 +1,8 @@
 // FILE: src/components/DraftingPanel.tsx
-// PHOENIX PROTOCOL - DRAFTING PANEL V2.1 (UI STATE FIX)
-// 1. FIX: The footer is now always visible; buttons are conditionally disabled.
-// 2. UX: Added a live status indicator ("Generating...", "Ready", "Completed").
-// 3. STYLE: Retains professional placeholder rendering and symmetrical design.
+// PHOENIX PROTOCOL - DRAFTING PANEL V2.2 (CRASH-PROOF RENDERER)
+// 1. CRITICAL FIX: Fortified the custom placeholder renderer with safety checks to prevent fatal crashes on unexpected AI output (the "blank screen" bug).
+// 2. STABILITY: Improved error handling within the API polling loop.
+// 3. UI: Retains the stable footer and professional styling from V2.1.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../services/api';
@@ -30,16 +30,22 @@ interface DraftingPanelProps {
     className?: string;
 }
 
-// --- Custom Renderer for Placeholders ---
+// --- PHOENIX: Crash-Proof Renderer ---
 const PlaceholderRenderer = ({ node, ...props }: any) => {
+    // SAFETY CHECK: Ensure the node has valid children before proceeding.
+    if (!node || !node.children || !node.children[0] || typeof node.children[0].value !== 'string') {
+        // Render nothing or a fallback for this malformed node to prevent a crash.
+        return <p {...props}></p>; 
+    }
+
     const text = node.children[0].value;
     const parts = text.split(/(\[[^\]]+\])/g);
 
     return (
-        <p {...props}>
+        <p {...props} style={{ whiteSpace: 'pre-wrap' }}>
             {parts.map((part: string, index: number) => 
                 /(\[[^\]]+\])/.test(part) ? (
-                    <span key={index} className="bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-md px-1.5 py-0.5 font-medium mx-1 text-xs sm:text-sm">
+                    <span key={index} className="bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-md px-1.5 py-0.5 font-medium mx-1 text-xs sm:text-sm inline-block">
                         {part.slice(1, -1)}
                     </span>
                 ) : (
@@ -93,27 +99,36 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
 
   useEffect(() => { return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); }; }, []);
 
+  const stopPolling = () => {
+    if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+    }
+  };
+
   const startPolling = (jobId: string) => {
-    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    stopPolling();
     pollingIntervalRef.current = window.setInterval(async () => {
       try {
         const statusResponse = await apiService.getDraftingJobStatus(jobId);
         const newStatus = statusResponse.status as JobStatus; 
         setCurrentJob(prev => ({ ...prev, status: newStatus }));
         if (newStatus === 'COMPLETED' || newStatus === 'SUCCESS') {
+          stopPolling();
           const resultResponse = await apiService.getDraftingJobResult(jobId);
           const finalResult = resultResponse.document_text || resultResponse.result_text || "";
           setIsResultNew(true); 
           setCurrentJob(prev => ({ ...prev, status: 'COMPLETED', result: finalResult, error: null }));
-          if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
           setIsSubmitting(false);
         } else if (newStatus === 'FAILED' || newStatus === 'FAILURE') {
+          stopPolling();
           setCurrentJob(prev => ({ ...prev, status: 'FAILED', error: statusResponse.error || t('drafting.errorJobFailed'), result: null }));
-          if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
           setIsSubmitting(false);
         }
       } catch (error) { 
-          if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+          console.error("Polling failed:", error);
+          stopPolling();
+          setCurrentJob(prev => ({ ...prev, status: 'FAILED', error: t('drafting.errorJobFailed') }));
           setIsSubmitting(false);
       }
     }, 2000);
@@ -144,7 +159,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); runDraftingJob(); };
   const handleCopyResult = async () => { if (currentJob.result) { await navigator.clipboard.writeText(currentJob.result); alert(t('general.copied')); } };
   const handleDownloadResult = () => { if (currentJob.result) { const blob = new Blob([currentJob.result], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `draft-${new Date().getTime()}.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); } };
-  const handleClearResult = () => { if (window.confirm(t('drafting.confirmClear'))) { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); setCurrentJob({ jobId: null, status: null, result: null, error: null }); setIsResultNew(false); } };
+  const handleClearResult = () => { if (window.confirm(t('drafting.confirmClear'))) { stopPolling(); setCurrentJob({ jobId: null, status: null, result: null, error: null }); setIsResultNew(false); setIsSubmitting(false); } };
 
   return (
     <div className={`flex flex-col relative overflow-hidden h-full w-full ${className}`}>
@@ -195,7 +210,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
             )}
         </div>
 
-        {/* FOOTER AREA - PHOENIX FIX */}
+        {/* FOOTER AREA */}
         <div className="p-3 border-t border-white/10 bg-white/5 flex justify-between items-center z-20">
             <div className="flex items-center gap-2 text-xs font-bold">
                 {currentJob.result ? (
