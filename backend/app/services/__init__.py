@@ -1,18 +1,18 @@
 # FILE: backend/app/services/__init__.py
-# PHOENIX PROTOCOL - SERVICES INIT CLEANUP
-# 1. REMOVED: Deleted 'analysis_service' from imports as the file was deleted.
-# 2. STATUS: Prevents ImportError on server startup.
+# PHOENIX PROTOCOL - SERVICES INIT V2.0
+# 1. REMOVED: Deleted imports for 'document_processing_service' and 'albanian_document_processor'.
+# 2. REASON: These files were deleted as their intelligence was consolidated into the unified Celery worker.
+# 3. STATUS: Resolves the circular import error and allows the application to start.
 
 from . import (
     admin_service,
-    # analysis_service, # PHOENIX: Removed deleted service
     business_service,
     calendar_service,
     case_service,
     chat_service,
     conversion_service,
     deadline_service,
-    document_processing_service,
+    # document_processing_service, # PHOENIX: Removed, logic migrated to Celery task
     document_service,
     drafting_service,
     email_service,
@@ -27,8 +27,6 @@ from . import (
     user_service,
     vector_store_service,
     spreadsheet_service,
-
-    # PHOENIX NEW SERVICES
     archive_service,
     finance_service,
     graph_service,
@@ -43,5 +41,4 @@ from . import (
     albanian_language_detector,
     albanian_metadata_extractor,
     albanian_ner_service,
-
 )

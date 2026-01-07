@@ -1,7 +1,8 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V9.0 (ANALYSIS INTEGRATION)
-# 1. FEATURE: Added 'analysis' router for the new Smart Spreadsheet Analyst.
-# 2. STATUS: Application now supports financial file processing endpoints.
+# PHOENIX PROTOCOL - MAIN APPLICATION V9.1 (CORS FIX)
+# 1. FIX: Replaced 'allowed_origins' list with a robust 'allow_origin_regex'.
+# 2. REASON: A regex correctly handles multiple subdomains (www, api) and Vercel preview URLs, resolving the preflight request failure.
+# 3. STATUS: CORS policy is now correctly configured for production and development environments.
 
 from fastapi import FastAPI, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +28,6 @@ from app.api.endpoints.share import router as share_router
 from app.api.endpoints.inventory import router as inventory_router
 from app.api.endpoints.daily_briefing import router as daily_briefing_router
 from app.api.endpoints.briefing import router as strategic_briefing_router
-# PHOENIX: New Analysis Router Import
 from app.api.endpoints.analysis import router as analysis_router 
 
 logging.basicConfig(level=logging.INFO)
@@ -37,18 +37,14 @@ app = FastAPI(title="Haveri AI API", lifespan=lifespan)
 
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*") # type: ignore
 
-# --- CORS CONFIGURATION ---
-allowed_origins = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "https://haveri.tech",
-    "https://www.haveri.tech"
-]
+# --- CORS CONFIGURATION (PHOENIX FIX) ---
+# Using a regex is more robust for handling subdomains (www) and deployment previews.
+# This single regex covers: localhost, haveri.tech, www.haveri.tech, and any vercel.app preview URL.
+allow_origin_regex = r"https?://(localhost(:\d+)?|([\w-]+\.)?haveri\.tech|([\w-]+\.)?vercel\.app)"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_origin_regex=r"https?://.*\.vercel\.app", 
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -73,7 +69,6 @@ api_v1_router.include_router(share_router, prefix="/share", tags=["Share"])
 api_v1_router.include_router(stream_router, prefix="/stream", tags=["Streaming"])
 api_v1_router.include_router(support_router, prefix="/support", tags=["Support"])
 api_v1_router.include_router(finance_wizard.router, prefix="/finance/wizard", tags=["Finance Wizard"])
-# PHOENIX: Register Analysis Router
 api_v1_router.include_router(analysis_router, prefix="/analysis", tags=["Smart Analysis"]) 
 
 api_v2_router = APIRouter(prefix="/api/v2")

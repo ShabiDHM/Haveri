@@ -1,10 +1,7 @@
 # FILE: backend/app/core/lifespan.py
-# PHOENIX PROTOCOL - LIFESPAN MANAGER V3.0 (DEFINITIVE CORRECTION)
-# 1. FIX: The lifespan now correctly calls all three required connection functions
-#    (Sync Mongo, Sync Redis, Async Motor), resolving the root cause of the
-#    'Authentication failed' errors in synchronous operations.
-# 2. STATE MANAGEMENT: The database instances are now correctly attached to the
-#    application state (app.state) for use by other functions.
+# PHOENIX PROTOCOL - LIFESPAN MANAGER V3.1 (RENAMED)
+# 1. FIX: Updated import from 'JuristiRemoteEmbeddings' to 'HaveriEmbeddingFunction'.
+# 2. ALIGNMENT: Ensures the lifespan manager uses the correctly named core components.
 # 3. STATUS: This is the final, architecturally sound version.
 
 from contextlib import asynccontextmanager
@@ -13,18 +10,18 @@ import logging
 import chromadb
 from pymongo import ASCENDING, DESCENDING
 
-# PHOENIX FIX: Importing all required functions from the corrected db.py
 from .db import (
     connect_to_mongo,
     connect_to_redis,
     connect_to_motor,
     close_mongo_connections,
     close_redis_connection,
-    db_instance, # Import the global instance to attach to app.state
-    async_db_instance # Import the global instance to attach to app.state
+    db_instance, 
+    async_db_instance 
 )
 from .config import settings
-from .embeddings import JuristiRemoteEmbeddings
+# PHOENIX FIX: Import the correctly named class
+from .embeddings import HaveriEmbeddingFunction
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +31,8 @@ def initialize_chromadb():
         logger.info("--- [Lifespan] Initializing ChromaDB connection... ---")
         client = chromadb.HttpClient(host=settings.CHROMA_HOST, port=settings.CHROMA_PORT)
         
-        embedding_function = JuristiRemoteEmbeddings()
+        # PHOENIX FIX: Instantiate the correctly named class
+        embedding_function = HaveriEmbeddingFunction()
         client.get_or_create_collection(
             name="legal_knowledge_base",
             embedding_function=embedding_function
@@ -71,12 +69,10 @@ async def lifespan(app: FastAPI):
     """Handles application startup and shutdown events."""
     logger.info("--- [Lifespan] Application startup sequence initiated... ---")
     
-    # --- PHOENIX FIX: Call all three connection functions ---
     connect_to_mongo()
     connect_to_redis()
     await connect_to_motor()
     
-    # --- PHOENIX FIX: Attach database instances to the app state ---
     app.state.mongo_db = db_instance
     app.state.async_mongo_db = async_db_instance
     
