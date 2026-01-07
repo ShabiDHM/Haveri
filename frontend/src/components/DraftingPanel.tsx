@@ -1,7 +1,8 @@
 // FILE: src/components/DraftingPanel.tsx
-// PHOENIX PROTOCOL - DRAFTING PANEL V1.3 (TEMPLATE CLEANUP)
-// 1. CLEANUP: Removed obsolete legal templates ('padi', 'pergjigje', 'kunderpadi') from the UI.
-// 2. FOCUS: The 'Legal' drafting group now only contains 'Kontratë'.
+// PHOENIX PROTOCOL - DRAFTING PANEL V2.0 (PROFESSIONAL STYLING)
+// 1. FEATURE: Custom Markdown renderer highlights placeholders like [Emri] as fillable fields.
+// 2. UI: Polished headers, footers, and buttons for a premium, symmetrical look.
+// 3. MOBILE: Adjusted padding and text sizes for mobile responsiveness.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../services/api';
@@ -13,7 +14,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-// PHOENIX: Removed obsolete types
+// --- TYPES ---
 type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'SUCCESS' | 'FAILED' | 'FAILURE';
 type TemplateType = 'generic' | 'kontrate' | 'email' | 'marketing_post';
 
@@ -29,24 +30,58 @@ interface DraftingPanelProps {
     className?: string;
 }
 
+// --- PHOENIX: Custom Renderer for Placeholders ---
+const PlaceholderRenderer = ({ node, ...props }: any) => {
+    const text = node.children[0].value;
+    // Regex to find placeholders like [Your Name]
+    const parts = text.split(/(\[[^\]]+\])/g);
+
+    return (
+        <p {...props}>
+            {parts.map((part: string, index: number) => 
+                /(\[[^\]]+\])/.test(part) ? (
+                    <span key={index} className="bg-amber-500/10 text-amber-300 border border-amber-500/20 rounded-md px-1.5 py-0.5 font-medium mx-1 text-xs sm:text-sm">
+                        {part.slice(1, -1)}
+                    </span>
+                ) : (
+                    part
+                )
+            )}
+        </p>
+    );
+};
+
+
 const StreamedMarkdown: React.FC<{ text: string, isNew: boolean, onComplete: () => void }> = ({ text, isNew, onComplete }) => {
     const [displayedText, setDisplayedText] = useState(isNew ? "" : text);
+    
     useEffect(() => {
         if (!isNew) { setDisplayedText(text); return; }
         setDisplayedText(""); 
         let index = 0; const speed = 5; 
         const intervalId = setInterval(() => {
-            setDisplayedText((prev) => {
-                if (index >= text.length) { clearInterval(intervalId); onComplete(); return text; }
-                const nextChar = text.charAt(index); index++; return prev + nextChar;
-            });
+            if (index >= text.length) {
+                clearInterval(intervalId);
+                onComplete();
+                return;
+            }
+            setDisplayedText(text.substring(0, index + 1));
+            index++;
         }, speed);
         return () => clearInterval(intervalId);
     }, [text, isNew, onComplete]);
 
     return (
-        <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-headings:text-white prose-a:text-blue-400 prose-strong:text-amber-200">
-             <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedText}</ReactMarkdown>
+        <div className="prose prose-invert prose-sm sm:prose-base max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-headings:text-white prose-a:text-blue-400 prose-strong:text-amber-200">
+             <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                    // Use our custom renderer for paragraphs
+                    p: PlaceholderRenderer,
+                }}
+            >
+                {displayedText}
+            </ReactMarkdown>
         </div>
     );
 };
@@ -58,7 +93,6 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('generic');
   const [isResultNew, setIsResultNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isInputActive, setIsInputActive] = useState(false);
   const pollingIntervalRef = useRef<number | null>(null);
 
   useEffect(() => { return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); }; }, []);
@@ -71,31 +105,27 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
         const newStatus = statusResponse.status as JobStatus; 
         setCurrentJob(prev => ({ ...prev, status: newStatus }));
         if (newStatus === 'COMPLETED' || newStatus === 'SUCCESS') {
-          try {
-            const resultResponse = await apiService.getDraftingJobResult(jobId);
-            const finalResult = resultResponse.document_text || resultResponse.result_text || "";
-            setIsResultNew(true); 
-            setCurrentJob(prev => ({ ...prev, status: 'COMPLETED', result: finalResult, error: null }));
-            if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-            setIsSubmitting(false);
-          } catch (error) {
-            setCurrentJob(prev => ({ ...prev, error: t('drafting.errorFetchResult'), status: 'FAILED' }));
-            if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-            setIsSubmitting(false);
-          }
+          const resultResponse = await apiService.getDraftingJobResult(jobId);
+          const finalResult = resultResponse.document_text || resultResponse.result_text || "";
+          setIsResultNew(true); 
+          setCurrentJob(prev => ({ ...prev, status: 'COMPLETED', result: finalResult, error: null }));
+          if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+          setIsSubmitting(false);
         } else if (newStatus === 'FAILED' || newStatus === 'FAILURE') {
           setCurrentJob(prev => ({ ...prev, status: 'FAILED', error: statusResponse.error || t('drafting.errorJobFailed'), result: null }));
           if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
           setIsSubmitting(false);
         }
-      } catch (error) { console.warn("Polling error:", error); }
+      } catch (error) { 
+          if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+          setIsSubmitting(false);
+      }
     }, 2000);
   };
 
   const runDraftingJob = async () => {
     if (!context.trim()) return;
     setIsSubmitting(true);
-    setIsInputActive(false);
     setCurrentJob({ jobId: null, status: 'PENDING', result: null, error: null });
     setIsResultNew(false);
     try {
@@ -121,62 +151,71 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const handleClearResult = () => { if (window.confirm(t('drafting.confirmClear'))) { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); setCurrentJob({ jobId: null, status: null, result: null, error: null }); setIsResultNew(false); } };
 
   return (
-    <div className={`flex flex-col relative bg-transparent overflow-hidden h-full w-full ${className}`}>
+    // PHOENIX: Removed extra background colors to inherit from parent.
+    <div className={`flex flex-col relative overflow-hidden h-full w-full ${className}`}>
         <style>{` select option, select optgroup { background-color: #0f172a; color: #f9fafb; } `}</style>
-        <div className="flex flex-col gap-4 p-4 border-b border-white/10 bg-white/5 z-20">
-            <div className="flex gap-4">
-                <div className='flex-1 relative group min-w-0'>
-                    <LayoutTemplate className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-blue-400 transition-colors pointer-events-none"/>
-                    <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value as TemplateType)} disabled={isSubmitting} className="w-full bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-xs pl-9 pr-4 py-2.5 appearance-none transition-colors cursor-pointer font-medium">
-                        <optgroup label={t('drafting.groupBusiness')}>
-                            <option value="email">{t('drafting.templateEmail')}</option>
-                            <option value="marketing_post">{t('drafting.templateMarketingPost')}</option>
-                            <option value="generic">{t('drafting.templateGeneric')}</option>
-                        </optgroup>
-                        <optgroup label={t('drafting.groupLegal')}>
-                            <option value="kontrate">{t('drafting.templateKontrate')}</option>
-                        </optgroup>
-                    </select>
-                </div>
-            </div>
-            
-            {!currentJob.result && (
-                <form onSubmit={handleSubmit} className="flex gap-2 items-end">
-                    <textarea 
-                        value={context} 
-                        onChange={(e) => setContext(e.target.value)} 
-                        onFocus={() => setIsInputActive(true)}
-                        onBlur={() => { if(!context) setIsInputActive(false) }}
-                        placeholder={t('drafting.promptPlaceholder')} 
-                        disabled={isSubmitting} 
-                        rows={isInputActive ? 8 : 3}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-sm resize-none custom-scrollbar transition-all duration-300" 
-                    />
-                    <button type="submit" disabled={isSubmitting || !context.trim()} className="h-full px-4 bg-primary-start hover:bg-primary-end text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center">
-                        {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
-                    </button>
-                </form>
+        
+        {/* HEADER AREA */}
+        <div className="flex flex-col gap-4 p-3 sm:p-4 border-b border-white/10 bg-white/5 z-20">
+            {currentJob.result ? (
+                 <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 text-sm font-bold text-gray-200">
+                        <FileText size={16} className="text-blue-400"/>
+                        {t('drafting.documentReady', 'Dokument i Përgatitur')}
+                    </div>
+                 </div>
+            ) : (
+                <>
+                    <div className='relative group min-w-0'>
+                        <LayoutTemplate className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-blue-400 transition-colors pointer-events-none"/>
+                        <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value as TemplateType)} disabled={isSubmitting} className="w-full bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-xs pl-10 pr-4 py-3 appearance-none transition-colors cursor-pointer font-medium">
+                            <optgroup label={t('drafting.groupBusiness')}>
+                                <option value="email">{t('drafting.templateEmail')}</option>
+                                <option value="marketing_post">{t('drafting.templateMarketingPost')}</option>
+                                <option value="generic">{t('drafting.templateGeneric')}</option>
+                            </optgroup>
+                            <optgroup label={t('drafting.groupLegal')}>
+                                <option value="kontrate">{t('drafting.templateKontrate')}</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <form onSubmit={handleSubmit} className="flex gap-2 items-stretch">
+                        <textarea 
+                            value={context} 
+                            onChange={(e) => setContext(e.target.value)} 
+                            placeholder={t('drafting.promptPlaceholder')} 
+                            disabled={isSubmitting} 
+                            rows={3}
+                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-500 focus:border-blue-500/50 outline-none text-sm resize-none custom-scrollbar transition-all duration-300" 
+                        />
+                        <button type="submit" disabled={isSubmitting || !context.trim()} className="px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center aspect-square sm:aspect-auto">
+                            {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+                        </button>
+                    </form>
+                </>
             )}
         </div>
 
+        {/* CONTENT AREA */}
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar z-0 relative min-h-0 bg-black/20">
             {currentJob.result ? (
                 <StreamedMarkdown text={currentJob.result} isNew={isResultNew} onComplete={() => setIsResultNew(false)} />
             ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center opacity-30">
                     <FileText size={48} className="mb-4 text-gray-500" />
-                    <p className="text-sm text-gray-400 max-w-xs">{t('drafting.emptyState')}</p>
+                    <p className="text-sm text-gray-400 max-w-xs">{ isSubmitting ? t('drafting.loadingState') : t('drafting.emptyState')}</p>
                     {currentJob.error && <p className="text-red-400 text-xs mt-2">{currentJob.error}</p>}
                 </div>
             )}
         </div>
 
+        {/* FOOTER AREA */}
         {currentJob.result && (
             <div className="p-3 border-t border-white/10 bg-white/5 flex justify-between items-center z-20">
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
                     <CheckCircle size={14} /> {t('drafting.statusCompleted')}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1 sm:gap-2">
                     <button onClick={handleCopyResult} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 transition-colors" title={t('drafting.copyTitle')}><Copy size={16}/></button>
                     <button onClick={handleDownloadResult} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 transition-colors" title={t('drafting.downloadTitle')}><Download size={16}/></button>
                     <button onClick={handleClearResult} className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors" title={t('drafting.clearTitle')}><Trash2 size={16}/></button>

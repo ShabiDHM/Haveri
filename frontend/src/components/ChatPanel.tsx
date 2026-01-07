@@ -1,8 +1,8 @@
 // FILE: src/components/ChatPanel.tsx
-// PHOENIX PROTOCOL - CONTEXT-AWARE CHAT V2
-// 1. FEATURE: Component now accepts an 'agentType' prop ('business' | 'legal').
-// 2. UX: Displays a dynamic welcome message and icon based on the active agent persona.
-// 3. LOGIC: The 'onSendMessage' call now correctly passes the agentType.
+// PHOENIX PROTOCOL - SYMMETRY UPGRADE V3
+// 1. UI: Replaced the entire panel shell to be pixel-perfect with DraftingPanel.
+// 2. STYLE: Corrected the 'Clear Chat' button to use destructive-action red colors.
+// 3. RESPONSIVE: Inherits mobile-friendly padding and layout from the new shell.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -31,7 +31,7 @@ const MessageCopyButton: React.FC<{ text: string }> = ({ text }) => {
         <button 
             onClick={handleCopy} 
             className={`absolute top-2 right-2 p-1.5 rounded-lg transition-all duration-200 ${ copied ? 'bg-green-500/20 text-green-400' : 'bg-black/20 text-gray-400 hover:text-white hover:bg-black/40 opacity-0 group-hover:opacity-100'}`}
-            title={copied ? "Copied!" : "Copy text"}
+            title={copied ? "Kopjuar!" : "Kopjo"}
         >
             {copied ? <Check size={14} /> : <Copy size={14} />}
         </button>
@@ -43,10 +43,9 @@ const TypingMessage: React.FC<{ text: string; onComplete?: () => void }> = ({ te
     useEffect(() => {
         setDisplayedText(""); let index = 0; const speed = 10;
         const intervalId = setInterval(() => {
-            setDisplayedText((prev) => {
-                if (index >= text.length) { clearInterval(intervalId); if (onComplete) onComplete(); return text; }
-                const nextChar = text.charAt(index); index++; return prev + nextChar;
-            });
+            if (index >= text.length) { clearInterval(intervalId); if (onComplete) onComplete(); return; }
+            setDisplayedText(text.substring(0, index + 1));
+            index++;
         }, speed);
         return () => clearInterval(intervalId);
     }, [text, onComplete]);
@@ -121,17 +120,23 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   const personaTitle = agentType === 'legal' ? t('chatPanel.titleLegal', 'Asistenti Ligjor') : t('chatPanel.title');
 
   return (
-    <div className={`flex flex-col relative bg-background-dark/40 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl overflow-hidden h-full w-full ${className}`}>
-      <div className="flex items-center justify-between px-3 sm:px-4 py-3 border-b border-white/10 bg-white/5 rounded-t-2xl z-50">
+    // PHOENIX: SYMMETRY SHELL APPLIED
+    <div className={`flex flex-col relative overflow-hidden h-full w-full ${className}`}>
+      
+      {/* HEADER AREA */}
+      <div className="p-3 sm:p-4 border-b border-white/10 bg-white/5 z-20 flex justify-between items-center">
         <div className="flex items-center gap-2 sm:gap-3">
             <div className={`w-2.5 h-2.5 rounded-full transition-colors duration-500 ${statusDotColor(connectionStatus)}`} />
-            <h3 className="text-sm font-bold text-gray-100 hidden sm:block">{personaTitle}</h3>
+            <h3 className="text-sm font-bold text-gray-100">{personaTitle}</h3>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-            <button onClick={onClearChat} className="p-1.5 text-gray-500 hover:text-red-400 transition-colors" title={t('chatPanel.confirmClear')}><Trash2 size={16} /></button>
+        <div className="flex items-center gap-1 sm:gap-2">
+            {/* PHOENIX: Red Button Style Applied */}
+            <button onClick={onClearChat} className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors" title={t('chatPanel.confirmClear')}><Trash2 size={16} /></button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar z-0 relative min-h-0">
+
+      {/* CONTENT AREA */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar z-0 relative min-h-0 bg-black/20">
         {messages.length === 0 && !isSendingMessage ? (
             <div className="flex flex-col items-center justify-center h-full text-center opacity-40">
                 <PersonaIcon size={48} className="mb-4 text-primary-start" />
@@ -144,7 +149,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 return (
                     <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {isAi && <div className="w-8 h-8 rounded-full bg-black/40 border border-white/10 flex items-center justify-center flex-shrink-0"><PersonaIcon className="w-4 h-4 text-primary-start" /></div>}
-                        <div className={`relative group max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm break-words ${msg.role === 'user' ? 'bg-primary-start text-white rounded-br-none' : 'bg-white/10 text-gray-200 rounded-bl-none border border-white/5 pr-10'}`}>
+                        <div className={`relative group max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm break-words ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white/10 text-gray-200 rounded-bl-none border border-white/5 pr-10'}`}>
                             {isAi && !useTyping && <MessageCopyButton text={msg.content} />}
                             {msg.role === 'user' ? msg.content : useTyping ? <TypingMessage text={msg.content} onComplete={() => setTypingIndex(null)} /> : (
                                 <div className="markdown-content space-y-2 break-words">
@@ -167,7 +172,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         )}
         <div ref={messagesEndRef} />
       </div>
-      <div className="p-4 border-t border-white/10 bg-white/5 rounded-b-2xl z-10">
+      
+      {/* FOOTER AREA */}
+      <div className="p-3 sm:p-4 border-t border-white/10 bg-white/5 z-10">
         <form onSubmit={handleSubmit} className="relative flex items-end gap-2">
             <textarea
                 ref={textareaRef}
@@ -176,10 +183,10 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 onKeyDown={handleKeyDown}
                 placeholder={t('chatPanel.inputPlaceholder')}
                 rows={1}
-                className="w-full bg-black/40 border border-white/10 text-white rounded-xl pl-4 pr-12 py-3 focus:outline-none focus:border-primary-start/50 focus:ring-1 focus:ring-primary-start/50 transition-all placeholder:text-gray-600 text-sm resize-none custom-scrollbar"
+                className="w-full bg-black/40 border border-white/10 text-white rounded-xl pl-4 pr-12 py-3 focus:outline-none focus:border-blue-600/50 focus:ring-1 focus:ring-blue-600/50 transition-all placeholder:text-gray-500 text-sm resize-none custom-scrollbar"
                 style={{ maxHeight: '150px' }}
             />
-            <button type="submit" disabled={!input.trim() || isSendingMessage} className="absolute right-2 bottom-2 p-2 bg-primary-start hover:bg-primary-end text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            <button type="submit" disabled={!input.trim() || isSendingMessage} className="absolute right-2 bottom-2 p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                 <Send size={16} />
             </button>
         </form>

@@ -1,8 +1,8 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - CASE VIEW V16.0 (SPLIT VIEW)
-// 1. LAYOUT: Replaced Document/AI Tabs with permanent 50/50 Chat/Draft split.
-// 2. LOGIC: Removed obsolete document management handlers.
-// 3. STYLE: Consistent glassmorphism for both panels.
+// PHOENIX PROTOCOL - SYMMETRY & MOBILE V17.0
+// 1. LAYOUT: Removed redundant panel wrappers and headers for true component symmetry.
+// 2. RESPONSIVE: Grid now stacks vertically on mobile (lg:grid-cols-2).
+// 3. STYLE: Panels now use h-full to dynamically fill available screen space.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -44,7 +44,6 @@ const CaseViewPage: React.FC = () => {
   
   const currentCaseId = useMemo(() => caseId || '', [caseId]);
   
-  // Socket connection for Chat functionality
   const { 
       messages: liveMessages, 
       setMessages, 
@@ -56,7 +55,6 @@ const CaseViewPage: React.FC = () => {
 
   const isReadyForData = isAuthenticated && !isAuthLoading && !!caseId;
 
-  // Load/Save Chat History from LocalStorage/API
   useEffect(() => { 
       if (!currentCaseId) return; 
       const cached = localStorage.getItem(`chat_history_${currentCaseId}`); 
@@ -98,13 +96,15 @@ const CaseViewPage: React.FC = () => {
 
   const handleClearChat = async () => { 
       if (!caseId) return; 
-      try { 
-          await apiService.clearChatHistory(caseId); 
-          setMessages([]); 
-          localStorage.removeItem(`chat_history_${currentCaseId}`); 
-      } catch (err) { 
-          alert(t('error.generic')); 
-      } 
+      if(window.confirm(t('chatPanel.confirmClear', 'Jeni i sigurt që doni të fshini bisedën?'))) {
+        try { 
+            await apiService.clearChatHistory(caseId); 
+            setMessages([]); 
+            localStorage.removeItem(`chat_history_${currentCaseId}`); 
+        } catch (err) { 
+            alert(t('error.generic')); 
+        }
+      }
   };
 
   const handleChatSubmit = (text: string, _mode: ChatMode, documentId?: string, jurisdiction?: Jurisdiction, agentType?: AgentType) => { 
@@ -115,47 +115,36 @@ const CaseViewPage: React.FC = () => {
   if (error || !caseData.details) return <div className="p-8 text-center text-red-400 border border-red-500/20 rounded-2xl bg-red-500/10"><AlertCircle className="mx-auto h-12 w-12 mb-4" /><p>{error}</p></div>;
 
   return (
-    <motion.div className="w-full h-screen bg-background-dark" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 h-full flex flex-col">
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 py-6 min-h-0 items-center">
+    <motion.div 
+        className="w-full h-screen bg-background-dark p-4 sm:p-6"
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }}
+    >
+      <div className="max-w-[1800px] w-full mx-auto h-full">
+        {/* PHOENIX: Mobile-first grid, stacks on small screens */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
             
-            {/* LEFT COLUMN: CHAT PANEL (Replaces Documents) */}
-            <div className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-full min-h-[500px] overflow-hidden shadow-2xl shadow-blue-900/10 flex flex-col">
-                <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
-                     <h2 className="font-bold text-gray-100 flex items-center gap-2">
-                        {t('chatPanel.title', 'Bisedo')}
-                     </h2>
-                </div>
-                <div className="flex-1 min-h-0">
-                    <ChatPanel 
-                        agentType="business" 
-                        messages={liveMessages} 
-                        connectionStatus={connectionStatus} 
-                        reconnect={reconnect} 
-                        onSendMessage={handleChatSubmit} 
-                        isSendingMessage={isSendingMessage} 
-                        onClearChat={handleClearChat} 
-                        t={t} 
-                        className="h-full border-none rounded-none bg-transparent" 
-                        activeContextId="general" 
-                    />
-                </div>
-            </div>
+            {/* LEFT COLUMN: CHAT PANEL */}
+            {/* PHOENIX: Removed wrapper, using direct component with symmetrical shell */}
+            <ChatPanel 
+                agentType="business" 
+                messages={liveMessages} 
+                connectionStatus={connectionStatus} 
+                reconnect={reconnect} 
+                onSendMessage={handleChatSubmit} 
+                isSendingMessage={isSendingMessage} 
+                onClearChat={handleClearChat} 
+                t={t} 
+                className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-blue-900/10" 
+                activeContextId="general" 
+            />
 
-            {/* RIGHT COLUMN: DRAFTING PANEL (Previously Tabbed) */}
-            <div className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl h-full min-h-[500px] overflow-hidden shadow-2xl shadow-purple-900/10 flex flex-col">
-                <div className="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
-                     <h2 className="font-bold text-gray-100 flex items-center gap-2">
-                        {t('drafting.title', 'Harto')}
-                     </h2>
-                </div>
-                <div className="flex-1 min-h-0">
-                    <DraftingPanel 
-                        activeCaseId={caseData.details.id} 
-                        className="h-full border-none rounded-none bg-transparent"
-                    />
-                </div>
-            </div>
+            {/* RIGHT COLUMN: DRAFTING PANEL */}
+            {/* PHOENIX: Removed wrapper, using direct component with symmetrical shell */}
+            <DraftingPanel 
+                activeCaseId={caseData.details.id} 
+                className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/10"
+            />
 
         </div>
       </div>
