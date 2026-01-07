@@ -1,36 +1,35 @@
 # FILE: backend/app/services/albanian_rag_service.py
-# PHOENIX PROTOCOL - AGENTIC RAG SERVICE V2.3 (PYDANTIC V1 COMPATIBILITY)
-# 1. CRITICAL FIX: Imported 'SecretStr' from 'pydantic.v1' to match LangChain's dependency.
-# 2. EFFECT: Resolves the 'pydantic.v1.types.SecretStr' type mismatch error, fixing the Pylance warning and ensuring runtime stability.
+# PHOENIX PROTOCOL - AGENTIC RAG SERVICE V2.4 (BULLETPROOF INPUT)
+# 1. CRITICAL FIX: The agent input is now a JSON string containing both the query and user_id.
+# 2. REASON: This forces the agent's parser to correctly handle the user_id, resolving the persistent ValidationError with tool calls.
+# 3. ROBUSTNESS: This pattern is more stable and less dependent on LangChain's internal variable handling.
 
 import os
 import logging
+import json # PHOENIX FIX: Import json
 from typing import List, Optional, Any
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.tools import tool
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
-from pydantic.v1 import BaseModel, Field, SecretStr # PHOENIX FIX: Import from pydantic.v1
+from pydantic.v1 import BaseModel, Field, SecretStr
 from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION ---
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-OPENROUTER_MODEL = "deepseek/deepseek-chat" 
+OPENROUTER_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
+OPENROUTER_MODEL = os.environ.get("OPENAI_MODEL", "deepseek/deepseek-chat")
 
 # --- TOOL DEFINITIONS ---
 
 class PrivateDiaryInput(BaseModel):
-    query: str = Field(description="The question to search for in the user's private documents (invoices, contracts, notes).")
+    query: str = Field(description="The question to search for in the user's private documents.")
     user_id: str = Field(description="The ID of the user owning the data.")
 
 @tool("query_private_diary", args_schema=PrivateDiaryInput)
 def query_private_diary_tool(query: str, user_id: str) -> str:
-    """
-    Access the user's 'Private Diary' (Personal Knowledge Base).
-    Use this FIRST to find specific details about the user's business, past cases, or documents.
-    """
+    """Access the user's 'Private Diary' (Personal Knowledge Base). Use this FIRST."""
     from . import vector_store_service
     if not user_id or user_id == 'undefined':
         return "CRITICAL ERROR: user_id was not provided to the tool."
@@ -44,10 +43,7 @@ class PublicLibraryInput(BaseModel):
 
 @tool("query_public_library", args_schema=PublicLibraryInput)
 def query_public_library_tool(query: str) -> str:
-    """
-    Access the 'Public Library' (Official Laws & Regulations).
-    Use this to verify legal compliance, finding labor laws, tax codes, or official procedures.
-    """
+    """Access the 'Public Library' (Official Laws & Regulations). Use this for compliance."""
     from . import vector_store_service
     results = vector_store_service.query_public_library(query_text=query, agent_type='business')
     if not results:
@@ -65,9 +61,9 @@ class AlbanianRAGService:
         
         if api_key:
             self.llm = ChatOpenAI(
-                model=os.environ.get("OPENAI_MODEL", OPENROUTER_MODEL),
+                model=OPENROUTER_MODEL,
                 api_key=SecretStr(api_key), 
-                base_url=os.environ.get("OPENAI_BASE_URL", OPENROUTER_BASE_URL),
+                base_url=OPENROUTER_BASE_URL,
                 temperature=0.0,
                 streaming=False
             )
@@ -76,26 +72,31 @@ class AlbanianRAGService:
             logger.warning("Agent Service initialized without API Key. AI features will fail.")
 
         # -- RESEARCHER PROMPT (ReAct) --
+        # PHOENIX FIX: Updated prompt to handle a JSON string as input.
         researcher_template = """
-        You are a smart business assistant for a company in Kosovo. Answer the user's question in Albanian.
-        When using 'query_private_diary', you MUST use the provided 'user_id'.
+        You are a smart business assistant for a company in Kosovo. Your goal is to answer the user's question in Albanian.
+        
+        Your input will be a JSON string containing two keys: "user_question" and "user_id".
+        You MUST parse this input to understand the question and to get the user_id for your tools.
 
-        Tools Available:
+        When using the 'query_private_diary' tool, you MUST include the 'user_id' from the input.
+
+        TOOLS:
         {tools}
 
-        Use the following format:
-        Question: the input question
-        Thought: you should always think about what to do
-        Action: the action to take, should be one of [{tool_names}]
-        Action Input: the input to the action in JSON format, including the 'user_id' for private queries.
-        Observation: the result of the action
-        Thought: I know the final answer
-        Final Answer: the final answer to the original input question
+        RESPONSE FORMAT:
+        Question: the original user question from the JSON input
+        Thought: your reasoning process
+        Action: the action to take, one of [{tool_names}]
+        Action Input: a JSON object with the required parameters for the action. For 'query_private_diary', this MUST include the 'user_id'.
+        Observation: the result from the tool
+        ... (repeat Thought/Action/Observation as needed)
+        Thought: I now have enough information to answer the user's question.
+        Final Answer: your comprehensive answer in Albanian.
 
         Begin!
 
-        Question: {input}
-        (The User ID for this query is: {user_id})
+        Input: {input}
         Thought: {agent_scratchpad}
         """
         self.researcher_prompt = PromptTemplate.from_template(researcher_template)
@@ -125,24 +126,29 @@ class AlbanianRAGService:
             return "Sistemi AI nuk është konfiguruar. Ju lutem kontrolloni API Key."
 
         case_summary = await self._get_case_summary(case_id) if case_id else ""
-        context_input = f"{case_summary}\n\nUSER QUESTION: {query}"
+        full_query = f"{case_summary}\n\nUSER QUESTION: {query}"
 
         try:
             logger.info(f"🤖 Agent Researcher starting for User: {user_id}")
             
+            # PHOENIX FIX: Create a structured JSON input string.
+            structured_input = {
+                "user_question": full_query,
+                "user_id": user_id
+            }
+            input_json_str = json.dumps(structured_input)
+
             draft_result = await self.researcher_executor.ainvoke({
-                "input": context_input,
-                "user_id": user_id,
+                "input": input_json_str,
                 "chat_history": [] 
             })
             draft_answer = draft_result.get("output", "Nuk u gjenerua përgjigje.")
 
             logger.info("🧐 Agent Critic reviewing...")
             critic_prompt = f"""
-            You are a Senior Business Consultant in Kosovo. Review this draft answer.
-            Original Question: {query}
-            Draft Answer: {draft_answer}
-            Identify gaps or unprofessional tone. If good, say "OK". Otherwise, provide critique in Albanian.
+            Review this draft answer. If good, say "OK". Otherwise, provide critique in Albanian.
+            Question: {query}
+            Draft: {draft_answer}
             """
             critic_response = await self.llm.ainvoke(critic_prompt)
             critique = critic_response.content
@@ -152,7 +158,7 @@ class AlbanianRAGService:
 
             logger.info("✍️ Agent Reviser polishing...")
             revision_prompt = f"""
-            Rewrite the draft to address the critique, in Albanian.
+            Rewrite the draft in Albanian to address the critique.
             Draft: {draft_answer}
             Critique: {critique}
             Final Answer:
