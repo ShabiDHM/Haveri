@@ -1,8 +1,8 @@
 # FILE: backend/app/services/albanian_rag_service.py
-# PHOENIX PROTOCOL - AGENTIC RAG SERVICE V3.3 (FINAL TYPE OVERRIDE)
-# 1. CRITICAL FIX: Added a '# type: ignore' to the `request_specific_tools` list definition.
-# 2. REASON: Pylance is demonstrably unable to correctly infer the types of either dynamically created or decorated LangChain tools, creating a persistent false positive. This override is the final and correct solution.
-# 3. STATUS: The file is now fully compliant with the static analyzer while maintaining the architecturally sound runtime binding pattern.
+# PHOENIX PROTOCOL - AGENTIC RAG SERVICE V3.4 (PROMPT FIX)
+# 1. CRITICAL FIX: Re-instated the essential '{tool_names}' variable in the agent's prompt template.
+# 2. REASON: The `create_react_agent` function requires '{tool_names}' to function. Its removal was the direct cause of the "Prompt missing required variables" crash.
+# 3. ROBUSTNESS: The prompt has been refined to be fully compliant with the LangChain ReAct agent contract, ensuring stable tool selection.
 
 import os
 import logging
@@ -64,11 +64,28 @@ class AlbanianRAGService:
             self.llm = None
             logger.warning("Agent Service initialized without API Key. AI features will fail.")
 
+        # PHOENIX FIX: Restored the prompt to its correct, fully-featured state.
         researcher_template = """
         You are a smart business assistant for Kosovo. Answer the user's question in Albanian.
-        You have tools to access a private diary and a public library. Use them to find the answer.
-        TOOLS: {tools}
+        You have access to tools. You must use them to find the answer.
+        
+        TOOLS:
+        ------
+        {tools}
+        
+        RESPONSE FORMAT:
+        --------------------
+        Question: The input question you must answer
+        Thought: You should always think about what to do.
+        Action: The action to take, must be one of [{tool_names}]
+        Action Input: The input to the action.
+        Observation: The result of the action.
+        ... (this Thought/Action/Action Input/Observation can repeat N times)
+        Thought: I now have enough information to answer the user's question.
+        Final Answer: The final answer to the original input question, in Albanian.
+        
         Begin!
+        
         Question: {input}
         Thought: {agent_scratchpad}
         """
@@ -91,11 +108,10 @@ class AlbanianRAGService:
         private_tool_with_user = Tool(
             name="query_private_diary",
             func=bound_private_func,
-            description="Access the user's 'Private Diary' (Personal Knowledge Base) to find specific details about their business, contracts, etc.",
+            description="Access the user's 'Private Diary' (Personal Knowledge Base) to find specific details about their business, contracts, etc. Use this FIRST.",
             args_schema=PrivateDiaryInputForAI
         )
         
-        # PHOENIX FIX: Override the Pylance false positive.
         request_specific_tools: List[BaseTool] = [private_tool_with_user, query_public_library_tool] # type: ignore
 
         agent = create_react_agent(self.llm, request_specific_tools, self.researcher_prompt)
@@ -114,7 +130,6 @@ class AlbanianRAGService:
                 logger.error("Agent returned an empty 'output'.")
                 return "Pata një problem me formulimin e përgjigjes. Provoni ta riformuloni pyetjen tuaj."
             
-            # ... (rest of the critique/revise logic is unchanged)
             logger.info("🧐 Agent Critic reviewing...")
             critic_prompt = f'Review this draft. If good, say "OK". Otherwise, critique in Albanian.\nQuestion: {query}\nDraft: {draft_answer}'
             critic_response = await self.llm.ainvoke(critic_prompt)
