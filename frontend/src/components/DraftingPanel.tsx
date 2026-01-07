@@ -1,8 +1,8 @@
 // FILE: src/components/DraftingPanel.tsx
-// PHOENIX PROTOCOL - DRAFTING PANEL V2.2 (CRASH-PROOF RENDERER)
-// 1. CRITICAL FIX: Fortified the custom placeholder renderer with safety checks to prevent fatal crashes on unexpected AI output (the "blank screen" bug).
-// 2. STABILITY: Improved error handling within the API polling loop.
-// 3. UI: Retains the stable footer and professional styling from V2.1.
+// PHOENIX PROTOCOL - DRAFTING PANEL V2.3 (CRITICAL STABILITY FIX)
+// 1. CRITICAL FIX: Temporarily disabled the streaming (typing) animation, which is the likely source of the render crash. The full text will now appear at once.
+// 2. STABILITY: Added more robust "crash-proof" safety checks to the custom placeholder renderer to handle any unexpected AI output format.
+// 3. UX: The UI remains consistent with the professional styling and stable footer.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { apiService } from '../services/api';
@@ -33,8 +33,8 @@ interface DraftingPanelProps {
 // --- PHOENIX: Crash-Proof Renderer ---
 const PlaceholderRenderer = ({ node, ...props }: any) => {
     // SAFETY CHECK: Ensure the node has valid children before proceeding.
-    if (!node || !node.children || !node.children[0] || typeof node.children[0].value !== 'string') {
-        // Render nothing or a fallback for this malformed node to prevent a crash.
+    if (!node || !node.children || node.children.length === 0 || !node.children[0] || typeof node.children[0].value !== 'string') {
+        // Render an empty paragraph to prevent crashing on malformed nodes.
         return <p {...props}></p>; 
     }
 
@@ -56,48 +56,13 @@ const PlaceholderRenderer = ({ node, ...props }: any) => {
     );
 };
 
-
-const StreamedMarkdown: React.FC<{ text: string, isNew: boolean, onComplete: () => void }> = ({ text, isNew, onComplete }) => {
-    const [displayedText, setDisplayedText] = useState(isNew ? "" : text);
-    
-    useEffect(() => {
-        if (!isNew) { setDisplayedText(text); return; }
-        setDisplayedText(""); 
-        let index = 0; const speed = 5; 
-        const intervalId = setInterval(() => {
-            if (index >= text.length) {
-                clearInterval(intervalId);
-                onComplete();
-                return;
-            }
-            setDisplayedText(text.substring(0, index + 1));
-            index++;
-        }, speed);
-        return () => clearInterval(intervalId);
-    }, [text, isNew, onComplete]);
-
-    return (
-        <div className="prose prose-invert prose-sm sm:prose-base max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-headings:text-white prose-a:text-blue-400 prose-strong:text-amber-200">
-             <ReactMarkdown 
-                remarkPlugins={[remarkGfm]}
-                components={{ p: PlaceholderRenderer }}
-            >
-                {displayedText}
-            </ReactMarkdown>
-        </div>
-    );
-};
-
 const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }) => {
   const { t } = useTranslation();
   const [context, setContext] = useState('');
   const [currentJob, setCurrentJob] = useState<DraftingJobState>({ jobId: null, status: null, result: null, error: null });
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('kontrate');
-  const [isResultNew, setIsResultNew] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const pollingIntervalRef = useRef<number | null>(null);
-
-  useEffect(() => { return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); }; }, []);
 
   const stopPolling = () => {
     if (pollingIntervalRef.current) {
@@ -106,6 +71,8 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
     }
   };
 
+  useEffect(() => { return () => stopPolling(); }, []);
+
   const startPolling = (jobId: string) => {
     stopPolling();
     pollingIntervalRef.current = window.setInterval(async () => {
@@ -113,11 +80,11 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
         const statusResponse = await apiService.getDraftingJobStatus(jobId);
         const newStatus = statusResponse.status as JobStatus; 
         setCurrentJob(prev => ({ ...prev, status: newStatus }));
+
         if (newStatus === 'COMPLETED' || newStatus === 'SUCCESS') {
           stopPolling();
           const resultResponse = await apiService.getDraftingJobResult(jobId);
           const finalResult = resultResponse.document_text || resultResponse.result_text || "";
-          setIsResultNew(true); 
           setCurrentJob(prev => ({ ...prev, status: 'COMPLETED', result: finalResult, error: null }));
           setIsSubmitting(false);
         } else if (newStatus === 'FAILED' || newStatus === 'FAILURE') {
@@ -138,7 +105,6 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
     if (!context.trim()) return;
     setIsSubmitting(true);
     setCurrentJob({ jobId: null, status: 'PENDING', result: null, error: null });
-    setIsResultNew(false);
     try {
       const jobResponse = await apiService.initiateDraftingJob({ 
           user_prompt: context.trim(), 
@@ -159,7 +125,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); runDraftingJob(); };
   const handleCopyResult = async () => { if (currentJob.result) { await navigator.clipboard.writeText(currentJob.result); alert(t('general.copied')); } };
   const handleDownloadResult = () => { if (currentJob.result) { const blob = new Blob([currentJob.result], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `draft-${new Date().getTime()}.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); } };
-  const handleClearResult = () => { if (window.confirm(t('drafting.confirmClear'))) { stopPolling(); setCurrentJob({ jobId: null, status: null, result: null, error: null }); setIsResultNew(false); setIsSubmitting(false); } };
+  const handleClearResult = () => { if (window.confirm(t('drafting.confirmClear'))) { stopPolling(); setCurrentJob({ jobId: null, status: null, result: null, error: null }); setIsSubmitting(false); } };
 
   return (
     <div className={`flex flex-col relative overflow-hidden h-full w-full ${className}`}>
@@ -200,7 +166,15 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
         {/* CONTENT AREA */}
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar z-0 relative min-h-0 bg-black/20">
             {currentJob.result ? (
-                <StreamedMarkdown text={currentJob.result} isNew={isResultNew} onComplete={() => setIsResultNew(false)} />
+                // PHOENIX: Streaming component removed for stability. Direct render is safer.
+                <div className="prose prose-invert prose-sm sm:prose-base max-w-none prose-p:leading-relaxed">
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{ p: PlaceholderRenderer }}
+                    >
+                        {currentJob.result}
+                    </ReactMarkdown>
+                </div>
             ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center opacity-30">
                     <FileText size={48} className="mb-4 text-gray-500" />
@@ -213,7 +187,7 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
         {/* FOOTER AREA */}
         <div className="p-3 border-t border-white/10 bg-white/5 flex justify-between items-center z-20">
             <div className="flex items-center gap-2 text-xs font-bold">
-                {currentJob.result ? (
+                {currentJob.status === 'COMPLETED' ? (
                     <span className="text-emerald-400 flex items-center gap-2"><CheckCircle size={14} /> {t('drafting.statusCompleted', 'Përfunduar')}</span>
                 ) : isSubmitting ? (
                     <span className="text-blue-400 flex items-center gap-2 animate-pulse"><Loader2 size={14} className="animate-spin" /> {t('drafting.statusGenerating', 'Duke Gjeneruar...')}</span>
