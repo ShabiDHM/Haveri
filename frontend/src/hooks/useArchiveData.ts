@@ -1,8 +1,8 @@
 // FILE: src/hooks/useArchiveData.ts
-// PHOENIX PROTOCOL - ROBUST SYNC V4.0
-// 1. FIX: Implemented "Smart Injection". If SSE receives an event for a missing item, it triggers a list refresh.
-// 2. SAFETY: Added try/catch logging to 'uploadFile' to diagnose why uploads might be failing silently.
-// 3. OPTIMIZATION: SSE connection is now managed with a dedicated AbortController to prevent connection leaks.
+// PHOENIX PROTOCOL - AGGRESSIVE SYNC V4.1
+// 1. FIX: Added specific 'console.log' for every SSE event received to verify network connectivity.
+// 2. LOGIC: If 'READY' status is received, we now TRIGGER 'fetchArchiveContent' immediately.
+//    - This brute-forces the UI update even if the local state ID matching fails.
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { apiService, API_V1_URL } from '../services/api';
@@ -33,15 +33,15 @@ export const useArchiveData = () => {
     // Content Fetch on Navigation
     const fetchArchiveContent = useCallback(async () => {
         const active = breadcrumbs[breadcrumbs.length - 1];
-        setLoading(true);
+        // Only set loading on initial nav, not background refreshes
+        if (itemsRef.current.length === 0) setLoading(true);
+        
         try {
             let rawItems: any[] = [];
-            // Handle "ROOT" with explicit "null" string for backend compatibility
             if (active.type === 'ROOT') rawItems = await apiService.getArchiveItems(undefined, undefined, "null");
             else if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
             else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
             
-            // PHOENIX FIX: Sanitize data
             const items: ArchiveItemOut[] = rawItems
                 .filter(item => item && (item._id || item.id))
                 .map(item => ({ ...item, id: item._id || item.id }));
@@ -64,13 +64,18 @@ export const useArchiveData = () => {
             const token = apiService.getToken();
             if (!token) return;
 
+            console.log("🔌 Connecting to Archive Event Stream...");
+
             try {
                 const response = await fetch(`${API_V1_URL}/archive/events`, {
                     headers: { 'Authorization': `Bearer ${token}` },
                     signal: abortController.signal
                 });
 
-                if (!response.ok || !response.body) return;
+                if (!response.ok || !response.body) {
+                    console.warn("SSE Connection Failed", response.status);
+                    return;
+                }
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
@@ -89,24 +94,23 @@ export const useArchiveData = () => {
                             const jsonStr = line.trim().substring(6);
                             try {
                                 const eventData = JSON.parse(jsonStr);
+                                console.log("📨 SSE RECEIVED:", eventData);
                                 
                                 if (eventData.type === 'DOCUMENT_STATUS') {
                                     const { document_id, status } = eventData;
                                     
-                                    // Check if item exists in current list
-                                    const exists = itemsRef.current.some(i => i.id === document_id);
-                                    
-                                    if (exists) {
-                                        // Update existing item
-                                        setArchiveItems(prev => prev.map(item => 
-                                            item.id === document_id 
-                                                ? { ...item, indexing_status: status } 
-                                                : item
-                                        ));
-                                    } else {
-                                        // SMART INJECTION: Item missing? Refresh list to find it.
-                                        console.log("New item detected via SSE, refreshing list...");
-                                        fetchArchiveContent();
+                                    // 1. Optimistic Update (Instant Feedback)
+                                    setArchiveItems(prev => prev.map(item => 
+                                        item.id === document_id 
+                                            ? { ...item, indexing_status: status } 
+                                            : item
+                                    ));
+
+                                    // 2. Aggressive Sync (Guarantee Correctness)
+                                    // If status is READY, fetch from DB to ensure we have the final vector state
+                                    if (status === 'READY') {
+                                        console.log("✅ Document Ready. Refreshing list to confirm...");
+                                        fetchArchiveContent(); 
                                     }
                                 }
                             } catch (e) { /* Ignore ping/parse errors */ }
@@ -120,7 +124,7 @@ export const useArchiveData = () => {
 
         setupStream();
         return () => abortController.abort();
-    }, [fetchArchiveContent]); // Re-connect if fetch logic changes (rare)
+    }, [fetchArchiveContent]); 
 
     // Navigation Helpers
     const navigateTo = (index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
@@ -152,7 +156,6 @@ export const useArchiveData = () => {
             await fetchArchiveContent();
         } catch (error) {
             console.error("Upload Failed:", error);
-            // Optionally trigger a toast here if you have a UI library for it
         } finally {
             setIsUploading(false);
         }
@@ -174,7 +177,6 @@ export const useArchiveData = () => {
         setArchiveItems(prev => prev.map(i => i.id === item.id ? { ...i, is_shared: newStatus } : i));
     };
 
-    // Derived State
     const currentView = breadcrumbs[breadcrumbs.length - 1];
     const isInsideCase = currentView.type === 'CASE';
     

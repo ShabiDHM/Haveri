@@ -1,8 +1,8 @@
 # FILE: backend/app/api/endpoints/archive.py
-# PHOENIX PROTOCOL - ARCHIVE API V2.4 (REAL-TIME EVENTS)
-# 1. NEW: Added '/events' SSE endpoint for real-time document status updates.
-# 2. INTEGRATION: Connects to Redis 'user:{id}:updates' channel to stream "processing complete" signals.
-# 3. SECURITY: Uses standard 'get_current_user' dependency to ensure only the owner receives their events.
+# PHOENIX PROTOCOL - ARCHIVE API V2.5 (ANTI-BUFFERING)
+# 1. FIX: Added 'X-Accel-Buffering: no' header to SSE response.
+#    - REASON: Prevents Nginx/Docker proxies from holding back real-time events.
+# 2. STATUS: Ensures immediate delivery of the 'READY' signal.
 
 from fastapi import APIRouter, Depends, status, UploadFile, Form, Query, HTTPException, Request
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -44,11 +44,9 @@ async def archive_events_stream(
     current_user: Annotated[UserInDB, Depends(get_current_user)]
 ):
     """
-    Server-Sent Events (SSE) endpoint to stream real-time updates (e.g., Document Ready).
-    Uses Header-based Auth via the 'fetch' API on the frontend.
+    Server-Sent Events (SSE) endpoint to stream real-time updates.
     """
     async def event_generator():
-        # Connect to Redis
         try:
             r = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
             pubsub = r.pubsub()
@@ -59,7 +57,6 @@ async def archive_events_stream(
             return
 
         try:
-            # Heartbeat to keep connection alive
             yield "event: ping\ndata: connected\n\n"
             
             while True:
@@ -69,10 +66,8 @@ async def archive_events_stream(
                 message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
                 
                 if message and message["type"] == "message":
-                    # Forward the Redis message directly to the client
                     yield f"data: {message['data']}\n\n"
                 
-                # Small sleep to prevent busy loop if no messages
                 await asyncio.sleep(0.1)
                 
         except asyncio.CancelledError:
@@ -81,7 +76,15 @@ async def archive_events_stream(
             await pubsub.unsubscribe(channel)
             await r.close()
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    # PHOENIX FIX: Disable Nginx Buffering
+    headers = {
+        "X-Accel-Buffering": "no",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "text/event-stream"
+    }
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream", headers=headers)
 
 @router.get("/items", response_model=List[ArchiveItemOut])
 def get_archive_items(
