@@ -1,18 +1,8 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - CUMULATIVE FIXES
-// ---
-// FIX V29.0: DEAD CODE ELIMINATION
-// 1. ROOT CAUSE: The V28.0 refactoring to a single-project view left behind unused code artifacts: the 'Case' type import, the 'cases' state variable, and the 'loadCases' function. This resulted in a TypeScript compiler warning (ts6133).
-// 2. FIX: Surgically removed the unused 'Case' type import and the 'cases' state management logic.
-// 3. STATUS: The component is now free of dead code, resolving all compiler warnings and finalizing the single-project architectural refactoring. The system is clean.
-// ---
-// FIX V28.0: SINGLE-PROJECT UI FLATTENING
-// 1. ROOT CAUSE: Component was designed for a multi-case system, creating a redundant UI layer.
-// 2. FIX: Reworked initialization to bypass the root view and start directly inside the primary project.
-// ---
-// FIX V27.0: ROBUST DATA SANITIZATION
-// 1. ROOT CAUSE: API returned inconsistent `_id` field (string vs. object), causing unstable React keys.
-// 2. FIX: Implemented a robust `sanitizeArchiveItem` utility to guarantee a stable string `id`.
+// PHOENIX PROTOCOL - DATA INTEGRITY FIX V30.1 (COMPLETE FILE)
+// 1. UI FIX: The `StatusBadge` component is now stricter and will only show "Ready" for an explicit 'READY' status, preventing UI hallucinations for old documents.
+// 2. FEATURE: Added a "Re-Index" button (Zap icon) to the hover menu on archive cards.
+// 3. LOGIC: The Re-Index button calls a new backend endpoint to re-trigger the Celery processing task for any stale or failed document.
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,7 +12,7 @@ import {
     FolderUp, FileUp, Search, Share2, Link as LinkIcon, Archive, Zap, CheckCircle, AlertCircle
 } from 'lucide-react';
 import { apiService, API_V1_URL } from '../../services/api';
-import { ArchiveItemOut, Document } from '../../data/types'; // PHOENIX FIX V29.0: Removed unused 'Case' import
+import { ArchiveItemOut, Document } from '../../data/types';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import PDFViewerModal from '../PDFViewerModal';
@@ -42,19 +32,67 @@ const sanitizeArchiveItem = (item: any): ArchiveItemOut => {
     return { ...item, id: itemId };
 };
 
-// --- COMPONENTS (No changes) ---
+// --- COMPONENTS ---
 const getMimeType = (fileType: string, fileName:string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; if (['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF'].includes(fileType)) return 'image/jpeg'; return 'application/octet-stream'; };
 const getFileIcon = (fileType: string) => { const ft = fileType ? fileType.toUpperCase() : ""; if (ft === 'PDF') return <FileText className="w-5 h-5 text-red-400" />; if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-purple-400" />; if (['JSON', 'JS', 'TS'].includes(ft)) return <FileCode className="w-5 h-5 text-yellow-400" />; return <FileIcon className="w-5 h-5 text-blue-400" />; };
-const StatusBadge = ({ status }: { status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED' }) => { const { t } = useTranslation(); if (status === 'READY') return <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.statusReady', 'Gati për AI')}><CheckCircle size={14} /></div>; if (status === 'PROCESSING') return <div className="bg-blue-500/10 text-blue-400 p-1.5 rounded-lg border border-blue-500/20" title={t('archive.statusProcessing', 'Duke procesuar...')}><Loader2 size={14} className="animate-spin" /></div>; if (status === 'PENDING') return <div className="bg-amber-500/10 text-amber-400 p-1.5 rounded-lg border border-amber-500/20" title={t('archive.statusPending', 'Në pritje')}><Zap size={14} /></div>; if (status === 'FAILED') return <div className="bg-rose-500/10 text-rose-400 p-1.5 rounded-lg border border-rose-500/20" title={t('archive.statusFailed', 'Dështoi')}><AlertCircle size={14} /></div>; return null; };
+
+// PHOENIX FIX: Stricter StatusBadge logic
+const StatusBadge = ({ status }: { status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED' | null }) => { 
+    const { t } = useTranslation(); 
+    if (status === 'READY') return <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.statusReady', 'Gati për AI')}><CheckCircle size={14} /></div>; 
+    if (status === 'PROCESSING') return <div className="bg-blue-500/10 text-blue-400 p-1.5 rounded-lg border border-blue-500/20" title={t('archive.statusProcessing', 'Duke procesuar...')}><Loader2 size={14} className="animate-spin" /></div>; 
+    if (status === 'PENDING') return <div className="bg-amber-500/10 text-amber-400 p-1.5 rounded-lg border border-amber-500/20" title={t('archive.statusPending', 'Në pritje')}><Zap size={14} /></div>; 
+    if (status === 'FAILED') return <div className="bg-rose-500/10 text-rose-400 p-1.5 rounded-lg border border-rose-500/20" title={t('archive.statusFailed', 'Dështoi')}><AlertCircle size={14} /></div>; 
+    // For null, undefined, or any other status, show "Pending" as the default actionable state.
+    return <div className="bg-gray-500/10 text-gray-400 p-1.5 rounded-lg border border-gray-500/20" title={t('archive.statusUnknown', 'Status i panjohur, Ri-indekso')}><Zap size={14} /></div>; 
+};
+
 const ActionButton = ({ icon, label, onClick, primary = false, disabled = false, fullWidth = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean, disabled?: boolean, fullWidth?: boolean }) => ( <button onClick={onClick} disabled={disabled} className={` flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group ${fullWidth ? 'w-full' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${primary ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 border border-indigo-400/50' : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10 hover:border-white/20'} `}> <span className={`transition-transform duration-300 group-hover:scale-110 ${primary ? 'text-white' : 'text-indigo-400'}`}>{icon}</span> <span>{label}</span> </button> );
-const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, isShared, isFolder, isLoading, indexingStatus }: any) => { const { t } = useTranslation(); return ( <motion.div whileHover={{ scale: 1.02 }} onClick={onClick} className={`group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-3xl transition-all duration-300 cursor-pointer bg-gray-900/60 backdrop-blur-md border border-white/10 shadow-xl hover:shadow-2xl hover:border-indigo-500/30`}> <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" /> <div> <div className="flex flex-col mb-4 relative z-10"> <div className="flex justify-between items-start gap-2"> <div className="p-3 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-indigo-500/10 group-hover:border-indigo-500/20 transition-all duration-300">{icon}</div> <div className="flex items-center gap-2">{!isFolder && <StatusBadge status={indexingStatus} />}{isShared && (<div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 cursor-default shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.isShared')}><Share2 size={14} /></div>)}</div> </div> <div className="mt-4"><h2 className="text-lg font-bold text-gray-100 line-clamp-2 leading-tight tracking-tight group-hover:text-indigo-400 transition-colors break-words"> {title} </h2><div className="flex items-center gap-2 mt-2"><Calendar className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" /><p className="text-xs text-gray-500 font-medium truncate">{date}</p></div></div> </div> <div className="flex flex-col mb-4 relative z-10"> <div className="space-y-1.5 pl-1 border-l-2 border-white/5 group-hover:border-indigo-500/30 transition-colors pl-3"> <div className="flex items-center gap-2 text-sm font-medium text-gray-300">{isFolder ? <FolderOpen className="w-4 h-4 text-amber-500" /> : <FileText className="w-4 h-4 text-blue-500" />}<span className="truncate">{type}</span></div> <div className="flex items-center gap-2 text-xs text-gray-500"><Hash className="w-3.5 h-3.5 flex-shrink-0" /><span className="truncate">{subtitle}</span></div> </div> </div> </div> <div className="relative z-10 pt-4 border-t border-white/5 flex items-center justify-between"> <span className="text-xs font-bold text-indigo-400 group-hover:text-indigo-300 transition-colors flex items-center gap-1 uppercase tracking-wider"> {isFolder ? t('archive.openFolder') : ''} </span> <div className="flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">{!isFolder && onShare && ( <button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 rounded-lg transition-colors ${isShared ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} title={t('archive.share')}> <Share2 className="h-4 w-4" /> </button> )}{onRename && ( <button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title={t('general.edit')}> <Pencil className="h-4 w-4" /> </button> )}{!isFolder && ( <> <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 transition-colors" title={t('general.view')}> {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-blue-400" /> : <Eye className="h-4 w-4" />} </button> {onDownload && ( <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-400/10 transition-colors" title={t('general.download')}> <Download className="h-4 w-4" /> </button> )} </> )}{onDelete && ( <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition-colors" title={t('general.delete')}> <Trash2 className="h-4 w-4" /> </button> )}</div> </div> </motion.div> ); };
+
+// PHOENIX FIX: Added onReIndex to props
+const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, onReIndex, isShared, isFolder, isLoading, indexingStatus }: any) => { 
+    const { t } = useTranslation(); 
+    const canReIndex = indexingStatus !== 'PROCESSING' && indexingStatus !== 'PENDING';
+    return ( 
+        <motion.div whileHover={{ scale: 1.02 }} onClick={onClick} className={`group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-3xl transition-all duration-300 cursor-pointer bg-gray-900/60 backdrop-blur-md border border-white/10 shadow-xl hover:shadow-2xl hover:border-indigo-500/30`}> 
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" /> 
+            <div> 
+                <div className="flex flex-col mb-4 relative z-10"> 
+                    <div className="flex justify-between items-start gap-2"> 
+                        <div className="p-3 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-indigo-500/10 group-hover:border-indigo-500/20 transition-all duration-300">{icon}</div> 
+                        <div className="flex items-center gap-2">{!isFolder && <StatusBadge status={indexingStatus} />}{isShared && (<div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 cursor-default shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.isShared')}><Share2 size={14} /></div>)}</div> 
+                    </div> 
+                    <div className="mt-4">
+                        <h2 className="text-lg font-bold text-gray-100 line-clamp-2 leading-tight tracking-tight group-hover:text-indigo-400 transition-colors break-words"> {title} </h2>
+                        <div className="flex items-center gap-2 mt-2"><Calendar className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" /><p className="text-xs text-gray-500 font-medium truncate">{date}</p></div>
+                    </div> 
+                </div> 
+                <div className="flex flex-col mb-4 relative z-10"> 
+                    <div className="space-y-1.5 pl-1 border-l-2 border-white/5 group-hover:border-indigo-500/30 transition-colors pl-3"> 
+                        <div className="flex items-center gap-2 text-sm font-medium text-gray-300">{isFolder ? <FolderOpen className="w-4 h-4 text-amber-500" /> : <FileText className="w-4 h-4 text-blue-500" />}<span className="truncate">{type}</span></div> 
+                        <div className="flex items-center gap-2 text-xs text-gray-500"><Hash className="w-3.5 h-3.5 flex-shrink-0" /><span className="truncate">{subtitle}</span></div> 
+                    </div> 
+                </div> 
+            </div> 
+            <div className="relative z-10 pt-4 border-t border-white/5 flex items-center justify-between"> 
+                <span className="text-xs font-bold text-indigo-400 group-hover:text-indigo-300 transition-colors flex items-center gap-1 uppercase tracking-wider"> {isFolder ? t('archive.openFolder') : ''} </span> 
+                <div className="flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    {!isFolder && onReIndex && canReIndex && ( <button onClick={(e) => { e.stopPropagation(); onReIndex(); }} className="p-2 rounded-lg text-gray-400 hover:text-amber-400 hover:bg-amber-400/10 transition-colors" title={t('archive.reIndex', 'Ri-indekso për AI')}> <Zap className="h-4 w-4" /> </button> )}
+                    {!isFolder && onShare && ( <button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 rounded-lg transition-colors ${isShared ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} title={t('archive.share')}> <Share2 className="h-4 w-4" /> </button> )}
+                    {onRename && ( <button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors" title={t('general.edit')}> <Pencil className="h-4 w-4" /> </button> )}
+                    {!isFolder && ( <> <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-2 rounded-lg text-gray-400 hover:text-blue-400 hover:bg-blue-400/10 transition-colors" title={t('general.view')}> {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-blue-400" /> : <Eye className="h-4 w-4" />} </button> {onDownload && ( <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-400/10 transition-colors" title={t('general.download')}> <Download className="h-4 w-4" /> </button> )} </> )}
+                    {onDelete && ( <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition-colors" title={t('general.delete')}> <Trash2 className="h-4 w-4" /> </button> )}
+                </div> 
+            </div> 
+        </motion.div> 
+    ); 
+};
 
 export const ArchiveTab: React.FC = () => {
     const { t } = useTranslation();
     const { isAuthenticated } = useAuth();
     const [loading, setLoading] = useState(true);
     const [archiveItems, setArchiveItems] = useState<ArchiveItemOut[]>([]);
-    // PHOENIX FIX V29.0: Removed unused 'cases' state.
     const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([{ id: null, name: t('business.archive'), type: 'ROOT' }]);
     const [isUploading, setIsUploading] = useState(false);
     const [showFolderModal, setShowFolderModal] = useState(false);
@@ -79,7 +117,6 @@ export const ArchiveTab: React.FC = () => {
             try {
                 const cases = await apiService.getCases();
                 const primaryCase = cases.length > 0 ? cases[0] : null;
-
                 if (primaryCase) {
                     setBreadcrumbs([{ id: primaryCase.id, name: primaryCase.title, type: 'CASE' }]);
                 } else {
@@ -90,12 +127,11 @@ export const ArchiveTab: React.FC = () => {
                 setLoading(false);
             }
         };
-
         initializeArchive();
-    }, [isAuthenticated]);
+    }, [isAuthenticated, t]);
 
     useEffect(() => {
-        if (breadcrumbs[0]?.type !== 'ROOT') {
+        if (breadcrumbs.length > 0 && breadcrumbs[0]?.type !== 'ROOT') {
             fetchArchiveContent();
         }
     }, [breadcrumbs]);
@@ -155,9 +191,7 @@ export const ArchiveTab: React.FC = () => {
             setArchiveItems(prev => [newFolder, ...prev]);
             setShowFolderModal(false);
             setNewFolderName("");
-        } catch {
-            alert(t('error.generic'));
-        }
+        } catch { alert(t('error.generic')); }
     };
 
     const handleSmartUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,11 +203,7 @@ export const ArchiveTab: React.FC = () => {
             const rawItem = await apiService.uploadArchiveItem(f, f.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, active.type === 'FOLDER' ? active.id! : undefined);
             const newItem = sanitizeArchiveItem(rawItem);
             setArchiveItems(prevItems => [newItem, ...prevItems]);
-        } catch {
-            alert(t('error.uploadFailed'));
-        } finally {
-            setIsUploading(false);
-        }
+        } catch { alert(t('error.uploadFailed')); } finally { setIsUploading(false); }
     };
 
     const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -194,11 +224,16 @@ export const ArchiveTab: React.FC = () => {
             });
             await Promise.all(uploadPromises);
             fetchArchiveContent();
-        } catch {
-            alert(t('error.uploadFailed'));
-        } finally {
-            setIsUploading(false);
-            if (folderInputRef.current) folderInputRef.current.value = '';
+        } catch { alert(t('error.uploadFailed')); } finally { setIsUploading(false); if (folderInputRef.current) folderInputRef.current.value = ''; }
+    };
+
+    const handleReIndex = async (itemId: string) => {
+        try {
+            setArchiveItems(prev => prev.map(item => item.id === itemId ? { ...item, indexing_status: 'PENDING' } : item));
+            await apiService.reIndexArchiveItem(itemId);
+        } catch (error) {
+            alert(t('error.generic'));
+            fetchArchiveContent();
         }
     };
 
@@ -209,9 +244,7 @@ export const ArchiveTab: React.FC = () => {
         try {
             await apiService.deleteArchiveItem(id);
             setArchiveItems(prev => prev.filter(item => item.id !== id));
-        } catch {
-            alert(t('error.generic'));
-        }
+        } catch { alert(t('error.generic')); }
     };
 
     const handleViewItem = async (item: ArchiveItemOut) => { setOpeningDocId(item.id); try { const blob = await apiService.getArchiveFileBlob(item.id); const url = window.URL.createObjectURL(blob); setViewingUrl(url); setViewingDoc({ id: item.id, file_name: item.title, mime_type: getMimeType(item.file_type, item.title), status: 'READY' } as any); } catch { alert(t('error.generic')); } finally { setOpeningDocId(null); } };
@@ -260,7 +293,7 @@ export const ArchiveTab: React.FC = () => {
             </div>
             
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] shadow-2xl">
-                {filteredItems.length > 0 && (
+                {filteredItems.length > 0 ? (
                     <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         <AnimatePresence>
                             {filteredItems.map(item => {
@@ -284,14 +317,14 @@ export const ArchiveTab: React.FC = () => {
                                             onDelete={() => deleteArchiveItem(item.id)}
                                             onRename={() => handleRenameClick(item)} 
                                             onShare={() => handleShareItem(item)}
+                                            onReIndex={() => handleReIndex(item.id)}
                                         />
                                     </motion.div>
                                 );
                             })}
                         </AnimatePresence>
                     </motion.div>
-                )}
-                {filteredItems.length === 0 && (
+                ) : (
                     <div className="flex flex-col items-center justify-center h-96 text-gray-500">
                         <FolderOpen size={64} className="mb-4 opacity-20" />
                         <p>{t('archive.emptyFolder')}</p>

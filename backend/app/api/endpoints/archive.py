@@ -1,11 +1,11 @@
 # FILE: backend/app/api/endpoints/archive.py
-# PHOENIX PROTOCOL - ARCHIVE API V2.2 (SHARING ENABLED)
-# 1. NEW: Added 'share_archive_item' for single item toggling.
-# 2. NEW: Added 'share_archive_case' for bulk case sharing.
-# 3. STATUS: API Support for Client Portal Library.
+# PHOENIX PROTOCOL - ARCHIVE API V2.3 (RE-INDEXING)
+# 1. NEW: Added the '/items/{item_id}/re-index' endpoint.
+# 2. LOGIC: Allows the frontend to re-trigger the Celery ingestion task for stale or failed documents.
+# 3. HTTP STATUS: Correctly uses a 202 Accepted response for initiating a background task.
 
 from fastapi import APIRouter, Depends, status, UploadFile, Form, Query, HTTPException, Body
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from typing import List, Annotated, Optional, Dict, Any
 from pymongo.database import Database
 from pydantic import BaseModel
@@ -51,7 +51,6 @@ def create_archive_folder(
     case_id: Optional[str] = Form(None),
     db: Database = Depends(get_db)
 ):
-    """Creates a new logical folder."""
     service = ArchiveService(db)
     return service.create_folder(str(current_user.id), title, parent_id, case_id)
 
@@ -67,6 +66,20 @@ async def upload_archive_item(
 ):
     service = ArchiveService(db)
     return await service.add_file_to_archive(str(current_user.id), file, category, title, case_id, parent_id)
+
+# PHOENIX: NEW ENDPOINT FOR RE-INDEXING
+@router.post("/items/{item_id}/re-index", status_code=status.HTTP_202_ACCEPTED)
+def re_index_archive_item(
+    item_id: str,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    db: Database = Depends(get_db)
+):
+    """
+    Triggers a background task to re-process and re-index a specific archive item.
+    """
+    service = ArchiveService(db)
+    service.re_index_item(str(current_user.id), item_id)
+    return JSONResponse(content={"message": "Re-indexing task has been accepted."})
 
 @router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_archive_item(
@@ -87,7 +100,6 @@ def rename_archive_item(
     service = ArchiveService(db)
     service.rename_item(str(current_user.id), item_id, body.new_title)
 
-# PHOENIX NEW: SHARE SINGLE ITEM
 @router.put("/items/{item_id}/share", response_model=ArchiveItemOut)
 def share_archive_item(
     item_id: str,
@@ -95,22 +107,15 @@ def share_archive_item(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db)
 ):
-    """
-    Toggles visibility of an archive item in the Client Portal.
-    """
     service = ArchiveService(db)
     return service.share_item(str(current_user.id), item_id, body.is_shared)
 
-# PHOENIX NEW: SHARE ALL ITEMS FOR CASE
 @router.put("/case/share", status_code=status.HTTP_200_OK)
 def share_archive_case(
     body: ArchiveCaseShareRequest,
     current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db)
 ):
-    """
-    Bulk toggles visibility for ALL archive files belonging to a case.
-    """
     service = ArchiveService(db)
     count = service.share_case_items(str(current_user.id), body.case_id, body.is_shared)
     return {"message": "Success", "updated_count": count}

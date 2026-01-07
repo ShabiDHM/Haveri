@@ -1,8 +1,8 @@
 // FILE: frontend/src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - REVISION V6.1 (COMPLETE FILE)
-// 1. FEATURE: Added a mobile-only "Skano Dokumentin" button that opens the device camera.
-// 2. LOGIC: The `handleUpload` function is now "smart," dynamically choosing the correct backend endpoint based on file type (Image vs. Spreadsheet).
-// 3. UI: The UI now adapts to mobile, showing the Scan button and hiding the desktop drag-and-drop area.
+// PHOENIX PROTOCOL - REVISION V6.2 (DUAL MOBILE ACTIONS)
+// 1. FEATURE: The mobile view now correctly displays BOTH a "Scan Document" and an "Upload File" button.
+// 2. UI: Established a clear visual hierarchy with a primary scan button and a secondary upload button for mobile.
+// 3. DESKTOP: The large drag-and-drop interface is preserved for desktop users.
 // 4. COMPLETENESS: This is the full and final version of the file.
 
 import React, { useState, useRef } from 'react';
@@ -20,7 +20,8 @@ import {
     FileText,
     X,
     BarChart3,
-    Camera
+    Camera,
+    FileUp // PHOENIX: New Icon
 } from 'lucide-react';
 import { API_V1_URL } from '../services/api';
 
@@ -56,17 +57,17 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         e.preventDefault();
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             const droppedFile = e.dataTransfer.files[0];
-            if (droppedFile.name.match(/\.(csv|xlsx|xls)$/i)) {
+            if (droppedFile.name.match(/\.(csv|xlsx|xls|jpg|jpeg|png)$/i)) {
                  setFile(droppedFile);
                  handleUpload(droppedFile);
             } else {
-                alert(t('analyst.errorFileType', 'Ju lutemi hidhni një skedar CSV ose Excel. Për imazhe, përdorni butonin Skano në mobil.'));
+                alert(t('analyst.errorFileType', 'Ky lloj i skedarit nuk mbështetet.'));
             }
         }
     };
 
     const handleUpload = async (selectedFile: File) => {
-        setFile(selectedFile); // Set the file for display in the loading state
+        setFile(selectedFile);
         setStatus('uploading');
         setErrorMsg('');
         
@@ -116,40 +117,49 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     if (status === 'idle') {
         return (
             <div className="min-h-[500px] flex flex-col items-center justify-center p-4 text-center">
+                {/* PHOENIX: Desktop Drag & Drop Area */}
                 <div 
                     className="hidden sm:flex min-h-[450px] w-full flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-3xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
                 >
                     <div className="p-6 rounded-full bg-blue-500/10 group-hover:bg-blue-500/20 transition-all mb-6">
                         <UploadCloud className="w-16 h-16 text-blue-400" />
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">{t('analyst.dropTitle', 'Ngarko Skedarin Financiar')}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-2">{t('analyst.dropTitle', 'Ngarko ose Hidh Skedarin')}</h2>
                     <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                        {t('analyst.dropDesc', 'Tërhiqni një skedar Excel (.xlsx) ose CSV.')}
+                        {t('analyst.dropDesc', 'Tërhiqni një skedar Excel, CSV, ose imazh.')}
                     </p>
-                </div>
-                <div className="sm:hidden w-full flex flex-col items-center justify-center">
-                    <div className="p-6 rounded-full bg-blue-500/10 mb-6">
-                        <Camera className="w-16 h-16 text-blue-400" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">{t('analyst.scanTitle', 'Skano një Dokument')}</h2>
-                    <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                        {t('analyst.scanDesc', 'Përdorni kamerën për të analizuar një faturë ose pasqyrë bankare.')}
-                    </p>
-                    <button onClick={() => scanInputRef.current?.click()} className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 w-full flex items-center justify-center gap-2">
-                        <Camera size={18} />
-                        {t('analyst.scanButton', 'Skano Dokumentin')}
+                    <button onClick={() => fileInputRef.current?.click()} className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">
+                        {t('analyst.selectButton', 'Zgjidh Skedarin')}
                     </button>
                 </div>
+                {/* PHOENIX: Mobile Dual-Action Area */}
+                <div className="sm:hidden w-full flex flex-col items-center justify-center">
+                    <h2 className="text-2xl font-bold text-white mb-4">{t('analyst.mobileTitle', 'Analizo një Dokument')}</h2>
+                    <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                        {t('analyst.mobileDesc', 'Skanoni një dokument me kamerë ose ngarkoni një skedar nga telefoni juaj.')}
+                    </p>
+                    <div className="w-full space-y-4">
+                        <button onClick={() => scanInputRef.current?.click()} className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 w-full flex items-center justify-center gap-2">
+                            <Camera size={18} />
+                            {t('analyst.scanButton', 'Skano me Kamerë')}
+                        </button>
+                        <div className="text-gray-500 text-sm font-bold uppercase">{t('general.or', 'ose')}</div>
+                        <button onClick={() => fileInputRef.current?.click()} className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold transition-all w-full flex items-center justify-center gap-2">
+                            <FileUp size={18} />
+                            {t('analyst.uploadButton', 'Ngarko Skedar')}
+                        </button>
+                    </div>
+                </div>
                 
-                <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept=".csv, .xlsx, .xls"/>
+                {/* Hidden Inputs */}
+                <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept=".csv, .xlsx, .xls, .png, .jpg, .jpeg"/>
                 <input type="file" ref={scanInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" capture="environment"/>
             </div>
         );
     }
-
+    
     // 2. PROCESSING STATE
     if (status === 'uploading' || status === 'analyzing') {
         const isImage = file?.type.startsWith('image/');
