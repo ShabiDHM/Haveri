@@ -1,8 +1,8 @@
 # FILE: backend/app/services/albanian_rag_service.py
-# PHOENIX PROTOCOL - AGENTIC RAG SERVICE V3.6 (DEFINITIVE PROMPT FIX)
-# 1. CRITICAL FIX: The agent prompt has been rebuilt to include BOTH a few-shot example AND the mandatory '{tool_names}' placeholder.
-# 2. REASON: The 'create_react_agent' function requires '{tool_names}' to operate. Its repeated omission was a critical failure and the sole cause of the crash.
-# 3. STABILITY: This version is now fully compliant with the LangChain ReAct framework and will not crash on initialization.
+# PHOENIX PROTOCOL - AGENTIC RAG SERVICE V3.7 (FAILURE HANDLING)
+# 1. CRITICAL FIX: Added an explicit "CRITICAL RULE" to the agent's prompt, instructing it how to handle a "not found" observation from a tool.
+# 2. REASON: The agent was stuck in an infinite loop because it had no instructions for failure cases. This new rule forces it to stop and report the negative result, resolving the loop.
+# 3. REFINEMENT: Re-enabled the "Researcher + Critic" loop to ensure final answer quality now that the core agent is stable.
 
 import os
 import logging
@@ -64,7 +64,7 @@ class AlbanianRAGService:
             self.llm = None
             logger.warning("Agent Service initialized without API Key. AI features will fail.")
 
-        # PHOENIX FIX: The definitive prompt, compliant with all framework requirements.
+        # PHOENIX FIX: The definitive prompt with failure-handling instructions.
         researcher_template = """
         You are a helpful assistant for a business in Kosovo. Your goal is to answer the user's question in Albanian using the tools provided.
 
@@ -77,6 +77,9 @@ class AlbanianRAGService:
         --------------------
         Follow this exact format. The 'Action' line MUST be one of the following tool names: [{tool_names}]
         
+        CRITICAL RULE:
+        If a tool returns 'Nuk u gjetën të dhëna...' (No records found), your next Thought MUST be 'I now have enough information...' and your 'Final Answer' must inform the user that the information could not be found. DO NOT try the same tool again for the same query.
+
         EXAMPLE:
         Question: Cilat janë rregullat për pushimin vjetor sipas ligjit?
         Thought: Përdoruesi po pyet për një ligj specifik. Unë duhet të përdor mjetin 'query_public_library' për të gjetur informacionin në legjislacion.
@@ -132,8 +135,18 @@ class AlbanianRAGService:
                 logger.error("Agent returned an empty 'output'.")
                 return "Pata një problem me formulimin e përgjigjes. Provoni ta riformuloni pyetjen tuaj."
             
-            # For this test, we return the direct answer from the agent to confirm the fix.
-            return draft_answer
+            logger.info("🧐 Agent Critic reviewing...")
+            critic_prompt = f'Review this draft. If good, say "OK". Otherwise, critique in Albanian.\nQuestion: {query}\nDraft: {draft_answer}'
+            critic_response = await self.llm.ainvoke(critic_prompt)
+            critique = critic_response.content
+
+            if "OK" in str(critique) and len(str(critique)) < 10:
+                return draft_answer
+
+            logger.info("✍️ Agent Reviser polishing...")
+            revision_prompt = f"Rewrite the draft in Albanian to address the critique.\nDraft: {draft_answer}\nCritique: {critique}\nFinal Answer:"
+            final_response = await self.llm.ainvoke(revision_prompt)
+            return str(final_response.content)
 
         except Exception as e:
             logger.error(f"Agent execution failed: {e}", exc_info=True)
