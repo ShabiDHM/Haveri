@@ -1,8 +1,8 @@
 // FILE: src/hooks/useArchiveData.ts
-// PHOENIX PROTOCOL - DEFENSIVE DATA SANITIZATION V3.1 (REAL-TIME SSE)
-// 1. FIX: Added 'useEffect' to listen for Server-Sent Events (SSE) from '/api/v1/archive/events'.
-// 2. LOGIC: Uses 'fetch' with Auth headers instead of EventSource to ensure security context.
-// 3. RESULT: Instantly updates document status (PROCESSING -> READY) without page refresh.
+// PHOENIX PROTOCOL - ROBUST SYNC V4.0
+// 1. FIX: Implemented "Smart Injection". If SSE receives an event for a missing item, it triggers a list refresh.
+// 2. SAFETY: Added try/catch logging to 'uploadFile' to diagnose why uploads might be failing silently.
+// 3. OPTIMIZATION: SSE connection is now managed with a dedicated AbortController to prevent connection leaks.
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { apiService, API_V1_URL } from '../services/api';
@@ -20,10 +20,11 @@ export const useArchiveData = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [isUploading, setIsUploading] = useState(false);
     
-    // To prevent duplicate connections or memory leaks
-    const abortControllerRef = useRef<AbortController | null>(null);
+    // Ref to track current items for SSE comparison without triggering re-renders
+    const itemsRef = useRef<ArchiveItemOut[]>([]);
+    useEffect(() => { itemsRef.current = archiveItems; }, [archiveItems]);
 
-    // Initial Load
+    // Initial Load of Cases
     useEffect(() => {
         const loadCases = async () => { try { const c = await apiService.getCases(); setCases(c); } catch {} };
         loadCases();
@@ -35,11 +36,12 @@ export const useArchiveData = () => {
         setLoading(true);
         try {
             let rawItems: any[] = [];
+            // Handle "ROOT" with explicit "null" string for backend compatibility
             if (active.type === 'ROOT') rawItems = await apiService.getArchiveItems(undefined, undefined, "null");
             else if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
             else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
             
-            // PHOENIX FIX: Sanitize the data from the backend.
+            // PHOENIX FIX: Sanitize data
             const items: ArchiveItemOut[] = rawItems
                 .filter(item => item && (item._id || item.id))
                 .map(item => ({ ...item, id: item._id || item.id }));
@@ -56,22 +58,16 @@ export const useArchiveData = () => {
 
     // PHOENIX PROTOCOL: Real-Time SSE Listener
     useEffect(() => {
+        const abortController = new AbortController();
+        
         const setupStream = async () => {
             const token = apiService.getToken();
             if (!token) return;
 
-            // Cleanup previous connection if exists
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
-            
-            const ac = new AbortController();
-            abortControllerRef.current = ac;
-
             try {
                 const response = await fetch(`${API_V1_URL}/archive/events`, {
                     headers: { 'Authorization': `Bearer ${token}` },
-                    signal: ac.signal
+                    signal: abortController.signal
                 });
 
                 if (!response.ok || !response.body) return;
@@ -86,47 +82,47 @@ export const useArchiveData = () => {
                     
                     buffer += decoder.decode(value, { stream: true });
                     const lines = buffer.split('\n\n');
-                    buffer = lines.pop() || ''; // Keep incomplete data in buffer
+                    buffer = lines.pop() || '';
 
                     for (const line of lines) {
-                        const dataPrefix = 'data: ';
-                        if (line.trim().startsWith(dataPrefix)) {
-                            const jsonStr = line.trim().substring(dataPrefix.length);
+                        if (line.trim().startsWith('data: ')) {
+                            const jsonStr = line.trim().substring(6);
                             try {
                                 const eventData = JSON.parse(jsonStr);
                                 
-                                // Handle Document Status Updates
                                 if (eventData.type === 'DOCUMENT_STATUS') {
                                     const { document_id, status } = eventData;
-                                    setArchiveItems(prev => prev.map(item => 
-                                        item.id === document_id 
-                                            ? { ...item, indexing_status: status } 
-                                            : item
-                                    ));
+                                    
+                                    // Check if item exists in current list
+                                    const exists = itemsRef.current.some(i => i.id === document_id);
+                                    
+                                    if (exists) {
+                                        // Update existing item
+                                        setArchiveItems(prev => prev.map(item => 
+                                            item.id === document_id 
+                                                ? { ...item, indexing_status: status } 
+                                                : item
+                                        ));
+                                    } else {
+                                        // SMART INJECTION: Item missing? Refresh list to find it.
+                                        console.log("New item detected via SSE, refreshing list...");
+                                        fetchArchiveContent();
+                                    }
                                 }
-                            } catch (e) {
-                                // Ignore parse errors (ping, etc)
-                            }
+                            } catch (e) { /* Ignore ping/parse errors */ }
                         }
                     }
                 }
             } catch (err: any) {
-                if (err.name !== 'AbortError') {
-                    console.warn("SSE Connection lost", err);
-                }
+                if (err.name !== 'AbortError') console.warn("SSE Stream disconnected:", err);
             }
         };
 
         setupStream();
+        return () => abortController.abort();
+    }, [fetchArchiveContent]); // Re-connect if fetch logic changes (rare)
 
-        return () => {
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
-        };
-    }, []); // Run once on mount (or could depend on location, but global is safer here)
-
-    // Navigation
+    // Navigation Helpers
     const navigateTo = (index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
     const enterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name, type }]);
 
@@ -146,12 +142,17 @@ export const useArchiveData = () => {
         setIsUploading(true);
         const active = breadcrumbs[breadcrumbs.length - 1];
         try {
+            console.log("Starting upload...", file.name);
             await apiService.uploadArchiveItem(
                 file, file.name, "GENERAL",
                 active.type === 'CASE' ? active.id! : undefined,
                 active.type === 'FOLDER' ? active.id! : undefined
             );
+            console.log("Upload successful, refreshing...");
             await fetchArchiveContent();
+        } catch (error) {
+            console.error("Upload Failed:", error);
+            // Optionally trigger a toast here if you have a UI library for it
         } finally {
             setIsUploading(false);
         }
@@ -184,7 +185,7 @@ export const useArchiveData = () => {
 
     const filteredItems = useMemo(() => 
         archiveItems.filter(item => {
-            if (currentView.type === 'ROOT' && item.case_id) return false; // Don't show case items in root
+            if (currentView.type === 'ROOT' && item.case_id) return false; 
             return item.title.toLowerCase().includes(searchTerm.toLowerCase());
         }),
         [archiveItems, searchTerm, currentView]
