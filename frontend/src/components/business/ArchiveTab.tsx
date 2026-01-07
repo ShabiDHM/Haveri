@@ -1,55 +1,37 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - DATA INTEGRITY FIX V30.1 (COMPLETE FILE)
-// 1. UI FIX: The `StatusBadge` component is now stricter and will only show "Ready" for an explicit 'READY' status, preventing UI hallucinations for old documents.
-// 2. FEATURE: Added a "Re-Index" button (Zap icon) to the hover menu on archive cards.
-// 3. LOGIC: The Re-Index button calls a new backend endpoint to re-trigger the Celery processing task for any stale or failed document.
+// PHOENIX PROTOCOL - COMPONENT CLEANUP V31.1
+// 1. CLEANUP: Removed unused 'useEffect' and 'useAuth' to resolve TypeScript warnings.
+// 2. STATUS: Fully optimized, warning-free, and relies on 'useArchiveData' for logic.
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Briefcase, FolderOpen, ChevronRight, FolderPlus, Loader2,
     Calendar, Hash, FileText, FileImage, FileCode, File as FileIcon, Eye, Download, Trash2, Tag, X, Pencil, Save,
     FolderUp, FileUp, Search, Share2, Link as LinkIcon, Archive, Zap, CheckCircle, AlertCircle
 } from 'lucide-react';
-import { apiService, API_V1_URL } from '../../services/api';
+import { apiService } from '../../services/api';
 import { ArchiveItemOut, Document } from '../../data/types';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../context/AuthContext';
+import { useArchiveData } from '../../hooks/useArchiveData';
 import PDFViewerModal from '../PDFViewerModal';
 import ShareModal from '../ShareModal';
 
-type Breadcrumb = { id: string | null; name: string; type: 'ROOT' | 'CASE' | 'FOLDER'; };
-
-const sanitizeArchiveItem = (item: any): ArchiveItemOut => {
-    let itemId = item.id;
-    if (!itemId) {
-        if (typeof item._id === 'string') {
-            itemId = item._id;
-        } else if (typeof item._id === 'object' && item._id !== null && '$oid' in item._id) {
-            itemId = item._id.$oid;
-        }
-    }
-    return { ...item, id: itemId };
-};
-
-// --- COMPONENTS ---
 const getMimeType = (fileType: string, fileName:string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; if (['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF'].includes(fileType)) return 'image/jpeg'; return 'application/octet-stream'; };
 const getFileIcon = (fileType: string) => { const ft = fileType ? fileType.toUpperCase() : ""; if (ft === 'PDF') return <FileText className="w-5 h-5 text-red-400" />; if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-purple-400" />; if (['JSON', 'JS', 'TS'].includes(ft)) return <FileCode className="w-5 h-5 text-yellow-400" />; return <FileIcon className="w-5 h-5 text-blue-400" />; };
 
-// PHOENIX FIX: Stricter StatusBadge logic
+// --- BADGE COMPONENT ---
 const StatusBadge = ({ status }: { status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED' | null }) => { 
     const { t } = useTranslation(); 
     if (status === 'READY') return <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.statusReady', 'Gati për AI')}><CheckCircle size={14} /></div>; 
     if (status === 'PROCESSING') return <div className="bg-blue-500/10 text-blue-400 p-1.5 rounded-lg border border-blue-500/20" title={t('archive.statusProcessing', 'Duke procesuar...')}><Loader2 size={14} className="animate-spin" /></div>; 
     if (status === 'PENDING') return <div className="bg-amber-500/10 text-amber-400 p-1.5 rounded-lg border border-amber-500/20" title={t('archive.statusPending', 'Në pritje')}><Zap size={14} /></div>; 
     if (status === 'FAILED') return <div className="bg-rose-500/10 text-rose-400 p-1.5 rounded-lg border border-rose-500/20" title={t('archive.statusFailed', 'Dështoi')}><AlertCircle size={14} /></div>; 
-    // For null, undefined, or any other status, show "Pending" as the default actionable state.
     return <div className="bg-gray-500/10 text-gray-400 p-1.5 rounded-lg border border-gray-500/20" title={t('archive.statusUnknown', 'Status i panjohur, Ri-indekso')}><Zap size={14} /></div>; 
 };
 
 const ActionButton = ({ icon, label, onClick, primary = false, disabled = false, fullWidth = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean, disabled?: boolean, fullWidth?: boolean }) => ( <button onClick={onClick} disabled={disabled} className={` flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group ${fullWidth ? 'w-full' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${primary ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 border border-indigo-400/50' : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10 hover:border-white/20'} `}> <span className={`transition-transform duration-300 group-hover:scale-110 ${primary ? 'text-white' : 'text-indigo-400'}`}>{icon}</span> <span>{label}</span> </button> );
 
-// PHOENIX FIX: Added onReIndex to props
 const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, onReIndex, isShared, isFolder, isLoading, indexingStatus }: any) => { 
     const { t } = useTranslation(); 
     const canReIndex = indexingStatus !== 'PROCESSING' && indexingStatus !== 'PENDING';
@@ -90,11 +72,29 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
 
 export const ArchiveTab: React.FC = () => {
     const { t } = useTranslation();
-    const { isAuthenticated } = useAuth();
-    const [loading, setLoading] = useState(true);
-    const [archiveItems, setArchiveItems] = useState<ArchiveItemOut[]>([]);
-    const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([{ id: null, name: t('business.archive'), type: 'ROOT' }]);
-    const [isUploading, setIsUploading] = useState(false);
+    
+    // PHOENIX: Replaced local state with Robust Hook
+    const {
+        loading,
+        archiveItems, // Now this updates in real-time
+        breadcrumbs,
+        currentView,
+        filteredItems,
+        isUploading,
+        searchTerm,
+        setSearchTerm,
+        navigateTo,
+        enterFolder,
+        createFolder,
+        uploadFile,
+        deleteItem,
+        renameItem,
+        shareItem,
+        fetchArchiveContent,
+        isInsideCase
+    } = useArchiveData();
+
+    // Local UI State (Modals)
     const [showFolderModal, setShowFolderModal] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
     const [newFolderCategory, setNewFolderCategory] = useState("GENERAL");
@@ -103,161 +103,87 @@ export const ArchiveTab: React.FC = () => {
     const [openingDocId, setOpeningDocId] = useState<string | null>(null);
     const [itemToRename, setItemToRename] = useState<ArchiveItemOut | null>(null);
     const [renameValue, setRenameValue] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
     const [showShareModal, setShowShareModal] = useState(false);
+    
     const folderInputRef = useRef<HTMLInputElement>(null);
     const archiveInputRef = useRef<HTMLInputElement>(null);
 
     const translateSystemName = (name: string) => { if (!name) return ""; const lowerName = name.toLowerCase().trim(); if (lowerName === "my workspace") return t('archive.myWorkspace', 'Hapësira e Punës'); if (lowerName === "general") return t('category.general', 'Të Përgjithshme'); return name; };
 
-    useEffect(() => {
-        const initializeArchive = async () => {
-            if (!isAuthenticated) return;
-            setLoading(true);
-            try {
-                const cases = await apiService.getCases();
-                const primaryCase = cases.length > 0 ? cases[0] : null;
-                if (primaryCase) {
-                    setBreadcrumbs([{ id: primaryCase.id, name: primaryCase.title, type: 'CASE' }]);
-                } else {
-                    setLoading(false);
-                }
-            } catch (error) {
-                console.error("Failed to initialize archive:", error);
-                setLoading(false);
-            }
-        };
-        initializeArchive();
-    }, [isAuthenticated, t]);
-
-    useEffect(() => {
-        if (breadcrumbs.length > 0 && breadcrumbs[0]?.type !== 'ROOT') {
-            fetchArchiveContent();
-        }
-    }, [breadcrumbs]);
-
-    useEffect(() => {
-        if (!isAuthenticated) return;
-        const token = apiService.getToken();
-        if (!token) return;
-        const sseUrl = `${API_V1_URL}/stream/updates?token=${token}`;
-        const eventSource = new EventSource(sseUrl);
-        eventSource.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                const updatedDocId = data.document_id || data.id || (data._id ? (data._id.$oid || data._id) : null);
-                const newStatus = data.status || data.indexing_status;
-                if (data.type === 'DOCUMENT_STATUS' && updatedDocId && newStatus) {
-                    setArchiveItems(prevItems => 
-                        prevItems.map(item => 
-                            item.id === updatedDocId 
-                                ? { ...item, indexing_status: newStatus }
-                                : item
-                        )
-                    );
-                }
-            } catch (error) { console.error("Failed to parse SSE message:", error); }
-        };
-        eventSource.onerror = (error) => { console.error('EventSource connection failed:', error); eventSource.close(); };
-        return () => { eventSource.close(); };
-    }, [isAuthenticated]);
-
-    const fetchArchiveContent = async () => {
-        const active = breadcrumbs[breadcrumbs.length - 1];
-        if (!active || active.type === 'ROOT') {
-            setLoading(false);
-            return;
-        }
-        if (!loading) setLoading(true);
-        try {
-            let rawItems: any[] = [];
-            if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
-            else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
-            const sanitizedItems = rawItems.filter(item => item).map(sanitizeArchiveItem);
-            setArchiveItems(sanitizedItems);
-        } catch(e) { console.error("Failed to fetch archive content:", e); } finally { setLoading(false); }
-    };
-
-    const handleNavigate = (_: Breadcrumb, index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
-    const handleEnterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name: translateSystemName(name), type }]);
-    
+    // --- HANDLERS (Delegated to Hook) ---
     const handleCreateFolder = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newFolderName.trim()) return;
-        const active = breadcrumbs[breadcrumbs.length - 1];
-        try {
-            const rawFolder = await apiService.createArchiveFolder(newFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, newFolderCategory);
-            const newFolder = sanitizeArchiveItem(rawFolder);
-            setArchiveItems(prev => [newFolder, ...prev]);
-            setShowFolderModal(false);
-            setNewFolderName("");
-        } catch { alert(t('error.generic')); }
+        await createFolder(newFolderName, newFolderCategory);
+        setShowFolderModal(false);
+        setNewFolderName("");
     };
 
     const handleSmartUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0];
         if (!f) return;
-        setIsUploading(true);
-        const active = breadcrumbs[breadcrumbs.length - 1];
-        try {
-            const rawItem = await apiService.uploadArchiveItem(f, f.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, active.type === 'FOLDER' ? active.id! : undefined);
-            const newItem = sanitizeArchiveItem(rawItem);
-            setArchiveItems(prevItems => [newItem, ...prevItems]);
-        } catch { alert(t('error.uploadFailed')); } finally { setIsUploading(false); }
+        await uploadFile(f);
+        if (archiveInputRef.current) archiveInputRef.current.value = "";
     };
 
     const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
-        setIsUploading(true);
-        const active = breadcrumbs[breadcrumbs.length - 1];
+        
         try {
             const firstPath = files[0].webkitRelativePath || "";
             const rootFolderName = firstPath.split('/')[0] || t('archive.newFolderDefault');
-            const rawFolder = await apiService.createArchiveFolder(rootFolderName, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, "GENERAL");
-            const newFolder = sanitizeArchiveItem(rawFolder);
-            if (!newFolder || !newFolder.id) throw new Error("Failed to create folder");
-            setArchiveItems(prev => [newFolder, ...prev]);
+            
+            const rawFolder = await apiService.createArchiveFolder(rootFolderName, currentView.type === 'FOLDER' ? currentView.id! : undefined, currentView.type === 'CASE' ? currentView.id! : undefined, "GENERAL");
+            
             const uploadPromises = Array.from(files).map(file => {
                 if (file.name.startsWith('.')) return Promise.resolve();
-                return apiService.uploadArchiveItem(file, file.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, newFolder.id);
+                return apiService.uploadArchiveItem(file, file.name, "GENERAL", currentView.type === 'CASE' ? currentView.id! : undefined, rawFolder.id);
             });
             await Promise.all(uploadPromises);
-            fetchArchiveContent();
-        } catch { alert(t('error.uploadFailed')); } finally { setIsUploading(false); if (folderInputRef.current) folderInputRef.current.value = ''; }
+            fetchArchiveContent(); // Refresh after bulk operation
+        } catch { 
+            alert(t('error.uploadFailed')); 
+        } finally { 
+            if (folderInputRef.current) folderInputRef.current.value = ''; 
+        }
     };
 
     const handleReIndex = async (itemId: string) => {
         try {
-            setArchiveItems(prev => prev.map(item => item.id === itemId ? { ...item, indexing_status: 'PENDING' } : item));
             await apiService.reIndexArchiveItem(itemId);
+            fetchArchiveContent();
         } catch (error) {
             alert(t('error.generic'));
-            fetchArchiveContent();
         }
     };
 
-    const downloadArchiveItem = async (id: string, title: string) => { try { await apiService.downloadArchiveItem(id, title); } catch { alert(t('error.generic')); } };
-    
-    const deleteArchiveItem = async (id: string) => {
-        if(!window.confirm(t('general.confirmDelete'))) return;
-        try {
-            await apiService.deleteArchiveItem(id);
-            setArchiveItems(prev => prev.filter(item => item.id !== id));
-        } catch { alert(t('error.generic')); }
+    // --- VIEWERS & MODALS ---
+    const handleViewItem = async (item: ArchiveItemOut) => { 
+        setOpeningDocId(item.id); 
+        try { 
+            const blob = await apiService.getArchiveFileBlob(item.id); 
+            const url = window.URL.createObjectURL(blob); 
+            setViewingUrl(url); 
+            setViewingDoc({ id: item.id, file_name: item.title, mime_type: getMimeType(item.file_type, item.title), status: 'READY' } as any); 
+        } catch { 
+            alert(t('error.generic')); 
+        } finally { 
+            setOpeningDocId(null); 
+        } 
     };
-
-    const handleViewItem = async (item: ArchiveItemOut) => { setOpeningDocId(item.id); try { const blob = await apiService.getArchiveFileBlob(item.id); const url = window.URL.createObjectURL(blob); setViewingUrl(url); setViewingDoc({ id: item.id, file_name: item.title, mime_type: getMimeType(item.file_type, item.title), status: 'READY' } as any); } catch { alert(t('error.generic')); } finally { setOpeningDocId(null); } };
+    
     const closePreview = () => { setViewingDoc(null); if(viewingUrl) window.URL.revokeObjectURL(viewingUrl); };
     const handleRenameClick = (item: ArchiveItemOut) => { setItemToRename(item); setRenameValue(item.title); };
-    const submitRename = async (e: React.FormEvent) => { e.preventDefault(); if (!itemToRename || !renameValue.trim()) return; try { await apiService.renameArchiveItem(itemToRename.id, renameValue); setArchiveItems(prev => prev.map(i => i.id === itemToRename.id ? { ...i, title: renameValue } : i)); setItemToRename(null); } catch (error) { alert(t('error.generic')); } };
-    const handleShareItem = async (item: ArchiveItemOut) => { try { const newStatus = !item.is_shared; await apiService.shareArchiveItem(item.id, newStatus); setArchiveItems(prev => prev.map(i => i.id === item.id ? { ...i, is_shared: newStatus } : i)); } catch (e) { alert(t('error.generic')); } };
     
-    const currentView = breadcrumbs[breadcrumbs.length - 1];
-    const isInsideCase = currentView?.type === 'CASE'; 
-    const filteredItems = archiveItems.filter(item => { return item.title.toLowerCase().includes(searchTerm.toLowerCase()); });
-    
-    if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
+    const submitRename = async (e: React.FormEvent) => { 
+        e.preventDefault(); 
+        if (!itemToRename || !renameValue.trim()) return; 
+        await renameItem(itemToRename.id, renameValue);
+        setItemToRename(null); 
+    };
+
+    if (loading && archiveItems.length === 0) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
 
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
@@ -283,7 +209,7 @@ export const ArchiveTab: React.FC = () => {
             <div className="flex items-center gap-2 overflow-x-auto text-sm no-scrollbar pb-2">
                 {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={crumb.id || 'root'}>
-                        <button onClick={() => handleNavigate(crumb, index)} className={` flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${index === breadcrumbs.length - 1 ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30 font-bold shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'text-gray-500 border-transparent hover:text-white hover:bg-white/5'} `}>
+                        <button onClick={() => navigateTo(index)} className={` flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${index === breadcrumbs.length - 1 ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30 font-bold shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'text-gray-500 border-transparent hover:text-white hover:bg-white/5'} `}>
                             {crumb.type === 'ROOT' ? <Archive size={16} /> : crumb.type === 'CASE' ? <Briefcase size={16} /> : <FolderOpen size={16} />}
                             {translateSystemName(crumb.name)}
                         </button>
@@ -312,11 +238,11 @@ export const ArchiveTab: React.FC = () => {
                                             isShared={item.is_shared}
                                             isLoading={openingDocId === item.id}
                                             indexingStatus={item.indexing_status}
-                                            onClick={() => isFolder ? handleEnterFolder(item.id, item.title, 'FOLDER') : handleViewItem(item)} 
-                                            onDownload={() => downloadArchiveItem(item.id, item.title)} 
-                                            onDelete={() => deleteArchiveItem(item.id)}
+                                            onClick={() => isFolder ? enterFolder(item.id, item.title, 'FOLDER') : handleViewItem(item)} 
+                                            onDownload={() => apiService.downloadArchiveItem(item.id, item.title)} 
+                                            onDelete={() => deleteItem(item.id)}
                                             onRename={() => handleRenameClick(item)} 
-                                            onShare={() => handleShareItem(item)}
+                                            onShare={() => shareItem(item)}
                                             onReIndex={() => handleReIndex(item.id)}
                                         />
                                     </motion.div>
