@@ -1,12 +1,11 @@
 // FILE: src/hooks/useArchiveData.ts
-// PHOENIX PROTOCOL - DEFENSIVE DATA SANITIZATION V3.0
-// 1. FIX: Implemented a two-stage data sanitization process in 'fetchArchiveContent'.
-//    a. FILTER: It first removes any item from the API response that lacks an '_id' or 'id' property.
-//    b. MAP: It then maps the remaining valid items to ensure the 'id' field is correctly populated from '_id'.
-// 2. STATUS: This makes the frontend resilient to malformed backend data and permanently resolves the 'DELETE .../undefined' error.
+// PHOENIX PROTOCOL - DEFENSIVE DATA SANITIZATION V3.1 (REAL-TIME SSE)
+// 1. FIX: Added 'useEffect' to listen for Server-Sent Events (SSE) from '/api/v1/archive/events'.
+// 2. LOGIC: Uses 'fetch' with Auth headers instead of EventSource to ensure security context.
+// 3. RESULT: Instantly updates document status (PROCESSING -> READY) without page refresh.
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { apiService } from '../services/api';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { apiService, API_V1_URL } from '../services/api';
 import { ArchiveItemOut, Case } from '../data/types';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +19,9 @@ export const useArchiveData = () => {
     const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbType[]>([{ id: null, name: t('business.archive'), type: 'ROOT' }]);
     const [searchTerm, setSearchTerm] = useState("");
     const [isUploading, setIsUploading] = useState(false);
+    
+    // To prevent duplicate connections or memory leaks
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Initial Load
     useEffect(() => {
@@ -39,9 +41,7 @@ export const useArchiveData = () => {
             
             // PHOENIX FIX: Sanitize the data from the backend.
             const items: ArchiveItemOut[] = rawItems
-                // 1. Filter out any items that are missing an identifier.
                 .filter(item => item && (item._id || item.id))
-                // 2. Map the valid items to the expected frontend structure.
                 .map(item => ({ ...item, id: item._id || item.id }));
             
             setArchiveItems(items);
@@ -53,6 +53,78 @@ export const useArchiveData = () => {
     }, [breadcrumbs]);
 
     useEffect(() => { fetchArchiveContent(); }, [fetchArchiveContent]);
+
+    // PHOENIX PROTOCOL: Real-Time SSE Listener
+    useEffect(() => {
+        const setupStream = async () => {
+            const token = apiService.getToken();
+            if (!token) return;
+
+            // Cleanup previous connection if exists
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+            
+            const ac = new AbortController();
+            abortControllerRef.current = ac;
+
+            try {
+                const response = await fetch(`${API_V1_URL}/archive/events`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    signal: ac.signal
+                });
+
+                if (!response.ok || !response.body) return;
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n\n');
+                    buffer = lines.pop() || ''; // Keep incomplete data in buffer
+
+                    for (const line of lines) {
+                        const dataPrefix = 'data: ';
+                        if (line.trim().startsWith(dataPrefix)) {
+                            const jsonStr = line.trim().substring(dataPrefix.length);
+                            try {
+                                const eventData = JSON.parse(jsonStr);
+                                
+                                // Handle Document Status Updates
+                                if (eventData.type === 'DOCUMENT_STATUS') {
+                                    const { document_id, status } = eventData;
+                                    setArchiveItems(prev => prev.map(item => 
+                                        item.id === document_id 
+                                            ? { ...item, indexing_status: status } 
+                                            : item
+                                    ));
+                                }
+                            } catch (e) {
+                                // Ignore parse errors (ping, etc)
+                            }
+                        }
+                    }
+                }
+            } catch (err: any) {
+                if (err.name !== 'AbortError') {
+                    console.warn("SSE Connection lost", err);
+                }
+            }
+        };
+
+        setupStream();
+
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []); // Run once on mount (or could depend on location, but global is safer here)
 
     // Navigation
     const navigateTo = (index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
@@ -130,7 +202,7 @@ export const useArchiveData = () => {
         setSearchTerm,
         isUploading,
         isInsideCase,
-        fetchArchiveContent, // Exposed for refresh if needed
+        fetchArchiveContent,
         navigateTo,
         enterFolder,
         createFolder,

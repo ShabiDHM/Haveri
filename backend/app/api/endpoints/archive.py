@@ -1,16 +1,19 @@
 # FILE: backend/app/api/endpoints/archive.py
-# PHOENIX PROTOCOL - ARCHIVE API V2.3 (RE-INDEXING)
-# 1. NEW: Added the '/items/{item_id}/re-index' endpoint.
-# 2. LOGIC: Allows the frontend to re-trigger the Celery ingestion task for stale or failed documents.
-# 3. HTTP STATUS: Correctly uses a 202 Accepted response for initiating a background task.
+# PHOENIX PROTOCOL - ARCHIVE API V2.4 (REAL-TIME EVENTS)
+# 1. NEW: Added '/events' SSE endpoint for real-time document status updates.
+# 2. INTEGRATION: Connects to Redis 'user:{id}:updates' channel to stream "processing complete" signals.
+# 3. SECURITY: Uses standard 'get_current_user' dependency to ensure only the owner receives their events.
 
-from fastapi import APIRouter, Depends, status, UploadFile, Form, Query, HTTPException, Body
+from fastapi import APIRouter, Depends, status, UploadFile, Form, Query, HTTPException, Request
 from fastapi.responses import StreamingResponse, JSONResponse
-from typing import List, Annotated, Optional, Dict, Any
+from typing import List, Annotated, Optional
 from pymongo.database import Database
 from pydantic import BaseModel
 import urllib.parse
 import mimetypes
+import asyncio
+import os
+import redis.asyncio as redis
 
 from ...models.user import UserInDB
 from ...models.archive import ArchiveItemOut
@@ -18,6 +21,9 @@ from ...services.archive_service import ArchiveService
 from .dependencies import get_current_user, get_db
 
 router = APIRouter(tags=["Archive"])
+
+# Redis Config
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 # --- REQUEST MODELS ---
 class ArchiveRenameRequest(BaseModel):
@@ -31,6 +37,51 @@ class ArchiveCaseShareRequest(BaseModel):
     is_shared: bool
 
 # --- ENDPOINTS ---
+
+@router.get("/events")
+async def archive_events_stream(
+    request: Request,
+    current_user: Annotated[UserInDB, Depends(get_current_user)]
+):
+    """
+    Server-Sent Events (SSE) endpoint to stream real-time updates (e.g., Document Ready).
+    Uses Header-based Auth via the 'fetch' API on the frontend.
+    """
+    async def event_generator():
+        # Connect to Redis
+        try:
+            r = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
+            pubsub = r.pubsub()
+            channel = f"user:{current_user.id}:updates"
+            await pubsub.subscribe(channel)
+        except Exception as e:
+            yield f"event: error\ndata: {str(e)}\n\n"
+            return
+
+        try:
+            # Heartbeat to keep connection alive
+            yield "event: ping\ndata: connected\n\n"
+            
+            while True:
+                if await request.is_disconnected():
+                    break
+                
+                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+                
+                if message and message["type"] == "message":
+                    # Forward the Redis message directly to the client
+                    yield f"data: {message['data']}\n\n"
+                
+                # Small sleep to prevent busy loop if no messages
+                await asyncio.sleep(0.1)
+                
+        except asyncio.CancelledError:
+            pass
+        finally:
+            await pubsub.unsubscribe(channel)
+            await r.close()
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @router.get("/items", response_model=List[ArchiveItemOut])
 def get_archive_items(
@@ -67,16 +118,12 @@ async def upload_archive_item(
     service = ArchiveService(db)
     return await service.add_file_to_archive(str(current_user.id), file, category, title, case_id, parent_id)
 
-# PHOENIX: NEW ENDPOINT FOR RE-INDEXING
 @router.post("/items/{item_id}/re-index", status_code=status.HTTP_202_ACCEPTED)
 def re_index_archive_item(
     item_id: str,
     current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db)
 ):
-    """
-    Triggers a background task to re-process and re-index a specific archive item.
-    """
     service = ArchiveService(db)
     service.re_index_item(str(current_user.id), item_id)
     return JSONResponse(content={"message": "Re-indexing task has been accepted."})

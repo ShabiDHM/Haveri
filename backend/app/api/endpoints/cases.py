@@ -1,8 +1,9 @@
 # FILE: backend/app/api/endpoints/cases.py
-# PHOENIX PROTOCOL - CASES ROUTER V6.1 (FINAL CLEANUP)
-# 1. REMOVED: Deleted legacy 'generate_objection' endpoint which relied on deleted forensic logic.
-# 2. CLEANUP: Removed unused 'drafting_service' import.
-# 3. STATUS: Compilation error resolved; API fully standardized.
+# PHOENIX PROTOCOL - CASES ROUTER V6.2 (SIGNATURE CORRECTION)
+# 1. FIX: Updated 'archive_case_document' to match the restored 'ArchiveService' signature.
+#    - Old Call: passed 'source_key' and 'filename' (invalid).
+#    - New Call: passes 'document_id' (valid).
+# 2. STATUS: Fully synchronized with backend services.
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body, Query
 from typing import List, Annotated, Dict, Optional
@@ -28,7 +29,6 @@ from ...services import (
     archive_service,
     pdf_service,
     llm_service
-    # PHOENIX: Removed 'drafting_service' as it is no longer used in this router
 )
 
 # --- MODEL IMPORTS ---
@@ -217,10 +217,13 @@ async def bulk_delete_documents(case_id: str, body: BulkDeleteRequest, current_u
 
 @router.post("/{case_id}/documents/{doc_id}/archive", response_model=ArchiveItemOut, tags=["Documents"])
 async def archive_case_document(case_id: str, doc_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
+    # 1. Verify Permission (Router Level)
     doc = await asyncio.to_thread(document_service.get_and_verify_document, db, doc_id, current_user)
     if str(doc.case_id) != case_id: raise HTTPException(status_code=403)
+    
+    # 2. Call Service with Correct Signature (PHOENIX FIX)
     archiver = archive_service.ArchiveService(db)
-    return await archiver.archive_existing_document(user_id=str(current_user.id), case_id=case_id, source_key=doc.storage_key, filename=doc.file_name)
+    return await archiver.archive_existing_document(user_id=str(current_user.id), case_id=case_id, document_id=doc_id)
 
 @router.put("/{case_id}/documents/{doc_id}/rename", tags=["Documents"])
 async def rename_document_endpoint(case_id: str, doc_id: str, body: RenameDocumentRequest, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):

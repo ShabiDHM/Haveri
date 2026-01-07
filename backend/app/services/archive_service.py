@@ -1,8 +1,8 @@
 # FILE: backend/app/services/archive_service.py
-# PHOENIX PROTOCOL - SMART ARCHIVE V3.1 (RE-INDEXING)
-# 1. NEW: Added the `re_index_item` function to handle re-processing requests.
-# 2. LOGIC: This function securely validates the item, resets its status to 'PENDING', and re-dispatches the processing task to Celery.
-# 3. CLEANUP: The 'delete_archive_item' function now also cleans up any associated embeddings from the vector store.
+# PHOENIX PROTOCOL - ARCHIVE SERVICE V4.0 (COMPLETE RESTORATION)
+# 1. FIX: Restored 'archive_existing_document' and 'save_generated_file' methods which were previously elided.
+# 2. LOGIC: Ensures seamless integration between Cases, Finance, and the Archive module.
+# 3. INTEGRITY: Includes full S3 copy logic and Celery task triggering for all archive pathways.
 
 import os
 import logging
@@ -11,8 +11,7 @@ from datetime import datetime, timezone
 from bson import ObjectId
 from bson.errors import InvalidId
 from pymongo.database import Database
-from fastapi import UploadFile
-from fastapi.exceptions import HTTPException
+from fastapi import UploadFile, HTTPException
 
 from ..models.archive import ArchiveItemInDB
 from .storage_service import get_s3_client, transfer_config
@@ -87,7 +86,6 @@ class ArchiveService:
         doc_data["_id"] = result.inserted_id
         return ArchiveItemInDB(**doc_data)
 
-    # PHOENIX: NEW FUNCTION FOR RE-INDEXING
     def re_index_item(self, user_id: str, item_id: str):
         """
         Re-triggers the indexing process for a specific archive item.
@@ -181,5 +179,104 @@ class ArchiveService:
             response = get_s3_client().get_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
             return response['Body'], item["title"]
         except: raise HTTPException(500, "Stream failed")
-    
-    # ... (save_generated_file and archive_existing_document are unchanged) ...
+
+    # --- RESTORED METHODS ---
+
+    async def archive_existing_document(self, user_id: str, case_id: str, document_id: str) -> ArchiveItemInDB:
+        """
+        Archives an existing document from a Case by copying its S3 object.
+        """
+        # 1. Find the document within the Case
+        case = self.db.cases.find_one({
+            "_id": self._to_oid(case_id), 
+            "user_id": self._to_oid(user_id),
+            "documents.id": document_id 
+        }, {"documents.$": 1})
+        
+        if not case or not case.get("documents"):
+            raise HTTPException(status_code=404, detail="Document not found in case")
+            
+        doc = case["documents"][0]
+        original_key = doc.get("storage_key")
+        
+        if not original_key:
+             raise HTTPException(status_code=400, detail="Document has no content to archive")
+
+        # 2. Create new Storage Key for Archive (Clone the object)
+        s3 = get_s3_client()
+        timestamp = int(datetime.now().timestamp())
+        new_key = f"archive/{user_id}/{timestamp}_{doc.get('file_name', 'archived')}"
+        
+        try:
+            s3.copy_object(
+                Bucket=B2_BUCKET_NAME,
+                CopySource={'Bucket': B2_BUCKET_NAME, 'Key': original_key},
+                Key=new_key
+            )
+        except Exception as e:
+            logger.error(f"S3 Copy failed during archiving: {e}")
+            raise HTTPException(status_code=500, detail="Failed to copy file to archive storage")
+
+        # 3. Create Database Entry
+        archive_data = {
+            "user_id": self._to_oid(user_id),
+            "title": doc.get("file_name"),
+            "item_type": "FILE",
+            "file_type": doc.get("file_type", "PDF"),
+            "category": "CASE_DOCUMENT",
+            "case_id": self._to_oid(case_id),
+            "storage_key": new_key,
+            "file_size": doc.get("file_size", 0),
+            "created_at": datetime.now(timezone.utc),
+            "description": "Archived from Case Documents",
+            "is_shared": False,
+            "indexing_status": "PENDING"
+        }
+        
+        res = self.db.archives.insert_one(archive_data)
+        
+        # 4. Trigger Indexing
+        try:
+            celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(res.inserted_id)])
+        except Exception as e:
+            logger.warning(f"Failed to queue indexing for archived document: {e}")
+            
+        archive_data["_id"] = res.inserted_id
+        return ArchiveItemInDB(**archive_data)
+
+    async def save_generated_file(self, user_id: str, file_content: bytes, filename: str, category: str, case_id: Optional[str] = None) -> ArchiveItemInDB:
+        """
+        Saves a system-generated file (e.g. Invoice PDF) directly to the archive.
+        """
+        timestamp = int(datetime.now().timestamp())
+        storage_key = f"archive/{user_id}/generated_{timestamp}_{filename}"
+        
+        s3 = get_s3_client()
+        try:
+            s3.put_object(Bucket=B2_BUCKET_NAME, Key=storage_key, Body=file_content)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Storage upload failed: {e}")
+            
+        doc_data = {
+            "user_id": self._to_oid(user_id),
+            "title": filename,
+            "item_type": "FILE",
+            "file_type": filename.split('.')[-1].upper(),
+            "category": category,
+            "storage_key": storage_key,
+            "file_size": len(file_content),
+            "created_at": datetime.now(timezone.utc),
+            "description": "System generated document",
+            "is_shared": False,
+            "indexing_status": "PENDING"
+        }
+        if case_id:
+            doc_data["case_id"] = self._to_oid(case_id)
+            
+        res = self.db.archives.insert_one(doc_data)
+        doc_data["_id"] = res.inserted_id
+        
+        # Trigger indexing
+        celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(res.inserted_id)])
+        
+        return ArchiveItemInDB(**doc_data)
