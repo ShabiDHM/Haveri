@@ -1,7 +1,7 @@
 # FILE: backend/app/services/spreadsheet_service.py
-# PHOENIX PROTOCOL - REVISION V7 (OPENROUTER COMPATIBLE)
-# 1. FEATURE: Uses 'OPENAI_BASE_URL' to support OpenRouter/Custom Proxies.
-# 2. LOGIC: Maintains Priority Scoring & Deep Scan for columns.
+# PHOENIX PROTOCOL - REVISION V8 (ALBANIAN LOCALIZATION)
+# 1. LOCALIZATION: All hardcoded strings and AI prompts converted to Albanian.
+# 2. LOGIC: Retains the robust OpenRouter/Priority logic from V7.
 
 import pandas as pd
 import io
@@ -20,13 +20,12 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
         model_name = getattr(settings, 'OPENAI_MODEL', "gpt-4o")
 
         if not api_key:
-            return {"error": "Server Configuration Error: OPENAI_API_KEY is missing."}
+            return {"error": "Gabim Konfigurimi: Mungon çelësi API."}
         
-        # Connect using the config (works for OpenRouter if base_url is set correctly)
         client = OpenAI(api_key=str(api_key), base_url=base_url)
         # --------------------------------------
 
-        # 1. LOAD DATA (SMART READ)
+        # 1. LOAD DATA
         if filename.endswith('.csv'):
             try:
                 df = pd.read_csv(io.BytesIO(file_contents))
@@ -44,7 +43,7 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
         date_col, amount_col = smart_detect_columns(df)
 
         if not amount_col:
-            return {"error": "Could not identify an Amount/Total column. Ensure your file has headers like 'Vlera', 'Shuma', or 'Total'."}
+            return {"error": "Nuk u gjet asnjë kolonë për 'Vlerën' ose 'Shumën'. Ju lutemi kontrolloni titujt e skedarit."}
 
         # 3. NORMALIZE DATA
         def clean_currency(val):
@@ -70,42 +69,42 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
         avg_transaction = float(df[amount_col].mean())
         transaction_count = int(len(df))
 
-        # 5. ANOMALY DETECTION
+        # 5. ANOMALY DETECTION (TRANSLATED)
         anomalies: List[Dict[str, Any]] = []
         
-        # Round Numbers
+        # Rule A: Round Numbers
         suspicious_round = df[(df[amount_col] > 50) & (df[amount_col] % 50 == 0) & (df[amount_col] != 0)]
         for idx, row in suspicious_round.head(3).iterrows():
             anomalies.append({
-                "type": "Round Number",
+                "type": "Numër i Rrumbullakët", # ALBANIAN
                 "severity": "medium",
-                "description": f"Row {idx}: Exact round amount of {row[amount_col]:.2f}",
+                "description": f"Rreshti {idx}: Shumë e plotë prej {row[amount_col]:.2f} (Dyshim për vlerësim/manipulim)", # ALBANIAN
                 "row_id": int(idx)
             })
 
-        # Weekend
+        # Rule B: Weekend Transactions
         if has_dates and date_col:
             weekend_tx = df[df[date_col].dt.dayofweek >= 5]
             for idx, row in weekend_tx.head(3).iterrows():
                 try:
                     date_str = row[date_col].strftime('%Y-%m-%d')
                     anomalies.append({
-                        "type": "Weekend Activity",
+                        "type": "Aktivitet në Fundjavë", # ALBANIAN
                         "severity": "low",
-                        "description": f"Row {idx}: Transaction on a weekend ({date_str})",
+                        "description": f"Rreshti {idx}: Transaksion i kryer në fundjavë ({date_str})", # ALBANIAN
                         "row_id": int(idx)
                     })
                 except: continue
 
-        # Outliers
+        # Rule C: Outliers
         if transaction_count > 5:
             cutoff = df[amount_col].std() * 3
             outliers = df[df[amount_col] > (avg_transaction + cutoff)]
             for idx, row in outliers.head(3).iterrows():
                  anomalies.append({
-                    "type": "Statistical Outlier",
+                    "type": "Vlerë e Jashtëzakonshme", # ALBANIAN
                     "severity": "high",
-                    "description": f"Row {idx}: Amount {row[amount_col]:.2f} is unusually high.",
+                    "description": f"Rreshti {idx}: Shuma {row[amount_col]:.2f} është jashtëzakonisht e lartë krahasuar me mesataren.", # ALBANIAN
                     "row_id": int(idx)
                 })
 
@@ -124,20 +123,27 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
                 counts = df['category'].value_counts()
                 chart_data = [{"label": str(label), "value": int(counts.get(label, 0))} for label in labels]
 
-        # 7. AI NARRATIVE
+        # 7. AI NARRATIVE (TRANSLATED PROMPT)
         system_prompt = """
-        You are an expert Financial Forensics Auditor.
-        Analyze the provided data summary.
-        Write a SHORT, punchy executive summary (max 3 sentences).
-        Highlight the total volume and any specific red flags found.
+        Ti je një Ekspert i Forenzikës Financiare dhe Auditues.
+        Analizo të dhënat statistikore të mëposhtme nga një skedar financiar.
+        
+        Detyra jote:
+        1. Shkruaj një përmbledhje ekzekutive të shkurtër dhe profesionale në gjuhën SHQIPE (Albanian).
+        2. Mos përmend termat teknikë si "DataFrame" apo "Pandas".
+        3. Përmend volumin total dhe numrin e transaksioneve.
+        4. Thekso anomalitë kryesore nëse ka.
+        
+        Stili: Profesional, i drejtpërdrejtë, për një pronar biznesi.
+        Maksimumi 3 fjali.
         """
         
         user_content = f"""
-        Filename: {filename}
-        Rows: {transaction_count}
-        Total: {total_sum:.2f}
-        Anomalies Found: {len(anomalies)}
-        Top Anomalies: {[a['description'] for a in anomalies[:2]]}
+        Emri i Skedarit: {filename}
+        Nr. Rreshtave: {transaction_count}
+        Totali: {total_sum:.2f}
+        Anomali të gjetura: {len(anomalies)}
+        Anomalitë kryesore: {[a['description'] for a in anomalies[:2]]}
         """
 
         response = client.chat.completions.create(
@@ -165,7 +171,7 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
 
     except Exception as e:
         print(f"Analysis Error: {e}")
-        return {"error": f"Analysis failed: {str(e)}"}
+        return {"error": f"Analiza dështoi: {str(e)}"}
 
 def smart_detect_columns(df: pd.DataFrame) -> Tuple[Any, Any]:
     cols = df.columns
