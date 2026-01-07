@@ -1,7 +1,7 @@
 # FILE: backend/app/tasks/document_processing.py
-# PHOENIX PROTOCOL - UNIFIED ARCHIVE WORKER V10.0
-# 1. CLEANUP: Removed legacy 'process_document_task' (Dead Logic).
-# 2. CORE: 'process_archive_document' is now the sole ingestion engine.
+# PHOENIX PROTOCOL - UNIFIED ARCHIVE WORKER V10.0 (CLEAN)
+# 1. CLEANUP: Removed legacy 'process_document_task' as the Case Document Panel is deprecated.
+# 2. CORE LOGIC: 'process_archive_document' is now the SINGLE source of truth for all ingestion.
 # 3. TRIGGER: Implements the Redis Publish logic to turn the icon GREEN.
 
 import logging
