@@ -1,4 +1,8 @@
 # FILE: backend/app/services/spreadsheet_service.py
+# PHOENIX PROTOCOL - REVISION V2 (SAFE BOOT)
+# 1. FIX: Moved OpenAI Client initialization inside the function to prevent startup crashes.
+# 2. LOGIC: Added explicit check for API Key before attempting analysis.
+
 import pandas as pd
 import io
 import os
@@ -6,10 +10,6 @@ import re
 from app.core.config import settings
 from openai import OpenAI
 from typing import Dict, Any, List
-
-# Initialize OpenAI Client
-api_key = getattr(settings, 'OPENAI_API_KEY', None) or os.getenv('OPENAI_API_KEY')
-client = OpenAI(api_key=api_key)
 
 def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[str, Any]:
     """
@@ -21,6 +21,16 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
     5. Generate AI Narrative
     """
     try:
+        # --- SAFE CLIENT INITIALIZATION ---
+        # We initialize here so the server doesn't crash on startup if key is missing
+        api_key = getattr(settings, 'OPENAI_API_KEY', None) or os.getenv('OPENAI_API_KEY')
+        
+        if not api_key:
+            return {"error": "Server Configuration Error: OPENAI_API_KEY is missing."}
+            
+        client = OpenAI(api_key=str(api_key))
+        # ----------------------------------
+
         # 1. LOAD DATA
         if filename.endswith('.csv'):
             df = pd.read_csv(io.BytesIO(file_contents))
