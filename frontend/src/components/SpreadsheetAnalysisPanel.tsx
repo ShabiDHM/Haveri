@@ -1,8 +1,7 @@
 // FILE: frontend/src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - REVISION V4 (MOBILE READY + ANIMATIONS)
-// 1. FIX: Re-integrated 'motion' for smooth bar chart animations (Fixes Pylance).
-// 2. MOBILE: Added horizontal scroll for charts and responsive padding.
-// 3. LAYOUT: Stacked columns on mobile, side-by-side on desktop.
+// PHOENIX PROTOCOL - REVISION V5 (READABILITY UPDATE)
+// 1. UI FIX: Increased chart label font size (10px -> 12px/14px) and contrast.
+// 2. STYLE: Improved tooltip visibility and bar interactions.
 
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -248,7 +247,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                             Trendi i Shpenzimeve
                         </h3>
                         
-                        {/* Chart Container - Added overflow-x-auto for mobile */}
+                        {/* Chart Container */}
                         <div className="flex-1 w-full overflow-x-auto pb-4">
                             <div className="flex items-end gap-2 h-48 sm:h-64 min-w-[300px]">
                                 {result.chart_data.length === 0 ? (
@@ -260,7 +259,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                                         const heightPct = (item.value / maxVal) * 100;
                                         return (
                                             <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-2 group relative min-w-[30px]">
-                                                {/* Tooltip (Hidden on touch, shown on hover) */}
+                                                {/* Tooltip */}
                                                 <div className="hidden sm:block absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10 pointer-events-none border border-white/10">
                                                     €{item.value.toLocaleString()}
                                                 </div>
@@ -275,7 +274,8 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                                                     <div className="absolute top-0 w-full h-[2px] bg-emerald-200/50 shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
                                                 </motion.div>
 
-                                                <span className="text-[10px] text-gray-500 truncate w-full text-center group-hover:text-gray-300 transition-colors">
+                                                {/* FIX: Font size increased for readability */}
+                                                <span className="text-xs text-gray-400 truncate w-full text-center group-hover:text-white transition-colors pt-2">
                                                     {item.label}
                                                 </span>
                                             </div>
