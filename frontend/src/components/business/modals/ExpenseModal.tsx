@@ -1,13 +1,14 @@
 // FILE: src/components/business/modals/ExpenseModal.tsx
-// PHOENIX PROTOCOL - MODULE EXTRACTION V1.0
-// Extracted from FinanceTab.tsx.
-// Handles Create and Update operations for Expenses, including Receipt Upload.
+// PHOENIX PROTOCOL - SUBTLE SCAN V2.1
+// 1. UI: Removed the extra "Scan" button. The AI workflow now starts automatically when a user attaches a receipt.
+// 2. LOGIC: The 'Paperclip' button's text changes to show the AI's status (Uploading, Analyzing, etc.).
+// 3. UX: Preserves the original, minimal UI while making the form "magically" pre-fill itself.
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, MinusCircle, CheckCircle, Paperclip } from 'lucide-react';
+import { X, MinusCircle, CheckCircle, Paperclip, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Expense, ExpenseCreateRequest, ExpenseUpdate } from '../../../data/types';
-import { apiService } from '../../../services/api';
+import { apiService, API_V1_URL } from '../../../services/api';
 import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { sq, enUS } from 'date-fns/locale';
@@ -21,69 +22,146 @@ interface ExpenseModalProps {
     expenseToEdit: Expense | null;
 }
 
+type ExtractionStatus = 'IDLE' | 'UPLOADING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+
 export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onSuccess, expenseToEdit }) => {
     const { t, i18n } = useTranslation();
     const localeMap: { [key: string]: any } = { sq, al: sq, en: enUS };
     const currentLocale = localeMap[i18n.language] || enUS;
-    const receiptInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // State
     const [formData, setFormData] = useState({ 
         category: '', 
         amount: 0, 
         description: '' 
     });
     const [expenseDate, setExpenseDate] = useState<Date | null>(new Date());
-    const [expenseReceipt, setExpenseReceipt] = useState<File | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [extractionStatus, setExtractionStatus] = useState<ExtractionStatus>('IDLE');
+    const [extractionError, setExtractionError] = useState<string | null>(null);
 
-    // Initialize state on open
+    const resetForm = (expense: Expense | null = null) => {
+        if (expense) {
+            setFormData({
+                category: expense.category,
+                amount: expense.amount,
+                description: expense.description || ''
+            });
+            setExpenseDate(new Date(expense.date));
+        } else {
+            setFormData({ category: '', amount: 0, description: '' });
+            setExpenseDate(new Date());
+        }
+        setSelectedFile(null);
+        setExtractionStatus('IDLE');
+        setExtractionError(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
     useEffect(() => {
         if (isOpen) {
-            if (expenseToEdit) {
-                setFormData({
-                    category: expenseToEdit.category,
-                    amount: expenseToEdit.amount,
-                    description: expenseToEdit.description || ''
-                });
-                setExpenseDate(new Date(expenseToEdit.date));
-                setExpenseReceipt(null); // Reset file input
-            } else {
-                setFormData({ category: '', amount: 0, description: '' });
-                setExpenseDate(new Date());
-                setExpenseReceipt(null);
-            }
+            resetForm(expenseToEdit);
         }
     }, [isOpen, expenseToEdit]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const abortController = new AbortController();
+        const token = apiService.getToken();
+        if (!token) return;
+
+        const setupStream = async () => {
+            try {
+                const response = await fetch(`${API_V1_URL}/archive/events`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    signal: abortController.signal
+                });
+                if (!response.ok || !response.body) return;
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n\n');
+                    for (const line of lines) {
+                        if (line.trim().startsWith('data: ')) {
+                            try {
+                                const eventData = JSON.parse(line.trim().substring(6));
+                                if (eventData.type === 'EXPENSE_EXTRACTION_COMPLETE') {
+                                    setExtractionStatus('COMPLETED');
+                                    const data = eventData.data;
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        category: data.category || prev.category,
+                                        amount: data.total_amount || prev.amount,
+                                        description: data.supplier_name || prev.description,
+                                    }));
+                                    if (data.date) setExpenseDate(new Date(data.date));
+                                } else if (eventData.type === 'EXPENSE_EXTRACTION_FAILED') {
+                                    setExtractionStatus('FAILED');
+                                    setExtractionError(eventData.error || t('error.generic'));
+                                }
+                            } catch (e) { /* ignore */ }
+                        }
+                    }
+                }
+            } catch (err: any) {
+                if (err.name !== 'AbortError') console.warn("SSE Stream disconnected:", err);
+            }
+        };
+        setupStream();
+        return () => abortController.abort();
+    }, [isOpen, t]);
+
+    const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setSelectedFile(file);
+        setExtractionStatus('UPLOADING');
+        setExtractionError(null);
+
+        try {
+            const token = apiService.getToken();
+            const formPayload = new FormData();
+            formPayload.append('file', file);
+            
+            const response = await fetch(`${API_V1_URL}/analysis/extract-expense-from-file`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formPayload
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Upload failed');
+            }
+            
+            setExtractionStatus('PROCESSING');
+        } catch (error: any) {
+            setExtractionStatus('FAILED');
+            setExtractionError(error.message || t('error.generic'));
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             const dateStr = expenseDate ? expenseDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
             let savedExpenseId: string;
-
             if (expenseToEdit) {
-                // Update
-                const updatePayload: ExpenseUpdate = {
-                    ...formData,
-                    date: dateStr
-                };
-                const updated = await apiService.updateExpense(expenseToEdit.id, updatePayload);
+                const payload: ExpenseUpdate = { ...formData, date: dateStr };
+                const updated = await apiService.updateExpense(expenseToEdit.id, payload);
                 savedExpenseId = updated.id;
             } else {
-                // Create
-                const createPayload: ExpenseCreateRequest = {
-                    ...formData,
-                    date: dateStr
-                };
-                const created = await apiService.createExpense(createPayload);
+                const payload: ExpenseCreateRequest = { ...formData, date: dateStr };
+                const created = await apiService.createExpense(payload);
                 savedExpenseId = created.id;
             }
-
-            // Handle Receipt Upload if exists
-            if (expenseReceipt && savedExpenseId) {
-                await apiService.uploadExpenseReceipt(savedExpenseId, expenseReceipt);
+            if (selectedFile && savedExpenseId) {
+                await apiService.uploadExpenseReceipt(savedExpenseId, selectedFile);
             }
-
             onSuccess();
             onClose();
         } catch (error) {
@@ -93,6 +171,16 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
     };
 
     if (!isOpen) return null;
+
+    const getButtonContent = () => {
+        switch (extractionStatus) {
+            case 'UPLOADING': return <><Loader2 size={18} className="animate-spin"/> {t('finance.uploading')}...</>;
+            case 'PROCESSING': return <><Loader2 size={18} className="animate-spin"/> {t('finance.analyzing')}...</>;
+            case 'COMPLETED': return <><CheckCircle size={18} /> {selectedFile?.name || t('finance.dataExtracted')}</>;
+            case 'FAILED': return <><X size={18} /> {t('finance.extractionFailed')}</>;
+            default: return <><Paperclip size={18} /> {selectedFile ? selectedFile.name : t('finance.attachReceipt')}</>;
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -106,18 +194,19 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                 </div>
                 
                 <div className="mb-6">
-                    <input type="file" ref={receiptInputRef} className="hidden" accept="image/*,.pdf" onChange={(e) => setExpenseReceipt(e.target.files?.[0] || null)} />
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileSelected} />
                     <button 
                         type="button"
-                        onClick={() => receiptInputRef.current?.click()} 
-                        className={`w-full py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${expenseReceipt ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'}
+                        className={`w-full py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${
+                            extractionStatus === 'COMPLETED' ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 
+                            'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                        } disabled:opacity-50`}
                     >
-                        {expenseReceipt ? (
-                            <><CheckCircle size={18} /> {expenseReceipt.name}</>
-                        ) : (
-                            <><Paperclip size={18} /> {t('finance.attachReceipt')}</>
-                        )}
+                        {getButtonContent()}
                     </button>
+                    {extractionError && <p className="text-xs text-red-400 mt-2">{extractionError}</p>}
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
