@@ -1,8 +1,8 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V25.0 (DATA TYPE CORRECTION)
-# 1. CRITICAL FIX: All database queries now use the user_id as a STRING, not an ObjectId.
-# 2. ROBUSTNESS: Revenue calculation for transactions now correctly sums '$total_price'.
-# 3. EFFECT: This resolves the "€0.00" error by correctly matching user data in the database.
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V26.0 (FINAL LOGIC CORRECTION)
+# 1. CRITICAL FIX (INVOICES): Revenue now includes ALL non-cancelled invoices (Draft, Sent, Paid), not just Paid. This correctly reflects monthly activity.
+# 2. CRITICAL FIX (TRANSACTIONS): The query now checks for BOTH 'date' and 'transaction_date' to guarantee data is found.
+# 3. EFFECT: Resolves the "€0.00" error by using realistic business logic for the "Ritmi i Ditës" calculation.
 
 import logging
 import asyncio
@@ -19,7 +19,6 @@ def map_api_priority(priority: Optional[str]) -> str:
 class StrategicBriefingService:
     def __init__(self, db, user_id: str):
         self.db = db
-        # PHOENIX FIX: The user_id is consistently a STRING throughout the application.
         self.user_id = user_id
 
     async def generate_strategic_briefing(self) -> Dict[str, Any]:
@@ -33,18 +32,23 @@ class StrategicBriefingService:
     async def _analyze_staff_performance(self) -> Dict[str, Any]:
         now = datetime.utcnow()
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        
-        # PHOENIX FIX: Use self.user_id (string) for all queries.
         user_filter = {"user_id": self.user_id}
 
+        # PHOENIX FIX 1: Include DRAFT and SENT invoices, not just PAID.
         invoices_pipeline = [
-            {"$match": {**user_filter, "issue_date": {"$gte": month_start}, "status": "PAID"}},
+            {"$match": {**user_filter, "issue_date": {"$gte": month_start}, "status": {"$nin": ["CANCELLED", "VOID"]}}},
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total_amount"}, "transaction_count": {"$sum": 1}}}
         ]
         
-        # PHOENIX FIX: Correctly sum '$total_price' from transactions.
+        # PHOENIX FIX 2: Check for 'date' OR 'transaction_date' field.
         transactions_pipeline = [
-            {"$match": {**user_filter, "date": {"$gte": month_start}}},
+            {"$match": {
+                **user_filter, 
+                "$or": [
+                    {"date": {"$gte": month_start}},
+                    {"transaction_date": {"$gte": month_start}}
+                ]
+            }},
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total_price"}, "transaction_count": {"$sum": 1}}}
         ]
 
@@ -81,7 +85,13 @@ class StrategicBriefingService:
             {"$group": {"_id": "$items.description", "total_quantity": {"$sum": "$items.quantity"}}}
         ]
         bestsellers_transactions = [
-            {"$match": {**user_filter, "date": {"$gte": today_start}}},
+            {"$match": {
+                **user_filter, 
+                "$or": [
+                    {"date": {"$gte": today_start}},
+                    {"transaction_date": {"$gte": today_start}}
+                ]
+            }},
             {"$group": {"_id": "$product_name", "total_quantity": {"$sum": "$quantity"}}}
         ]
         

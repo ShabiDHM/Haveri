@@ -1,10 +1,10 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - STOCK INTELLIGENCE V4.3 (TYPE SAFETY FIX)
-// 1. CRITICAL FIX: Explicitly cast 'selectedItem.id' to a String before API calls.
-// 2. REASON: Resolves the 422 Unprocessable Entity error by ensuring the backend receives a string, not a complex object or null.
-// 3. I18N: The component is fully localized.
+// PHOENIX PROTOCOL - STOCK INTELLIGENCE V5.0 (EDITABLE QUANTITY)
+// 1. FEATURE: Added an input field for users to override the AI's suggested quantity.
+// 2. UX: Estimated cost now updates in real-time as the user types.
+// 3. FIX: Resolved the "0.00" data flow error by populating the state via useEffect.
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Package, AlertCircle, TrendingUp, ShoppingCart, Loader2, X, ArrowRight, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,10 +26,19 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
     const [drafting, setDrafting] = useState(false);
     const [aiData, setAiData] = useState<{ prediction: RestockPrediction | null, trend: SalesTrendAnalysis | null }>({ prediction: null, trend: null });
 
+    // PHOENIX: State for the editable quantity
+    const [editableQuantity, setEditableQuantity] = useState<number>(0);
+
+    // PHOENIX: Populate editable quantity when AI data arrives to fix the "0.00" bug
+    useEffect(() => {
+        if (aiData.prediction) {
+            setEditableQuantity(aiData.prediction.suggested_quantity);
+        }
+    }, [aiData.prediction]);
+
     const handleItemClick = async (item: any) => {
         setSelectedItem(item); setLoading(true); setAiData({ prediction: null, trend: null });
         try {
-            // PHOENIX FIX: Ensure item.id is a string
             const itemIdAsString = String(item.id);
             const [prediction, trend] = await Promise.all([
                 apiService.predictRestock(itemIdAsString), 
@@ -39,18 +48,20 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
         } catch (error) { console.error("AI Analysis Failed", error); } 
         finally { setLoading(false); }
     };
+    
+    // PHOENIX: Calculate cost in real-time based on the editable quantity
+    const editableCost = (selectedItem?.cost_per_unit ?? 0) * editableQuantity;
 
     const handleDraftOrder = async () => {
         if (!selectedItem) return;
         setDrafting(true);
         try {
-            // PHOENIX FIX: Ensure item.id is a string
             await apiService.createPurchaseOrder({
                 item_id: String(selectedItem.id), 
                 item_name: selectedItem.name, 
                 unit: selectedItem.unit,
-                quantity: aiData.prediction?.suggested_quantity ?? 0,
-                estimated_cost: aiData.prediction?.estimated_cost ?? 0,
+                quantity: editableQuantity, // Use the editable quantity
+                estimated_cost: editableCost, // Use the real-time calculated cost
                 supplier_name: aiData.prediction?.supplier_name ?? "Primary Supplier"
             });
             alert(t('inventory.orderDrafted', 'Porosia u draftua dhe u dërgua në Arkivë!'));
@@ -120,11 +131,20 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             <div className="flex items-center justify-between bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
                                                 <div>
                                                     <p className="text-xs text-blue-300 uppercase font-bold">{t('inventory.analysis.orderNow', 'Porosit Tani')}</p>
-                                                    <p className="text-lg font-mono font-bold text-white">{aiData.prediction?.suggested_quantity ?? 0} {selectedItem.unit}</p>
+                                                    {/* PHOENIX: Editable input field */}
+                                                    <div className="flex items-baseline gap-2">
+                                                        <input 
+                                                            type="number"
+                                                            value={editableQuantity}
+                                                            onChange={(e) => setEditableQuantity(parseFloat(e.target.value) || 0)}
+                                                            className="text-lg font-mono font-bold text-white bg-transparent outline-none w-24 p-0 border-none"
+                                                        />
+                                                        <span className="text-lg font-mono font-bold text-white">{selectedItem.unit}</span>
+                                                    </div>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-xs text-gray-400">{t('inventory.analysis.estimatedValue', 'Vlera e Përafërt')}</p>
-                                                    <p className="text-lg font-mono font-bold text-white">€{(aiData.prediction?.estimated_cost ?? 0).toFixed(2)}</p>
+                                                    <p className="text-lg font-mono font-bold text-white">€{editableCost.toFixed(2)}</p>
                                                 </div>
                                             </div>
                                             <button onClick={handleDraftOrder} disabled={drafting} className="w-full mt-3 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2">
