@@ -481,7 +481,21 @@
     },
     "posBatch": "Import POS",
     "itemsCount": "artikuj",
-    "orderDrafted": "Porosia u draftua dhe u dërgua në modulin e Dokumenteve!"
+    "orderDrafted": "Porosia u draftua dhe u dërgua në Arkivë!",
+    "analysis": {
+      "critical": "Kritike",
+      "currentStock": "Stoku Aktual",
+      "analyzing": "Inteligjenca Artificiale po analizon...",
+      "restockTitle": "Sugjerim për Rimbushje",
+      "orderNow": "Porosit Tani",
+      "estimatedValue": "Vlera e Përafërt",
+      "drafting": "Duke draftuar...",
+      "draftOrder": "Drafto Porosinë",
+      "trendTitle": "Analiza e Trendit",
+      "performance": "Performanca",
+      "crossSell": "Mundësi Cross-Sell",
+      "unavailable": "E padisponueshme"
+    }
   },
   "calendar": {
     "loadFailure": "Dështoi ngarkimi i të dhënave të kalendarit.",
