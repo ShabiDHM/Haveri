@@ -27,7 +27,9 @@
     "archive": "Arkivo",
     "delete": "Fshi",
     "actions": "Veprime",
-    "allGood": "Gjithçka në rregull!"
+    "allGood": "Gjithçka në rregull!",
+    "clear": "Pastro",
+    "confirmClearChat": "A jeni i sigurt që doni të fshini bisedën?"
   },
   "common": {
     "today": "SOT",
@@ -324,6 +326,8 @@
     "price": "Çmimi",
     "addLine": "Shto Rresht",
     "monthlyClose": "Mbyllja Mujore",
+    "viewSourceDoc": "Shiko Burimin",
+    "noTransactions": "Nuk ka transaksione për këtë periudhë.",
     "import": { 
       "title": "Importo Transaksione",
       "uploadTitle": "Ngarko CSV/Excel",
@@ -341,6 +345,14 @@
       "typeLabel": "Lloji (Faturë/Shpenzim)",
       "statusLabel": "Statusi",
       "importFailed": "Importi dështoi. Kontrolloni konsolën."
+    },
+    "smartAnalyst": {
+      "bannerTitle": "Inteligjenca Artificiale",
+      "modalTitle": "Analisti Inteligjent",
+      "executiveSummary": "Përmbledhje Ekzekutive",
+      "keyContributors": "Kontribuesit Kryesorë",
+      "analyzing": "Duke analizuar të dhënat financiare...",
+      "failed": "Analiza dështoi."
     },
     "wizard": {
         "stepAudit": "Auditimi",
@@ -392,7 +404,7 @@
     "activityAndReports": "Aktiviteti & Raportet",
     "tabTransactions": "Transaksionet",
     "tabReports": "Raportet",
-    "noTransactions": "Nuk ka transaksione për këtë periudhë.",
+    "archiveDoc": "Dokument Arkive",
     "categories": {
         "rent": "Qira", "salary": "Paga", "supplies": "Furnizime",
         "transport": "Transport", "utilities": "Shërbime (Rrymë/Ujë)",
@@ -457,7 +469,8 @@
         "milliliters": "Mililitra (ml)" 
     },
     "posBatch": "Import POS",
-    "itemsCount": "artikuj"
+    "itemsCount": "artikuj",
+    "orderDrafted": "Porosia u draftua dhe u dërgua në modulin e Dokumenteve!"
   },
   "calendar": {
     "loadFailure": "Dështoi ngarkimi i të dhënave të kalendarit.",
@@ -524,5 +537,13 @@
     "uploadFailed": "Ngarkimi dështoi.",
     "receiptNotFound": "Fatura/Dëshmia nuk u gjet.",
     "failedToLoad": "Dështoi ngarkimi i të dhënave."
+  },
+  "tax": {
+    "chatWelcome": "Përshëndetje! Unë jam asistenti juaj tatimor. Keni ndonjë pyetje për zbritshmërinë e shpenzimeve?",
+    "askAdvisor": "Pyet Asistentin Tatimor"
+  },
+  "analyst": {
+    "title": "Smart Data Analyst",
+    "desc": "Keni një skedar Excel ose CSV të komplikuar? Ngarkojeni këtu dhe Inteligjenca Artificiale do ta analizojë, vizualizojë dhe gjejë anomali automatikisht."
   }
 }
