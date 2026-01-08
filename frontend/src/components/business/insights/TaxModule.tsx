@@ -1,12 +1,14 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX ADVISOR V4.0 (AI ENHANCED)
-// 1. FEATURE: 'Pre-flight Check' (AI Audit) before monthly closing.
-// 2. FEATURE: Conversational Tax Bot via '?' icon.
-// 3. UI: Integrated 'Smart Anomalies' display.
+// PHOENIX PROTOCOL - TAX ADVISOR V4.1 (CHAT CLEAR)
+// 1. FEATURE: Added 'Clear Chat' (Trash) button to the Tax Assistant modal.
+// 2. UX: Allows users to reset the conversation context instantly.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Landmark, TrendingDown, TrendingUp, Calculator, HelpCircle, X, Send, AlertTriangle, CheckCircle, Loader2, MessageSquare } from 'lucide-react';
+import { 
+    Landmark, TrendingDown, TrendingUp, Calculator, HelpCircle, X, Send, 
+    AlertTriangle, CheckCircle, Loader2, MessageSquare, Trash2 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiService, TaxAuditResult } from '../../../services/api';
@@ -76,6 +78,14 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
             setMessages(prev => [...prev, { role: 'bot', text: t('error.generic', 'Dicka shkoi keq. Ju lutem provoni përsëri.') }]);
         } finally {
             setChatLoading(false);
+        }
+    };
+
+    const handleClearChat = () => {
+        if (window.confirm(t('general.confirmClearChat', 'A jeni i sigurt që doni të fshini bisedën?'))) {
+            setMessages([
+                { role: 'bot', text: t('tax.chatWelcome', 'Përshëndetje! Unë jam asistenti juaj tatimor. Keni ndonjë pyetje për zbritshmërinë e shpenzimeve?') }
+            ]);
         }
     };
 
@@ -161,7 +171,16 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                                         <p className="text-xs text-blue-300">Powered by Kosovo Tax Laws</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowChat(false)} className="text-gray-400 hover:text-white p-1 hover:bg-white/10 rounded-lg"><X size={20}/></button>
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={handleClearChat}
+                                        className="text-gray-400 hover:text-red-400 p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                        title={t('general.clear', 'Pastro')}
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                    <button onClick={() => setShowChat(false)} className="text-gray-400 hover:text-white p-2 hover:bg-white/10 rounded-lg"><X size={20}/></button>
+                                </div>
                             </div>
 
                             {/* Chat Body */}
