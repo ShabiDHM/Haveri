@@ -1,8 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V5.0 (SYNCED WITH BACKEND INTELLIGENCE)
-// 1. URL FIX: Updated AI endpoints to use '/analysis/' prefix to match backend router.
-// 2. INTEGRITY: Complete restoration of all service methods.
-// 3. STATUS: Ready for End-to-End AI operations.
+// PHOENIX PROTOCOL - API V6.0 (SMART ANALYST ENABLED)
+// 1. FEATURE: Added 'getKpiInsight' and 'getProactiveInsight' for financial intelligence.
+// 2. INTEGRITY: Complete set of methods including Auth, Docs, Finance, Inventory, and Analysis.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -27,10 +26,13 @@ export interface InventoryImportResult { items_created: number; count?: number; 
 interface LoginResponse { access_token: string; }
 interface DocumentContentResponse { text: string; }
 
-// AI Types
+// AI / Intelligence Types
 export interface TaxAuditResult { anomalies: string[]; status: 'CLEAR' | 'WARNING' | 'CRITICAL'; net_obligation: number; }
 export interface RestockPrediction { suggested_quantity: number; reason: string; supplier_name?: string; estimated_cost?: number; }
 export interface SalesTrendAnalysis { trend_analysis: string; cross_sell_opportunities: string; }
+// NEW TIER 1 TYPES
+export interface KpiInsightResponse { summary: string; key_contributors: string[]; }
+export interface GeneralInsightResponse { insight: string; sentiment: 'positive' | 'negative' | 'neutral'; }
 
 const getBaseUrl = (): string => { if (typeof window !== 'undefined') { const hostname = window.location.hostname; if (hostname === 'www.haveri.tech' || hostname === 'haveri.tech') { return 'https://api.haveri.tech'; } } return 'http://localhost:8000'; };
 const normalizedUrl = getBaseUrl();
@@ -85,7 +87,7 @@ class ApiService {
     public async getCaseDetails(caseId: string): Promise<Case> { const response = await this.axiosInstance.get<Case>(`/cases/${caseId}`); return response.data; }
     public async deleteCase(caseId: string): Promise<void> { await this.axiosInstance.delete(`/cases/${caseId}`); }
 
-    // --- DOCUMENTS (Legacy) ---
+    // --- DOCUMENTS ---
     public async getDocuments(caseId: string): Promise<Document[]> { const response = await this.axiosInstance.get<any>(`/cases/${caseId}/documents`); return Array.isArray(response.data) ? response.data : (response.data?.documents || []); }
     public async uploadDocument(caseId: string, file: File, onProgress?: (percent: number) => void): Promise<Document> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<Document>(`/cases/${caseId}/documents/upload`, formData, { onUploadProgress: (progressEvent) => { if (onProgress && progressEvent.total) { const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total); onProgress(percent); } } }); return response.data; }
     public async getDocument(caseId: string, documentId: string): Promise<Document> { const response = await this.axiosInstance.get<Document>(`/cases/${caseId}/documents/${documentId}`); return response.data; }
@@ -101,28 +103,18 @@ class ApiService {
     public async sendChatMessage(caseId: string, message: string, documentId?: string, jurisdiction?: string, agentType: string = 'business'): Promise<string> { const response = await this.axiosInstance.post<{ response: string }>(`/chat/case/${caseId}`, { message, document_id: documentId || null, jurisdiction: jurisdiction || 'ks', agent_type: agentType }); return response.data.response; }
     public async clearChatHistory(caseId: string): Promise<void> { await this.axiosInstance.delete(`/chat/case/${caseId}/history`); }
 
-    // --- AI INTELLIGENCE (NEW) ---
+    // --- AI / INTELLIGENCE ---
     public async analyzeTaxAnomalies(month: number, year: number): Promise<TaxAuditResult> {
         try {
-            // Updated to /analysis/... to match backend router
             const response = await this.axiosInstance.post<TaxAuditResult>('/analysis/tax/audit', { month, year });
             return response.data;
         } catch (e) {
-            // Simulated response for immediate UI functionality if backend is not ready
-            return {
-                anomalies: [
-                    "Anomaly Found: Unusual expense of €1,200 categorized as 'General'. Review for VAT deduction.",
-                    "Opportunity: Zero marketing expenses recorded. Kosovo law allows full deduction. Did you forget Facebook Ads?"
-                ],
-                status: 'WARNING',
-                net_obligation: 0
-            };
+            return { anomalies: ["System error. Please try again."], status: 'WARNING', net_obligation: 0 };
         }
     }
 
     public async chatWithTaxBot(message: string): Promise<string> {
         try {
-             // Updated to /analysis/... to match backend router
             const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message });
             return response.data.response;
         } catch (e) {
@@ -132,29 +124,38 @@ class ApiService {
 
     public async predictRestock(itemId: string): Promise<RestockPrediction> {
         try {
-             // Updated to /analysis/... to match backend router
             const response = await this.axiosInstance.post<RestockPrediction>('/analysis/inventory/predict', { item_id: itemId });
             return response.data;
         } catch (e) {
-            return {
-                suggested_quantity: 50,
-                reason: "Based on your sales velocity of 5 units/day, you will run out in 4 days. Supplier lead time is 2 days.",
-                supplier_name: "Best Supplier Ltd",
-                estimated_cost: 450.00
-            };
+            return { suggested_quantity: 0, reason: "Analysis unavailable.", estimated_cost: 0 };
         }
     }
 
     public async analyzeSalesTrend(itemId: string): Promise<SalesTrendAnalysis> {
         try {
-             // Updated to /analysis/... to match backend router
             const response = await this.axiosInstance.post<SalesTrendAnalysis>('/analysis/inventory/trend', { item_id: itemId });
             return response.data;
         } catch (e) {
-            return {
-                trend_analysis: "Sales for this item are UP 15% compared to last month. Peak selling hours are 18:00 - 20:00.",
-                cross_sell_opportunities: "Customers who buy this often buy 'Croissant' (34% correlation)."
-            };
+            return { trend_analysis: "Unavailable", cross_sell_opportunities: "Unavailable" };
+        }
+    }
+
+    // --- TIER 1: FINANCIAL INTELLIGENCE ---
+    public async getKpiInsight(kpiType: string): Promise<KpiInsightResponse> {
+        try {
+            const response = await this.axiosInstance.post<KpiInsightResponse>('/analysis/finance/kpi-insight', { kpi_type: kpiType });
+            return response.data;
+        } catch (e) {
+            return { summary: "Analysis service is currently offline.", key_contributors: [] };
+        }
+    }
+
+    public async getProactiveInsight(): Promise<GeneralInsightResponse> {
+        try {
+            const response = await this.axiosInstance.get<GeneralInsightResponse>('/analysis/finance/proactive-insight');
+            return response.data;
+        } catch (e) {
+            return { insight: "Start adding transactions to see AI insights.", sentiment: "neutral" };
         }
     }
 

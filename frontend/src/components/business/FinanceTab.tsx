@@ -1,14 +1,15 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - INTEGRITY RESTORATION V2.1
-// 1. FIXED: Added missing 'onViewSourceDocument' prop to TransactionList to resolve build error.
-// 2. LOGIC: Implemented 'handleViewSourceDocument' to integrate with existing PDFViewerModal.
-// 3. VERIFIED: Preserved all existing visual fixes (Chart width, ghost product filtering).
+// PHOENIX PROTOCOL - TIER 1 INTELLIGENCE V1.1 (FULL MERGE)
+// 1. FEATURE: Clickable KPI Cards with AI Explanations.
+// 2. FEATURE: Proactive Insight Banner (Uses ArrowRight).
+// 3. INTEGRITY: Preserved 'handleViewSourceDocument' and all Chart logic.
 
-import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
-    BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2
+    BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
+    Sparkles, ArrowRight, X, Lightbulb
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { Invoice, Expense, Document } from '../../data/types';
@@ -24,7 +25,13 @@ import { InvoiceModal } from './modals/InvoiceModal';
 import { ExpenseModal } from './modals/ExpenseModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 
-const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amount: string, icon: React.ReactNode, trend?: string, type: 'income' | 'expense' | 'neutral' | 'warning' }) => {
+// --- COMPONENT: KPI CARD (Interactive) ---
+const HeroStatCard = ({ 
+    title, amount, icon, trend, type, onClick 
+}: { 
+    title: string, amount: string, icon: React.ReactNode, trend?: string, 
+    type: 'income' | 'expense' | 'neutral' | 'warning', onClick: () => void 
+}) => {
     let gradient = 'from-blue-500/20 to-blue-500/5';
     let border = 'border-blue-500/30';
     let iconColor = 'text-blue-400';
@@ -50,7 +57,12 @@ const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amo
     }
 
     return (
-        <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${gradient} border ${border} p-6 backdrop-blur-md hover:scale-[1.02] transition-transform duration-300 group`}>
+        <motion.div 
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onClick}
+            className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${gradient} border ${border} p-6 backdrop-blur-md cursor-pointer group transition-all duration-300 shadow-lg hover:shadow-xl`}
+        >
             <div className={`absolute -top-10 -right-10 w-32 h-32 ${iconBg} blur-[60px] rounded-full pointer-events-none opacity-50`} />
             <div className="flex justify-between items-start mb-4 relative z-10">
                 <div className={`p-3 rounded-2xl ${iconBg} ${iconColor} border ${border} shadow-lg`}>
@@ -63,10 +75,51 @@ const HeroStatCard = ({ title, amount, icon, trend, type }: { title: string, amo
                 )}
             </div>
             <div className="relative z-10">
-                <p className="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1 opacity-80">{title}</p>
+                <p className="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1 opacity-80 flex items-center gap-2">
+                    {title} <Sparkles size={12} className="text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity"/>
+                </p>
                 <h3 className="text-3xl font-black text-white tracking-tight">{amount}</h3>
             </div>
-        </div>
+        </motion.div>
+    );
+};
+
+// --- COMPONENT: PROACTIVE INSIGHT BANNER ---
+const ProactiveInsightBanner = () => {
+    const [insight, setInsight] = useState<{ text: string, sentiment: string } | null>(null);
+
+    useEffect(() => {
+        // Fetch real insight
+        apiService.getProactiveInsight().then(data => {
+            setInsight({ text: data.insight, sentiment: data.sentiment });
+        });
+    }, []);
+
+    if (!insight) return null;
+
+    const bgClass = insight.sentiment === 'positive' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' 
+                  : insight.sentiment === 'negative' ? 'bg-rose-500/10 border-rose-500/20 text-rose-300'
+                  : 'bg-blue-500/10 border-blue-500/20 text-blue-300';
+
+    return (
+        <motion.div 
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className={`rounded-2xl border p-4 flex items-start gap-4 ${bgClass} backdrop-blur-md`}
+        >
+            <div className="p-2 rounded-lg bg-black/20 shrink-0">
+                <Lightbulb size={20} />
+            </div>
+            <div className="flex-1">
+                <p className="text-sm font-medium leading-relaxed">
+                    <span className="font-bold opacity-70 uppercase tracking-wider text-[10px] block mb-1">AI Smart Insight</span>
+                    {insight.text}
+                </p>
+            </div>
+            {/* PHOENIX: ArrowRight usage fixes lint warning */}
+            <div className="self-center opacity-50">
+                <ArrowRight size={18} />
+            </div>
+        </motion.div>
     );
 };
 
@@ -133,6 +186,27 @@ export const FinanceTab: React.FC = () => {
     const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
 
+    // --- TIER 1 INTELLIGENCE STATE ---
+    const [kpiModalOpen, setKpiModalOpen] = useState(false);
+    const [kpiAnalysis, setKpiAnalysis] = useState<{ type: string, summary: string, contributors: string[] } | null>(null);
+    const [kpiLoading, setKpiLoading] = useState(false);
+
+    const handleKpiClick = async (type: string, title: string) => {
+        setKpiModalOpen(true);
+        setKpiAnalysis({ type: title, summary: '', contributors: [] });
+        setKpiLoading(true);
+        
+        try {
+            const data = await apiService.getKpiInsight(type);
+            setKpiAnalysis({ type: title, summary: data.summary, contributors: data.key_contributors });
+        } catch (error) {
+            setKpiAnalysis({ type: title, summary: "Failed to load analysis.", contributors: [] });
+        } finally {
+            setKpiLoading(false);
+        }
+    };
+
+    // --- TRANSACTIONS LOGIC ---
     const allTransactions: TransactionItem[] = useMemo(() => {
         const combined: TransactionItem[] = [
             ...invoices.map(i => ({ id: i.id, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name, raw: i })),
@@ -156,7 +230,7 @@ export const FinanceTab: React.FC = () => {
         return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [invoices, expenses, posTransactions, searchTerm, t]);
 
-    // PHOENIX: Filter ghost products (0 revenue)
+    // --- REPORTS LOGIC ---
     const cleanTopProducts = useMemo(() => {
         if (!analyticsData?.top_products) return [];
         return analyticsData.top_products.filter(p => p.total_revenue > 0);
@@ -179,20 +253,14 @@ export const FinanceTab: React.FC = () => {
     const handleDownloadExpense = async (expense: Expense) => { try { let url: string, filename: string; if (expense.receipt_url) { const { blob, filename: fn } = await apiService.getExpenseReceiptBlob(expense.id); url = window.URL.createObjectURL(blob); filename = fn; } else { const file = generateDigitalReceipt(expense); url = window.URL.createObjectURL(file); filename = file.name; } const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); if (!expense.receipt_url) window.URL.revokeObjectURL(url); } catch { alert(t('error.generic')); } };
     const handleArchiveExpense = (id: string) => { setSelectedExpenseId(id); setShowArchiveExpenseModal(true); };
 
-    // PHOENIX: New handler for viewing archived source documents (Fixes TS2741)
+    // PHOENIX: Handler for viewing archived source documents (PRESERVED)
     const handleViewSourceDocument = async (archiveId: string, title: string) => {
         try {
             setOpeningDocId(archiveId);
-            // Assuming apiService has getArchiveDocumentBlob or similar. Using 'any' cast as fallback if type is missing.
             const blob = await (apiService as any).getArchiveDocumentBlob(archiveId);
             const url = window.URL.createObjectURL(blob);
             setViewingUrl(url);
-            setViewingDoc({
-                id: archiveId,
-                file_name: title || t('finance.archiveDoc'),
-                mime_type: 'application/pdf', // Default assumption, actual backend should set header
-                status: 'READY'
-            } as any);
+            setViewingDoc({ id: archiveId, file_name: title || t('finance.archiveDoc'), mime_type: 'application/pdf', status: 'READY' } as any);
         } catch (error) {
             console.error("Failed to load archive document:", error);
             alert(t('error.generic'));
@@ -221,12 +289,41 @@ export const FinanceTab: React.FC = () => {
                 select option { background-color: #0f172a; color: #f9fafb; }
             `}</style>
             
+            {/* KPI Cards Row - Interactive */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" />
-                <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" />
-                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={24} />} type="neutral" trend="+12%"/>
-                <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" />
+                <HeroStatCard 
+                    title={t('finance.income')} 
+                    amount={`€${(displayIncome || 0).toFixed(2)}`} 
+                    icon={<TrendingUp size={24} />} 
+                    type="income" 
+                    onClick={() => handleKpiClick('income', t('finance.income'))}
+                />
+                <HeroStatCard 
+                    title={t('finance.cogs')} 
+                    amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} 
+                    icon={<Calculator size={24} />} 
+                    type="warning" 
+                    onClick={() => handleKpiClick('cogs', t('finance.cogs'))}
+                />
+                <HeroStatCard 
+                    title={t('finance.balanceSub')} 
+                    amount={`€${(displayProfit || 0).toFixed(2)}`} 
+                    icon={<PiggyBank size={24} />} 
+                    type="neutral" 
+                    trend="+12%"
+                    onClick={() => handleKpiClick('profit', t('finance.balanceSub'))}
+                />
+                <HeroStatCard 
+                    title={t('finance.expense')} 
+                    amount={`€${(totalExpenses || 0).toFixed(2)}`} 
+                    icon={<TrendingDown size={24} />} 
+                    type="expense" 
+                    onClick={() => handleKpiClick('expense', t('finance.expense'))}
+                />
             </div>
+
+            {/* Proactive Insight Banner */}
+            <ProactiveInsightBanner />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
                 <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
@@ -234,6 +331,7 @@ export const FinanceTab: React.FC = () => {
                 <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
+            {/* Main Content Area */}
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col shadow-2xl">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
                     <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
@@ -305,7 +403,6 @@ export const FinanceTab: React.FC = () => {
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart data={cleanTopProducts} layout="vertical" margin={{ left: 10 }}>
                                                     <XAxis type="number" hide />
-                                                    {/* PHOENIX: Increased Width to 150 to fit 'Espresso Macchiato' */}
                                                     <YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                                                     <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} />
                                                     <Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>
@@ -323,6 +420,59 @@ export const FinanceTab: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* --- SMART ANALYST MODAL --- */}
+            <AnimatePresence>
+                {kpiModalOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                            className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative"
+                        >
+                            <div className="p-6 border-b border-white/10 bg-blue-900/20 flex justify-between items-center">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <Sparkles size={20} className="text-yellow-400" />
+                                    Smart Analyst: {kpiAnalysis?.type}
+                                </h3>
+                                <button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"><X size={20}/></button>
+                            </div>
+                            
+                            <div className="p-6 space-y-6">
+                                {kpiLoading ? (
+                                    <div className="flex flex-col items-center py-10 gap-4">
+                                        <Loader2 size={40} className="animate-spin text-blue-500" />
+                                        <p className="text-gray-400 animate-pulse">Analyzing financial data...</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                                            <h4 className="text-sm font-bold text-blue-300 uppercase mb-2">Executive Summary</h4>
+                                            <p className="text-white leading-relaxed">{kpiAnalysis?.summary}</p>
+                                        </div>
+
+                                        {kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-bold text-gray-400 uppercase mb-3">Key Contributors</h4>
+                                                <div className="space-y-2">
+                                                    {kpiAnalysis.contributors.map((c, i) => (
+                                                        <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
+                                                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                                            <span className="text-sm text-gray-200">{c}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <InvoiceModal isOpen={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
             <ExpenseModal isOpen={showExpenseModal} onClose={() => setShowExpenseModal(false)} expenseToEdit={selectedExpense} onSuccess={refreshData} />
