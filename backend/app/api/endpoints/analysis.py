@@ -1,7 +1,8 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V1.6 (ALBANIAN LOCALIZATION)
-# 1. LOCALIZATION: All AI insights (Revenue, Expenses, Profit, Proactive Banner) now generated in Albanian.
-# 2. CONSISTENCY: Aligned terminology with the frontend (Të Hyrat, Shpenzimet, Fitimi).
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V1.8 (ROBUST MATCHING)
+# 1. FIX: Implemented Regex-based Case-Insensitive matching for Products.
+# 2. LOGIC: Ensures "Jack Daniels" matches "jack daniels" in sales transactions.
+# 3. SAFETY: Escapes regex characters to prevent errors with symbols like '+'.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any, Optional
@@ -10,6 +11,7 @@ from datetime import datetime, timedelta
 from pymongo.database import Database
 import pymongo
 from bson import ObjectId
+import re
 
 from app.api.endpoints.dependencies import get_current_user, get_db
 from app.models.user import UserInDB
@@ -31,7 +33,7 @@ class PredictionRequest(BaseModel):
     item_id: str
 
 class KpiInsightRequest(BaseModel):
-    kpi_type: str # 'income', 'expense', 'profit', 'cogs'
+    kpi_type: str 
 
 # --- OUTPUT MODELS ---
 class TaxAuditResult(BaseModel):
@@ -55,7 +57,7 @@ class KpiInsightResponse(BaseModel):
 
 class GeneralInsightResponse(BaseModel):
     insight: str
-    sentiment: str # 'positive', 'negative', 'neutral'
+    sentiment: str 
 
 # --- HELPER ---
 def _get_item_from_db(db: Database, user_id: str, item_id: str) -> Optional[InventoryItem]:
@@ -70,7 +72,7 @@ def _get_item_from_db(db: Database, user_id: str, item_id: str) -> Optional[Inve
         return InventoryItem(**doc)
     return None
 
-# --- FINANCE INTELLIGENCE ENDPOINTS (TRANSLATED) ---
+# --- FINANCE INTELLIGENCE ENDPOINTS ---
 
 @router.post("/finance/kpi-insight", response_model=KpiInsightResponse)
 def generate_kpi_insight(
@@ -78,9 +80,6 @@ def generate_kpi_insight(
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db)
 ):
-    """
-    Analyzes 'Why' a number is what it is based on recent data.
-    """
     user_id = str(current_user.id)
     finance_service = FinanceService(db)
     
@@ -101,7 +100,6 @@ def generate_kpi_insight(
         if total_income == 0:
             summary = "Nuk u gjetën fatura të paguara në 30 ditët e fundit."
         else:
-            # Group by Client
             clients: Dict[str, float] = {}
             for inv in recent_invoices:
                 clients[inv.client_name] = clients.get(inv.client_name, 0) + inv.total_amount
@@ -124,7 +122,6 @@ def generate_kpi_insight(
         if total_expense == 0:
             summary = "Nuk ka shpenzime të regjistruara në 30 ditët e fundit."
         else:
-            # Group by Category
             cats: Dict[str, float] = {}
             for e in recent_expenses:
                 cats[e.category] = cats.get(e.category, 0) + e.amount
@@ -157,8 +154,51 @@ def generate_kpi_insight(
             contributors = [f"Shpenzimet: €{recent_expense:.2f}"]
 
     elif request.kpi_type == 'cogs':
-        summary = "Analiza e Kostos së Mallrave të Shitura kërkon historikun e plotë të transaksioneve të stokut."
-        contributors = ["Moduli: Gjurmimi i Stokut"]
+        inv_items = list(db["inventory"].find({"user_id": user_id}, {"_id": 1, "name": 1, "cost_per_unit": 1}))
+        cost_by_id = {str(i["_id"]): i.get("cost_per_unit", 0) for i in inv_items}
+        cost_by_name = {i["name"].lower().strip(): i.get("cost_per_unit", 0) for i in inv_items}
+
+        recipes = list(db["recipes"].find({"user_id": user_id}))
+        product_costs = {} 
+        
+        for r in recipes:
+            r_cost = 0
+            for ing in r.get("ingredients", []):
+                i_id = ing.get("inventory_item_id")
+                qty = ing.get("quantity_required", 0)
+                if i_id in cost_by_id:
+                    r_cost += cost_by_id[i_id] * qty
+            product_costs[r["product_name"].lower().strip()] = r_cost
+
+        sales = list(db["transactions"].find({"user_id": user_id, "date": {"$gte": cutoff_date}}))
+        
+        total_cogs = 0.0
+        item_cogs_breakdown = {}
+
+        for sale in sales:
+            p_name = sale.get("product_name", "").lower().strip()
+            qty = sale.get("quantity", 0)
+            
+            unit_cost = product_costs.get(p_name)
+            if unit_cost is None:
+                unit_cost = cost_by_name.get(p_name, 0)
+            
+            line_cost = unit_cost * qty
+            total_cogs += line_cost
+            
+            if line_cost > 0:
+                original_name = sale.get("product_name", p_name)
+                item_cogs_breakdown[original_name] = item_cogs_breakdown.get(original_name, 0) + line_cost
+
+        if total_cogs > 0:
+            sorted_cogs = sorted(item_cogs_breakdown.items(), key=lambda x: x[1], reverse=True)
+            top_item = sorted_cogs[0]
+            
+            summary = f"Kosto totale e materialeve të shitura është €{total_cogs:.2f}. Artikulli me koston më të lartë të prodhimit/blerjes ishte '{top_item[0]}'."
+            contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_cogs[:4]]
+        else:
+            summary = "Nuk u identifikua asnjë kosto. Sigurohuni që artikujt në Stok kanë 'Kosto për Njësi' ose që keni krijuar Receta për produktet e shitura."
+            contributors = ["Mungojnë të dhënat e kostos"]
 
     return KpiInsightResponse(summary=summary, key_contributors=contributors)
 
@@ -167,12 +207,8 @@ def get_proactive_insight(
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db)
 ):
-    """
-    Generates a high-level banner insight comparing Income vs Expenses.
-    """
     user_id = str(current_user.id)
     finance_service = FinanceService(db)
-    
     cutoff_30 = datetime.utcnow() - timedelta(days=30)
     
     invoices = finance_service.get_invoices(user_id)
@@ -209,7 +245,7 @@ def get_proactive_insight(
             sentiment="neutral"
         )
 
-# --- EXISTING AI ENDPOINTS ---
+# --- AI ENDPOINTS ---
 
 @router.post("/tax/audit", response_model=TaxAuditResult)
 def analyze_tax_anomalies(
@@ -289,8 +325,10 @@ def predict_restock(
     if not item:
         raise HTTPException(404, "Artikulli nuk u gjet")
         
+    # PHOENIX: Regex for Case-Insensitive Match
+    safe_name = re.escape(item.name)
     pipeline = [
-        {"$match": {"user_id": user_id, "product_name": item.name}},
+        {"$match": {"user_id": user_id, "product_name": {"$regex": f"^{safe_name}$", "$options": "i"}}},
         {"$group": {"_id": None, "total_sold": {"$sum": "$quantity"}, "count": {"$sum": 1}}}
     ]
     result = list(db["transactions"].aggregate(pipeline))
@@ -341,8 +379,9 @@ def analyze_sales_trend(
     )
 
 def get_real_trend_analysis(db: Database, user_id: str, item_name: str) -> str:
+    safe_name = re.escape(item_name)
     pipeline = [
-        {"$match": {"user_id": user_id, "product_name": item_name}},
+        {"$match": {"user_id": user_id, "product_name": {"$regex": f"^{safe_name}$", "$options": "i"}}},
         {"$project": {"day_of_week": {"$dayOfWeek": "$date"}}}, 
         {"$group": {"_id": "$day_of_week", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
@@ -357,8 +396,9 @@ def get_real_trend_analysis(db: Database, user_id: str, item_name: str) -> str:
     return "Nuk ka të dhëna për trendin."
 
 def get_real_cross_sell(db: Database, user_id: str, item_name: str) -> str:
+    safe_name = re.escape(item_name)
     dates_cursor = db["transactions"].find(
-        {"user_id": user_id, "product_name": item_name},
+        {"user_id": user_id, "product_name": {"$regex": f"^{safe_name}$", "$options": "i"}},
         {"date": 1}
     ).sort("date", -1).limit(20) 
     
@@ -367,8 +407,9 @@ def get_real_cross_sell(db: Database, user_id: str, item_name: str) -> str:
     if not target_dates: return "Nuk ka mjaftueshëm të dhëna për korrelacion."
     
     try:
+        # PHOENIX: Exclude the item itself safely
         recent_txs = list(db["transactions"].find(
-            {"user_id": user_id, "product_name": {"$ne": item_name}}
+            {"user_id": user_id, "product_name": {"$not": {"$regex": f"^{safe_name}$", "$options": "i"}}}
         ).sort("date", -1).limit(200))
         
         correlated: Dict[str, int] = {}
