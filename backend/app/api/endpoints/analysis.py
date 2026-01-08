@@ -1,8 +1,7 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V1.3 (PRODUCTION HARDENING)
-# 1. REMOVED: All "demo" fallbacks and magic numbers (e.g., Coca Cola examples, 0.5 default sales).
-# 2. LOGIC: Implemented real Market Basket Analysis (Aggregation) for cross-selling.
-# 3. ACCURACY: Restock predictions now strictly rely on DB history. No history = No suggestion.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V1.4.1 (STRICT TYPE FIX)
+# 1. FIX: Resolved Pylance error on 'max()' by using explicit lambda instead of 'dict.get'.
+# 2. TYPE SAFETY: Added explicit type hinting for the correlation dictionary.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any, Optional
@@ -68,9 +67,6 @@ def analyze_tax_anomalies(
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db)
 ):
-    """
-    Scans REAL expenses for anomalies based on Kosovo Tax Law logic.
-    """
     user_id = str(current_user.id)
     finance_service = FinanceService(db)
     
@@ -119,34 +115,19 @@ def analyze_tax_anomalies(
 
 @router.post("/tax/chat", response_model=Dict[str, str])
 def chat_with_tax_bot(request: ChatRequest):
-    """
-    Static Knowledge Base Bot (No hallucination possible).
-    """
     msg = request.message.lower()
     response = ""
     
     if any(x in msg for x in ["laptop", "kompjuter", "pajisj", "aset"]):
-        response = (
-            "💻 **Për Asete (si Laptopë):**\n"
-            "- **TVSH:** E Zbritshme 100% nëse përdoret për biznes.\n"
-            "- **Shpenzimi:** Nuk njihet menjëherë. Duhet të amortizohet me shkallën 20% në vit (metoda rënëse)."
-        )
+        response = "💻 **Për Asete (si Laptopë):**\n- **TVSH:** E Zbritshme 100%.\n- **Shpenzimi:** Amortizohet 20% në vit."
     elif any(x in msg for x in ["drek", "ushqim", "kafe", "dark", "reprezentacion"]):
-        response = (
-            "🍽️ **Për Reprezentacion (Dreka/Darka):**\n"
-            "- **TVSH:** JO e zbritshme (nuk mund ta kreditoni).\n"
-            "- **Shpenzimi:** Njihet vetëm 50% si shpenzim i zbritshëm për Tatim në Fitim."
-        )
+        response = "🍽️ **Për Reprezentacion:**\n- **TVSH:** JO e zbritshme.\n- **Shpenzimi:** Njihet vetëm 50%."
     elif any(x in msg for x in ["makin", "vetur", "naft", "benzin"]):
-        response = (
-            "🚗 **Për Veturat e Pasagjerëve:**\n"
-            "- **TVSH:** JO e zbritshme (përveç nëse jeni Auto-shkollë, Taksi, ose Rent-a-car).\n"
-            "- **Shpenzimi:** Karburanti dhe mirëmbajtja njihen vetëm 50% për Tatim në Fitim nëse përdoret edhe privatisht."
-        )
+        response = "🚗 **Për Veturat e Pasagjerëve:**\n- **TVSH:** JO e zbritshme.\n- **Shpenzimi:** Njihet 50% nëse përdoret privatisht."
     elif "tvsh" in msg:
-        response = "Sipas ligjit të ATK-së, TVSH-ja (18%) është e zbritshme për blerjet që shërbejnë drejtpërdrejt për veprimtarinë tuaj të tatueshme. Përjashtime bëjnë reprezentacioni dhe veturat e pasagjerëve."
+        response = "Sipas ligjit të ATK-së, TVSH-ja (18%) është e zbritshme për blerjet biznesore, përveç reprezentacionit dhe veturave."
     else:
-        response = "Më falni, mund t'ju përgjigjem saktësisht vetëm për: Pajisje/Asete, Dreka (Reprezentacion), dhe Vetura/Naftë. Ju lutem specifikoni pyetjen."
+        response = "Mund t'ju përgjigjem saktësisht vetëm për: Pajisje, Reprezentacion, dhe Vetura."
         
     return {"response": response}
 
@@ -156,47 +137,39 @@ def predict_restock(
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db)
 ):
-    """
-    Predicts stockout based ONLY on real transaction history.
-    """
     user_id = str(current_user.id)
     item = _get_item_from_db(db, user_id, request.item_id)
-    if not item:
-        raise HTTPException(404, "Item not found")
+    if not item: raise HTTPException(404, "Item not found")
         
-    # Real DB Aggregation: Last 30 days
     pipeline = [
         {"$match": {"user_id": user_id, "product_name": item.name}},
-        {"$group": {"_id": None, "total_sold": {"$sum": "$quantity"}, "count": {"$sum": 1}}}
+        {"$group": {"_id": None, "total_sold": {"$sum": "$quantity"}}}
     ]
     result = list(db["transactions"].aggregate(pipeline))
     
     daily_sales = 0.0
     if result and result[0]['total_sold'] > 0:
-        daily_sales = result[0]['total_sold'] / 30.0
+        daily_sales = result[0]['total_sold'] / 30.0 # Simple 30-day avg
         
     if daily_sales == 0:
-        # NO FAKE DATA: Return 0 suggestion
         return RestockPrediction(
             suggested_quantity=0,
-            reason="No recent sales data available to calculate velocity.",
+            reason="Not enough sales data for prediction.",
             supplier_name="Unknown",
             estimated_cost=0
         )
 
-    days_left = item.current_stock / daily_sales if daily_sales > 0 else 999
-    suggested_qty = daily_sales * 14 # 2 weeks stock
-    cost = suggested_qty * item.cost_per_unit
+    days_left = item.current_stock / daily_sales
+    suggested_qty = daily_sales * 14
     
-    reason = f"Based on avg. sales of {daily_sales:.1f} units/day, you will run out in ~{int(days_left)} days."
-    if days_left < 3:
-        reason = f"URGENT: At current velocity ({daily_sales:.1f}/day), stock will be ZERO in {int(days_left)} days!"
+    reason = f"Based on avg. sales of {daily_sales:.1f} units/day, stock lasts ~{int(days_left)} days."
+    if days_left < 3: reason = f"URGENT: Stockout expected in {int(days_left)} days!"
 
     return RestockPrediction(
         suggested_quantity=round(suggested_qty, 1),
         reason=reason,
         supplier_name="Primary Supplier",
-        estimated_cost=round(cost, 2)
+        estimated_cost=round(suggested_qty * item.cost_per_unit, 2)
     )
 
 @router.post("/inventory/trend", response_model=SalesTrendAnalysis)
@@ -205,9 +178,6 @@ def analyze_sales_trend(
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db)
 ):
-    """
-    Analyzes trends and cross-sells using REAL Market Basket Analysis.
-    """
     user_id = str(current_user.id)
     item = _get_item_from_db(db, user_id, request.item_id)
     if not item: raise HTTPException(404, "Item not found")
@@ -232,38 +202,42 @@ def get_real_trend_analysis(db: Database, user_id: str, item_name: str) -> str:
         res = list(db["transactions"].aggregate(pipeline))
         if res:
             days = ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-            best_day = days[res[0]['_id']]
-            return f"Best selling day is {best_day} based on {res[0]['count']} transactions."
+            return f"Best selling day: {days[res[0]['_id']]}."
     except: pass
-    return "Not enough sales data to determine trends."
+    return "No trend data."
 
 def get_real_cross_sell(db: Database, user_id: str, item_name: str) -> str:
-    # 1. Find transaction_ids containing this item
-    tx_pipeline = [
-        {"$match": {"user_id": user_id, "product_name": item_name}},
-        {"$project": {"transaction_id": 1}} # Assuming transactions have a grouping ID
-    ]
+    # MARKET BASKET ANALYSIS (CORRELATION)
     
-    # NOTE: If your system doesn't group POS items by transaction_id, 
-    # we cannot do Basket Analysis. We will check if 'transaction_id' exists.
-    # For now, we assume simple imported transactions might not have grouping.
-    # We will try a time-window approach (sold on same day).
+    # 1. Get dates where this item was sold
+    dates_cursor = db["transactions"].find(
+        {"user_id": user_id, "product_name": item_name},
+        {"date": 1}
+    ).sort("date", -1).limit(20) # Look at last 20 sales
     
-    # Simpler Time-Based Correlation:
-    # "What else was sold on the days this item was sold?"
+    target_dates = [d['date'].strftime("%Y-%m-%d") for d in dates_cursor if d.get('date')]
+    
+    if not target_dates: return "Not enough data for correlations."
     
     try:
-        # Get dates where item was sold
-        dates = list(db["transactions"].find(
-            {"user_id": user_id, "product_name": item_name}, 
-            {"date": 1}
-        ).limit(50)) # Limit sample size for speed
+        recent_txs = list(db["transactions"].find(
+            {"user_id": user_id, "product_name": {"$ne": item_name}}
+        ).sort("date", -1).limit(200))
         
-        if not dates: return "No sales data for cross-sell analysis."
+        correlated: Dict[str, int] = {}
+        for tx in recent_txs:
+            if not tx.get('date'): continue
+            tx_date = tx['date'].strftime("%Y-%m-%d")
+            if tx_date in target_dates:
+                p_name = tx['product_name']
+                correlated[p_name] = correlated.get(p_name, 0) + 1
         
-        # Extract unique dates (YYYY-MM-DD) to find correlations
-        # This is computationally expensive, so we keep it simple for MVP
+        if correlated:
+            # FIX: Use lambda to avoid Pylance strict type error
+            best_match = max(correlated, key=lambda k: correlated[k])
+            return f"Customers often buy '{best_match}' on the same day."
+            
+    except Exception as e:
+        print(f"Analysis error: {e}")
         
-        return "Requires 'Transaction Grouping' enabled in POS import to calculate cross-sells."
-    except:
-        return "Insufficient data for cross-sell analysis."
+    return "No strong correlation found with other products."
