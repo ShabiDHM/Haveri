@@ -276,7 +276,18 @@
     "smartAgenda": "Axhenda Inteligjente",
     "priorityTasks": "Prioritetet e ditës",
     "viewCalendar": "Shiko Kalendarin",
-    "noEvents": "Nuk ka ngjarje për sot."
+    "noEvents": "Nuk ka ngjarje për sot.",
+    "pulse": {
+      "title": "Pulsi i Biznesit",
+      "eodForecast": "Parashikimi i Ditës",
+      "basedOnVelocity": "Bazuar në ritmin aktual",
+      "analyzing": "Duke analizuar...",
+      "alertTrend": "Kujdes: Trend në Rritje",
+      "sellingFast": "po shitet 2x më shpejt se zakonisht.",
+      "trafficAnalysis": "Analiza e Trafikut",
+      "trafficForecast": "Pritet fluks i lartë 17:00 - 19:00.",
+      "monitoring": "Sistemi po monitoron..."
+    }
   },
   "business": {
     "title": "Qendra e Biznesit",

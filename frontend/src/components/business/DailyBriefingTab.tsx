@@ -1,8 +1,8 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - TAB V2.0 (DATA WIRING)
-// 1. FIX: Passes 'data.staffPerformance.mvpTotal' to BusinessRhythmCard.
-// 2. FIX: Passes 'data.market.signals' to ProductPerformanceCard.
-// 3. EFFECT: The dashboard is now fully driven by the backend.
+// PHOENIX PROTOCOL - DASHBOARD V3.0 (AI PULSE INTEGRATION)
+// 1. REPLACED: 'ProductPerformanceCard' (Static List) -> 'BusinessPulseCard' (Predictive AI).
+// 2. DATA: Passed 'mvpTotal' (Revenue) to Pulse Card for velocity calculation.
+// 3. UI: Updated layout to accommodate the new card style.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,7 +14,7 @@ import { apiService } from '../../services/api';
 import { Case } from '../../data/types';
 
 import { BusinessRhythmCard } from './briefing/BusinessRhythmCard';
-import { ProductPerformanceCard } from './briefing/ProductPerformanceCard';
+import { BusinessPulseCard } from './briefing/BusinessPulseCard'; // NEW COMPONENT
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
 
 export const DailyBriefingTab: React.FC = () => {
@@ -78,16 +78,20 @@ export const DailyBriefingTab: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                    {/* PHOENIX FIX: Passing live MTD revenue */}
+                    {/* Card 1: Rhythm (Past/Present Status) */}
                     <BusinessRhythmCard currentSales={data?.staffPerformance.mvpTotal} /> 
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                    {/* PHOENIX FIX: Passing live market signals */}
-                    <ProductPerformanceCard signals={data?.market.signals} />
+                    {/* Card 2: AI Pulse (Future/Prediction) - REPLACED */}
+                    <BusinessPulseCard 
+                        signals={data?.market.signals} 
+                        currentSales={data?.staffPerformance.mvpTotal}
+                    />
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+                    {/* Card 3: Agenda (Tasks) */}
                     {data && <SmartAgendaCard agenda={data.agenda} onEventClick={(event) => setSelectedEvent(event)} />}
                 </motion.div>
             </div>
