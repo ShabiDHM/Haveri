@@ -1,8 +1,7 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V1.5 (FINANCIAL ANALYST)
-# 1. FEATURE: Added 'generate_kpi_insight' to explain Revenue, Expenses, and Profit drivers.
-# 2. FEATURE: Added 'get_proactive_insight' for the smart dashboard banner.
-# 3. LOGIC: Uses real database aggregations to determine top clients and expense categories.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V1.6 (ALBANIAN LOCALIZATION)
+# 1. LOCALIZATION: All AI insights (Revenue, Expenses, Profit, Proactive Banner) now generated in Albanian.
+# 2. CONSISTENCY: Aligned terminology with the frontend (Të Hyrat, Shpenzimet, Fitimi).
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any, Optional
@@ -71,7 +70,7 @@ def _get_item_from_db(db: Database, user_id: str, item_id: str) -> Optional[Inve
         return InventoryItem(**doc)
     return None
 
-# --- FINANCE INTELLIGENCE ENDPOINTS (NEW) ---
+# --- FINANCE INTELLIGENCE ENDPOINTS (TRANSLATED) ---
 
 @router.post("/finance/kpi-insight", response_model=KpiInsightResponse)
 def generate_kpi_insight(
@@ -85,11 +84,9 @@ def generate_kpi_insight(
     user_id = str(current_user.id)
     finance_service = FinanceService(db)
     
-    summary = "Data analysis unavailable."
+    summary = "Analiza e të dhënave e padisponueshme."
     contributors = []
     
-    # Get data for the current month/period (simplified to all-time active for robust demo, or last 30 days)
-    # For better insights, let's look at the last 30 days.
     cutoff_date = datetime.utcnow() - timedelta(days=30)
     
     if request.kpi_type == 'income':
@@ -102,7 +99,7 @@ def generate_kpi_insight(
         total_income = sum(i.total_amount for i in recent_invoices)
         
         if total_income == 0:
-            summary = "No paid invoices found in the last 30 days."
+            summary = "Nuk u gjetën fatura të paguara në 30 ditët e fundit."
         else:
             # Group by Client
             clients: Dict[str, float] = {}
@@ -112,7 +109,7 @@ def generate_kpi_insight(
             sorted_clients = sorted(clients.items(), key=lambda x: x[1], reverse=True)
             top_client = sorted_clients[0]
             
-            summary = f"Revenue of €{total_income:.2f} (last 30 days) is driven by {len(sorted_clients)} active clients. '{top_client[0]}' is your top contributor."
+            summary = f"Të hyrat prej €{total_income:.2f} (30 ditët e fundit) vijnë kryesisht nga {len(sorted_clients)} klientë aktivë. '{top_client[0]}' është kontribuesi kryesor."
             contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_clients[:4]]
 
     elif request.kpi_type == 'expense':
@@ -125,7 +122,7 @@ def generate_kpi_insight(
         total_expense = sum(e.amount for e in recent_expenses)
         
         if total_expense == 0:
-            summary = "No recorded expenses in the last 30 days."
+            summary = "Nuk ka shpenzime të regjistruara në 30 ditët e fundit."
         else:
             # Group by Category
             cats: Dict[str, float] = {}
@@ -135,11 +132,10 @@ def generate_kpi_insight(
             sorted_cats = sorted(cats.items(), key=lambda x: x[1], reverse=True)
             top_cat = sorted_cats[0]
             
-            summary = f"Total outflow: €{total_expense:.2f}. Your spending is concentrated in '{top_cat[0]}', accounting for {int((top_cat[1]/total_expense)*100)}% of costs."
+            summary = f"Dalja totale: €{total_expense:.2f}. Shpenzimet janë të përqendruara në '{top_cat[0]}', që përbën {int((top_cat[1]/total_expense)*100)}% të kostove."
             contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_cats[:4]]
 
     elif request.kpi_type == 'profit':
-        # Calculate real net income
         invoices = finance_service.get_invoices(user_id)
         expenses = finance_service.get_expenses(user_id)
         
@@ -149,21 +145,20 @@ def generate_kpi_insight(
         
         if recent_income > 0:
             margin = (net / recent_income) * 100
-            status_text = "healthy" if margin > 20 else "tight"
-            summary = f"Net Profit is €{net:.2f} with a {status_text} margin of {margin:.1f}%."
+            status_text = "e shëndetshme" if margin > 20 else "e ulët"
+            summary = f"Fitimi Neto është €{net:.2f} me një marzhë {status_text} prej {margin:.1f}%."
             contributors = [
-                f"Total Income: €{recent_income:.2f}",
-                f"Total Expense: €{recent_expense:.2f}",
-                f"Net Result: €{net:.2f}"
+                f"Të Hyrat: €{recent_income:.2f}",
+                f"Shpenzimet: €{recent_expense:.2f}",
+                f"Rezultati Neto: €{net:.2f}"
             ]
         else:
-            summary = f"Net loss of €{abs(net):.2f} due to lack of revenue in this period."
-            contributors = [f"Expenses: €{recent_expense:.2f}"]
+            summary = f"Humbje neto prej €{abs(net):.2f} për shkak të mungesës së të hyrave në këtë periudhë."
+            contributors = [f"Shpenzimet: €{recent_expense:.2f}"]
 
     elif request.kpi_type == 'cogs':
-        # Placeholder for COGS logic if Inventory Costing was fully implemented
-        summary = "Cost of Goods Sold analysis requires full inventory transaction history."
-        contributors = ["Module: Inventory Tracking"]
+        summary = "Analiza e Kostos së Mallrave të Shitura kërkon historikun e plotë të transaksioneve të stokut."
+        contributors = ["Moduli: Gjurmimi i Stokut"]
 
     return KpiInsightResponse(summary=summary, key_contributors=contributors)
 
@@ -188,34 +183,33 @@ def get_proactive_insight(
     
     if income == 0 and outflow == 0:
         return GeneralInsightResponse(
-            insight="Welcome! Start adding Invoices and Expenses to unlock AI insights.",
+            insight="Mirësevini! Filloni të shtoni Fatura dhe Shpenzime për të aktivizuar analizat e AI.",
             sentiment="neutral"
         )
         
     if income > outflow * 1.5:
         return GeneralInsightResponse(
-            insight=f"Great performance! Your revenue (€{income:.0f}) is significantly higher than expenses (€{outflow:.0f}). Consider reinvesting.",
+            insight=f"Performancë e shkëlqyer! Të hyrat (€{income:.0f}) janë ndjeshëm më të larta se shpenzimet (€{outflow:.0f}).",
             sentiment="positive"
         )
     elif outflow > income:
-        # Find biggest expense category
         cats: Dict[str, float] = {}
         for e in expenses:
              if e.date >= cutoff_30:
                 cats[e.category] = cats.get(e.category, 0) + e.amount
-        top_cat = max(cats, key=lambda k: cats[k]) if cats else "General"
+        top_cat = max(cats, key=lambda k: cats[k]) if cats else "Të Përgjithshme"
         
         return GeneralInsightResponse(
-            insight=f"Warning: Expenses (€{outflow:.0f}) exceed Income (€{income:.0f}). Primary driver is '{top_cat}'. Review immediately.",
+            insight=f"Kujdes: Shpenzimet (€{outflow:.0f}) tejkalojnë Të Hyrat (€{income:.0f}). Shkaktari kryesor është '{top_cat}'.",
             sentiment="negative"
         )
     else:
         return GeneralInsightResponse(
-            insight="Stable performance. Income is balancing expenses. Focus on increasing sales volume.",
+            insight="Performancë stabile. Të hyrat po balancojnë shpenzimet. Fokusohuni në rritjen e vëllimit të shitjeve.",
             sentiment="neutral"
         )
 
-# --- EXISTING AI ENDPOINTS (TAX/INVENTORY) ---
+# --- EXISTING AI ENDPOINTS ---
 
 @router.post("/tax/audit", response_model=TaxAuditResult)
 def analyze_tax_anomalies(
@@ -241,24 +235,24 @@ def analyze_tax_anomalies(
         amount = exp.amount
         
         if any(x in desc for x in ['dhurat', 'gift', 'drek', 'lunch', 'dark', 'dinner']) and amount > 50:
-            anomalies.append(f"Potential Non-Deductible: Expense '{exp.category}' of €{amount} contains keywords suggesting personal use.")
+            anomalies.append(f"Potencialisht e pa-zbritshme: Shpenzimi '{exp.category}' prej €{amount} përmban fjalë kyçe për përdorim personal.")
             
         if 'general' in cat or 'pergjithshme' in cat:
             if amount > 500:
-                anomalies.append(f"Audit Risk: Large expense (€{amount}) categorized as 'General'. Please re-classify.")
+                anomalies.append(f"Rrezik Auditi: Shpenzim i madh (€{amount}) i kategorizuar si 'Të Përgjithshme'. Ju lutem ri-klasifikoni.")
         
         if 'marketing' in cat or 'reklam' in cat:
             marketing_found = True
             
         if ('rrog' in cat or 'pag' in cat) and amount % 100 == 0 and amount > 0:
-             anomalies.append(f"Payroll Check: Salary payment of €{amount} detected. Ensure Withholding Tax is declared.")
+             anomalies.append(f"Kontroll Page: U detektua pagesë page prej €{amount}. Sigurohuni që Tatimi në Burim është deklaruar.")
 
     if not marketing_found and len(period_expenses) > 5:
-        anomalies.append("Opportunity: No Marketing expenses found. These are 100% deductible.")
+        anomalies.append("Mundësi: Nuk u gjetën shpenzime Marketingu. Këto janë 100% të zbritshme.")
 
     status_code = "CLEAR"
     if len(anomalies) > 0: status_code = "WARNING"
-    if any("Audit Risk" in a for a in anomalies): status_code = "CRITICAL"
+    if any("Rrezik Auditi" in a for a in anomalies): status_code = "CRITICAL"
 
     return TaxAuditResult(
         anomalies=anomalies,
@@ -293,7 +287,7 @@ def predict_restock(
     user_id = str(current_user.id)
     item = _get_item_from_db(db, user_id, request.item_id)
     if not item:
-        raise HTTPException(404, "Item not found")
+        raise HTTPException(404, "Artikulli nuk u gjet")
         
     pipeline = [
         {"$match": {"user_id": user_id, "product_name": item.name}},
@@ -308,8 +302,8 @@ def predict_restock(
     if daily_sales == 0:
         return RestockPrediction(
             suggested_quantity=0,
-            reason="No recent sales data available to calculate velocity.",
-            supplier_name="Unknown",
+            reason="Nuk ka mjaftueshëm të dhëna shitjeje për parashikim.",
+            supplier_name="I panjohur",
             estimated_cost=0
         )
 
@@ -317,14 +311,14 @@ def predict_restock(
     suggested_qty = daily_sales * 14 
     cost = suggested_qty * item.cost_per_unit
     
-    reason = f"Based on avg. sales of {daily_sales:.1f} units/day, you will run out in ~{int(days_left)} days."
+    reason = f"Bazuar në mesataren e shitjes prej {daily_sales:.1f} njësi/ditë, stoku mjafton për ~{int(days_left)} ditë."
     if days_left < 3:
-        reason = f"URGENT: At current velocity ({daily_sales:.1f}/day), stock will be ZERO in {int(days_left)} days!"
+        reason = f"URGJENTE: Me ritmin aktual ({daily_sales:.1f}/ditë), stoku do të mbarojë në {int(days_left)} ditë!"
 
     return RestockPrediction(
         suggested_quantity=round(suggested_qty, 1),
         reason=reason,
-        supplier_name="Primary Supplier",
+        supplier_name="Furnitori Kryesor",
         estimated_cost=round(cost, 2)
     )
 
@@ -336,7 +330,7 @@ def analyze_sales_trend(
 ):
     user_id = str(current_user.id)
     item = _get_item_from_db(db, user_id, request.item_id)
-    if not item: raise HTTPException(404, "Item not found")
+    if not item: raise HTTPException(404, "Artikulli nuk u gjet")
 
     trend_msg = get_real_trend_analysis(db, user_id, item.name)
     cross_sell_msg = get_real_cross_sell(db, user_id, item.name)
@@ -357,10 +351,10 @@ def get_real_trend_analysis(db: Database, user_id: str, item_name: str) -> str:
     try:
         res = list(db["transactions"].aggregate(pipeline))
         if res:
-            days = ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-            return f"Best selling day: {days[res[0]['_id']]}."
+            days = ["", "E Diel", "E Hënë", "E Martë", "E Mërkurë", "E Enjte", "E Premte", "E Shtunë"]
+            return f"Dita me më shumë shitje: {days[res[0]['_id']]}."
     except: pass
-    return "Not enough sales data to determine trends."
+    return "Nuk ka të dhëna për trendin."
 
 def get_real_cross_sell(db: Database, user_id: str, item_name: str) -> str:
     dates_cursor = db["transactions"].find(
@@ -370,7 +364,7 @@ def get_real_cross_sell(db: Database, user_id: str, item_name: str) -> str:
     
     target_dates = [d['date'].strftime("%Y-%m-%d") for d in dates_cursor if d.get('date')]
     
-    if not target_dates: return "Not enough data for correlations."
+    if not target_dates: return "Nuk ka mjaftueshëm të dhëna për korrelacion."
     
     try:
         recent_txs = list(db["transactions"].find(
@@ -387,9 +381,9 @@ def get_real_cross_sell(db: Database, user_id: str, item_name: str) -> str:
         
         if correlated:
             best_match = max(correlated, key=lambda k: correlated[k])
-            return f"Customers often buy '{best_match}' on the same day."
+            return f"Klientët shpesh blejnë '{best_match}' në të njëjtën ditë."
             
     except Exception as e:
         print(f"Analysis error: {e}")
         
-    return "No strong correlation found with other products."
+    return "Nuk u gjet ndonjë lidhje e fortë me produkte të tjera."
