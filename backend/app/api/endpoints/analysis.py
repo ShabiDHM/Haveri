@@ -1,8 +1,8 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V1.8 (ROBUST MATCHING)
-# 1. FIX: Implemented Regex-based Case-Insensitive matching for Products.
-# 2. LOGIC: Ensures "Jack Daniels" matches "jack daniels" in sales transactions.
-# 3. SAFETY: Escapes regex characters to prevent errors with symbols like '+'.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V1.8 (SMART COGS MATCHING)
+# 1. FIX: Upgraded COGS engine to use 'contains' logic for matching sales to recipes.
+# 2. ROBUSTNESS: Now correctly calculates cost for "Espresso Macchiato" even if recipe is just "Espresso".
+# 3. UX: Improved error message to better guide users on fixing data.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any, Optional
@@ -159,7 +159,7 @@ def generate_kpi_insight(
         cost_by_name = {i["name"].lower().strip(): i.get("cost_per_unit", 0) for i in inv_items}
 
         recipes = list(db["recipes"].find({"user_id": user_id}))
-        product_costs = {} 
+        product_costs: Dict[str, float] = {} 
         
         for r in recipes:
             r_cost = 0
@@ -168,7 +168,8 @@ def generate_kpi_insight(
                 qty = ing.get("quantity_required", 0)
                 if i_id in cost_by_id:
                     r_cost += cost_by_id[i_id] * qty
-            product_costs[r["product_name"].lower().strip()] = r_cost
+            if r_cost > 0: # Only add recipes with a calculated cost
+                product_costs[r["product_name"].lower().strip()] = r_cost
 
         sales = list(db["transactions"].find({"user_id": user_id, "date": {"$gte": cutoff_date}}))
         
@@ -176,29 +177,41 @@ def generate_kpi_insight(
         item_cogs_breakdown = {}
 
         for sale in sales:
-            p_name = sale.get("product_name", "").lower().strip()
+            p_name_sold = sale.get("product_name", "").lower().strip()
             qty = sale.get("quantity", 0)
+            unit_cost = 0
+
+            # PHOENIX FIX: Smart Matching Logic
+            # 1. Try exact match first (fastest)
+            if p_name_sold in product_costs:
+                unit_cost = product_costs[p_name_sold]
+            else:
+                # 2. Fallback to 'contains' match (e.g., "Espresso" in "Espresso Macchiato")
+                for recipe_name, cost in product_costs.items():
+                    if recipe_name in p_name_sold:
+                        unit_cost = cost
+                        break 
             
-            unit_cost = product_costs.get(p_name)
-            if unit_cost is None:
-                unit_cost = cost_by_name.get(p_name, 0)
+            # 3. Fallback to direct inventory cost if still no recipe match
+            if unit_cost == 0 and p_name_sold in cost_by_name:
+                unit_cost = cost_by_name[p_name_sold]
             
             line_cost = unit_cost * qty
             total_cogs += line_cost
             
             if line_cost > 0:
-                original_name = sale.get("product_name", p_name)
+                original_name = sale.get("product_name", p_name_sold)
                 item_cogs_breakdown[original_name] = item_cogs_breakdown.get(original_name, 0) + line_cost
 
         if total_cogs > 0:
             sorted_cogs = sorted(item_cogs_breakdown.items(), key=lambda x: x[1], reverse=True)
             top_item = sorted_cogs[0]
             
-            summary = f"Kosto totale e materialeve të shitura është €{total_cogs:.2f}. Artikulli me koston më të lartë të prodhimit/blerjes ishte '{top_item[0]}'."
+            summary = f"Kosto totale e materialeve të shitura është €{total_cogs:.2f}. Artikulli me koston më të lartë ishte '{top_item[0]}'."
             contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_cogs[:4]]
         else:
-            summary = "Nuk u identifikua asnjë kosto. Sigurohuni që artikujt në Stok kanë 'Kosto për Njësi' ose që keni krijuar Receta për produktet e shitura."
-            contributors = ["Mungojnë të dhënat e kostos"]
+            summary = "Nuk u identifikua asnjë kosto. Sigurohuni që artikujt në Stok kanë 'Kosto për Njësi' dhe emrat e Recetave përputhen me emrat e produkteve të shitura."
+            contributors = ["Verifikoni kostot e lëndës së parë."]
 
     return KpiInsightResponse(summary=summary, key_contributors=contributors)
 
@@ -325,7 +338,6 @@ def predict_restock(
     if not item:
         raise HTTPException(404, "Artikulli nuk u gjet")
         
-    # PHOENIX: Regex for Case-Insensitive Match
     safe_name = re.escape(item.name)
     pipeline = [
         {"$match": {"user_id": user_id, "product_name": {"$regex": f"^{safe_name}$", "$options": "i"}}},
@@ -407,7 +419,6 @@ def get_real_cross_sell(db: Database, user_id: str, item_name: str) -> str:
     if not target_dates: return "Nuk ka mjaftueshëm të dhëna për korrelacion."
     
     try:
-        # PHOENIX: Exclude the item itself safely
         recent_txs = list(db["transactions"].find(
             {"user_id": user_id, "product_name": {"$not": {"$regex": f"^{safe_name}$", "$options": "i"}}}
         ).sort("date", -1).limit(200))

@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V6.0 (SMART ANALYST ENABLED)
-// 1. FEATURE: Added 'getKpiInsight' and 'getProactiveInsight' for financial intelligence.
-// 2. INTEGRITY: Complete set of methods including Auth, Docs, Finance, Inventory, and Analysis.
+// PHOENIX PROTOCOL - API V6.2 (PO DRAFTING ENABLED)
+// 1. NEW: Added 'createPurchaseOrder' method to call the new backend endpoint.
+// 2. INTEGRITY: Complete set of methods for all application features.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -30,7 +30,6 @@ interface DocumentContentResponse { text: string; }
 export interface TaxAuditResult { anomalies: string[]; status: 'CLEAR' | 'WARNING' | 'CRITICAL'; net_obligation: number; }
 export interface RestockPrediction { suggested_quantity: number; reason: string; supplier_name?: string; estimated_cost?: number; }
 export interface SalesTrendAnalysis { trend_analysis: string; cross_sell_opportunities: string; }
-// NEW TIER 1 TYPES
 export interface KpiInsightResponse { summary: string; key_contributors: string[]; }
 export interface GeneralInsightResponse { insight: string; sentiment: 'positive' | 'negative' | 'neutral'; }
 
@@ -105,58 +104,28 @@ class ApiService {
 
     // --- AI / INTELLIGENCE ---
     public async analyzeTaxAnomalies(month: number, year: number): Promise<TaxAuditResult> {
-        try {
-            const response = await this.axiosInstance.post<TaxAuditResult>('/analysis/tax/audit', { month, year });
-            return response.data;
-        } catch (e) {
-            return { anomalies: ["System error. Please try again."], status: 'WARNING', net_obligation: 0 };
-        }
+        try { const response = await this.axiosInstance.post<TaxAuditResult>('/analysis/tax/audit', { month, year }); return response.data; } 
+        catch (e) { return { anomalies: ["Sistemi nuk mund të kryejë analizën për momentin."], status: 'WARNING', net_obligation: 0 }; }
     }
-
     public async chatWithTaxBot(message: string): Promise<string> {
-        try {
-            const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message });
-            return response.data.response;
-        } catch (e) {
-            return "Based on Kosovo Tax Law (TAK), VAT is deductible for business-related expenses. For personal equipment, it is not.";
-        }
+        try { const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message }); return response.data.response; } 
+        catch (e) { return "Më falni, shërbimi i asistencës tatimore është përkohësisht jashtë funksionit."; }
     }
-
     public async predictRestock(itemId: string): Promise<RestockPrediction> {
-        try {
-            const response = await this.axiosInstance.post<RestockPrediction>('/analysis/inventory/predict', { item_id: itemId });
-            return response.data;
-        } catch (e) {
-            return { suggested_quantity: 0, reason: "Analysis unavailable.", estimated_cost: 0 };
-        }
+        try { const response = await this.axiosInstance.post<RestockPrediction>('/analysis/inventory/predict', { item_id: itemId }); return response.data; } 
+        catch (e) { return { suggested_quantity: 0, reason: "Analiza e padisponueshme për momentin.", estimated_cost: 0 }; }
     }
-
     public async analyzeSalesTrend(itemId: string): Promise<SalesTrendAnalysis> {
-        try {
-            const response = await this.axiosInstance.post<SalesTrendAnalysis>('/analysis/inventory/trend', { item_id: itemId });
-            return response.data;
-        } catch (e) {
-            return { trend_analysis: "Unavailable", cross_sell_opportunities: "Unavailable" };
-        }
+        try { const response = await this.axiosInstance.post<SalesTrendAnalysis>('/analysis/inventory/trend', { item_id: itemId }); return response.data; } 
+        catch (e) { return { trend_analysis: "E padisponueshme", cross_sell_opportunities: "E padisponueshme" }; }
     }
-
-    // --- TIER 1: FINANCIAL INTELLIGENCE ---
     public async getKpiInsight(kpiType: string): Promise<KpiInsightResponse> {
-        try {
-            const response = await this.axiosInstance.post<KpiInsightResponse>('/analysis/finance/kpi-insight', { kpi_type: kpiType });
-            return response.data;
-        } catch (e) {
-            return { summary: "Analysis service is currently offline.", key_contributors: [] };
-        }
+        try { const response = await this.axiosInstance.post<KpiInsightResponse>('/analysis/finance/kpi-insight', { kpi_type: kpiType }); return response.data; } 
+        catch (e) { return { summary: "Shërbimi i analizës është offline.", key_contributors: [] }; }
     }
-
     public async getProactiveInsight(): Promise<GeneralInsightResponse> {
-        try {
-            const response = await this.axiosInstance.get<GeneralInsightResponse>('/analysis/finance/proactive-insight');
-            return response.data;
-        } catch (e) {
-            return { insight: "Start adding transactions to see AI insights.", sentiment: "neutral" };
-        }
+        try { const response = await this.axiosInstance.get<GeneralInsightResponse>('/analysis/finance/proactive-insight'); return response.data; } 
+        catch (e) { return { insight: "Shtoni transaksione për të parë analizat e AI.", sentiment: "neutral" }; }
     }
 
     // --- FINANCE & ANALYTICS ---
@@ -212,11 +181,17 @@ class ApiService {
     public async deleteCalendarEvent(eventId: string): Promise<void> { await this.axiosInstance.delete(`/calendar/events/${eventId}`); }
     public async getAlertsCount(): Promise<{ count: number }> { const response = await this.axiosInstance.get<{ count: number }>('/calendar/alerts'); return response.data; }
 
-    // --- DRAFTING V2 ---
+    // --- DRAFTING V2 (ASYNC) ---
     public async initiateDraftingJob(data: CreateDraftingJobRequest): Promise<DraftingJobStatus> { const response = await this.axiosInstance.post<DraftingJobStatus>(`${API_V2_URL}/drafting/jobs`, data); return response.data; }
     public async getDraftingJobStatus(jobId: string): Promise<DraftingJobStatus> { const response = await this.axiosInstance.get<DraftingJobStatus>(`${API_V2_URL}/drafting/jobs/${jobId}/status`); return response.data; }
     public async getDraftingJobResult(jobId: string): Promise<DraftingJobResult> { const response = await this.axiosInstance.get<DraftingJobResult>(`${API_V2_URL}/drafting/jobs/${jobId}/result`); return response.data; }
     
+    // --- DRAFTING (SYNC) ---
+    public async createPurchaseOrder(data: { item_id: string; item_name: string; unit: string; quantity: number; estimated_cost: number; supplier_name: string; }): Promise<any> {
+        const response = await this.axiosInstance.post('/drafting/purchase-order', data);
+        return response.data;
+    }
+
     // --- BUSINESS ---
     public async getBusinessProfile(): Promise<BusinessProfile> { const response = await this.axiosInstance.get<BusinessProfile>('/business/profile'); return response.data; }
     public async updateBusinessProfile(data: BusinessProfileUpdate): Promise<BusinessProfile> { const response = await this.axiosInstance.put<BusinessProfile>('/business/profile', data); return response.data; }
@@ -227,7 +202,6 @@ class ApiService {
     public async getStrategicBriefing(): Promise<StrategicBriefingResponse> { const response = await this.axiosInstance.get<StrategicBriefingResponse>('/briefing/strategic'); return response.data; }
     public async sendContactForm(data: { firstName: string; lastName: string; email: string; phone: string; message: string }): Promise<void> { await this.axiosInstance.post('/support/contact', { first_name: data.firstName, last_name: data.lastName, email: data.email, phone: data.phone, message: data.message }); }
     
-    // PHOENIX: Added fallback for source document viewing
     public async getArchiveDocumentBlob(archiveId: string): Promise<Blob> {
         return this.getArchiveFileBlob(archiveId);
     }
