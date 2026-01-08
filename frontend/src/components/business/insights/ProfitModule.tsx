@@ -1,8 +1,8 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - STOCK INTELLIGENCE V5.0 (EDITABLE QUANTITY)
-// 1. FEATURE: Added an input field for users to override the AI's suggested quantity.
-// 2. UX: Estimated cost now updates in real-time as the user types.
-// 3. FIX: Resolved the "0.00" data flow error by populating the state via useEffect.
+// PHOENIX PROTOCOL - STOCK INTELLIGENCE V5.1 (DEFINITIVE FIX)
+// 1. CRITICAL FIX: The "Drafto" button is now disabled until AI data arrives, permanently fixing the "0.00" data flow error.
+// 2. FEATURE: Added an input field for users to override the AI's suggested quantity.
+// 3. UX: Estimated cost now updates in real-time as the user types.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,11 +25,8 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
     const [loading, setLoading] = useState(false);
     const [drafting, setDrafting] = useState(false);
     const [aiData, setAiData] = useState<{ prediction: RestockPrediction | null, trend: SalesTrendAnalysis | null }>({ prediction: null, trend: null });
-
-    // PHOENIX: State for the editable quantity
     const [editableQuantity, setEditableQuantity] = useState<number>(0);
 
-    // PHOENIX: Populate editable quantity when AI data arrives to fix the "0.00" bug
     useEffect(() => {
         if (aiData.prediction) {
             setEditableQuantity(aiData.prediction.suggested_quantity);
@@ -49,7 +46,6 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
         finally { setLoading(false); }
     };
     
-    // PHOENIX: Calculate cost in real-time based on the editable quantity
     const editableCost = (selectedItem?.cost_per_unit ?? 0) * editableQuantity;
 
     const handleDraftOrder = async () => {
@@ -60,9 +56,9 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                 item_id: String(selectedItem.id), 
                 item_name: selectedItem.name, 
                 unit: selectedItem.unit,
-                quantity: editableQuantity, // Use the editable quantity
-                estimated_cost: editableCost, // Use the real-time calculated cost
-                supplier_name: aiData.prediction?.supplier_name ?? "Primary Supplier"
+                quantity: editableQuantity,
+                estimated_cost: editableCost,
+                supplier_name: aiData.prediction?.supplier_name ?? "Furnitori Primar"
             });
             alert(t('inventory.orderDrafted', 'Porosia u draftua dhe u dërgua në Arkivë!'));
             setSelectedItem(null);
@@ -131,13 +127,12 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             <div className="flex items-center justify-between bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
                                                 <div>
                                                     <p className="text-xs text-blue-300 uppercase font-bold">{t('inventory.analysis.orderNow', 'Porosit Tani')}</p>
-                                                    {/* PHOENIX: Editable input field */}
                                                     <div className="flex items-baseline gap-2">
                                                         <input 
                                                             type="number"
                                                             value={editableQuantity}
                                                             onChange={(e) => setEditableQuantity(parseFloat(e.target.value) || 0)}
-                                                            className="text-lg font-mono font-bold text-white bg-transparent outline-none w-24 p-0 border-none"
+                                                            className="text-lg font-mono font-bold text-white bg-transparent outline-none w-24 p-0 border-none ring-0 focus:ring-0"
                                                         />
                                                         <span className="text-lg font-mono font-bold text-white">{selectedItem.unit}</span>
                                                     </div>
@@ -147,7 +142,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                                     <p className="text-lg font-mono font-bold text-white">€{editableCost.toFixed(2)}</p>
                                                 </div>
                                             </div>
-                                            <button onClick={handleDraftOrder} disabled={drafting} className="w-full mt-3 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2">
+                                            <button onClick={handleDraftOrder} disabled={drafting || !aiData.prediction} className="w-full mt-3 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2">
                                                 {drafting ? (<><Loader2 size={16} className="animate-spin" /> {t('inventory.analysis.drafting', 'Duke draftuar...')}</>) : (<>{t('inventory.analysis.draftOrder', 'Drafto Porosinë')} <ArrowRight size={16} /></>)}
                                             </button>
                                         </div>
