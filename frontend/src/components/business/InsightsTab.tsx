@@ -1,7 +1,6 @@
 // FILE: frontend/src/components/business/InsightsTab.tsx
 // PHOENIX PROTOCOL - INSIGHTS TAB V2.1
 // 1. FEATURE: 'Smart Analyst' Button (The Trigger).
-// 2. LOGIC: Switches view to SpreadsheetAnalysisPanel when clicked.
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
