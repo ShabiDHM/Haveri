@@ -1,8 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - TIER 1 INTELLIGENCE V1.1 (FULL MERGE)
-// 1. FEATURE: Clickable KPI Cards with AI Explanations.
-// 2. FEATURE: Proactive Insight Banner (Uses ArrowRight).
-// 3. INTEGRITY: Preserved 'handleViewSourceDocument' and all Chart logic.
+// PHOENIX PROTOCOL - I18N UPDATE V1.2
+// 1. FEATURE: Fully internationalized 'Smart Analyst' and 'Insight Banner'.
+// 2. FIX: Replaced hardcoded English labels with 't()' keys.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -86,10 +85,10 @@ const HeroStatCard = ({
 
 // --- COMPONENT: PROACTIVE INSIGHT BANNER ---
 const ProactiveInsightBanner = () => {
+    const { t } = useTranslation(); // HOOK ADDED
     const [insight, setInsight] = useState<{ text: string, sentiment: string } | null>(null);
 
     useEffect(() => {
-        // Fetch real insight
         apiService.getProactiveInsight().then(data => {
             setInsight({ text: data.insight, sentiment: data.sentiment });
         });
@@ -111,11 +110,13 @@ const ProactiveInsightBanner = () => {
             </div>
             <div className="flex-1">
                 <p className="text-sm font-medium leading-relaxed">
-                    <span className="font-bold opacity-70 uppercase tracking-wider text-[10px] block mb-1">AI Smart Insight</span>
+                    {/* TRANSLATED LABEL */}
+                    <span className="font-bold opacity-70 uppercase tracking-wider text-[10px] block mb-1">
+                        {t('finance.smartAnalyst.bannerTitle', 'AI Smart Insight')}
+                    </span>
                     {insight.text}
                 </p>
             </div>
-            {/* PHOENIX: ArrowRight usage fixes lint warning */}
             <div className="self-center opacity-50">
                 <ArrowRight size={18} />
             </div>
@@ -200,13 +201,12 @@ export const FinanceTab: React.FC = () => {
             const data = await apiService.getKpiInsight(type);
             setKpiAnalysis({ type: title, summary: data.summary, contributors: data.key_contributors });
         } catch (error) {
-            setKpiAnalysis({ type: title, summary: "Failed to load analysis.", contributors: [] });
+            setKpiAnalysis({ type: title, summary: t('finance.smartAnalyst.failed', "Failed to load analysis."), contributors: [] });
         } finally {
             setKpiLoading(false);
         }
     };
 
-    // --- TRANSACTIONS LOGIC ---
     const allTransactions: TransactionItem[] = useMemo(() => {
         const combined: TransactionItem[] = [
             ...invoices.map(i => ({ id: i.id, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name, raw: i })),
@@ -230,7 +230,6 @@ export const FinanceTab: React.FC = () => {
         return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [invoices, expenses, posTransactions, searchTerm, t]);
 
-    // --- REPORTS LOGIC ---
     const cleanTopProducts = useMemo(() => {
         if (!analyticsData?.top_products) return [];
         return analyticsData.top_products.filter(p => p.total_revenue > 0);
@@ -253,7 +252,6 @@ export const FinanceTab: React.FC = () => {
     const handleDownloadExpense = async (expense: Expense) => { try { let url: string, filename: string; if (expense.receipt_url) { const { blob, filename: fn } = await apiService.getExpenseReceiptBlob(expense.id); url = window.URL.createObjectURL(blob); filename = fn; } else { const file = generateDigitalReceipt(expense); url = window.URL.createObjectURL(file); filename = file.name; } const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); if (!expense.receipt_url) window.URL.revokeObjectURL(url); } catch { alert(t('error.generic')); } };
     const handleArchiveExpense = (id: string) => { setSelectedExpenseId(id); setShowArchiveExpenseModal(true); };
 
-    // PHOENIX: Handler for viewing archived source documents (PRESERVED)
     const handleViewSourceDocument = async (archiveId: string, title: string) => {
         try {
             setOpeningDocId(archiveId);
@@ -289,7 +287,6 @@ export const FinanceTab: React.FC = () => {
                 select option { background-color: #0f172a; color: #f9fafb; }
             `}</style>
             
-            {/* KPI Cards Row - Interactive */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <HeroStatCard 
                     title={t('finance.income')} 
@@ -322,7 +319,6 @@ export const FinanceTab: React.FC = () => {
                 />
             </div>
 
-            {/* Proactive Insight Banner */}
             <ProactiveInsightBanner />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
@@ -331,7 +327,6 @@ export const FinanceTab: React.FC = () => {
                 <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
-            {/* Main Content Area */}
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] flex flex-col shadow-2xl">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
                     <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
@@ -421,7 +416,6 @@ export const FinanceTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* --- SMART ANALYST MODAL --- */}
             <AnimatePresence>
                 {kpiModalOpen && (
                     <motion.div 
@@ -435,7 +429,7 @@ export const FinanceTab: React.FC = () => {
                             <div className="p-6 border-b border-white/10 bg-blue-900/20 flex justify-between items-center">
                                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                                     <Sparkles size={20} className="text-yellow-400" />
-                                    Smart Analyst: {kpiAnalysis?.type}
+                                    {t('finance.smartAnalyst.modalTitle', 'Smart Analyst')}: {kpiAnalysis?.type}
                                 </h3>
                                 <button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"><X size={20}/></button>
                             </div>
@@ -444,18 +438,18 @@ export const FinanceTab: React.FC = () => {
                                 {kpiLoading ? (
                                     <div className="flex flex-col items-center py-10 gap-4">
                                         <Loader2 size={40} className="animate-spin text-blue-500" />
-                                        <p className="text-gray-400 animate-pulse">Analyzing financial data...</p>
+                                        <p className="text-gray-400 animate-pulse">{t('finance.smartAnalyst.analyzing', 'Analyzing financial data...')}</p>
                                     </div>
                                 ) : (
                                     <>
                                         <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-                                            <h4 className="text-sm font-bold text-blue-300 uppercase mb-2">Executive Summary</h4>
+                                            <h4 className="text-sm font-bold text-blue-300 uppercase mb-2">{t('finance.smartAnalyst.executiveSummary', 'Executive Summary')}</h4>
                                             <p className="text-white leading-relaxed">{kpiAnalysis?.summary}</p>
                                         </div>
 
                                         {kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (
                                             <div>
-                                                <h4 className="text-sm font-bold text-gray-400 uppercase mb-3">Key Contributors</h4>
+                                                <h4 className="text-sm font-bold text-gray-400 uppercase mb-3">{t('finance.smartAnalyst.keyContributors', 'Key Contributors')}</h4>
                                                 <div className="space-y-2">
                                                     {kpiAnalysis.contributors.map((c, i) => (
                                                         <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
