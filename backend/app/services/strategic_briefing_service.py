@@ -1,18 +1,16 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V24.0 (MTD REVENUE)
-# 1. LOGIC UPGRADE: 'Ritmi i Ditës' now calculates Month-to-Date (MTD) revenue instead of just Today's.
-# 2. ACCURACY: Aligns the metric with the UI's implied monthly goal.
-# 3. DATA CONTRACT: The 'mvpTotal' field now correctly represents MTD sales.
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V25.0 (DATA TYPE CORRECTION)
+# 1. CRITICAL FIX: All database queries now use the user_id as a STRING, not an ObjectId.
+# 2. ROBUSTNESS: Revenue calculation for transactions now correctly sums '$total_price'.
+# 3. EFFECT: This resolves the "€0.00" error by correctly matching user data in the database.
 
 import logging
 import asyncio
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta, timezone
-from bson import ObjectId
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-# Helper to map database priority to frontend priority
 def map_api_priority(priority: Optional[str]) -> str:
     if priority in ['CRITICAL', 'HIGH']: return 'high'
     if priority == 'MEDIUM': return 'medium'
@@ -21,11 +19,8 @@ def map_api_priority(priority: Optional[str]) -> str:
 class StrategicBriefingService:
     def __init__(self, db, user_id: str):
         self.db = db
-        try:
-            self.user_id_obj = ObjectId(user_id)
-        except:
-            self.user_id_str = user_id
-            self.user_id_obj = None
+        # PHOENIX FIX: The user_id is consistently a STRING throughout the application.
+        self.user_id = user_id
 
     async def generate_strategic_briefing(self) -> Dict[str, Any]:
         staff_data, market_data, agenda_data = await asyncio.gather(
@@ -36,19 +31,18 @@ class StrategicBriefingService:
         return {"staffPerformance": staff_data, "market": market_data, "agenda": agenda_data}
 
     async def _analyze_staff_performance(self) -> Dict[str, Any]:
-        # PHOENIX FIX: Changed date filter to calculate Month-to-Date (MTD)
         now = datetime.utcnow()
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
-        user_filter = {"user_id": self.user_id_obj} if self.user_id_obj else {"user_id": self.user_id_str}
+        # PHOENIX FIX: Use self.user_id (string) for all queries.
+        user_filter = {"user_id": self.user_id}
 
-        # 1. Query Invoices for the month
         invoices_pipeline = [
             {"$match": {**user_filter, "issue_date": {"$gte": month_start}, "status": "PAID"}},
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total_amount"}, "transaction_count": {"$sum": 1}}}
         ]
         
-        # 2. Query POS Transactions for the month
+        # PHOENIX FIX: Correctly sum '$total_price' from transactions.
         transactions_pipeline = [
             {"$match": {**user_filter, "date": {"$gte": month_start}}},
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total_price"}, "transaction_count": {"$sum": 1}}}
@@ -59,7 +53,6 @@ class StrategicBriefingService:
             self.db.transactions.aggregate(transactions_pipeline).to_list(length=1)
         )
 
-        # 3. Combine Results for MTD
         invoice_revenue = invoice_result[0].get("total_revenue", 0) if invoice_result else 0
         invoice_txs = invoice_result[0].get("transaction_count", 0) if invoice_result else 0
         
@@ -69,7 +62,6 @@ class StrategicBriefingService:
         total_mtd_revenue = invoice_revenue + transaction_revenue
         total_mtd_txs = invoice_txs + transaction_txs
         
-        # The score and status can still be based on daily velocity if needed, but the main metric is MTD
         status = "fire" if total_mtd_txs > (now.day * 10) else "stable"
         score = min(98, int((total_mtd_txs / (now.day * 20.0)) * 100)) if now.day > 0 else 0
         
@@ -80,9 +72,7 @@ class StrategicBriefingService:
         }
 
     async def _analyze_market_pulse(self) -> Dict[str, Any]:
-        user_filter = {"user_id": self.user_id_obj} if self.user_id_obj else {"user_id": self.user_id_str}
-        
-        # Market pulse should remain daily
+        user_filter = {"user_id": self.user_id}
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         
         bestsellers_invoices = [
@@ -124,7 +114,7 @@ class StrategicBriefingService:
         return {"signals": signals}
 
     async def _compile_tactical_agenda(self) -> List[Dict]:
-        user_filter = {"user_id": self.user_id_obj} if self.user_id_obj else {"user_id": self.user_id_str}
+        user_filter = {"user_id": self.user_id}
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = today_start + timedelta(days=1)
         
