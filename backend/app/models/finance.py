@@ -1,8 +1,8 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V11.0 (SELF-CONTAINED FIX)
-# 1. FIX: Inlined 'PyObjectId' to prevent ImportErrors from missing common.py.
-# 2. FIX: Defined ALL models (Invoice, Expense, Analytics, Wizard) in one place to resolve Pylance errors.
-# 3. STATUS: Robust and dependency-free.
+# PHOENIX PROTOCOL - FINANCE MODELS V11.1 (SOURCE LINK - COMPLETE)
+# 1. SCHEMA CHANGE: Added 'source_archive_id' to Expense models.
+# 2. PURPOSE: Creates the database field to permanently link an Expense to its original scanned document.
+# 3. INTEGRITY: Ensures a full, auditable trail from financial record to source of truth.
 
 from pydantic import BaseModel, Field, ConfigDict, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -136,8 +136,8 @@ class InvoiceCreate(BaseModel):
     items: List[InvoiceItem]
     tax_rate: float = 0.0
     due_date: Optional[datetime] = None
-    issue_date: Optional[datetime] = None  # Crucial for Import
-    status: Optional[str] = None           # Crucial for Import
+    issue_date: Optional[datetime] = None
+    status: Optional[str] = None
     notes: Optional[str] = None
     related_case_id: Optional[str] = None
 
@@ -177,9 +177,10 @@ class ExpenseBase(BaseModel):
     receipt_url: Optional[str] = None
     related_case_id: Optional[str] = None
     is_locked: bool = False
+    source_archive_id: Optional[str] = None  # PHOENIX: Link to the original scanned document
 
 class ExpenseCreate(ExpenseBase):
-    pass
+    pass # Inherits all fields, including the new one
 
 class ExpenseUpdate(BaseModel):
     category: Optional[str] = None
@@ -188,6 +189,7 @@ class ExpenseUpdate(BaseModel):
     date: Optional[datetime] = None
     related_case_id: Optional[str] = None
     is_locked: Optional[bool] = None
+    source_archive_id: Optional[str] = None  # Allow updating the link
 
 class ExpenseInDB(ExpenseBase):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
@@ -198,7 +200,7 @@ class ExpenseInDB(ExpenseBase):
 class ExpenseOut(ExpenseInDB):
     id: Optional[PyObjectId] = Field(alias="_id", serialization_alias="id", default=None)
 
-# --- ANALYTICS MODELS (Re-defined here to ensure Availability) ---
+# --- ANALYTICS MODELS ---
 class SalesTrendPoint(BaseModel):
     date: str
     amount: float

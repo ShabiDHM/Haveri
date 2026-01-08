@@ -1,8 +1,8 @@
 # FILE: backend/app/services/archive_service.py
-# PHOENIX PROTOCOL - ARCHIVE SERVICE V4.0 (COMPLETE RESTORATION)
-# 1. FIX: Restored 'archive_existing_document' and 'save_generated_file' methods which were previously elided.
-# 2. LOGIC: Ensures seamless integration between Cases, Finance, and the Archive module.
-# 3. INTEGRITY: Includes full S3 copy logic and Celery task triggering for all archive pathways.
+# PHOENIX PROTOCOL - ARCHIVE SERVICE V4.1 (TITLE ENHANCEMENT)
+# 1. FIX: Upgraded 'save_generated_file' to accept an optional 'title' parameter.
+# 2. LOGIC: If a title is provided, it is used for the archive item; otherwise, it falls back to the filename.
+# 3. INTEGRITY: Aligns the function's signature with other creation methods and improves data quality.
 
 import os
 import logging
@@ -87,76 +87,50 @@ class ArchiveService:
         return ArchiveItemInDB(**doc_data)
 
     def re_index_item(self, user_id: str, item_id: str):
-        """
-        Re-triggers the indexing process for a specific archive item.
-        """
         oid_user = self._to_oid(user_id)
         oid_item = self._to_oid(item_id)
-
-        # 1. Verify ownership and existence
         item = self.db.archives.find_one({"_id": oid_item, "user_id": oid_user, "item_type": "FILE"})
         if not item:
             raise HTTPException(status_code=404, detail="File not found or access denied.")
-
-        # 2. Reset status to PENDING
-        self.db.archives.update_one(
-            {"_id": oid_item},
-            {"$set": {"indexing_status": "PENDING"}}
-        )
-        
-        # 3. Clean up any old vectors for this document to avoid duplicates
+        self.db.archives.update_one({"_id": oid_item}, {"$set": {"indexing_status": "PENDING"}})
         try:
             vector_store_service.delete_document_embeddings(user_id, item_id)
-            logger.info(f"Cleared old vector memory for re-indexing item: {item_id}")
         except Exception as e:
             logger.error(f"Failed to clear old vector memory during re-index: {e}")
-            # We proceed anyway, as the new data might overwrite the old.
-
-        # 4. Re-dispatch the Celery task
         try:
             celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[item_id])
             logger.info(f"Re-queued archive item {item_id} for embedding.")
         except Exception as e:
             logger.error(f"Failed to re-queue archive indexing: {e}")
-            # If queuing fails, revert the status update
             self.db.archives.update_one({"_id": oid_item}, {"$set": {"indexing_status": "FAILED"}})
             raise HTTPException(status_code=500, detail="Failed to initiate re-indexing task.")
 
     def get_archive_items(self, user_id: str, category: Optional[str] = None, case_id: Optional[str] = None, parent_id: Optional[str] = None) -> List[ArchiveItemInDB]:
         query: Dict[str, Any] = {"user_id": self._to_oid(user_id)}
-        
         if parent_id and parent_id.strip() and parent_id != "null": 
             query["parent_id"] = self._to_oid(parent_id)
         else:
             if not category or category == "ALL": query["parent_id"] = None
-
         if category and category != "ALL": query["category"] = category
         if case_id and case_id.strip() and case_id != "null": query["case_id"] = self._to_oid(case_id)
-        
         cursor = self.db.archives.find(query).sort([("item_type", -1), ("created_at", -1)])
         return [ArchiveItemInDB(**doc) for doc in cursor]
 
     def delete_archive_item(self, user_id: str, item_id: str):
         oid_user = self._to_oid(user_id); oid_item = self._to_oid(item_id)
-        
         item = self.db.archives.find_one({"_id": oid_item, "user_id": oid_user})
         if not item: raise HTTPException(status_code=404, detail="Item not found")
-
         if item.get("item_type") == "FOLDER":
             children = self.db.archives.find({"parent_id": oid_item, "user_id": oid_user})
             for child in children: self.delete_archive_item(user_id, str(child["_id"]))
-
         if item.get("item_type") == "FILE":
             if item.get("storage_key"):
                 try: get_s3_client().delete_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
                 except: pass
-            
             try:
                 vector_store_service.delete_document_embeddings(user_id, str(item_id))
-                logger.info(f"Wiped vector memory for archive item: {item_id}")
             except Exception as e:
                 logger.error(f"Failed to wipe vector memory: {e}")
-
         self.db.archives.delete_one({"_id": oid_item})
 
     def rename_item(self, user_id: str, item_id: str, new_title: str) -> None:
@@ -180,103 +154,50 @@ class ArchiveService:
             return response['Body'], item["title"]
         except: raise HTTPException(500, "Stream failed")
 
-    # --- RESTORED METHODS ---
-
     async def archive_existing_document(self, user_id: str, case_id: str, document_id: str) -> ArchiveItemInDB:
-        """
-        Archives an existing document from a Case by copying its S3 object.
-        """
-        # 1. Find the document within the Case
-        case = self.db.cases.find_one({
-            "_id": self._to_oid(case_id), 
-            "user_id": self._to_oid(user_id),
-            "documents.id": document_id 
-        }, {"documents.$": 1})
-        
-        if not case or not case.get("documents"):
-            raise HTTPException(status_code=404, detail="Document not found in case")
-            
-        doc = case["documents"][0]
+        doc_oid = self._to_oid(document_id)
+        doc = self.db.documents.find_one({"_id": doc_oid, "owner_id": self._to_oid(user_id)})
+        if not doc: raise HTTPException(status_code=404, detail="Document not found")
         original_key = doc.get("storage_key")
-        
-        if not original_key:
-             raise HTTPException(status_code=400, detail="Document has no content to archive")
-
-        # 2. Create new Storage Key for Archive (Clone the object)
+        if not original_key: raise HTTPException(status_code=400, detail="Document has no content")
         s3 = get_s3_client()
         timestamp = int(datetime.now().timestamp())
         new_key = f"archive/{user_id}/{timestamp}_{doc.get('file_name', 'archived')}"
-        
         try:
-            s3.copy_object(
-                Bucket=B2_BUCKET_NAME,
-                CopySource={'Bucket': B2_BUCKET_NAME, 'Key': original_key},
-                Key=new_key
-            )
+            s3.copy_object(Bucket=B2_BUCKET_NAME, CopySource={'Bucket': B2_BUCKET_NAME, 'Key': original_key}, Key=new_key)
         except Exception as e:
-            logger.error(f"S3 Copy failed during archiving: {e}")
-            raise HTTPException(status_code=500, detail="Failed to copy file to archive storage")
-
-        # 3. Create Database Entry
+            raise HTTPException(status_code=500, detail=f"Failed to copy file to archive: {e}")
         archive_data = {
-            "user_id": self._to_oid(user_id),
-            "title": doc.get("file_name"),
-            "item_type": "FILE",
-            "file_type": doc.get("file_type", "PDF"),
-            "category": "CASE_DOCUMENT",
-            "case_id": self._to_oid(case_id),
-            "storage_key": new_key,
-            "file_size": doc.get("file_size", 0),
-            "created_at": datetime.now(timezone.utc),
-            "description": "Archived from Case Documents",
-            "is_shared": False,
-            "indexing_status": "PENDING"
+            "user_id": self._to_oid(user_id), "title": doc.get("file_name"), "item_type": "FILE",
+            "file_type": doc.get("file_type", "PDF"), "category": "CASE_DOCUMENT", "case_id": self._to_oid(case_id),
+            "storage_key": new_key, "file_size": doc.get("file_size", 0), "created_at": datetime.now(timezone.utc),
+            "is_shared": False, "indexing_status": "PENDING"
         }
-        
         res = self.db.archives.insert_one(archive_data)
-        
-        # 4. Trigger Indexing
         try:
             celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(res.inserted_id)])
         except Exception as e:
             logger.warning(f"Failed to queue indexing for archived document: {e}")
-            
         archive_data["_id"] = res.inserted_id
         return ArchiveItemInDB(**archive_data)
 
-    async def save_generated_file(self, user_id: str, file_content: bytes, filename: str, category: str, case_id: Optional[str] = None) -> ArchiveItemInDB:
-        """
-        Saves a system-generated file (e.g. Invoice PDF) directly to the archive.
-        """
+    async def save_generated_file(self, user_id: str, file_content: bytes, filename: str, category: str, title: Optional[str] = None, case_id: Optional[str] = None) -> ArchiveItemInDB:
         timestamp = int(datetime.now().timestamp())
         storage_key = f"archive/{user_id}/generated_{timestamp}_{filename}"
-        
         s3 = get_s3_client()
         try:
             s3.put_object(Bucket=B2_BUCKET_NAME, Key=storage_key, Body=file_content)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Storage upload failed: {e}")
-            
         doc_data = {
             "user_id": self._to_oid(user_id),
-            "title": filename,
-            "item_type": "FILE",
-            "file_type": filename.split('.')[-1].upper(),
-            "category": category,
-            "storage_key": storage_key,
-            "file_size": len(file_content),
-            "created_at": datetime.now(timezone.utc),
-            "description": "System generated document",
-            "is_shared": False,
-            "indexing_status": "PENDING"
+            "title": title or filename, # PHOENIX FIX: Use title if provided
+            "item_type": "FILE", "file_type": filename.split('.')[-1].upper(), "category": category,
+            "storage_key": storage_key, "file_size": len(file_content), "created_at": datetime.now(timezone.utc),
+            "description": "System generated document", "is_shared": False, "indexing_status": "PENDING"
         }
-        if case_id:
-            doc_data["case_id"] = self._to_oid(case_id)
-            
+        if case_id: doc_data["case_id"] = self._to_oid(case_id)
         res = self.db.archives.insert_one(doc_data)
         doc_data["_id"] = res.inserted_id
-        
-        # Trigger indexing
         celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(res.inserted_id)])
-        
         return ArchiveItemInDB(**doc_data)

@@ -1,6 +1,7 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V2.3 (ARCHIVE STATUS FIX)
-// 1. FIX: Added the missing 'indexing_status' property to the ArchiveItemOut interface.
+// PHOENIX PROTOCOL - TYPES V2.4 (SOURCE LINK - COMPLETE)
+// 1. SCHEMA CHANGE: Added 'source_archive_id' to the Expense interface.
+// 2. PURPOSE: Allows the frontend to know when an expense has an original document attached.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -79,9 +80,37 @@ export interface StrategicBriefingResponse {
 export interface InvoiceItem { description: string; quantity: number; unit_price: number; total: number; }
 export interface Invoice { id: string; invoice_number: string; client_name: string; client_email?: string; client_address?: string; issue_date: string; due_date: string; items: InvoiceItem[]; subtotal: number; tax_rate: number; tax_amount: number; total_amount: number; currency: string; status: 'DRAFT' | 'SENT' | 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED'; notes?: string; related_case_id?: string; }
 export interface InvoiceCreateRequest { client_name: string; client_email?: string; client_address?: string; items: InvoiceItem[]; tax_rate: number; due_date?: string; notes?: string; related_case_id?: string; status?: string; }
-export interface Expense { id: string; category: string; amount: number; description?: string; date: string; currency: string; receipt_url?: string; related_case_id?: string; }
-export interface ExpenseCreateRequest { category: string; amount: number; description?: string; date?: string; related_case_id?: string; }
-export interface ExpenseUpdate { category?: string; amount?: number; description?: string; date?: string; related_case_id?: string; }
+
+export interface Expense { 
+    id: string; 
+    category: string; 
+    amount: number; 
+    description?: string; 
+    date: string; 
+    currency: string; 
+    receipt_url?: string; 
+    related_case_id?: string; 
+    source_archive_id?: string; // PHOENIX: Link to the original scanned document
+}
+
+export interface ExpenseCreateRequest { 
+    category: string; 
+    amount: number; 
+    description?: string; 
+    date?: string; 
+    related_case_id?: string; 
+    source_archive_id?: string; // PHOENIX: Allow passing the source ID
+}
+
+export interface ExpenseUpdate { 
+    category?: string; 
+    amount?: number; 
+    description?: string; 
+    date?: string; 
+    related_case_id?: string; 
+    source_archive_id?: string; // PHOENIX: Allow updating the link
+}
+
 export interface CaseFinancialSummary { case_id: string; case_title: string; case_number: string; total_billed: number; total_expenses: number; net_balance: number; }
 export interface SalesTrendPoint { date: string; amount: number; }
 export interface TopProductItem { product_name: string; total_quantity: number; total_revenue: number; }
@@ -99,7 +128,7 @@ export interface ArchiveItemOut {
     parent_id?: string; 
     item_type?: 'FILE' | 'FOLDER'; 
     is_shared?: boolean; 
-    indexing_status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED'; // <-- PHOENIX FIX
+    indexing_status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED';
 }
 
 export interface PosTransaction { id: string; product_name: string; quantity: number; total_price: number; transaction_date: string; payment_method: string; }
