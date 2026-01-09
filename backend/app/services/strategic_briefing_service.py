@@ -1,12 +1,14 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V27.0 (DEFINITIVE DATA FIX)
-# 1. CRITICAL FIX: All date queries now handle both 'datetime' objects AND 'string' dates, resolving the €0.00 bug permanently.
-# 2. LOGIC: Ensures that sales data is correctly aggregated for the dashboard regardless of how it was imported.
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.0 (DEFINITIVE FIX)
+# 1. CRITICAL FIX: All queries to 'transactions' and 'inventory_items' now correctly use a STRING for user_id, resolving the "€0.00" data bug.
+# 2. CRITICAL FIX: Revenue calculation for transactions now correctly sums the 'amount' field, aligning with the data model.
+# 3. ROBUSTNESS: Date queries handle both datetime objects and ISO strings.
 
 import logging
 import asyncio
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
+from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,9 @@ def map_api_priority(priority: Optional[str]) -> str:
 class StrategicBriefingService:
     def __init__(self, db, user_id: str):
         self.db = db
-        self.user_id = user_id
+        # PHOENIX: Standardize on STRING user_id for all services.
+        self.user_id_str = user_id
+        self.user_id_obj = ObjectId(user_id)
 
     async def generate_strategic_briefing(self) -> Dict[str, Any]:
         staff_data, market_data, agenda_data = await asyncio.gather(
@@ -30,35 +34,30 @@ class StrategicBriefingService:
 
     async def _analyze_staff_performance(self) -> Dict[str, Any]:
         now = datetime.utcnow()
-        month_start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        month_start_iso = month_start_dt.isoformat()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
-        user_filter = {"user_id": self.user_id}
-
-        # PHOENIX FIX: Query for both datetime objects AND ISO strings
-        date_filter = {
-            "$gte": month_start_dt
-        }
-        string_date_filter = {
-            "$gte": month_start_iso
-        }
+        # Invoices use ObjectId
+        invoice_filter = {"user_id": self.user_id_obj}
+        # Transactions use string
+        transaction_filter = {"user_id": self.user_id_str}
 
         invoices_pipeline = [
-            {"$match": {**user_filter, "issue_date": date_filter, "status": {"$nin": ["CANCELLED", "VOID"]}}},
+            {"$match": {**invoice_filter, "issue_date": {"$gte": month_start}, "status": {"$nin": ["CANCELLED", "VOID"]}}},
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total_amount"}, "transaction_count": {"$sum": 1}}}
         ]
         
+        # PHOENIX FIX: Use correct field 'amount' and handle string dates
         transactions_pipeline = [
             {"$match": {
-                **user_filter, 
+                **transaction_filter, 
                 "$or": [
-                    {"date": date_filter},
-                    {"transaction_date": date_filter},
-                    {"date": string_date_filter},
-                    {"transaction_date": string_date_filter}
+                    {"date": {"$gte": month_start}},
+                    {"transaction_date": {"$gte": month_start}},
+                    {"date": {"$gte": month_start.isoformat()}},
+                    {"transaction_date": {"$gte": month_start.isoformat()}}
                 ]
             }},
-            {"$group": {"_id": None, "total_revenue": {"$sum": "$total_price"}, "transaction_count": {"$sum": 1}}}
+            {"$group": {"_id": None, "total_revenue": {"$sum": "$amount"}, "transaction_count": {"$sum": 1}}}
         ]
 
         invoice_result, transaction_result = await asyncio.gather(
@@ -84,18 +83,17 @@ class StrategicBriefingService:
             "actionBravo": total_mtd_revenue > 0
         }
 
-    # ... (The rest of the file remains unchanged, but I provide it for completeness)
     async def _analyze_market_pulse(self) -> Dict[str, Any]:
-        user_filter = {"user_id": self.user_id}
-        today_start_dt = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        today_start_iso = today_start_dt.isoformat()
-
-        date_filter = {"$gte": today_start_dt}
-        string_date_filter = {"$gte": today_start_iso}
+        invoice_filter = {"user_id": self.user_id_obj}
+        transaction_filter = {"user_id": self.user_id_str}
+        inventory_filter = {"user_id": self.user_id_str} # Inventory also uses string user_id
         
-        bestsellers_invoices = [{"$match": {**user_filter, "issue_date": date_filter}}, {"$unwind": "$items"}, {"$group": {"_id": "$items.description", "total_quantity": {"$sum": "$items.quantity"}}}]
-        bestsellers_transactions = [{"$match": {**user_filter, "$or": [{"date": date_filter}, {"transaction_date": date_filter}, {"date": string_date_filter}, {"transaction_date": string_date_filter}]}}, {"$group": {"_id": "$product_name", "total_quantity": {"$sum": "$quantity"}}}]
-        low_stock_pipeline = [{"$match": {**user_filter, "$expr": {"$lte": ["$current_stock", "$low_stock_threshold"]}}}, {"$sort": {"current_stock": 1}}, {"$limit": 1}]
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start_iso = today_start.isoformat()
+        
+        bestsellers_invoices = [{"$match": {**invoice_filter, "issue_date": {"$gte": today_start}}}, {"$unwind": "$items"}, {"$group": {"_id": "$items.description", "total_quantity": {"$sum": "$items.quantity"}}}]
+        bestsellers_transactions = [{"$match": {**transaction_filter, "$or": [{"date": {"$gte": today_start}}, {"transaction_date": {"$gte": today_start}}, {"date": {"$gte": today_start_iso}}, {"transaction_date": {"$gte": today_start_iso}}]}}, {"$group": {"_id": "$product_name", "total_quantity": {"$sum": "$quantity"}}}]
+        low_stock_pipeline = [{"$match": {**inventory_filter, "$expr": {"$lte": ["$current_stock", "$low_stock_threshold"]}}}, {"$sort": {"current_stock": 1}}, {"$limit": 1}]
         
         invoices_sales, transactions_sales, low_stock_items = await asyncio.gather(
             self.db.invoices.aggregate(bestsellers_invoices).to_list(length=10),
@@ -105,7 +103,7 @@ class StrategicBriefingService:
         
         combined_sales = {}
         for item in invoices_sales + transactions_sales:
-            if item["_id"]: combined_sales[item["_id"]] = combined_sales.get(item["_id"], 0) + item["total_quantity"]
+            if item.get("_id"): combined_sales[item["_id"]] = combined_sales.get(item["_id"], 0) + item["total_quantity"]
         
         sorted_bestsellers = sorted(combined_sales.items(), key=lambda x: x[1], reverse=True)[:2]
         
@@ -120,7 +118,7 @@ class StrategicBriefingService:
         return {"signals": signals}
 
     async def _compile_tactical_agenda(self) -> List[Dict]:
-        user_filter = {"user_id": self.user_id}
+        user_filter = {"user_id": self.user_id_obj} # Calendar uses ObjectId
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = today_start + timedelta(days=1)
         
