@@ -1,7 +1,7 @@
 # FILE: backend/app/services/report_service.py
-# PHOENIX PROTOCOL - REPORT SERVICE V5.8 (FULL RESTORATION)
-# 1. CRITICAL FIX: Restored the full body of the 'generate_invoice_pdf' function, fixing the Pylance return type error.
-# 2. INTEGRITY: This file is now complete, type-safe, and production-ready.
+# PHOENIX PROTOCOL - REPORT SERVICE V5.9 (PO FORMATTING FIX)
+# 1. FIX: Added 'phone' field to Purchase Order header branding.
+# 2. FEATURE: Supplier address now supports multi-line text (replaces newlines with <br/>).
 
 import io
 import os
@@ -148,7 +148,8 @@ def generate_purchase_order_pdf(po_data: dict, db: Database, user_id: str, lang:
     
     firm_name = str(branding.get("firm_name") or "Haveri AI")
     firm_content: List[Flowable] = [Paragraph(firm_name, STYLES['FirmName'])]
-    for key, label_key in [("address", "lbl_address"), ("nui", "lbl_nui"), ("email_public", "lbl_email")]:
+    # PHOENIX: Added 'phone' to the header loop
+    for key, label_key in [("address", "lbl_address"), ("nui", "lbl_nui"), ("email_public", "lbl_email"), ("phone", "lbl_tel")]:
         val = branding.get(key)
         if val: firm_content.append(Paragraph(f"<b>{_get_text(label_key, lang)}</b> {val}", STYLES['FirmMeta']))
 
@@ -161,7 +162,10 @@ def generate_purchase_order_pdf(po_data: dict, db: Database, user_id: str, lang:
     Story.append(Spacer(1, 15*mm))
 
     supplier_name = po_data.get('supplier_name', 'Furnitor i Papërcaktuar')
-    supplier_content = [Paragraph(f"<b>{supplier_name}</b>", STYLES['AddressText'])]
+    # PHOENIX: Replaced newlines with <br/> for multi-line support
+    formatted_supplier = escape(supplier_name).replace('\n', '<br/>')
+    supplier_content = [Paragraph(f"<b>{formatted_supplier}</b>", STYLES['AddressText'])]
+    
     t_addr = Table([[Paragraph(_get_text('to', lang), STYLES['AddressLabel']), supplier_content]], colWidths=[30*mm, 150*mm], style=[('VALIGN', (0,0), (-1,-1), 'TOP')])
     Story.append(t_addr)
     Story.append(Spacer(1, 10*mm))
