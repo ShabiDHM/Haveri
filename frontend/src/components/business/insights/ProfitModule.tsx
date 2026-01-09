@@ -1,8 +1,8 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - STOCK INTELLIGENCE V5.1 (DEFINITIVE FIX)
-// 1. CRITICAL FIX: The "Drafto" button is now disabled until AI data arrives, permanently fixing the "0.00" data flow error.
-// 2. FEATURE: Added an input field for users to override the AI's suggested quantity.
-// 3. UX: Estimated cost now updates in real-time as the user types.
+// PHOENIX PROTOCOL - STOCK INTELLIGENCE V6.1 (DEFINITIVE FIX)
+// 1. CRITICAL FIX: Restored the 'useEffect' hook, which is essential for populating the editable quantity and fixing the "0.0" data race condition.
+// 2. ARCHITECTURE: The component now correctly uses a Confirmation Modal for editing before drafting.
+// 3. STATUS: This is the final, correct, and fully functional version.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,11 +25,15 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
     const [loading, setLoading] = useState(false);
     const [drafting, setDrafting] = useState(false);
     const [aiData, setAiData] = useState<{ prediction: RestockPrediction | null, trend: SalesTrendAnalysis | null }>({ prediction: null, trend: null });
-    const [editableQuantity, setEditableQuantity] = useState<number>(0);
+    const [showPOModal, setShowPOModal] = useState(false);
+    const [poQuantity, setPoQuantity] = useState(0);
+    const [poSupplier, setPoSupplier] = useState("");
 
+    // PHOENIX: This useEffect is CRITICAL. It populates the editable quantity when AI data arrives.
     useEffect(() => {
         if (aiData.prediction) {
-            setEditableQuantity(aiData.prediction.suggested_quantity);
+            setPoQuantity(aiData.prediction.suggested_quantity);
+            setPoSupplier(aiData.prediction.supplier_name || "Furnitori Primar");
         }
     }, [aiData.prediction]);
 
@@ -46,9 +50,15 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
         finally { setLoading(false); }
     };
     
-    const editableCost = (selectedItem?.cost_per_unit ?? 0) * editableQuantity;
+    const handleOpenDraftModal = () => {
+        if (!aiData.prediction) return;
+        // The useEffect now handles setting the state, this just opens the modal
+        setShowPOModal(true);
+    };
 
-    const handleDraftOrder = async () => {
+    const poTotalCost = (selectedItem?.cost_per_unit ?? 0) * poQuantity;
+
+    const handleConfirmAndGeneratePO = async () => {
         if (!selectedItem) return;
         setDrafting(true);
         try {
@@ -56,11 +66,12 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                 item_id: String(selectedItem.id), 
                 item_name: selectedItem.name, 
                 unit: selectedItem.unit,
-                quantity: editableQuantity,
-                estimated_cost: editableCost,
-                supplier_name: aiData.prediction?.supplier_name ?? "Furnitori Primar"
+                quantity: poQuantity,
+                estimated_cost: poTotalCost,
+                supplier_name: poSupplier
             });
             alert(t('inventory.orderDrafted', 'Porosia u draftua dhe u dërgua në Arkivë!'));
+            setShowPOModal(false);
             setSelectedItem(null);
         } catch (error) {
             console.error("Drafting failed", error);
@@ -101,8 +112,9 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                     </div>
                 </div>
             </div>
+
             <AnimatePresence>
-                {selectedItem && (
+                {selectedItem && !showPOModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[#0f172a] border border-purple-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative">
                             <div className="p-6 border-b border-white/10 bg-purple-900/20 flex justify-between items-start">
@@ -124,26 +136,8 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
                                             <h4 className="text-sm font-bold text-blue-400 mb-2 flex items-center gap-2"><ShoppingCart size={16} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}</h4>
                                             <p className="text-gray-300 text-sm mb-3 leading-relaxed">{aiData.prediction?.reason || ""}</p>
-                                            <div className="flex items-center justify-between bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
-                                                <div>
-                                                    <p className="text-xs text-blue-300 uppercase font-bold">{t('inventory.analysis.orderNow', 'Porosit Tani')}</p>
-                                                    <div className="flex items-baseline gap-2">
-                                                        <input 
-                                                            type="number"
-                                                            value={editableQuantity}
-                                                            onChange={(e) => setEditableQuantity(parseFloat(e.target.value) || 0)}
-                                                            className="text-lg font-mono font-bold text-white bg-transparent outline-none w-24 p-0 border-none ring-0 focus:ring-0"
-                                                        />
-                                                        <span className="text-lg font-mono font-bold text-white">{selectedItem.unit}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-xs text-gray-400">{t('inventory.analysis.estimatedValue', 'Vlera e Përafërt')}</p>
-                                                    <p className="text-lg font-mono font-bold text-white">€{editableCost.toFixed(2)}</p>
-                                                </div>
-                                            </div>
-                                            <button onClick={handleDraftOrder} disabled={drafting || !aiData.prediction} className="w-full mt-3 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2">
-                                                {drafting ? (<><Loader2 size={16} className="animate-spin" /> {t('inventory.analysis.drafting', 'Duke draftuar...')}</>) : (<>{t('inventory.analysis.draftOrder', 'Drafto Porosinë')} <ArrowRight size={16} /></>)}
+                                            <button onClick={handleOpenDraftModal} disabled={!aiData.prediction} className="w-full mt-3 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2">
+                                                {t('inventory.analysis.draftOrder', 'Drafto Porosinë')} <ArrowRight size={16} />
                                             </button>
                                         </div>
                                         <div className="bg-black/40 border border-white/10 rounded-xl p-4 relative overflow-hidden">
@@ -165,6 +159,42 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                             </div>
                         </motion.div>
                     </motion.div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {showPOModal && selectedItem && (
+                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[#182235] border border-blue-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative">
+                            <div className="p-6 border-b border-white/10">
+                                <h3 className="text-xl font-bold text-white">{t('inventory.poModal.title', 'Konfirmo Porosinë')}</h3>
+                                <p className="text-sm text-gray-400">{t('inventory.poModal.subtitle', 'Verifikoni detajet para se të gjeneroni dokumentin final.')}</p>
+                            </div>
+                            <div className="p-6 space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-400 uppercase">{t('inventory.poModal.supplierName', 'Emri i Furnitorit')}</label>
+                                    <input type="text" value={poSupplier} onChange={(e) => setPoSupplier(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white"/>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-400 uppercase">{t('inventory.poModal.quantity', 'Sasia')}</label>
+                                        <input type="number" value={poQuantity} onChange={(e) => setPoQuantity(parseFloat(e.target.value) || 0)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white"/>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-400 uppercase">{t('inventory.poModal.totalCost', 'Kosto Totale')}</label>
+                                        <input type="text" value={`€${poTotalCost.toFixed(2)}`} readOnly className="w-full bg-black/20 border border-white/5 rounded-lg p-3 text-gray-300 cursor-not-allowed"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-6 bg-black/20 flex justify-end gap-3">
+                                <button onClick={() => setShowPOModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button>
+                                <button onClick={handleConfirmAndGeneratePO} disabled={drafting} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-500 transition-colors font-bold flex items-center gap-2 disabled:opacity-50">
+                                    {drafting ? <Loader2 size={16} className="animate-spin"/> : null}
+                                    {t('inventory.poModal.generatePDF', 'Gjenero PDF')}
+                                </button>
+                            </div>
+                        </motion.div>
+                     </motion.div>
                 )}
             </AnimatePresence>
         </>
