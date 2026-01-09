@@ -1,9 +1,8 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - EXECUTIVE PORTAL V7.1 (BRIEFING FOCUS)
-// 1. LAYOUT: Removed "Project Pulse" metrics sidebar entirely.
-// 2. FEATURE: Replaced the sidebar with a prominent "Executive Briefing" card.
-//    - This displays the Case Description as a formal, "manual" message from the director.
-// 3. STYLE: Enhanced typography and glassmorphism for a high-end "Digital Letter" feel.
+// PHOENIX PROTOCOL - EXECUTIVE PORTAL V7.2 (TEXT REFINEMENT)
+// 1. CONTENT: Removed client name from greeting to avoid self-referencing confusion.
+// 2. TEXT: Simplified welcome message as requested ("...komunikimet" instead of "...komunikimet zyrtare").
+// 3. STYLE: Adjusted H1 sizing slightly to balance the shorter text.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -27,7 +26,7 @@ interface PublicCaseData {
     client_name: string; 
     status: string; 
     organization_name?: string; 
-    description?: string; // The "Manual Message" source
+    description?: string; 
     logo?: string; 
     documents: SharedDocument[]; 
 }
@@ -138,7 +137,6 @@ const ClientPortalPage: React.FC = () => {
     const logoSrc = getLogoUrl();
     const currentDate = new Date().toLocaleDateString('sq-AL', { year: 'numeric', month: 'long', day: 'numeric' });
     
-    // The "Manual Message" is derived from the case description
     const directorMessage = data.description || "Të nderuar, bashkëngjitur gjeni dokumentacionin e përgatitur për rishikimin tuaj. Për çdo paqartësi, mbetemi në dispozicion.";
 
     return (
@@ -182,17 +180,17 @@ const ClientPortalPage: React.FC = () => {
                         </div>
                         
                         <div>
-                            <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.1] mb-2">
-                                Përshëndetje, <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">{data.client_name}</span>
+                            {/* PHOENIX: Removed client name, simplified text */}
+                            <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.1] mb-4">
+                                Përshëndetje,
                             </h1>
                             <p className="text-gray-400 text-lg font-light leading-relaxed max-w-md">
-                                Mirësevini në hapësirën tuaj personale. Këtu do të gjeni pasqyrën e plotë të dokumentacionit dhe komunikimet zyrtare.
+                                Këtu do të gjeni pasqyrën e plotë të dokumentacionit dhe komunikimet.
                             </p>
                         </div>
                     </div>
 
-                    {/* RIGHT: EXECUTIVE BRIEFING CARD (Replaces Metrics) */}
+                    {/* RIGHT: EXECUTIVE BRIEFING CARD */}
                     <div className="relative group">
                         <div className="absolute -inset-1 bg-gradient-to-br from-emerald-500/20 via-transparent to-blue-500/20 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition duration-1000"></div>
                         <div className="relative bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 sm:p-10 shadow-2xl">
@@ -227,7 +225,6 @@ const ClientPortalPage: React.FC = () => {
                             {/* Card Footer */}
                             <div className="mt-8 flex justify-between items-center pt-6 border-t border-white/5">
                                 <div className="flex -space-x-2">
-                                    {/* Mock Avatars to imply team collaboration */}
                                     <div className="w-8 h-8 rounded-full bg-gray-800 border-2 border-[#0f172a] flex items-center justify-center text-[10px] text-gray-400">SB</div>
                                     <div className="w-8 h-8 rounded-full bg-gray-700 border-2 border-[#0f172a] flex items-center justify-center text-[10px] text-gray-400">+1</div>
                                 </div>
