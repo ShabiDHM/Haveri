@@ -124,76 +124,14 @@
     "slide5_title": "Menaxhimi Financiar",
     "slide5_desc": "Menaxhoni financat, faturat dhe llogaritni shpenzimet automatikisht."
   },
-  "sidebar": {
-    "dashboard": "Haveri AI",
-    "juristi_ai": "Haveri AI",
-    "haveri_ai": "Haveri AI",
-    "calendar": "Kalendari",
-    "drafting": "Hartimi",
-    "business": "Zyra Ime",
-    "support": "Ndihma",
-    "admin": "Admin Panel",
-    "logout": "Dilni",
-    "account": "Llogaria Ime",
-    "workspace": "Workspace"
-  },
+
   "header": {
     "searchPlaceholder": "Kërko...",
     "profile": "Profili",
     "settings": "Cilësimet",
     "logout": "Dilni"
-  },
-  "caseCard": {
-    "client": "Klienti"
-  },
-  "caseView": {
-    "backToDashboard": "Kthehu te Haveri AI",
-    "statusLabel": "Statusi",
-    "findingsTitle": "Gjetjet",
-    "errorLoadingTitle": "Gabim",
-    "genericError": "Ndodhi një gabim gjatë ngarkimit.",
-    "noFindings": "Asnjë gjetje nuk është identifikuar ende.",
-    "findingSource": "Burimi",
-    "confidenceScore": "Besueshmëria",
-    "unnamedCase": "Projekt pa Emër",
-    "defaultWorkspace": "Hapësira Ime e Punës",
-    "statusTypes": {
-      "OPEN": "Hapur",
-      "CLOSED": "Mbyllur",
-      "PENDING": "Në Pritje",
-      "ARCHIVED": "Arkivuar"
-    }
-  },
-  "documentsPanel": {
-    "title": "Dokumentet",
-    "uploadDocument": "Ngarko Dokument",
-    "noDocuments": "Asnjë dokument i ngarkuar.",
-    "statusPending": "Duke pritur...",
-    "statusUploading": "Duke ngarkuar...",
-    "statusProcessing": "Duke procesuar...",
-    "statusCompleted": "Përfunduar",
-    "statusConnected": "Lidhur",
-    "statusConnecting": "Duke u lidhur...",
-    "statusDisconnected": "Shkëputur",
-    "statusError": "Gabim",
-    "crossExamine": "Kryqëzo Të Dhënat",
-    "archive": "Arkivo",
-    "reconnect": "Rilidhu",
-    "viewOriginal": "Shiko Originalin",
-    "delete": "Fshi",
-    "confirmDelete": "A jeni të sigurt?",
-    "uploadFailed": "Ngarkimi dështoi",
-    "deleteFailed": "Fshirja dështoi.",
-    "uploaded": "Ngarkuar",
-    "rename": "Riemërto",
-    "renameTitle": "Riemërto Dokumentin",
-    "newName": "Emri i ri",
-    "archiveSuccess": "Dokumenti u arkivua me sukses!",
-    "archiveFailed": "Arkivimi dështoi.",
-    "share": "Ndaj me Klientin",
-    "unshare": "Hiq Ndarjen",
-    "shared": "Ndarë me klientin"
-  },
+    },
+  
   "chatPanel": {
     "title": "Bisedo",
     "titleLegal": "Hartuesi Ligjor",
@@ -205,29 +143,7 @@
     "confirmClear": "Pastro bisedën?",
     "contextGeneral": "E gjithë Dosja"
   },
-  "analysis": {
-    "analyzeButton": "Analizo Projektin",
-    "crossExamineButton": "Kryqëzo Dokumentin",
-    "warRoomTitle": "Dhoma e Strategjisë",
-    "modeAudit": "AUDITIM I PLOTË",
-    "modeCross": "KRYQËZIM DOKUMENTESH",
-    "modeStandard": "ANALIZË STANDARDE",
-    "auditing": "Duke Audituar Projektin...",
-    "aiWorking": "Inteligjenca Artificiale po verifikon të dhënat.",
-    "tabFactual": "Analiza Faktike",
-    "tabStrategy": "Strategjia",
-    "judicialObservation": "Vlerësimi Logjik",
-    "redFlags": "Sinjale Rreziku (Red Flags)",
-    "warningMissingInfo": "Kujdes: Mungesë Informacioni",
-    "silentParties": "Palët e Përfshira",
-    "executiveSummary": "Përmbledhje Ekzekutive",
-    "verifiedChronology": "Kronologjia e Verifikuar",
-    "contradictions": "Kontradikta / Mospërputhje",
-    "witnessQuestions": "Pyetje Kyçe",
-    "noQuestions": "Nuk u gjeneruan pyetje specifike.",
-    "discoveryRequests": "Kërkesa për Informacion",
-    "noDiscovery": "Nuk u identifikuan kërkesa të reja."
-  },
+  
   "drafting": {
     "title": "Harto",
     "subtitle": "Krijoni dokumente profesionale me fuqinë e AI.",

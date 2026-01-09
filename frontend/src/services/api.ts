@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V8.3 (NAMING CONVENTION FIX)
-// 1. FIX: 'sendClientMessage' now correctly maps frontend camelCase keys to backend snake_case keys.
-// 2. RESULT: Resolves the 422 Unprocessable Entity error when submitting the portal contact form.
+// PHOENIX PROTOCOL - API V8.4 (ADOPT-ON-SHARE - COMPLETE FILE)
+// 1. UPDATE: 'shareArchiveItem' now accepts an optional 'caseId' and includes it in the request payload.
+// 2. INTEGRITY: This file is complete and synchronized with all backend endpoints, including the full messaging and archive suites.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -14,7 +14,6 @@ import type {
     StrategicBriefingResponse
 } from '../data/types';
 
-// --- SHARED TYPES ---
 export interface DailyBriefingResponse { id: string; content: string; created_at: string; tasks_summary?: string; }
 export interface AuditIssue { id: string; severity: 'CRITICAL' | 'WARNING'; message: string; related_item_id?: string; item_type?: 'INVOICE' | 'EXPENSE'; }
 export interface TaxCalculation { period_month: number; period_year: number; total_sales_gross: number; total_purchases_gross: number; vat_collected: number; vat_deductible: number; net_obligation: number; currency: string; status: string; regime: string; tax_rate_applied: string; description: string; }
@@ -27,14 +26,13 @@ export interface InventoryImportResult { items_created: number; count?: number; 
 interface LoginResponse { access_token: string; }
 interface DocumentContentResponse { text: string; }
 
-// --- AI / INTELLIGENCE ---
+// AI / Intelligence Types
 export interface TaxAuditResult { anomalies: string[]; status: 'CLEAR' | 'WARNING' | 'CRITICAL'; net_obligation: number; }
 export interface RestockPrediction { suggested_quantity: number; reason: string; supplier_name?: string; estimated_cost?: number; }
 export interface SalesTrendAnalysis { trend_analysis: string; cross_sell_opportunities: string; }
 export interface KpiInsightResponse { summary: string; key_contributors: string[]; }
 export interface GeneralInsightResponse { insight: string; sentiment: 'positive' | 'negative' | 'neutral'; }
 
-// --- CONFIG ---
 const getBaseUrl = (): string => { if (typeof window !== 'undefined') { const hostname = window.location.hostname; if (hostname === 'www.haveri.tech' || hostname === 'haveri.tech') { return 'https://api.haveri.tech'; } } return 'http://localhost:8000'; };
 const normalizedUrl = getBaseUrl();
 export const API_BASE_URL = normalizedUrl;
@@ -53,7 +51,6 @@ class ApiService {
     constructor() { this.axiosInstance = axios.create({ baseURL: API_V1_URL, withCredentials: true }); this.setupInterceptors(); }
     public setLogoutHandler(handler: () => void) { this.onUnauthorized = handler; }
     private processQueue(error: Error | null) { this.failedQueue.forEach(prom => { if (error) prom.reject(error); else prom.resolve(tokenManager.get()); }); this.failedQueue = []; }
-    
     private setupInterceptors() {
         this.axiosInstance.interceptors.request.use((config) => { const token = tokenManager.get(); if (!config.headers) config.headers = new AxiosHeaders(); if (token) { if (config.headers instanceof AxiosHeaders) config.headers.set('Authorization', `Bearer ${token}`); else (config.headers as any).Authorization = `Bearer ${token}`; } return config; }, (error) => Promise.reject(error));
         this.axiosInstance.interceptors.response.use((response) => response, async (error: AxiosError) => {
@@ -80,14 +77,7 @@ class ApiService {
 
     // --- MESSAGING ---
     public async sendClientMessage(caseId: string, data: { firstName: string, lastName: string, email: string, phone: string, message: string }) {
-        // PHOENIX: Map frontend camelCase to backend snake_case
-        const payload = {
-            first_name: data.firstName,
-            last_name: data.lastName,
-            email: data.email,
-            phone: data.phone,
-            message: data.message
-        };
+        const payload = { first_name: data.firstName, last_name: data.lastName, email: data.email, phone: data.phone, message: data.message };
         const response = await this.axiosInstance.post(`/share/portal/${caseId}/message`, payload);
         return response.data;
     }
@@ -198,7 +188,7 @@ class ApiService {
     public async renameArchiveItem(itemId: string, newTitle: string): Promise<void> { await this.axiosInstance.put(`/archive/items/${itemId}/rename`, { new_title: newTitle }); }
     public async getArchiveFileBlob(itemId: string): Promise<Blob> { const response = await this.axiosInstance.get(`/archive/items/${itemId}/download`, { params: { preview: true }, responseType: 'blob' }); return response.data; }
     public async downloadArchiveItem(itemId: string, title: string): Promise<void> { const blob = await this.getArchiveFileBlob(itemId); const url = window.URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.setAttribute('download', title); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); }
-    public async shareArchiveItem(itemId: string, isShared: boolean): Promise<ArchiveItemOut> { const response = await this.axiosInstance.put<ArchiveItemOut>(`/archive/items/${itemId}/share`, { is_shared: isShared }); return response.data; }
+    public async shareArchiveItem(itemId: string, isShared: boolean, caseId?: string): Promise<ArchiveItemOut> { const response = await this.axiosInstance.put<ArchiveItemOut>(`/archive/items/${itemId}/share`, { is_shared: isShared, case_id: caseId }); return response.data; }
     public async reIndexArchiveItem(itemId: string): Promise<void> { await this.axiosInstance.post(`/archive/items/${itemId}/re-index`); }
     public async importArchiveDocuments(caseId: string, documentIds: string[]): Promise<Document[]> { const response = await this.axiosInstance.post<Document[]>(`/cases/${caseId}/documents/import-archive`, { archive_item_ids: documentIds }); return response.data; }
 

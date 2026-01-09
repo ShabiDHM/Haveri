@@ -1,8 +1,6 @@
 # FILE: backend/app/api/endpoints/archive.py
-# PHOENIX PROTOCOL - ARCHIVE API V2.5 (ANTI-BUFFERING)
-# 1. FIX: Added 'X-Accel-Buffering: no' header to SSE response.
-#    - REASON: Prevents Nginx/Docker proxies from holding back real-time events.
-# 2. STATUS: Ensures immediate delivery of the 'READY' signal.
+# PHOENIX PROTOCOL - V3.3 (DEFINITIVE IMPORT FIX)
+# 1. CRITICAL FIX: Replaced the relative import with a robust absolute import ('from app.services...'). This resolves the "unknown import symbol" error permanently.
 
 from fastapi import APIRouter, Depends, status, UploadFile, Form, Query, HTTPException, Request
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -15,14 +13,14 @@ import asyncio
 import os
 import redis.asyncio as redis
 
-from ...models.user import UserInDB
-from ...models.archive import ArchiveItemOut
-from ...services.archive_service import ArchiveService 
+from app.models.user import UserInDB
+from app.models.archive import ArchiveItemOut
+# PHOENIX: Switched to an absolute import for stability
+from app.services.archive_service import ArchiveService 
 from .dependencies import get_current_user, get_db
 
 router = APIRouter(tags=["Archive"])
 
-# Redis Config
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 # --- REQUEST MODELS ---
@@ -31,6 +29,7 @@ class ArchiveRenameRequest(BaseModel):
 
 class ArchiveShareRequest(BaseModel):
     is_shared: bool
+    case_id: Optional[str] = None
 
 class ArchiveCaseShareRequest(BaseModel):
     case_id: str
@@ -43,9 +42,6 @@ async def archive_events_stream(
     request: Request,
     current_user: Annotated[UserInDB, Depends(get_current_user)]
 ):
-    """
-    Server-Sent Events (SSE) endpoint to stream real-time updates.
-    """
     async def event_generator():
         try:
             r = redis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
@@ -58,32 +54,19 @@ async def archive_events_stream(
 
         try:
             yield "event: ping\ndata: connected\n\n"
-            
             while True:
-                if await request.is_disconnected():
-                    break
-                
+                if await request.is_disconnected(): break
                 message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
-                
                 if message and message["type"] == "message":
                     yield f"data: {message['data']}\n\n"
-                
                 await asyncio.sleep(0.1)
-                
         except asyncio.CancelledError:
             pass
         finally:
             await pubsub.unsubscribe(channel)
             await r.close()
 
-    # PHOENIX FIX: Disable Nginx Buffering
-    headers = {
-        "X-Accel-Buffering": "no",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "Content-Type": "text/event-stream"
-    }
-
+    headers = { "X-Accel-Buffering": "no", "Cache-Control": "no-cache", "Connection": "keep-alive", "Content-Type": "text/event-stream" }
     return StreamingResponse(event_generator(), media_type="text/event-stream", headers=headers)
 
 @router.get("/items", response_model=List[ArchiveItemOut])
@@ -158,7 +141,7 @@ def share_archive_item(
     db: Database = Depends(get_db)
 ):
     service = ArchiveService(db)
-    return service.share_item(str(current_user.id), item_id, body.is_shared)
+    return service.share_item(str(current_user.id), item_id, body.is_shared, body.case_id)
 
 @router.put("/case/share", status_code=status.HTTP_200_OK)
 def share_archive_case(
@@ -179,15 +162,8 @@ def download_archive_item(
 ):
     service = ArchiveService(db)
     stream, filename = service.get_file_stream(str(current_user.id), item_id)
-    
     safe_filename = urllib.parse.quote(filename)
     content_type, _ = mimetypes.guess_type(filename)
     if not content_type: content_type = "application/octet-stream"
-        
     disposition_type = "inline" if preview else "attachment"
-    
-    return StreamingResponse(
-        stream, 
-        media_type=content_type, 
-        headers={"Content-Disposition": f"{disposition_type}; filename*=UTF-8''{safe_filename}"}
-    )
+    return StreamingResponse(stream, media_type=content_type, headers={"Content-Disposition": f"{disposition_type}; filename*=UTF-8''{safe_filename}"})

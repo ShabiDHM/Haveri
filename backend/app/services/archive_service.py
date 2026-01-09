@@ -1,9 +1,3 @@
-# FILE: backend/app/services/archive_service.py
-# PHOENIX PROTOCOL - ARCHIVE SERVICE V4.1 (TITLE ENHANCEMENT)
-# 1. FIX: Upgraded 'save_generated_file' to accept an optional 'title' parameter.
-# 2. LOGIC: If a title is provided, it is used for the archive item; otherwise, it falls back to the filename.
-# 3. INTEGRITY: Aligns the function's signature with other creation methods and improves data quality.
-
 import os
 import logging
 from typing import List, Optional, Tuple, Any, Dict
@@ -15,7 +9,6 @@ from fastapi import UploadFile, HTTPException
 
 from ..models.archive import ArchiveItemInDB
 from .storage_service import get_s3_client, transfer_config
-from .pdf_service import pdf_service 
 
 from ..celery_app import celery_app
 from . import vector_store_service
@@ -42,7 +35,7 @@ class ArchiveService:
         if parent_id and parent_id.strip() and parent_id != "null":
             folder_data["parent_id"] = self._to_oid(parent_id)
         if case_id and case_id.strip() and case_id != "null":
-            folder_data["case_id"] = self._to_oid(case_id)
+            folder_data["case_id"] = case_id
             
         result = self.db.archives.insert_one(folder_data)
         folder_data["_id"] = result.inserted_id
@@ -50,13 +43,8 @@ class ArchiveService:
 
     async def add_file_to_archive(self, user_id: str, file: UploadFile, category: str, title: str, case_id: Optional[str] = None, parent_id: Optional[str] = None) -> ArchiveItemInDB:
         s3_client = get_s3_client()
+        file_obj, final_filename = file.file, file.filename or "untitled"
         
-        try:
-            file_obj, final_filename = await pdf_service.convert_upload_to_pdf(file)
-        except Exception as e:
-            logger.error(f"PDF Conversion failed: {e}")
-            file_obj = file.file; final_filename = file.filename or "untitled"
-
         file_ext = final_filename.split('.')[-1].upper() if '.' in final_filename else "BIN"
         timestamp = int(datetime.now().timestamp())
         storage_key = f"archive/{user_id}/{timestamp}_{final_filename}"
@@ -72,14 +60,13 @@ class ArchiveService:
             "category": category, "storage_key": storage_key, "file_size": file_size, "created_at": datetime.now(timezone.utc),
             "description": "", "is_shared": False, "indexing_status": "PENDING"
         }
-        if case_id and case_id.strip() and case_id != "null": doc_data["case_id"] = self._to_oid(case_id)
+        if case_id and case_id.strip() and case_id != "null": doc_data["case_id"] = case_id
         if parent_id and parent_id.strip() and parent_id != "null": doc_data["parent_id"] = self._to_oid(parent_id)
         
         result = self.db.archives.insert_one(doc_data)
         
         try:
             celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(result.inserted_id)])
-            logger.info(f"Queued archive item {result.inserted_id} for embedding.")
         except Exception as e:
             logger.error(f"Failed to queue archive indexing: {e}")
 
@@ -87,100 +74,108 @@ class ArchiveService:
         return ArchiveItemInDB(**doc_data)
 
     def re_index_item(self, user_id: str, item_id: str):
-        oid_user = self._to_oid(user_id)
-        oid_item = self._to_oid(item_id)
+        oid_user, oid_item = self._to_oid(user_id), self._to_oid(item_id)
         item = self.db.archives.find_one({"_id": oid_item, "user_id": oid_user, "item_type": "FILE"})
-        if not item:
-            raise HTTPException(status_code=404, detail="File not found or access denied.")
+        if not item: raise HTTPException(status_code=404, detail="File not found or access denied.")
+        
         self.db.archives.update_one({"_id": oid_item}, {"$set": {"indexing_status": "PENDING"}})
         try:
             vector_store_service.delete_document_embeddings(user_id, item_id)
         except Exception as e:
-            logger.error(f"Failed to clear old vector memory during re-index: {e}")
+            logger.error(f"Failed to clear old vectors: {e}")
         try:
             celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[item_id])
-            logger.info(f"Re-queued archive item {item_id} for embedding.")
         except Exception as e:
             logger.error(f"Failed to re-queue archive indexing: {e}")
             self.db.archives.update_one({"_id": oid_item}, {"$set": {"indexing_status": "FAILED"}})
-            raise HTTPException(status_code=500, detail="Failed to initiate re-indexing task.")
+            raise HTTPException(status_code=500, detail="Failed to re-index.")
 
     def get_archive_items(self, user_id: str, category: Optional[str] = None, case_id: Optional[str] = None, parent_id: Optional[str] = None) -> List[ArchiveItemInDB]:
         query: Dict[str, Any] = {"user_id": self._to_oid(user_id)}
-        if parent_id and parent_id.strip() and parent_id != "null": 
-            query["parent_id"] = self._to_oid(parent_id)
-        else:
-            if not category or category == "ALL": query["parent_id"] = None
-        if category and category != "ALL": query["category"] = category
-        if case_id and case_id.strip() and case_id != "null": query["case_id"] = self._to_oid(case_id)
+
+        if case_id == "null":
+            query["case_id"] = None
+        elif case_id:
+            query["case_id"] = case_id
+        
+        if parent_id == "null":
+            query["parent_id"] = None
+        elif parent_id:
+             query["parent_id"] = self._to_oid(parent_id)
+        
+        if category and category != "ALL":
+            query["category"] = category
+        
         cursor = self.db.archives.find(query).sort([("item_type", -1), ("created_at", -1)])
         return [ArchiveItemInDB(**doc) for doc in cursor]
 
     def delete_archive_item(self, user_id: str, item_id: str):
-        oid_user = self._to_oid(user_id); oid_item = self._to_oid(item_id)
+        oid_user, oid_item = self._to_oid(user_id), self._to_oid(item_id)
         item = self.db.archives.find_one({"_id": oid_item, "user_id": oid_user})
-        if not item: raise HTTPException(status_code=404, detail="Item not found")
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
         if item.get("item_type") == "FOLDER":
-            children = self.db.archives.find({"parent_id": oid_item, "user_id": oid_user})
-            for child in children: self.delete_archive_item(user_id, str(child["_id"]))
-        if item.get("item_type") == "FILE":
-            if item.get("storage_key"):
-                try: get_s3_client().delete_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
-                except: pass
+            for child in self.db.archives.find({"parent_id": oid_item, "user_id": oid_user}):
+                self.delete_archive_item(user_id, str(child["_id"]))
+        if item.get("storage_key"):
             try:
-                vector_store_service.delete_document_embeddings(user_id, str(item_id))
-            except Exception as e:
-                logger.error(f"Failed to wipe vector memory: {e}")
+                get_s3_client().delete_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
+            except:
+                pass
+        try:
+            vector_store_service.delete_document_embeddings(user_id, str(item_id))
+        except Exception as e:
+            logger.error(f"Vector wipe failed: {e}")
         self.db.archives.delete_one({"_id": oid_item})
 
     def rename_item(self, user_id: str, item_id: str, new_title: str) -> None:
-        oid_user = self._to_oid(user_id); oid_item = self._to_oid(item_id)
-        self.db.archives.update_one({"_id": oid_item, "user_id": oid_user}, {"$set": {"title": new_title}})
+        self.db.archives.update_one({"_id": self._to_oid(item_id), "user_id": self._to_oid(user_id)}, {"$set": {"title": new_title}})
 
-    def share_item(self, user_id: str, item_id: str, is_shared: bool) -> ArchiveItemInDB:
-        result = self.db.archives.find_one_and_update({"_id": self._to_oid(item_id), "user_id": self._to_oid(user_id)}, {"$set": {"is_shared": is_shared}}, return_document=True)
-        if not result: raise HTTPException(status_code=404, detail="Item not found")
+    def share_item(self, user_id: str, item_id: str, is_shared: bool, case_id: Optional[str] = None) -> ArchiveItemInDB:
+        item_oid, user_oid = self._to_oid(item_id), self._to_oid(user_id)
+        item = self.db.archives.find_one({"_id": item_oid, "user_id": user_oid})
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+        
+        # Explicit typing to prevent type narrowing (Dict[str, bool]) which causes errors when adding 'case_id'
+        update_fields: Dict[str, Any] = {"is_shared": is_shared}
+        
+        if is_shared and not item.get("case_id") and case_id:
+            update_fields["case_id"] = case_id
+            
+        result = self.db.archives.find_one_and_update(
+            {"_id": item_oid}, 
+            {"$set": update_fields}, 
+            return_document=True
+        )
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Update failed")
         return ArchiveItemInDB(**result)
 
     def share_case_items(self, user_id: str, case_id: str, is_shared: bool) -> int:
-        result = self.db.archives.update_many({"case_id": self._to_oid(case_id), "user_id": self._to_oid(user_id), "item_type": "FILE"}, {"$set": {"is_shared": is_shared}})
+        query_filter: Dict[str, Any] = {
+            "user_id": self._to_oid(user_id),
+            "case_id": case_id,
+            "item_type": "FILE"
+        }
+        update_operation = {"$set": {"is_shared": is_shared}}
+        result = self.db.archives.update_many(
+            query_filter, # type: ignore
+            update_operation
+        )
         return result.modified_count
 
     def get_file_stream(self, user_id: str, item_id: str) -> Tuple[Any, str]:
         item = self.db.archives.find_one({"_id": self._to_oid(item_id), "user_id": self._to_oid(user_id)})
-        if not item: raise HTTPException(status_code=404, detail="Item not found")
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
         try:
             response = get_s3_client().get_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
             return response['Body'], item["title"]
-        except: raise HTTPException(500, "Stream failed")
-
-    async def archive_existing_document(self, user_id: str, case_id: str, document_id: str) -> ArchiveItemInDB:
-        doc_oid = self._to_oid(document_id)
-        doc = self.db.documents.find_one({"_id": doc_oid, "owner_id": self._to_oid(user_id)})
-        if not doc: raise HTTPException(status_code=404, detail="Document not found")
-        original_key = doc.get("storage_key")
-        if not original_key: raise HTTPException(status_code=400, detail="Document has no content")
-        s3 = get_s3_client()
-        timestamp = int(datetime.now().timestamp())
-        new_key = f"archive/{user_id}/{timestamp}_{doc.get('file_name', 'archived')}"
-        try:
-            s3.copy_object(Bucket=B2_BUCKET_NAME, CopySource={'Bucket': B2_BUCKET_NAME, 'Key': original_key}, Key=new_key)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to copy file to archive: {e}")
-        archive_data = {
-            "user_id": self._to_oid(user_id), "title": doc.get("file_name"), "item_type": "FILE",
-            "file_type": doc.get("file_type", "PDF"), "category": "CASE_DOCUMENT", "case_id": self._to_oid(case_id),
-            "storage_key": new_key, "file_size": doc.get("file_size", 0), "created_at": datetime.now(timezone.utc),
-            "is_shared": False, "indexing_status": "PENDING"
-        }
-        res = self.db.archives.insert_one(archive_data)
-        try:
-            celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(res.inserted_id)])
-        except Exception as e:
-            logger.warning(f"Failed to queue indexing for archived document: {e}")
-        archive_data["_id"] = res.inserted_id
-        return ArchiveItemInDB(**archive_data)
-
+        except:
+            raise HTTPException(500, "Stream failed")
+        
     async def save_generated_file(self, user_id: str, file_content: bytes, filename: str, category: str, title: Optional[str] = None, case_id: Optional[str] = None) -> ArchiveItemInDB:
         timestamp = int(datetime.now().timestamp())
         storage_key = f"archive/{user_id}/generated_{timestamp}_{filename}"
@@ -188,15 +183,14 @@ class ArchiveService:
         try:
             s3.put_object(Bucket=B2_BUCKET_NAME, Key=storage_key, Body=file_content)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Storage upload failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
         doc_data = {
-            "user_id": self._to_oid(user_id),
-            "title": title or filename, # PHOENIX FIX: Use title if provided
-            "item_type": "FILE", "file_type": filename.split('.')[-1].upper(), "category": category,
+            "user_id": self._to_oid(user_id), "title": title or filename, "item_type": "FILE", "file_type": filename.split('.')[-1].upper(), "category": category,
             "storage_key": storage_key, "file_size": len(file_content), "created_at": datetime.now(timezone.utc),
             "description": "System generated document", "is_shared": False, "indexing_status": "PENDING"
         }
-        if case_id: doc_data["case_id"] = self._to_oid(case_id)
+        if case_id:
+            doc_data["case_id"] = case_id
         res = self.db.archives.insert_one(doc_data)
         doc_data["_id"] = res.inserted_id
         celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(res.inserted_id)])

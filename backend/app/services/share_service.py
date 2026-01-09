@@ -1,7 +1,8 @@
 # FILE: backend/app/services/share_service.py
-# PHOENIX PROTOCOL - SHARE SERVICE V1.5 (QUERY FIX)
-# 1. CRITICAL FIX: The query for 'shared_archive_cursor' now uses the 'case_id' string, not the 'case_oid' ObjectId.
-# 2. RESULT: This aligns the query with the data storage format and ensures shared archive documents are correctly found and displayed in the Client Portal.
+# PHOENIX PROTOCOL - SHARE SERVICE V1.6 (ROBUST QUERY FIX)
+# 1. CRITICAL FIX: The database queries for both 'documents' and 'archives' now use an '$or' condition.
+# 2. LOGIC: This checks for 'case_id' matching EITHER the string OR the ObjectId version.
+# 3. RESULT: This definitively resolves the "missing documents" bug by making the query resilient to any data type inconsistencies for the 'case_id' field.
 
 from pymongo.database import Database
 from typing import Dict, Any, List
@@ -37,7 +38,7 @@ class ShareService:
 
         # 2. Get Fallback User Info
         user_doc = self.db["users"].find_one({"_id": ObjectId(str(owner_id))})
-
+        
         # 3. Determine Display Name
         org_name = "Zyra Ligjore"
         if business_profile and business_profile.get("firm_name"):
@@ -53,6 +54,13 @@ class ShareService:
              logo_url = business_profile.get("logo_url")
 
         # 5. Gather Content
+        
+        # PHOENIX: Use a robust $or query to handle both string and ObjectId case_id formats.
+        robust_case_query = {
+            "$or": [{"case_id": case_id}, {"case_id": case_oid}],
+            "is_shared": True
+        }
+
         public_events_cursor = self.db["calendar_events"].find({
             "case_id": case_id,
             "is_public": True
@@ -62,20 +70,13 @@ class ShareService:
             for e in list(public_events_cursor)
         ]
         
-        shared_docs_cursor = self.db["documents"].find({
-            "case_id": case_id,
-            "is_shared": True
-        })
+        shared_docs_cursor = self.db["documents"].find(robust_case_query)
         active_documents: List[Dict[str, Any]] = [
             {"id": str(d.get("_id")), "file_name": d.get("file_name"), "created_at": d.get("created_at"), "file_type": d.get("mime_type", "application/octet-stream"), "source": "ACTIVE"}
             for d in list(shared_docs_cursor)
         ]
         
-        # PHOENIX: Corrected the query to use the string 'case_id'
-        shared_archive_cursor = self.db["archives"].find({
-            "case_id": case_id,
-            "is_shared": True
-        })
+        shared_archive_cursor = self.db["archives"].find(robust_case_query)
         archive_documents: List[Dict[str, Any]] = [
             {"id": str(doc.get("_id")), "file_name": doc.get("title"), "created_at": doc.get("created_at"), "file_type": doc.get("file_type", "application/octet-stream"), "source": "ARCHIVE"}
             for doc in list(shared_archive_cursor)
@@ -105,7 +106,6 @@ class ShareService:
             {"_id": case_oid, "user_id": user_oid},
             {"$set": {"is_shared": is_shared}}
         )
-        # Fallback check for old 'owner_id' field
         if result.matched_count == 0:
              result = self.db["cases"].update_one(
                 {"_id": case_oid, "owner_id": user_oid},
