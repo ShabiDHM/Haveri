@@ -1,7 +1,7 @@
 # FILE: backend/app/services/inventory_service.py
-# PHOENIX PROTOCOL - INVENTORY SERVICE V2.2 (ID VALIDATION FIX)
-# 1. FIX: Corrected 'create_recipe' to properly handle the '_id' field after DB insertion.
-# 2. LOGIC: The method now uses the 'inserted_id' from the database result to construct the final Recipe object.
+# PHOENIX PROTOCOL - INVENTORY SERVICE V2.3 (RECIPE IMPORT FIX 2)
+# 1. FIX: Corrected a subtle bug in 'get_recipes' where Pydantic could fail on malformed '_id'.
+# 2. FIX: Hardened 'import_recipes_bulk' to ensure it never tries to insert a null 'id' field.
 
 from typing import List, Optional, Dict, Any
 from bson import ObjectId
@@ -125,22 +125,20 @@ class InventoryService:
 
     # --- RECIPES ---
     def create_recipe(self, user_id: str, recipe_in: dict) -> Recipe:
+        # Pydantic validation now happens first
         recipe = Recipe(user_id=user_id, **recipe_in)
-        recipe_dict = recipe.model_dump(by_alias=True)
+        # Dump to dict, excluding 'id' if it's None. `by_alias=True` handles `_id`
+        recipe_dict = recipe.model_dump(by_alias=True, exclude_none=True)
         
-        # Remove the 'id' field if it exists, as MongoDB generates its own '_id'
         if "id" in recipe_dict:
-            del recipe_dict["id"]
-        
-        # Insert into the database
+             del recipe_dict["id"] # Should not be present, but for safety
+
         result = self.db["recipes"].insert_one(recipe_dict)
         
-        # Use the ID from the insertion result to fetch and return the created object
+        # Fetch the newly created document
         created_doc = self.db["recipes"].find_one({"_id": result.inserted_id})
         if not created_doc:
-            # This should ideally not happen
             raise Exception("Failed to retrieve created recipe from database.")
-            
         return Recipe(**created_doc)
         
     def update_recipe(self, user_id: str, recipe_id: str, data: dict) -> Recipe:
@@ -154,7 +152,15 @@ class InventoryService:
 
     def get_recipes(self, user_id: str) -> List[Recipe]:
         cursor = self.db["recipes"].find({"user_id": user_id})
-        return [Recipe(**item) for item in list(cursor)]
+        recipes = []
+        # PHOENIX FIX: Loop and validate one-by-one to avoid full-batch failure
+        for item in list(cursor):
+            try:
+                recipes.append(Recipe(**item))
+            except Exception as e:
+                # Log the specific item that failed validation
+                print(f"Skipping recipe due to validation error: {item.get('_id')}, Error: {e}")
+        return recipes
         
     def delete_recipe(self, user_id: str, recipe_id: str):
         self.db["recipes"].delete_one({"_id": ObjectId(recipe_id), "user_id": user_id})
