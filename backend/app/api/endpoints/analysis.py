@@ -1,7 +1,9 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V2.1 (LLM INTEGRATION)
-# 1. FEATURE: 'chat_with_tax_bot' now uses the 'llm_service' RAG pipeline instead of hardcoded if/else statements.
-# 2. LOGIC: This enables dynamic, context-aware answers grounded in the Legal Knowledge Base.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V2.2 (COGS FIX)
+# 1. FIX: Relaxed matching logic for COGS calculation.
+#    - Normalizes strings (strip/lower) before comparing Sales vs Inventory/Recipes.
+#    - Improves fallback to Inventory Cost if Recipe is missing.
+# 2. INTEGRITY: Retains all other endpoints and the previous LLM integration.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any, Optional
@@ -16,7 +18,7 @@ from app.api.endpoints.dependencies import get_current_user, get_db
 from app.models.user import UserInDB
 from app.services.inventory_service import InventoryService
 from app.services.finance_service import FinanceService
-from app.services import llm_service  # PHOENIX: Imported LLM Service
+from app.services import llm_service 
 from app.models.inventory import InventoryItem
 
 router = APIRouter()
@@ -71,6 +73,10 @@ def _get_item_from_db(db: Database, user_id: str, item_id: str) -> Optional[Inve
         doc["id"] = str(doc["_id"])
         return InventoryItem(**doc)
     return None
+
+def _normalize(text: str) -> str:
+    """Helper to normalize strings for comparison."""
+    return str(text).strip().lower()
 
 # --- FINANCE INTELLIGENCE ENDPOINTS ---
 @router.post("/finance/kpi-insight", response_model=KpiInsightResponse)
@@ -133,10 +139,15 @@ def generate_kpi_insight(
             contributors = [f"Shpenzimet: €{recent_expense:.2f}"]
 
     elif request.kpi_type == 'cogs':
+        # 1. Fetch Inventory & Recipes
         inv_items = list(db["inventory"].find({"user_id": user_id}, {"_id": 1, "name": 1, "cost_per_unit": 1}))
-        cost_by_id = {str(i["_id"]): i.get("cost_per_unit", 0) for i in inv_items}
-        cost_by_name = {i["name"].lower().strip(): i.get("cost_per_unit", 0) for i in inv_items}
         recipes = list(db["recipes"].find({"user_id": user_id}))
+        
+        # 2. Build Lookup Maps (Normalized Keys)
+        cost_by_id = {str(i["_id"]): i.get("cost_per_unit", 0) for i in inv_items}
+        cost_by_name = {_normalize(i["name"]): i.get("cost_per_unit", 0) for i in inv_items}
+        
+        # 3. Calculate Recipe Costs
         product_costs: Dict[str, float] = {} 
         for r in recipes:
             r_cost = 0
@@ -145,34 +156,59 @@ def generate_kpi_insight(
                 qty = ing.get("quantity_required", 0)
                 if i_id in cost_by_id:
                     r_cost += cost_by_id[i_id] * qty
-            if r_cost > 0: product_costs[r["product_name"].lower().strip()] = r_cost
+            
+            p_name_norm = _normalize(r["product_name"])
+            if r_cost > 0: 
+                product_costs[p_name_norm] = r_cost
+
+        # 4. Process Sales (Transactions)
         sales = list(db["transactions"].find({"user_id": user_id, "date": {"$gte": cutoff_date}}))
         total_cogs = 0.0
         item_cogs_breakdown = {}
+        
         for sale in sales:
-            p_name_sold = sale.get("product_name", "").lower().strip()
+            p_name_raw = sale.get("product_name", "")
+            p_name_norm = _normalize(p_name_raw)
             qty = sale.get("quantity", 0)
+            
             unit_cost = 0
-            if p_name_sold in product_costs:
-                unit_cost = product_costs[p_name_sold]
+            
+            # Strategy A: Check Recipe (Exact Match)
+            if p_name_norm in product_costs:
+                unit_cost = product_costs[p_name_norm]
+            
+            # Strategy B: Check Inventory (Exact Match)
+            elif p_name_norm in cost_by_name:
+                unit_cost = cost_by_name[p_name_norm]
+            
+            # Strategy C: Fuzzy / Partial Match (Recipe)
             else:
-                for recipe_name, cost in product_costs.items():
-                    if recipe_name in p_name_sold:
-                        unit_cost = cost; break 
-            if unit_cost == 0 and p_name_sold in cost_by_name:
-                unit_cost = cost_by_name[p_name_sold]
+                for r_name, r_cost in product_costs.items():
+                    if r_name in p_name_norm or p_name_norm in r_name:
+                        unit_cost = r_cost
+                        break
+            
+            # Strategy D: Fuzzy / Partial Match (Inventory)
+            if unit_cost == 0:
+                for i_name, i_cost in cost_by_name.items():
+                    if i_name in p_name_norm or p_name_norm in i_name:
+                        unit_cost = i_cost
+                        break
+
+            # Calculate Line Cost
             line_cost = unit_cost * qty
             total_cogs += line_cost
+            
             if line_cost > 0:
-                original_name = sale.get("product_name", p_name_sold)
-                item_cogs_breakdown[original_name] = item_cogs_breakdown.get(original_name, 0) + line_cost
+                item_cogs_breakdown[p_name_raw] = item_cogs_breakdown.get(p_name_raw, 0) + line_cost
+
         if total_cogs > 0:
             sorted_cogs = sorted(item_cogs_breakdown.items(), key=lambda x: x[1], reverse=True)
             top_item = sorted_cogs[0]
             summary = f"Kosto totale e materialeve të shitura është €{total_cogs:.2f}. Artikulli me koston më të lartë ishte '{top_item[0]}'."
             contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_cogs[:4]]
         else:
-            summary = "Nuk u identifikua asnjë kosto. Sigurohuni që artikujt në Stok kanë 'Kosto për Njësi' dhe emrat e Recetave përputhen me emrat e produkteve të shitura."
+            summary = "Nuk u identifikua asnjë kosto. Sigurohuni që artikujt në Stok kanë 'Kosto për Njësi' dhe emrat e produkteve përputhen."
             contributors = ["Verifikoni kostot e lëndës së parë."]
 
     return KpiInsightResponse(summary=summary, key_contributors=contributors)
