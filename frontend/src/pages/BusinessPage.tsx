@@ -1,8 +1,7 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - CONTEXT AWARE V19.2
-// 1. DATA: Added auto-detection of the 'Main Business Case' to support the Single-Business model.
-// 2. LOGIC: Passes 'caseId' to ArchiveTab, enabling the 'PORTAL' button in the global view.
-// 3. UX: Added graceful loading state for the archive view.
+// PHOENIX PROTOCOL - CONTEXT AWARE V19.3
+// 1. CLEANUP: Removed 'caseTitle' prop passed to ArchiveTab to match updated signature.
+// 2. LOGIC: Maintains 'caseId' injection for correct Portal behavior.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,16 +26,13 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
   const { t } = useTranslation();
   const { user } = useAuth();
   
-  // PHOENIX: State to track the main business context
   const [mainCase, setMainCase] = useState<Case | null>(null);
   const [loadingContext, setLoadingContext] = useState(true);
 
-  // PHOENIX: Fetch the default business case on mount
   useEffect(() => {
     const loadBusinessContext = async () => {
         try {
             const cases = await apiService.getCases();
-            // In the Single-Business model, the first active case is the Main Context
             if (cases && cases.length > 0) {
                 setMainCase(cases[0]);
             }
@@ -60,7 +56,6 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
       case 'finance': return <FinanceTab />;
       case 'inventory': return <InventoryTab />;
       
-      // PHOENIX: Inject context into ArchiveTab
       case 'archive': 
         if (loadingContext) {
             return (
@@ -69,12 +64,11 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
                 </div>
             );
         }
-        // Key ensures component remounts if ID changes, though loading state usually handles this
+        // PHOENIX: Removed caseTitle prop
         return (
             <ArchiveTab 
                 key={mainCase?.id || 'root'} 
                 caseId={mainCase?.id} 
-                caseTitle={mainCase?.title} 
             />
         );
         

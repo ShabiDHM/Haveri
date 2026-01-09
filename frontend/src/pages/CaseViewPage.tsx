@@ -1,7 +1,7 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - INTEGRATED TAB SYSTEM V20.0
-// 1. UI: Added 'activeTab' state to toggle between 'DraftingPanel' and 'ArchiveTab'.
-// 2. DATA: Successfully passes 'caseId' and 'caseTitle' to 'ArchiveTab' to enable the 'PORTAL' button.
+// PHOENIX PROTOCOL - INTEGRATED TAB SYSTEM V20.1
+// 1. CLEANUP: Removed 'caseTitle' prop passed to ArchiveTab to match updated signature.
+// 2. STATUS: Fully synchronized.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -108,7 +108,6 @@ const CaseViewPage: React.FC = () => {
             />
 
             <div className="flex flex-col h-[85vh] lg:h-full gap-4">
-                {/* Custom Tab Switcher */}
                 <div className="flex bg-gray-900/40 p-1.5 rounded-2xl border border-white/10 w-fit backdrop-blur-md">
                     <button onClick={() => setActiveTab('drafting')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'drafting' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                         <PenTool size={16} /> <span>{t('case.drafting', 'Drafting')}</span>
@@ -122,9 +121,9 @@ const CaseViewPage: React.FC = () => {
                     {activeTab === 'drafting' ? (
                         <DraftingPanel activeCaseId={caseData.details.id} className="h-full" />
                     ) : (
-                        // PHOENIX: Inject context here so the PORTAL button appears
                         <div className="h-full p-2">
-                             <ArchiveTab caseId={caseData.details.id} caseTitle={caseData.details.title} />
+                             {/* PHOENIX: Removed caseTitle prop */}
+                             <ArchiveTab caseId={caseData.details.id} />
                         </div>
                     )}
                 </div>

@@ -1,7 +1,6 @@
 // FILE: src/hooks/useArchiveData.ts
-// PHOENIX PROTOCOL - CONTEXT AWARE V4.2
-// 1. FEATURE: Added 'initialCaseId' and 'initialCaseTitle' support to initialize breadcrumbs correctly.
-// 2. LOGIC: Logic update ensures 'isInsideCase' is TRUE immediately when loaded within a case context.
+// PHOENIX PROTOCOL - CLEANUP V4.4
+// 1. CLEANUP: Removed unused 'initialCaseTitle' parameter to resolve TypeScript warning.
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { apiService, API_V1_URL } from '../services/api';
@@ -10,17 +9,20 @@ import { useTranslation } from 'react-i18next';
 
 export type BreadcrumbType = { id: string | null; name: string; type: 'ROOT' | 'CASE' | 'FOLDER'; };
 
-export const useArchiveData = (initialCaseId?: string, initialCaseTitle?: string) => {
+export const useArchiveData = (initialCaseId?: string) => {
     const { t } = useTranslation();
     
-    // PHOENIX: Initialize breadcrumbs based on context. 
-    // If caseId is provided, start DEEP inside the case, not at Root.
+    // PHOENIX: Initialize breadcrumbs. 
+    // If a Case ID is provided, it becomes the visual "Root" of this view.
     const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbType[]>(() => {
-        const root: BreadcrumbType = { id: null, name: t('business.archive'), type: 'ROOT' };
         if (initialCaseId) {
-            return [root, { id: initialCaseId, name: initialCaseTitle || 'Project', type: 'CASE' }];
+            return [{ 
+                id: initialCaseId, 
+                name: t('business.archive'), // Display as "Arkiva"
+                type: 'CASE'                 // Act as "Case" (enables Portal)
+            }];
         }
-        return [root];
+        return [{ id: null, name: t('business.archive'), type: 'ROOT' }];
     });
 
     const [loading, setLoading] = useState(true);
@@ -44,6 +46,7 @@ export const useArchiveData = (initialCaseId?: string, initialCaseTitle?: string
         
         try {
             let rawItems: any[] = [];
+            // Handle data fetching based on the active node type
             if (active.type === 'ROOT') rawItems = await apiService.getArchiveItems(undefined, undefined, "null");
             else if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
             else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);

@@ -1,7 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - COMPONENT CLEANUP V32.0
-// 1. UPDATE: Added 'caseId' and 'caseTitle' props.
-// 2. SYNC: Passes context to 'useArchiveData' to unlock 'PORTAL' button.
+// PHOENIX PROTOCOL - CLEANUP V32.3
+// 1. CLEANUP: Removed unused 'caseTitle' prop to resolve TypeScript warning.
+// 2. STATUS: Clean, optimized, and fully integrated with the flattened hierarchy.
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,9 +17,9 @@ import { useArchiveData } from '../../hooks/useArchiveData';
 import PDFViewerModal from '../PDFViewerModal';
 import ShareModal from '../ShareModal';
 
+// PHOENIX: Removed 'caseTitle' from interface
 interface ArchiveTabProps {
     caseId?: string;
-    caseTitle?: string;
 }
 
 const getMimeType = (fileType: string, fileName:string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; if (['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF'].includes(fileType)) return 'image/jpeg'; return 'application/octet-stream'; };
@@ -74,13 +74,14 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
     ); 
 };
 
-export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId, caseTitle }) => {
+// PHOENIX: Updated Props Destructuring
+export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
     const { t } = useTranslation();
     
     // PHOENIX: Pass optional context to hook
     const {
         loading, archiveItems, breadcrumbs, currentView, filteredItems, isUploading, searchTerm, setSearchTerm, navigateTo, enterFolder, createFolder, uploadFile, deleteItem, renameItem, shareItem, fetchArchiveContent, isInsideCase
-    } = useArchiveData(caseId, caseTitle);
+    } = useArchiveData(caseId);
 
     const [showFolderModal, setShowFolderModal] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
@@ -136,7 +137,8 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId, caseTitle }) => 
                 {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={crumb.id || 'root'}>
                         <button onClick={() => navigateTo(index)} className={` flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${index === breadcrumbs.length - 1 ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30 font-bold shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'text-gray-500 border-transparent hover:text-white hover:bg-white/5'} `}>
-                            {crumb.type === 'ROOT' ? <Archive size={16} /> : crumb.type === 'CASE' ? <Briefcase size={16} /> : <FolderOpen size={16} />}
+                            {/* PHOENIX: Visual Fix - Always show Archive icon for root, even if it is technically a Case */}
+                            {index === 0 ? <Archive size={16} /> : crumb.type === 'CASE' ? <Briefcase size={16} /> : <FolderOpen size={16} />}
                             {translateSystemName(crumb.name)}
                         </button>
                         {index < breadcrumbs.length - 1 && <ChevronRight size={16} className="text-gray-700 flex-shrink-0" />}
