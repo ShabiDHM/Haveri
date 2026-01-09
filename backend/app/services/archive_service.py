@@ -1,3 +1,10 @@
+# FILE: backend/app/services/archive_service.py
+# PHOENIX PROTOCOL - ARCHIVE SERVICE V5.3 (CHAT LOGIC)
+# 1. FEATURE: Implemented 'chat_with_document' method.
+#    - Uses 'vector_store_service' to retrieve relevant chunks from the specific document.
+#    - Uses 'llm_service' to generate a context-aware answer.
+# 2. STATUS: End-to-end "Ask AI" functionality enabled.
+
 import os
 import logging
 from typing import List, Optional, Tuple, Any, Dict
@@ -12,6 +19,8 @@ from .storage_service import get_s3_client, transfer_config
 
 from ..celery_app import celery_app
 from . import vector_store_service
+# PHOENIX: Importing llm_service to power the Ask AI feature
+from . import llm_service
 
 logger = logging.getLogger(__name__)
 
@@ -196,27 +205,21 @@ class ArchiveService:
         return ArchiveItemInDB(**doc_data)
 
     async def archive_existing_document(self, user_id: str, case_id: str, document_id: str) -> ArchiveItemOut:
-        """
-        Moves a document from the active 'documents' collection to the 'archives' collection.
-        This preserves the storage file but changes the database record metadata.
-        """
         doc_oid = self._to_oid(document_id)
         user_oid = self._to_oid(user_id)
         
-        # 1. Fetch Source Document
         source_doc = self.db.documents.find_one({"_id": doc_oid, "owner_id": user_oid})
         if not source_doc:
             raise HTTPException(status_code=404, detail="Active document not found")
             
-        # 2. Prepare Archive Record
         archive_data = {
             "user_id": user_oid,
             "case_id": case_id,
             "title": source_doc.get("file_name", "Untitled"),
             "item_type": "FILE",
-            "file_type": "PDF", # Assuming PDF for active docs usually
+            "file_type": "PDF",
             "category": "CASE_ARCHIVE",
-            "storage_key": source_doc.get("storage_key"), # REUSE same S3 key
+            "storage_key": source_doc.get("storage_key"),
             "file_size": source_doc.get("file_size", 0),
             "created_at": datetime.now(timezone.utc),
             "description": f"Archived from case {case_id}",
@@ -224,14 +227,11 @@ class ArchiveService:
             "indexing_status": "PENDING"
         }
         
-        # 3. Insert into Archive
         insert_result = self.db.archives.insert_one(archive_data)
         new_archive_id = insert_result.inserted_id
         
-        # 4. Delete from Active Documents
         self.db.documents.delete_one({"_id": doc_oid})
         
-        # 5. Trigger Re-indexing (Optional, since key is same, but context changed)
         try:
             celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(new_archive_id)])
         except Exception as e:
@@ -239,3 +239,52 @@ class ArchiveService:
             
         archive_data["_id"] = new_archive_id
         return ArchiveItemOut(**archive_data)
+
+    async def chat_with_document(self, user_id: str, item_id: str, question: str) -> str:
+        """
+        Retrieves context for the specific document from the Vector Store and asks the LLM.
+        """
+        # 1. Verify access
+        oid_user = self._to_oid(user_id)
+        oid_item = self._to_oid(item_id)
+        item = self.db.archives.find_one({"_id": oid_item, "user_id": oid_user, "item_type": "FILE"})
+        
+        if not item:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        if item.get("indexing_status") != "READY":
+             return "Dokumenti ende nuk është indeksuar. Ju lutem prisni disa momente."
+
+        try:
+            # 2. Retrieve Context (RAG specific to this doc_id)
+            # Using the same vector service used for Intelligence, but filtering by document ID
+            context_chunks = await vector_store_service.similarity_search(
+                user_id=user_id,
+                query=question,
+                limit=4,
+                filter_criteria={"doc_id": item_id} 
+            )
+            
+            context_text = "\n\n".join([chunk.page_content for chunk in context_chunks])
+            
+            if not context_text:
+                return "Nuk u gjet informacion relevant në këtë dokument për pyetjen tuaj."
+
+            # 3. Generate Answer via LLM Service
+            # We construct a prompt specific to this document context
+            system_prompt = (
+                f"You are a helpful assistant analyzing a specific document titled '{item.get('title')}'. "
+                "Use ONLY the following context to answer the user's question. "
+                "If the answer is not in the context, say you don't know."
+            )
+            
+            answer = await llm_service.chat_completion(
+                system_prompt=system_prompt,
+                user_message=f"Context:\n{context_text}\n\nQuestion: {question}"
+            )
+            
+            return answer
+
+        except Exception as e:
+            logger.error(f"Chat error for item {item_id}: {e}")
+            return "Ndodhi një gabim gjatë procesimit të pyetjes."

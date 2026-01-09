@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V8.4 (ADOPT-ON-SHARE - COMPLETE FILE)
-// 1. UPDATE: 'shareArchiveItem' now accepts an optional 'caseId' and includes it in the request payload.
-// 2. INTEGRITY: This file is complete and synchronized with all backend endpoints, including the full messaging and archive suites.
+// PHOENIX PROTOCOL - API V8.5 (ASK DOCUMENT AI)
+// 1. FEATURE: Added 'askDocumentQuestion' to enable the 'Ask AI' functionality for specific archive documents.
+// 2. INTEGRITY: Fully backward compatible with all previous service definitions.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -128,6 +128,13 @@ class ApiService {
         try { const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message }); return response.data.response; } 
         catch (e) { return "Më falni, shërbimi i asistencës tatimore është përkohësisht jashtë funksionit."; }
     }
+    
+    // PHOENIX: New method for Archive Document Q&A
+    public async askDocumentQuestion(documentId: string, question: string): Promise<{ answer: string }> {
+        const response = await this.axiosInstance.post<{ answer: string }>(`/archive/items/${documentId}/chat`, { question });
+        return response.data;
+    }
+
     public async predictRestock(itemId: string): Promise<RestockPrediction> {
         try { const response = await this.axiosInstance.post<RestockPrediction>('/analysis/inventory/predict', { item_id: itemId }); return response.data; } 
         catch (e) { return { suggested_quantity: 0, reason: "Analiza e padisponueshme për momentin.", estimated_cost: 0 }; }

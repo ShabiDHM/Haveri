@@ -1,8 +1,8 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - BUSINESS INTELLIGENCE V4.1 (EXPENSE EXTRACTOR)
-# 1. NEW: Added 'extract_expense_data' function with a strict JSON prompt.
-# 2. LOGIC: This new function is the "brain" for the Smart Expense Modal feature.
-# 3. PERSONA: Retained and refined the Business Consultant persona for RAG.
+# PHOENIX PROTOCOL - LLM SERVICE V5.0 (GENERIC CHAT COMPLETION)
+# 1. FEATURE: Added 'chat_completion' wrapper to support generic Q&A (Archive Chat).
+# 2. FEATURE: Added 'extract_expense_data' (retained from previous request).
+# 3. INTEGRITY: Maintains Business Consultant persona for complex queries.
 
 import os
 import json
@@ -70,7 +70,32 @@ def _call_deepseek(system_prompt: str, user_prompt: str, json_mode: bool = False
         logger.warning(f"⚠️ DeepSeek Call Failed: {e}")
         return None
 
-# PHOENIX: New function for Smart Expense Modal
+# --- PUBLIC FUNCTIONS ---
+
+async def chat_completion(system_prompt: str, user_message: str) -> str:
+    """
+    Generic wrapper for simple Q&A interactions (e.g., Archive Chat).
+    Doesn't inject complex persona rules by default, relies on the caller's system prompt.
+    """
+    client = get_deepseek_client()
+    if not client:
+        return "Shërbimi AI nuk është i konfiguruar."
+        
+    try:
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.3,
+            max_tokens=1000
+        )
+        return response.choices[0].message.content or "Nuk u gjenerua përgjigje."
+    except Exception as e:
+        logger.error(f"Chat completion failed: {e}")
+        return "Ndodhi një gabim gjatë komunikimit me AI."
+
 def extract_expense_data(text: str) -> Dict[str, Any]:
     """
     Uses a vision-capable model to extract structured data from an expense receipt/invoice.

@@ -1,7 +1,7 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - PORTAL V8.2 (BUSINESS PROFILE INTEGRATION)
-// 1. UI UPGRADE: Replaced generic contact text with full Business Profile details (Address, Phone, Email, NUI).
-// 2. LAYOUT: Left panel now displays the Law Firm's contact info dynamically.
+// PHOENIX PROTOCOL - PORTAL V8.3 (REFINED CONTACT LAYOUT)
+// 1. UI CLEANUP: Removed 'Zyra Ligjore' and 'Numri Fiskal' from the contact panel to reduce clutter.
+// 2. STYLING: Enhanced the contact info presentation for a more professional look.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { 
     Loader2, FileText, ShieldCheck, Building2, Download,
     Calendar, Eye, Quote, AlignLeft, User, Mail, MessageSquare, Send, Phone,
-    MapPin, Globe, CreditCard
+    MapPin, Globe
 } from 'lucide-react';
 import { API_V1_URL, apiService } from '../services/api';
 import PDFViewerModal from '../components/PDFViewerModal';
@@ -23,7 +23,7 @@ interface PublicCaseData {
     organization_name?: string; description?: string; logo?: string; 
     owner_address?: string; address?: string; owner_nui?: string; nui?: string;
     tax_id?: string; owner_email?: string; email?: string; owner_phone?: string; phone?: string;
-    owner_website?: string; owner_city?: string; // Extended fields
+    owner_website?: string; owner_city?: string;
     documents: SharedDocument[]; 
 }
 
@@ -106,16 +106,22 @@ const ClientPortalPage: React.FC = () => {
     const closeViewer = () => { if (viewingUrl) URL.revokeObjectURL(viewingUrl); setViewingDoc(null); setViewingUrl(null); };
 
     // --- HELPER FOR BUSINESS INFO ROWS ---
-    const InfoRow = ({ icon: Icon, label, value }: { icon: any, label: string, value?: string }) => {
+    const InfoRow = ({ icon: Icon, label, value, isLink = false }: { icon: any, label: string, value?: string, isLink?: boolean }) => {
         if (!value) return null;
         return (
-            <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                <div className="p-2.5 bg-blue-500/10 rounded-lg text-blue-400">
+            <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
+                <div className="p-2.5 bg-blue-500/10 rounded-lg text-blue-400 group-hover:bg-blue-500/20 group-hover:text-blue-300 transition-colors">
                     <Icon size={18} />
                 </div>
                 <div>
                     <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-0.5">{label}</p>
-                    <p className="text-sm font-medium text-gray-200">{value}</p>
+                    {isLink ? (
+                        <a href={value.startsWith('http') ? value : `https://${value}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-400 hover:underline break-all">
+                            {value}
+                        </a>
+                    ) : (
+                        <p className="text-sm font-medium text-gray-200">{value}</p>
+                    )}
                 </div>
             </div>
         );
@@ -167,14 +173,13 @@ const ClientPortalPage: React.FC = () => {
                                     <h3 className="text-2xl font-bold text-white mb-2">Informacion Kontaktues</h3>
                                     <p className="text-gray-400 text-sm leading-relaxed">Detajet tona për kontakt të drejtpërdrejtë.</p>
                                 </div>
-                                <div className="space-y-3">
-                                    <InfoRow icon={Building2} label="Zyra Ligjore" value={businessName} />
+                                <div className="space-y-4">
+                                    {/* PHOENIX: Removed 'Zyra Ligjore' and 'Numri Fiskal' as requested */}
                                     <InfoRow icon={Mail} label="Email Publik" value={businessEmail} />
                                     <InfoRow icon={Phone} label="Numri i Telefonit" value={businessPhone} />
                                     <InfoRow icon={MapPin} label="Adresa" value={businessAddress} />
                                     {(businessCity) && <InfoRow icon={MapPin} label="Qyteti" value={businessCity} />}
-                                    <InfoRow icon={Globe} label="Website" value={businessWebsite} />
-                                    <InfoRow icon={CreditCard} label="Numri Fiskal" value={businessNui} />
+                                    <InfoRow icon={Globe} label="Website" value={businessWebsite} isLink={true} />
                                 </div>
                             </div>
 

@@ -1,14 +1,15 @@
 # FILE: backend/app/services/vector_store_service.py
-# PHOENIX PROTOCOL - VECTOR STORE V3.0 (AGENTIC TOOLS)
-# 1. REFACTOR: Exposed 'query_private_diary' and 'query_public_library' as distinct functions.
-# 2. TYPE SAFETY: Added 'cast' to handle Pylance strict typing for ChromaDB filters.
-# 3. ARCHITECTURE: Supports the Agent's ability to choose which DB to query.
+# PHOENIX PROTOCOL - VECTOR STORE V3.1 (CHAT SUPPORT)
+# 1. FEATURE: Added 'similarity_search' wrapper to support the Archive Chat feature.
+# 2. LOGIC: Updated 'query_private_diary' to support generic metadata filtering (e.g., specific document ID).
+# 3. TYPE SAFETY: Maintains Pylance compatibility.
 
 from __future__ import annotations
 import os
 import time
 import logging
 from typing import List, Dict, Optional, Any, Sequence, cast
+from langchain_core.documents import Document  # Required for return type compatibility
 import chromadb
 from chromadb.api import ClientAPI
 from chromadb.api.models.Collection import Collection
@@ -79,7 +80,7 @@ def query_private_diary(
     user_id: str,
     query_text: str,
     n_results: int = 5,
-    case_context_id: Optional[str] = None
+    filter_criteria: Optional[Dict[str, Any]] = None # PHOENIX: Added generic filter support
 ) -> List[Dict[str, Any]]:
     """
     Searches the user's private, isolated data.
@@ -91,8 +92,9 @@ def query_private_diary(
     results = []
     try:
         user_coll = get_private_collection(user_id)
-        # Optional: Filter by specific case if provided by the agent
-        where_filter = {"case_id": {"$eq": str(case_context_id)}} if case_context_id else {}
+        
+        # Build filter from criteria
+        where_filter = filter_criteria if filter_criteria else {}
         
         # Cast to Any to satisfy Pylance strict typing
         final_where = cast(Any, where_filter) if where_filter else None
@@ -117,6 +119,26 @@ def query_private_diary(
         logger.warning(f"Private Diary Query failed for {user_id}: {e}")
     
     return results
+
+# --- PHOENIX WRAPPER: SIMILARITY SEARCH ---
+async def similarity_search(user_id: str, query: str, limit: int = 4, filter_criteria: Optional[Dict[str, Any]] = None) -> List[Document]:
+    """
+    Wrapper for ArchiveService compatibility. 
+    Maps the generic query request to 'query_private_diary' and returns LangChain Document objects.
+    """
+    # Map 'doc_id' from ArchiveService to 'source_document_id' in Chroma metadata
+    chroma_filter = {}
+    if filter_criteria and "doc_id" in filter_criteria:
+        chroma_filter["source_document_id"] = str(filter_criteria["doc_id"])
+    
+    results = query_private_diary(user_id, query, n_results=limit, filter_criteria=chroma_filter)
+    
+    # Convert Dict results to LangChain Document objects
+    lc_docs = []
+    for r in results:
+        lc_docs.append(Document(page_content=r["content"], metadata={"source": r["source"]}))
+        
+    return lc_docs
 
 # --- AGENT TOOL 2: PUBLIC LIBRARY ---
 def query_public_library(

@@ -1,6 +1,7 @@
 # FILE: backend/app/api/endpoints/archive.py
-# PHOENIX PROTOCOL - V3.3 (DEFINITIVE IMPORT FIX)
-# 1. CRITICAL FIX: Replaced the relative import with a robust absolute import ('from app.services...'). This resolves the "unknown import symbol" error permanently.
+# PHOENIX PROTOCOL - ARCHIVE ROUTER V4.0 (CHAT ENDPOINT)
+# 1. NEW FEATURE: Added 'chat_with_archive_item' endpoint to support "Ask AI" functionality.
+# 2. INTEGRITY: connects the frontend 'askDocumentQuestion' call to the service layer.
 
 from fastapi import APIRouter, Depends, status, UploadFile, Form, Query, HTTPException, Request
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -34,6 +35,9 @@ class ArchiveShareRequest(BaseModel):
 class ArchiveCaseShareRequest(BaseModel):
     case_id: str
     is_shared: bool
+
+class ArchiveChatRequest(BaseModel):
+    question: str
 
 # --- ENDPOINTS ---
 
@@ -113,6 +117,18 @@ def re_index_archive_item(
     service = ArchiveService(db)
     service.re_index_item(str(current_user.id), item_id)
     return JSONResponse(content={"message": "Re-indexing task has been accepted."})
+
+# --- PHOENIX: CHAT ENDPOINT ---
+@router.post("/items/{item_id}/chat")
+async def chat_with_archive_item(
+    item_id: str,
+    body: ArchiveChatRequest,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    db: Database = Depends(get_db)
+):
+    service = ArchiveService(db)
+    answer = await service.chat_with_document(str(current_user.id), item_id, body.question)
+    return {"answer": answer}
 
 @router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_archive_item(

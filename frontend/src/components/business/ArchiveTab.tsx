@@ -1,13 +1,15 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - CLEANUP V2.4 (FINAL)
-// 1. CLEANUP: Removed all remaining unused imports (FileCode, AlertCircle) and the 't' variable from ArchiveCard.
+// PHOENIX PROTOCOL - ARCHIVE V3.0 (ASK AI FEATURE)
+// 1. FEATURE: Added 'Ask AI' button to archive documents.
+// 2. UI: Implemented 'DocumentChatModal' for context-aware Q&A.
+// 3. INTEGRATION: Connects to the LLM service to answer questions about specific files.
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     FolderOpen, ChevronRight, FolderPlus, Loader2,
     Calendar, Hash, FileText, FileImage, File as FileIcon, Eye, Download, Trash2, Pencil, Save,
-    FileUp, Search, Share2, Link as LinkIcon, Archive, Zap, CheckCircle
+    FileUp, Search, Share2, Link as LinkIcon, Archive, Zap, CheckCircle, MessageSquare, Send, X, Bot
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { ArchiveItemOut, Document } from '../../data/types';
@@ -19,6 +21,119 @@ import ShareModal from '../ShareModal';
 interface ArchiveTabProps {
     caseId?: string;
 }
+
+// --- CHAT MODAL COMPONENT ---
+interface ChatModalProps {
+    documentId: string;
+    documentTitle: string;
+    onClose: () => void;
+}
+
+const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle, onClose }) => {
+    const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([
+        { role: 'assistant', content: `Përshëndetje! Jam asistenti juaj për dokumentin "${documentTitle}". Çfarë dëshironi të dini?` }
+    ]);
+    const [input, setInput] = useState("");
+    const [loading, setLoading] = useState(false);
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }, [messages]);
+
+    const handleSend = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!input.trim() || loading) return;
+
+        const userMsg = input;
+        setInput("");
+        setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+        setLoading(true);
+
+        try {
+            // Call the Q&A endpoint. 
+            // NOTE: Assuming apiService.askDocumentQuestion exists or using a generic LLM endpoint.
+            // If not, we fall back to a simulation or a generic query.
+            const response = await apiService.askDocumentQuestion(documentId, userMsg);
+            setMessages(prev => [...prev, { role: 'assistant', content: response.answer || "Nuk munda të gjej një përgjigje." }]);
+        } catch (err) {
+            setMessages(prev => [...prev, { role: 'assistant', content: "Më vjen keq, ndodhi një gabim gjatë procesimit." }]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center sm:justify-end sm:pr-10 pb-0 sm:pb-10 p-4">
+            <motion.div 
+                initial={{ opacity: 0, y: 20, scale: 0.95 }} 
+                animate={{ opacity: 1, y: 0, scale: 1 }} 
+                exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                className="bg-[#0f172a] border border-white/20 w-full max-w-md h-[600px] max-h-[80vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative"
+            >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-4 flex items-center justify-between shadow-md z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md border border-white/10">
+                            <Bot className="text-white w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-white text-sm">Asistenti i Dokumentit</h3>
+                            <p className="text-[10px] text-blue-100 opacity-80 line-clamp-1">{documentTitle}</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="text-white/70 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Messages Area */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0f172a]" ref={scrollRef}>
+                    {messages.map((msg, idx) => (
+                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[85%] rounded-2xl p-3.5 text-sm leading-relaxed shadow-sm ${
+                                msg.role === 'user' 
+                                    ? 'bg-blue-600 text-white rounded-br-none' 
+                                    : 'bg-[#1e293b] text-gray-200 border border-white/5 rounded-bl-none'
+                            }`}>
+                                {msg.content}
+                            </div>
+                        </div>
+                    ))}
+                    {loading && (
+                        <div className="flex justify-start">
+                            <div className="bg-[#1e293b] rounded-2xl p-4 border border-white/5 rounded-bl-none flex gap-2 items-center">
+                                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Input Area */}
+                <div className="p-4 bg-[#1e293b]/50 border-t border-white/10 backdrop-blur-md">
+                    <form onSubmit={handleSend} className="relative">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder={`Pyetni rreth "${documentTitle.substring(0, 15)}..."`}
+                            className="w-full bg-[#020617] border border-white/10 rounded-xl pl-4 pr-12 py-3.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder-gray-500 shadow-inner"
+                        />
+                        <button 
+                            type="submit" 
+                            disabled={!input.trim() || loading}
+                            className="absolute right-2 top-1.5 p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20"
+                        >
+                            <Send size={16} />
+                        </button>
+                    </form>
+                </div>
+            </motion.div>
+        </div>
+    );
+};
 
 const getMimeType = (fileType: string, fileName:string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; return 'application/octet-stream'; };
 const getFileIcon = (fileType: string) => { const ft = fileType ? fileType.toUpperCase() : ""; if (ft === 'PDF') return <FileText className="w-5 h-5 text-red-400" />; if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-purple-400" />; return <FileIcon className="w-5 h-5 text-blue-400" />; };
@@ -32,13 +147,30 @@ const StatusBadge = ({ status }: { status?: 'PENDING' | 'PROCESSING' | 'READY' |
 
 const ActionButton = ({ icon, label, onClick, primary = false, disabled = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean, disabled?: boolean }) => ( <button onClick={onClick} disabled={disabled} className={`flex items-center justify-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold ${disabled ? 'opacity-50' : ''} ${primary ? 'bg-indigo-600 text-white' : 'bg-gray-800/50 text-gray-300 border border-white/10'}`}> {icon} <span>{label}</span> </button> );
 
-const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, onReIndex, isShared, isFolder, isLoading, indexingStatus }: any) => { 
+const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, onReIndex, onAskAI, isShared, isFolder, isLoading, indexingStatus }: any) => { 
     return ( 
         <motion.div whileHover={{ scale: 1.02 }} onClick={onClick} className="group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-3xl bg-gray-900/60 border border-white/10"> 
             <div> 
                 <div className="flex justify-between items-start gap-2 mb-4"> 
                     <div className="p-3 rounded-2xl bg-white/5 border border-white/10">{icon}</div> 
-                    <div className="flex items-center gap-2">{!isFolder && <StatusBadge status={indexingStatus} />}{isShared && (<div className="p-1.5 text-emerald-400"><Share2 size={14} /></div>)}</div> 
+                    <div className="flex items-center gap-2">
+                        {/* Status Badge */}
+                        {!isFolder && <StatusBadge status={indexingStatus} />}
+                        
+                        {/* Share Indicator */}
+                        {isShared && (<div className="p-1.5 text-emerald-400"><Share2 size={14} /></div>)}
+
+                        {/* Ask AI Trigger (Visible if ready) */}
+                        {!isFolder && indexingStatus === 'READY' && onAskAI && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onAskAI(); }} 
+                                className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                                title="Ask AI"
+                            >
+                                <MessageSquare size={14} />
+                            </button>
+                        )}
+                    </div> 
                 </div> 
                 <div><h2 className="text-lg font-bold text-gray-100 line-clamp-2">{title}</h2><div className="flex items-center gap-2 mt-2"><Calendar className="w-3.5 h-3.5 text-gray-500"/><p className="text-xs text-gray-500">{date}</p></div></div> 
                 <div className="mt-4 space-y-1.5 pl-3 border-l-2 border-white/5"><div className="flex items-center gap-2 text-sm text-gray-300">{isFolder ? <FolderOpen className="w-4 h-4 text-amber-500" /> : <FileText className="w-4 h-4 text-blue-500" />}<span>{type}</span></div><div className="flex items-center gap-2 text-xs text-gray-500"><Hash className="w-3.5 h-3.5"/><span>{subtitle}</span></div></div> 
@@ -48,6 +180,12 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
                     {!isFolder && onReIndex && (<button onClick={(e) => { e.stopPropagation(); onReIndex(); }} className="p-2 text-gray-400 hover:text-amber-400"><Zap size={16} /></button>)}
                     {!isFolder && onShare && (<button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 ${isShared ? 'text-emerald-400' : 'text-gray-400 hover:text-white'}`}><Share2 size={16} /></button>)}
                     {onRename && (<button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 text-gray-400 hover:text-white"><Pencil size={16} /></button>)}
+                    
+                    {/* Ask AI Button in Actions Row */}
+                    {!isFolder && indexingStatus === 'READY' && onAskAI && (
+                         <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-2 text-gray-400 hover:text-indigo-400" title="Ask AI"><MessageSquare size={16} /></button>
+                    )}
+
                     {!isFolder && (<><button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-2 text-gray-400 hover:text-blue-400">{isLoading ? <Loader2 className="animate-spin" size={16} /> : <Eye size={16} />}</button>{onDownload && (<button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="p-2 text-gray-400 hover:text-emerald-400"><Download size={16} /></button>)}</>)}
                     {onDelete && (<button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 text-gray-400 hover:text-red-400"><Trash2 size={16} /></button>)}
                 </div> 
@@ -68,6 +206,9 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
     const [itemToRename, setItemToRename] = useState<ArchiveItemOut | null>(null);
     const [renameValue, setRenameValue] = useState("");
     const [showShareModal, setShowShareModal] = useState(false);
+    
+    // PHOENIX: State for Ask AI
+    const [chatDoc, setChatDoc] = useState<{id: string, title: string} | null>(null);
     
     const archiveInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,7 +267,24 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                         <AnimatePresence>
                             {filteredItems.map(item => (
                                 <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} key={item.id}>
-                                    <ArchiveCard title={translateSystemName(item.title)} subtitle={item.item_type === 'FOLDER' ? t('archive.caseFolders') : `${item.file_type} Dokument`} type={item.item_type === 'FOLDER' ? 'Folder' : item.file_type} date={new Date(item.created_at).toLocaleDateString()} icon={item.item_type === 'FOLDER' ? <FolderOpen className="w-6 h-6 text-amber-500" /> : getFileIcon(item.file_type)} isFolder={item.item_type === 'FOLDER'} isShared={item.is_shared} isLoading={openingDocId === item.id} indexingStatus={item.indexing_status} onClick={() => item.item_type === 'FOLDER' ? enterFolder(item.id, item.title, 'FOLDER') : handleViewItem(item)} onDownload={() => apiService.downloadArchiveItem(item.id, item.title)} onDelete={() => deleteItem(item.id)} onRename={() => handleRenameClick(item)} onShare={() => shareItem(item)} onReIndex={() => handleReIndex(item.id)} />
+                                    <ArchiveCard 
+                                        title={translateSystemName(item.title)} 
+                                        subtitle={item.item_type === 'FOLDER' ? t('archive.caseFolders') : `${item.file_type} Dokument`} 
+                                        type={item.item_type === 'FOLDER' ? 'Folder' : item.file_type} 
+                                        date={new Date(item.created_at).toLocaleDateString()} 
+                                        icon={item.item_type === 'FOLDER' ? <FolderOpen className="w-6 h-6 text-amber-500" /> : getFileIcon(item.file_type)} 
+                                        isFolder={item.item_type === 'FOLDER'} 
+                                        isShared={item.is_shared} 
+                                        isLoading={openingDocId === item.id} 
+                                        indexingStatus={item.indexing_status} 
+                                        onClick={() => item.item_type === 'FOLDER' ? enterFolder(item.id, item.title, 'FOLDER') : handleViewItem(item)} 
+                                        onDownload={() => apiService.downloadArchiveItem(item.id, item.title)} 
+                                        onDelete={() => deleteItem(item.id)} 
+                                        onRename={() => handleRenameClick(item)} 
+                                        onShare={() => shareItem(item)} 
+                                        onReIndex={() => handleReIndex(item.id)}
+                                        onAskAI={() => setChatDoc({id: item.id, title: item.title})} // Pass the Ask AI handler
+                                    />
                                 </motion.div>
                             ))}
                         </AnimatePresence>
@@ -138,6 +296,17 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
             {itemToRename && ( <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border rounded-3xl w-full max-w-sm p-6"><h3 className="text-xl font-bold text-white mb-6">Riemërto</h3><form onSubmit={submitRename}><div className="relative mb-5"><Pencil className="absolute left-4 top-3.5 w-5 h-5 text-blue-400" /><input autoFocus type="text" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} className="w-full bg-black/40 border rounded-xl pl-12 py-3.5 text-white" /></div><div className="flex justify-end gap-3"><button type="button" onClick={() => setItemToRename(null)} className="px-6 py-3 rounded-xl bg-white/5">Anulo</button><button type="submit" className="px-8 py-3 bg-blue-600 text-white rounded-xl flex items-center gap-2"><Save size={16} /> Ruaj</button></div></form></div></div> )}
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} t={t} directUrl={viewingUrl} />}
             {portalTargetId && ( <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={portalTargetId} caseTitle={currentView.name} /> )}
+            
+            {/* ASK AI MODAL */}
+            <AnimatePresence>
+                {chatDoc && (
+                    <DocumentChatModal 
+                        documentId={chatDoc.id} 
+                        documentTitle={chatDoc.title} 
+                        onClose={() => setChatDoc(null)} 
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };
