@@ -1,8 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE V3.4 (CHAT UI REFINEMENT)
-// 1. UI: Renamed Chat Title to 'Haveri i dokumenteve'.
-// 2. FEATURE: Added 'Clear Chat' (Trash icon) to the chat modal header.
-// 3. INTEGRITY: Preserved Markdown rendering and Typewriter effects.
+// PHOENIX PROTOCOL - ARCHIVE V3.5 (UI CLEANUP)
+// 1. UI: Made action icons (Rename, View, etc.) always visible, removing the hover effect.
+// 2. UI: Removed the duplicate 'Ask AI' icon from the top right for a cleaner layout.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,10 +23,8 @@ interface ArchiveTabProps {
 
 // --- MARKDOWN & TYPEWRITER COMPONENTS ---
 
-// Robust Markdown Renderer
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
     const paragraphs = content.split(/\n\n+/);
-
     return (
         <div className="space-y-3 text-sm text-gray-200 leading-relaxed">
             {paragraphs.map((paragraph, pIdx) => {
@@ -37,16 +34,13 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
                         {lines.map((line, lIdx) => {
                             const isListItem = /^[•-]\s|^\d+\.\s/.test(line);
                             const cleanLine = line.replace(/^[•-]\s|^\d+\.\s/, '');
-                            
                             const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
-                            
                             const renderedLine = parts.map((part, k) => {
                                 if (part.startsWith('**') && part.endsWith('**')) {
                                     return <strong key={k} className="font-bold text-white">{part.slice(2, -2)}</strong>;
                                 }
                                 return <span key={k}>{part}</span>;
                             });
-
                             if (isListItem) {
                                 return (
                                     <div key={`${pIdx}-${lIdx}`} className="flex gap-2 ml-2 mb-1">
@@ -55,13 +49,7 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
                                     </div>
                                 );
                             }
-
-                            return (
-                                <React.Fragment key={`${pIdx}-${lIdx}`}>
-                                    {renderedLine}
-                                    {lIdx < lines.length - 1 && <br />}
-                                </React.Fragment>
-                            );
+                            return <React.Fragment key={`${pIdx}-${lIdx}`}>{renderedLine}{lIdx < lines.length - 1 && <br />}</React.Fragment>;
                         })}
                     </div>
                 );
@@ -70,10 +58,8 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
     );
 };
 
-// Typewriter Wrapper
 const TypewriterMessage: React.FC<{ content: string; onComplete?: () => void }> = ({ content, onComplete }) => {
     const [displayedContent, setDisplayedContent] = useState("");
-    
     useEffect(() => {
         let index = 0;
         const intervalId = setInterval(() => {
@@ -84,13 +70,10 @@ const TypewriterMessage: React.FC<{ content: string; onComplete?: () => void }> 
                 if (onComplete) onComplete();
             }
         }, 5);
-        
         return () => clearInterval(intervalId);
     }, [content, onComplete]);
-
     return <MarkdownRenderer content={displayedContent} />;
 };
-
 
 // --- CHAT MODAL COMPONENT ---
 interface ChatModalProps {
@@ -98,7 +81,6 @@ interface ChatModalProps {
     documentTitle: string;
     onClose: () => void;
 }
-
 const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle, onClose }) => {
     const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string, isNew?: boolean}[]>([
         { role: 'assistant', content: `Përshëndetje! Jam asistenti juaj për dokumentin "${documentTitle}". Çfarë dëshironi të dini?`, isNew: true }
@@ -107,24 +89,16 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
     const [loading, setLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-        }
-    }, [messages, loading, messages.length]); 
+    useEffect(() => { if (scrollRef.current) { scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }); } }, [messages, loading, messages.length]); 
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim() || loading) return;
-
         const userMsg = input;
         setInput("");
-        
         setMessages(prev => prev.map(m => ({...m, isNew: false})));
         setMessages(prev => [...prev, { role: 'user', content: userMsg, isNew: false }]);
         setLoading(true);
-
         try {
             const response = await apiService.askDocumentQuestion(documentId, userMsg);
             setMessages(prev => [...prev, { role: 'assistant', content: response.answer || "Nuk munda të gjej një përgjigje.", isNew: true }]);
@@ -134,98 +108,30 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
             setLoading(false);
         }
     };
-
-    // PHOENIX: Clear Chat Handler
-    const handleClearChat = () => {
-        if (window.confirm("A jeni i sigurt që doni të fshini bisedën?")) {
-            setMessages([
-                { role: 'assistant', content: `Përshëndetje! Jam asistenti juaj për dokumentin "${documentTitle}". Çfarë dëshironi të dini?`, isNew: true }
-            ]);
-        }
-    };
+    const handleClearChat = () => { if (window.confirm("A jeni i sigurt që doni të fshini bisedën?")) { setMessages([{ role: 'assistant', content: `Përshëndetje! Jam asistenti juaj për dokumentin "${documentTitle}". Çfarë dëshironi të dini?`, isNew: true }]); } };
 
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 10 }} 
-                animate={{ opacity: 1, scale: 1, y: 0 }} 
-                exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                className="bg-[#0f172a] border border-white/20 w-full max-w-lg h-[650px] max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative ring-1 ring-white/10"
-            >
-                {/* Header */}
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 10 }} className="bg-[#0f172a] border border-white/20 w-full max-w-lg h-[650px] max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative ring-1 ring-white/10">
                 <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-4 flex items-center justify-between shadow-md z-10 shrink-0">
                     <div className="flex items-center gap-3.5">
-                        <div className="p-2 bg-white/15 rounded-xl backdrop-blur-md border border-white/10 shadow-sm">
-                            <Bot className="text-white w-5 h-5" />
-                        </div>
-                        <div>
-                            {/* PHOENIX: Updated Title */}
-                            <h3 className="font-bold text-white text-sm tracking-wide">Haveri i dokumenteve</h3>
-                            <p className="text-[11px] text-blue-100/90 font-medium line-clamp-1 max-w-[200px]">{documentTitle}</p>
-                        </div>
+                        <div className="p-2 bg-white/15 rounded-xl backdrop-blur-md border border-white/10 shadow-sm"><Bot className="text-white w-5 h-5" /></div>
+                        <div><h3 className="font-bold text-white text-sm tracking-wide">Haveri i dokumenteve</h3><p className="text-[11px] text-blue-100/90 font-medium line-clamp-1 max-w-[200px]">{documentTitle}</p></div>
                     </div>
                     <div className="flex items-center gap-1">
-                        {/* PHOENIX: Added Clear Chat Button */}
-                        <button 
-                            onClick={handleClearChat} 
-                            className="text-white/80 hover:text-red-300 transition-colors p-1.5 rounded-full hover:bg-white/10"
-                            title="Pastro Bisedën"
-                        >
-                            <Trash2 size={18} />
-                        </button>
-                        <button onClick={onClose} className="text-white/80 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10">
-                            <X size={20} />
-                        </button>
+                        <button onClick={handleClearChat} className="text-white/80 hover:text-red-300 transition-colors p-1.5 rounded-full hover:bg-white/10" title="Pastro Bisedën"><Trash2 size={18} /></button>
+                        <button onClick={onClose} className="text-white/80 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10"><X size={20} /></button>
                     </div>
                 </div>
-
-                {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-[#0f172a]" ref={scrollRef}>
-                    {messages.map((msg, idx) => (
-                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-md ${
-                                msg.role === 'user' 
-                                    ? 'bg-blue-600 text-white rounded-br-sm' 
-                                    : 'bg-[#1e293b] border border-white/5 rounded-bl-sm'
-                            }`}>
-                                {msg.role === 'assistant' && msg.isNew ? (
-                                    <TypewriterMessage content={msg.content} />
-                                ) : (
-                                    msg.role === 'assistant' ? <MarkdownRenderer content={msg.content} /> : <p className="text-white">{msg.content}</p>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                    {loading && (
-                        <div className="flex justify-start">
-                            <div className="bg-[#1e293b] rounded-2xl px-4 py-3.5 border border-white/5 rounded-bl-sm flex gap-1.5 items-center">
-                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
-                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
-                            </div>
-                        </div>
-                    )}
+                    {messages.map((msg, idx) => (<div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-md ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-[#1e293b] border border-white/5 rounded-bl-sm'}`}>{msg.role === 'assistant' && msg.isNew ? <TypewriterMessage content={msg.content} /> : (msg.role === 'assistant' ? <MarkdownRenderer content={msg.content} /> : <p className="text-white">{msg.content}</p>)}</div></div>))}
+                    {loading && (<div className="flex justify-start"><div className="bg-[#1e293b] rounded-2xl px-4 py-3.5 border border-white/5 rounded-bl-sm flex gap-1.5 items-center"><div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} /><div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} /><div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} /></div></div>)}
                 </div>
-
-                {/* Input Area */}
                 <div className="p-4 bg-[#1e293b] border-t border-white/10 shrink-0">
                     <form onSubmit={handleSend} className="relative flex items-center gap-3">
                         <div className="relative flex-1">
-                            <input
-                                autoFocus
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder="Pyetni rreth dokumentit..."
-                                className="w-full bg-[#020617] border border-white/10 rounded-2xl pl-4 pr-12 py-3.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder-gray-500 transition-all"
-                            />
-                            <button 
-                                type="submit" 
-                                disabled={!input.trim() || loading}
-                                className="absolute right-2 top-2 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                            >
-                                <Send size={16} className={loading ? "opacity-50" : ""} />
-                            </button>
+                            <input autoFocus type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Pyetni rreth dokumentit..." className="w-full bg-[#020617] border border-white/10 rounded-2xl pl-4 pr-12 py-3.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder-gray-500 transition-all" />
+                            <button type="submit" disabled={!input.trim() || loading} className="absolute right-2 top-2 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"><Send size={16} className={loading ? "opacity-50" : ""} /></button>
                         </div>
                     </form>
                 </div>
@@ -252,19 +158,18 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
             <div> 
                 <div className="flex justify-between items-start gap-2 mb-4"> 
                     <div className="p-3 rounded-2xl bg-white/5 border border-white/10">{icon}</div> 
+                    {/* PHOENIX UI FIX: Removed duplicate Ask AI icon */}
                     <div className="flex items-center gap-2">
                         {!isFolder && <StatusBadge status={indexingStatus} />}
                         {isShared && (<div className="p-1.5 text-emerald-400"><Share2 size={14} /></div>)}
-                        {!isFolder && indexingStatus === 'READY' && onAskAI && (
-                            <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors" title="Ask AI"><MessageSquare size={14} /></button>
-                        )}
                     </div> 
                 </div> 
                 <div><h2 className="text-lg font-bold text-gray-100 line-clamp-2">{title}</h2><div className="flex items-center gap-2 mt-2"><Calendar className="w-3.5 h-3.5 text-gray-500"/><p className="text-xs text-gray-500">{date}</p></div></div> 
                 <div className="mt-4 space-y-1.5 pl-3 border-l-2 border-white/5"><div className="flex items-center gap-2 text-sm text-gray-300">{isFolder ? <FolderOpen className="w-4 h-4 text-amber-500" /> : <FileText className="w-4 h-4 text-blue-500" />}<span>{type}</span></div><div className="flex items-center gap-2 text-xs text-gray-500"><Hash className="w-3.5 h-3.5"/><span>{subtitle}</span></div></div> 
             </div> 
             <div className="pt-4 border-t border-white/5 flex justify-end items-center"> 
-                <div className="flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* PHOENIX UI FIX: Removed opacity classes to make actions always visible */}
+                <div className="flex gap-1 items-center">
                     {!isFolder && onReIndex && (<button onClick={(e) => { e.stopPropagation(); onReIndex(); }} className="p-2 text-gray-400 hover:text-amber-400"><Zap size={16} /></button>)}
                     {!isFolder && onShare && (<button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 ${isShared ? 'text-emerald-400' : 'text-gray-400 hover:text-white'}`}><Share2 size={16} /></button>)}
                     {onRename && (<button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 text-gray-400 hover:text-white"><Pencil size={16} /></button>)}
