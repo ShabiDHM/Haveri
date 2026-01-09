@@ -1,8 +1,8 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE V3.3 (CHAT UX FIX)
-// 1. UI FIX: Chat Modal is now centered (not right-aligned) and sized appropriately.
-// 2. MARKDOWN FIX: Improved regex to correctly render **bold** text even in long streams.
-// 3. UX: Typewriter effect is preserved for a premium feel.
+// PHOENIX PROTOCOL - ARCHIVE V3.4 (CHAT UI REFINEMENT)
+// 1. UI: Renamed Chat Title to 'Haveri i dokumenteve'.
+// 2. FEATURE: Added 'Clear Chat' (Trash icon) to the chat modal header.
+// 3. INTEGRITY: Preserved Markdown rendering and Typewriter effects.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,25 +26,18 @@ interface ArchiveTabProps {
 
 // Robust Markdown Renderer
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
-    // 1. Split text into paragraphs based on double newlines
     const paragraphs = content.split(/\n\n+/);
 
     return (
         <div className="space-y-3 text-sm text-gray-200 leading-relaxed">
             {paragraphs.map((paragraph, pIdx) => {
-                // 2. Check for list items (lines starting with "- " or "1. ") within the paragraph
-                // We split by single newline to catch lists that are packed together
                 const lines = paragraph.split('\n');
-                
                 return (
                     <div key={pIdx}>
                         {lines.map((line, lIdx) => {
-                            // Detect List Item
                             const isListItem = /^[•-]\s|^\d+\.\s/.test(line);
                             const cleanLine = line.replace(/^[•-]\s|^\d+\.\s/, '');
                             
-                            // 3. Parse Bold Syntax: **text**
-                            // Use a non-greedy capture group
                             const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
                             
                             const renderedLine = parts.map((part, k) => {
@@ -63,7 +56,6 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
                                 );
                             }
 
-                            // Regular line (add break if it's not the last line of a paragraph)
                             return (
                                 <React.Fragment key={`${pIdx}-${lIdx}`}>
                                     {renderedLine}
@@ -84,7 +76,6 @@ const TypewriterMessage: React.FC<{ content: string; onComplete?: () => void }> 
     
     useEffect(() => {
         let index = 0;
-        // Faster typing speed (5ms) for better responsiveness
         const intervalId = setInterval(() => {
             setDisplayedContent(content.slice(0, index + 1));
             index++;
@@ -121,7 +112,7 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
         if (scrollRef.current) {
             scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
         }
-    }, [messages, loading, messages.length]); // Add messages.length dependency
+    }, [messages, loading, messages.length]); 
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -130,9 +121,7 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
         const userMsg = input;
         setInput("");
         
-        // Mark old messages as NOT new
         setMessages(prev => prev.map(m => ({...m, isNew: false})));
-        
         setMessages(prev => [...prev, { role: 'user', content: userMsg, isNew: false }]);
         setLoading(true);
 
@@ -146,14 +135,21 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
         }
     };
 
+    // PHOENIX: Clear Chat Handler
+    const handleClearChat = () => {
+        if (window.confirm("A jeni i sigurt që doni të fshini bisedën?")) {
+            setMessages([
+                { role: 'assistant', content: `Përshëndetje! Jam asistenti juaj për dokumentin "${documentTitle}". Çfarë dëshironi të dini?`, isNew: true }
+            ]);
+        }
+    };
+
     return (
-        // PHOENIX UI FIX: Centered Modal (justify-center items-center) instead of right-aligned drawer
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
             <motion.div 
                 initial={{ opacity: 0, scale: 0.9, y: 10 }} 
                 animate={{ opacity: 1, scale: 1, y: 0 }} 
                 exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                // Controlled width and max-height so it doesn't cover the whole page
                 className="bg-[#0f172a] border border-white/20 w-full max-w-lg h-[650px] max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative ring-1 ring-white/10"
             >
                 {/* Header */}
@@ -163,13 +159,24 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
                             <Bot className="text-white w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-white text-sm tracking-wide">Asistenti i Dokumentit</h3>
+                            {/* PHOENIX: Updated Title */}
+                            <h3 className="font-bold text-white text-sm tracking-wide">Haveri i dokumenteve</h3>
                             <p className="text-[11px] text-blue-100/90 font-medium line-clamp-1 max-w-[200px]">{documentTitle}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-white/80 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10">
-                        <X size={20} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        {/* PHOENIX: Added Clear Chat Button */}
+                        <button 
+                            onClick={handleClearChat} 
+                            className="text-white/80 hover:text-red-300 transition-colors p-1.5 rounded-full hover:bg-white/10"
+                            title="Pastro Bisedën"
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                        <button onClick={onClose} className="text-white/80 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10">
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Messages Area */}

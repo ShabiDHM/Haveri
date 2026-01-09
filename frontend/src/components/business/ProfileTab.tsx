@@ -1,8 +1,7 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V18.0 (TACTICAL UPGRADE)
-// 1. STYLE: Applied Phoenix Glassmorphism to all cards and inputs.
-// 2. CONSISTENCY: Aligned layout, spacing, and component styles with Finance/Archive tabs.
-// 3. UX: Enhanced visual feedback on interactive elements.
+// PHOENIX PROTOCOL - PROFILE TAB V18.1 (LABEL UPDATE)
+// 1. UI FIX: Changed 'Law Firm Name' label to 'Business Name' (Biznesi) to be more generic.
+// 2. INTEGRITY: Preserved all other functionality and styling.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -187,7 +186,8 @@ export const ProfileTab: React.FC = () => {
                     <div>
                         <SectionHeader icon={<Building2 className="w-6 h-6 text-blue-400" />} title={t('business.firmData')} />
                         <div className="space-y-6">
-                            <FormField label={t('business.firmNameLabel')} icon={<Building2 />}>
+                            {/* PHOENIX UI FIX: Changed label to 'BUSINESS NAME' */}
+                            <FormField label={t('business.businessName', 'BUSINESS NAME')} icon={<Building2 />}>
                                 <input type="text" name="firm_name" value={formData.firm_name} onChange={(e) => setFormData({ ...formData, firm_name: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all text-sm placeholder:text-gray-600" placeholder={t('business.firmNamePlaceholder')} />
                             </FormField>
                             

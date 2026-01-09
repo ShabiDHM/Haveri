@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V2.0 (SYNTAX CORRECTION)
-# 1. FIX: Restored all functions to their full, un-collapsed state, fixing all syntax errors.
-# 2. INTEGRITY: This file is a complete, final version containing all logic for Finance, Tax, and Inventory AI.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V2.1 (LLM INTEGRATION)
+# 1. FEATURE: 'chat_with_tax_bot' now uses the 'llm_service' RAG pipeline instead of hardcoded if/else statements.
+# 2. LOGIC: This enables dynamic, context-aware answers grounded in the Legal Knowledge Base.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any, Optional
@@ -16,6 +16,7 @@ from app.api.endpoints.dependencies import get_current_user, get_db
 from app.models.user import UserInDB
 from app.services.inventory_service import InventoryService
 from app.services.finance_service import FinanceService
+from app.services import llm_service  # PHOENIX: Imported LLM Service
 from app.models.inventory import InventoryItem
 
 router = APIRouter()
@@ -232,13 +233,14 @@ def analyze_tax_anomalies(
     return TaxAuditResult(anomalies=anomalies, status=status_code, net_obligation=0.0)
 
 @router.post("/tax/chat", response_model=Dict[str, str])
-def chat_with_tax_bot(request: ChatRequest):
-    msg = request.message.lower()
-    if any(x in msg for x in ["laptop", "kompjuter", "pajisj", "aset"]): return {"response": "💻 **Për Asete (si Laptopë):**\n- **TVSH:** E Zbritshme 100%.\n- **Shpenzimi:** Amortizohet 20% në vit."}
-    if any(x in msg for x in ["drek", "ushqim", "kafe", "dark", "reprezentacion"]): return {"response": "🍽️ **Për Reprezentacion:**\n- **TVSH:** JO e zbritshme.\n- **Shpenzimi:** Njihet vetëm 50%."}
-    if any(x in msg for x in ["makin", "vetur", "naft", "benzin"]): return {"response": "🚗 **Për Veturat e Pasagjerëve:**\n- **TVSH:** JO e zbritshme.\n- **Shpenzimi:** Njihet 50% nëse përdoret privatisht."}
-    if "tvsh" in msg: return {"response": "Sipas ligjit të ATK-së, TVSH-ja (18%) është e zbritshme për blerjet biznesore, përveç reprezentacionit dhe veturave."}
-    return {"response": "Mund t'ju përgjigjem saktësisht vetëm për: Pajisje, Reprezentacion, dhe Vetura."}
+def chat_with_tax_bot(
+    request: ChatRequest,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    # PHOENIX: Replaced hardcoded logic with dynamic RAG call
+    user_id = str(current_user.id)
+    response_text = llm_service.ask_business_consultant(user_id=user_id, query=request.message)
+    return {"response": response_text}
 
 @router.post("/inventory/predict", response_model=RestockPrediction)
 def predict_restock(
