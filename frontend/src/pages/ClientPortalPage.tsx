@@ -1,14 +1,15 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - PORTAL V8.0 (PHONE INPUT)
-// 1. FORM: Added a 'Phone' input field to the contact form.
-// 2. LOGIC: The phone number is now included in the message submission.
+// PHOENIX PROTOCOL - PORTAL V8.2 (BUSINESS PROFILE INTEGRATION)
+// 1. UI UPGRADE: Replaced generic contact text with full Business Profile details (Address, Phone, Email, NUI).
+// 2. LAYOUT: Left panel now displays the Law Firm's contact info dynamically.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
     Loader2, FileText, ShieldCheck, Building2, Download,
-    Calendar, Eye, Quote, AlignLeft, User, Mail, MessageSquare, Send, Phone
+    Calendar, Eye, Quote, AlignLeft, User, Mail, MessageSquare, Send, Phone,
+    MapPin, Globe, CreditCard
 } from 'lucide-react';
 import { API_V1_URL, apiService } from '../services/api';
 import PDFViewerModal from '../components/PDFViewerModal';
@@ -22,6 +23,7 @@ interface PublicCaseData {
     organization_name?: string; description?: string; logo?: string; 
     owner_address?: string; address?: string; owner_nui?: string; nui?: string;
     tax_id?: string; owner_email?: string; email?: string; owner_phone?: string; phone?: string;
+    owner_website?: string; owner_city?: string; // Extended fields
     documents: SharedDocument[]; 
 }
 
@@ -103,14 +105,37 @@ const ClientPortalPage: React.FC = () => {
 
     const closeViewer = () => { if (viewingUrl) URL.revokeObjectURL(viewingUrl); setViewingDoc(null); setViewingUrl(null); };
 
+    // --- HELPER FOR BUSINESS INFO ROWS ---
+    const InfoRow = ({ icon: Icon, label, value }: { icon: any, label: string, value?: string }) => {
+        if (!value) return null;
+        return (
+            <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                <div className="p-2.5 bg-blue-500/10 rounded-lg text-blue-400">
+                    <Icon size={18} />
+                </div>
+                <div>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-0.5">{label}</p>
+                    <p className="text-sm font-medium text-gray-200">{value}</p>
+                </div>
+            </div>
+        );
+    };
+
     if (loading) return ( <div className="min-h-screen bg-[#020617] flex items-center justify-center"><Loader2 className="w-12 h-12 text-emerald-500 animate-spin" /></div> );
     if (error || !data) return ( <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6"><div className="bg-rose-900/10 border border-rose-500/20 p-12 rounded-3xl text-center"><ShieldCheck className="w-16 h-16 text-rose-900/50 mx-auto mb-6" /><h1 className="text-2xl font-bold text-white mb-2">{t('portal.access_denied')}</h1><p className="text-gray-400">{error}</p></div></div> );
 
     const logoSrc = getLogoUrl();
     const currentDate = new Date().toLocaleDateString('sq-AL', { year: 'numeric', month: 'long', day: 'numeric' });
     const directorMessage = data.description || "Të nderuar, bashkëngjitur gjeni dokumentacionin e përgatitur për rishikimin tuaj.";
+    
+    // Consolidate Data Fields
+    const businessName = data.organization_name;
     const businessAddress = data.owner_address || data.address;
     const businessNui = data.owner_nui || data.nui || data.tax_id;
+    const businessEmail = data.owner_email || data.email;
+    const businessPhone = data.owner_phone || data.phone;
+    const businessWebsite = data.owner_website;
+    const businessCity = data.owner_city;
 
     return (
         <div className="min-h-screen bg-[#020617] font-sans text-white selection:bg-emerald-500/30 pb-24 relative overflow-x-hidden">
@@ -119,7 +144,7 @@ const ClientPortalPage: React.FC = () => {
                 <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-5">
                         {logoSrc ? <img src={logoSrc} alt="Logo" className="w-12 h-12 rounded-xl object-contain bg-black/20 border border-white/10" onError={() => setImgError(true)}/> : <div className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center"><Building2 className="text-gray-400 w-6 h-6" /></div>}
-                        <div className="flex flex-col"><span className="font-bold text-lg tracking-tight text-white leading-none mb-1">{data.organization_name || 'Portal'}</span>{(businessAddress || businessNui) ? (<div className="flex flex-col gap-0.5"><div className="flex items-center gap-2 text-[10px] text-gray-400 font-medium">{businessAddress && <span>{businessAddress}</span>}{businessNui && <span className="opacity-50">|</span>}{businessNui && <span>NUI: {businessNui}</span>}</div></div>) : (<span className="text-[10px] text-gray-500 tracking-widest uppercase font-medium">Portali i Klientit</span>)}</div>
+                        <div className="flex flex-col"><span className="font-bold text-lg tracking-tight text-white leading-none mb-1">{businessName || 'Portal'}</span>{(businessAddress || businessNui) ? (<div className="flex flex-col gap-0.5"><div className="flex items-center gap-2 text-[10px] text-gray-400 font-medium">{businessAddress && <span>{businessAddress}</span>}{businessNui && <span className="opacity-50">|</span>}{businessNui && <span>NUI: {businessNui}</span>}</div></div>) : (<span className="text-[10px] text-gray-500 tracking-widest uppercase font-medium">Portali i Klientit</span>)}</div>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400 bg-emerald-500/5 px-3 py-1.5 rounded-full border border-emerald-500/10"><ShieldCheck size={12} /><span className="hidden sm:inline uppercase tracking-wider">Lidhje e Sigurt</span></div>
                 </div>
@@ -129,30 +154,52 @@ const ClientPortalPage: React.FC = () => {
                     <div className="space-y-6 pt-4"><div className="inline-flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20 text-xs font-bold uppercase tracking-widest"><Calendar size={12} /> {currentDate}</div><div><h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.1] mb-4">Përshëndetje,</h1><p className="text-gray-400 text-lg font-light leading-relaxed max-w-md">Këtu do të gjeni pasqyrën e plotë të dokumentacionit dhe komunikimet.</p></div></div>
                     <div className="relative group"><div className="absolute -inset-1 bg-gradient-to-br from-emerald-500/20 via-transparent to-blue-500/20 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition"></div><div className="relative bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 sm:p-10 shadow-2xl"><div className="flex items-start justify-between mb-6"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg border border-white/10"><Quote size={18} className="text-white" /></div><div><h3 className="text-sm font-bold text-white uppercase tracking-wider">Njoftim</h3><p className="text-[10px] text-emerald-400 font-mono mt-0.5 uppercase tracking-widest">Nga Drejtoria</p></div></div><AlignLeft className="text-white/20" size={24} /></div><div className="prose prose-invert prose-sm max-w-none"><p className="text-gray-300 leading-relaxed font-light whitespace-pre-wrap">{directorMessage}</p></div></div></div>
                 </motion.div>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}><div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4"><div className="flex items-center gap-4"><div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-emerald-500 rounded-full" /><h2 className="text-2xl font-bold text-white tracking-tight">Dokumentet</h2></div><span className="bg-white/5 border border-white/10 text-gray-400 px-3 py-1 rounded-full text-xs font-mono">{data.documents.length} skedarë</span></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{data.documents.length === 0 ? (<div className="col-span-full border border-dashed border-white/10 rounded-3xl p-16 text-center bg-white/5"><div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5"><FileText className="text-gray-600" size={24} /></div><p className="text-gray-500 font-medium">Nuk ka dokumente të disponueshme për momentin.</p></div>) : (data.documents.map((doc, i) => (<motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 + 0.4 }} className="group relative bg-[#1e293b]/40 hover:bg-[#1e293b]/80 border border-white/5 hover:border-emerald-500/30 rounded-2xl p-6 transition-all duration-300 flex flex-col h-48 overflow-hidden"><div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-500 pointer-events-none" /><div className="flex justify-between items-start mb-4 relative z-10"><div className="p-3 bg-black/40 rounded-xl text-emerald-400 group-hover:text-emerald-300 border border-white/5 transition-colors shadow-lg"><FileText size={20} /></div><div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => handleView(doc.id, doc.source, doc.file_name, doc.file_type)} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title="Shiko"><Eye size={16} /></button></div></div><div className="relative z-10 flex-1"><h4 className="font-bold text-gray-200 group-hover:text-white line-clamp-2 leading-snug text-base mb-1">{doc.file_name}</h4><div className="flex items-center gap-2 text-xs text-gray-500"><Calendar size={12} /><span>{new Date(doc.created_at).toLocaleDateString()}</span></div></div><div className="relative z-10 mt-4 pt-4 border-t border-white/5 flex justify-between items-center"><span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{doc.file_type || 'PDF'}</span><button onClick={() => handleDownload(doc.id, doc.source, doc.file_name)} className="flex items-center gap-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider">Shkarko <Download size={12} /></button></div></motion.div>)))}</div></motion.div>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}><div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4"><div className="flex items-center gap-4"><div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-emerald-500 rounded-full" /><h2 className="text-2xl font-bold text-white tracking-tight">Dokumentet</h2></div><span className="bg-white/5 border border-white/10 text-gray-400 px-3 py-1 rounded-full text-xs font-mono">{data.documents.length} skedarë</span></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{data.documents.length === 0 ? (<div className="col-span-full border border-dashed border-white/10 rounded-3xl p-16 text-center bg-white/5"><div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5"><FileText className="text-gray-600" size={24} /></div><p className="text-gray-500 font-medium">Nuk ka dokumente të disponueshme për momentin.</p></div>) : (data.documents.map((doc, i) => (<motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 + 0.4 }} className="group relative bg-[#1e293b]/40 hover:bg-[#1e293b]/80 border border-white/5 hover:border-emerald-500/30 rounded-2xl p-6 transition-all duration-300 flex flex-col h-48 overflow-hidden"><div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-500 pointer-events-none" /><div className="flex justify-between items-start mb-4 relative z-10"><div className="p-3 bg-black/40 rounded-xl text-emerald-400 group-hover:text-emerald-300 border border-white/5 transition-colors shadow-lg"><FileText size={20} /></div><div className="flex gap-2"><button onClick={() => handleView(doc.id, doc.source, doc.file_name, doc.file_type)} className="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/5" title="Shiko"><Eye size={16} /></button></div></div><div className="relative z-10 flex-1"><h4 className="font-bold text-gray-200 group-hover:text-white line-clamp-2 leading-snug text-base mb-1">{doc.file_name}</h4><div className="flex items-center gap-2 text-xs text-gray-500"><Calendar size={12} /><span>{new Date(doc.created_at).toLocaleDateString()}</span></div></div><div className="relative z-10 mt-4 pt-4 border-t border-white/5 flex justify-between items-center"><span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{doc.file_type || 'PDF'}</span><button onClick={() => handleDownload(doc.id, doc.source, doc.file_name)} className="flex items-center gap-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider">Shkarko <Download size={12} /></button></div></motion.div>)))}</div></motion.div>
+                
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="pt-8">
                     <div className="bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600" />
                         <div className="grid grid-cols-1 lg:grid-cols-5">
+                            
+                            {/* LEFT PANEL: BUSINESS PROFILE INFO */}
                             <div className="lg:col-span-2 p-8 sm:p-10 bg-white/5 border-r border-white/5 flex flex-col justify-center">
-                                <div><h3 className="text-2xl font-bold text-white mb-3">Na dërgoni mesazh</h3><p className="text-gray-400 text-sm leading-relaxed">Keni pyetje rreth dokumentacionit ose kërkesa shtesë? Plotësoni formën dhe do t'ju kontaktojmë menjëherë.</p></div>
+                                <div className="mb-8">
+                                    <h3 className="text-2xl font-bold text-white mb-2">Informacion Kontaktues</h3>
+                                    <p className="text-gray-400 text-sm leading-relaxed">Detajet tona për kontakt të drejtpërdrejtë.</p>
+                                </div>
+                                <div className="space-y-3">
+                                    <InfoRow icon={Building2} label="Zyra Ligjore" value={businessName} />
+                                    <InfoRow icon={Mail} label="Email Publik" value={businessEmail} />
+                                    <InfoRow icon={Phone} label="Numri i Telefonit" value={businessPhone} />
+                                    <InfoRow icon={MapPin} label="Adresa" value={businessAddress} />
+                                    {(businessCity) && <InfoRow icon={MapPin} label="Qyteti" value={businessCity} />}
+                                    <InfoRow icon={Globe} label="Website" value={businessWebsite} />
+                                    <InfoRow icon={CreditCard} label="Numri Fiskal" value={businessNui} />
+                                </div>
                             </div>
+
+                            {/* RIGHT PANEL: CONTACT FORM */}
                             <div className="lg:col-span-3 p-8 sm:p-10 bg-[#0f172a]">
                                 {sent ? (<motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="h-full flex flex-col items-center justify-center text-center py-12"><div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4 text-emerald-400 border border-emerald-500/30"><ShieldCheck size={32} /></div><h4 className="text-xl font-bold text-white mb-2">Mesazhi u dërgua me sukses!</h4><p className="text-gray-400">Faleminderit që na kontaktuat.</p></motion.div>) : (
-                                    <form onSubmit={handleSendMessage} className="space-y-5">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                            <div className="relative group"><User className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder="Emri" required value={formState.firstName} onChange={e => setFormState({...formState, firstName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" /></div>
-                                            <div className="relative group"><User className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder="Mbiemri" required value={formState.lastName} onChange={e => setFormState({...formState, lastName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" /></div>
+                                    <div className="h-full flex flex-col justify-center">
+                                         <div className="mb-6 lg:hidden">
+                                            <h3 className="text-xl font-bold text-white mb-1">Na dërgoni mesazh</h3>
+                                            <p className="text-gray-400 text-xs">Plotësoni formën më poshtë.</p>
                                         </div>
-                                        <div className="relative group"><Mail className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><input type="email" placeholder="Email" required value={formState.email} onChange={e => setFormState({...formState, email: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" /></div>
-                                        {/* PHOENIX: Added Phone Input */}
-                                        <div className="relative group">
-                                            <Phone className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
-                                            <input type="tel" placeholder="Telefoni (Opsional)" value={formState.phone} onChange={e => setFormState({...formState, phone: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" />
-                                        </div>
-                                        <div className="relative group"><MessageSquare className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><textarea placeholder="Mesazhi juaj..." rows={4} required value={formState.message} onChange={e => setFormState({...formState, message: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none resize-none" /></div>
-                                        <div className="pt-2"><button type="submit" disabled={sending} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.01]">{sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />} Dërgo Mesazhin</button></div>
-                                    </form>
+                                        <form onSubmit={handleSendMessage} className="space-y-5">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                <div className="relative group"><User className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder="Emri" required value={formState.firstName} onChange={e => setFormState({...formState, firstName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" /></div>
+                                                <div className="relative group"><User className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder="Mbiemri" required value={formState.lastName} onChange={e => setFormState({...formState, lastName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" /></div>
+                                            </div>
+                                            <div className="relative group"><Mail className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><input type="email" placeholder="Email" required value={formState.email} onChange={e => setFormState({...formState, email: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" /></div>
+                                            <div className="relative group">
+                                                <Phone className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
+                                                <input type="tel" placeholder="Telefoni (Opsional)" value={formState.phone} onChange={e => setFormState({...formState, phone: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" />
+                                            </div>
+                                            <div className="relative group"><MessageSquare className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><textarea placeholder="Mesazhi juaj..." rows={4} required value={formState.message} onChange={e => setFormState({...formState, message: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none resize-none" /></div>
+                                            <div className="pt-2"><button type="submit" disabled={sending} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.01]">{sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />} Dërgo Mesazhin</button></div>
+                                        </form>
+                                    </div>
                                 )}
                             </div>
                         </div>

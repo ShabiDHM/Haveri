@@ -1,11 +1,11 @@
 # FILE: backend/app/services/share_service.py
-# PHOENIX PROTOCOL - SHARE SERVICE V1.6 (ROBUST QUERY FIX)
-# 1. CRITICAL FIX: The database queries for both 'documents' and 'archives' now use an '$or' condition.
-# 2. LOGIC: This checks for 'case_id' matching EITHER the string OR the ObjectId version.
-# 3. RESULT: This definitively resolves the "missing documents" bug by making the query resilient to any data type inconsistencies for the 'case_id' field.
+# PHOENIX PROTOCOL - SHARE SERVICE V1.7 (EXTENDED PROFILE DATA)
+# 1. FEATURE: Extended 'get_public_case_data' to return full Business Profile details.
+#    - Added: address, city, phone, email, website, tax_id (nui).
+# 2. UI SYNC: This enables the frontend Client Portal to display the full contact info of the Law Firm.
 
 from pymongo.database import Database
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from bson import ObjectId
 
 class ShareService:
@@ -32,14 +32,14 @@ class ShareService:
             return {} 
 
         # 1. Resolve Owner Profile
-        business_profile = self.db["business_profiles"].find_one({"user_id": str(owner_id)})
+        business_profile: Optional[Dict[str, Any]] = self.db["business_profiles"].find_one({"user_id": str(owner_id)})
         if not business_profile and isinstance(owner_id, ObjectId):
              business_profile = self.db["business_profiles"].find_one({"user_id": owner_id})
 
         # 2. Get Fallback User Info
         user_doc = self.db["users"].find_one({"_id": ObjectId(str(owner_id))})
         
-        # 3. Determine Display Name
+        # 3. Determine Display Name & Base Info
         org_name = "Zyra Ligjore"
         if business_profile and business_profile.get("firm_name"):
             org_name = business_profile.get("firm_name")
@@ -53,7 +53,17 @@ class ShareService:
         elif business_profile and business_profile.get("logo_url"):
              logo_url = business_profile.get("logo_url")
 
-        # 5. Gather Content
+        # 5. Extract Extended Profile Details
+        profile_data = business_profile or {}
+        
+        owner_address = profile_data.get("address")
+        owner_city = profile_data.get("city")
+        owner_phone = profile_data.get("phone")
+        owner_email = profile_data.get("email_public") or (user_doc.get("email") if user_doc else None)
+        owner_nui = profile_data.get("tax_id") or profile_data.get("nui")
+        owner_website = profile_data.get("website")
+
+        # 6. Gather Content (Documents & Timeline)
         
         # PHOENIX: Use a robust $or query to handle both string and ObjectId case_id formats.
         robust_case_query = {
@@ -88,8 +98,19 @@ class ShareService:
             "title": case_doc.get("title"),
             "client_name": case_doc.get("client", {}).get("name"),
             "status": case_doc.get("status"),
+            "description": case_doc.get("description"), # Pass case description if any
+            
+            # --- Business Profile Data ---
             "organization_name": org_name,
             "logo": logo_url,
+            "owner_address": owner_address,
+            "owner_city": owner_city,
+            "owner_phone": owner_phone,
+            "owner_email": owner_email,
+            "owner_nui": owner_nui,
+            "owner_website": owner_website,
+            
+            # --- Content ---
             "timeline": sorted(timeline, key=lambda x: x['date'], reverse=True) if timeline else [],
             "documents": active_documents + archive_documents,
             "invoices": []
