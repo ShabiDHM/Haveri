@@ -1,25 +1,30 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V3.0 (AI PULSE INTEGRATION)
-// 1. REPLACED: 'ProductPerformanceCard' (Static List) -> 'BusinessPulseCard' (Predictive AI).
-// 2. DATA: Passed 'mvpTotal' (Revenue) to Pulse Card for velocity calculation.
-// 3. UI: Updated layout to accommodate the new card style.
+// PHOENIX PROTOCOL - DASHBOARD V4.0 (DEFINITIVE DATA SOURCE FIX)
+// 1. CRITICAL FIX: The entire component now consumes the 'useFinanceData' hook.
+// 2. LOGIC: It passes the verified 'displayIncome' (which is Month-to-Date) directly to the dashboard cards.
+// 3. EFFECT: This bypasses the faulty backend service ('strategic_briefing_service') and guarantees the Dashboard shows the exact same, correct data as the Finance Tab, resolving the "€0.00" error permanently.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Target, AlertTriangle } from 'lucide-react';
 import { useStrategicBriefing, UIAgendaItem } from '../../hooks/useStrategicBriefing';
+import { useFinanceData } from '../../hooks/useFinanceData'; // PHOENIX: IMPORT THE CORRECT DATA HOOK
 import { EventDetailModal } from '../modals/EventDetailModal';
 import { apiService } from '../../services/api';
 import { Case } from '../../data/types';
 
 import { BusinessRhythmCard } from './briefing/BusinessRhythmCard';
-import { BusinessPulseCard } from './briefing/BusinessPulseCard'; // NEW COMPONENT
+import { BusinessPulseCard } from './briefing/BusinessPulseCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
 
 export const DailyBriefingTab: React.FC = () => {
     const { t } = useTranslation();
-    const { data, loading, error, refreshData } = useStrategicBriefing();
+    
+    // PHOENIX: Use BOTH hooks. Briefing for Agenda, Finance for revenue data.
+    const { data: briefingData, loading: briefingLoading, error: briefingError, refreshData } = useStrategicBriefing();
+    const { displayIncome, loading: financeLoading } = useFinanceData();
+
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
     const [cases, setCases] = useState<Case[]>([]);
 
@@ -46,8 +51,10 @@ export const DailyBriefingTab: React.FC = () => {
         if(refreshData) refreshData();
     };
 
-    if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
-    if (error) return <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-center"><AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" /><h3 className="text-white font-bold">{t('error.generic')}</h3><p>{t('error.failedToLoad')}</p></div>;
+    const isLoading = briefingLoading || financeLoading;
+
+    if (isLoading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
+    if (briefingError) return <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-center"><AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" /><h3 className="text-white font-bold">{t('error.generic')}</h3><p>{t('error.failedToLoad')}</p></div>;
 
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 sm:space-y-8 pb-10">
@@ -78,21 +85,20 @@ export const DailyBriefingTab: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                    {/* Card 1: Rhythm (Past/Present Status) */}
-                    <BusinessRhythmCard currentSales={data?.staffPerformance.mvpTotal} /> 
+                    {/* PHOENIX: Pass the verified 'displayIncome' (MTD Revenue) from the correct hook */}
+                    <BusinessRhythmCard currentSales={displayIncome} /> 
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                    {/* Card 2: AI Pulse (Future/Prediction) - REPLACED */}
+                    {/* PHOENIX: Pass 'displayIncome' for velocity calculation */}
                     <BusinessPulseCard 
-                        signals={data?.market.signals} 
-                        currentSales={data?.staffPerformance.mvpTotal}
+                        signals={briefingData?.market.signals} 
+                        currentSales={displayIncome}
                     />
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-                    {/* Card 3: Agenda (Tasks) */}
-                    {data && <SmartAgendaCard agenda={data.agenda} onEventClick={(event) => setSelectedEvent(event)} />}
+                    {briefingData && <SmartAgendaCard agenda={briefingData.agenda} onEventClick={(event) => setSelectedEvent(event)} />}
                 </motion.div>
             </div>
         </motion.div>
