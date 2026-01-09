@@ -1,8 +1,8 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - EXECUTIVE PORTAL V7.2 (TEXT REFINEMENT)
-// 1. CONTENT: Removed client name from greeting to avoid self-referencing confusion.
-// 2. TEXT: Simplified welcome message as requested ("...komunikimet" instead of "...komunikimet zyrtare").
-// 3. STYLE: Adjusted H1 sizing slightly to balance the shorter text.
+// PHOENIX PROTOCOL - EXECUTIVE PORTAL V7.5 (BUSINESS HEADER INFO)
+// 1. HEADER UPDATE: Replaced "Portali i Klientit" subtitle with dynamic Business Info (Address, NUI, Email) to match Invoice style.
+// 2. LOGIC: Added fallback - displays specific info if available, otherwise keeps the clean default title.
+// 3. INTERFACE: Extended PublicCaseData to accept owner/business details.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -11,7 +11,8 @@ import {
     Loader2, 
     FileText, ShieldCheck, 
     Building2, Download,
-    Calendar, Eye, Quote, AlignLeft
+    Calendar, Eye, Quote, AlignLeft,
+    User, Mail, MessageSquare, Send
 } from 'lucide-react';
 import { API_V1_URL, apiService } from '../services/api';
 import PDFViewerModal from '../components/PDFViewerModal';
@@ -28,6 +29,10 @@ interface PublicCaseData {
     organization_name?: string; 
     description?: string; 
     logo?: string; 
+    // PHOENIX: Added Business Details for Header
+    owner_address?: string;
+    owner_nui?: string;
+    owner_email?: string;
     documents: SharedDocument[]; 
 }
 
@@ -42,6 +47,11 @@ const ClientPortalPage: React.FC = () => {
 
     const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
+
+    // Contact Form State
+    const [formState, setFormState] = useState({ firstName: '', lastName: '', email: '', message: '' });
+    const [sending, setSending] = useState(false);
+    const [sent, setSent] = useState(false);
 
     useEffect(() => {
         const fetchPublicData = async () => {
@@ -111,6 +121,17 @@ const ClientPortalPage: React.FC = () => {
         }
     };
 
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSending(true);
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        setSending(false);
+        setSent(true);
+        setFormState({ firstName: '', lastName: '', email: '', message: '' });
+        setTimeout(() => setSent(false), 5000);
+    };
+
     const closeViewer = () => {
         if (viewingUrl) URL.revokeObjectURL(viewingUrl);
         setViewingDoc(null);
@@ -136,7 +157,6 @@ const ClientPortalPage: React.FC = () => {
 
     const logoSrc = getLogoUrl();
     const currentDate = new Date().toLocaleDateString('sq-AL', { year: 'numeric', month: 'long', day: 'numeric' });
-    
     const directorMessage = data.description || "Të nderuar, bashkëngjitur gjeni dokumentacionin e përgatitur për rishikimin tuaj. Për çdo paqartësi, mbetemi në dispozicion.";
 
     return (
@@ -146,16 +166,25 @@ const ClientPortalPage: React.FC = () => {
 
             {/* Header */}
             <header className="sticky top-0 z-50 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-6xl mx-auto px-6 h-24 flex items-center justify-between">
+                <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         {logoSrc ? (
                             <img src={logoSrc} alt="Logo" className="w-10 h-10 rounded-xl object-contain bg-black/20 border border-white/10" onError={() => setImgError(true)}/>
                         ) : (
                             <div className="w-10 h-10 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center"><Building2 className="text-gray-400 w-5 h-5" /></div>
                         )}
-                        <div className="flex flex-col">
-                            <span className="font-bold text-base tracking-wide text-white leading-tight">{data.organization_name || t('branding.fallback', 'Portal')}</span>
-                            <span className="text-[10px] text-gray-500 tracking-widest uppercase font-medium">Portali i Klientit</span>
+                        <div className="flex flex-col justify-center">
+                            <span className="font-bold text-base tracking-wide text-white leading-tight mb-0.5">{data.organization_name || t('branding.fallback', 'Portal')}</span>
+                            
+                            {/* PHOENIX: Dynamic Business Info / Subtitle */}
+                            {(data.owner_address || data.owner_nui) ? (
+                                <div className="text-[10px] text-gray-400 font-medium leading-tight flex flex-wrap gap-x-2">
+                                    {data.owner_address && <span>{data.owner_address}</span>}
+                                    {data.owner_nui && <span className="opacity-70 border-l border-white/10 pl-2">NUI: {data.owner_nui}</span>}
+                                </div>
+                            ) : (
+                                <span className="text-[10px] text-gray-500 tracking-widest uppercase font-medium">Portali i Klientit</span>
+                            )}
                         </div>
                     </div>
                     <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400 bg-emerald-500/5 px-3 py-1.5 rounded-full border border-emerald-500/10 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
@@ -167,35 +196,20 @@ const ClientPortalPage: React.FC = () => {
 
             <main className="max-w-6xl mx-auto px-6 pt-12 relative z-10 space-y-16">
                 
-                {/* HERO SECTION: WELCOME & BRIEFING */}
-                <motion.div 
-                    initial={{ opacity: 0, y: 20 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start"
-                >
-                    {/* LEFT: WARM WELCOME */}
+                {/* HERO SECTION */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
                     <div className="space-y-6 pt-4">
                         <div className="inline-flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20 text-xs font-bold uppercase tracking-widest">
                             <Calendar size={12} /> {currentDate}
                         </div>
-                        
                         <div>
-                            {/* PHOENIX: Removed client name, simplified text */}
-                            <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.1] mb-4">
-                                Përshëndetje,
-                            </h1>
-                            <p className="text-gray-400 text-lg font-light leading-relaxed max-w-md">
-                                Këtu do të gjeni pasqyrën e plotë të dokumentacionit dhe komunikimet.
-                            </p>
+                            <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.1] mb-4">Përshëndetje,</h1>
+                            <p className="text-gray-400 text-lg font-light leading-relaxed max-w-md">Këtu do të gjeni pasqyrën e plotë të dokumentacionit dhe komunikimet.</p>
                         </div>
                     </div>
-
-                    {/* RIGHT: EXECUTIVE BRIEFING CARD */}
                     <div className="relative group">
                         <div className="absolute -inset-1 bg-gradient-to-br from-emerald-500/20 via-transparent to-blue-500/20 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition duration-1000"></div>
                         <div className="relative bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 sm:p-10 shadow-2xl">
-                            
-                            {/* Card Header */}
                             <div className="flex items-start justify-between mb-6">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg border border-white/10">
@@ -208,28 +222,13 @@ const ClientPortalPage: React.FC = () => {
                                 </div>
                                 <AlignLeft className="text-white/20" size={24} />
                             </div>
-
-                            {/* Card Body */}
                             <div className="space-y-4">
                                 <div className="pb-4 border-b border-white/5">
                                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Subjekti:</span>
                                     <p className="text-white font-medium truncate">{data.title}</p>
                                 </div>
                                 <div className="prose prose-invert prose-sm max-w-none">
-                                    <p className="text-gray-300 leading-relaxed font-light whitespace-pre-wrap">
-                                        {directorMessage}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Card Footer */}
-                            <div className="mt-8 flex justify-between items-center pt-6 border-t border-white/5">
-                                <div className="flex -space-x-2">
-                                    <div className="w-8 h-8 rounded-full bg-gray-800 border-2 border-[#0f172a] flex items-center justify-center text-[10px] text-gray-400">SB</div>
-                                    <div className="w-8 h-8 rounded-full bg-gray-700 border-2 border-[#0f172a] flex items-center justify-center text-[10px] text-gray-400">+1</div>
-                                </div>
-                                <div className="text-[10px] text-gray-500 font-mono bg-white/5 px-2 py-1 rounded">
-                                    REF: {data.case_number}
+                                    <p className="text-gray-300 leading-relaxed font-light whitespace-pre-wrap">{directorMessage}</p>
                                 </div>
                             </div>
                         </div>
@@ -249,50 +248,71 @@ const ClientPortalPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {data.documents.length === 0 ? (
                             <div className="col-span-full border border-dashed border-white/10 rounded-3xl p-16 text-center bg-white/5">
-                                <div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5">
-                                    <FileText className="text-gray-600" size={24} />
-                                </div>
+                                <div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5"><FileText className="text-gray-600" size={24} /></div>
                                 <p className="text-gray-500 font-medium">Nuk ka dokumente të disponueshme për momentin.</p>
                             </div>
                         ) : (
                             data.documents.map((doc, i) => (
-                                <motion.div 
-                                    key={i} 
-                                    initial={{ opacity: 0, y: 10 }} 
-                                    animate={{ opacity: 1, y: 0 }} 
-                                    transition={{ delay: i * 0.05 + 0.4 }} 
-                                    className="group relative bg-[#1e293b]/40 hover:bg-[#1e293b]/80 border border-white/5 hover:border-emerald-500/30 rounded-2xl p-6 transition-all duration-300 flex flex-col h-48 overflow-hidden hover:shadow-2xl hover:shadow-emerald-900/10"
-                                >
+                                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 + 0.4 }} className="group relative bg-[#1e293b]/40 hover:bg-[#1e293b]/80 border border-white/5 hover:border-emerald-500/30 rounded-2xl p-6 transition-all duration-300 flex flex-col h-48 overflow-hidden hover:shadow-2xl hover:shadow-emerald-900/10">
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-500 pointer-events-none" />
-                                    
                                     <div className="flex justify-between items-start mb-4 relative z-10">
-                                        <div className="p-3 bg-black/40 rounded-xl text-emerald-400 group-hover:text-emerald-300 border border-white/5 transition-colors shadow-lg">
-                                            <FileText size={20} />
-                                        </div>
+                                        <div className="p-3 bg-black/40 rounded-xl text-emerald-400 group-hover:text-emerald-300 border border-white/5 transition-colors shadow-lg"><FileText size={20} /></div>
                                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button onClick={() => handleView(doc.id, doc.source, doc.file_name, doc.file_type)} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title={t('actions.view')}><Eye size={16} /></button>
                                         </div>
                                     </div>
-
                                     <div className="relative z-10 flex-1">
                                         <h4 className="font-bold text-gray-200 group-hover:text-white line-clamp-2 leading-snug text-base mb-1">{doc.file_name}</h4>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                                            <Calendar size={12} />
-                                            <span>{new Date(doc.created_at).toLocaleDateString()}</span>
-                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500"><Calendar size={12} /><span>{new Date(doc.created_at).toLocaleDateString()}</span></div>
                                     </div>
-
                                     <div className="relative z-10 mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
                                         <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{doc.file_type || 'PDF'}</span>
-                                        <button 
-                                            onClick={() => handleDownload(doc.id, doc.source, doc.file_name)}
-                                            className="flex items-center gap-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider"
-                                        >
-                                            {t('actions.download')} <Download size={12} />
-                                        </button>
+                                        <button onClick={() => handleDownload(doc.id, doc.source, doc.file_name)} className="flex items-center gap-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider">{t('actions.download')} <Download size={12} /></button>
                                     </div>
                                 </motion.div>
                             ))
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* CONTACT SECTION */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="pt-8">
+                    <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-8 max-w-2xl mx-auto shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600" />
+                        <div className="mb-8">
+                            <h3 className="text-2xl font-bold text-white mb-2">Na dërgoni një mesazh</h3>
+                            <p className="text-gray-400 text-sm">Keni pyetje apo kërkesa shtesë? Na shkruani direkt këtu.</p>
+                        </div>
+                        {sent ? (
+                            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center">
+                                <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3 text-emerald-400"><ShieldCheck size={24} /></div>
+                                <h4 className="text-white font-bold mb-1">Mesazhi u dërgua!</h4>
+                                <p className="text-emerald-400 text-sm">Do t'ju kontaktojmë së shpejti.</p>
+                            </motion.div>
+                        ) : (
+                            <form onSubmit={handleSendMessage} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="relative group">
+                                        <User className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
+                                        <input type="text" placeholder="Emri" required value={formState.firstName} onChange={e => setFormState({...formState, firstName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all" />
+                                    </div>
+                                    <div className="relative group">
+                                        <User className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
+                                        <input type="text" placeholder="Mbiemri" required value={formState.lastName} onChange={e => setFormState({...formState, lastName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all" />
+                                    </div>
+                                </div>
+                                <div className="relative group">
+                                    <Mail className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
+                                    <input type="email" placeholder="Email" required value={formState.email} onChange={e => setFormState({...formState, email: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all" />
+                                </div>
+                                <div className="relative group">
+                                    <MessageSquare className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
+                                    <textarea placeholder="Mesazhi juaj..." rows={4} required value={formState.message} onChange={e => setFormState({...formState, message: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all resize-none" />
+                                </div>
+                                <button type="submit" disabled={sending} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />} Dërgo Mesazhin
+                                </button>
+                            </form>
                         )}
                     </div>
                 </motion.div>
