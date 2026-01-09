@@ -1,7 +1,7 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - FINAL CLEANUP V19.1
-// 1. CRITICAL FIX: Removed the obsolete 'activeContextId' prop from the ChatPanel invocation, resolving the TypeScript error.
-// 2. STATUS: This file is now fully synchronized with its child components, stable, and free of linting errors.
+// PHOENIX PROTOCOL - INTEGRATED TAB SYSTEM V20.0
+// 1. UI: Added 'activeTab' state to toggle between 'DraftingPanel' and 'ArchiveTab'.
+// 2. DATA: Successfully passes 'caseId' and 'caseTitle' to 'ArchiveTab' to enable the 'PORTAL' button.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -9,15 +9,15 @@ import { Case } from '../data/types';
 import { apiService } from '../services/api';
 import ChatPanel, { ChatMode, Jurisdiction, AgentType } from '../components/ChatPanel';
 import DraftingPanel from '../components/DraftingPanel';
+import { ArchiveTab } from '../components/business/ArchiveTab';
 import { useDocumentSocket } from '../hooks/useDocumentSocket';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, FileText, PenTool } from 'lucide-react';
 
-type CaseData = {
-    details: Case | null;
-};
+type CaseData = { details: Case | null; };
+type RightPanelTab = 'drafting' | 'documents';
 
 const CaseViewPage: React.FC = () => {
   const { t } = useTranslation();
@@ -27,6 +27,7 @@ const CaseViewPage: React.FC = () => {
   const [caseData, setCaseData] = useState<CaseData>({ details: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<RightPanelTab>('drafting');
   
   const currentCaseId = useMemo(() => caseId || '', [caseId]);
   
@@ -71,9 +72,7 @@ const CaseViewPage: React.FC = () => {
     }
   }, [caseId, t]);
 
-  useEffect(() => { 
-      if (isReadyForData) fetchCaseData(true); 
-  }, [isReadyForData, fetchCaseData]);
+  useEffect(() => { if (isReadyForData) fetchCaseData(true); }, [isReadyForData, fetchCaseData]);
 
   const handleClearChat = async () => { 
       if (!caseId) return; 
@@ -92,44 +91,44 @@ const CaseViewPage: React.FC = () => {
       sendChatMessage(text, documentId, jurisdiction, agentType); 
   };
 
-  if (isAuthLoading || isLoading) {
-    return <div className="flex items-center justify-center h-screen"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>;
-  }
-
-  if (error) {
-    return <div className="p-8 text-center text-red-400 border border-red-500/20 rounded-2xl bg-red-500/10"><AlertCircle className="mx-auto h-12 w-12 mb-4" /><p>{error}</p></div>;
-  }
-  
-  if (!caseData.details) {
-    return <div className="p-8 text-center text-yellow-400 border border-yellow-500/20 rounded-2xl bg-yellow-500/10"><AlertCircle className="mx-auto h-12 w-12 mb-4" /><p>{t('error.caseNotFound', 'Çështja nuk u gjet.')}</p></div>;
-  }
+  if (isAuthLoading || isLoading) return <div className="flex items-center justify-center h-screen"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>;
+  if (error) return <div className="p-8 text-center text-red-400 border border-red-500/20 rounded-2xl bg-red-500/10"><AlertCircle className="mx-auto h-12 w-12 mb-4" /><p>{error}</p></div>;
+  if (!caseData.details) return <div className="p-8 text-center text-yellow-400 border border-yellow-500/20 rounded-2xl bg-yellow-500/10"><AlertCircle className="mx-auto h-12 w-12 mb-4" /><p>{t('error.caseNotFound', 'Çështja nuk u gjet.')}</p></div>;
 
   return (
-    <motion.div 
-        className="w-full min-h-screen bg-background-dark p-2 sm:p-4 lg:p-6"
-        initial={{ opacity: 0 }} 
-        animate={{ opacity: 1 }}
-    >
+    <motion.div className="w-full min-h-screen bg-background-dark p-2 sm:p-4 lg:p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="max-w-[1800px] w-full mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[calc(100vh-3rem)]">
             
             <ChatPanel 
-                agentType="business" 
-                messages={liveMessages} 
-                connectionStatus={connectionStatus} 
-                reconnect={reconnect} 
-                onSendMessage={handleChatSubmit} 
-                isSendingMessage={isSendingMessage} 
-                onClearChat={handleClearChat} 
-                t={t}
+                agentType="business" messages={liveMessages} connectionStatus={connectionStatus} 
+                reconnect={reconnect} onSendMessage={handleChatSubmit} isSendingMessage={isSendingMessage} 
+                onClearChat={handleClearChat} t={t}
                 className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-blue-900/10 h-[85vh] lg:h-full" 
-                // PHOENIX: activeContextId prop removed
             />
 
-            <DraftingPanel 
-                activeCaseId={caseData.details.id} 
-                className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/10 h-[85vh] lg:h-full"
-            />
+            <div className="flex flex-col h-[85vh] lg:h-full gap-4">
+                {/* Custom Tab Switcher */}
+                <div className="flex bg-gray-900/40 p-1.5 rounded-2xl border border-white/10 w-fit backdrop-blur-md">
+                    <button onClick={() => setActiveTab('drafting')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'drafting' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                        <PenTool size={16} /> <span>{t('case.drafting', 'Drafting')}</span>
+                    </button>
+                    <button onClick={() => setActiveTab('documents')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'documents' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                        <FileText size={16} /> <span>{t('case.documents', 'Dokumentet')}</span>
+                    </button>
+                </div>
+
+                <div className="flex-1 min-h-0 bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/10 overflow-hidden relative">
+                    {activeTab === 'drafting' ? (
+                        <DraftingPanel activeCaseId={caseData.details.id} className="h-full" />
+                    ) : (
+                        // PHOENIX: Inject context here so the PORTAL button appears
+                        <div className="h-full p-2">
+                             <ArchiveTab caseId={caseData.details.id} caseTitle={caseData.details.title} />
+                        </div>
+                    )}
+                </div>
+            </div>
 
         </div>
       </div>

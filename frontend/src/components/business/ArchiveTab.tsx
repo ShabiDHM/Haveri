@@ -1,7 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - COMPONENT CLEANUP V31.1
-// 1. CLEANUP: Removed unused 'useEffect' and 'useAuth' to resolve TypeScript warnings.
-// 2. STATUS: Fully optimized, warning-free, and relies on 'useArchiveData' for logic.
+// PHOENIX PROTOCOL - COMPONENT CLEANUP V32.0
+// 1. UPDATE: Added 'caseId' and 'caseTitle' props.
+// 2. SYNC: Passes context to 'useArchiveData' to unlock 'PORTAL' button.
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,10 +17,14 @@ import { useArchiveData } from '../../hooks/useArchiveData';
 import PDFViewerModal from '../PDFViewerModal';
 import ShareModal from '../ShareModal';
 
+interface ArchiveTabProps {
+    caseId?: string;
+    caseTitle?: string;
+}
+
 const getMimeType = (fileType: string, fileName:string) => { const ext = fileName.split('.').pop()?.toLowerCase() || ''; if (fileType === 'PDF' || ext === 'pdf') return 'application/pdf'; if (['PNG', 'JPG', 'JPEG', 'WEBP', 'GIF'].includes(fileType)) return 'image/jpeg'; return 'application/octet-stream'; };
 const getFileIcon = (fileType: string) => { const ft = fileType ? fileType.toUpperCase() : ""; if (ft === 'PDF') return <FileText className="w-5 h-5 text-red-400" />; if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-purple-400" />; if (['JSON', 'JS', 'TS'].includes(ft)) return <FileCode className="w-5 h-5 text-yellow-400" />; return <FileIcon className="w-5 h-5 text-blue-400" />; };
 
-// --- BADGE COMPONENT ---
 const StatusBadge = ({ status }: { status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED' | null }) => { 
     const { t } = useTranslation(); 
     if (status === 'READY') return <div className="bg-emerald-500/10 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title={t('archive.statusReady', 'Gati për AI')}><CheckCircle size={14} /></div>; 
@@ -70,31 +74,14 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
     ); 
 };
 
-export const ArchiveTab: React.FC = () => {
+export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId, caseTitle }) => {
     const { t } = useTranslation();
     
-    // PHOENIX: Replaced local state with Robust Hook
+    // PHOENIX: Pass optional context to hook
     const {
-        loading,
-        archiveItems, // Now this updates in real-time
-        breadcrumbs,
-        currentView,
-        filteredItems,
-        isUploading,
-        searchTerm,
-        setSearchTerm,
-        navigateTo,
-        enterFolder,
-        createFolder,
-        uploadFile,
-        deleteItem,
-        renameItem,
-        shareItem,
-        fetchArchiveContent,
-        isInsideCase
-    } = useArchiveData();
+        loading, archiveItems, breadcrumbs, currentView, filteredItems, isUploading, searchTerm, setSearchTerm, navigateTo, enterFolder, createFolder, uploadFile, deleteItem, renameItem, shareItem, fetchArchiveContent, isInsideCase
+    } = useArchiveData(caseId, caseTitle);
 
-    // Local UI State (Modals)
     const [showFolderModal, setShowFolderModal] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
     const [newFolderCategory, setNewFolderCategory] = useState("GENERAL");
@@ -110,92 +97,31 @@ export const ArchiveTab: React.FC = () => {
 
     const translateSystemName = (name: string) => { if (!name) return ""; const lowerName = name.toLowerCase().trim(); if (lowerName === "my workspace") return t('archive.myWorkspace', 'Hapësira e Punës'); if (lowerName === "general") return t('category.general', 'Të Përgjithshme'); return name; };
 
-    // --- HANDLERS (Delegated to Hook) ---
-    const handleCreateFolder = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newFolderName.trim()) return;
-        await createFolder(newFolderName, newFolderCategory);
-        setShowFolderModal(false);
-        setNewFolderName("");
-    };
-
-    const handleSmartUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const f = e.target.files?.[0];
-        if (!f) return;
-        await uploadFile(f);
-        if (archiveInputRef.current) archiveInputRef.current.value = "";
-    };
-
+    const handleCreateFolder = async (e: React.FormEvent) => { e.preventDefault(); if (!newFolderName.trim()) return; await createFolder(newFolderName, newFolderCategory); setShowFolderModal(false); setNewFolderName(""); };
+    const handleSmartUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (!f) return; await uploadFile(f); if (archiveInputRef.current) archiveInputRef.current.value = ""; };
     const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-        
-        try {
-            const firstPath = files[0].webkitRelativePath || "";
-            const rootFolderName = firstPath.split('/')[0] || t('archive.newFolderDefault');
-            
-            const rawFolder = await apiService.createArchiveFolder(rootFolderName, currentView.type === 'FOLDER' ? currentView.id! : undefined, currentView.type === 'CASE' ? currentView.id! : undefined, "GENERAL");
-            
-            const uploadPromises = Array.from(files).map(file => {
-                if (file.name.startsWith('.')) return Promise.resolve();
-                return apiService.uploadArchiveItem(file, file.name, "GENERAL", currentView.type === 'CASE' ? currentView.id! : undefined, rawFolder.id);
-            });
-            await Promise.all(uploadPromises);
-            fetchArchiveContent(); // Refresh after bulk operation
-        } catch { 
-            alert(t('error.uploadFailed')); 
-        } finally { 
-            if (folderInputRef.current) folderInputRef.current.value = ''; 
-        }
+        const files = e.target.files; if (!files || files.length === 0) return;
+        try { const firstPath = files[0].webkitRelativePath || ""; const rootFolderName = firstPath.split('/')[0] || t('archive.newFolderDefault'); const rawFolder = await apiService.createArchiveFolder(rootFolderName, currentView.type === 'FOLDER' ? currentView.id! : undefined, currentView.type === 'CASE' ? currentView.id! : undefined, "GENERAL"); const uploadPromises = Array.from(files).map(file => { if (file.name.startsWith('.')) return Promise.resolve(); return apiService.uploadArchiveItem(file, file.name, "GENERAL", currentView.type === 'CASE' ? currentView.id! : undefined, rawFolder.id); }); await Promise.all(uploadPromises); fetchArchiveContent(); } catch { alert(t('error.uploadFailed')); } finally { if (folderInputRef.current) folderInputRef.current.value = ''; }
     };
-
-    const handleReIndex = async (itemId: string) => {
-        try {
-            await apiService.reIndexArchiveItem(itemId);
-            fetchArchiveContent();
-        } catch (error) {
-            alert(t('error.generic'));
-        }
-    };
-
-    // --- VIEWERS & MODALS ---
-    const handleViewItem = async (item: ArchiveItemOut) => { 
-        setOpeningDocId(item.id); 
-        try { 
-            const blob = await apiService.getArchiveFileBlob(item.id); 
-            const url = window.URL.createObjectURL(blob); 
-            setViewingUrl(url); 
-            setViewingDoc({ id: item.id, file_name: item.title, mime_type: getMimeType(item.file_type, item.title), status: 'READY' } as any); 
-        } catch { 
-            alert(t('error.generic')); 
-        } finally { 
-            setOpeningDocId(null); 
-        } 
-    };
-    
+    const handleReIndex = async (itemId: string) => { try { await apiService.reIndexArchiveItem(itemId); fetchArchiveContent(); } catch (error) { alert(t('error.generic')); } };
+    const handleViewItem = async (item: ArchiveItemOut) => { setOpeningDocId(item.id); try { const blob = await apiService.getArchiveFileBlob(item.id); const url = window.URL.createObjectURL(blob); setViewingUrl(url); setViewingDoc({ id: item.id, file_name: item.title, mime_type: getMimeType(item.file_type, item.title), status: 'READY' } as any); } catch { alert(t('error.generic')); } finally { setOpeningDocId(null); } };
     const closePreview = () => { setViewingDoc(null); if(viewingUrl) window.URL.revokeObjectURL(viewingUrl); };
     const handleRenameClick = (item: ArchiveItemOut) => { setItemToRename(item); setRenameValue(item.title); };
-    
-    const submitRename = async (e: React.FormEvent) => { 
-        e.preventDefault(); 
-        if (!itemToRename || !renameValue.trim()) return; 
-        await renameItem(itemToRename.id, renameValue);
-        setItemToRename(null); 
-    };
+    const submitRename = async (e: React.FormEvent) => { e.preventDefault(); if (!itemToRename || !renameValue.trim()) return; await renameItem(itemToRename.id, renameValue); setItemToRename(null); };
 
     if (loading && archiveItems.length === 0) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-            <style>{` .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); } select option { background-color: #0f172a; color: #f9fafb; } `}</style>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8 h-full flex flex-col">
+             <style>{` .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); } select option { background-color: #0f172a; color: #f9fafb; } `}</style>
             
-            <div className="bg-gray-900/40 p-6 rounded-3xl border border-white/5 backdrop-blur-md">
-                 <div className="flex flex-col lg:flex-row gap-6">
+            <div className="bg-gray-900/40 p-6 rounded-3xl border border-white/5 backdrop-blur-md flex-shrink-0">
+                 <div className="flex flex-col xl:flex-row gap-6">
                     <div className="flex-1 relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-indigo-400 transition-colors" />
                         <input type="text" placeholder={t('header.searchPlaceholder') || "Kërko..."} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl text-base text-white focus:outline-none focus:border-indigo-500/50 focus:bg-black/60 transition-all shadow-inner placeholder:text-gray-600" />
                     </div>
-                    <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+                    <div className="flex flex-wrap gap-3 w-full xl:w-auto">
                         {isInsideCase && currentView.id && ( <ActionButton icon={<LinkIcon size={20} />} label="PORTAL" onClick={() => setShowShareModal(true)} /> )}
                         <ActionButton icon={<FolderPlus size={20} />} label="Krijo Dosje" onClick={() => setShowFolderModal(true)} />
                         <input type="file" ref={folderInputRef} onChange={handleFolderUpload} className="hidden" {...({ webkitdirectory: "", directory: "" } as any)} multiple />
@@ -206,7 +132,7 @@ export const ArchiveTab: React.FC = () => {
                  </div>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto text-sm no-scrollbar pb-2">
+            <div className="flex items-center gap-2 overflow-x-auto text-sm no-scrollbar pb-2 flex-shrink-0">
                 {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={crumb.id || 'root'}>
                         <button onClick={() => navigateTo(index)} className={` flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${index === breadcrumbs.length - 1 ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30 font-bold shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'text-gray-500 border-transparent hover:text-white hover:bg-white/5'} `}>
@@ -218,16 +144,16 @@ export const ArchiveTab: React.FC = () => {
                 ))}
             </div>
             
-            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md min-h-[600px] shadow-2xl">
+            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md shadow-2xl flex-1 overflow-y-auto min-h-[400px]">
                 {filteredItems.length > 0 ? (
-                    <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <motion.div layout className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
                         <AnimatePresence>
                             {filteredItems.map(item => {
                                 if (!item || !item.id) return null;
                                 const isFolder = item.item_type === 'FOLDER'; 
                                 const fileExt = item.file_type || 'FILE'; 
                                 return (
-                                    <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} key={item.id} className="h-full">
+                                    <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} key={item.id}>
                                         <ArchiveCard 
                                             title={translateSystemName(item.title)} 
                                             subtitle={isFolder ? t('archive.caseFolders') : `${fileExt} Dokument`} 
@@ -251,7 +177,7 @@ export const ArchiveTab: React.FC = () => {
                         </AnimatePresence>
                     </motion.div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-96 text-gray-500">
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
                         <FolderOpen size={64} className="mb-4 opacity-20" />
                         <p>{t('archive.emptyFolder')}</p>
                     </div>
