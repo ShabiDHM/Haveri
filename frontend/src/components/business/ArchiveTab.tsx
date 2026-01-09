@@ -1,8 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE V3.0 (ASK AI FEATURE)
-// 1. FEATURE: Added 'Ask AI' button to archive documents.
-// 2. UI: Implemented 'DocumentChatModal' for context-aware Q&A.
-// 3. INTEGRATION: Connects to the LLM service to answer questions about specific files.
+// PHOENIX PROTOCOL - ARCHIVE V3.2 (LINTER FIX)
+// 1. FIX: Removed unused 'prev' variable in TypewriterMessage to satisfy TypeScript.
+// 2. INTEGRITY: Keeps all Chat, Markdown, and Archive functionality intact.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,6 +21,71 @@ interface ArchiveTabProps {
     caseId?: string;
 }
 
+// --- MARKDOWN & TYPEWRITER COMPONENTS ---
+
+// 1. Simple Markdown Renderer (Zero Dependency)
+const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
+    // Split by newlines to handle paragraphs
+    const lines = content.split('\n');
+    
+    return (
+        <div className="space-y-1">
+            {lines.map((line, i) => {
+                // Empty lines become spacers
+                if (!line.trim()) return <div key={i} className="h-2" />;
+                
+                // Check for List Items (starting with "- " or "1. ")
+                const isList = /^- /.test(line) || /^\d+\. /.test(line);
+                const cleanLine = line.replace(/^- /, '').replace(/^\d+\. /, '');
+                
+                // Parse Bold Syntax: **text**
+                const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
+                const renderedLine = parts.map((part, j) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                        return <strong key={j} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+                    }
+                    return <span key={j}>{part}</span>;
+                });
+
+                if (isList) {
+                    return (
+                        <div key={i} className="flex gap-2 ml-1">
+                            <span className="text-indigo-400 mt-1.5 text-[10px]">●</span>
+                            <div className="flex-1 leading-relaxed text-gray-300">{renderedLine}</div>
+                        </div>
+                    );
+                }
+
+                return <p key={i} className="leading-relaxed text-gray-300">{renderedLine}</p>;
+            })}
+        </div>
+    );
+};
+
+// 2. Typewriter Wrapper
+const TypewriterMessage: React.FC<{ content: string; onComplete?: () => void }> = ({ content, onComplete }) => {
+    const [displayedContent, setDisplayedContent] = useState("");
+    
+    useEffect(() => {
+        let index = 0;
+        // Faster speed for better UX (10ms per char)
+        const intervalId = setInterval(() => {
+            // PHOENIX FIX: Removed unused 'prev' argument
+            setDisplayedContent(content.slice(0, index + 1));
+            index++;
+            if (index >= content.length) {
+                clearInterval(intervalId);
+                if (onComplete) onComplete();
+            }
+        }, 10);
+        
+        return () => clearInterval(intervalId);
+    }, [content, onComplete]);
+
+    return <MarkdownRenderer content={displayedContent} />;
+};
+
+
 // --- CHAT MODAL COMPONENT ---
 interface ChatModalProps {
     documentId: string;
@@ -30,16 +94,20 @@ interface ChatModalProps {
 }
 
 const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle, onClose }) => {
-    const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([
-        { role: 'assistant', content: `Përshëndetje! Jam asistenti juaj për dokumentin "${documentTitle}". Çfarë dëshironi të dini?` }
+    // Messages state: content is the full text. isTyping determines if we show the typewriter effect.
+    const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string, isNew?: boolean}[]>([
+        { role: 'assistant', content: `Përshëndetje! Jam asistenti juaj për dokumentin "${documentTitle}". Çfarë dëshironi të dini?`, isNew: true }
     ]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    // Auto-scroll to bottom
     useEffect(() => {
-        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }, [messages]);
+        if (scrollRef.current) {
+            scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+        }
+    }, [messages, loading]);
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,17 +115,20 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
 
         const userMsg = input;
         setInput("");
-        setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+        
+        // Mark previous messages as not new so they render statically
+        setMessages(prev => prev.map(m => ({...m, isNew: false})));
+        
+        // Add User Message
+        setMessages(prev => [...prev, { role: 'user', content: userMsg, isNew: false }]);
         setLoading(true);
 
         try {
-            // Call the Q&A endpoint. 
-            // NOTE: Assuming apiService.askDocumentQuestion exists or using a generic LLM endpoint.
-            // If not, we fall back to a simulation or a generic query.
             const response = await apiService.askDocumentQuestion(documentId, userMsg);
-            setMessages(prev => [...prev, { role: 'assistant', content: response.answer || "Nuk munda të gjej një përgjigje." }]);
+            // Add Assistant Message (marked as isNew to trigger typewriter)
+            setMessages(prev => [...prev, { role: 'assistant', content: response.answer || "Nuk munda të gjej një përgjigje.", isNew: true }]);
         } catch (err) {
-            setMessages(prev => [...prev, { role: 'assistant', content: "Më vjen keq, ndodhi një gabim gjatë procesimit." }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: "Më vjen keq, ndodhi një gabim gjatë procesimit.", isNew: true }]);
         } finally {
             setLoading(false);
         }
@@ -88,15 +159,21 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
                 </div>
 
                 {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0f172a]" ref={scrollRef}>
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0f172a] scroll-smooth" ref={scrollRef}>
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] rounded-2xl p-3.5 text-sm leading-relaxed shadow-sm ${
+                            <div className={`max-w-[85%] rounded-2xl p-3.5 text-sm shadow-sm ${
                                 msg.role === 'user' 
                                     ? 'bg-blue-600 text-white rounded-br-none' 
                                     : 'bg-[#1e293b] text-gray-200 border border-white/5 rounded-bl-none'
                             }`}>
-                                {msg.content}
+                                {msg.role === 'assistant' && msg.isNew ? (
+                                    <TypewriterMessage content={msg.content} onComplete={() => {
+                                        // Optional: logic to stop scrolling or finalized state
+                                    }} />
+                                ) : (
+                                    msg.role === 'assistant' ? <MarkdownRenderer content={msg.content} /> : msg.content
+                                )}
                             </div>
                         </div>
                     ))}
@@ -118,7 +195,7 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder={`Pyetni rreth "${documentTitle.substring(0, 15)}..."`}
+                            placeholder={`Pyetni rreth dokumentit...`}
                             className="w-full bg-[#020617] border border-white/10 rounded-xl pl-4 pr-12 py-3.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder-gray-500 shadow-inner"
                         />
                         <button 
