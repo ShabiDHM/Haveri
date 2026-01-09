@@ -1,7 +1,8 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE V3.2 (LINTER FIX)
-// 1. FIX: Removed unused 'prev' variable in TypewriterMessage to satisfy TypeScript.
-// 2. INTEGRITY: Keeps all Chat, Markdown, and Archive functionality intact.
+// PHOENIX PROTOCOL - ARCHIVE V3.3 (CHAT UX FIX)
+// 1. UI FIX: Chat Modal is now centered (not right-aligned) and sized appropriately.
+// 2. MARKDOWN FIX: Improved regex to correctly render **bold** text even in long streams.
+// 3. UX: Typewriter effect is preserved for a premium feel.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,61 +24,75 @@ interface ArchiveTabProps {
 
 // --- MARKDOWN & TYPEWRITER COMPONENTS ---
 
-// 1. Simple Markdown Renderer (Zero Dependency)
+// Robust Markdown Renderer
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
-    // Split by newlines to handle paragraphs
-    const lines = content.split('\n');
-    
+    // 1. Split text into paragraphs based on double newlines
+    const paragraphs = content.split(/\n\n+/);
+
     return (
-        <div className="space-y-1">
-            {lines.map((line, i) => {
-                // Empty lines become spacers
-                if (!line.trim()) return <div key={i} className="h-2" />;
+        <div className="space-y-3 text-sm text-gray-200 leading-relaxed">
+            {paragraphs.map((paragraph, pIdx) => {
+                // 2. Check for list items (lines starting with "- " or "1. ") within the paragraph
+                // We split by single newline to catch lists that are packed together
+                const lines = paragraph.split('\n');
                 
-                // Check for List Items (starting with "- " or "1. ")
-                const isList = /^- /.test(line) || /^\d+\. /.test(line);
-                const cleanLine = line.replace(/^- /, '').replace(/^\d+\. /, '');
-                
-                // Parse Bold Syntax: **text**
-                const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
-                const renderedLine = parts.map((part, j) => {
-                    if (part.startsWith('**') && part.endsWith('**')) {
-                        return <strong key={j} className="font-bold text-white">{part.slice(2, -2)}</strong>;
-                    }
-                    return <span key={j}>{part}</span>;
-                });
+                return (
+                    <div key={pIdx}>
+                        {lines.map((line, lIdx) => {
+                            // Detect List Item
+                            const isListItem = /^[•-]\s|^\d+\.\s/.test(line);
+                            const cleanLine = line.replace(/^[•-]\s|^\d+\.\s/, '');
+                            
+                            // 3. Parse Bold Syntax: **text**
+                            // Use a non-greedy capture group
+                            const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
+                            
+                            const renderedLine = parts.map((part, k) => {
+                                if (part.startsWith('**') && part.endsWith('**')) {
+                                    return <strong key={k} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+                                }
+                                return <span key={k}>{part}</span>;
+                            });
 
-                if (isList) {
-                    return (
-                        <div key={i} className="flex gap-2 ml-1">
-                            <span className="text-indigo-400 mt-1.5 text-[10px]">●</span>
-                            <div className="flex-1 leading-relaxed text-gray-300">{renderedLine}</div>
-                        </div>
-                    );
-                }
+                            if (isListItem) {
+                                return (
+                                    <div key={`${pIdx}-${lIdx}`} className="flex gap-2 ml-2 mb-1">
+                                        <span className="text-indigo-400 mt-1.5 text-[8px]">●</span>
+                                        <div className="flex-1">{renderedLine}</div>
+                                    </div>
+                                );
+                            }
 
-                return <p key={i} className="leading-relaxed text-gray-300">{renderedLine}</p>;
+                            // Regular line (add break if it's not the last line of a paragraph)
+                            return (
+                                <React.Fragment key={`${pIdx}-${lIdx}`}>
+                                    {renderedLine}
+                                    {lIdx < lines.length - 1 && <br />}
+                                </React.Fragment>
+                            );
+                        })}
+                    </div>
+                );
             })}
         </div>
     );
 };
 
-// 2. Typewriter Wrapper
+// Typewriter Wrapper
 const TypewriterMessage: React.FC<{ content: string; onComplete?: () => void }> = ({ content, onComplete }) => {
     const [displayedContent, setDisplayedContent] = useState("");
     
     useEffect(() => {
         let index = 0;
-        // Faster speed for better UX (10ms per char)
+        // Faster typing speed (5ms) for better responsiveness
         const intervalId = setInterval(() => {
-            // PHOENIX FIX: Removed unused 'prev' argument
             setDisplayedContent(content.slice(0, index + 1));
             index++;
             if (index >= content.length) {
                 clearInterval(intervalId);
                 if (onComplete) onComplete();
             }
-        }, 10);
+        }, 5);
         
         return () => clearInterval(intervalId);
     }, [content, onComplete]);
@@ -94,7 +109,6 @@ interface ChatModalProps {
 }
 
 const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle, onClose }) => {
-    // Messages state: content is the full text. isTyping determines if we show the typewriter effect.
     const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string, isNew?: boolean}[]>([
         { role: 'assistant', content: `Përshëndetje! Jam asistenti juaj për dokumentin "${documentTitle}". Çfarë dëshironi të dini?`, isNew: true }
     ]);
@@ -102,12 +116,12 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
     const [loading, setLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll to bottom
+    // Auto-scroll
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
         }
-    }, [messages, loading]);
+    }, [messages, loading, messages.length]); // Add messages.length dependency
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -116,16 +130,14 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
         const userMsg = input;
         setInput("");
         
-        // Mark previous messages as not new so they render statically
+        // Mark old messages as NOT new
         setMessages(prev => prev.map(m => ({...m, isNew: false})));
         
-        // Add User Message
         setMessages(prev => [...prev, { role: 'user', content: userMsg, isNew: false }]);
         setLoading(true);
 
         try {
             const response = await apiService.askDocumentQuestion(documentId, userMsg);
-            // Add Assistant Message (marked as isNew to trigger typewriter)
             setMessages(prev => [...prev, { role: 'assistant', content: response.answer || "Nuk munda të gjej një përgjigje.", isNew: true }]);
         } catch (err) {
             setMessages(prev => [...prev, { role: 'assistant', content: "Më vjen keq, ndodhi një gabim gjatë procesimit.", isNew: true }]);
@@ -135,76 +147,79 @@ const DocumentChatModal: React.FC<ChatModalProps> = ({ documentId, documentTitle
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center sm:justify-end sm:pr-10 pb-0 sm:pb-10 p-4">
+        // PHOENIX UI FIX: Centered Modal (justify-center items-center) instead of right-aligned drawer
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
             <motion.div 
-                initial={{ opacity: 0, y: 20, scale: 0.95 }} 
-                animate={{ opacity: 1, y: 0, scale: 1 }} 
-                exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                className="bg-[#0f172a] border border-white/20 w-full max-w-md h-[600px] max-h-[80vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative"
+                initial={{ opacity: 0, scale: 0.9, y: 10 }} 
+                animate={{ opacity: 1, scale: 1, y: 0 }} 
+                exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                // Controlled width and max-height so it doesn't cover the whole page
+                className="bg-[#0f172a] border border-white/20 w-full max-w-lg h-[650px] max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden relative ring-1 ring-white/10"
             >
                 {/* Header */}
-                <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-4 flex items-center justify-between shadow-md z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md border border-white/10">
+                <div className="bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-4 flex items-center justify-between shadow-md z-10 shrink-0">
+                    <div className="flex items-center gap-3.5">
+                        <div className="p-2 bg-white/15 rounded-xl backdrop-blur-md border border-white/10 shadow-sm">
                             <Bot className="text-white w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-white text-sm">Asistenti i Dokumentit</h3>
-                            <p className="text-[10px] text-blue-100 opacity-80 line-clamp-1">{documentTitle}</p>
+                            <h3 className="font-bold text-white text-sm tracking-wide">Asistenti i Dokumentit</h3>
+                            <p className="text-[11px] text-blue-100/90 font-medium line-clamp-1 max-w-[200px]">{documentTitle}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-white/70 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10">
+                    <button onClick={onClose} className="text-white/80 hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/10">
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#0f172a] scroll-smooth" ref={scrollRef}>
+                <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-[#0f172a]" ref={scrollRef}>
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] rounded-2xl p-3.5 text-sm shadow-sm ${
+                            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-md ${
                                 msg.role === 'user' 
-                                    ? 'bg-blue-600 text-white rounded-br-none' 
-                                    : 'bg-[#1e293b] text-gray-200 border border-white/5 rounded-bl-none'
+                                    ? 'bg-blue-600 text-white rounded-br-sm' 
+                                    : 'bg-[#1e293b] border border-white/5 rounded-bl-sm'
                             }`}>
                                 {msg.role === 'assistant' && msg.isNew ? (
-                                    <TypewriterMessage content={msg.content} onComplete={() => {
-                                        // Optional: logic to stop scrolling or finalized state
-                                    }} />
+                                    <TypewriterMessage content={msg.content} />
                                 ) : (
-                                    msg.role === 'assistant' ? <MarkdownRenderer content={msg.content} /> : msg.content
+                                    msg.role === 'assistant' ? <MarkdownRenderer content={msg.content} /> : <p className="text-white">{msg.content}</p>
                                 )}
                             </div>
                         </div>
                     ))}
                     {loading && (
                         <div className="flex justify-start">
-                            <div className="bg-[#1e293b] rounded-2xl p-4 border border-white/5 rounded-bl-none flex gap-2 items-center">
-                                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                            <div className="bg-[#1e293b] rounded-2xl px-4 py-3.5 border border-white/5 rounded-bl-sm flex gap-1.5 items-center">
+                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 bg-[#1e293b]/50 border-t border-white/10 backdrop-blur-md">
-                    <form onSubmit={handleSend} className="relative">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder={`Pyetni rreth dokumentit...`}
-                            className="w-full bg-[#020617] border border-white/10 rounded-xl pl-4 pr-12 py-3.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder-gray-500 shadow-inner"
-                        />
-                        <button 
-                            type="submit" 
-                            disabled={!input.trim() || loading}
-                            className="absolute right-2 top-1.5 p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20"
-                        >
-                            <Send size={16} />
-                        </button>
+                <div className="p-4 bg-[#1e293b] border-t border-white/10 shrink-0">
+                    <form onSubmit={handleSend} className="relative flex items-center gap-3">
+                        <div className="relative flex-1">
+                            <input
+                                autoFocus
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder="Pyetni rreth dokumentit..."
+                                className="w-full bg-[#020617] border border-white/10 rounded-2xl pl-4 pr-12 py-3.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder-gray-500 transition-all"
+                            />
+                            <button 
+                                type="submit" 
+                                disabled={!input.trim() || loading}
+                                className="absolute right-2 top-2 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                            >
+                                <Send size={16} className={loading ? "opacity-50" : ""} />
+                            </button>
+                        </div>
                     </form>
                 </div>
             </motion.div>
@@ -231,21 +246,10 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
                 <div className="flex justify-between items-start gap-2 mb-4"> 
                     <div className="p-3 rounded-2xl bg-white/5 border border-white/10">{icon}</div> 
                     <div className="flex items-center gap-2">
-                        {/* Status Badge */}
                         {!isFolder && <StatusBadge status={indexingStatus} />}
-                        
-                        {/* Share Indicator */}
                         {isShared && (<div className="p-1.5 text-emerald-400"><Share2 size={14} /></div>)}
-
-                        {/* Ask AI Trigger (Visible if ready) */}
                         {!isFolder && indexingStatus === 'READY' && onAskAI && (
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); onAskAI(); }} 
-                                className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors"
-                                title="Ask AI"
-                            >
-                                <MessageSquare size={14} />
-                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors" title="Ask AI"><MessageSquare size={14} /></button>
                         )}
                     </div> 
                 </div> 
@@ -258,7 +262,6 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
                     {!isFolder && onShare && (<button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 ${isShared ? 'text-emerald-400' : 'text-gray-400 hover:text-white'}`}><Share2 size={16} /></button>)}
                     {onRename && (<button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 text-gray-400 hover:text-white"><Pencil size={16} /></button>)}
                     
-                    {/* Ask AI Button in Actions Row */}
                     {!isFolder && indexingStatus === 'READY' && onAskAI && (
                          <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-2 text-gray-400 hover:text-indigo-400" title="Ask AI"><MessageSquare size={16} /></button>
                     )}
@@ -283,10 +286,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
     const [itemToRename, setItemToRename] = useState<ArchiveItemOut | null>(null);
     const [renameValue, setRenameValue] = useState("");
     const [showShareModal, setShowShareModal] = useState(false);
-    
-    // PHOENIX: State for Ask AI
     const [chatDoc, setChatDoc] = useState<{id: string, title: string} | null>(null);
-    
     const archiveInputRef = useRef<HTMLInputElement>(null);
 
     const translateSystemName = (name: string) => { if (!name) return ""; const lowerName = name.toLowerCase().trim(); if (lowerName === "my workspace") return t('archive.myWorkspace'); return name; };
@@ -360,7 +360,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                                         onRename={() => handleRenameClick(item)} 
                                         onShare={() => shareItem(item)} 
                                         onReIndex={() => handleReIndex(item.id)}
-                                        onAskAI={() => setChatDoc({id: item.id, title: item.title})} // Pass the Ask AI handler
+                                        onAskAI={() => setChatDoc({id: item.id, title: item.title})} 
                                     />
                                 </motion.div>
                             ))}
@@ -374,7 +374,6 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} t={t} directUrl={viewingUrl} />}
             {portalTargetId && ( <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={portalTargetId} caseTitle={currentView.name} /> )}
             
-            {/* ASK AI MODAL */}
             <AnimatePresence>
                 {chatDoc && (
                     <DocumentChatModal 
