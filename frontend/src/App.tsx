@@ -1,7 +1,7 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V3.1 (BUSINESS SUB-ROUTES)
-// 1. ROUTING: Added explicit sub-routes for Business sections to support Global Header navigation.
-// 2. LOGIC: BusinessPage now accepts a 'view' prop instead of managing internal state.
+// PHOENIX PROTOCOL - ROUTING V3.2 (INBOX ADDED)
+// 1. ROUTING: Added the missing route '/business/inbox'.
+// 2. LOGIC: This connects the Dashboard button to the actual Inbox view.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -83,6 +83,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/business/archive" element={<BusinessPage view="archive" />} />
         <Route path="/business/insights" element={<BusinessPage view="insights" />} />
         <Route path="/business/profile" element={<BusinessPage view="profile" />} />
+        
+        {/* PHOENIX: The Missing Link */}
+        <Route path="/business/inbox" element={<BusinessPage view="inbox" />} />
       </Route>
 
       {/* Admin Protected Route */}
