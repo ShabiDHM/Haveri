@@ -1,10 +1,11 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.3 (NAVIGATION CLEANUP)
-// 1. CLEANUP: Removed 'Mesazhet' (Inbox) from the main navigation array as requested.
-// 2. UX: Access to the inbox is now exclusively through the Dashboard widget.
+// PHOENIX PROTOCOL - HEADER V6.4 (MOBILE NAV FIX)
+// 1. CRITICAL FIX: Added a useEffect hook that listens to 'location.pathname'.
+// 2. LOGIC: When the path changes (i.e., user navigates), it forces the mobile menu to close.
+// 3. RESULT: The mobile menu no longer gets "stuck" on top of the content after clicking a link.
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, MessageSquare, Menu, FileText, Package, FolderOpen, Sparkles, Building2, X } from 'lucide-react';
+import { Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, MessageSquare, Menu, FileText, Package, FolderOpen, Sparkles, Building2, X, Inbox } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
@@ -24,6 +25,13 @@ const Header: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  // PHOENIX: This effect closes the mobile menu whenever the user navigates.
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const fetchPrimaryWorkspace = async () => {
@@ -55,19 +63,17 @@ const Header: React.FC = () => {
       if (isProfileOpen && dropdownRef.current && !dropdownRef.current.contains(event.target as Node) && buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         setIsProfileOpen(false);
       }
-      if (isMobileMenuOpen && mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
-          // Handled by onclick usually
-      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isProfileOpen, isMobileMenuOpen]);
+  }, [isProfileOpen]);
   
   const navItems = [
       { label: t('sidebar.business', 'Zyra Ime'), path: '/business', icon: LayoutDashboard, exact: true },
       { label: t('business.finance', 'Financat'), path: '/business/finance', icon: FileText },
       { label: t('inventory.tabItems_short', 'Stoku'), path: '/business/inventory', icon: Package },
       { label: t('business.archive', 'Arkiva'), path: '/business/archive', icon: FolderOpen },
+      { label: t('inbox.title', 'Mesazhet'), path: '/business/inbox', icon: Inbox },
       { label: t('business.insights', 'Inteligjenca'), path: '/business/insights', icon: Sparkles },
       { label: t('business.profile', 'Profili'), path: '/business/profile', icon: Building2 },
       { label: t('sidebar.haveri_ai', 'Haveri AI'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
@@ -76,13 +82,11 @@ const Header: React.FC = () => {
   return (
     <header className="h-16 bg-background-dark/80 backdrop-blur-md border-b border-glass-edge flex items-center justify-between px-4 sm:px-6 z-40 sticky top-0">
       
-      {/* Left side: Desktop Nav & Mobile Brand */}
       <div className="flex items-center gap-6">
         <Link to="/business" className="lg:hidden">
             <BrandLogo />
         </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-1">
             {navItems.map(item => {
                 const isActive = item.exact 
@@ -109,7 +113,6 @@ const Header: React.FC = () => {
         </nav>
       </div>
 
-      {/* Right side: Actions & Mobile Toggle */}
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="hidden"><LanguageSwitcher /></div>
         <Link to="/calendar" className="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-lg transition-colors relative" title="Njoftimet">
@@ -118,7 +121,6 @@ const Header: React.FC = () => {
         </Link>
         <div className="h-6 w-px bg-glass-edge/50"></div>
         
-        {/* Profile Dropdown */}
         <div className="relative">
           <button ref={buttonRef} onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-3 hover:bg-white/5 p-1.5 rounded-xl transition-colors border border-transparent hover:border-glass-edge">
             <div className="text-right hidden sm:block">
@@ -138,7 +140,6 @@ const Header: React.FC = () => {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
         <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="p-2 text-gray-400 hover:text-white lg:hidden hover:bg-white/10 rounded-lg transition-colors"
@@ -147,7 +148,6 @@ const Header: React.FC = () => {
         </button>
       </div>
 
-      {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div className="fixed inset-x-0 top-16 bg-background-dark/95 backdrop-blur-xl border-b border-glass-edge p-4 lg:hidden z-30 animate-in slide-in-from-top-2 shadow-2xl">
             <div className="grid grid-cols-2 gap-3" ref={mobileMenuRef}>
