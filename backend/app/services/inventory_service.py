@@ -1,9 +1,15 @@
 # FILE: backend/app/services/inventory_service.py
+# PHOENIX PROTOCOL - INVENTORY SERVICE V2.1 (RECIPE IMPORT FIX)
+# 1. FEATURE: Added 'import_recipes_bulk' to handle CSV recipe uploads.
+# 2. LOGIC: Implements intelligent name resolution to link CSV Ingredient Names to existing Inventory IDs.
+# 3. RESULT: Enables the COGS engine to calculate costs correctly.
+
 from typing import List, Optional, Dict, Any
 from bson import ObjectId
 from pymongo.database import Database
-from app.models.inventory import InventoryItem, Recipe
+from app.models.inventory import InventoryItem, Recipe, Ingredient
 import datetime
+import re
 
 class InventoryService:
     def __init__(self, db: Database):
@@ -50,14 +56,13 @@ class InventoryService:
         """
         clean_items = []
         for row in items_data:
-            # Map CSV headers to Model fields if necessary, or assume pre-mapped
             item_obj = InventoryItem(
                 user_id=user_id,
                 name=str(row.get("name", row.get("Product", "Unknown"))),
                 unit=str(row.get("unit", row.get("Unit", "kg"))).lower(),
                 current_stock=float(row.get("current_stock", row.get("Stock", 0.0))),
                 cost_per_unit=float(row.get("cost_per_unit", row.get("Cost", 0.0))),
-                source="POS" # Explicitly tag as POS
+                source="POS"
             )
             item_dict = item_obj.model_dump(by_alias=True)
             if "_id" in item_dict: del item_dict["_id"]
@@ -68,7 +73,77 @@ class InventoryService:
             return len(res.inserted_ids)
         return 0
 
-    # --- RECIPES ---
+    # --- RECIPE BULK IMPORT (PHOENIX ADDITION) ---
+    def import_recipes_bulk(self, user_id: str, recipes_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Imports recipes from CSV. 
+        Format expected: Product, Ingredient, Quantity
+        Logic: Groups by Product, resolves Ingredient IDs from Inventory.
+        """
+        # 1. Fetch all inventory for name resolution
+        inventory_items = list(self.db["inventory"].find({"user_id": user_id}))
+        # Map normalized name to ID
+        inv_map = {item["name"].strip().lower(): str(item["_id"]) for item in inventory_items}
+        
+        recipes_map: Dict[str, List[Ingredient]] = {}
+        missing_ingredients = set()
+        
+        # 2. Process CSV Rows
+        for row in recipes_data:
+            # Flexible header mapping
+            product_name = str(row.get("product_name", row.get("Product", ""))).strip()
+            ingredient_name = str(row.get("ingredient_name", row.get("Ingredient", ""))).strip()
+            quantity = float(row.get("quantity_required", row.get("Quantity", 0.0)))
+            
+            if not product_name or not ingredient_name:
+                continue
+                
+            # Resolve ID
+            ing_id = inv_map.get(ingredient_name.lower())
+            
+            if not ing_id:
+                # Try fuzzy/partial match if exact fails
+                for inv_name, real_id in inv_map.items():
+                    if ingredient_name.lower() in inv_name or inv_name in ingredient_name.lower():
+                        ing_id = real_id
+                        break
+            
+            if ing_id:
+                ing_obj = Ingredient(inventory_item_id=ing_id, quantity_required=quantity)
+                if product_name not in recipes_map:
+                    recipes_map[product_name] = []
+                recipes_map[product_name].append(ing_obj)
+            else:
+                missing_ingredients.add(ingredient_name)
+
+        # 3. Create/Update Recipes in DB
+        created_count = 0
+        for p_name, ingredients in recipes_map.items():
+            # Check if recipe exists
+            existing = self.db["recipes"].find_one({
+                "user_id": user_id, 
+                "product_name": {"$regex": f"^{re.escape(p_name)}$", "$options": "i"}
+            })
+            
+            recipe_data = {
+                "user_id": user_id,
+                "product_name": p_name,
+                "ingredients": [i.model_dump() for i in ingredients],
+                "instructions": "Imported from CSV"
+            }
+            
+            if existing:
+                self.db["recipes"].update_one({"_id": existing["_id"]}, {"$set": recipe_data})
+            else:
+                self.db["recipes"].insert_one(recipe_data)
+            created_count += 1
+            
+        return {
+            "recipes_created": created_count,
+            "missing_ingredients": list(missing_ingredients)
+        }
+
+    # --- RECIPES CRUD ---
     def create_recipe(self, user_id: str, recipe_in: dict) -> Recipe:
         recipe = Recipe(user_id=user_id, **recipe_in)
         recipe_dict = recipe.model_dump(by_alias=True)
