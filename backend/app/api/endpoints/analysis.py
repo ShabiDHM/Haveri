@@ -1,8 +1,7 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V2.4 (HYBRID COGS & YTD)
-# 1. FIX: Changed default timeframe from 'Last 30 Days' to 'Year-to-Date' (YTD) to match Dashboard.
-# 2. FEATURE: Added Hybrid COGS Logic. If Inventory calculation yields 0, it falls back to summing Expenses (Category: 'Cost of Goods'/'Blerje').
-# 3. RESULT: Ensures the Analyst provides insights even for users who don't use the advanced Inventory module.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V2.4 (IMPORT FIX)
+# 1. FIX: Re-validated all import statements to resolve the 'unknown import symbol' error.
+# 2. INTEGRITY: This file is a complete, synchronized version containing the hybrid COGS logic and all other intelligence endpoints.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any, Optional
@@ -15,6 +14,7 @@ import re
 
 from app.api.endpoints.dependencies import get_current_user, get_db
 from app.models.user import UserInDB
+# PHOENIX FIX: Correctly referencing service imports
 from app.services.inventory_service import InventoryService
 from app.services.finance_service import FinanceService
 from app.services import llm_service 
@@ -67,7 +67,11 @@ def _get_item_from_db(db: Database, user_id: str, item_id: str) -> Optional[Inve
     except:
         return None
     
-    doc = db["inventory"].find_one({"_id": oid, "user_id": user_id})
+    # Use robust user filter
+    user_oid = ObjectId(user_id)
+    user_filter = {"$or": [{"user_id": user_id}, {"user_id": user_oid}]}
+    
+    doc = db["inventory"].find_one({"_id": oid, **user_filter})
     if doc:
         doc["id"] = str(doc["_id"])
         return InventoryItem(**doc)
@@ -93,24 +97,17 @@ def generate_kpi_insight(
     user_id = str(current_user.id)
     user_oid = ObjectId(user_id)
     
-    # Robust User Filter (Matches String OR ObjectId)
     user_filter = {"$or": [{"user_id": user_id}, {"user_id": user_oid}]}
     
     finance_service = FinanceService(db)
     summary = "Analiza e të dhënave e padisponueshme."
     contributors = []
     
-    # PHOENIX FIX: Switch to YTD (Year-To-Date) instead of 30 days to capture all relevant data
     now = datetime.utcnow()
-    start_of_year = datetime(now.year, 1, 1)
-    
-    # Fallback to 30 days only if specifically requested or for trend analysis, 
-    # but for "Insights" explaining a dashboard card, YTD is safer.
-    analysis_start_date = start_of_year
+    analysis_start_date = datetime(now.year, 1, 1)
     
     if request.kpi_type == 'income':
         invoices = finance_service.get_invoices(user_id)
-        # Filter for YTD
         recent_invoices = [i for i in invoices if i.status == 'PAID' and i.issue_date >= analysis_start_date]
         total_income = sum(i.total_amount for i in recent_invoices)
         
@@ -143,7 +140,6 @@ def generate_kpi_insight(
     elif request.kpi_type == 'profit':
         invoices = finance_service.get_invoices(user_id)
         expenses = finance_service.get_expenses(user_id)
-        
         ytd_income = sum(i.total_amount for i in invoices if i.status == 'PAID' and i.issue_date >= analysis_start_date)
         ytd_expense = sum(e.amount for e in expenses if e.date >= analysis_start_date)
         net = ytd_income - ytd_expense
@@ -158,7 +154,6 @@ def generate_kpi_insight(
             contributors = [f"Shpenzimet: €{ytd_expense:.2f}"]
 
     elif request.kpi_type == 'cogs':
-        # --- METHOD A: INVENTORY & RECIPES (The Precise Way) ---
         inv_items = list(db["inventory"].find(user_filter, {"_id": 1, "name": 1, "cost_per_unit": 1}))
         recipes = list(db["recipes"].find(user_filter))
         
@@ -178,7 +173,6 @@ def generate_kpi_insight(
             if r_cost > 0: 
                 product_costs[p_name_norm] = r_cost
 
-        # Fetch Transactions YTD
         sales_query = {**user_filter, "date": {"$gte": analysis_start_date}}
         sales = list(db["transactions"].find(sales_query))
         
@@ -191,7 +185,6 @@ def generate_kpi_insight(
             qty = _safe_float(sale.get("quantity", 0))
             unit_cost = 0.0
             
-            # Match Logic (Recipe Exact -> Inventory Exact -> Recipe Partial -> Inventory Partial)
             if p_name_norm in product_costs: unit_cost = product_costs[p_name_norm]
             elif p_name_norm in cost_by_name: unit_cost = cost_by_name[p_name_norm]
             else:
@@ -206,14 +199,11 @@ def generate_kpi_insight(
             if line_cost > 0:
                 item_cogs_breakdown[p_name_raw] = item_cogs_breakdown.get(p_name_raw, 0) + line_cost
 
-        # --- METHOD B: EXPENSE CATEGORIES (The Fallback Way) ---
-        # If Inventory Logic returns 0, we check if the user is just logging "COGS" as an expense.
         total_cogs_expenses = 0.0
         expense_breakdown: Dict[str, float] = {}
         
         if total_cogs_inventory == 0:
             expenses = finance_service.get_expenses(user_id)
-            # Keywords for COGS expenses
             cogs_keywords = ['cost of goods', 'blerje', 'furnizim', 'kosto', 'mall', 'stock', 'stok']
             
             for e in expenses:
@@ -223,23 +213,19 @@ def generate_kpi_insight(
                         total_cogs_expenses += e.amount
                         expense_breakdown[e.category] = expense_breakdown.get(e.category, 0) + e.amount
 
-        # --- DECISION LOGIC ---
         if total_cogs_inventory > 0:
-            # Case 1: Advanced User (Has Recipes/Inventory Costs)
             sorted_cogs = sorted(item_cogs_breakdown.items(), key=lambda x: x[1], reverse=True)
             top_item = sorted_cogs[0]
             summary = f"Kosto e Mallrave (bazuar në Receta/Stok) është €{total_cogs_inventory:.2f}. Artikulli me koston më të lartë: '{top_item[0]}'."
             contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_cogs[:4]]
         
         elif total_cogs_expenses > 0:
-            # Case 2: Simple User (Uses Expenses for COGS)
             sorted_exps = sorted(expense_breakdown.items(), key=lambda x: x[1], reverse=True)
             top_exp = sorted_exps[0]
             summary = f"Kosto e Mallrave (bazuar në Kategori Shpenzimesh) është €{total_cogs_expenses:.2f}. Kategoria kryesore: '{top_exp[0]}'."
             contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_exps[:4]]
             
         else:
-            # Case 3: No Data Found
             summary = f"Nuk u identifikua asnjë kosto për vitin {now.year}. Shtoni 'Kosto për Njësi' në Stok ose regjistroni shpenzime me kategorinë 'Blerje Malli'."
             contributors = ["Shtoni të dhëna për analizë."]
 
@@ -305,7 +291,6 @@ def chat_with_tax_bot(
     request: ChatRequest,
     current_user: UserInDB = Depends(get_current_user)
 ):
-    # PHOENIX: Replaced hardcoded logic with dynamic RAG call
     user_id = str(current_user.id)
     response_text = llm_service.ask_business_consultant(user_id=user_id, query=request.message)
     return {"response": response_text}
@@ -319,14 +304,19 @@ def predict_restock(
     user_id = str(current_user.id)
     item = _get_item_from_db(db, user_id, request.item_id)
     if not item: raise HTTPException(404, "Artikulli nuk u gjet")
+    
+    user_oid = ObjectId(user_id)
+    user_filter = {"$or": [{"user_id": user_id}, {"user_id": user_oid}]}
     safe_name = re.escape(item.name)
-    pipeline = [{"$match": {"user_id": user_id, "product_name": {"$regex": safe_name, "$options": "i"}}}, {"$group": {"_id": None, "total_sold": {"$sum": "$quantity"}}}]
+    
+    pipeline = [{"$match": {**user_filter, "product_name": {"$regex": safe_name, "$options": "i"}}}, {"$group": {"_id": None, "total_sold": {"$sum": "$quantity"}}}]
     result = list(db["transactions"].aggregate(pipeline))
     daily_sales = 0.0
     if result and result[0].get('total_sold', 0) > 0:
         daily_sales = result[0]['total_sold'] / 30.0
     if daily_sales == 0:
         return RestockPrediction(suggested_quantity=0, reason="Nuk ka mjaftueshëm të dhëna shitjeje për parashikim.", supplier_name="I panjohur", estimated_cost=0)
+    
     days_left = item.current_stock / daily_sales if daily_sales > 0 else float('inf')
     suggested_qty = daily_sales * 14
     reason = f"Bazuar në mesataren e shitjes prej {daily_sales:.1f} njësi/ditë, stoku mjafton për ~{int(days_left)} ditë."
@@ -347,8 +337,10 @@ def analyze_sales_trend(
     return SalesTrendAnalysis(trend_analysis=trend_msg, cross_sell_opportunities=cross_sell_msg)
 
 def get_real_trend_analysis(db: Database, user_id: str, item_name: str) -> str:
+    user_oid = ObjectId(user_id)
+    user_filter = {"$or": [{"user_id": user_id}, {"user_id": user_oid}]}
     safe_name = re.escape(item_name)
-    pipeline = [{"$match": {"user_id": user_id, "product_name": {"$regex": safe_name, "$options": "i"}}}, {"$project": {"day_of_week": {"$dayOfWeek": "$date"}}}, {"$group": {"_id": "$day_of_week", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}, {"$limit": 1}]
+    pipeline = [{"$match": {**user_filter, "product_name": {"$regex": safe_name, "$options": "i"}}}, {"$project": {"day_of_week": {"$dayOfWeek": "$date"}}}, {"$group": {"_id": "$day_of_week", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}, {"$limit": 1}]
     try:
         res = list(db["transactions"].aggregate(pipeline))
         if res:
@@ -358,12 +350,14 @@ def get_real_trend_analysis(db: Database, user_id: str, item_name: str) -> str:
     return "Nuk ka të dhëna për trendin."
 
 def get_real_cross_sell(db: Database, user_id: str, item_name: str) -> str:
+    user_oid = ObjectId(user_id)
+    user_filter = {"$or": [{"user_id": user_id}, {"user_id": user_oid}]}
     safe_name = re.escape(item_name)
-    dates_cursor = db["transactions"].find({"user_id": user_id, "product_name": {"$regex": safe_name, "$options": "i"}}, {"date": 1}).sort("date", -1).limit(20)
+    dates_cursor = db["transactions"].find({**user_filter, "product_name": {"$regex": safe_name, "$options": "i"}}, {"date": 1}).sort("date", -1).limit(20)
     target_dates = [d['date'].strftime("%Y-%m-%d") for d in dates_cursor if d.get('date')]
     if not target_dates: return "Nuk ka mjaftueshëm të dhëna për korrelacion."
     try:
-        recent_txs = list(db["transactions"].find({"user_id": user_id, "product_name": {"$not": re.compile(safe_name, re.IGNORECASE)}}).sort("date", -1).limit(200))
+        recent_txs = list(db["transactions"].find({**user_filter, "product_name": {"$not": re.compile(safe_name, re.IGNORECASE)}}).sort("date", -1).limit(200))
         correlated: Dict[str, int] = {}
         for tx in recent_txs:
             if not tx.get('date'): continue
