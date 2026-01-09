@@ -1,6 +1,9 @@
 // FILE: src/hooks/useArchiveData.ts
-// PHOENIX PROTOCOL - CLEANUP V4.4
-// 1. CLEANUP: Removed unused 'initialCaseTitle' parameter to resolve TypeScript warning.
+// PHOENIX PROTOCOL - LOOP BREAKER V4.6
+// 1. FIX: Actually USES 'initialCaseId' in 'uploadFile' and 'createFolder'.
+//    - Resolves TypeScript "unused variable" warning.
+//    - Ensures files uploaded from Root are linked to the Business Case.
+// 2. VIEW: defaults to ROOT to ensure legacy files are visible.
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { apiService, API_V1_URL } from '../services/api';
@@ -12,18 +15,10 @@ export type BreadcrumbType = { id: string | null; name: string; type: 'ROOT' | '
 export const useArchiveData = (initialCaseId?: string) => {
     const { t } = useTranslation();
     
-    // PHOENIX: Initialize breadcrumbs. 
-    // If a Case ID is provided, it becomes the visual "Root" of this view.
-    const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbType[]>(() => {
-        if (initialCaseId) {
-            return [{ 
-                id: initialCaseId, 
-                name: t('business.archive'), // Display as "Arkiva"
-                type: 'CASE'                 // Act as "Case" (enables Portal)
-            }];
-        }
-        return [{ id: null, name: t('business.archive'), type: 'ROOT' }];
-    });
+    // View starts at ROOT so you can see all existing files.
+    const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbType[]>([
+        { id: null, name: t('business.archive'), type: 'ROOT' }
+    ]);
 
     const [loading, setLoading] = useState(true);
     const [archiveItems, setArchiveItems] = useState<ArchiveItemOut[]>([]);
@@ -46,7 +41,6 @@ export const useArchiveData = (initialCaseId?: string) => {
         
         try {
             let rawItems: any[] = [];
-            // Handle data fetching based on the active node type
             if (active.type === 'ROOT') rawItems = await apiService.getArchiveItems(undefined, undefined, "null");
             else if (active.type === 'CASE') rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
             else if (active.type === 'FOLDER') rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
@@ -124,15 +118,38 @@ export const useArchiveData = (initialCaseId?: string) => {
     // CRUD
     const createFolder = async (name: string, category: string) => {
         const active = breadcrumbs[breadcrumbs.length - 1];
-        await apiService.createArchiveFolder(name, active.type === 'FOLDER' ? active.id! : undefined, active.type === 'CASE' ? active.id! : undefined, category);
+        
+        // PHOENIX: Use initialCaseId if at ROOT to keep folder structure clean
+        const targetCaseId = active.type === 'CASE' 
+            ? active.id! 
+            : (active.type === 'ROOT' ? initialCaseId : undefined);
+
+        await apiService.createArchiveFolder(
+            name, 
+            active.type === 'FOLDER' ? active.id! : undefined, 
+            targetCaseId, 
+            category
+        );
         await fetchArchiveContent();
     };
 
     const uploadFile = async (file: File) => {
         setIsUploading(true);
         const active = breadcrumbs[breadcrumbs.length - 1];
+        
+        // PHOENIX: Use initialCaseId if at ROOT so uploaded files are linked to business
+        const targetCaseId = active.type === 'CASE' 
+            ? active.id! 
+            : (active.type === 'ROOT' ? initialCaseId : undefined);
+
         try {
-            await apiService.uploadArchiveItem(file, file.name, "GENERAL", active.type === 'CASE' ? active.id! : undefined, active.type === 'FOLDER' ? active.id! : undefined);
+            await apiService.uploadArchiveItem(
+                file, 
+                file.name, 
+                "GENERAL", 
+                targetCaseId, 
+                active.type === 'FOLDER' ? active.id! : undefined
+            );
             await fetchArchiveContent();
         } catch (error) {
             console.error("Upload Failed:", error);

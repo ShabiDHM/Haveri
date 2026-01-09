@@ -1,7 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - CLEANUP V32.3
-// 1. CLEANUP: Removed unused 'caseTitle' prop to resolve TypeScript warning.
-// 2. STATUS: Clean, optimized, and fully integrated with the flattened hierarchy.
+// PHOENIX PROTOCOL - HYBRID VIEW V32.4
+// 1. FEATURE: 'PORTAL' button now appears if 'caseId' prop is present OR if inside a case folder.
+// 2. LOGIC: Uses the prop 'caseId' as a fallback for the ShareModal when in Root View.
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,7 +17,6 @@ import { useArchiveData } from '../../hooks/useArchiveData';
 import PDFViewerModal from '../PDFViewerModal';
 import ShareModal from '../ShareModal';
 
-// PHOENIX: Removed 'caseTitle' from interface
 interface ArchiveTabProps {
     caseId?: string;
 }
@@ -74,7 +73,6 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
     ); 
 };
 
-// PHOENIX: Updated Props Destructuring
 export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
     const { t } = useTranslation();
     
@@ -112,6 +110,10 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
 
     if (loading && archiveItems.length === 0) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
 
+    // PHOENIX: Determine if Portal button should show (Inside Case OR we have a fallback ID)
+    const showPortalButton = isInsideCase || !!caseId;
+    const portalTargetId = isInsideCase ? currentView.id : caseId;
+
     return (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8 h-full flex flex-col">
              <style>{` .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); } select option { background-color: #0f172a; color: #f9fafb; } `}</style>
@@ -123,7 +125,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                         <input type="text" placeholder={t('header.searchPlaceholder') || "Kërko..."} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl text-base text-white focus:outline-none focus:border-indigo-500/50 focus:bg-black/60 transition-all shadow-inner placeholder:text-gray-600" />
                     </div>
                     <div className="flex flex-wrap gap-3 w-full xl:w-auto">
-                        {isInsideCase && currentView.id && ( <ActionButton icon={<LinkIcon size={20} />} label="PORTAL" onClick={() => setShowShareModal(true)} /> )}
+                        {showPortalButton && portalTargetId && ( <ActionButton icon={<LinkIcon size={20} />} label="PORTAL" onClick={() => setShowShareModal(true)} /> )}
                         <ActionButton icon={<FolderPlus size={20} />} label="Krijo Dosje" onClick={() => setShowFolderModal(true)} />
                         <input type="file" ref={folderInputRef} onChange={handleFolderUpload} className="hidden" {...({ webkitdirectory: "", directory: "" } as any)} multiple />
                         <input type="file" ref={archiveInputRef} className="hidden" onChange={handleSmartUpload} />
@@ -137,8 +139,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                 {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={crumb.id || 'root'}>
                         <button onClick={() => navigateTo(index)} className={` flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl transition-all border ${index === breadcrumbs.length - 1 ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30 font-bold shadow-[0_0_10px_rgba(99,102,241,0.2)]' : 'text-gray-500 border-transparent hover:text-white hover:bg-white/5'} `}>
-                            {/* PHOENIX: Visual Fix - Always show Archive icon for root, even if it is technically a Case */}
-                            {index === 0 ? <Archive size={16} /> : crumb.type === 'CASE' ? <Briefcase size={16} /> : <FolderOpen size={16} />}
+                            {crumb.type === 'ROOT' ? <Archive size={16} /> : crumb.type === 'CASE' ? <Briefcase size={16} /> : <FolderOpen size={16} />}
                             {translateSystemName(crumb.name)}
                         </button>
                         {index < breadcrumbs.length - 1 && <ChevronRight size={16} className="text-gray-700 flex-shrink-0" />}
@@ -189,7 +190,9 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
             {showFolderModal && ( <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"> <div className="bg-[#0f172a] border border-indigo-500/20 rounded-3xl w-full max-w-sm p-6 shadow-2xl shadow-indigo-900/20"> <div className="flex justify-between items-center mb-6"> <h3 className="text-xl font-bold text-white">{t('archive.newFolderTitle')}</h3> <button onClick={() => setShowFolderModal(false)} className="text-gray-500 hover:text-white"><X size={24}/></button> </div> <form onSubmit={handleCreateFolder}> <div className="relative mb-5"> <FolderOpen className="absolute left-4 top-3.5 w-6 h-6 text-amber-500" /> <input autoFocus type="text" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} placeholder={t('archive.folderNamePlaceholder')} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white text-base focus:border-indigo-500/50 outline-none transition-all placeholder:text-gray-600" /> </div> <div className="relative mb-8"> <Tag className="absolute left-4 top-3.5 w-5 h-5 text-gray-500" /> <select value={newFolderCategory} onChange={(e) => setNewFolderCategory(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-gray-300 focus:border-indigo-500/50 outline-none appearance-none cursor-pointer text-base"> <option value="GENERAL">{t('category.general')}</option> <option value="EVIDENCE">{t('category.evidence')}</option> <option value="LEGAL_DOCS">{t('category.legalDocs')}</option> <option value="INVOICES">{t('category.invoices')}</option> <option value="CONTRACTS">{t('category.contracts')}</option> </select> </div> <div className="flex justify-end gap-3"> <button type="button" onClick={() => setShowFolderModal(false)} className="px-6 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors font-medium">{t('general.cancel')}</button> <button type="submit" className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white rounded-xl font-bold shadow-lg shadow-amber-500/20 transition-all transform hover:scale-[1.02]">{t('general.create')}</button> </div> </form> </div> </div> )}
             {itemToRename && ( <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"> <div className="bg-[#0f172a] border border-blue-500/20 rounded-3xl w-full max-w-sm p-6 shadow-2xl"> <div className="flex justify-between items-center mb-6"> <h3 className="text-xl font-bold text-white">{t('documentsPanel.renameTitle')}</h3> <button onClick={() => setItemToRename(null)} className="text-gray-500 hover:text-white"><X size={24}/></button> </div> <form onSubmit={submitRename}> <div className="relative mb-5"> <Pencil className="absolute left-4 top-3.5 w-5 h-5 text-blue-400" /> <input autoFocus type="text" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white text-base focus:border-blue-500/50 outline-none transition-all" /> </div> <div className="flex justify-end gap-3"> <button type="button" onClick={() => setItemToRename(null)} className="px-6 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors font-medium">{t('general.cancel')}</button> <button type="submit" className="px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02] flex items-center gap-2"><Save size={16} /> {t('general.save')}</button> </div> </form> </div> </div> )}
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} onMinimize={closePreview} t={t} directUrl={viewingUrl} />}
-            {isInsideCase && currentView?.id && ( <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={currentView.id} caseTitle={currentView.name} /> )}
+            
+            {/* PHOENIX: Passed fallback caseId to ShareModal */}
+            {(showPortalButton && portalTargetId) && ( <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={portalTargetId} caseTitle={currentView.name} /> )}
         </motion.div>
     );
 };
