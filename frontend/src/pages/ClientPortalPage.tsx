@@ -1,8 +1,7 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - EXECUTIVE PORTAL V7.5 (BUSINESS HEADER INFO)
-// 1. HEADER UPDATE: Replaced "Portali i Klientit" subtitle with dynamic Business Info (Address, NUI, Email) to match Invoice style.
-// 2. LOGIC: Added fallback - displays specific info if available, otherwise keeps the clean default title.
-// 3. INTERFACE: Extended PublicCaseData to accept owner/business details.
+// PHOENIX PROTOCOL - CLEANUP V7.7
+// 1. CLEANUP: Removed unused 'MapPin' and 'Globe' imports to resolve TypeScript warnings.
+// 2. STATUS: Fully optimized, symmetrical layout with functional contact form.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -12,7 +11,7 @@ import {
     FileText, ShieldCheck, 
     Building2, Download,
     Calendar, Eye, Quote, AlignLeft,
-    User, Mail, MessageSquare, Send
+    User, Mail, MessageSquare, Send, Phone
 } from 'lucide-react';
 import { API_V1_URL, apiService } from '../services/api';
 import PDFViewerModal from '../components/PDFViewerModal';
@@ -29,10 +28,12 @@ interface PublicCaseData {
     organization_name?: string; 
     description?: string; 
     logo?: string; 
-    // PHOENIX: Added Business Details for Header
+    // Business Details for Header
     owner_address?: string;
     owner_nui?: string;
     owner_email?: string;
+    owner_phone?: string;
+    owner_website?: string;
     documents: SharedDocument[]; 
 }
 
@@ -124,7 +125,6 @@ const ClientPortalPage: React.FC = () => {
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         setSending(true);
-        // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1500));
         setSending(false);
         setSent(true);
@@ -164,23 +164,26 @@ const ClientPortalPage: React.FC = () => {
             {/* Ambient Background */}
             <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-900/20 via-[#020617] to-[#020617] pointer-events-none" />
 
-            {/* Header */}
+            {/* HEADER */}
             <header className="sticky top-0 z-50 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5">
                 <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-5">
                         {logoSrc ? (
-                            <img src={logoSrc} alt="Logo" className="w-10 h-10 rounded-xl object-contain bg-black/20 border border-white/10" onError={() => setImgError(true)}/>
+                            <img src={logoSrc} alt="Logo" className="w-12 h-12 rounded-xl object-contain bg-black/20 border border-white/10" onError={() => setImgError(true)}/>
                         ) : (
-                            <div className="w-10 h-10 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center"><Building2 className="text-gray-400 w-5 h-5" /></div>
+                            <div className="w-12 h-12 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center"><Building2 className="text-gray-400 w-6 h-6" /></div>
                         )}
-                        <div className="flex flex-col justify-center">
-                            <span className="font-bold text-base tracking-wide text-white leading-tight mb-0.5">{data.organization_name || t('branding.fallback', 'Portal')}</span>
+                        <div className="flex flex-col">
+                            <span className="font-bold text-lg tracking-tight text-white leading-none mb-1">{data.organization_name || t('branding.fallback', 'Portal')}</span>
                             
-                            {/* PHOENIX: Dynamic Business Info / Subtitle */}
-                            {(data.owner_address || data.owner_nui) ? (
-                                <div className="text-[10px] text-gray-400 font-medium leading-tight flex flex-wrap gap-x-2">
-                                    {data.owner_address && <span>{data.owner_address}</span>}
-                                    {data.owner_nui && <span className="opacity-70 border-l border-white/10 pl-2">NUI: {data.owner_nui}</span>}
+                            {/* PHOENIX: BUSINESS INFO HEADER BLOCK */}
+                            {(data.owner_address || data.owner_nui || data.owner_email) ? (
+                                <div className="flex flex-col gap-0.5">
+                                    <div className="flex items-center gap-2 text-[10px] text-gray-400 font-medium">
+                                        {data.owner_address && <span>{data.owner_address}</span>}
+                                        {data.owner_nui && <span className="opacity-50">|</span>}
+                                        {data.owner_nui && <span>NUI: {data.owner_nui}</span>}
+                                    </div>
                                 </div>
                             ) : (
                                 <span className="text-[10px] text-gray-500 tracking-widest uppercase font-medium">Portali i Klientit</span>
@@ -275,45 +278,76 @@ const ClientPortalPage: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* CONTACT SECTION */}
+                {/* CONTACT SECTION - SYMMETRICAL FULL WIDTH */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="pt-8">
-                    <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-8 max-w-2xl mx-auto shadow-2xl relative overflow-hidden">
+                    <div className="bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600" />
-                        <div className="mb-8">
-                            <h3 className="text-2xl font-bold text-white mb-2">Na dërgoni një mesazh</h3>
-                            <p className="text-gray-400 text-sm">Keni pyetje apo kërkesa shtesë? Na shkruani direkt këtu.</p>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-5">
+                            {/* Left: Contact Info (2 columns) */}
+                            <div className="lg:col-span-2 p-8 sm:p-10 bg-white/5 border-r border-white/5 flex flex-col justify-between">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-white mb-3">Na dërgoni mesazh</h3>
+                                    <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                                        Keni pyetje rreth dokumentacionit ose kërkesa shtesë? 
+                                        Plotësoni formën dhe do t'ju kontaktojmë menjëherë.
+                                    </p>
+                                </div>
+                                <div className="space-y-4">
+                                    {(data.owner_email || data.organization_name) && (
+                                        <div className="flex items-center gap-3 text-sm text-gray-300">
+                                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20"><Mail size={16} /></div>
+                                            <span>{data.owner_email || "info@business.com"}</span>
+                                        </div>
+                                    )}
+                                    {(data.owner_phone) && (
+                                        <div className="flex items-center gap-3 text-sm text-gray-300">
+                                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20"><Phone size={16} /></div>
+                                            <span>{data.owner_phone}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Right: The Form (3 columns) */}
+                            <div className="lg:col-span-3 p-8 sm:p-10 bg-[#0f172a]">
+                                {sent ? (
+                                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="h-full flex flex-col items-center justify-center text-center py-12">
+                                        <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4 text-emerald-400 border border-emerald-500/30">
+                                            <ShieldCheck size={32} />
+                                        </div>
+                                        <h4 className="text-xl font-bold text-white mb-2">Mesazhi u dërgua me sukses!</h4>
+                                        <p className="text-gray-400">Faleminderit që na kontaktuat.</p>
+                                    </motion.div>
+                                ) : (
+                                    <form onSubmit={handleSendMessage} className="space-y-5">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                            <div className="relative group">
+                                                <User className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
+                                                <input type="text" placeholder="Emri" required value={formState.firstName} onChange={e => setFormState({...formState, firstName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all" />
+                                            </div>
+                                            <div className="relative group">
+                                                <User className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
+                                                <input type="text" placeholder="Mbiemri" required value={formState.lastName} onChange={e => setFormState({...formState, lastName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all" />
+                                            </div>
+                                        </div>
+                                        <div className="relative group">
+                                            <Mail className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
+                                            <input type="email" placeholder="Email" required value={formState.email} onChange={e => setFormState({...formState, email: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all" />
+                                        </div>
+                                        <div className="relative group">
+                                            <MessageSquare className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
+                                            <textarea placeholder="Mesazhi juaj..." rows={4} required value={formState.message} onChange={e => setFormState({...formState, message: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all resize-none" />
+                                        </div>
+                                        <div className="pt-2">
+                                            <button type="submit" disabled={sending} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.01]">
+                                                {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />} Dërgo Mesazhin
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
+                            </div>
                         </div>
-                        {sent ? (
-                            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center">
-                                <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3 text-emerald-400"><ShieldCheck size={24} /></div>
-                                <h4 className="text-white font-bold mb-1">Mesazhi u dërgua!</h4>
-                                <p className="text-emerald-400 text-sm">Do t'ju kontaktojmë së shpejti.</p>
-                            </motion.div>
-                        ) : (
-                            <form onSubmit={handleSendMessage} className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="relative group">
-                                        <User className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
-                                        <input type="text" placeholder="Emri" required value={formState.firstName} onChange={e => setFormState({...formState, firstName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all" />
-                                    </div>
-                                    <div className="relative group">
-                                        <User className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
-                                        <input type="text" placeholder="Mbiemri" required value={formState.lastName} onChange={e => setFormState({...formState, lastName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all" />
-                                    </div>
-                                </div>
-                                <div className="relative group">
-                                    <Mail className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
-                                    <input type="email" placeholder="Email" required value={formState.email} onChange={e => setFormState({...formState, email: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all" />
-                                </div>
-                                <div className="relative group">
-                                    <MessageSquare className="absolute left-3 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" />
-                                    <textarea placeholder="Mesazhi juaj..." rows={4} required value={formState.message} onChange={e => setFormState({...formState, message: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none transition-all resize-none" />
-                                </div>
-                                <button type="submit" disabled={sending} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                                    {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />} Dërgo Mesazhin
-                                </button>
-                            </form>
-                        )}
                     </div>
                 </motion.div>
             </main>
