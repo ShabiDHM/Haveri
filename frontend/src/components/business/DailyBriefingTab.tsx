@@ -1,13 +1,13 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD INTEGRATION V4.1
-// 1. FEATURE: Added 'Messages Widget' in Column 3 (Smart Agenda).
-// 2. LOGIC: Fetches unread message count and links to the Inbox tab.
+// PHOENIX PROTOCOL - DASHBOARD INTEGRATION V4.2 (ARGUMENT FIX)
+// 1. FIX: Provided the required 'INBOX' argument to 'getInboundMessages' to resolve the TypeScript error.
+// 2. LOGIC: Ensures the message count on the dashboard specifically reflects unread inbox messages.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Target, AlertTriangle, Mail, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom'; // New Import
+import { useNavigate } from 'react-router-dom';
 import { useStrategicBriefing, UIAgendaItem } from '../../hooks/useStrategicBriefing';
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { EventDetailModal } from '../modals/EventDetailModal';
@@ -27,7 +27,7 @@ export const DailyBriefingTab: React.FC = () => {
 
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
     const [cases, setCases] = useState<Case[]>([]);
-    const [messageCount, setMessageCount] = useState(0); // New State
+    const [messageCount, setMessageCount] = useState(0);
 
     const months = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
     const today = new Date();
@@ -40,8 +40,8 @@ export const DailyBriefingTab: React.FC = () => {
                 const casesData = await apiService.getCases();
                 setCases(casesData);
                 
-                // Fetch Message Count
-                const msgs = await apiService.getInboundMessages();
+                // PHOENIX: Pass 'INBOX' to get the correct count for the widget
+                const msgs = await apiService.getInboundMessages('INBOX');
                 setMessageCount(msgs.length);
             } catch (err) {
                 console.error("Failed to load dashboard data", err);
@@ -90,7 +90,6 @@ export const DailyBriefingTab: React.FC = () => {
                     <BusinessPulseCard signals={briefingData?.market.signals} currentSales={displayIncome} />
                 </motion.div>
                 
-                {/* PHOENIX: Modified 3rd Column - Widget Stack */}
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-4">
                     
                     {/* New Messages Widget */}
