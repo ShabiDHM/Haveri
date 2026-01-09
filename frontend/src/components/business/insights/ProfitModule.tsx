@@ -1,7 +1,7 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - STOCK INTELLIGENCE V6.2 (MULTILINE SUPPLIER)
-// 1. UI UPGRADE: Replaced the single-line Supplier input with a multi-line <textarea>.
-// 2. UX: Users can now enter full supplier details, including address, for the PDF.
+// PHOENIX PROTOCOL - EDITABLE COST V6.3
+// 1. FEATURE: 'Kosto Totale' is now editable, allowing manual overrides of the calculated price.
+// 2. LOGIC: Added 'manualCost' state. Prioritizes manual input; falls back to auto-calculation if cleared.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,18 +25,26 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
     const [drafting, setDrafting] = useState(false);
     const [aiData, setAiData] = useState<{ prediction: RestockPrediction | null, trend: SalesTrendAnalysis | null }>({ prediction: null, trend: null });
     const [showPOModal, setShowPOModal] = useState(false);
+    
+    // Form States
     const [poQuantity, setPoQuantity] = useState(0);
     const [poSupplier, setPoSupplier] = useState("");
+    const [manualCost, setManualCost] = useState<string>(""); // PHOENIX: Track manual input as string
 
+    // Update derived values when prediction arrives
     useEffect(() => {
         if (aiData.prediction) {
             setPoQuantity(aiData.prediction.suggested_quantity);
             setPoSupplier(aiData.prediction.supplier_name || "Furnitori Primar");
+            setManualCost(""); // Reset manual override on new prediction
         }
     }, [aiData.prediction]);
 
     const handleItemClick = async (item: any) => {
-        setSelectedItem(item); setLoading(true); setAiData({ prediction: null, trend: null });
+        setSelectedItem(item); 
+        setLoading(true); 
+        setAiData({ prediction: null, trend: null });
+        setManualCost(""); // Reset
         try {
             const itemIdAsString = String(item.id);
             const [prediction, trend] = await Promise.all([
@@ -53,7 +61,10 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
         setShowPOModal(true);
     };
 
-    const poTotalCost = (selectedItem?.cost_per_unit ?? 0) * poQuantity;
+    // PHOENIX: Logic to determine which price to use
+    // If user typed something, use it. Otherwise, calculate (Quantity * UnitCost).
+    const calculatedCost = (selectedItem?.cost_per_unit ?? 0) * poQuantity;
+    const finalCostValue = manualCost !== "" ? parseFloat(manualCost) || 0 : calculatedCost;
 
     const handleConfirmAndGeneratePO = async () => {
         if (!selectedItem) return;
@@ -64,7 +75,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                 item_name: selectedItem.name, 
                 unit: selectedItem.unit,
                 quantity: poQuantity,
-                estimated_cost: poTotalCost,
+                estimated_cost: finalCostValue, // Use the finalized value
                 supplier_name: poSupplier
             });
             alert(t('inventory.orderDrafted', 'Porosia u draftua dhe u dërgua në Arkivë!'));
@@ -170,7 +181,6 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                             <div className="p-6 space-y-4">
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-400 uppercase">{t('inventory.poModal.supplierName', 'Emri i Furnitorit')}</label>
-                                    {/* PHOENIX: Changed to textarea */}
                                     <textarea 
                                         value={poSupplier} 
                                         onChange={(e) => setPoSupplier(e.target.value)}
@@ -185,7 +195,23 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-400 uppercase">{t('inventory.poModal.totalCost', 'Kosto Totale')}</label>
-                                        <input type="text" value={`€${poTotalCost.toFixed(2)}`} readOnly className="w-full bg-black/20 border border-white/5 rounded-lg p-3 text-gray-300 cursor-not-allowed"/>
+                                        
+                                        {/* PHOENIX: EDITABLE COST LOGIC */}
+                                        <input 
+                                            type="number" 
+                                            // If manualCost is set, show it. Otherwise show calculation.
+                                            value={manualCost !== "" ? manualCost : calculatedCost.toFixed(2)}
+                                            onChange={(e) => setManualCost(e.target.value)}
+                                            onBlur={() => {
+                                                // Optional: Format on blur if strictly numeric needed
+                                                if (manualCost !== "") {
+                                                    const val = parseFloat(manualCost);
+                                                    if (!isNaN(val)) setManualCost(val.toFixed(2));
+                                                }
+                                            }}
+                                            placeholder={`Calculated: €${calculatedCost.toFixed(2)}`}
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-blue-500/50 outline-none"
+                                        />
                                     </div>
                                 </div>
                             </div>
