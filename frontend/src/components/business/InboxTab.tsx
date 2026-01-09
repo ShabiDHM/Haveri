@@ -1,16 +1,15 @@
 // FILE: src/components/business/InboxTab.tsx
-// PHOENIX PROTOCOL - INBOX V2.3 (SYNTAX & JSX CORRECTION)
-// 1. CRITICAL FIX: Corrected typo in 'react-i18next' import.
-// 2. JSX FIX: Rebuilt the entire JSX structure to fix all unclosed tags and fragments.
-// 3. CLEANUP: Removed all unused variable and import warnings.
+// PHOENIX PROTOCOL - INBOX V2.4 (DISPLAY PHONE)
+// 1. UI: Added a 'Phone' field to the message detail view.
+// 2. LOGIC: Conditionally renders the phone number if it exists on the message object.
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { apiService } from '../../services/api';
-import { Mail, Loader2, ArrowRight, MessageSquare, Inbox, Archive, Trash2, AlertCircle } from 'lucide-react';
-import { useTranslation } from 'react-i18next'; // Corrected import
+import { Mail, Loader2, ArrowRight, MessageSquare, Inbox, Archive, Trash2, AlertCircle, Phone } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface ClientMessage {
-    id: string; client_name: string; sender_email: string; case_title: string;
+    id: string; client_name: string; sender_email: string; sender_phone?: string; case_title: string;
     content: string; created_at: string; is_read: boolean; status: string;
 }
 type FolderType = 'INBOX' | 'ARCHIVED' | 'TRASHED';
@@ -60,8 +59,6 @@ export const InboxTab: React.FC = () => {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Folder Sidebar - Spans 1 column */}
             <div className="lg:col-span-1 flex flex-col bg-gray-900/60 border border-white/10 rounded-3xl p-4 backdrop-blur-md max-h-[70vh]">
                 <h3 className="text-lg font-bold text-white mb-4 px-2 flex-shrink-0">Kutia Postare</h3>
                 <div className="space-y-2 flex-shrink-0">
@@ -70,10 +67,7 @@ export const InboxTab: React.FC = () => {
                     <FolderButton label={t('inbox.folder.trash', 'Shporta')} icon={Trash2} isActive={activeFolder === 'TRASHED'} onClick={() => setActiveFolder('TRASHED')} count={activeFolder === 'TRASHED' ? messages.length : 0}/>
                 </div>
             </div>
-
-            {/* Message List & Detail View - Spans 2 columns */}
             <div className="lg:col-span-2 flex flex-col lg:flex-row gap-6 max-h-[70vh]">
-                {/* Message List */}
                 <div className={`${selectedMessage ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-1/2 bg-gray-900/60 border border-white/10 rounded-3xl overflow-hidden backdrop-blur-md`}>
                     <div className="p-5 border-b border-white/10 bg-white/5 flex-shrink-0"><h3 className="text-lg font-bold text-white flex items-center gap-2"><Mail size={18} className="text-blue-400"/> {activeFolder}</h3></div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1.5 min-h-0">
@@ -91,15 +85,18 @@ export const InboxTab: React.FC = () => {
                         )}
                     </div>
                 </div>
-
-                {/* Message Detail View */}
                 <div className={`${selectedMessage ? 'flex' : 'hidden lg:flex'} flex-1 bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex-col relative`}>
                     {selectedMessage ? (
                         <>
                             <button onClick={() => setSelectedMessage(null)} className="lg:hidden absolute top-4 left-4 p-2 bg-white/10 rounded-lg text-white"><ArrowRight className="rotate-180" size={20}/></button>
                             <div className="flex items-center gap-4 mb-6 border-b border-white/10 pb-6 mt-8 lg:mt-0 flex-shrink-0">
                                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">{selectedMessage.client_name.charAt(0)}</div>
-                                <div><h2 className="text-xl font-bold text-white">{selectedMessage.client_name}</h2><p className="text-sm text-blue-400">{selectedMessage.sender_email}</p></div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">{selectedMessage.client_name}</h2>
+                                    <p className="text-sm text-blue-400">{selectedMessage.sender_email}</p>
+                                    {/* PHOENIX: Display phone if available */}
+                                    {selectedMessage.sender_phone && <p className="text-xs text-gray-400 flex items-center gap-1 mt-1"><Phone size={12}/> {selectedMessage.sender_phone}</p>}
+                                </div>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0"><div className="bg-black/20 rounded-2xl p-6 border border-white/5"><p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selectedMessage.content}</p></div></div>
                             <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-center flex-wrap gap-2 flex-shrink-0">

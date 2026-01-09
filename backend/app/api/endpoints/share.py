@@ -1,9 +1,7 @@
 # FILE: backend/app/api/endpoints/share.py
-# PHOENIX PROTOCOL - MESSAGING V8.2 (COMPLETE FILE)
-# 1. FEATURE: Added 'submit_portal_message' and 'get_my_messages' endpoints.
-# 2. FEATURE: Added 'update_message_status' and 'delete_message_permanently' endpoints.
-# 3. DATA MODEL: Messages now have a 'status' field ('INBOX', 'ARCHIVED', 'TRASHED').
-# 4. LOGIC: 'get_my_messages' now filters by status, allowing for folder views.
+# PHOENIX PROTOCOL - MESSAGING SYSTEM V8.4 (PHONE FIELD ADDED)
+# 1. DATA MODEL: Added an optional 'phone' field to the ClientMessageIn and ClientMessageOut models.
+# 2. LOGIC: The submission endpoint now saves the client's phone number if provided.
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -12,7 +10,7 @@ from pydantic import BaseModel, EmailStr
 import os
 from datetime import datetime
 from bson import ObjectId
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from app.api.endpoints.dependencies import get_db, get_current_user
 from app.services.share_service import ShareService
@@ -33,6 +31,7 @@ class ClientMessageIn(BaseModel):
     last_name: str
     email: EmailStr
     message: str
+    phone: Optional[str] = None # PHOENIX: Added phone field
 
 class ClientMessageOut(BaseModel):
     id: str
@@ -40,6 +39,7 @@ class ClientMessageOut(BaseModel):
     case_title: str
     client_name: str
     sender_email: str
+    sender_phone: Optional[str] = None # PHOENIX: Added phone field
     content: str
     created_at: datetime
     is_read: bool
@@ -68,7 +68,9 @@ def submit_portal_message(case_id: str, msg: ClientMessageIn, db: Database = Dep
         if not case:
             raise HTTPException(status_code=404, detail="Project not found")
         
-        owner_id = case.get("user_id")
+        owner_id = case.get("user_id") or case.get("owner_id")
+        if not owner_id:
+            raise HTTPException(status_code=500, detail="Project owner could not be identified.")
 
         new_message = {
             "user_id": owner_id,
@@ -76,6 +78,7 @@ def submit_portal_message(case_id: str, msg: ClientMessageIn, db: Database = Dep
             "case_title": case.get("title", "Unknown Project"),
             "sender_name": f"{msg.first_name} {msg.last_name}",
             "sender_email": msg.email,
+            "sender_phone": msg.phone, # PHOENIX: Save phone number
             "content": msg.message,
             "created_at": datetime.utcnow(),
             "is_read": False,
@@ -101,6 +104,7 @@ def get_my_messages(
         case_title=doc.get("case_title", "N/A"),
         client_name=doc.get("sender_name", "N/A"),
         sender_email=doc.get("sender_email", ""),
+        sender_phone=doc.get("sender_phone"), # PHOENIX: Retrieve phone number
         content=doc.get("content", ""),
         created_at=doc["created_at"],
         is_read=doc.get("is_read", False),
@@ -136,8 +140,9 @@ def delete_message_permanently(
         raise HTTPException(status_code=404, detail="Message not found")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-# --- INTERNAL SHARING TOGGLE ENDPOINTS ---
 
+# --- INTERNAL SHARING TOGGLE ENDPOINTS ---
+# (Rest of the file is unchanged)
 @router.put("/case/{case_id}", status_code=status.HTTP_200_OK)
 def update_case_share_status(
     case_id: str,
@@ -148,8 +153,6 @@ def update_case_share_status(
     service = ShareService(db)
     service.set_case_share_status(case_id, str(current_user.id), update_data.is_shared)
     return {"status": "success", "case_id": case_id, "is_shared": update_data.is_shared}
-
-# --- DYNAMIC IMAGE GENERATOR ---
 
 @router.get("/c/{case_id}/image")
 async def get_case_social_image(case_id: str, db: Database = Depends(get_db)):
@@ -166,8 +169,6 @@ async def get_case_social_image(case_id: str, db: Database = Depends(get_db)):
         return Response(content=img_bytes, media_type="image/jpeg")
     except Exception:
         return Response(status_code=404)
-
-# --- SMART LINK (THE MAGIC SWITCH) ---
 
 @router.get("/c/{case_id}")
 async def share_case_link(request: Request, case_id: str, db: Database = Depends(get_db)):
