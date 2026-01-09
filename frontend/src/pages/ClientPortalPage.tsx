@@ -1,7 +1,8 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - CLEANUP V7.7
-// 1. CLEANUP: Removed unused 'MapPin' and 'Globe' imports to resolve TypeScript warnings.
-// 2. STATUS: Fully optimized, symmetrical layout with functional contact form.
+// PHOENIX PROTOCOL - CLEANUP V7.9
+// 1. CLEANUP: Removed the entire contact details block (Email/Phone icons) from the bottom-left contact card.
+//    - This removes the "info@business.com" placeholder entirely.
+// 2. LAYOUT: Kept the split layout but the left side is now purely text (Title + Description), which looks cleaner.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -11,7 +12,7 @@ import {
     FileText, ShieldCheck, 
     Building2, Download,
     Calendar, Eye, Quote, AlignLeft,
-    User, Mail, MessageSquare, Send, Phone
+    User, Mail, MessageSquare, Send
 } from 'lucide-react';
 import { API_V1_URL, apiService } from '../services/api';
 import PDFViewerModal from '../components/PDFViewerModal';
@@ -28,12 +29,18 @@ interface PublicCaseData {
     organization_name?: string; 
     description?: string; 
     logo?: string; 
-    // Business Details for Header
+    
+    // Backend Fields (Flexible matching)
     owner_address?: string;
+    address?: string; 
     owner_nui?: string;
+    nui?: string;
+    tax_id?: string;
     owner_email?: string;
+    email?: string;
     owner_phone?: string;
-    owner_website?: string;
+    phone?: string;
+
     documents: SharedDocument[]; 
 }
 
@@ -159,6 +166,10 @@ const ClientPortalPage: React.FC = () => {
     const currentDate = new Date().toLocaleDateString('sq-AL', { year: 'numeric', month: 'long', day: 'numeric' });
     const directorMessage = data.description || "Të nderuar, bashkëngjitur gjeni dokumentacionin e përgatitur për rishikimin tuaj. Për çdo paqartësi, mbetemi në dispozicion.";
 
+    // PHOENIX: Normalized Data Access
+    const businessAddress = data.owner_address || data.address;
+    const businessNui = data.owner_nui || data.nui || data.tax_id;
+
     return (
         <div className="min-h-screen bg-[#020617] font-sans text-white selection:bg-emerald-500/30 pb-24 relative overflow-x-hidden">
             {/* Ambient Background */}
@@ -176,13 +187,13 @@ const ClientPortalPage: React.FC = () => {
                         <div className="flex flex-col">
                             <span className="font-bold text-lg tracking-tight text-white leading-none mb-1">{data.organization_name || t('branding.fallback', 'Portal')}</span>
                             
-                            {/* PHOENIX: BUSINESS INFO HEADER BLOCK */}
-                            {(data.owner_address || data.owner_nui || data.owner_email) ? (
+                            {/* PHOENIX: BUSINESS INFO HEADER BLOCK (Normalized Check) */}
+                            {(businessAddress || businessNui) ? (
                                 <div className="flex flex-col gap-0.5">
                                     <div className="flex items-center gap-2 text-[10px] text-gray-400 font-medium">
-                                        {data.owner_address && <span>{data.owner_address}</span>}
-                                        {data.owner_nui && <span className="opacity-50">|</span>}
-                                        {data.owner_nui && <span>NUI: {data.owner_nui}</span>}
+                                        {businessAddress && <span>{businessAddress}</span>}
+                                        {businessNui && <span className="opacity-50">|</span>}
+                                        {businessNui && <span>NUI: {businessNui}</span>}
                                     </div>
                                 </div>
                             ) : (
@@ -284,28 +295,14 @@ const ClientPortalPage: React.FC = () => {
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600" />
                         
                         <div className="grid grid-cols-1 lg:grid-cols-5">
-                            {/* Left: Contact Info (2 columns) */}
-                            <div className="lg:col-span-2 p-8 sm:p-10 bg-white/5 border-r border-white/5 flex flex-col justify-between">
+                            {/* Left: Contact Info (Cleaned - No info block) */}
+                            <div className="lg:col-span-2 p-8 sm:p-10 bg-white/5 border-r border-white/5 flex flex-col justify-center">
                                 <div>
                                     <h3 className="text-2xl font-bold text-white mb-3">Na dërgoni mesazh</h3>
-                                    <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                                    <p className="text-gray-400 text-sm leading-relaxed">
                                         Keni pyetje rreth dokumentacionit ose kërkesa shtesë? 
                                         Plotësoni formën dhe do t'ju kontaktojmë menjëherë.
                                     </p>
-                                </div>
-                                <div className="space-y-4">
-                                    {(data.owner_email || data.organization_name) && (
-                                        <div className="flex items-center gap-3 text-sm text-gray-300">
-                                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20"><Mail size={16} /></div>
-                                            <span>{data.owner_email || "info@business.com"}</span>
-                                        </div>
-                                    )}
-                                    {(data.owner_phone) && (
-                                        <div className="flex items-center gap-3 text-sm text-gray-300">
-                                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20"><Phone size={16} /></div>
-                                            <span>{data.owner_phone}</span>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 
