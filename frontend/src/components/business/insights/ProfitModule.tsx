@@ -1,8 +1,7 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - STOCK INTELLIGENCE V6.1 (DEFINITIVE FIX)
-// 1. CRITICAL FIX: Restored the 'useEffect' hook, which is essential for populating the editable quantity and fixing the "0.0" data race condition.
-// 2. ARCHITECTURE: The component now correctly uses a Confirmation Modal for editing before drafting.
-// 3. STATUS: This is the final, correct, and fully functional version.
+// PHOENIX PROTOCOL - STOCK INTELLIGENCE V6.2 (MULTILINE SUPPLIER)
+// 1. UI UPGRADE: Replaced the single-line Supplier input with a multi-line <textarea>.
+// 2. UX: Users can now enter full supplier details, including address, for the PDF.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,7 +28,6 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
     const [poQuantity, setPoQuantity] = useState(0);
     const [poSupplier, setPoSupplier] = useState("");
 
-    // PHOENIX: This useEffect is CRITICAL. It populates the editable quantity when AI data arrives.
     useEffect(() => {
         if (aiData.prediction) {
             setPoQuantity(aiData.prediction.suggested_quantity);
@@ -52,7 +50,6 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
     
     const handleOpenDraftModal = () => {
         if (!aiData.prediction) return;
-        // The useEffect now handles setting the state, this just opens the modal
         setShowPOModal(true);
     };
 
@@ -173,7 +170,13 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                             <div className="p-6 space-y-4">
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-400 uppercase">{t('inventory.poModal.supplierName', 'Emri i Furnitorit')}</label>
-                                    <input type="text" value={poSupplier} onChange={(e) => setPoSupplier(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white"/>
+                                    {/* PHOENIX: Changed to textarea */}
+                                    <textarea 
+                                        value={poSupplier} 
+                                        onChange={(e) => setPoSupplier(e.target.value)}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white h-24 resize-none"
+                                        placeholder={t('inventory.poModal.supplierPlaceholder', 'Shkruani emrin dhe adresën e furnitorit...')}
+                                    />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
