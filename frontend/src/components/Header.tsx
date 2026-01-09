@@ -1,10 +1,10 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.2 (INBOX LINK INTEGRATION)
-// 1. FEATURE: Added 'Mesazhet' (Inbox) to the main navigation array.
-// 2. FIX: This registers the '/business/inbox' route with the UI, solving the redirect loop.
+// PHOENIX PROTOCOL - HEADER V6.3 (NAVIGATION CLEANUP)
+// 1. CLEANUP: Removed 'Mesazhet' (Inbox) from the main navigation array as requested.
+// 2. UX: Access to the inbox is now exclusively through the Dashboard widget.
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, MessageSquare, Menu, FileText, Package, FolderOpen, Sparkles, Building2, X, Inbox } from 'lucide-react';
+import { Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, MessageSquare, Menu, FileText, Package, FolderOpen, Sparkles, Building2, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
@@ -68,8 +68,6 @@ const Header: React.FC = () => {
       { label: t('business.finance', 'Financat'), path: '/business/finance', icon: FileText },
       { label: t('inventory.tabItems_short', 'Stoku'), path: '/business/inventory', icon: Package },
       { label: t('business.archive', 'Arkiva'), path: '/business/archive', icon: FolderOpen },
-      // PHOENIX: Added Inbox Link
-      { label: t('inbox.title', 'Mesazhet'), path: '/business/inbox', icon: Inbox },
       { label: t('business.insights', 'Inteligjenca'), path: '/business/insights', icon: Sparkles },
       { label: t('business.profile', 'Profili'), path: '/business/profile', icon: Building2 },
       { label: t('sidebar.haveri_ai', 'Haveri AI'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
@@ -97,7 +95,6 @@ const Header: React.FC = () => {
                     <NavLink
                         key={item.path}
                         to={item.path}
-                        // PHOENIX: Upgraded to text-base and icon size 18
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
                             (isActive || isHaveriActive) 
                                 ? 'text-white bg-primary-start/20 border border-primary-start/20 shadow-[0_0_10px_rgba(99,102,241,0.2)]' 
@@ -125,7 +122,6 @@ const Header: React.FC = () => {
         <div className="relative">
           <button ref={buttonRef} onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-3 hover:bg-white/5 p-1.5 rounded-xl transition-colors border border-transparent hover:border-glass-edge">
             <div className="text-right hidden sm:block">
-              {/* PHOENIX: Upgraded to text-base */}
               <p className="text-base font-medium text-white">{user?.username || 'User'}</p>
               <p className="text-xs text-text-secondary uppercase tracking-wider">{user?.role || 'USER'}</p>
             </div>
@@ -134,7 +130,6 @@ const Header: React.FC = () => {
           {isProfileOpen && (
             <div ref={dropdownRef} className="absolute right-0 mt-2 w-56 bg-background-dark border border-glass-edge rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
               <div className="px-4 py-3 border-b border-glass-edge mb-1"><p className="text-base text-white font-medium truncate">{user?.username}</p><p className="text-xs text-text-secondary truncate">{user?.email}</p></div>
-              {/* PHOENIX: Upgraded dropdown items to text-base and icon size 18 */}
               <Link to="/account" className="flex items-center px-4 py-2 text-base text-text-secondary hover:text-white hover:bg-white/5 transition-colors" onClick={() => setIsProfileOpen(false)}><UserIcon size={18} className="mr-3 text-blue-400" />{t('sidebar.account')}</Link>
               <Link to="/support" className="flex items-center px-4 py-2 text-base text-text-secondary hover:text-white hover:bg-white/5 transition-colors" onClick={() => setIsProfileOpen(false)}><MessageSquare size={18} className="mr-3 text-emerald-400" />{t('sidebar.support')}</Link>
               <div className="h-px bg-glass-edge my-1"></div>
@@ -168,7 +163,6 @@ const Header: React.FC = () => {
                         }`}
                     >
                         <item.icon size={28} className="mb-2" />
-                        {/* Mobile text stays slightly smaller for grid fit, but bold */}
                         <span className="text-sm font-bold">{item.label}</span>
                     </Link>
                 ))}
