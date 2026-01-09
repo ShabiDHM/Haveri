@@ -1,7 +1,7 @@
 # FILE: backend/app/services/report_service.py
-# PHOENIX PROTOCOL - REPORT SERVICE V5.9 (PO FORMATTING FIX)
-# 1. FIX: Added 'phone' field to Purchase Order header branding.
-# 2. FEATURE: Supplier address now supports multi-line text (replaces newlines with <br/>).
+# PHOENIX PROTOCOL - REPORT SERVICE V6.0 (TEXT TO PDF FEATURE)
+# 1. NEW FEATURE: Added 'create_pdf_from_text' to generate simple text reports.
+# 2. INTEGRITY: Preserved all PO and Invoice generation logic.
 
 import io
 import os
@@ -12,11 +12,11 @@ from datetime import datetime
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
-from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer, Table, TableStyle, Flowable
+from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer, Table, TableStyle, Flowable, SimpleDocTemplate
 from reportlab.platypus import Image as ReportLabImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.colors import HexColor, white
-from reportlab.lib.enums import TA_RIGHT, TA_LEFT, TA_CENTER
+from reportlab.lib.enums import TA_RIGHT, TA_LEFT, TA_CENTER, TA_JUSTIFY
 from pymongo.database import Database
 from typing import List, Optional
 from bson import ObjectId
@@ -50,6 +50,7 @@ STYLES.add(ParagraphStyle(name='TotalValue', parent=STYLES['TableCellRight'], fo
 STYLES.add(ParagraphStyle(name='NotesLabel', parent=STYLES['AddressLabel'], spaceBefore=10))
 STYLES.add(ParagraphStyle(name='FirmName', parent=STYLES['h3'], alignment=TA_RIGHT, fontSize=14, spaceAfter=4, textColor=COLOR_PRIMARY_TEXT))
 STYLES.add(ParagraphStyle(name='FirmMeta', parent=STYLES['Normal'], alignment=TA_RIGHT, fontSize=9, textColor=COLOR_SECONDARY_TEXT, leading=12))
+STYLES.add(ParagraphStyle(name='ReportBody', parent=STYLES['Normal'], fontSize=11, leading=14, alignment=TA_JUSTIFY, spaceAfter=10))
 
 # --- TRANSLATIONS ---
 TRANSLATIONS = {
@@ -241,6 +242,41 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
         Story.append(Paragraph(_get_text('notes', lang), STYLES['NotesLabel']))
         Story.append(Paragraph(escape(invoice.notes).replace('\n', '<br/>'), STYLES['AddressText']))
 
+    doc.build(Story)
+    buffer.seek(0)
+    return buffer
+
+def create_pdf_from_text(text: str, document_title: str = "Raport i Gjeneruar") -> io.BytesIO:
+    """
+    Creates a simple PDF report from plain text.
+    Useful for printing analysis reports or raw document content.
+    """
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=15*mm, leftMargin=15*mm,
+        topMargin=15*mm, bottomMargin=15*mm
+    )
+    
+    Story = []
+    
+    # Title
+    Story.append(Paragraph(document_title, STYLES['H1']))
+    Story.append(Spacer(1, 5*mm))
+    Story.append(Paragraph(f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M')}", STYLES['MetaLabel']))
+    Story.append(Spacer(1, 10*mm))
+    
+    # Text Content (Split by newlines for basic formatting)
+    lines = text.split('\n')
+    for line in lines:
+        if line.strip():
+            # Use basic escape just in case
+            safe_line = escape(line)
+            Story.append(Paragraph(safe_line, STYLES['ReportBody']))
+        else:
+            Story.append(Spacer(1, 2*mm))
+            
     doc.build(Story)
     buffer.seek(0)
     return buffer

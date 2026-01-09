@@ -1,12 +1,12 @@
 # FILE: backend/app/api/endpoints/cases.py
-# PHOENIX PROTOCOL - CASES ROUTER V6.2 (SIGNATURE CORRECTION)
-# 1. FIX: Updated 'archive_case_document' to match the restored 'ArchiveService' signature.
-#    - Old Call: passed 'source_key' and 'filename' (invalid).
-#    - New Call: passes 'document_id' (valid).
-# 2. STATUS: Fully synchronized with backend services.
+# PHOENIX PROTOCOL - CASES ROUTER V6.3 (PUBLIC DOCUMENTS ENDPOINT)
+# 1. NEW FEATURE: Added 'get_public_case_documents' endpoint.
+#    - Aggregates shared items from both 'documents' (Active) and 'archives' (Archived) collections.
+#    - Returns a unified list for the Client Portal.
+# 2. STATUS: Fully synchronized with ArchiveService and DocumentService.
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body, Query
-from typing import List, Annotated, Dict, Optional
+from typing import List, Annotated, Dict, Optional, Any
 from fastapi.responses import Response, StreamingResponse, JSONResponse, FileResponse
 from pydantic import BaseModel
 from pymongo.database import Database
@@ -59,6 +59,15 @@ class BulkDeleteRequest(BaseModel):
     document_ids: List[str]
 class ArchiveImportRequest(BaseModel):
     archive_item_ids: List[str]
+
+# Schema for the Public Portal Document List
+class PublicDocumentItem(BaseModel):
+    id: str
+    title: str
+    created_at: datetime
+    file_size: Optional[int] = 0
+    file_type: str
+    source: str  # "ACTIVE" or "ARCHIVE"
 
 def validate_object_id(id_str: str) -> ObjectId:
     try: return ObjectId(id_str)
@@ -235,6 +244,67 @@ async def get_public_case_timeline(case_id: str, db: Database = Depends(get_db))
         validate_object_id(case_id)
         return await asyncio.to_thread(case_service.get_public_case_events, db=db, case_id=case_id)
     except Exception: raise HTTPException(404, "Portal not available.")
+
+# --- NEW ENDPOINT: PUBLIC DOCUMENTS LIST ---
+@router.get("/public/{case_id}/documents", response_model=List[PublicDocumentItem], tags=["Public Portal"])
+async def get_public_case_documents(case_id: str, db: Database = Depends(get_db)):
+    """
+    Fetches all shared documents for a case from both:
+    1. The active 'documents' collection.
+    2. The 'archives' collection.
+    """
+    try:
+        case_oid = validate_object_id(case_id)
+        
+        # Helper to query mongo in thread
+        def query_docs():
+            # 1. Active Documents
+            active_cursor = db.documents.find({
+                "$or": [{"case_id": case_id}, {"case_id": case_oid}],
+                "is_shared": True
+            })
+            
+            # 2. Archive Files
+            archive_cursor = db.archives.find({
+                "$or": [{"case_id": case_id}, {"case_id": case_oid}],
+                "is_shared": True,
+                "item_type": "FILE"
+            })
+            
+            results = []
+            
+            # Process Active
+            for doc in active_cursor:
+                results.append(PublicDocumentItem(
+                    id=str(doc["_id"]),
+                    title=doc.get("file_name", "Untitled"),
+                    created_at=doc.get("created_at") or datetime.now(timezone.utc),
+                    file_size=doc.get("file_size", 0),
+                    file_type="PDF", # Mostly PDF in active docs
+                    source="ACTIVE"
+                ))
+            
+            # Process Archive
+            for doc in archive_cursor:
+                results.append(PublicDocumentItem(
+                    id=str(doc["_id"]),
+                    title=doc.get("title", "Untitled"),
+                    created_at=doc.get("created_at") or datetime.now(timezone.utc),
+                    file_size=doc.get("file_size", 0),
+                    file_type=doc.get("file_type", "UNKNOWN"),
+                    source="ARCHIVE"
+                ))
+                
+            # Sort by date desc
+            results.sort(key=lambda x: x.created_at, reverse=True)
+            return results
+
+        return await asyncio.to_thread(query_docs)
+        
+    except HTTPException as e: raise e
+    except Exception as e:
+        logger.error(f"Public Documents Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load documents.")
 
 @router.get("/public/{case_id}/documents/{doc_id}/download", tags=["Public Portal"])
 async def download_public_document(case_id: str, doc_id: str, source: str = Query("ACTIVE", enum=["ACTIVE", "ARCHIVE"]), db: Database = Depends(get_db)):

@@ -7,7 +7,7 @@ from bson.errors import InvalidId
 from pymongo.database import Database
 from fastapi import UploadFile, HTTPException
 
-from ..models.archive import ArchiveItemInDB
+from ..models.archive import ArchiveItemInDB, ArchiveItemOut
 from .storage_service import get_s3_client, transfer_config
 
 from ..celery_app import celery_app
@@ -137,7 +137,6 @@ class ArchiveService:
         if not item:
             raise HTTPException(status_code=404, detail="Item not found")
         
-        # Explicit typing to prevent type narrowing (Dict[str, bool]) which causes errors when adding 'case_id'
         update_fields: Dict[str, Any] = {"is_shared": is_shared}
         
         if is_shared and not item.get("case_id") and case_id:
@@ -195,3 +194,48 @@ class ArchiveService:
         doc_data["_id"] = res.inserted_id
         celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(res.inserted_id)])
         return ArchiveItemInDB(**doc_data)
+
+    async def archive_existing_document(self, user_id: str, case_id: str, document_id: str) -> ArchiveItemOut:
+        """
+        Moves a document from the active 'documents' collection to the 'archives' collection.
+        This preserves the storage file but changes the database record metadata.
+        """
+        doc_oid = self._to_oid(document_id)
+        user_oid = self._to_oid(user_id)
+        
+        # 1. Fetch Source Document
+        source_doc = self.db.documents.find_one({"_id": doc_oid, "owner_id": user_oid})
+        if not source_doc:
+            raise HTTPException(status_code=404, detail="Active document not found")
+            
+        # 2. Prepare Archive Record
+        archive_data = {
+            "user_id": user_oid,
+            "case_id": case_id,
+            "title": source_doc.get("file_name", "Untitled"),
+            "item_type": "FILE",
+            "file_type": "PDF", # Assuming PDF for active docs usually
+            "category": "CASE_ARCHIVE",
+            "storage_key": source_doc.get("storage_key"), # REUSE same S3 key
+            "file_size": source_doc.get("file_size", 0),
+            "created_at": datetime.now(timezone.utc),
+            "description": f"Archived from case {case_id}",
+            "is_shared": source_doc.get("is_shared", False),
+            "indexing_status": "PENDING"
+        }
+        
+        # 3. Insert into Archive
+        insert_result = self.db.archives.insert_one(archive_data)
+        new_archive_id = insert_result.inserted_id
+        
+        # 4. Delete from Active Documents
+        self.db.documents.delete_one({"_id": doc_oid})
+        
+        # 5. Trigger Re-indexing (Optional, since key is same, but context changed)
+        try:
+            celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(new_archive_id)])
+        except Exception as e:
+            logger.error(f"Failed to queue archive indexing: {e}")
+            
+        archive_data["_id"] = new_archive_id
+        return ArchiveItemOut(**archive_data)
