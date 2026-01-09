@@ -1,7 +1,7 @@
 # FILE: backend/app/services/share_service.py
-# PHOENIX PROTOCOL - SHARE SERVICE V1.4 (BRANDING FIX)
-# 1. FIX: Added fallback to 'users' collection to ensure 'organization_name' is never empty.
-# 2. FIX: Properly routes 'logo' to the public streaming endpoint if a logo exists.
+# PHOENIX PROTOCOL - SHARE SERVICE V1.5 (QUERY FIX)
+# 1. CRITICAL FIX: The query for 'shared_archive_cursor' now uses the 'case_id' string, not the 'case_oid' ObjectId.
+# 2. RESULT: This aligns the query with the data storage format and ensures shared archive documents are correctly found and displayed in the Client Portal.
 
 from pymongo.database import Database
 from typing import Dict, Any, List
@@ -30,29 +30,22 @@ class ShareService:
         if not owner_id:
             return {} 
 
-        # 1. Resolve Owner Profile (Business or Individual)
-        # Try finding business profile with string ID first (standard)
+        # 1. Resolve Owner Profile
         business_profile = self.db["business_profiles"].find_one({"user_id": str(owner_id)})
-        
-        # If not found, and owner_id is ObjectId, try generic query just in case
         if not business_profile and isinstance(owner_id, ObjectId):
              business_profile = self.db["business_profiles"].find_one({"user_id": owner_id})
 
         # 2. Get Fallback User Info
-        user_doc = self.db["users"].find_one({"_id": ObjectId(owner_id)}) if ObjectId.is_valid(str(owner_id)) else None
-        
-        # 3. Determine Display Name (Organization Name)
-        # Priority: Business Name -> User Full Name -> "Zyra Ligjore"
-        org_name = None
+        user_doc = self.db["users"].find_one({"_id": ObjectId(str(owner_id))})
+
+        # 3. Determine Display Name
+        org_name = "Zyra Ligjore"
         if business_profile and business_profile.get("firm_name"):
             org_name = business_profile.get("firm_name")
         elif user_doc and user_doc.get("full_name"):
             org_name = user_doc.get("full_name")
-        else:
-            org_name = "Zyra Ligjore"
 
         # 4. Determine Logo URL
-        # If we have a storage key, we point to the public streaming endpoint
         logo_url = None
         if business_profile and business_profile.get("logo_storage_key"):
             logo_url = f"/api/v1/cases/public/{case_id}/logo"
@@ -78,8 +71,9 @@ class ShareService:
             for d in list(shared_docs_cursor)
         ]
         
+        # PHOENIX: Corrected the query to use the string 'case_id'
         shared_archive_cursor = self.db["archives"].find({
-            "case_id": case_oid,
+            "case_id": case_id,
             "is_shared": True
         })
         archive_documents: List[Dict[str, Any]] = [
@@ -101,15 +95,21 @@ class ShareService:
         }
 
     def set_case_share_status(self, case_id: str, user_id: str, is_shared: bool) -> bool:
-        if not ObjectId.is_valid(case_id):
+        if not ObjectId.is_valid(case_id) or not ObjectId.is_valid(user_id):
             return False
         
         case_oid = ObjectId(case_id)
-        # We allow owner_id to be checked against the session user
-        # Note: In a real service, strict ownership check should be enforced via query
+        user_oid = ObjectId(user_id)
         
         result = self.db["cases"].update_one(
-            {"_id": case_oid, "owner_id": ObjectId(user_id)},
+            {"_id": case_oid, "user_id": user_oid},
             {"$set": {"is_shared": is_shared}}
         )
+        # Fallback check for old 'owner_id' field
+        if result.matched_count == 0:
+             result = self.db["cases"].update_one(
+                {"_id": case_oid, "owner_id": user_oid},
+                {"$set": {"is_shared": is_shared}}
+            )
+
         return result.modified_count > 0
