@@ -1,8 +1,8 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V2.3 (ID TYPE FIX)
-# 1. CRITICAL FIX: Implemented hybrid '$or' queries for 'user_id' (String vs ObjectId).
-#    - This ensures Inventory, Recipes, and Transactions are found regardless of how they were stored.
-# 2. LOGIC: Added safe float conversion for costs to handle potential data format inconsistencies.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V2.4 (HYBRID COGS & YTD)
+# 1. FIX: Changed default timeframe from 'Last 30 Days' to 'Year-to-Date' (YTD) to match Dashboard.
+# 2. FEATURE: Added Hybrid COGS Logic. If Inventory calculation yields 0, it falls back to summing Expenses (Category: 'Cost of Goods'/'Blerje').
+# 3. RESULT: Ensures the Analyst provides insights even for users who don't use the advanced Inventory module.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any, Optional
@@ -100,67 +100,71 @@ def generate_kpi_insight(
     summary = "Analiza e të dhënave e padisponueshme."
     contributors = []
     
-    # Default cutoff: 30 days. 
-    # NOTE: If we want "All Time" to match dashboard totals, we might need to adjust logic, 
-    # but "Insight" usually implies recent trend analysis.
-    cutoff_date = datetime.utcnow() - timedelta(days=30)
+    # PHOENIX FIX: Switch to YTD (Year-To-Date) instead of 30 days to capture all relevant data
+    now = datetime.utcnow()
+    start_of_year = datetime(now.year, 1, 1)
+    
+    # Fallback to 30 days only if specifically requested or for trend analysis, 
+    # but for "Insights" explaining a dashboard card, YTD is safer.
+    analysis_start_date = start_of_year
     
     if request.kpi_type == 'income':
         invoices = finance_service.get_invoices(user_id)
-        recent_invoices = [i for i in invoices if i.status == 'PAID' and i.issue_date >= cutoff_date]
+        # Filter for YTD
+        recent_invoices = [i for i in invoices if i.status == 'PAID' and i.issue_date >= analysis_start_date]
         total_income = sum(i.total_amount for i in recent_invoices)
+        
         if total_income == 0:
-            summary = "Nuk u gjetën fatura të paguara në 30 ditët e fundit."
+            summary = f"Nuk u gjetën fatura të paguara për vitin {now.year}."
         else:
             clients: Dict[str, float] = {}
             for inv in recent_invoices:
                 clients[inv.client_name] = clients.get(inv.client_name, 0) + inv.total_amount
             sorted_clients = sorted(clients.items(), key=lambda x: x[1], reverse=True)
             top_client = sorted_clients[0]
-            summary = f"Të hyrat prej €{total_income:.2f} (30 ditët e fundit) vijnë kryesisht nga {len(sorted_clients)} klientë aktivë. '{top_client[0]}' është kontribuesi kryesor."
+            summary = f"Të hyrat YTD prej €{total_income:.2f} vijnë kryesisht nga {len(sorted_clients)} klientë. '{top_client[0]}' është kontribuesi kryesor."
             contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_clients[:4]]
 
     elif request.kpi_type == 'expense':
         expenses = finance_service.get_expenses(user_id)
-        recent_expenses = [e for e in expenses if e.date >= cutoff_date]
+        recent_expenses = [e for e in expenses if e.date >= analysis_start_date]
         total_expense = sum(e.amount for e in recent_expenses)
         if total_expense == 0:
-            summary = "Nuk ka shpenzime të regjistruara në 30 ditët e fundit."
+            summary = f"Nuk ka shpenzime të regjistruara për vitin {now.year}."
         else:
             cats: Dict[str, float] = {}
             for e in recent_expenses:
                 cats[e.category] = cats.get(e.category, 0) + e.amount
             sorted_cats = sorted(cats.items(), key=lambda x: x[1], reverse=True)
             top_cat = sorted_cats[0]
-            summary = f"Dalja totale: €{total_expense:.2f}. Shpenzimet janë të përqendruara në '{top_cat[0]}', që përbën {int((top_cat[1]/total_expense)*100)}% të kostove."
+            summary = f"Dalja totale YTD: €{total_expense:.2f}. Shpenzimet dominohen nga '{top_cat[0]}' ({int((top_cat[1]/total_expense)*100)}%)."
             contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_cats[:4]]
 
     elif request.kpi_type == 'profit':
         invoices = finance_service.get_invoices(user_id)
         expenses = finance_service.get_expenses(user_id)
-        recent_income = sum(i.total_amount for i in invoices if i.status == 'PAID' and i.issue_date >= cutoff_date)
-        recent_expense = sum(e.amount for e in expenses if e.date >= cutoff_date)
-        net = recent_income - recent_expense
-        if recent_income > 0:
-            margin = (net / recent_income) * 100
+        
+        ytd_income = sum(i.total_amount for i in invoices if i.status == 'PAID' and i.issue_date >= analysis_start_date)
+        ytd_expense = sum(e.amount for e in expenses if e.date >= analysis_start_date)
+        net = ytd_income - ytd_expense
+        
+        if ytd_income > 0:
+            margin = (net / ytd_income) * 100
             status_text = "e shëndetshme" if margin > 20 else "e ulët"
-            summary = f"Fitimi Neto është €{net:.2f} me një marzhë {status_text} prej {margin:.1f}%."
-            contributors = [f"Të Hyrat: €{recent_income:.2f}", f"Shpenzimet: €{recent_expense:.2f}", f"Rezultati Neto: €{net:.2f}"]
+            summary = f"Fitimi Neto YTD është €{net:.2f} (Marzha: {margin:.1f}%). {status_text.capitalize()}."
+            contributors = [f"Të Hyrat: €{ytd_income:.2f}", f"Shpenzimet: €{ytd_expense:.2f}", f"Neto: €{net:.2f}"]
         else:
-            summary = f"Humbje neto prej €{abs(net):.2f} për shkak të mungesës së të hyrave në këtë periudhë."
-            contributors = [f"Shpenzimet: €{recent_expense:.2f}"]
+            summary = f"Humbje neto YTD prej €{abs(net):.2f}. Mungojnë të hyrat e mjaftueshme për të mbuluar shpenzimet."
+            contributors = [f"Shpenzimet: €{ytd_expense:.2f}"]
 
     elif request.kpi_type == 'cogs':
-        # 1. Fetch Inventory & Recipes (Using Robust User Filter)
+        # --- METHOD A: INVENTORY & RECIPES (The Precise Way) ---
         inv_items = list(db["inventory"].find(user_filter, {"_id": 1, "name": 1, "cost_per_unit": 1}))
         recipes = list(db["recipes"].find(user_filter))
         
-        # 2. Build Lookup Maps (Normalized Keys)
-        # We use _safe_float to handle potential string numbers in DB
         cost_by_id = {str(i["_id"]): _safe_float(i.get("cost_per_unit", 0)) for i in inv_items}
         cost_by_name = {_normalize(i["name"]): _safe_float(i.get("cost_per_unit", 0)) for i in inv_items}
         
-        # 3. Calculate Recipe Costs
         product_costs: Dict[str, float] = {} 
         for r in recipes:
             r_cost = 0.0
@@ -174,58 +178,70 @@ def generate_kpi_insight(
             if r_cost > 0: 
                 product_costs[p_name_norm] = r_cost
 
-        # 4. Process Sales (Transactions)
-        # Using specific filter for date, plus the robust user filter
-        sales_query = {**user_filter, "date": {"$gte": cutoff_date}}
+        # Fetch Transactions YTD
+        sales_query = {**user_filter, "date": {"$gte": analysis_start_date}}
         sales = list(db["transactions"].find(sales_query))
         
-        total_cogs = 0.0
+        total_cogs_inventory = 0.0
         item_cogs_breakdown: Dict[str, float] = {}
         
         for sale in sales:
             p_name_raw = sale.get("product_name", "")
             p_name_norm = _normalize(p_name_raw)
             qty = _safe_float(sale.get("quantity", 0))
-            
             unit_cost = 0.0
             
-            # Strategy A: Check Recipe (Exact Match)
-            if p_name_norm in product_costs:
-                unit_cost = product_costs[p_name_norm]
-            
-            # Strategy B: Check Inventory (Exact Match)
-            elif p_name_norm in cost_by_name:
-                unit_cost = cost_by_name[p_name_norm]
-            
-            # Strategy C: Fuzzy / Partial Match (Recipe)
+            # Match Logic (Recipe Exact -> Inventory Exact -> Recipe Partial -> Inventory Partial)
+            if p_name_norm in product_costs: unit_cost = product_costs[p_name_norm]
+            elif p_name_norm in cost_by_name: unit_cost = cost_by_name[p_name_norm]
             else:
                 for r_name, r_cost in product_costs.items():
-                    if r_name in p_name_norm or p_name_norm in r_name:
-                        unit_cost = r_cost
-                        break
-            
-            # Strategy D: Fuzzy / Partial Match (Inventory)
+                    if r_name in p_name_norm or p_name_norm in r_name: unit_cost = r_cost; break
             if unit_cost == 0:
                 for i_name, i_cost in cost_by_name.items():
-                    if i_name in p_name_norm or p_name_norm in i_name:
-                        unit_cost = i_cost
-                        break
+                    if i_name in p_name_norm or p_name_norm in i_name: unit_cost = i_cost; break
 
-            # Calculate Line Cost
             line_cost = unit_cost * qty
-            total_cogs += line_cost
-            
+            total_cogs_inventory += line_cost
             if line_cost > 0:
                 item_cogs_breakdown[p_name_raw] = item_cogs_breakdown.get(p_name_raw, 0) + line_cost
 
-        if total_cogs > 0:
+        # --- METHOD B: EXPENSE CATEGORIES (The Fallback Way) ---
+        # If Inventory Logic returns 0, we check if the user is just logging "COGS" as an expense.
+        total_cogs_expenses = 0.0
+        expense_breakdown: Dict[str, float] = {}
+        
+        if total_cogs_inventory == 0:
+            expenses = finance_service.get_expenses(user_id)
+            # Keywords for COGS expenses
+            cogs_keywords = ['cost of goods', 'blerje', 'furnizim', 'kosto', 'mall', 'stock', 'stok']
+            
+            for e in expenses:
+                if e.date >= analysis_start_date:
+                    cat_norm = _normalize(e.category)
+                    if any(kw in cat_norm for kw in cogs_keywords):
+                        total_cogs_expenses += e.amount
+                        expense_breakdown[e.category] = expense_breakdown.get(e.category, 0) + e.amount
+
+        # --- DECISION LOGIC ---
+        if total_cogs_inventory > 0:
+            # Case 1: Advanced User (Has Recipes/Inventory Costs)
             sorted_cogs = sorted(item_cogs_breakdown.items(), key=lambda x: x[1], reverse=True)
             top_item = sorted_cogs[0]
-            summary = f"Kosto totale e materialeve të shitura është €{total_cogs:.2f}. Artikulli me koston më të lartë ishte '{top_item[0]}'."
+            summary = f"Kosto e Mallrave (bazuar në Receta/Stok) është €{total_cogs_inventory:.2f}. Artikulli me koston më të lartë: '{top_item[0]}'."
             contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_cogs[:4]]
+        
+        elif total_cogs_expenses > 0:
+            # Case 2: Simple User (Uses Expenses for COGS)
+            sorted_exps = sorted(expense_breakdown.items(), key=lambda x: x[1], reverse=True)
+            top_exp = sorted_exps[0]
+            summary = f"Kosto e Mallrave (bazuar në Kategori Shpenzimesh) është €{total_cogs_expenses:.2f}. Kategoria kryesore: '{top_exp[0]}'."
+            contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_exps[:4]]
+            
         else:
-            summary = "Nuk u identifikua asnjë kosto. Sigurohuni që artikujt në Stok kanë 'Kosto për Njësi' dhe emrat e produkteve përputhen."
-            contributors = ["Verifikoni kostot e lëndës së parë."]
+            # Case 3: No Data Found
+            summary = f"Nuk u identifikua asnjë kosto për vitin {now.year}. Shtoni 'Kosto për Njësi' në Stok ose regjistroni shpenzime me kategorinë 'Blerje Malli'."
+            contributors = ["Shtoni të dhëna për analizë."]
 
     return KpiInsightResponse(summary=summary, key_contributors=contributors)
 
