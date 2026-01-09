@@ -1,7 +1,6 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - CONTEXT AWARE V19.3
-// 1. CLEANUP: Removed 'caseTitle' prop passed to ArchiveTab to match updated signature.
-// 2. LOGIC: Maintains 'caseId' injection for correct Portal behavior.
+// PHOENIX PROTOCOL - ROUTING UPDATE V19.4
+// 1. FEATURE: Registered 'InboxTab' for the 'inbox' view.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,9 +13,10 @@ import { ArchiveTab } from '../components/business/ArchiveTab';
 import { InventoryTab } from '../components/business/InventoryTab';
 import { DailyBriefingTab } from '../components/business/DailyBriefingTab';
 import { InsightsTab } from '../components/business/InsightsTab';
+import { InboxTab } from '../components/business/InboxTab'; // New Import
 import { Loader2 } from 'lucide-react';
 
-type BusinessView = 'briefing' | 'finance' | 'inventory' | 'archive' | 'insights' | 'profile';
+type BusinessView = 'briefing' | 'finance' | 'inventory' | 'archive' | 'insights' | 'profile' | 'inbox'; // Added 'inbox'
 
 interface BusinessPageProps {
     view?: BusinessView;
@@ -57,23 +57,12 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
       case 'inventory': return <InventoryTab />;
       
       case 'archive': 
-        if (loadingContext) {
-            return (
-                <div className="flex justify-center items-center h-96">
-                    <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-                </div>
-            );
-        }
-        // PHOENIX: Removed caseTitle prop
-        return (
-            <ArchiveTab 
-                key={mainCase?.id || 'root'} 
-                caseId={mainCase?.id} 
-            />
-        );
+        if (loadingContext) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-8 h-8 text-indigo-500 animate-spin" /></div>;
+        return <ArchiveTab key={mainCase?.id || 'root'} caseId={mainCase?.id} />;
         
       case 'insights': return <InsightsTab />;
       case 'profile': return <ProfileTab />;
+      case 'inbox': return <InboxTab />; // New Route
       default: return <DailyBriefingTab />;
     }
   };

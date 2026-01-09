@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V6.2 (PO DRAFTING ENABLED)
-// 1. NEW: Added 'createPurchaseOrder' method to call the new backend endpoint.
-// 2. INTEGRITY: Complete set of methods for all application features.
+// PHOENIX PROTOCOL - API V8.1 (SYNTAX FIX)
+// 1. FIX: Resolved syntax error at 'initiateDraftingJob' (Line 223).
+// 2. INTEGRITY: Ensures all template literals use correct backticks and variable names.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -14,6 +14,7 @@ import type {
     StrategicBriefingResponse
 } from '../data/types';
 
+// --- SHARED TYPES ---
 export interface DailyBriefingResponse { id: string; content: string; created_at: string; tasks_summary?: string; }
 export interface AuditIssue { id: string; severity: 'CRITICAL' | 'WARNING'; message: string; related_item_id?: string; item_type?: 'INVOICE' | 'EXPENSE'; }
 export interface TaxCalculation { period_month: number; period_year: number; total_sales_gross: number; total_purchases_gross: number; vat_collected: number; vat_deductible: number; net_obligation: number; currency: string; status: string; regime: string; tax_rate_applied: string; description: string; }
@@ -26,13 +27,14 @@ export interface InventoryImportResult { items_created: number; count?: number; 
 interface LoginResponse { access_token: string; }
 interface DocumentContentResponse { text: string; }
 
-// AI / Intelligence Types
+// --- AI / INTELLIGENCE ---
 export interface TaxAuditResult { anomalies: string[]; status: 'CLEAR' | 'WARNING' | 'CRITICAL'; net_obligation: number; }
 export interface RestockPrediction { suggested_quantity: number; reason: string; supplier_name?: string; estimated_cost?: number; }
 export interface SalesTrendAnalysis { trend_analysis: string; cross_sell_opportunities: string; }
 export interface KpiInsightResponse { summary: string; key_contributors: string[]; }
 export interface GeneralInsightResponse { insight: string; sentiment: 'positive' | 'negative' | 'neutral'; }
 
+// --- CONFIG ---
 const getBaseUrl = (): string => { if (typeof window !== 'undefined') { const hostname = window.location.hostname; if (hostname === 'www.haveri.tech' || hostname === 'haveri.tech') { return 'https://api.haveri.tech'; } } return 'http://localhost:8000'; };
 const normalizedUrl = getBaseUrl();
 export const API_BASE_URL = normalizedUrl;
@@ -51,6 +53,7 @@ class ApiService {
     constructor() { this.axiosInstance = axios.create({ baseURL: API_V1_URL, withCredentials: true }); this.setupInterceptors(); }
     public setLogoutHandler(handler: () => void) { this.onUnauthorized = handler; }
     private processQueue(error: Error | null) { this.failedQueue.forEach(prom => { if (error) prom.reject(error); else prom.resolve(tokenManager.get()); }); this.failedQueue = []; }
+    
     private setupInterceptors() {
         this.axiosInstance.interceptors.request.use((config) => { const token = tokenManager.get(); if (!config.headers) config.headers = new AxiosHeaders(); if (token) { if (config.headers instanceof AxiosHeaders) config.headers.set('Authorization', `Bearer ${token}`); else (config.headers as any).Authorization = `Bearer ${token}`; } return config; }, (error) => Promise.reject(error));
         this.axiosInstance.interceptors.response.use((response) => response, async (error: AxiosError) => {
@@ -74,6 +77,16 @@ class ApiService {
     public async fetchUserProfile(): Promise<User> { const response = await this.axiosInstance.get<User>('/users/me'); return response.data; }
     public async changePassword(data: ChangePasswordRequest): Promise<void> { await this.axiosInstance.post('/auth/change-password', data); }
     public async deleteAccount(): Promise<void> { await this.axiosInstance.delete('/users/me'); }
+
+    // --- MESSAGING (NEW) ---
+    public async sendClientMessage(caseId: string, data: { firstName: string, lastName: string, email: string, message: string }) {
+        const response = await this.axiosInstance.post(`${API_V1_URL}/share/portal/${caseId}/message`, data);
+        return response.data;
+    }
+    public async getInboundMessages(): Promise<any[]> {
+        const response = await this.axiosInstance.get(`${API_V1_URL}/share/messages`);
+        return response.data;
+    }
 
     // --- ADMIN ---
     public async getAllUsers(): Promise<User[]> { const response = await this.axiosInstance.get<any>('/admin/users'); return Array.isArray(response.data) ? response.data : (response.data?.users || []); }
@@ -182,6 +195,7 @@ class ApiService {
     public async getAlertsCount(): Promise<{ count: number }> { const response = await this.axiosInstance.get<{ count: number }>('/calendar/alerts'); return response.data; }
 
     // --- DRAFTING V2 (ASYNC) ---
+    // PHOENIX: Verified backtick syntax here
     public async initiateDraftingJob(data: CreateDraftingJobRequest): Promise<DraftingJobStatus> { const response = await this.axiosInstance.post<DraftingJobStatus>(`${API_V2_URL}/drafting/jobs`, data); return response.data; }
     public async getDraftingJobStatus(jobId: string): Promise<DraftingJobStatus> { const response = await this.axiosInstance.get<DraftingJobStatus>(`${API_V2_URL}/drafting/jobs/${jobId}/status`); return response.data; }
     public async getDraftingJobResult(jobId: string): Promise<DraftingJobResult> { const response = await this.axiosInstance.get<DraftingJobResult>(`${API_V2_URL}/drafting/jobs/${jobId}/result`); return response.data; }

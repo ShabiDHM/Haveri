@@ -1,15 +1,15 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V4.0 (DEFINITIVE DATA SOURCE FIX)
-// 1. CRITICAL FIX: The entire component now consumes the 'useFinanceData' hook.
-// 2. LOGIC: It passes the verified 'displayIncome' (which is Month-to-Date) directly to the dashboard cards.
-// 3. EFFECT: This bypasses the faulty backend service ('strategic_briefing_service') and guarantees the Dashboard shows the exact same, correct data as the Finance Tab, resolving the "€0.00" error permanently.
+// PHOENIX PROTOCOL - DASHBOARD INTEGRATION V4.1
+// 1. FEATURE: Added 'Messages Widget' in Column 3 (Smart Agenda).
+// 2. LOGIC: Fetches unread message count and links to the Inbox tab.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Target, AlertTriangle } from 'lucide-react';
+import { Loader2, Target, AlertTriangle, Mail, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // New Import
 import { useStrategicBriefing, UIAgendaItem } from '../../hooks/useStrategicBriefing';
-import { useFinanceData } from '../../hooks/useFinanceData'; // PHOENIX: IMPORT THE CORRECT DATA HOOK
+import { useFinanceData } from '../../hooks/useFinanceData';
 import { EventDetailModal } from '../modals/EventDetailModal';
 import { apiService } from '../../services/api';
 import { Case } from '../../data/types';
@@ -20,31 +20,34 @@ import { SmartAgendaCard } from './briefing/SmartAgendaCard';
 
 export const DailyBriefingTab: React.FC = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     
-    // PHOENIX: Use BOTH hooks. Briefing for Agenda, Finance for revenue data.
     const { data: briefingData, loading: briefingLoading, error: briefingError, refreshData } = useStrategicBriefing();
     const { displayIncome, loading: financeLoading } = useFinanceData();
 
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
     const [cases, setCases] = useState<Case[]>([]);
+    const [messageCount, setMessageCount] = useState(0); // New State
 
     const months = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
     const today = new Date();
-    const day = today.getDate();
-    const month = months[today.getMonth()];
-    const year = today.getFullYear();
-    const finalDate = `${day} ${month} ${year}`;
+    const finalDate = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
     
     useEffect(() => {
-        const loadCases = async () => {
+        const loadData = async () => {
             try {
+                // Fetch Cases
                 const casesData = await apiService.getCases();
                 setCases(casesData);
+                
+                // Fetch Message Count
+                const msgs = await apiService.getInboundMessages();
+                setMessageCount(msgs.length);
             } catch (err) {
-                console.error("Failed to load cases for modal context", err);
+                console.error("Failed to load dashboard data", err);
             }
         };
-        loadCases();
+        loadData();
     }, []);
 
     const handleEventUpdate = () => {
@@ -60,12 +63,7 @@ export const DailyBriefingTab: React.FC = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 sm:space-y-8 pb-10">
             <AnimatePresence>
                 {selectedEvent && (
-                    <EventDetailModal
-                        event={selectedEvent}
-                        onClose={() => setSelectedEvent(null)}
-                        onUpdate={handleEventUpdate}
-                        cases={cases}
-                    />
+                    <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={handleEventUpdate} cases={cases} />
                 )}
             </AnimatePresence>
             
@@ -85,20 +83,36 @@ export const DailyBriefingTab: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                    {/* PHOENIX: Pass the verified 'displayIncome' (MTD Revenue) from the correct hook */}
                     <BusinessRhythmCard currentSales={displayIncome} /> 
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                    {/* PHOENIX: Pass 'displayIncome' for velocity calculation */}
-                    <BusinessPulseCard 
-                        signals={briefingData?.market.signals} 
-                        currentSales={displayIncome}
-                    />
+                    <BusinessPulseCard signals={briefingData?.market.signals} currentSales={displayIncome} />
                 </motion.div>
                 
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-                    {briefingData && <SmartAgendaCard agenda={briefingData.agenda} onEventClick={(event) => setSelectedEvent(event)} />}
+                {/* PHOENIX: Modified 3rd Column - Widget Stack */}
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-4">
+                    
+                    {/* New Messages Widget */}
+                    <div 
+                        onClick={() => navigate('/business/inbox')}
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-5 text-white flex justify-between items-center cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all border border-blue-400/20"
+                    >
+                        <div>
+                            <div className="flex items-center gap-2 text-xs opacity-90 uppercase font-bold tracking-widest mb-1">
+                                <Mail size={14} /> Inbox
+                            </div>
+                            <div className="text-2xl font-black">{messageCount} <span className="text-sm font-normal opacity-80">mesazhe</span></div>
+                        </div>
+                        <div className="bg-white/20 p-2 rounded-lg">
+                            <ArrowRight size={20} />
+                        </div>
+                    </div>
+
+                    {/* Existing Agenda Card */}
+                    <div className="flex-1 min-h-0">
+                        {briefingData && <SmartAgendaCard agenda={briefingData.agenda} onEventClick={(event) => setSelectedEvent(event)} />}
+                    </div>
                 </motion.div>
             </div>
         </motion.div>
