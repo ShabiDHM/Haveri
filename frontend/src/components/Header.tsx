@@ -1,11 +1,10 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.1 (TYPOGRAPHY BOOST)
-// 1. TYPOGRAPHY: Upgraded Navigation text to 'text-base' (was text-sm).
-// 2. ICONS: Increased Navigation icons to size={18} (was 16).
-// 3. PROFILE: Matched username text size to navigation.
+// PHOENIX PROTOCOL - HEADER V6.2 (INBOX LINK INTEGRATION)
+// 1. FEATURE: Added 'Mesazhet' (Inbox) to the main navigation array.
+// 2. FIX: This registers the '/business/inbox' route with the UI, solving the redirect loop.
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, MessageSquare, Menu, FileText, Package, FolderOpen, Sparkles, Building2, X } from 'lucide-react';
+import { Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, MessageSquare, Menu, FileText, Package, FolderOpen, Sparkles, Building2, X, Inbox } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
@@ -69,6 +68,8 @@ const Header: React.FC = () => {
       { label: t('business.finance', 'Financat'), path: '/business/finance', icon: FileText },
       { label: t('inventory.tabItems_short', 'Stoku'), path: '/business/inventory', icon: Package },
       { label: t('business.archive', 'Arkiva'), path: '/business/archive', icon: FolderOpen },
+      // PHOENIX: Added Inbox Link
+      { label: t('inbox.title', 'Mesazhet'), path: '/business/inbox', icon: Inbox },
       { label: t('business.insights', 'Inteligjenca'), path: '/business/insights', icon: Sparkles },
       { label: t('business.profile', 'Profili'), path: '/business/profile', icon: Building2 },
       { label: t('sidebar.haveri_ai', 'Haveri AI'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
