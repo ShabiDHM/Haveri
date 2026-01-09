@@ -1,9 +1,8 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V2.2 (COGS FIX)
-# 1. FIX: Relaxed matching logic for COGS calculation.
-#    - Normalizes strings (strip/lower) before comparing Sales vs Inventory/Recipes.
-#    - Improves fallback to Inventory Cost if Recipe is missing.
-# 2. INTEGRITY: Retains all other endpoints and the previous LLM integration.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V2.3 (ID TYPE FIX)
+# 1. CRITICAL FIX: Implemented hybrid '$or' queries for 'user_id' (String vs ObjectId).
+#    - This ensures Inventory, Recipes, and Transactions are found regardless of how they were stored.
+# 2. LOGIC: Added safe float conversion for costs to handle potential data format inconsistencies.
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Dict, Any, Optional
@@ -78,6 +77,12 @@ def _normalize(text: str) -> str:
     """Helper to normalize strings for comparison."""
     return str(text).strip().lower()
 
+def _safe_float(val: Any) -> float:
+    try:
+        return float(val)
+    except:
+        return 0.0
+
 # --- FINANCE INTELLIGENCE ENDPOINTS ---
 @router.post("/finance/kpi-insight", response_model=KpiInsightResponse)
 def generate_kpi_insight(
@@ -86,11 +91,18 @@ def generate_kpi_insight(
     db: Database = Depends(get_db)
 ):
     user_id = str(current_user.id)
-    finance_service = FinanceService(db)
+    user_oid = ObjectId(user_id)
     
+    # Robust User Filter (Matches String OR ObjectId)
+    user_filter = {"$or": [{"user_id": user_id}, {"user_id": user_oid}]}
+    
+    finance_service = FinanceService(db)
     summary = "Analiza e të dhënave e padisponueshme."
     contributors = []
     
+    # Default cutoff: 30 days. 
+    # NOTE: If we want "All Time" to match dashboard totals, we might need to adjust logic, 
+    # but "Insight" usually implies recent trend analysis.
     cutoff_date = datetime.utcnow() - timedelta(days=30)
     
     if request.kpi_type == 'income':
@@ -139,39 +151,43 @@ def generate_kpi_insight(
             contributors = [f"Shpenzimet: €{recent_expense:.2f}"]
 
     elif request.kpi_type == 'cogs':
-        # 1. Fetch Inventory & Recipes
-        inv_items = list(db["inventory"].find({"user_id": user_id}, {"_id": 1, "name": 1, "cost_per_unit": 1}))
-        recipes = list(db["recipes"].find({"user_id": user_id}))
+        # 1. Fetch Inventory & Recipes (Using Robust User Filter)
+        inv_items = list(db["inventory"].find(user_filter, {"_id": 1, "name": 1, "cost_per_unit": 1}))
+        recipes = list(db["recipes"].find(user_filter))
         
         # 2. Build Lookup Maps (Normalized Keys)
-        cost_by_id = {str(i["_id"]): i.get("cost_per_unit", 0) for i in inv_items}
-        cost_by_name = {_normalize(i["name"]): i.get("cost_per_unit", 0) for i in inv_items}
+        # We use _safe_float to handle potential string numbers in DB
+        cost_by_id = {str(i["_id"]): _safe_float(i.get("cost_per_unit", 0)) for i in inv_items}
+        cost_by_name = {_normalize(i["name"]): _safe_float(i.get("cost_per_unit", 0)) for i in inv_items}
         
         # 3. Calculate Recipe Costs
         product_costs: Dict[str, float] = {} 
         for r in recipes:
-            r_cost = 0
+            r_cost = 0.0
             for ing in r.get("ingredients", []):
                 i_id = ing.get("inventory_item_id")
-                qty = ing.get("quantity_required", 0)
+                qty = _safe_float(ing.get("quantity_required", 0))
                 if i_id in cost_by_id:
                     r_cost += cost_by_id[i_id] * qty
             
-            p_name_norm = _normalize(r["product_name"])
+            p_name_norm = _normalize(r.get("product_name", ""))
             if r_cost > 0: 
                 product_costs[p_name_norm] = r_cost
 
         # 4. Process Sales (Transactions)
-        sales = list(db["transactions"].find({"user_id": user_id, "date": {"$gte": cutoff_date}}))
+        # Using specific filter for date, plus the robust user filter
+        sales_query = {**user_filter, "date": {"$gte": cutoff_date}}
+        sales = list(db["transactions"].find(sales_query))
+        
         total_cogs = 0.0
-        item_cogs_breakdown = {}
+        item_cogs_breakdown: Dict[str, float] = {}
         
         for sale in sales:
             p_name_raw = sale.get("product_name", "")
             p_name_norm = _normalize(p_name_raw)
-            qty = sale.get("quantity", 0)
+            qty = _safe_float(sale.get("quantity", 0))
             
-            unit_cost = 0
+            unit_cost = 0.0
             
             # Strategy A: Check Recipe (Exact Match)
             if p_name_norm in product_costs:
