@@ -1,8 +1,7 @@
 // FILE: src/pages/AdminDashboardPage.tsx
-// PHOENIX PROTOCOL - ADMIN DASHBOARD V2.6 (MULTI-TENANT CONTROL)
-// 1. FEATURE: Added 'Plan Tier' selector to the Edit Modal.
-// 2. FEATURE: Added visual indicators for Organization Role (Owner vs Member).
-// 3. UI: Updated table layout to display Plan info.
+// PHOENIX PROTOCOL - ADMIN DASHBOARD V2.7 (UI CONSISTENCY FIX)
+// 1. UI FIX: Added a custom CSS class with 'color-scheme: dark' to force dropdown menus to render with a dark theme.
+// 2. STYLE: This corrects the white background on dropdown options, making the modal visually consistent.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +16,6 @@ const AdminDashboardPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    // PHOENIX: Expanded form state to include 'plan_tier'
     const [editForm, setEditForm] = useState<UpdateUserRequest & { plan_tier?: string }>({});
 
     useEffect(() => {
@@ -34,7 +32,6 @@ const AdminDashboardPage: React.FC = () => {
                 role: u.role || 'STANDARD',
                 status: u.status || 'inactive',
                 subscription_status: u.subscription_status || 'INACTIVE',
-                // Ensure plan_tier exists (default to SOLO if missing)
                 plan_tier: u.plan_tier || 'SOLO',
                 organization_role: u.organization_role || 'OWNER'
             }));
@@ -56,7 +53,7 @@ const AdminDashboardPage: React.FC = () => {
             role: user.role,
             subscription_status: user.subscription_status,
             status: user.status,
-            plan_tier: user.plan_tier || 'SOLO' // PHOENIX: Load current plan
+            plan_tier: user.plan_tier || 'SOLO'
         });
     };
 
@@ -65,8 +62,6 @@ const AdminDashboardPage: React.FC = () => {
         if (!editingUser?.id) return;
         
         try {
-            // Note: The backend 'UpdateUserRequest' might need to be flexible to accept 'plan_tier'.
-            // Ensure your backend pydantic model accepts this field (we updated it in V5.4).
             const payload: any = {
                 username: editForm.username,
                 email: editForm.email,
@@ -113,6 +108,13 @@ const AdminDashboardPage: React.FC = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-hidden">
+            {/* PHOENIX: Style block to enforce dark dropdowns */}
+            <style>{`
+                .dark-select {
+                    color-scheme: dark;
+                }
+            `}</style>
+
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-text-primary mb-2">{t('admin.title', 'Paneli i Administratorit')}</h1>
                 <p className="text-text-secondary">{t('admin.subtitle', 'Menaxhimi i përdoruesve dhe sistemit.')}</p>
@@ -154,7 +156,6 @@ const AdminDashboardPage: React.FC = () => {
                         <tbody className="divide-y divide-white/5">
                             {filteredUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-white/5 transition-colors">
-                                    {/* User Info */}
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
                                             <div className="w-8 h-8 rounded-full bg-primary-start/20 flex items-center justify-center text-primary-start font-bold mr-3 border border-primary-start/30 shrink-0">
@@ -166,8 +167,6 @@ const AdminDashboardPage: React.FC = () => {
                                             </div>
                                         </div>
                                     </td>
-
-                                    {/* PHOENIX: Organization Role */}
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
                                             {user.organization_role === 'OWNER' ? (
@@ -178,15 +177,12 @@ const AdminDashboardPage: React.FC = () => {
                                             <span className="text-xs font-medium text-gray-300">{user.organization_role || 'OWNER'}</span>
                                         </div>
                                     </td>
-
-                                    {/* PHOENIX: Plan Tier */}
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
                                             {user.plan_tier !== 'SOLO' && <Crown className="w-3 h-3 text-amber-400" />}
                                             <span className="text-xs font-mono uppercase text-gray-400">{user.plan_tier || 'SOLO'}</span>
                                         </div>
                                     </td>
-
                                     <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-medium border ${user.role.toUpperCase() === 'ADMIN' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>{user.role}</span></td>
                                     <td className="px-6 py-4">{renderStatusBadge(user)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{new Date(user.created_at).toLocaleDateString()}</td>
@@ -221,7 +217,7 @@ const AdminDashboardPage: React.FC = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-gray-400 uppercase mb-1">{t('admin.editModal.role', 'Roli')}</label>
-                                    <select value={editForm.role || 'STANDARD'} onChange={e => setEditForm({ ...editForm, role: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary-start outline-none">
+                                    <select value={editForm.role || 'STANDARD'} onChange={e => setEditForm({ ...editForm, role: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary-start outline-none dark-select">
                                         <option value="STANDARD">{t('admin.roles.STANDARD', 'Përdorues')}</option>
                                         <option value="ADMIN">{t('admin.roles.ADMIN', 'Admin')}</option>
                                     </select>
@@ -231,7 +227,7 @@ const AdminDashboardPage: React.FC = () => {
                                     <select 
                                         value={editForm.subscription_status} 
                                         onChange={e => setEditForm({ ...editForm, subscription_status: e.target.value })} 
-                                        className={`w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary-start outline-none`}
+                                        className={`w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary-start outline-none dark-select`}
                                     >
                                         <option value="ACTIVE">{t('admin.statuses.ACTIVE', 'Aktive')}</option>
                                         <option value="INACTIVE">{t('admin.statuses.INACTIVE', 'Jo Aktive')}</option>
@@ -239,14 +235,14 @@ const AdminDashboardPage: React.FC = () => {
                                     </select>
                                 </div>
                             </div>
-
-                            {/* PHOENIX: PLAN SELECTION */}
+                            
+                            {/* PHOENIX: Added dark-select class */}
                             <div>
                                 <label className="block text-xs font-medium text-gray-400 uppercase mb-1">Paketa (Plan Tier)</label>
                                 <select 
                                     value={editForm.plan_tier || 'SOLO'} 
                                     onChange={e => setEditForm({ ...editForm, plan_tier: e.target.value })} 
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-amber-500 outline-none font-mono"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-amber-500 outline-none font-mono dark-select"
                                 >
                                     <option value="SOLO">SOLO (1 Përdorues)</option>
                                     <option value="STARTUP">STARTUP (5 Përdorues)</option>
@@ -260,7 +256,7 @@ const AdminDashboardPage: React.FC = () => {
                                 <select 
                                     value={editForm.status} 
                                     onChange={e => setEditForm({ ...editForm, status: e.target.value as 'active' | 'inactive' })} 
-                                    className={`w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 focus:border-primary-start outline-none font-bold ${editForm.status === 'active' ? 'text-green-400' : 'text-yellow-400'}`}
+                                    className={`w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 focus:border-primary-start outline-none font-bold dark-select ${editForm.status === 'active' ? 'text-green-400' : 'text-yellow-400'}`}
                                 >
                                     <option value="active">{t('admin.statuses.ACTIVE', 'Aktive')}</option>
                                     <option value="inactive">{t('admin.statuses.INACTIVE', 'Në Pritje')}</option>

@@ -1,7 +1,7 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - INTEGRATED TAB SYSTEM V20.1
-// 1. CLEANUP: Removed 'caseTitle' prop passed to ArchiveTab to match updated signature.
-// 2. STATUS: Fully synchronized.
+// PHOENIX PROTOCOL - DUAL PANEL LAYOUT V21.1 (MOBILE RESPONSIVE)
+// 1. RESPONSIVE FIX: Applied height constraints (min/max) ONLY on medium screens and up (md:).
+// 2. MOBILE: On mobile, panels now have natural height to prevent overflow and ensure usability.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -27,7 +27,7 @@ const CaseViewPage: React.FC = () => {
   const [caseData, setCaseData] = useState<CaseData>({ details: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<RightPanelTab>('drafting');
+  const [activeTab, setActiveTab] = useState<RightPanelTab>('documents');
   
   const currentCaseId = useMemo(() => caseId || '', [caseId]);
   
@@ -98,33 +98,34 @@ const CaseViewPage: React.FC = () => {
   return (
     <motion.div className="w-full min-h-screen bg-background-dark p-2 sm:p-4 lg:p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="max-w-[1800px] w-full mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[calc(100vh-3rem)]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             
-            <ChatPanel 
-                agentType="business" messages={liveMessages} connectionStatus={connectionStatus} 
-                reconnect={reconnect} onSendMessage={handleChatSubmit} isSendingMessage={isSendingMessage} 
-                onClearChat={handleClearChat} t={t}
-                className="w-full bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-blue-900/10 h-[85vh] lg:h-full" 
-            />
+            {/* PHOENIX: Responsive Height for COLUMN 1: CHAT PANEL */}
+            <div className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-blue-900/10 flex flex-col h-[85vh] md:min-h-[500px] md:max-h-[700px]">
+                <ChatPanel 
+                    agentType="business" messages={liveMessages} connectionStatus={connectionStatus} 
+                    reconnect={reconnect} onSendMessage={handleChatSubmit} isSendingMessage={isSendingMessage} 
+                    onClearChat={handleClearChat} t={t}
+                    className="h-full"
+                />
+            </div>
 
-            <div className="flex flex-col h-[85vh] lg:h-full gap-4">
-                <div className="flex bg-gray-900/40 p-1.5 rounded-2xl border border-white/10 w-fit backdrop-blur-md">
-                    <button onClick={() => setActiveTab('drafting')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'drafting' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+            {/* PHOENIX: Responsive Height for COLUMN 2: DRAFTING / DOCUMENTS */}
+            <div className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/10 flex flex-col p-4 sm:p-6 h-[85vh] md:min-h-[500px] md:max-h-[700px]">
+                <div className="flex bg-black/40 p-1.5 rounded-2xl border border-white/5 w-fit mb-4">
+                    <button onClick={() => setActiveTab('drafting')} className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'drafting' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                         <PenTool size={16} /> <span>{t('case.drafting', 'Drafting')}</span>
                     </button>
-                    <button onClick={() => setActiveTab('documents')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'documents' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                    <button onClick={() => setActiveTab('documents')} className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'documents' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
                         <FileText size={16} /> <span>{t('case.documents', 'Dokumentet')}</span>
                     </button>
                 </div>
 
-                <div className="flex-1 min-h-0 bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/10 overflow-hidden relative">
+                <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
                     {activeTab === 'drafting' ? (
                         <DraftingPanel activeCaseId={caseData.details.id} className="h-full" />
                     ) : (
-                        <div className="h-full p-2">
-                             {/* PHOENIX: Removed caseTitle prop */}
-                             <ArchiveTab caseId={caseData.details.id} />
-                        </div>
+                        <ArchiveTab caseId={caseData.details.id} />
                     )}
                 </div>
             </div>
