@@ -1,11 +1,10 @@
 // FILE: src/components/business/InboxTab.tsx
-// PHOENIX PROTOCOL - INBOX V2.4 (DISPLAY PHONE)
-// 1. UI: Added a 'Phone' field to the message detail view.
-// 2. LOGIC: Conditionally renders the phone number if it exists on the message object.
+// PHOENIX PROTOCOL - INBOX V2.5 (REMOVE REPLY)
+// 1. UI: Removed the 'Përgjigju' (Reply) button as requested.
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { apiService } from '../../services/api';
-import { Mail, Loader2, ArrowRight, MessageSquare, Inbox, Archive, Trash2, AlertCircle, Phone } from 'lucide-react';
+import { Mail, Loader2, ArrowRight, Inbox, Archive, Trash2, AlertCircle, Phone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export interface ClientMessage {
@@ -35,6 +34,10 @@ export const InboxTab: React.FC = () => {
         try {
             const data = await apiService.getInboundMessages(folder);
             setMessages(data);
+            if (data.length > 0) {
+                // Select the first message by default if the list is not empty
+                setSelectedMessage(data[0]);
+            }
         } catch (e) { console.error(e); } 
         finally { setLoading(false); }
     }, []);
@@ -63,8 +66,8 @@ export const InboxTab: React.FC = () => {
                 <h3 className="text-lg font-bold text-white mb-4 px-2 flex-shrink-0">Kutia Postare</h3>
                 <div className="space-y-2 flex-shrink-0">
                     <FolderButton label={t('inbox.folder.inbox', 'Të Pritura')} icon={Inbox} isActive={activeFolder === 'INBOX'} onClick={() => setActiveFolder('INBOX')} count={activeFolder === 'INBOX' ? messages.length : 0}/>
-                    <FolderButton label={t('inbox.folder.archived', 'Të Arkivuara')} icon={Archive} isActive={activeFolder === 'ARCHIVED'} onClick={() => setActiveFolder('ARCHIVED')} count={activeFolder === 'ARCHIVED' ? messages.length : 0}/>
-                    <FolderButton label={t('inbox.folder.trash', 'Shporta')} icon={Trash2} isActive={activeFolder === 'TRASHED'} onClick={() => setActiveFolder('TRASHED')} count={activeFolder === 'TRASHED' ? messages.length : 0}/>
+                    <FolderButton label={t('inbox.folder.archived', 'Të Arkivuara')} icon={Archive} isActive={activeFolder === 'ARCHIVED'} onClick={() => setActiveFolder('ARCHIVED')} count={0}/>
+                    <FolderButton label={t('inbox.folder.trash', 'Shporta')} icon={Trash2} isActive={activeFolder === 'TRASHED'} onClick={() => setActiveFolder('TRASHED')} count={0}/>
                 </div>
             </div>
             <div className="lg:col-span-2 flex flex-col lg:flex-row gap-6 max-h-[70vh]">
@@ -94,21 +97,17 @@ export const InboxTab: React.FC = () => {
                                 <div>
                                     <h2 className="text-xl font-bold text-white">{selectedMessage.client_name}</h2>
                                     <p className="text-sm text-blue-400">{selectedMessage.sender_email}</p>
-                                    {/* PHOENIX: Display phone if available */}
                                     {selectedMessage.sender_phone && <p className="text-xs text-gray-400 flex items-center gap-1 mt-1"><Phone size={12}/> {selectedMessage.sender_phone}</p>}
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0"><div className="bg-black/20 rounded-2xl p-6 border border-white/5"><p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selectedMessage.content}</p></div></div>
-                            <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-center flex-wrap gap-2 flex-shrink-0">
-                                <div className="flex gap-2">
-                                    {activeFolder !== 'ARCHIVED' && <button onClick={() => handleAction(selectedMessage.id, 'ARCHIVED')} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg text-xs font-medium border border-white/10 transition-all"><Archive size={14}/> Arkivo</button>}
-                                    {activeFolder !== 'INBOX' && <button onClick={() => handleAction(selectedMessage.id, 'INBOX')} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg text-xs font-medium border border-white/10 transition-all"><Inbox size={14}/> Kthe në Inbox</button>}
-                                    {activeFolder === 'TRASHED' ?
-                                        <button onClick={() => handleDeletePermanent(selectedMessage.id)} className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium border border-red-500/20 transition-all"><AlertCircle size={14}/> Fshije Përgjithmonë</button> :
-                                        <button onClick={() => handleAction(selectedMessage.id, 'TRASHED')} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-red-500/10 text-gray-300 hover:text-red-400 rounded-lg text-xs font-medium border border-white/10 hover:border-red-500/20 transition-all"><Trash2 size={14}/> Hidh në Shportë</button>
-                                    }
-                                </div>
-                                <a href={`mailto:${selectedMessage.sender_email}`} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all text-sm"><MessageSquare size={16} /> Përgjigju</a>
+                            <div className="mt-6 pt-4 border-t border-white/10 flex justify-start items-center flex-wrap gap-2 flex-shrink-0">
+                                {activeFolder !== 'ARCHIVED' && <button onClick={() => handleAction(selectedMessage.id, 'ARCHIVED')} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg text-xs font-medium border border-white/10 transition-all"><Archive size={14}/> Arkivo</button>}
+                                {activeFolder !== 'INBOX' && <button onClick={() => handleAction(selectedMessage.id, 'INBOX')} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg text-xs font-medium border border-white/10 transition-all"><Inbox size={14}/> Kthe në Inbox</button>}
+                                {activeFolder === 'TRASHED' ?
+                                    <button onClick={() => handleDeletePermanent(selectedMessage.id)} className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium border border-red-500/20 transition-all"><AlertCircle size={14}/> Fshije Përgjithmonë</button> :
+                                    <button onClick={() => handleAction(selectedMessage.id, 'TRASHED')} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-red-500/10 text-gray-300 hover:text-red-400 rounded-lg text-xs font-medium border border-white/10 hover:border-red-500/20 transition-all"><Trash2 size={14}/> Hidh në Shportë</button>
+                                }
                             </div>
                         </>
                     ) : (

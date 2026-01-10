@@ -1,7 +1,7 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD INTEGRATION V4.2 (ARGUMENT FIX)
-// 1. FIX: Provided the required 'INBOX' argument to 'getInboundMessages' to resolve the TypeScript error.
-// 2. LOGIC: Ensures the message count on the dashboard specifically reflects unread inbox messages.
+// PHOENIX PROTOCOL - DASHBOARD V4.3 (INBOX UI REFACTOR)
+// 1. STYLE: Redesigned the 'Inbox' card to match the glassmorphism aesthetic of the other dashboard widgets.
+// 2. UX: Ensured the new design is clean, consistent, and provides clear visual feedback on hover.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,7 +40,7 @@ export const DailyBriefingTab: React.FC = () => {
                 const casesData = await apiService.getCases();
                 setCases(casesData);
                 
-                // PHOENIX: Pass 'INBOX' to get the correct count for the widget
+                // Fetch Message Count
                 const msgs = await apiService.getInboundMessages('INBOX');
                 setMessageCount(msgs.length);
             } catch (err) {
@@ -90,23 +90,32 @@ export const DailyBriefingTab: React.FC = () => {
                     <BusinessPulseCard signals={briefingData?.market.signals} currentSales={displayIncome} />
                 </motion.div>
                 
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-4">
+                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-6">
                     
-                    {/* New Messages Widget */}
-                    <div 
+                    {/* PHOENIX: Redesigned Inbox Card */}
+                    <motion.div 
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => navigate('/business/inbox')}
-                        className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-5 text-white flex justify-between items-center cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all border border-blue-400/20"
+                        className="group relative bg-gray-900/60 hover:bg-gray-900/80 border border-white/10 rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md"
                     >
-                        <div>
-                            <div className="flex items-center gap-2 text-xs opacity-90 uppercase font-bold tracking-widest mb-1">
-                                <Mail size={14} /> Inbox
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/20">
+                                    <Mail size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white text-lg">Inbox</h3>
+                                    <p className="text-sm text-gray-400">
+                                        {messageCount} {t('inbox.newMessages', 'mesazhe të reja')}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="text-2xl font-black">{messageCount} <span className="text-sm font-normal opacity-80">mesazhe</span></div>
+                            <div className="p-2 rounded-full bg-white/5 group-hover:bg-blue-500/20 group-hover:text-blue-300 transition-all text-gray-400">
+                                <ArrowRight size={20} />
+                            </div>
                         </div>
-                        <div className="bg-white/20 p-2 rounded-lg">
-                            <ArrowRight size={20} />
-                        </div>
-                    </div>
+                    </motion.div>
 
                     {/* Existing Agenda Card */}
                     <div className="flex-1 min-h-0">
