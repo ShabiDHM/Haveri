@@ -1,9 +1,9 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V3.3 (MOBILE OPTIMIZED)
-// 1. LAYOUT: Updated grid gap to 'gap-4' on mobile for tighter spacing.
-// 2. STYLE: Adjusted padding and min-height for better fit in scrollable container.
+// PHOENIX PROTOCOL - INVENTORY LIST V3.4 (SMART SORTING)
+// 1. LOGIC: Implemented automatic sorting. Items with LOWEST stock now appear at the top.
+// 2. UX: This ensures critical items are seen first, as requested.
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Edit, Trash2, Layers, Package, Box } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +23,10 @@ const ItemCard: React.FC<{
     onDelete: (id: string) => void;
 }> = ({ item, isPos, onEdit, onDelete }) => {
     const { t } = useTranslation();
-    const isLowStock = item.current_stock <= item.low_stock_threshold;
+    // Safe check for numeric comparison
+    const current = Number(item.current_stock);
+    const threshold = Number(item.low_stock_threshold || 0);
+    const isLowStock = current <= threshold;
 
     return (
         <motion.div 
@@ -39,7 +42,7 @@ const ItemCard: React.FC<{
                         {isPos ? <Layers size={18} /> : <Package size={18} />}
                     </div>
                     {isLowStock && (
-                        <div className="flex items-center gap-1.5 bg-rose-500/10 text-rose-400 text-[10px] px-2 py-1 rounded-full uppercase tracking-wider font-bold">
+                        <div className="flex items-center gap-1.5 bg-rose-500/10 text-rose-400 text-[10px] px-2 py-1 rounded-full uppercase tracking-wider font-bold animate-pulse">
                             <AlertTriangle size={12} /> {t('inventory.lowStock', 'Stoku Kritik')}
                         </div>
                     )}
@@ -49,7 +52,7 @@ const ItemCard: React.FC<{
                 
                 <div className="mt-2 sm:mt-3">
                     <span className={`text-xl sm:text-2xl font-mono ${isLowStock ? 'text-rose-400' : 'text-gray-200'}`}>
-                        {item.current_stock.toFixed(3)}
+                        {current.toFixed(3)}
                     </span>
                     <span className="ml-2 text-xs sm:text-sm text-gray-500">{item.unit}</span>
                 </div>
@@ -82,13 +85,22 @@ const ItemCard: React.FC<{
 export const InventoryList: React.FC<InventoryListProps> = ({ manualItems, posItems, onEdit, onDelete }) => {
     const { t } = useTranslation();
 
-    const allItems = [...manualItems.map(item => ({...item, isPos: false})), ...posItems.map(item => ({...item, isPos: true}))];
+    // PHOENIX: SORTING LOGIC ADDED HERE
+    const allItems = useMemo(() => {
+        const combined = [
+            ...manualItems.map(item => ({...item, isPos: false})), 
+            ...posItems.map(item => ({...item, isPos: true}))
+        ];
+        
+        // Sort by Current Stock (Ascending) - Lowest stock first
+        return combined.sort((a, b) => Number(a.current_stock) - Number(b.current_stock));
+    }, [manualItems, posItems]);
     
     if (allItems.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-48 text-gray-500">
                 <Box size={40} className="mb-4 opacity-20" />
-                <p className="text-sm sm:text-base">{t('inventory.items.noItems', 'No items in stock')}</p>
+                <p className="text-sm sm:text-base">{t('inventory.items.noItems', 'No items found')}</p>
             </div>
         );
     }

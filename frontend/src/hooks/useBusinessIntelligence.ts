@@ -1,8 +1,7 @@
 // FILE: src/hooks/useBusinessIntelligence.ts
-// PHOENIX PROTOCOL - BI ENGINE V1.2 (DEDUPLICATION & SMART TAX)
-// 1. FIX: Deduplicates inventory items by name to prevent double listings.
-// 2. LOGIC: Excludes 'Salaries' (Rrogat) from VAT deduction automatically.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - BI ENGINE V1.3 (ROBUST LOW STOCK)
+// 1. FIX: Improved low stock detection logic. Now defaults threshold to 0 if undefined, ensuring safe numeric comparison.
+// 2. LOGIC: Deduplication logic maintained but comparison strictness refined.
 
 import { useMemo } from 'react';
 import { useFinanceData } from './useFinanceData';
@@ -55,18 +54,29 @@ export const useBusinessIntelligence = () => {
         
         combinedItems.forEach(item => {
             if (!uniqueItemsMap.has(item.name)) {
-                uniqueItemsMap.set(item.name, item);
+                // Clone the item to avoid mutating the original reference in the cache
+                uniqueItemsMap.set(item.name, { ...item });
             } else {
-                // If duplicate, aggregate stock (optional, but safer to just take one for now)
+                // If duplicate, aggregate stock
                 const existing = uniqueItemsMap.get(item.name);
-                existing.current_stock += item.current_stock; // Merge stock count
+                existing.current_stock += item.current_stock;
+                
+                // PHOENIX: Also aggregate cost (weighted average would be better, but sum is safer for value calc)
+                // For simplicity in this snapshot, we keep the cost of the first item found.
             }
         });
 
         const uniqueItems = Array.from(uniqueItemsMap.values());
 
         const totalStockValue = uniqueItems.reduce((sum, item) => sum + (item.current_stock * item.cost_per_unit), 0);
-        const lowStockItems = uniqueItems.filter(i => i.current_stock <= i.low_stock_threshold);
+        
+        // PHOENIX: Robust Low Stock Filter
+        // Explicitly cast to Number to avoid string comparison errors from API data
+        const lowStockItems = uniqueItems.filter(i => {
+            const current = Number(i.current_stock);
+            const threshold = Number(i.low_stock_threshold ?? 0); // Default to 0 if null/undefined
+            return current <= threshold;
+        });
 
         return { totalStockValue, lowStockItems };
     }, [items, posItems]);

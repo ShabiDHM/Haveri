@@ -1,6 +1,7 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V19.5 (HEIGHT ADJUSTMENT)
-// 1. LAYOUT: Increased fixed height to 700px (h-[700px]) per user request.
+// PHOENIX PROTOCOL - INVENTORY TAB V19.6 (RECIPE SEARCH FIX)
+// 1. FIX: Applied search filtering to Recipes logic (previously missing).
+// 2. UX: Ensures search bar works seamlessly across both tabs.
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -77,8 +78,12 @@ export const InventoryTab: React.FC = () => {
 
     const openImport = (target: 'items' | 'recipes') => { setImportTarget(target); setShowImportModal(true); };
 
+    // PHOENIX: Filtering Logic for BOTH Items and Recipes
     const filteredManual = manualItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const filteredPos = posItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Fixed: Now filtering recipes as well
+    const filteredRecipes = recipes.filter(r => r.product_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-emerald-500" /></div>;
 
@@ -105,7 +110,6 @@ export const InventoryTab: React.FC = () => {
                 )}
             </div>
 
-            {/* PHOENIX: Fixed Height Container h-[700px] */}
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-4 sm:p-6 backdrop-blur-md h-[700px] flex flex-col shadow-2xl overflow-hidden">
                 
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 border-b border-white/5 pb-4 sm:pb-6 shrink-0">
@@ -144,7 +148,7 @@ export const InventoryTab: React.FC = () => {
 
                         {activeTab === 'recipes' && (
                             <RecipeList 
-                                recipes={recipes} 
+                                recipes={filteredRecipes} // PHOENIX: Passed filtered list
                                 inventoryItems={items} 
                                 calculateCost={calculateRecipeCost}
                                 onEdit={openEditRecipe}
