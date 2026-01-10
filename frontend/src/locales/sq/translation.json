@@ -29,7 +29,9 @@
     "actions": "Veprime",
     "allGood": "Gjithçka në rregull!",
     "clear": "Pastro",
-    "confirmClearChat": "A jeni i sigurt që doni të fshini bisedën?"
+    "confirmClearChat": "A jeni i sigurt që doni të fshini bisedën?",
+    "backToYears": "Kthehu te Vitet",
+    "backTo": "Kthehu te"
   },
   "common": {
     "today": "SOT",
@@ -140,8 +142,7 @@
     "welcomeMessage": "Përshëndetje! Unë jam Këshilltari juaj i Biznesit.",
     "welcomeLegal": "Përshëndetje! Unë jam Asistenti juaj Ligjor.",
     "statusConnected": "Lidhur",
-    "confirmClear": "Pastro bisedën?",
-    "contextGeneral": "E gjithë Dosja"
+    "confirmClear": "Pastro bisedën?"
   },
   
   "drafting": {
@@ -219,14 +220,23 @@
     "phone": "Numri i Telefonit",
     "city": "Qyteti",
     "taxId": "Numri Fiskal",
-    "address": "Adresa"
+    "address": "Adresa",
+    "businessName": "Emri i Biznesit",
+    "firmNamePlaceholder": "Emri i biznesit tuaj",
+    "logoIdentity": "Logo & Identiteti",
+    "upload": "Ngarko",
+    "branding": "Branding",
+    "saveColor": "Ruaj Ngjyrën",
+    "firmData": "Të Dhënat e Firmës",
+    "logoUploadFailed": "Ngarkimi i logos dështoi."
   },
   "insights": {
     "title": "Inteligjenca e Biznesit",
     "subtitle": "Analizë e thelluar për të marrë vendime më të zgjuara.",
     "debt": { "title": "Analiza e Borxheve" },
     "tax": { "estimator": "Vlerësimi i TVSH-së" },
-    "inventory": { "title": "Inteligjenca e Stokut" }
+    "inventory": { "title": "Inteligjenca e Stokut" },
+    "tip": "Këshillë: Përdorni butonin WhatsApp tek borxhet për të përshpejtuar arkëtimin me 40%."
   },
   "finance": {
     "income": "Të Hyrat",
@@ -343,7 +353,11 @@
     },
     "analytics": {
         "salesTrend": "Trendi i Shitjeve",
-        "topProducts": "Produktet Kryesore"
+        "topProducts": "Produktet Kryesore",
+        "keys": {
+          "amount": "Vlera",
+          "total_revenue": "Shitjet"
+        }
     },
     "reports": {
       "noData": "Nuk ka të dhëna analitike për këtë periudhë."
@@ -363,7 +377,7 @@
         "import": "Importo CSV",
         "name": "Emri i Artikullit",
         "unit": "Njësia",
-        "cost": "Kosto për Njësi (€)",
+        "cost": "Kosto / Njësi",
         "stock": "Stoku Aktual",
         "lowStock": "Pragu i Stokut Kritik",
         "importedCount": "Artikuj të importuar"
@@ -379,7 +393,8 @@
         "addIngredient": "Shto Përbërës",
         "selectIngredient": "Zgjidh Përbërësin",
         "costPreview": "Kosto e vlerësuar:",
-        "importedCount": "Receta të importuara"
+        "importedCount": "Receta të importuara",
+        "cost": "Kosto e Vlerësuar"
     },
     "import": {
         "instruction": "Ngarkoni një skedar CSV ose Excel për të importuar të dhënat.",
@@ -397,7 +412,7 @@
     },
     "posBatch": "Import POS",
     "itemsCount": "artikuj",
-    "orderDrafted": "Porosia u draftua dhe u dërgua në Arkivë!",
+    "orderDrafted": "Porosia u draftua dhe u dërguua në Arkivë!",
     "analysis": {
       "critical": "Kritike",
       "currentStock": "Stoku Aktual",
