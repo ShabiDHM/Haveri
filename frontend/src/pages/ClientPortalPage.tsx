@@ -1,7 +1,6 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - PORTAL V8.5 (CONTACT PANEL VISUAL UNIFICATION)
-// 1. UI/UX: Redesigned Left Panel to remove 'boxed' look. Now uses a clean, vertical list layout for professional consistency.
-// 2. STYLE: Balanced spacing and typography to match the height and visual weight of the right-hand form.
+// PHOENIX PROTOCOL - PORTAL V8.6 (CLEANUP)
+// 1. UI/UX: Removed 'Komunikim i Sigurt' footer from the contact panel as requested.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -67,7 +66,6 @@ const ClientPortalPage: React.FC = () => {
     const closeViewer = () => { if (viewingUrl) URL.revokeObjectURL(viewingUrl); setViewingDoc(null); setViewingUrl(null); };
 
     // --- PHOENIX: REDESIGNED INFO ROW ---
-    // Clean, list-style component without heavy boxes
     const InfoRow = ({ icon: Icon, label, value, isLink = false }: { icon: any, label: string, value?: string, isLink?: boolean }) => {
         if (!value) return null;
         return (
@@ -121,7 +119,7 @@ const ClientPortalPage: React.FC = () => {
                     <div className="bg-[#0f172a]/50 border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative backdrop-blur-md">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600" />
                         <div className="grid grid-cols-1 lg:grid-cols-5">
-                            {/* PHOENIX: REDESIGNED LEFT COLUMN - Consistent Height & Style */}
+                            {/* PHOENIX: LEFT COLUMN */}
                             <div className="lg:col-span-2 p-8 sm:p-10 bg-[#020617]/30 flex flex-col border-b lg:border-b-0 lg:border-r border-white/5 relative min-h-[500px]">
                                 <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
                                 <div className="relative z-10 flex flex-col h-full justify-center">
@@ -136,12 +134,7 @@ const ClientPortalPage: React.FC = () => {
                                         {(businessCity) && <InfoRow icon={MapPin} label="Qyteti" value={businessCity} />}
                                         <InfoRow icon={Globe} label="Website" value={businessWebsite} isLink={true} />
                                     </div>
-                                    <div className="mt-8 pt-8 border-t border-white/5">
-                                        <div className="flex items-center gap-3 opacity-50">
-                                            <ShieldCheck size={16} />
-                                            <span className="text-xs uppercase tracking-widest">Komunikim i Sigurt</span>
-                                        </div>
-                                    </div>
+                                    {/* Footer Removed here */}
                                 </div>
                             </div>
 

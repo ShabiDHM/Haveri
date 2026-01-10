@@ -1,6 +1,7 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - ROUTING UPDATE V19.4
-// 1. FEATURE: Registered 'InboxTab' for the 'inbox' view.
+// PHOENIX PROTOCOL - LAYOUT LOGIC V19.5
+// 1. UI/UX: Restricted the 'Welcome' header to appear ONLY on the 'briefing' view.
+// 2. LOGIC: All other tabs (Finance, Inventory, etc.) now use the full vertical space without the main header.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,10 +14,10 @@ import { ArchiveTab } from '../components/business/ArchiveTab';
 import { InventoryTab } from '../components/business/InventoryTab';
 import { DailyBriefingTab } from '../components/business/DailyBriefingTab';
 import { InsightsTab } from '../components/business/InsightsTab';
-import { InboxTab } from '../components/business/InboxTab'; // New Import
+import { InboxTab } from '../components/business/InboxTab';
 import { Loader2 } from 'lucide-react';
 
-type BusinessView = 'briefing' | 'finance' | 'inventory' | 'archive' | 'insights' | 'profile' | 'inbox'; // Added 'inbox'
+type BusinessView = 'briefing' | 'finance' | 'inventory' | 'archive' | 'insights' | 'profile' | 'inbox';
 
 interface BusinessPageProps {
     view?: BusinessView;
@@ -62,21 +63,24 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
         
       case 'insights': return <InsightsTab />;
       case 'profile': return <ProfileTab />;
-      case 'inbox': return <InboxTab />; // New Route
+      case 'inbox': return <InboxTab />;
       default: return <DailyBriefingTab />;
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6">
-      <div className="mb-8 sm:mb-12">
-          <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight">
-              {t('business.welcome', 'Mirësevini {{name}}', { name: capitalize(user?.username) })}
-          </h1>
-          <p className="text-gray-400 text-base sm:text-lg font-medium">
-              {t('business.title', 'Qendra e Biznesit')}
-          </p>
-      </div>
+      {/* PHOENIX: Header restricted to Briefing view only */}
+      {view === 'briefing' && (
+          <div className="mb-8 sm:mb-12">
+              <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight">
+                  {t('business.welcome', 'Mirësevini {{name}}', { name: capitalize(user?.username) })}
+              </h1>
+              <p className="text-gray-400 text-base sm:text-lg font-medium">
+                  {t('business.title', 'Qendra e Biznesit')}
+              </p>
+          </div>
+      )}
 
       <div className="min-h-[500px] animate-in fade-in slide-in-from-bottom-4 duration-500">
         {renderActiveTab()}
