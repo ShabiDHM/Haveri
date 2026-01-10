@@ -1,7 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE V3.7 (FULLY RESPONSIVE GRID & SCROLLBAR)
-// 1. RESPONSIVE: Updated grid to be 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3' for full mobile-to-desktop compatibility.
-// 2. STYLE: Added custom 'archive-scrollbar' for a consistent dark theme.
+// PHOENIX PROTOCOL - ARCHIVE V3.8 (UNIFIED BUTTON LAYOUT)
+// 1. STYLE: Modified the ActionButton component to include 'flex-1', forcing equal width.
+// 2. LAYOUT: Adjusted the container to ensure consistent button alignment on all screen sizes.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -150,7 +150,8 @@ const StatusBadge = ({ status }: { status?: 'PENDING' | 'PROCESSING' | 'READY' |
     return <div className="p-1.5" title={t('archive.statusUnknown')}><Zap size={14} className="text-gray-400"/></div>; 
 };
 
-const ActionButton = ({ icon, label, onClick, primary = false, disabled = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean, disabled?: boolean }) => ( <button onClick={onClick} disabled={disabled} className={`flex items-center justify-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold ${disabled ? 'opacity-50' : ''} ${primary ? 'bg-indigo-600 text-white' : 'bg-gray-800/50 text-gray-300 border border-white/10'}`}> {icon} <span>{label}</span> </button> );
+// PHOENIX: Added flex-1 to make button grow
+const ActionButton = ({ icon, label, onClick, primary = false, disabled = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean, disabled?: boolean }) => ( <button onClick={onClick} disabled={disabled} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 px-4 py-3 sm:px-6 sm:py-4 rounded-xl text-xs sm:text-sm font-bold transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${primary ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'bg-gray-800/50 hover:bg-gray-700/80 text-gray-300 border border-white/10'}`}> {icon} <span className="truncate">{label}</span> </button> );
 
 const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, onReIndex, onAskAI, isShared, isFolder, isLoading, indexingStatus }: any) => { 
     return ( 
@@ -167,7 +168,7 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
                 <div className="mt-4 space-y-1.5 pl-3 border-l-2 border-white/5"><div className="flex items-center gap-2 text-sm text-gray-300">{isFolder ? <FolderOpen className="w-4 h-4 text-amber-500" /> : <FileText className="w-4 h-4 text-blue-500" />}<span>{type}</span></div><div className="flex items-center gap-2 text-xs text-gray-500"><Hash className="w-3.5 h-3.5"/><span>{subtitle}</span></div></div> 
             </div> 
             <div className="pt-4 border-t border-white/5 flex justify-end items-center"> 
-                <div className="flex gap-1 items-center">
+                <div className="flex gap-1 items-center flex-wrap justify-end">
                     {!isFolder && onReIndex && (<button onClick={(e) => { e.stopPropagation(); onReIndex(); }} className="p-2 text-gray-400 hover:text-amber-400"><Zap size={16} /></button>)}
                     {!isFolder && onShare && (<button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 ${isShared ? 'text-emerald-400' : 'text-gray-400 hover:text-white'}`}><Share2 size={16} /></button>)}
                     {onRename && (<button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 text-gray-400 hover:text-white"><Pencil size={16} /></button>)}
@@ -235,7 +236,8 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
                         <input type="text" placeholder={t('header.searchPlaceholder')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 sm:py-4 bg-black/40 border border-white/10 rounded-2xl text-white" />
                     </div>
-                    <div className="flex flex-wrap gap-2 sm:gap-3 w-full xl:w-auto">
+                    {/* PHOENIX: Flex container for equal-width buttons */}
+                    <div className="flex items-center gap-2 sm:gap-3 w-full xl:w-auto">
                         {showPortalButton && portalTargetId && ( <ActionButton icon={<LinkIcon size={18} />} label="PORTAL" onClick={() => setShowShareModal(true)} /> )}
                         <ActionButton icon={<FolderPlus size={18} />} label="Krijo Dosje" onClick={() => setShowFolderModal(true)} />
                         <input type="file" ref={archiveInputRef} className="hidden" onChange={handleSmartUpload} />

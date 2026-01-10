@@ -1,6 +1,7 @@
 // FILE: src/components/business/archive/ArchiveCard.tsx
-// PHOENIX PROTOCOL - COMPONENT EXTRACTION V1.0
-// Standardized Archive Card component.
+// PHOENIX PROTOCOL - CARD LAYOUT FIX V1.1
+// 1. UI FIX: Removed opacity classes to make action icons always visible.
+// 2. LAYOUT FIX: Added 'flex-wrap' to the icon container to prevent overflow on narrow screens.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -81,7 +82,9 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
             </div>
             <div className="relative z-10 pt-3 sm:pt-4 border-t border-white/5 flex items-center justify-between min-h-[2.5rem] sm:min-h-[3rem]">
                 <span className="text-xs sm:text-sm font-medium text-indigo-400 group-hover:text-indigo-300 transition-colors flex items-center gap-1">{isFolder ? t('archive.openFolder') : ''}</span>
-                <div className="flex gap-1 items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                
+                {/* PHOENIX: Icons now always visible, with wrapping */}
+                <div className="flex gap-1 items-center flex-wrap justify-end">
                     {!isFolder && onShare && (<button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-1.5 sm:p-2 rounded-lg transition-colors ${isShared ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'text-gray-600 hover:text-white hover:bg-white/10'}`} title={isShared ? t('archive.unshare') : t('archive.share')}><Share2 className="h-4 w-4" /></button>)}
                     {onRename && (<button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-1.5 sm:p-2 rounded-lg text-gray-600 hover:text-white hover:bg-white/10 transition-colors" title={t('general.edit')}><Pencil className="h-4 w-4" /></button>)}
                     {!isFolder && <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-1.5 sm:p-2 rounded-lg text-gray-600 hover:text-blue-400 hover:bg-blue-400/10 transition-colors" title={t('general.view')}>{isLoading ? <Loader2 className="h-4 w-4 animate-spin text-blue-400" /> : <Eye className="h-4 w-4" />}</button>}
