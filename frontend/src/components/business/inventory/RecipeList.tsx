@@ -1,7 +1,7 @@
 // FILE: src/components/business/inventory/RecipeList.tsx
-// PHOENIX PROTOCOL - RECIPE LIST V3.1 (UI/UX ALIGNMENT)
-// 1. STYLE: Matched the 'RecipeCard' styling (font sizes, spacing) to the 'ItemCard'.
-// 2. READABILITY: Increased text size for recipe title and ingredients for better readability.
+// PHOENIX PROTOCOL - RECIPE LIST V3.2 (LABEL & STYLE FIX)
+// 1. I18N FIX: Corrected the translation key for 'Est. Cost' and provided a fallback.
+// 2. STYLE: Increased the font size of the label for better readability.
 
 import React from 'react';
 import { ChefHat, Edit, Trash2 } from 'lucide-react';
@@ -42,12 +42,10 @@ const RecipeCard: React.FC<{
                     </div>
                 </div>
                 
-                {/* PHOENIX: Increased font size for consistency */}
                 <h2 className="text-lg font-bold text-gray-100 group-hover:text-white line-clamp-2">{recipe.product_name}</h2>
                 
                 <div className="mt-4 space-y-2 max-h-24 overflow-y-auto no-scrollbar pr-1">
                     {recipe.ingredients.map((ing, idx) => (
-                        // PHOENIX: Increased font size for readability
                         <div key={idx} className="flex items-center gap-2 text-sm text-gray-400">
                             <span className="opacity-50">•</span>
                             <span>{getIngredientName(ing.inventory_item_id)}</span>
@@ -60,7 +58,10 @@ const RecipeCard: React.FC<{
             {/* Bottom Section */}
             <div className="pt-4 mt-4 border-t border-white/10 flex justify-between items-end">
                 <div>
-                    <span className="block text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('inventory.recipes.estCost')}</span>
+                    {/* PHOENIX: Corrected translation key, added fallback, and increased font size */}
+                    <span className="block text-xs text-gray-500 uppercase tracking-wider font-bold">
+                        {t('inventory.recipes.cost', 'Kosto e Vlerësuar')}
+                    </span>
                     <span className="text-xl font-mono font-bold text-rose-400">
                         €{calculateCost(recipe.ingredients).toFixed(2)}
                     </span>

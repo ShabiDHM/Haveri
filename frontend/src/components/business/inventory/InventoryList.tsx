@@ -1,8 +1,7 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V3.1 (UI/UX ALIGNMENT)
-// 1. STYLE: Matched the 'ItemCard' styling (font sizes, spacing, layout) to the 'RecipeCard'.
-// 2. READABILITY: Increased text size for better readability and visual consistency.
-// 3. INTEGRITY: Preserved all existing functionality.
+// PHOENIX PROTOCOL - INVENTORY LIST V3.2 (LABEL & STYLE FIX)
+// 1. I18N FIX: Corrected the translation key for 'Cost Per Unit' and provided a fallback.
+// 2. STYLE: Increased the font size of the label for better readability.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -46,7 +45,6 @@ const ItemCard: React.FC<{
                     )}
                 </div>
                 
-                {/* PHOENIX: Matched RecipeCard font size and spacing */}
                 <h2 className="text-lg font-bold text-gray-100 group-hover:text-white line-clamp-2">{item.name}</h2>
                 
                 <div className="mt-3">
@@ -60,8 +58,10 @@ const ItemCard: React.FC<{
             {/* Bottom Section */}
             <div className="pt-4 mt-4 border-t border-white/10 flex justify-between items-end">
                 <div>
-                    <span className="block text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('inventory.items.costPerUnit')}</span>
-                    {/* PHOENIX: Matched RecipeCard font size */}
+                    {/* PHOENIX: Corrected translation key, added fallback, and increased font size */}
+                    <span className="block text-xs text-gray-500 uppercase tracking-wider font-bold">
+                        {t('inventory.items.cost', 'Kosto / Njësi')}
+                    </span>
                     <span className="text-xl font-mono font-bold text-emerald-400">
                         €{item.cost_per_unit.toFixed(2)}
                     </span>
