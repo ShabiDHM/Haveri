@@ -1,7 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE V3.5 (UI CLEANUP)
-// 1. UI: Made action icons (Rename, View, etc.) always visible, removing the hover effect.
-// 2. UI: Removed the duplicate 'Ask AI' icon from the top right for a cleaner layout.
+// PHOENIX PROTOCOL - ARCHIVE V3.7 (FULLY RESPONSIVE GRID & SCROLLBAR)
+// 1. RESPONSIVE: Updated grid to be 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3' for full mobile-to-desktop compatibility.
+// 2. STYLE: Added custom 'archive-scrollbar' for a consistent dark theme.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -158,7 +158,6 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
             <div> 
                 <div className="flex justify-between items-start gap-2 mb-4"> 
                     <div className="p-3 rounded-2xl bg-white/5 border border-white/10">{icon}</div> 
-                    {/* PHOENIX UI FIX: Removed duplicate Ask AI icon */}
                     <div className="flex items-center gap-2">
                         {!isFolder && <StatusBadge status={indexingStatus} />}
                         {isShared && (<div className="p-1.5 text-emerald-400"><Share2 size={14} /></div>)}
@@ -168,7 +167,6 @@ const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, o
                 <div className="mt-4 space-y-1.5 pl-3 border-l-2 border-white/5"><div className="flex items-center gap-2 text-sm text-gray-300">{isFolder ? <FolderOpen className="w-4 h-4 text-amber-500" /> : <FileText className="w-4 h-4 text-blue-500" />}<span>{type}</span></div><div className="flex items-center gap-2 text-xs text-gray-500"><Hash className="w-3.5 h-3.5"/><span>{subtitle}</span></div></div> 
             </div> 
             <div className="pt-4 border-t border-white/5 flex justify-end items-center"> 
-                {/* PHOENIX UI FIX: Removed opacity classes to make actions always visible */}
                 <div className="flex gap-1 items-center">
                     {!isFolder && onReIndex && (<button onClick={(e) => { e.stopPropagation(); onReIndex(); }} className="p-2 text-gray-400 hover:text-amber-400"><Zap size={16} /></button>)}
                     {!isFolder && onShare && (<button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 ${isShared ? 'text-emerald-400' : 'text-gray-400 hover:text-white'}`}><Share2 size={16} /></button>)}
@@ -223,18 +221,25 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
     if (loading && archiveItems.length === 0) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8 h-full flex flex-col">
-            <div className="bg-gray-900/40 p-6 rounded-3xl border border-white/5 backdrop-blur-md flex-shrink-0">
-                 <div className="flex flex-col xl:flex-row gap-6">
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 sm:space-y-8 h-full flex flex-col">
+            <style>{`
+                .archive-scrollbar::-webkit-scrollbar { width: 8px; }
+                .archive-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .archive-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+                .archive-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+            `}</style>
+
+            <div className="bg-gray-900/40 p-4 sm:p-6 rounded-3xl border border-white/5 backdrop-blur-md flex-shrink-0">
+                 <div className="flex flex-col xl:flex-row gap-4">
                     <div className="flex-1 relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-                        <input type="text" placeholder={t('header.searchPlaceholder')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl text-white" />
+                        <input type="text" placeholder={t('header.searchPlaceholder')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 sm:py-4 bg-black/40 border border-white/10 rounded-2xl text-white" />
                     </div>
-                    <div className="flex flex-wrap gap-3 w-full xl:w-auto">
-                        {showPortalButton && portalTargetId && ( <ActionButton icon={<LinkIcon size={20} />} label="PORTAL" onClick={() => setShowShareModal(true)} /> )}
-                        <ActionButton icon={<FolderPlus size={20} />} label="Krijo Dosje" onClick={() => setShowFolderModal(true)} />
+                    <div className="flex flex-wrap gap-2 sm:gap-3 w-full xl:w-auto">
+                        {showPortalButton && portalTargetId && ( <ActionButton icon={<LinkIcon size={18} />} label="PORTAL" onClick={() => setShowShareModal(true)} /> )}
+                        <ActionButton icon={<FolderPlus size={18} />} label="Krijo Dosje" onClick={() => setShowFolderModal(true)} />
                         <input type="file" ref={archiveInputRef} className="hidden" onChange={handleSmartUpload} />
-                        <ActionButton primary icon={isUploading ? <Loader2 className="animate-spin" size={20} /> : <FileUp size={20} />} label="Ngarko" onClick={() => archiveInputRef.current?.click()} disabled={isUploading} />
+                        <ActionButton primary icon={isUploading ? <Loader2 className="animate-spin" size={18} /> : <FileUp size={18} />} label="Ngarko" onClick={() => archiveInputRef.current?.click()} disabled={isUploading} />
                     </div>
                  </div>
             </div>
@@ -250,9 +255,9 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                 ))}
             </div>
             
-            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex-1 overflow-y-auto">
+            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-4 sm:p-6 backdrop-blur-md flex-1 overflow-y-auto archive-scrollbar">
                 {filteredItems.length > 0 ? (
-                    <motion.div layout className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+                    <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                         <AnimatePresence>
                             {filteredItems.map(item => (
                                 <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} key={item.id}>
