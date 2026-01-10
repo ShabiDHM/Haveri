@@ -1,7 +1,6 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V19.4 (FIXED HEIGHT & SCROLL)
-// 1. LAYOUT: Enforced fixed height of 600px (h-[600px]) instead of min-height to trigger internal scrolling.
-// 2. MOBILE: Optimized header and search layout for smaller screens.
+// PHOENIX PROTOCOL - INVENTORY TAB V19.5 (HEIGHT ADJUSTMENT)
+// 1. LAYOUT: Increased fixed height to 700px (h-[700px]) per user request.
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -106,8 +105,8 @@ export const InventoryTab: React.FC = () => {
                 )}
             </div>
 
-            {/* PHOENIX: Fixed Height Container h-[600px] */}
-            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-4 sm:p-6 backdrop-blur-md h-[600px] flex flex-col shadow-2xl overflow-hidden">
+            {/* PHOENIX: Fixed Height Container h-[700px] */}
+            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-4 sm:p-6 backdrop-blur-md h-[700px] flex flex-col shadow-2xl overflow-hidden">
                 
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 border-b border-white/5 pb-4 sm:pb-6 shrink-0">
                     <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
