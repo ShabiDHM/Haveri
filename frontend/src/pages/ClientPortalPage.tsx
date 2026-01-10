@@ -1,7 +1,7 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - PORTAL V8.4 (CONTACT PANEL REDESIGN)
-// 1. UI/UX: Completely redesigned the 'Informacion Kontaktues' panel for a professional, modern, and consistent look.
-// 2. STYLE: Applied glassmorphism, improved typography, and enhanced iconography to match the application's aesthetic.
+// PHOENIX PROTOCOL - PORTAL V8.5 (CONTACT PANEL VISUAL UNIFICATION)
+// 1. UI/UX: Redesigned Left Panel to remove 'boxed' look. Now uses a clean, vertical list layout for professional consistency.
+// 2. STYLE: Balanced spacing and typography to match the height and visual weight of the right-hand form.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -66,22 +66,29 @@ const ClientPortalPage: React.FC = () => {
     const handleSendMessage = async (e: React.FormEvent) => { e.preventDefault(); setSending(true); try { await apiService.sendClientMessage(caseId!, formState); setSent(true); setFormState({ firstName: '', lastName: '', email: '', phone: '', message: '' }); setTimeout(() => setSent(false), 5000); } catch { alert("Dërgimi dështoi."); } finally { setSending(false); } };
     const closeViewer = () => { if (viewingUrl) URL.revokeObjectURL(viewingUrl); setViewingDoc(null); setViewingUrl(null); };
 
-    // --- PHOENIX: Redesigned InfoRow Component ---
+    // --- PHOENIX: REDESIGNED INFO ROW ---
+    // Clean, list-style component without heavy boxes
     const InfoRow = ({ icon: Icon, label, value, isLink = false }: { icon: any, label: string, value?: string, isLink?: boolean }) => {
         if (!value) return null;
         return (
-            <div className="flex items-center gap-4 bg-black/20 p-4 rounded-2xl border border-white/5">
-                <div className="p-3 bg-gray-800/50 border border-white/10 rounded-xl text-blue-400 flex-shrink-0">
-                    <Icon size={20} />
+            <div className="flex items-start gap-5 relative group">
+                <div className="relative z-10 p-3 rounded-xl bg-[#020617] border border-white/10 text-blue-400 shadow-sm group-hover:border-blue-500/30 group-hover:text-blue-300 transition-all duration-300 shrink-0">
+                    <Icon size={20} strokeWidth={1.5} />
                 </div>
-                <div className="min-w-0">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{label}</p>
+                
+                <div className="flex-1 pt-1.5 min-w-0">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 group-hover:text-blue-400/70 transition-colors">{label}</h4>
                     {isLink ? (
-                        <a href={value.startsWith('http') ? value : `https://${value}`} target="_blank" rel="noopener noreferrer" className="text-base font-semibold text-white hover:text-blue-400 hover:underline break-all transition-colors">
+                        <a 
+                            href={value.startsWith('http') ? value : `https://${value}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-sm sm:text-base font-medium text-white hover:text-blue-400 transition-colors leading-relaxed block break-all"
+                        >
                             {value}
                         </a>
                     ) : (
-                        <p className="text-base font-semibold text-white break-words">{value}</p>
+                        <p className="text-sm sm:text-base font-medium text-white leading-relaxed break-words">{value}</p>
                     )}
                 </div>
             </div>
@@ -114,24 +121,34 @@ const ClientPortalPage: React.FC = () => {
                     <div className="bg-[#0f172a]/50 border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative backdrop-blur-md">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600" />
                         <div className="grid grid-cols-1 lg:grid-cols-5">
-                            {/* PHOENIX: Redesigned Left Panel */}
-                            <div className="lg:col-span-2 p-8 sm:p-10 bg-gray-900/60 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-white/10">
-                                <div className="mb-10">
-                                    <h3 className="text-3xl font-bold text-white mb-3">Informacion Kontaktues</h3>
-                                    <p className="text-gray-400 leading-relaxed">Detajet tona për kontakt të drejtpërdrejtë.</p>
-                                </div>
-                                <div className="space-y-5">
-                                    <InfoRow icon={Mail} label="Email Publik" value={businessEmail} />
-                                    <InfoRow icon={Phone} label="Numri i Telefonit" value={businessPhone} />
-                                    <InfoRow icon={MapPin} label="Adresa" value={businessAddress} />
-                                    {(businessCity) && <InfoRow icon={MapPin} label="Qyteti" value={businessCity} />}
-                                    <InfoRow icon={Globe} label="Website" value={businessWebsite} isLink={true} />
+                            {/* PHOENIX: REDESIGNED LEFT COLUMN - Consistent Height & Style */}
+                            <div className="lg:col-span-2 p-8 sm:p-10 bg-[#020617]/30 flex flex-col border-b lg:border-b-0 lg:border-r border-white/5 relative min-h-[500px]">
+                                <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
+                                <div className="relative z-10 flex flex-col h-full justify-center">
+                                    <div className="mb-10">
+                                        <h3 className="text-3xl font-bold text-white mb-3 tracking-tight">Informacion Kontaktues</h3>
+                                        <p className="text-gray-400 leading-relaxed font-light">Detajet tona për kontakt të drejtpërdrejtë.</p>
+                                    </div>
+                                    <div className="space-y-8 flex-1">
+                                        <InfoRow icon={Mail} label="Email Publik" value={businessEmail} />
+                                        <InfoRow icon={Phone} label="Numri i Telefonit" value={businessPhone} />
+                                        <InfoRow icon={MapPin} label="Adresa" value={businessAddress} />
+                                        {(businessCity) && <InfoRow icon={MapPin} label="Qyteti" value={businessCity} />}
+                                        <InfoRow icon={Globe} label="Website" value={businessWebsite} isLink={true} />
+                                    </div>
+                                    <div className="mt-8 pt-8 border-t border-white/5">
+                                        <div className="flex items-center gap-3 opacity-50">
+                                            <ShieldCheck size={16} />
+                                            <span className="text-xs uppercase tracking-widest">Komunikim i Sigurt</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="lg:col-span-3 p-8 sm:p-10">
+                            {/* RIGHT COLUMN - FORM */}
+                            <div className="lg:col-span-3 p-8 sm:p-10 flex flex-col justify-center">
                                 {sent ? (<motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="h-full flex flex-col items-center justify-center text-center py-12"><div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4 text-emerald-400 border border-emerald-500/30"><ShieldCheck size={32} /></div><h4 className="text-xl font-bold text-white mb-2">Mesazhi u dërgua me sukses!</h4><p className="text-gray-400">Faleminderit që na kontaktuat.</p></motion.div>) : (
-                                    <form onSubmit={handleSendMessage} className="space-y-5">
+                                    <form onSubmit={handleSendMessage} className="space-y-6">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5"><div className="relative group"><User className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder="Emri" required value={formState.firstName} onChange={e => setFormState({...formState, firstName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" /></div><div className="relative group"><User className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder="Mbiemri" required value={formState.lastName} onChange={e => setFormState({...formState, lastName: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" /></div></div>
                                         <div className="relative group"><Mail className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><input type="email" placeholder="Email" required value={formState.email} onChange={e => setFormState({...formState, email: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" /></div>
                                         <div className="relative group"><Phone className="absolute left-3.5 top-3.5 text-gray-500 w-4 h-4 group-focus-within:text-blue-400 transition-colors" /><input type="tel" placeholder="Telefoni (Opsional)" value={formState.phone} onChange={e => setFormState({...formState, phone: e.target.value})} className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white text-sm focus:border-blue-500/50 focus:bg-blue-500/5 focus:ring-1 focus:ring-blue-500/20 outline-none" /></div>
