@@ -1,7 +1,7 @@
 // FILE: src/components/business/inventory/RecipeList.tsx
-// PHOENIX PROTOCOL - RECIPE LIST V3.2 (LABEL & STYLE FIX)
-// 1. I18N FIX: Corrected the translation key for 'Est. Cost' and provided a fallback.
-// 2. STYLE: Increased the font size of the label for better readability.
+// PHOENIX PROTOCOL - RECIPE LIST V3.3 (MOBILE OPTIMIZED)
+// 1. LAYOUT: Updated grid gap and padding for better mobile viewing.
+// 2. CONSISTENCY: Matched style tweaks with InventoryList.
 
 import React from 'react';
 import { ChefHat, Edit, Trash2 } from 'lucide-react';
@@ -32,21 +32,21 @@ const RecipeCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-3xl bg-gray-900/60 border border-white/10 hover:border-blue-500/30 transition-all duration-300"
+            className="group relative flex flex-col justify-between h-full min-h-[13rem] p-5 sm:p-6 rounded-3xl bg-gray-900/60 border border-white/10 hover:border-blue-500/30 transition-all duration-300"
         >
             {/* Top Section */}
             <div>
-                <div className="flex justify-between items-start gap-4 mb-4">
-                    <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-blue-400">
-                        <ChefHat size={20} />
+                <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
+                    <div className="p-2.5 sm:p-3 rounded-2xl bg-white/5 border border-white/10 text-blue-400">
+                        <ChefHat size={18} />
                     </div>
                 </div>
                 
-                <h2 className="text-lg font-bold text-gray-100 group-hover:text-white line-clamp-2">{recipe.product_name}</h2>
+                <h2 className="text-base sm:text-lg font-bold text-gray-100 group-hover:text-white line-clamp-2">{recipe.product_name}</h2>
                 
-                <div className="mt-4 space-y-2 max-h-24 overflow-y-auto no-scrollbar pr-1">
+                <div className="mt-3 space-y-2 max-h-24 overflow-y-auto no-scrollbar pr-1">
                     {recipe.ingredients.map((ing, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-400">
+                        <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
                             <span className="opacity-50">•</span>
                             <span>{getIngredientName(ing.inventory_item_id)}</span>
                             <span className="font-mono text-blue-400">x{ing.quantity_required}</span>
@@ -56,13 +56,12 @@ const RecipeCard: React.FC<{
             </div>
             
             {/* Bottom Section */}
-            <div className="pt-4 mt-4 border-t border-white/10 flex justify-between items-end">
+            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/10 flex justify-between items-end">
                 <div>
-                    {/* PHOENIX: Corrected translation key, added fallback, and increased font size */}
-                    <span className="block text-xs text-gray-500 uppercase tracking-wider font-bold">
+                    <span className="block text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider font-bold">
                         {t('inventory.recipes.cost', 'Kosto e Vlerësuar')}
                     </span>
-                    <span className="text-xl font-mono font-bold text-rose-400">
+                    <span className="text-lg sm:text-xl font-mono font-bold text-rose-400">
                         €{calculateCost(recipe.ingredients).toFixed(2)}
                     </span>
                 </div>
@@ -86,15 +85,15 @@ export const RecipeList: React.FC<RecipeListProps> = ({ recipes, inventoryItems,
 
     if (recipes.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                <ChefHat size={48} className="mb-4 opacity-20" />
-                <p>{t('inventory.recipes.noRecipes', 'No recipes found')}</p>
+            <div className="flex flex-col items-center justify-center h-48 text-gray-500">
+                <ChefHat size={40} className="mb-4 opacity-20" />
+                <p className="text-sm sm:text-base">{t('inventory.recipes.noRecipes', 'No recipes found')}</p>
             </div>
         );
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
             {recipes.map(recipe => (
                 <RecipeCard 
                     key={recipe._id}
