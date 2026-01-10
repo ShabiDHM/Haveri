@@ -1,7 +1,7 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - DUAL PANEL LAYOUT V21.1 (MOBILE RESPONSIVE)
-// 1. RESPONSIVE FIX: Applied height constraints (min/max) ONLY on medium screens and up (md:).
-// 2. MOBILE: On mobile, panels now have natural height to prevent overflow and ensure usability.
+// PHOENIX PROTOCOL - DUAL PANEL LAYOUT V21.2 (LAYOUT DELEGATION)
+// 1. CRITICAL FIX: Removed 'overflow-y-auto' from the parent container.
+// 2. LOGIC: This delegates scrolling control to the child components (ArchiveTab, DraftingPanel), allowing their internal layouts (like multi-column grids) to render correctly.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -100,7 +100,6 @@ const CaseViewPage: React.FC = () => {
       <div className="max-w-[1800px] w-full mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             
-            {/* PHOENIX: Responsive Height for COLUMN 1: CHAT PANEL */}
             <div className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-blue-900/10 flex flex-col h-[85vh] md:min-h-[500px] md:max-h-[700px]">
                 <ChatPanel 
                     agentType="business" messages={liveMessages} connectionStatus={connectionStatus} 
@@ -110,7 +109,6 @@ const CaseViewPage: React.FC = () => {
                 />
             </div>
 
-            {/* PHOENIX: Responsive Height for COLUMN 2: DRAFTING / DOCUMENTS */}
             <div className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/10 flex flex-col p-4 sm:p-6 h-[85vh] md:min-h-[500px] md:max-h-[700px]">
                 <div className="flex bg-black/40 p-1.5 rounded-2xl border border-white/5 w-fit mb-4">
                     <button onClick={() => setActiveTab('drafting')} className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'drafting' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
@@ -121,7 +119,8 @@ const CaseViewPage: React.FC = () => {
                     </button>
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
+                {/* PHOENIX: Removed 'overflow-y-auto' to let children handle their own scrolling */}
+                <div className="flex-1 min-h-0">
                     {activeTab === 'drafting' ? (
                         <DraftingPanel activeCaseId={caseData.details.id} className="h-full" />
                     ) : (
