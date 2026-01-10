@@ -33,6 +33,13 @@
     "backToYears": "Kthehu te Vitet",
     "backTo": "Kthehu te"
   },
+  "sidebar": {
+      "business": "Zyra Ime",
+      "haveri_ai": "Haveri AI",
+      "account": "Llogaria",
+      "support": "Mbështetja",
+      "admin": "Admin"
+  },
   "common": {
     "today": "SOT",
     "urgent": "Urgjente"
