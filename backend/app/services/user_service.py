@@ -1,21 +1,21 @@
 # FILE: backend/app/services/user_service.py
-# PHOENIX PROTOCOL - USER SERVICE V1.5 (SINGLETON WORKSPACE)
-# 1. ADDED: On user creation, a default "workspace" Case is now automatically generated.
-# 2. LOGIC: Imports and uses 'case_service' to ensure the workspace is created correctly.
-# 3. RESULT: Guarantees every user has a primary workspace from the moment of registration.
+# PHOENIX PROTOCOL - USER SERVICE V1.8 (QUOTA ENFORCEMENT)
+# 1. LOGIC: Checks current team size against 'PLAN_LIMITS' before allowing an invite.
+# 2. SECURITY: Blocks invites if the plan limit is reached (e.g., SOLO plan trying to add a member).
 
 from pymongo.database import Database
 from bson import ObjectId
 from fastapi import HTTPException
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
 import logging
 import re
 
 from app.core.security import verify_password, get_password_hash
-from app.models.user import UserInDB, UserCreate
-from app.models.case import CaseCreate # PHOENIX: Import CaseCreate model
-from app.services import storage_service, case_service # PHOENIX: Import case_service
+# PHOENIX: Imported PLAN_LIMITS
+from app.models.user import UserInDB, UserCreate, PLAN_LIMITS 
+from app.models.case import CaseCreate
+from app.services import storage_service, case_service
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +75,10 @@ def create(db: Database, obj_in: UserCreate) -> UserInDB:
     user_data["hashed_password"] = hashed_password
     user_data["created_at"] = datetime.now(timezone.utc)
     
+    user_data["organization_id"] = None
+    user_data["organization_role"] = "OWNER" 
+    # Default plan is already set to SOLO in model
+    
     result = db.users.insert_one(user_data)
     new_user_dict = db.users.find_one({"_id": result.inserted_id})
     
@@ -83,7 +87,6 @@ def create(db: Database, obj_in: UserCreate) -> UserInDB:
     
     new_user = UserInDB.model_validate(new_user_dict)
 
-    # --- PHOENIX: SINGLETON WORKSPACE CREATION ---
     try:
         logger.info(f"Creating default workspace for new user {new_user.id}")
         workspace_name = f"{new_user.full_name}'s Workspace" if new_user.full_name else "My Workspace"
@@ -98,9 +101,7 @@ def create(db: Database, obj_in: UserCreate) -> UserInDB:
         case_service.create_case(db=db, case_in=default_case, owner=new_user)
         logger.info(f"Successfully created default workspace for user {new_user.id}")
     except Exception as e:
-        # Log the error but don't fail the user creation process
         logger.error(f"FATAL: Could not create default workspace for user {new_user.id}. Error: {e}")
-    # --- END PHOENIX BLOCK ---
         
     return new_user
 
@@ -150,3 +151,62 @@ def delete_user_and_all_data(db: Database, user: UserInDB):
     except Exception as e:
         logger.error(f"Failed during cascading delete for user {user_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="A failure occurred during the account deletion process.")
+
+def get_organization_members(db: Database, org_id: str) -> List[UserInDB]:
+    try:
+        users_dict = list(db.users.find({"organization_id": ObjectId(org_id)}))
+        return [UserInDB.model_validate(u) for u in users_dict]
+    except Exception as e:
+        logger.error(f"Error fetching organization members: {e}")
+        return []
+
+def invite_user_to_organization(db: Database, owner: UserInDB, email: str, role: str):
+    org_id = owner.organization_id if owner.organization_id else owner.id
+    
+    # --- PHOENIX: QUOTA ENFORCEMENT ---
+    # 1. Determine Quota
+    plan = owner.plan_tier or "SOLO" # Default to lowest if missing
+    max_users = PLAN_LIMITS.get(plan, 1)
+    
+    # 2. Count Current Usage
+    # Count all users with this org_id (Active + Pending)
+    current_count = db.users.count_documents({"organization_id": ObjectId(org_id)})
+    
+    # 3. Enforce Limit
+    if current_count >= max_users:
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Plan limit reached. Your '{plan}' plan allows a maximum of {max_users} users. Please upgrade to add more."
+        )
+    # ----------------------------------
+    
+    existing_user = get_user_by_email(db, email)
+    
+    if existing_user:
+        db.users.update_one(
+            {"_id": existing_user.id},
+            {"$set": {
+                "organization_id": ObjectId(org_id),
+                "organization_role": role
+            }}
+        )
+    else:
+        placeholder_data = {
+            "username": email.split('@')[0],
+            "email": email,
+            "hashed_password": get_password_hash("TempPass123!"),
+            "role": "STANDARD",
+            "subscription_status": "PENDING_INVITE",
+            "status": "inactive",
+            "organization_id": ObjectId(org_id),
+            "organization_role": role,
+            "plan_tier": "MEMBER", # Members don't have their own plan, they inherit
+            "created_at": datetime.now(timezone.utc)
+        }
+        db.users.insert_one(placeholder_data)
+        
+    if not owner.organization_id:
+        db.users.update_one(
+            {"_id": owner.id},
+            {"$set": {"organization_id": owner.id, "organization_role": "OWNER"}}
+        )

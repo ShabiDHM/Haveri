@@ -1,20 +1,29 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V18.1 (LABEL UPDATE)
-// 1. UI FIX: Changed 'Law Firm Name' label to 'Business Name' (Biznesi) to be more generic.
-// 2. INTEGRITY: Preserved all other functionality and styling.
+// PHOENIX PROTOCOL - PROFILE TAB V19.4 (LIVE QUOTA SYSTEM)
+// 1. INTEGRATION: Replaced mock data with 'apiService.getTeamMembers()' & 'apiService.removeTeamMember()'.
+// 2. FEATURE: Added dynamic Plan Limit indicator (e.g. "STARTUP: 2/5").
+// 3. UI: The Invite button is disabled if the plan limit is reached.
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
     Building2, Mail, Phone, Palette, Save, Upload, Loader2, Camera, MapPin, Globe, CreditCard,
-    TrendingUp, Calculator, Coins
+    TrendingUp, Calculator, Coins, Users, UserPlus, Trash2, Shield, Crown
 } from 'lucide-react';
 import { apiService, API_V1_URL } from '../../services/api';
-import { BusinessProfile, BusinessProfileUpdate } from '../../data/types';
+import { BusinessProfile, BusinessProfileUpdate, InviteUserRequest, User } from '../../data/types';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 
 const DEFAULT_COLOR = '#3b82f6';
+
+// PHOENIX: Plan Limits Configuration (Must match Backend)
+const PLAN_LIMITS: Record<string, number> = {
+    "SOLO": 1,
+    "STARTUP": 5,
+    "GROWTH": 10,
+    "ENTERPRISE": 50
+};
 
 const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
     <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-6">
@@ -37,7 +46,7 @@ const FormField = ({ label, icon, children }: { label: string, icon: React.React
 
 export const ProfileTab: React.FC = () => {
     const { t } = useTranslation();
-    const { refreshBusinessProfile } = useAuth();
+    const { refreshBusinessProfile, user } = useAuth();
     const [profile, setProfile] = useState<BusinessProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -45,10 +54,35 @@ export const ProfileTab: React.FC = () => {
     const [logoLoading, setLogoLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Team State
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviting, setInviting] = useState(false);
+    const [teamMembers, setTeamMembers] = useState<User[]>([]);
+    const [teamLoading, setTeamLoading] = useState(false);
+
+    // Calculated Plan Info
+    const currentPlan = user?.plan_tier || "SOLO";
+    const maxUsers = PLAN_LIMITS[currentPlan] || 1;
+    const currentUsage = teamMembers.length;
+    const isPlanFull = currentUsage >= maxUsers;
+
     const [formData, setFormData] = useState<BusinessProfileUpdate>({
         firm_name: '', email_public: '', phone: '', address: '', city: '', website: '', tax_id: '', branding_color: DEFAULT_COLOR,
         vat_rate: 18, target_margin: 30, currency: 'EUR'
     });
+
+    const fetchTeam = useCallback(async () => {
+        if (user?.organization_role !== 'OWNER') return;
+        setTeamLoading(true);
+        try {
+            const members = await apiService.getTeamMembers();
+            setTeamMembers(members);
+        } catch (error) {
+            console.error("Failed to fetch team", error);
+        } finally {
+            setTeamLoading(false);
+        }
+    }, [user?.organization_role]);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -71,7 +105,8 @@ export const ProfileTab: React.FC = () => {
             } catch (error) { console.error(error); } finally { setLoading(false); }
         };
         fetchProfile();
-    }, []);
+        fetchTeam(); // Fetch team on mount
+    }, [fetchTeam]);
 
     useEffect(() => {
         const url = profile?.logo_url;
@@ -142,6 +177,50 @@ export const ProfileTab: React.FC = () => {
         }
     };
 
+    const handleInviteUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!inviteEmail) return;
+        
+        // Frontend Pre-Check
+        if (isPlanFull) {
+            alert(`Ju keni arritur limitin e planit tuaj (${maxUsers} përdorues). Ju lutem bëni upgrade.`);
+            return;
+        }
+
+        setInviting(true);
+        try {
+            const inviteRequest: InviteUserRequest = {
+                email: inviteEmail,
+                role: 'MEMBER'
+            };
+            
+            await apiService.inviteUser(inviteRequest);
+            alert(`Ftesa u dërgua me sukses tek ${inviteEmail}`);
+            setInviteEmail('');
+            fetchTeam(); // Refresh list
+        } catch (err: any) {
+            // Handle Backend Quota Error specifically
+            if (err.response && err.response.status === 403) {
+                alert("Limiti i planit u arrit! Ju lutem kontaktoni suportin për të rritur paketën.");
+            } else {
+                alert("Dështoi dërgimi i ftesës. Sigurohuni që email është i saktë.");
+            }
+        } finally {
+            setInviting(false);
+        }
+    };
+
+    const handleRemoveMember = async (id: string) => {
+        if (window.confirm("A jeni i sigurt që doni ta largoni këtë anëtar?")) {
+            try {
+                await apiService.removeTeamMember(id);
+                fetchTeam(); // Refresh list
+            } catch {
+                alert("Dështoi largimi i anëtarit.");
+            }
+        }
+    };
+
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>;
 
     return (
@@ -178,15 +257,13 @@ export const ProfileTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* FORM CARD */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-8">
+                {/* FORM CARD */}
                 <form onSubmit={handleProfileSubmit} className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 space-y-8 shadow-2xl relative overflow-hidden flex flex-col backdrop-blur-md">
-                    
                     {/* SECTION 1: IDENTITY */}
                     <div>
                         <SectionHeader icon={<Building2 className="w-6 h-6 text-blue-400" />} title={t('business.firmData')} />
                         <div className="space-y-6">
-                            {/* PHOENIX UI FIX: Changed label to 'BUSINESS NAME' */}
                             <FormField label={t('business.businessName', 'BUSINESS NAME')} icon={<Building2 />}>
                                 <input type="text" name="firm_name" value={formData.firm_name} onChange={(e) => setFormData({ ...formData, firm_name: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all text-sm placeholder:text-gray-600" placeholder={t('business.firmNamePlaceholder')} />
                             </FormField>
@@ -246,6 +323,101 @@ export const ProfileTab: React.FC = () => {
                         </button>
                     </div>
                 </form>
+
+                {/* PHOENIX: TEAM MANAGEMENT CARD (LIVE) */}
+                {(!user?.organization_role || user?.organization_role === 'OWNER') && (
+                    <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-md">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-emerald-700"></div>
+                        
+                        <div className="flex justify-between items-start mb-6">
+                            <SectionHeader icon={<Users className="w-6 h-6 text-emerald-400" />} title="Menaxhimi i Ekipit" />
+                            
+                            {/* QUOTA INDICATOR */}
+                            <div className="flex flex-col items-end">
+                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isPlanFull ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'}`}>
+                                    <Crown size={14} />
+                                    <span className="text-xs font-bold uppercase tracking-wider">{currentPlan}</span>
+                                </div>
+                                <span className="text-[10px] text-gray-500 mt-1 font-mono uppercase tracking-widest">
+                                    {currentUsage} / {maxUsers} Përdorues
+                                </span>
+                            </div>
+                        </div>
+
+                        <p className="text-gray-400 text-sm mb-6">Ftoni anëtarë të ri në ekipin tuaj për të bashkëpunuar në të njëjtin panel.</p>
+                        
+                        {/* INVITE FORM */}
+                        <form onSubmit={handleInviteUser} className="flex flex-col sm:flex-row gap-4 items-end mb-8 border-b border-white/10 pb-8">
+                            <div className="w-full flex-1">
+                                <FormField label="Email i Bashkëpunëtorit" icon={<Mail />}>
+                                    <input 
+                                        type="email" 
+                                        value={inviteEmail} 
+                                        onChange={(e) => setInviteEmail(e.target.value)} 
+                                        placeholder="shembull@kompania.com"
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-emerald-500/50 outline-none transition-all text-sm disabled:opacity-50" 
+                                        required
+                                        disabled={isPlanFull}
+                                    />
+                                </FormField>
+                            </div>
+                            <button 
+                                type="submit" 
+                                disabled={inviting || !inviteEmail || isPlanFull}
+                                className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {inviting ? <Loader2 className="animate-spin" size={18} /> : <UserPlus size={18} />}
+                                {isPlanFull ? "Limiti u Arrit" : "Dërgo Ftesën"}
+                            </button>
+                        </form>
+
+                        {/* LIVE MEMBER LIST */}
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Anëtarët e Ekipit</h4>
+                            {teamLoading ? (
+                                <div className="text-center py-4"><Loader2 className="w-6 h-6 animate-spin text-gray-500 mx-auto" /></div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {teamMembers.map(member => (
+                                        <div key={member.id} className="flex items-center justify-between p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-black/30 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 border border-blue-500/30 font-bold">
+                                                    {member.username.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="text-white font-medium text-sm">{member.email}</p>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${member.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                                                            {member.status || 'Active'}
+                                                        </span>
+                                                        <span className="text-[10px] text-gray-500 font-mono">
+                                                            {member.organization_role || 'MEMBER'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {member.organization_role !== 'OWNER' && (
+                                                <button 
+                                                    onClick={() => handleRemoveMember(member.id)}
+                                                    className="p-2 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                                    title="Largo Anëtarin"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
+                                            {member.organization_role === 'OWNER' && (
+                                                <div className="p-2 text-emerald-500/50" title="Pronari">
+                                                    <Shield size={18} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </motion.div>
     );

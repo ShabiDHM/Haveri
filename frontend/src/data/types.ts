@@ -1,12 +1,32 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V2.4 (SOURCE LINK - COMPLETE)
-// 1. SCHEMA CHANGE: Added 'source_archive_id' to the Expense interface.
-// 2. PURPOSE: Allows the frontend to know when an expense has an original document attached.
+// PHOENIX PROTOCOL - TYPES V2.6 (PLAN TIER ADDED)
+// 1. SCHEMA CHANGE: Added 'plan_tier' to User interface.
+// 2. PURPOSE: Allows the UI to show the current subscription level and enforce visual quotas.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
-export interface User { id: string; email: string; username: string; role: 'ADMIN' | 'LAWYER' | 'CLIENT'; status: 'active' | 'inactive'; created_at: string; token?: string; subscription_status?: string; business_profile?: BusinessProfile; }
+export interface User { 
+    id: string; 
+    email: string; 
+    username: string; 
+    role: 'ADMIN' | 'LAWYER' | 'CLIENT'; 
+    status: 'active' | 'inactive'; 
+    created_at: string; 
+    token?: string; 
+    subscription_status?: string; 
+    business_profile?: BusinessProfile;
+    
+    // Multi-Tenant Fields
+    organization_id?: string;
+    organization_role?: 'OWNER' | 'MEMBER' | 'VIEWER';
+    organization_name?: string;
+    logo?: string;
+    plan_tier?: 'SOLO' | 'STARTUP' | 'GROWTH' | 'ENTERPRISE'; // PHOENIX: Added Plan Tier
+}
+
 export type AdminUser = User;
+
+// ... (Existing Interfaces - Unchanged) ...
 export interface Case { id: string; case_number: string; case_name: string; title: string; status: 'open' | 'closed' | 'pending' | 'archived'; client?: { name: string; phone: string; email: string; }; opposing_party?: { name: string; lawyer: string; }; court_info?: { name: string; judge: string; }; description: string; created_at: string; updated_at: string; tags: string[]; chat_history?: ChatMessage[]; document_count?: number; alert_count?: number; event_count?: number; is_shared?: boolean; }
 export interface Document { id: string; file_name: string; file_type: string; mime_type?: string; storage_key: string; uploaded_by: string; created_at: string; status: 'UPLOADING' | 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED'; summary?: string; risk_score?: number; ocr_status?: string; processed_text_storage_key?: string; preview_storage_key?: string; error_message?: string; progress_percent?: number; progress_message?: string; is_shared?: boolean; }
 export interface ChatMessage { role: 'user' | 'ai'; content: string; timestamp: string; }
@@ -90,7 +110,7 @@ export interface Expense {
     currency: string; 
     receipt_url?: string; 
     related_case_id?: string; 
-    source_archive_id?: string; // PHOENIX: Link to the original scanned document
+    source_archive_id?: string; 
 }
 
 export interface ExpenseCreateRequest { 
@@ -99,7 +119,7 @@ export interface ExpenseCreateRequest {
     description?: string; 
     date?: string; 
     related_case_id?: string; 
-    source_archive_id?: string; // PHOENIX: Allow passing the source ID
+    source_archive_id?: string; 
 }
 
 export interface ExpenseUpdate { 
@@ -108,7 +128,7 @@ export interface ExpenseUpdate {
     description?: string; 
     date?: string; 
     related_case_id?: string; 
-    source_archive_id?: string; // PHOENIX: Allow updating the link
+    source_archive_id?: string; 
 }
 
 export interface CaseFinancialSummary { case_id: string; case_title: string; case_number: string; total_billed: number; total_expenses: number; net_balance: number; }
@@ -138,10 +158,14 @@ export interface Ingredient { inventory_item_id: string; quantity_required: numb
 export interface Recipe { _id: string; product_name: string; ingredients: Ingredient[]; }
 export interface RecipeCreate { product_name: string; ingredients: Ingredient[]; }
 export interface RecipeImportResult { recipes_created: number; missing_ingredients: string[]; }
+
 export interface LoginRequest { username: string; password: string; }
-export interface RegisterRequest { email: string; password: string; username: string; }
+export interface RegisterRequest { email: string; password: string; username: string; full_name?: string; }
 export interface ChangePasswordRequest { current_password: string; new_password: string; }
 export interface UpdateUserRequest { username?: string; email?: string; role?: string; subscription_status?: string; status?: 'active' | 'inactive'; }
+
+export interface InviteUserRequest { email: string; role: 'MEMBER' | 'VIEWER' | 'ADMIN'; }
+
 export interface CreateCaseRequest { case_number: string; title: string; case_name?: string; description?: string; clientName?: string; clientEmail?: string; clientPhone?: string; status?: string; }
 export interface DeletedDocumentResponse { documentId: string; deletedFindingIds: string[]; }
 export interface CalendarEventCreateRequest { title: string; description?: string; start_date: string; end_date?: string; is_all_day?: boolean; event_type: string; case_id?: string; location?: string; notes?: string; priority?: string; attendees?: string[]; is_public?: boolean; }

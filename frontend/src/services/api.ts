@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V8.5 (ASK DOCUMENT AI)
-// 1. FEATURE: Added 'askDocumentQuestion' to enable the 'Ask AI' functionality for specific archive documents.
-// 2. INTEGRITY: Fully backward compatible with all previous service definitions.
+// PHOENIX PROTOCOL - API V8.6 (TEAM MANAGEMENT INTEGRATION)
+// 1. FEATURE: Added 'inviteUser', 'getTeamMembers', and 'removeTeamMember' to support corporate accounts.
+// 2. INTEGRITY: Preserved ALL 80+ existing methods (including AI, Archive, Drafting, Finance).
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -11,7 +11,7 @@ import type {
     BusinessProfile, BusinessProfileUpdate, Invoice, InvoiceCreateRequest, InvoiceItem,
     ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
     InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction,
-    StrategicBriefingResponse
+    StrategicBriefingResponse, InviteUserRequest // PHOENIX: Imported InviteUserRequest
 } from '../data/types';
 
 export interface DailyBriefingResponse { id: string; content: string; created_at: string; tasks_summary?: string; }
@@ -74,6 +74,21 @@ class ApiService {
     public async fetchUserProfile(): Promise<User> { const response = await this.axiosInstance.get<User>('/users/me'); return response.data; }
     public async changePassword(data: ChangePasswordRequest): Promise<void> { await this.axiosInstance.post('/auth/change-password', data); }
     public async deleteAccount(): Promise<void> { await this.axiosInstance.delete('/users/me'); }
+
+    // --- PHOENIX: TEAM MANAGEMENT (NEW METHODS) ---
+    public async inviteUser(data: InviteUserRequest): Promise<any> {
+        const response = await this.axiosInstance.post('/users/invite', data);
+        return response.data;
+    }
+    public async getTeamMembers(): Promise<User[]> {
+        const response = await this.axiosInstance.get<User[]>('/users/team');
+        return response.data;
+    }
+    public async removeTeamMember(userId: string): Promise<any> {
+        const response = await this.axiosInstance.delete(`/users/team/${userId}`);
+        return response.data;
+    }
+    // ----------------------------------------------
 
     // --- MESSAGING ---
     public async sendClientMessage(caseId: string, data: { firstName: string, lastName: string, email: string, phone: string, message: string }) {

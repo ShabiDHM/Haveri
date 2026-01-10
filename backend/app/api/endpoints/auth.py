@@ -1,4 +1,8 @@
-# FILE: backend/app/api/endpoints/auth.py (DIAGNOSTIC VERSION - FOR OBSERVATION ONLY)
+# FILE: backend/app/api/endpoints/auth.py
+# PHOENIX PROTOCOL - AUTH ENGINE V5.2 (CONTEXT AWARE)
+# 1. FEATURE: Injects 'org_id' into JWT. Defaults to 'user_id' if no Org exists (Legacy Support).
+# 2. LOGIC: This unifies Solo and Corporate data access under one 'org_id' parameter.
+
 from datetime import timedelta
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
@@ -20,63 +24,69 @@ class ChangePasswordSchema(BaseModel):
     old_password: str
     new_password: str
 
-# ... (rest of the file is unchanged) ...
-
 @router.post("/login", response_model=Token)
 async def login_access_token(response: Response, form_data: UserLogin, db: Database = Depends(get_db)) -> Any:
-    # --- PHOENIX DIAGNOSTIC LOGGING ---
-    print("\n\n--- [DIAGNOSTIC] LOGIN ATTEMPT RECEIVED ---")
-    print(f"[DIAGNOSTIC] Received Username/Email: '{form_data.username}'")
-    print(f"[DIAGNOSTIC] Received Password: '{form_data.password}'")
-    
+    # 1. Authenticate
     normalized_username = form_data.username.lower()
-    
-    print(f"[DIAGNOSTIC] Normalized Username for DB search: '{normalized_username}'")
-
     user = user_service.authenticate(db, username=normalized_username, password=form_data.password)
     
     if not user:
-        print("[DIAGNOSTIC] RESULT: user_service.authenticate returned None. Authentication FAILED.")
-        
-        temp_user = user_service.get_user_by_email(db, normalized_username)
-        if temp_user:
-            print("[DIAGNOSTIC] User was found in DB by that email.")
-            print(f"[DIAGNOSTIC] Stored Hashed Password: {temp_user.hashed_password}")
-            
-            from app.core.security import get_password_hash
-            newly_hashed_password = get_password_hash(form_data.password)
-            print(f"[DIAGNOSTIC] Newly Hashed version of received password: {newly_hashed_password}")
-        else:
-            print("[DIAGNOSTIC] User was NOT found in the database by that email.")
-
-        print("--- [DIAGNOSTIC] END LOGIN ATTEMPT ---\n\n")
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     
-    print("[DIAGNOSTIC] RESULT: Authentication SUCCEEDED.")
-    print("--- [DIAGNOSTIC] END LOGIN ATTEMPT ---\n\n")
-
+    # 2. Check Status
     if user.subscription_status == "INACTIVE":
         raise HTTPException(status_code=403, detail="Llogaria juaj është në pritje të miratimit nga Administratori.")
     
+    # 3. Update Stats
     user_service.update_last_login(db, str(user.id))
-    access_token = security.create_access_token(data={"id": str(user.id), "role": user.role})
+
+    # 4. PHOENIX: CONTEXT DETERMINATION
+    # If user belongs to an Org, use that ID. If solo, use their own User ID as the "Org ID".
+    # This allows the frontend to always query by 'org_id' uniformly.
+    context_org_id = str(user.organization_id) if user.organization_id else str(user.id)
+
+    # 5. Generate Tokens
+    access_token_payload = {
+        "id": str(user.id),
+        "role": user.role,
+        "org_id": context_org_id,
+        "org_role": user.organization_role
+    }
+
+    access_token = security.create_access_token(data=access_token_payload)
+    
     refresh_token_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
     refresh_token = security.create_refresh_token(data={"id": str(user.id)}, expires_delta=refresh_token_expires)
-    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, secure=settings.ENVIRONMENT != "development", samesite="lax", max_age=int(refresh_token_expires.total_seconds()))
+    
+    # 6. Set Cookies
+    response.set_cookie(
+        key="refresh_token", 
+        value=refresh_token, 
+        httponly=True, 
+        secure=settings.ENVIRONMENT != "development", 
+        samesite="lax", 
+        max_age=int(refresh_token_expires.total_seconds())
+    )
+    
     return {"access_token": access_token, "token_type": "bearer"}
 
-# ... (rest of the file is unchanged) ...
 async def get_user_from_refresh_token(request: Request, db: Database = Depends(get_db)) -> UserInDB:
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token not found")
     try:
         payload = security.decode_token(refresh_token)
-        if payload.get("type") != "refresh": raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+        if payload.get("type") != "refresh":
+             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+        
         user_id_str = payload.get("sub")
-        if user_id_str is None: raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+        if user_id_str is None: 
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+        
         user = user_service.get_user_by_id(db, ObjectId(user_id_str))
-        if user is None: raise HTTPException(status_code=404, detail="User not found")
+        if user is None: 
+            raise HTTPException(status_code=404, detail="User not found")
+        
         return user
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Could not validate credentials: {e}")
@@ -89,7 +99,12 @@ async def register_user(user_in: UserCreate, db: Database = Depends(get_db)) -> 
         raise HTTPException(status_code=409, detail="A user with this email already exists.")
     if user_service.get_user_by_username(db, username=user_in.username):
         raise HTTPException(status_code=409, detail="A user with this username already exists.")
+    
     user_in.subscription_status = "INACTIVE" 
+    
+    # On register, organization_id is None (Personal Mode)
+    # If you wanted to Auto-Create an Org on register, you would do it here.
+    
     user = user_service.create(db, obj_in=user_in)
     return user
 
@@ -97,7 +112,18 @@ async def register_user(user_in: UserCreate, db: Database = Depends(get_db)) -> 
 async def refresh_token(current_user: UserInDB = Depends(get_user_from_refresh_token)) -> Any:
     if current_user.subscription_status == "INACTIVE":
         raise HTTPException(status_code=403, detail="ACCOUNT_PENDING")
-    new_access_token = security.create_access_token(data={"id": str(current_user.id), "role": current_user.role})
+    
+    # PHOENIX: Maintain Context on Refresh
+    context_org_id = str(current_user.organization_id) if current_user.organization_id else str(current_user.id)
+    
+    new_payload = {
+        "id": str(current_user.id),
+        "role": current_user.role,
+        "org_id": context_org_id,
+        "org_role": current_user.organization_role
+    }
+
+    new_access_token = security.create_access_token(data=new_payload)
     return {"access_token": new_access_token, "token_type": "bearer"}
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
