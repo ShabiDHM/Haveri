@@ -1,10 +1,15 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.6 (IMPORT FIX)
-// 1. CRITICAL FIX: Corrected the 'lucide-react' import. Re-added 'MessageSquare' for the profile dropdown's Support link and removed the unused 'Inbox' icon.
-// 2. STATUS: The component is now free of all linter errors and warnings.
+// PHOENIX PROTOCOL - HEADER V6.7 (ADMIN & NAV FIX)
+// 1. FEATURE: Added 'Admin' tab visibility logic. It now appears ONLY if user.role === 'ADMIN'.
+// 2. UI: Added 'Shield' icon for the Admin tab.
+// 3. I18N: Ensured 'Zyra Ime' is the default fallback for the main business dashboard link.
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, MessageSquare, Menu, FileText, Package, FolderOpen, Sparkles, Building2, X } from 'lucide-react';
+import { 
+    Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, 
+    MessageSquare, Menu, FileText, Package, FolderOpen, 
+    Sparkles, Building2, X, Shield // PHOENIX: Imported Shield for Admin
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
@@ -66,6 +71,7 @@ const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProfileOpen]);
   
+  // PHOENIX: Dynamic Navigation Construction
   const navItems = [
       { label: t('sidebar.business', 'Zyra Ime'), path: '/business', icon: LayoutDashboard, exact: true },
       { label: t('business.finance', 'Financat'), path: '/business/finance', icon: FileText },
@@ -75,6 +81,16 @@ const Header: React.FC = () => {
       { label: t('business.profile', 'Profili'), path: '/business/profile', icon: Building2 },
       { label: t('sidebar.haveri_ai', 'Haveri AI'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
   ];
+
+  // PHOENIX: Inject Admin Tab if Role is ADMIN
+  if (user?.role === 'ADMIN') {
+      navItems.push({
+          label: t('sidebar.admin', 'Admin'),
+          path: '/admin',
+          icon: Shield,
+          exact: false // Matches sub-routes like /admin/users
+      } as any);
+  }
 
   return (
     <header className="h-16 bg-background-dark/80 backdrop-blur-md border-b border-glass-edge flex items-center justify-between px-4 sm:px-6 z-40 sticky top-0">
@@ -86,10 +102,12 @@ const Header: React.FC = () => {
 
         <nav className="hidden lg:flex items-center gap-1">
             {navItems.map(item => {
+                // Determine active state
                 const isActive = item.exact 
                     ? location.pathname === item.path 
                     : location.pathname.startsWith(item.path);
 
+                // Special handling for Haveri AI dynamic path
                 const isHaveriActive = item.path.startsWith('/cases') && location.pathname.startsWith('/cases');
 
                 return (
