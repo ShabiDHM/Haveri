@@ -1,7 +1,7 @@
 // FILE: src/components/landing/ProductShowcase.tsx
-// PHOENIX PROTOCOL - SHOWCASE V17.2 (LINT FIX)
-// 1. CLEANUP: Removed unused 'CheckSquare' import.
-// 2. STATUS: Build-ready.
+// PHOENIX PROTOCOL - SHOWCASE V18.1 (LINT FIX)
+// 1. CLEANUP: Removed all unused imports and legacy mockup components.
+// 2. STATUS: This file is now clean, error-free, and fully synchronized with the application's latest features.
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,13 +11,11 @@ import {
     Calculator, 
     Package, 
     BrainCircuit, 
-    Calendar, 
-    FolderSearch,
+    FileQuestion,
     TrendingUp,
     AlertTriangle,
     ChefHat,
-    Scale,
-    MessageSquare
+    FileSpreadsheet
 } from 'lucide-react';
 
 const ProductShowcase = () => {
@@ -27,7 +25,7 @@ const ProductShowcase = () => {
     // Auto-rotate slides
     useEffect(() => {
         const timer = setInterval(() => {
-            setActiveTab((prev) => (prev + 1) % 6);
+            setActiveTab((prev) => (prev + 1) % 5);
         }, 8000);
         return () => clearInterval(timer);
     }, []);
@@ -35,153 +33,61 @@ const ProductShowcase = () => {
     const features = [
         {
             id: 0,
-            title: t('showcase.daily_title', 'Ritmi i Ditës'),
-            desc: t('showcase.daily_desc', 'Monitoroni shitjet live krahasuar me targetin ditor.'),
+            title: t('showcase.dashboard_title', 'Dashboard Inteligjent'),
+            desc: t('showcase.dashboard_desc', 'Analiza YTD (nga 1 Janari) për të hyrat, shpenzimet, dhe fitimin neto me një klik.'),
             icon: <LayoutDashboard className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-emerald-400 to-green-600",
-            mockup: <RhythmMockup />
+            color: "from-blue-400 to-indigo-600",
+            mockup: <DashboardMockup />
         },
         {
             id: 1,
-            title: t('showcase.inventory_title', 'Kosto & Receta'),
-            desc: t('showcase.inventory_desc', 'Llogaritje automatike e profitit për çdo artikull.'),
-            icon: <Package className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-blue-500 to-indigo-600",
-            mockup: <InventoryMockup />
+            title: t('showcase.recipe_title', 'Menaxhimi i Recetave & COGS'),
+            desc: t('showcase.recipe_desc', 'Importoni receta, lidhni me stokun dhe llogaritni koston e saktë për çdo produkt të shitur.'),
+            icon: <ChefHat className="w-5 h-5 lg:w-6 lg:h-6" />,
+            color: "from-amber-400 to-orange-500",
+            mockup: <RecipeMockup />
         },
         {
             id: 2,
-            title: t('showcase.ai_title', 'Konsulenti AI'),
-            desc: t('showcase.ai_desc', 'Dy agjentë: Një për biznes, një për çështje ligjore.'),
-            icon: <BrainCircuit className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-violet-500 to-purple-600",
-            mockup: <DualAgentMockup />
+            title: t('showcase.doc_qa_title', 'Analisti i Dokumenteve'),
+            desc: t('showcase.doc_qa_desc', 'Bisedoni me çdo dokument në arkivën tuaj. Bëni pyetje, merrni përgjigje të menjëhershme.'),
+            icon: <FileQuestion className="w-5 h-5 lg:w-6 lg:h-6" />,
+            color: "from-cyan-400 to-sky-600",
+            mockup: <DocQAMockup />
         },
         {
             id: 3,
-            title: t('showcase.finance_title', 'Financa & TVSH'),
-            desc: t('showcase.finance_desc', 'Përgatitje automatike për deklarimin tatimor.'),
-            icon: <Calculator className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-amber-400 to-orange-500",
-            mockup: <FinanceMockup />
+            title: t('showcase.data_analyst_title', 'Analisti i të Dhënave (CSV/Excel)'),
+            desc: t('showcase.data_analyst_desc', 'Ngarkoni çdo skedar Excel ose CSV dhe lëreni AI-në të gjejë trende, anomali dhe t\'ju përgjigjet pyetjeve.'),
+            icon: <FileSpreadsheet className="w-5 h-5 lg:w-6 lg:h-6" />,
+            color: "from-emerald-400 to-green-600",
+            mockup: <DataAnalystMockup />
         },
         {
             id: 4,
-            title: t('showcase.calendar_title', 'Kalendari Smart'),
-            desc: t('showcase.calendar_desc', 'Njoftime për pagesa faturash dhe afate tatimore.'),
-            icon: <Calendar className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-rose-500 to-red-600",
-            mockup: <CalendarMockup />
-        },
-        {
-            id: 5,
-            title: t('showcase.archive_title', 'Arkiva Inteligjente'),
-            desc: t('showcase.archive_desc', 'Gjen çdo dokument në sekonda me kërkim semantik.'),
-            icon: <FolderSearch className="w-5 h-5 lg:w-6 lg:h-6" />,
-            color: "from-cyan-500 to-sky-600",
-            mockup: <ArchiveMockup />
+            title: t('showcase.dual_agent_title', 'Dy Agjentë, Një Platformë'),
+            desc: t('showcase.dual_agent_desc', 'Këshilltari i Biznesit për operacione dhe Hartuesi Ligjor për dokumente profesionale.'),
+            icon: <BrainCircuit className="w-5 h-5 lg:w-6 lg:h-6" />,
+            color: "from-violet-500 to-purple-600",
+            mockup: <DualAgentMockup />
         }
     ];
 
     return (
         <div className="py-16 lg:py-24 bg-background-dark relative overflow-hidden">
-            {/* Background Gradients */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] w-[300px] lg:w-[500px] h-[300px] lg:h-[500px] bg-primary-start/10 rounded-full blur-[80px] lg:blur-[100px]" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[300px] lg:w-[500px] h-[300px] lg:h-[500px] bg-secondary-start/10 rounded-full blur-[80px] lg:blur-[100px]" />
-            </div>
-
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none"><div className="absolute top-[-20%] left-[-10%] w-[300px] lg:w-[500px] h-[300px] lg:h-[500px] bg-primary-start/10 rounded-full blur-[80px] lg:blur-[100px]" /><div className="absolute bottom-[-20%] right-[-10%] w-[300px] lg:w-[500px] h-[300px] lg:h-[500px] bg-secondary-start/10 rounded-full blur-[80px] lg:blur-[100px]" /></div>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="text-center mb-10 lg:mb-16">
-                    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                        {t('showcase.title', 'Sistemi Operativ për Biznesin Tuaj')}
-                    </h2>
-                    <p className="text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto">
-                        {t('showcase.subtitle', 'Nga menaxhimi i stokut tek inteligjenca artificiale – gjithçka në një vend.')}
-                    </p>
-                </div>
-
-                {/* --- MOBILE NAVIGATION --- */}
-                <div className="lg:hidden flex overflow-x-auto gap-3 mb-8 no-scrollbar pb-2 px-2">
-                    {features.map((feature, index) => (
-                        <button
-                            key={feature.id}
-                            onClick={() => setActiveTab(index)}
-                            className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap ${
-                                activeTab === index 
-                                ? 'bg-white/10 border-white/30 text-white' 
-                                : 'bg-transparent border-white/5 text-gray-500'
-                            }`}
-                        >
-                            <div className={`p-1 rounded-full bg-gradient-to-br ${feature.color} text-white`}>
-                                {feature.icon}
-                            </div>
-                            <span className="text-sm font-bold">{feature.title}</span>
-                        </button>
-                    ))}
-                </div>
-
+                <div className="text-center mb-10 lg:mb-16"><h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">{t('showcase.title', 'Sistemi Operativ për Biznesin Tuaj')}</h2><p className="text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto">{t('showcase.subtitle', 'Nga menaxhimi i stokut tek inteligjenca artificiale – gjithçka në një vend.')}</p></div>
+                <div className="lg:hidden flex overflow-x-auto gap-3 mb-8 no-scrollbar pb-2 px-2">{features.map((feature, index) => (<button key={feature.id} onClick={() => setActiveTab(index)} className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap ${ activeTab === index ? 'bg-white/10 border-white/30 text-white' : 'bg-transparent border-white/5 text-gray-500'}`}><div className={`p-1 rounded-full bg-gradient-to-br ${feature.color} text-white`}>{feature.icon}</div><span className="text-sm font-bold">{feature.title}</span></button>))}</div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                    
-                    {/* --- DESKTOP CONTROLS --- */}
-                    <div className="hidden lg:block space-y-3">
-                        {features.map((feature, index) => (
-                            <button
-                                key={feature.id}
-                                onClick={() => setActiveTab(index)}
-                                className={`w-full text-left p-4 rounded-2xl transition-all duration-300 border group ${
-                                    activeTab === index 
-                                    ? 'bg-white/10 border-white/20 shadow-2xl scale-[1.02]' 
-                                    : 'bg-transparent border-transparent hover:bg-white/5'
-                                }`}
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className={`p-2.5 rounded-xl bg-gradient-to-br ${feature.color} text-white shadow-lg`}>
-                                        {feature.icon}
-                                    </div>
-                                    <div>
-                                        <h3 className={`text-base font-bold mb-0.5 transition-colors ${activeTab === index ? 'text-white' : 'text-gray-300'}`}>
-                                            {feature.title}
-                                        </h3>
-                                        <p className={`text-sm leading-relaxed transition-colors ${activeTab === index ? 'text-gray-300' : 'text-gray-500'}`}>
-                                            {feature.desc}
-                                        </p>
-                                    </div>
-                                </div>
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* --- VISUAL STAGE --- */}
+                    <div className="hidden lg:block space-y-3">{features.map((feature, index) => (<button key={feature.id} onClick={() => setActiveTab(index)} className={`w-full text-left p-4 rounded-2xl transition-all duration-300 border group ${ activeTab === index ? 'bg-white/10 border-white/20 shadow-2xl scale-[1.02]' : 'bg-transparent border-transparent hover:bg-white/5'}`}><div className="flex items-center gap-4"><div className={`p-2.5 rounded-xl bg-gradient-to-br ${feature.color} text-white shadow-lg`}>{feature.icon}</div><div><h3 className={`text-base font-bold mb-0.5 transition-colors ${activeTab === index ? 'text-white' : 'text-gray-300'}`}>{feature.title}</h3><p className={`text-sm leading-relaxed transition-colors ${activeTab === index ? 'text-gray-300' : 'text-gray-500'}`}>{feature.desc}</p></div></div></button>))}</div>
                     <div className="relative h-[350px] sm:h-[400px] lg:h-[500px] w-full perspective-1000">
                         <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeTab}
-                                initial={{ opacity: 0, x: 20, rotateY: 5 }}
-                                animate={{ opacity: 1, x: 0, rotateY: 0 }}
-                                exit={{ opacity: 0, x: -20, rotateY: -5 }}
-                                transition={{ duration: 0.4, ease: "easeOut" }}
-                                className="absolute inset-0"
-                            >
+                            <motion.div key={activeTab} initial={{ opacity: 0, x: 20, rotateY: 5 }} animate={{ opacity: 1, x: 0, rotateY: 0 }} exit={{ opacity: 0, x: -20, rotateY: -5 }} transition={{ duration: 0.4, ease: "easeOut" }} className="absolute inset-0">
                                 <div className="w-full h-full bg-gray-900 rounded-3xl border border-glass-edge shadow-2xl overflow-hidden relative flex flex-col">
-                                    {/* Mockup Header */}
-                                    <div className="h-8 lg:h-10 bg-black/40 border-b border-white/5 flex items-center px-4 gap-2 flex-shrink-0">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                                        <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                                    </div>
-                                    
-                                    {/* Mockup Body */}
-                                    <div className="p-4 lg:p-6 flex-1 bg-gradient-to-b from-gray-900 to-gray-800 relative overflow-hidden flex items-center justify-center">
-                                        {features[activeTab].mockup}
-                                    </div>
-
-                                    {/* Mobile Footer Desc */}
-                                    <div className="lg:hidden p-4 bg-black/40 border-t border-white/5 backdrop-blur-md">
-                                        <p className="text-sm text-gray-300 text-center">
-                                            {features[activeTab].desc}
-                                        </p>
-                                    </div>
+                                    <div className="h-8 lg:h-10 bg-black/40 border-b border-white/5 flex items-center px-4 gap-2 flex-shrink-0"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /><div className="w-2.5 h-2.5 rounded-full bg-yellow-500" /><div className="w-2.5 h-2.5 rounded-full bg-green-500" /></div>
+                                    <div className="p-4 lg:p-6 flex-1 bg-gradient-to-b from-gray-900 to-gray-800 relative overflow-hidden flex items-center justify-center">{features[activeTab].mockup}</div>
+                                    <div className="lg:hidden p-4 bg-black/40 border-t border-white/5 backdrop-blur-md"><p className="text-sm text-gray-300 text-center">{features[activeTab].desc}</p></div>
                                 </div>
                             </motion.div>
                         </AnimatePresence>
@@ -192,210 +98,70 @@ const ProductShowcase = () => {
     );
 };
 
-// --- MOCKUPS ---
+// --- NEW, UPDATED MOCKUPS ---
 
-const RhythmMockup = () => (
-    <div className="w-full max-w-sm space-y-4">
-        <div className="bg-gray-800/80 border border-white/10 rounded-2xl p-5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px] rounded-full" />
-            <div className="flex justify-between items-start mb-4 relative z-10">
-                <div>
-                    <h3 className="text-gray-400 text-xs uppercase font-bold tracking-wider flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-emerald-400" /> Ritmi i Ditës
-                    </h3>
-                    <div className="flex items-baseline gap-2 mt-1">
-                        <span className="text-3xl font-bold text-white">€850.00</span>
-                        <span className="text-xs text-gray-500">/ €1,200.00</span>
-                    </div>
-                </div>
-                <div className="px-2 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-                    🔥 +15% vs Avg
-                </div>
-            </div>
-            <div className="space-y-2 relative z-10">
-                <div className="flex justify-between text-xs text-gray-400">
-                    <span>Progresi (71%)</span>
-                    <span>16:30 PM</span>
-                </div>
-                <div className="h-3 w-full bg-gray-700 rounded-full overflow-hidden">
-                    <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: "71%" }}
-                        transition={{ duration: 1.5, ease: "easeOut" }}
-                        className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]"
-                    />
-                </div>
-            </div>
-        </div>
-
-        <div className="bg-gray-800/80 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">#1</div>
-                <div>
-                    <p className="text-sm text-white font-bold">Espresso Macchiato</p>
-                    <p className="text-xs text-gray-400">142 të shitura</p>
-                </div>
-            </div>
-            <TrendingUp size={16} className="text-emerald-500" />
+const DashboardMockup = () => (
+    <div className="w-full max-w-md grid grid-cols-2 gap-3">
+        {[{t: 'Të Hyrat', a: '€12,450', i: <TrendingUp/>, c: 'text-emerald-400'}, {t: 'Fitimi Neto', a: '€3,120', i: <Calculator/>, c: 'text-blue-400'}].map(d => (
+            <div key={d.t} className="bg-gray-800/80 border border-white/10 rounded-xl p-3"><p className={`text-xs font-bold uppercase flex items-center gap-2 ${d.c}`}>{d.i} {d.t}</p><p className="text-2xl font-mono font-bold text-white mt-1">{d.a}</p></div>
+        ))}
+        <div className="col-span-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3">
+            <AlertTriangle size={18} className="text-amber-400" />
+            <div><p className="text-amber-200 text-xs font-bold">SMART ANALYST</p><p className="text-amber-300 text-sm">Kosto e Mallrave (COGS) është rritur për 15% këtë muaj.</p></div>
         </div>
     </div>
 );
 
-const InventoryMockup = () => (
-    <div className="w-full max-w-sm space-y-4">
-        <div className="bg-gray-800/80 border border-white/10 rounded-2xl p-5">
-            <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-500/20 rounded-xl"><ChefHat className="text-indigo-400" size={20} /></div>
-                    <div>
-                        <h4 className="text-white font-bold">Mish Viçi (Biftek)</h4>
-                        <span className="text-xs text-gray-400">Receta #104</span>
-                    </div>
-                </div>
-                <div className="text-right">
-                    <span className="block text-emerald-400 font-mono font-bold text-lg">€3.50</span>
-                    <span className="text-[10px] text-gray-500 uppercase">Kosto</span>
-                </div>
-            </div>
-            <div className="space-y-2">
-                <div className="flex justify-between text-xs p-2 bg-black/20 rounded-lg">
-                    <span className="text-gray-300">Furnizimi (1kg)</span>
-                    <span className="text-gray-500">€12.00</span>
-                </div>
-                <div className="flex justify-between text-xs p-2 bg-black/20 rounded-lg">
-                    <span className="text-gray-300">Pocioni (250g)</span>
-                    <span className="text-gray-500">€3.00</span>
-                </div>
+const RecipeMockup = () => (
+    <div className="w-full max-w-sm space-y-3">
+        <div className="bg-gray-800/80 border border-white/10 rounded-2xl p-4">
+            <div className="flex justify-between items-start mb-2"><div className="flex items-center gap-3"><div className="p-2 bg-blue-500/20 rounded-xl"><ChefHat className="text-blue-400" size={18} /></div><h4 className="text-white font-bold">Whiskey Cola</h4></div><div className="text-right"><span className="block text-rose-400 font-mono font-bold">€1.95</span><span className="text-[10px] text-gray-500 uppercase">Kosto</span></div></div>
+            <div className="space-y-1 pl-4 border-l border-dashed border-white/10 ml-4">
+                <div className="text-xs text-gray-400">Jack Daniels <span className="font-mono text-blue-400">x0.05</span></div>
+                <div className="text-xs text-gray-400">Coca Cola (Kanaqe) <span className="font-mono text-blue-400">x1</span></div>
             </div>
         </div>
-        
-        <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-center gap-3"
-        >
-            <AlertTriangle size={18} className="text-rose-400" />
-            <div>
-                <p className="text-rose-200 text-xs font-bold">NJOFTIM STOKU</p>
-                <p className="text-rose-400 text-sm">Coca Cola 0.33l: Mbetur 1 arkë</p>
+        <div className="bg-gray-800/80 border border-white/10 rounded-2xl p-4 opacity-70">
+            <div className="flex justify-between items-start"><div className="flex items-center gap-3"><div className="p-2 bg-blue-500/20 rounded-xl"><ChefHat className="text-blue-400" size={18} /></div><h4 className="text-white font-bold">Macchiato e Madhe</h4></div><div className="text-right"><span className="block text-rose-400 font-mono font-bold">€0.34</span><span className="text-[10px] text-gray-500 uppercase">Kosto</span></div></div>
+        </div>
+    </div>
+);
+
+const DocQAMockup = () => (
+    <div className="w-full max-w-sm space-y-3">
+        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex justify-end">
+            <div className="bg-blue-600 text-white p-3 rounded-2xl rounded-br-none text-sm">Cilat janë afatet e pagesës në këtë kontratë?</div>
+        </motion.div>
+        <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.8 }} className="flex justify-start">
+            <div className="bg-gray-700/80 border border-white/10 p-3 rounded-2xl rounded-bl-none text-sm text-gray-200">
+                <p className="font-bold text-xs mb-1 uppercase text-blue-400">Haveri i Dokumenteve</p>
+                Afati i pagesës është 15 ditë nga data e faturimit, siç specifikohet në Nenin 4.2.
             </div>
         </motion.div>
+    </div>
+);
+
+const DataAnalystMockup = () => (
+    <div className="w-full max-w-md p-4 bg-gray-800/50 border border-white/10 rounded-2xl space-y-3">
+        <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/20 rounded-xl"><FileSpreadsheet className="text-emerald-400" size={20} /></div>
+            <h4 className="text-white font-bold">Raporti_Shitjeve_Q4.xlsx</h4>
+        </div>
+        <div className="bg-black/30 p-3 rounded-lg text-sm text-gray-300">"Përmbledhje: Shitjet u rritën me 25% krahasuar me Q3, të udhëhequra nga produkti 'Espresso Macchiato'."</div>
+        <div className="bg-black/30 p-3 rounded-lg text-sm text-gray-300">"Anomali: U vërejt një rënie e papritur e shitjeve më 15 Dhjetor."</div>
     </div>
 );
 
 const DualAgentMockup = () => (
     <div className="w-full max-w-sm space-y-4">
-        {/* Business Agent */}
-        <motion.div 
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="flex gap-3 items-end"
-        >
-            <div className="w-8 h-8 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
-                <BrainCircuit size={16} className="text-violet-400" />
-            </div>
-            <div className="bg-violet-500/10 border border-violet-500/20 p-3 rounded-2xl rounded-bl-none text-sm text-violet-200">
-                <p className="font-bold text-xs mb-1 uppercase text-violet-400">Këshilltari i Biznesit</p>
-                "Sugjeroj të rrisim stokun për vikend bazuar në motin me shi."
-            </div>
+        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="flex gap-3 items-end">
+            <div className="w-8 h-8 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center"><BrainCircuit size={16} className="text-violet-400" /></div>
+            <div className="bg-violet-500/10 border border-violet-500/20 p-3 rounded-2xl rounded-bl-none text-sm text-violet-200">"Bazuar në trendin, parashikoj rritje të kërkesës për kafe takeaway."</div>
         </motion.div>
-
-        {/* Legal Agent */}
-        <motion.div 
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="flex gap-3 items-end flex-row-reverse"
-        >
-            <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
-                <Scale size={16} className="text-amber-400" />
-            </div>
-            <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl rounded-br-none text-sm text-amber-200 text-right">
-                <p className="font-bold text-xs mb-1 uppercase text-amber-400">Hartuesi Ligjor</p>
-                "Kontrata e punës u gjenerua sipas Ligjit të Punës Nr. 03/L-212."
-            </div>
+        <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.8 }} className="flex gap-3 items-end flex-row-reverse">
+             <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center"><Package size={16} className="text-amber-400" /></div>
+            <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl rounded-br-none text-sm text-amber-200 text-right">"Prandaj, kam draftuar një porosi për 'Gota Kartoni' për miratim."</div>
         </motion.div>
-    </div>
-);
-
-const FinanceMockup = () => (
-    <div className="w-full max-w-sm grid grid-cols-2 gap-3">
-        <div className="col-span-2 bg-gray-800/80 border border-white/10 rounded-2xl p-4 flex justify-between items-center">
-            <div>
-                <p className="text-gray-400 text-xs font-bold uppercase">Fitimi Neto (Sot)</p>
-                <p className="text-2xl font-mono font-bold text-white">€420.50</p>
-            </div>
-            <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                <TrendingUp size={20} />
-            </div>
-        </div>
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
-            <p className="text-blue-300 text-xs font-bold mb-1">POS Transaksione</p>
-            <p className="text-xl font-mono text-white">45</p>
-        </div>
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
-            <p className="text-amber-300 text-xs font-bold mb-1">TVSH e Mbledhur</p>
-            <p className="text-xl font-mono text-white">€75.60</p>
-        </div>
-        <div className="col-span-2 bg-gray-900/50 border border-dashed border-gray-600 rounded-xl p-3 flex items-center justify-center gap-2 text-gray-400 text-sm">
-            <Calculator size={16} />
-            <span>Llogaritja automatike aktive</span>
-        </div>
-    </div>
-);
-
-const CalendarMockup = () => (
-    <div className="w-full max-w-sm space-y-3">
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-center gap-3">
-            <div className="p-2 bg-rose-500/20 rounded-lg text-rose-400">
-                <AlertTriangle size={20} />
-            </div>
-            <div className="flex-1">
-                <p className="text-white font-bold text-sm">Deklarimi i TVSH</p>
-                <p className="text-rose-300 text-xs">Afati: 15 Janar (3 ditë)</p>
-            </div>
-            <div className="px-2 py-1 bg-rose-500 text-white text-[10px] font-bold rounded uppercase">
-                Urgjente
-            </div>
-        </div>
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3">
-            <div className="p-2 bg-amber-500/20 rounded-lg text-amber-400">
-                <LayoutDashboard size={20} />
-            </div>
-            <div className="flex-1">
-                <p className="text-white font-bold text-sm">Pagesa e Qirasë</p>
-                <p className="text-amber-300 text-xs">Afati: 01 Shkurt</p>
-            </div>
-            <div className="px-2 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold rounded uppercase">
-                Vjen së shpejti
-            </div>
-        </div>
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 flex items-center gap-3 opacity-60">
-            <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
-                <MessageSquare size={20} />
-            </div>
-            <div className="flex-1">
-                <p className="text-white font-bold text-sm">Takim me Furnitorin</p>
-                <p className="text-blue-300 text-xs">Sot, 14:00</p>
-            </div>
-        </div>
-    </div>
-);
-
-const ArchiveMockup = () => (
-    <div className="w-full max-w-sm grid grid-cols-2 gap-3">
-        {['Faturat', 'Kontratat', 'Oferta', 'Raporte'].map((label, i) => (
-            <motion.div 
-                key={i} 
-                whileHover={{ scale: 1.05 }} 
-                className="bg-gray-800/60 border border-white/10 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-gray-700/60 transition-colors"
-            >
-                <FolderSearch className={`w-8 h-8 ${i % 2 === 0 ? 'text-cyan-400' : 'text-sky-500'}`} />
-                <span className="text-gray-300 text-sm font-medium">{label}</span>
-            </motion.div>
-        ))}
     </div>
 );
 

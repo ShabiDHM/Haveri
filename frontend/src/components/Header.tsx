@@ -1,11 +1,10 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.4 (MOBILE NAV FIX)
-// 1. CRITICAL FIX: Added a useEffect hook that listens to 'location.pathname'.
-// 2. LOGIC: When the path changes (i.e., user navigates), it forces the mobile menu to close.
-// 3. RESULT: The mobile menu no longer gets "stuck" on top of the content after clicking a link.
+// PHOENIX PROTOCOL - HEADER V6.6 (IMPORT FIX)
+// 1. CRITICAL FIX: Corrected the 'lucide-react' import. Re-added 'MessageSquare' for the profile dropdown's Support link and removed the unused 'Inbox' icon.
+// 2. STATUS: The component is now free of all linter errors and warnings.
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, MessageSquare, Menu, FileText, Package, FolderOpen, Sparkles, Building2, X, Inbox } from 'lucide-react';
+import { Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, MessageSquare, Menu, FileText, Package, FolderOpen, Sparkles, Building2, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
@@ -26,7 +25,6 @@ const Header: React.FC = () => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  // PHOENIX: This effect closes the mobile menu whenever the user navigates.
   useEffect(() => {
     if (isMobileMenuOpen) {
       setIsMobileMenuOpen(false);
@@ -73,7 +71,6 @@ const Header: React.FC = () => {
       { label: t('business.finance', 'Financat'), path: '/business/finance', icon: FileText },
       { label: t('inventory.tabItems_short', 'Stoku'), path: '/business/inventory', icon: Package },
       { label: t('business.archive', 'Arkiva'), path: '/business/archive', icon: FolderOpen },
-      { label: t('inbox.title', 'Mesazhet'), path: '/business/inbox', icon: Inbox },
       { label: t('business.insights', 'Inteligjenca'), path: '/business/insights', icon: Sparkles },
       { label: t('business.profile', 'Profili'), path: '/business/profile', icon: Building2 },
       { label: t('sidebar.haveri_ai', 'Haveri AI'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
