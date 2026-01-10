@@ -1,7 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V2.0 (SCROLL FIX)
-// 1. LAYOUT FIX: Changed the main content panel from 'min-height' to a fixed, responsive height ('h-[70vh]').
-// 2. UX: This forces the Transaction List to become scrollable when it overflows, preventing the page from expanding.
+// PHOENIX PROTOCOL - FINANCE TAB V2.1 (CHART POLISH)
+// 1. STYLE: Removed the box-shadow from Recharts tooltips for a cleaner look.
+// 2. I18N: Implemented a custom formatter to translate tooltip labels (e.g., 'total_revenue' -> 'Shitjet').
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -194,7 +194,6 @@ export const FinanceTab: React.FC = () => {
         setKpiModalOpen(true);
         setKpiAnalysis({ type: title, summary: '', contributors: [] });
         setKpiLoading(true);
-        
         try {
             const data = await apiService.getKpiInsight(type);
             setKpiAnalysis({ type: title, summary: data.summary, contributors: data.key_contributors });
@@ -209,22 +208,9 @@ export const FinanceTab: React.FC = () => {
         const combined: TransactionItem[] = [
             ...invoices.map(i => ({ id: i.id, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name, raw: i })),
             ...expenses.map(e => ({ id: e.id, type: 'expense' as const, date: e.date, amount: e.amount, label: e.category, raw: e })),
-            ...posTransactions.map(p => ({ 
-                id: (p as any).id || (p as any)._id, 
-                type: 'pos' as const, 
-                date: p.transaction_date || (p as any).date || new Date().toISOString(), 
-                amount: p.total_price ?? (p as any).amount ?? 0, 
-                label: p.product_name || (p as any).description || t('finance.posSale'),
-                raw: p 
-            })),
+            ...posTransactions.map(p => ({ id: (p as any).id || (p as any)._id, type: 'pos' as const, date: p.transaction_date || (p as any).date || new Date().toISOString(), amount: p.total_price ?? (p as any).amount ?? 0, label: p.product_name || (p as any).description || t('finance.posSale'), raw: p })),
         ];
-        
-        const filtered = combined.filter(tx => {
-            if (!searchTerm) return true;
-            return tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                   tx.amount.toString().includes(searchTerm);
-        });
-
+        const filtered = combined.filter(tx => !searchTerm || tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || tx.amount.toString().includes(searchTerm));
         return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [invoices, expenses, posTransactions, searchTerm, t]);
 
@@ -265,182 +251,47 @@ export const FinanceTab: React.FC = () => {
         }
     };
 
-    const generateDigitalReceipt = (expense: Expense): File => {
-        const content = `${t('finance.digitalReceipt.title')}\n------------------------------------------------\n${t('finance.digitalReceipt.category')}   ${expense.category}\n${t('finance.digitalReceipt.amount')}       €${expense.amount.toFixed(2)}\n${t('finance.digitalReceipt.date')}        ${new Date(expense.date).toLocaleDateString('sq-AL')}\n${t('finance.digitalReceipt.description')}  ${expense.description || t('finance.digitalReceipt.noDescription')}\n------------------------------------------------\n${t('finance.digitalReceipt.generated')}`;
-        const blob = new Blob([content], { type: 'text/plain' });
-        const fileName = `${t('finance.digitalReceipt.fileNamePrefix')}_${expense.category.replace(/\s+/g, '_')}_${expense.date}.txt`;
-        return new File([blob], fileName, { type: 'text/plain' });
-    };
-
+    const generateDigitalReceipt = (expense: Expense): File => { const content = `${t('finance.digitalReceipt.title')}\n------------------------------------------------\n${t('finance.digitalReceipt.category')}   ${expense.category}\n${t('finance.digitalReceipt.amount')}       €${expense.amount.toFixed(2)}\n${t('finance.digitalReceipt.date')}        ${new Date(expense.date).toLocaleDateString('sq-AL')}\n${t('finance.digitalReceipt.description')}  ${expense.description || t('finance.digitalReceipt.noDescription')}\n------------------------------------------------\n${t('finance.digitalReceipt.generated')}`; const blob = new Blob([content], { type: 'text/plain' }); const fileName = `${t('finance.digitalReceipt.fileNamePrefix')}_${expense.category.replace(/\s+/g, '_')}_${expense.date}.txt`; return new File([blob], fileName, { type: 'text/plain' }); };
     const submitArchiveInvoice = async () => { if (!selectedInvoiceId) return; try { await apiService.archiveInvoice(selectedInvoiceId, selectedCaseForInvoice || undefined); alert(t('general.saveSuccess')); setShowArchiveInvoiceModal(false); setSelectedCaseForInvoice(""); } catch { alert(t('error.generic')); } };
     const submitArchiveExpense = async () => { if (!selectedExpenseId) return; try { const ex = expenses.find(e => e.id === selectedExpenseId); if (!ex) return; let fileToUpload: File; if (ex.receipt_url) { const { blob, filename } = await apiService.getExpenseReceiptBlob(ex.id); fileToUpload = new File([blob], filename, { type: blob.type }); } else { fileToUpload = generateDigitalReceipt(ex); } await apiService.uploadArchiveItem(fileToUpload, fileToUpload.name, "EXPENSE", selectedCaseForInvoice || undefined, undefined); alert(t('general.saveSuccess')); setShowArchiveExpenseModal(false); setSelectedCaseForInvoice(""); } catch { alert(t('error.generic')); } };
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-            <style>{`
-                .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
-                .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.5); }
-                select option { background-color: #0f172a; color: #f9fafb; }
-            `}</style>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
-                <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
-                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={24} />} type="neutral" trend="+12%" onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} />
-                <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
-            </div>
-
+            <style>{`.custom-finance-scroll::-webkit-scrollbar { width: 6px; } .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.5); } select option { background-color: #0f172a; color: #f9fafb; }`}</style>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"><HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} /><HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} /><HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={24} />} type="neutral" trend="+12%" onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} /><HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} /></div>
             <ProactiveInsightBanner />
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
-                <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
-                <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
-                <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
-            </div>
-
-            {/* PHOENIX: Set a fixed, responsive height to enable scrolling */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md"><ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} /><ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} /><ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} /></div>
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md h-[70vh] min-h-[600px] flex flex-col shadow-2xl">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <Activity className="text-blue-500" />
-                        {t('finance.activityAndReports')}
-                    </h2>
-                    
-                    <div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md gap-1">
-                        <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
-                        <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
-                    </div>
-                </div>
-
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6"><h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3"><Activity className="text-blue-500" />{t('finance.activityAndReports')}</h2><div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md gap-1"><TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} /><TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} /></div></div>
                 <div className="flex-1 overflow-hidden relative">
-                    {activeTab === 'transactions' && (
-                        <div className="flex flex-col h-full space-y-6">
-                            <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
-                                <input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-base text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:bg-black/60 transition-all shadow-inner" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                            </div>
-                            
-                            <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-3">
-                                {loading ? (
-                                    <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>
-                                ) : (
-                                    <TransactionList 
-                                        allTransactions={allTransactions}
-                                        openingDocId={openingDocId}
-                                        onEditInvoice={handleEditInvoice}
-                                        onEditExpense={handleEditExpense}
-                                        onViewInvoice={handleViewInvoice}
-                                        onViewExpense={handleViewExpense}
-                                        onDownloadInvoice={handleDownloadInvoice}
-                                        onDownloadExpense={handleDownloadExpense}
-                                        onArchiveInvoice={handleArchiveInvoice}
-                                        onArchiveExpense={handleArchiveExpense}
-                                        onDeleteInvoice={handleDeleteInvoice}
-                                        onDeleteExpense={handleDeleteExpense}
-                                        onDeletePos={handleDeletePos}
-                                        onViewSourceDocument={handleViewSourceDocument}
-                                    />
-                                )}
+                    {activeTab === 'transactions' && (<div className="flex flex-col h-full space-y-6"><div className="relative group"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-base text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:bg-black/60 transition-all shadow-inner" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div><div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-3">{loading ? (<div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>) : (<TransactionList allTransactions={allTransactions} openingDocId={openingDocId} onEditInvoice={handleEditInvoice} onEditExpense={handleEditExpense} onViewInvoice={handleViewInvoice} onViewExpense={handleViewExpense} onDownloadInvoice={handleDownloadInvoice} onDownloadExpense={handleDownloadExpense} onArchiveInvoice={handleArchiveInvoice} onArchiveExpense={handleArchiveExpense} onDeleteInvoice={handleDeleteInvoice} onDeleteExpense={handleDeleteExpense} onDeletePos={handleDeletePos} onViewSourceDocument={handleViewSourceDocument} />)}</div></div>)}
+                    {activeTab === 'reports' && (<div className="h-full overflow-y-auto custom-finance-scroll pr-2">{!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
+                            <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-blue-400" /> {t('finance.analytics.salesTrend')}</h4>
+                            <div className="h-[300px] w-full">
+                                <ResponsiveContainer width="100%" height="100%"><AreaChart data={analyticsData.sales_trend}><defs><linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} /><YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} /><Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px', boxShadow: 'none' }} itemStyle={{ color: '#fff' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" /></AreaChart></ResponsiveContainer>
                             </div>
                         </div>
-                    )}
-
-                    {activeTab === 'reports' && (
-                        <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
-                            {!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
-                                        <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-blue-400" /> {t('finance.analytics.salesTrend')}</h4>
-                                        <div className="h-[300px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <AreaChart data={analyticsData.sales_trend}>
-                                                    <defs><linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
-                                                    <XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} />
-                                                    <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} />
-                                                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }} itemStyle={{ color: '#fff' }} />
-                                                    <Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </div>
-                                    <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
-                                        <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
-                                        <div className="h-[300px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={cleanTopProducts} layout="vertical" margin={{ left: 10 }}>
-                                                    <XAxis type="number" hide />
-                                                    <YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                                                    <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} />
-                                                    <Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>
-                                                        {cleanTopProducts.map((_, index) => (
-                                                            <Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />
-                                                        ))}
-                                                    </Bar>
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                        <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
+                            <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
+                            <div className="h-[300px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={cleanTopProducts} layout="vertical" margin={{ left: 10 }}>
+                                        <XAxis type="number" hide /><YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                                        <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px', boxShadow: 'none' }} itemStyle={{ color: '#fff' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} />
+                                        <Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>{cleanTopProducts.map((_, index) => (<Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />))}</Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
-                    )}
+                    </div>)}</div>)}
                 </div>
             </div>
-
-            <AnimatePresence>
-                {kpiModalOpen && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative">
-                            <div className="p-6 border-b border-white/10 bg-blue-900/20 flex justify-between items-center">
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2"><Sparkles size={20} className="text-yellow-400" />{t('finance.smartAnalyst.modalTitle', 'Smart Analyst')}: {kpiAnalysis?.type}</h3>
-                                <button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"><X size={20}/></button>
-                            </div>
-                            <div className="p-6 space-y-6">
-                                {kpiLoading ? (
-                                    <div className="flex flex-col items-center py-10 gap-4"><Loader2 size={40} className="animate-spin text-blue-500" /><p className="text-gray-400 animate-pulse">{t('finance.smartAnalyst.analyzing', 'Analyzing financial data...')}</p></div>
-                                ) : (
-                                    <>
-                                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4"><h4 className="text-sm font-bold text-blue-300 uppercase mb-2">{t('finance.smartAnalyst.executiveSummary', 'Executive Summary')}</h4><p className="text-white leading-relaxed">{kpiAnalysis?.summary}</p></div>
-                                        {kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (
-                                            <div>
-                                                <h4 className="text-sm font-bold text-gray-400 uppercase mb-3">{t('finance.smartAnalyst.keyContributors', 'Key Contributors')}</h4>
-                                                <div className="space-y-2">{kpiAnalysis.contributors.map((c, i) => (<div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-sm text-gray-200">{c}</span></div>))}</div>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
+            <AnimatePresence>{kpiModalOpen && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"><motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative"><div className="p-6 border-b border-white/10 bg-blue-900/20 flex justify-between items-center"><h3 className="text-xl font-bold text-white flex items-center gap-2"><Sparkles size={20} className="text-yellow-400" />{t('finance.smartAnalyst.modalTitle', 'Smart Analyst')}: {kpiAnalysis?.type}</h3><button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"><X size={20}/></button></div><div className="p-6 space-y-6">{kpiLoading ? (<div className="flex flex-col items-center py-10 gap-4"><Loader2 size={40} className="animate-spin text-blue-500" /><p className="text-gray-400 animate-pulse">{t('finance.smartAnalyst.analyzing', 'Analyzing financial data...')}</p></div>) : (<>{kpiAnalysis?.summary && <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4"><h4 className="text-sm font-bold text-blue-300 uppercase mb-2">{t('finance.smartAnalyst.executiveSummary', 'Executive Summary')}</h4><p className="text-white leading-relaxed">{kpiAnalysis?.summary}</p></div>}{kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (<div><h4 className="text-sm font-bold text-gray-400 uppercase mb-3">{t('finance.smartAnalyst.keyContributors', 'Key Contributors')}</h4><div className="space-y-2">{kpiAnalysis.contributors.map((c, i) => (<div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-sm text-gray-200">{c}</span></div>))}</div></div>)}</>)}</div></motion.div></motion.div>)}</AnimatePresence>
             <InvoiceModal isOpen={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
             <ExpenseModal isOpen={showExpenseModal} onClose={() => setShowExpenseModal(false)} expenseToEdit={selectedExpense} onSuccess={refreshData} />
-            
-            {showArchiveInvoiceModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20">
-                        <h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2>
-                        <div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div>
-                        <div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-500 transition-colors font-bold">{t('general.save')}</button></div>
-                    </div>
-                </div>
-            )}
-            
-            {showArchiveExpenseModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20">
-                        <h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2>
-                        <div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div>
-                        <div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white shadow-lg hover:bg-indigo-500 transition-colors font-bold">{t('general.save')}</button></div>
-                    </div>
-                </div>
-            )}
-            
+            {showArchiveInvoiceModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-500 transition-colors font-bold">{t('general.save')}</button></div></div></div>)}
+            {showArchiveExpenseModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white shadow-lg hover:bg-indigo-500 transition-colors font-bold">{t('general.save')}</button></div></div></div>)}
             {showImportModal && (<TransactionImporter onClose={() => setShowImportModal(false)} onSuccess={() => { refreshData(); setShowImportModal(false); }} t={t} />)}
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} onMinimize={closePreview} t={t} directUrl={viewingUrl} />}
         </motion.div>
