@@ -1,9 +1,7 @@
 // FILE: src/hooks/useArchiveData.ts
-// PHOENIX PROTOCOL - UNIFIED VIEW V5.0
-// 1. CORE FIX: 'fetchArchiveContent' now merges Global Root items AND Business Case items when at the top level.
-//    - This solves the "missing files" issue by showing legacy (root) and new (case) files together.
-// 2. LOGIC: Removed the restrictive filter that hid case items in the root view.
-// 3. UX: Uploads/Folders created in this view automatically go to the Business Case for consistency.
+// PHOENIX PROTOCOL - UNIFIED SEARCH V5.1
+// 1. CRITICAL FIX: The 'filteredItems' now correctly merges filtered files and filtered case-folders.
+// 2. LOGIC: This ensures that when a user searches, both documents AND relevant case folders appear in the results.
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { apiService, API_V1_URL } from '../services/api';
@@ -15,7 +13,6 @@ export type BreadcrumbType = { id: string | null; name: string; type: 'ROOT' | '
 export const useArchiveData = (initialCaseId?: string) => {
     const { t } = useTranslation();
     
-    // Start at ROOT, but this ROOT now represents a Unified View
     const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbType[]>([
         { id: null, name: t('business.archive'), type: 'ROOT' }
     ]);
@@ -42,24 +39,19 @@ export const useArchiveData = (initialCaseId?: string) => {
             let rawItems: any[] = [];
             
             if (active.type === 'ROOT') {
-                // 1. Fetch Legacy/Global Items (Root)
                 const globalItems = await apiService.getArchiveItems(undefined, undefined, "null");
                 
-                // 2. Fetch Business Case Items (New System)
                 let caseItems: any[] = [];
                 if (initialCaseId) {
                     try {
-                        // Fetch items located at the root of the Case ID
                         caseItems = await apiService.getArchiveItems(undefined, initialCaseId, "null");
                     } catch (e) {
                         console.warn("Could not fetch case items", e);
                     }
                 }
                 
-                // 3. MERGE Unified View
                 rawItems = [...globalItems, ...caseItems];
                 
-                // Deduplicate (just in case an item appears in both lists, unlikely but safe)
                 const seen = new Set();
                 rawItems = rawItems.filter(item => {
                     const id = item._id || item.id;
@@ -84,11 +76,10 @@ export const useArchiveData = (initialCaseId?: string) => {
         } finally {
             setLoading(false);
         }
-    }, [breadcrumbs, initialCaseId]); // Added initialCaseId dependency
+    }, [breadcrumbs, initialCaseId]);
 
     useEffect(() => { fetchArchiveContent(); }, [fetchArchiveContent]);
 
-    // SSE Listener (Unchanged logic, ensures real-time updates)
     useEffect(() => {
         const abortController = new AbortController();
         const setupStream = async () => {
@@ -137,10 +128,9 @@ export const useArchiveData = (initialCaseId?: string) => {
     const navigateTo = (index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
     const enterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name, type }]);
 
-    // CRUD - Intelligent Targeting
+    // CRUD
     const createFolder = async (name: string, category: string) => {
         const active = breadcrumbs[breadcrumbs.length - 1];
-        // If at ROOT, create inside the Business Case (if available) to modernize file structure
         const targetCaseId = active.type === 'CASE' 
             ? active.id! 
             : (active.type === 'ROOT' ? initialCaseId : undefined);
@@ -152,7 +142,6 @@ export const useArchiveData = (initialCaseId?: string) => {
     const uploadFile = async (file: File) => {
         setIsUploading(true);
         const active = breadcrumbs[breadcrumbs.length - 1];
-        // If at ROOT, upload to the Business Case so new files are Portal-ready
         const targetCaseId = active.type === 'CASE' 
             ? active.id! 
             : (active.type === 'ROOT' ? initialCaseId : undefined);
@@ -174,12 +163,40 @@ export const useArchiveData = (initialCaseId?: string) => {
     const currentView = breadcrumbs[breadcrumbs.length - 1];
     const isInsideCase = currentView.type === 'CASE';
     
+    // PHOENIX: UNIFIED FILTERING LOGIC
+    const filteredItems = useMemo(() => {
+        const lowerSearch = searchTerm.toLowerCase();
+        
+        // Filter regular files and folders
+        const items = archiveItems.filter(item => 
+            item.title.toLowerCase().includes(lowerSearch)
+        );
+
+        // Filter case-folders, but only if we are at the root
+        let caseFolders: ArchiveItemOut[] = [];
+        if (currentView.type === 'ROOT') {
+            caseFolders = cases
+                .filter(c => c.title.toLowerCase().includes(lowerSearch) || c.case_number.toLowerCase().includes(lowerSearch))
+                .map(c => ({
+                    id: c.id,
+                    title: c.title,
+                    item_type: 'FOLDER',
+                    file_type: 'Case Folder',
+                    created_at: c.created_at,
+                    // Mock the rest of the fields to match the type
+                    category: 'Cases',
+                    storage_key: '',
+                    file_size: 0
+                } as ArchiveItemOut));
+        }
+        
+        // Combine and return
+        return [...caseFolders, ...items];
+
+    }, [archiveItems, cases, searchTerm, currentView.type]);
+
+    // This is now redundant as it's handled in filteredItems
     const filteredCases = useMemo(() => cases.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.case_number.toLowerCase().includes(searchTerm.toLowerCase())), [cases, searchTerm]);
-    
-    // PHOENIX: Removed the filter that hid case items in ROOT view. Now strict search filtering only.
-    const filteredItems = useMemo(() => archiveItems.filter(item => { 
-        return item.title.toLowerCase().includes(searchTerm.toLowerCase()); 
-    }), [archiveItems, searchTerm]);
 
     return { loading, archiveItems, breadcrumbs, currentView, filteredCases, filteredItems, searchTerm, setSearchTerm, isUploading, isInsideCase, fetchArchiveContent, navigateTo, enterFolder, createFolder, uploadFile, deleteItem, renameItem, shareItem };
 };

@@ -1,7 +1,7 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - DUAL PANEL LAYOUT V21.2 (LAYOUT DELEGATION)
-// 1. CRITICAL FIX: Removed 'overflow-y-auto' from the parent container.
-// 2. LOGIC: This delegates scrolling control to the child components (ArchiveTab, DraftingPanel), allowing their internal layouts (like multi-column grids) to render correctly.
+// PHOENIX PROTOCOL - DUAL PANEL LAYOUT V22.0 (UI SIMPLIFICATION)
+// 1. CLEANUP: Removed the redundant 'Dokumentet' tab and all associated state/logic.
+// 2. LAYOUT: The right-hand panel now permanently displays the 'DraftingPanel'.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -9,15 +9,13 @@ import { Case } from '../data/types';
 import { apiService } from '../services/api';
 import ChatPanel, { ChatMode, Jurisdiction, AgentType } from '../components/ChatPanel';
 import DraftingPanel from '../components/DraftingPanel';
-import { ArchiveTab } from '../components/business/ArchiveTab';
 import { useDocumentSocket } from '../hooks/useDocumentSocket';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { AlertCircle, Loader2, FileText, PenTool } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 type CaseData = { details: Case | null; };
-type RightPanelTab = 'drafting' | 'documents';
 
 const CaseViewPage: React.FC = () => {
   const { t } = useTranslation();
@@ -27,7 +25,6 @@ const CaseViewPage: React.FC = () => {
   const [caseData, setCaseData] = useState<CaseData>({ details: null });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<RightPanelTab>('documents');
   
   const currentCaseId = useMemo(() => caseId || '', [caseId]);
   
@@ -109,23 +106,10 @@ const CaseViewPage: React.FC = () => {
                 />
             </div>
 
-            <div className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/10 flex flex-col p-4 sm:p-6 h-[85vh] md:min-h-[500px] md:max-h-[700px]">
-                <div className="flex bg-black/40 p-1.5 rounded-2xl border border-white/5 w-fit mb-4">
-                    <button onClick={() => setActiveTab('drafting')} className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'drafting' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
-                        <PenTool size={16} /> <span>{t('case.drafting', 'Drafting')}</span>
-                    </button>
-                    <button onClick={() => setActiveTab('documents')} className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'documents' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
-                        <FileText size={16} /> <span>{t('case.documents', 'Dokumentet')}</span>
-                    </button>
-                </div>
-
-                {/* PHOENIX: Removed 'overflow-y-auto' to let children handle their own scrolling */}
+            {/* PHOENIX: Simplified to always show DraftingPanel */}
+            <div className="bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-purple-900/10 flex flex-col h-[85vh] md:min-h-[500px] md:max-h-[700px]">
                 <div className="flex-1 min-h-0">
-                    {activeTab === 'drafting' ? (
-                        <DraftingPanel activeCaseId={caseData.details.id} className="h-full" />
-                    ) : (
-                        <ArchiveTab caseId={caseData.details.id} />
-                    )}
+                    <DraftingPanel activeCaseId={caseData.details.id} className="h-full" />
                 </div>
             </div>
 
