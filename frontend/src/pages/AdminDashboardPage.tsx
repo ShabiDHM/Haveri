@@ -1,12 +1,12 @@
 // FILE: src/pages/AdminDashboardPage.tsx
-// PHOENIX PROTOCOL - ADMIN DASHBOARD V2.5 (I18N OPTIMIZATION)
-// 1. REFACTOR: Replaced specific 'admin.search/cancel/save' keys with existing 'general.*' keys to immediately show Albanian text.
-// 2. I18N: Ensured every text element is wrapped in t() with a clean fallback.
-// 3. STATUS: Layout and Types preserved; Translation coverage maximized.
+// PHOENIX PROTOCOL - ADMIN DASHBOARD V2.6 (MULTI-TENANT CONTROL)
+// 1. FEATURE: Added 'Plan Tier' selector to the Edit Modal.
+// 2. FEATURE: Added visual indicators for Organization Role (Owner vs Member).
+// 3. UI: Updated table layout to display Plan info.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Users, Search, Edit2, Trash2, CheckCircle, Loader2, Clock } from 'lucide-react';
+import { Users, Search, Edit2, Trash2, CheckCircle, Loader2, Clock, Shield, Briefcase, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiService } from '../services/api';
 import { User, UpdateUserRequest } from '../data/types';
@@ -17,7 +17,8 @@ const AdminDashboardPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [editForm, setEditForm] = useState<UpdateUserRequest>({});
+    // PHOENIX: Expanded form state to include 'plan_tier'
+    const [editForm, setEditForm] = useState<UpdateUserRequest & { plan_tier?: string }>({});
 
     useEffect(() => {
         loadUsers();
@@ -32,7 +33,10 @@ const AdminDashboardPage: React.FC = () => {
                 id: u.id || u._id,
                 role: u.role || 'STANDARD',
                 status: u.status || 'inactive',
-                subscription_status: u.subscription_status || 'INACTIVE'
+                subscription_status: u.subscription_status || 'INACTIVE',
+                // Ensure plan_tier exists (default to SOLO if missing)
+                plan_tier: u.plan_tier || 'SOLO',
+                organization_role: u.organization_role || 'OWNER'
             }));
             const validUsers = normalizedData.filter((user: any) => user && typeof user.id === 'string' && user.id.trim() !== '');
             setUsers(validUsers);
@@ -52,6 +56,7 @@ const AdminDashboardPage: React.FC = () => {
             role: user.role,
             subscription_status: user.subscription_status,
             status: user.status,
+            plan_tier: user.plan_tier || 'SOLO' // PHOENIX: Load current plan
         });
     };
 
@@ -60,12 +65,15 @@ const AdminDashboardPage: React.FC = () => {
         if (!editingUser?.id) return;
         
         try {
-            const payload: UpdateUserRequest = {
+            // Note: The backend 'UpdateUserRequest' might need to be flexible to accept 'plan_tier'.
+            // Ensure your backend pydantic model accepts this field (we updated it in V5.4).
+            const payload: any = {
                 username: editForm.username,
                 email: editForm.email,
                 role: editForm.role,
                 subscription_status: editForm.subscription_status,
                 status: editForm.status,
+                plan_tier: editForm.plan_tier 
             };
 
             await apiService.updateUser(editingUser.id, payload);
@@ -79,7 +87,6 @@ const AdminDashboardPage: React.FC = () => {
     };
 
     const handleDeleteUser = async (userId: string) => {
-        // Uses 'admin.confirmDelete' which exists in your JSON
         if (!window.confirm(t('admin.confirmDelete', 'A jeni të sigurt që doni të fshini këtë përdorues?'))) return;
         try {
             await apiService.deleteUser(userId);
@@ -107,7 +114,6 @@ const AdminDashboardPage: React.FC = () => {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-hidden">
             <div className="mb-8">
-                {/* Existing Keys in your JSON */}
                 <h1 className="text-3xl font-bold text-text-primary mb-2">{t('admin.title', 'Paneli i Administratorit')}</h1>
                 <p className="text-text-secondary">{t('admin.subtitle', 'Menaxhimi i përdoruesve dhe sistemit.')}</p>
             </div>
@@ -128,16 +134,17 @@ const AdminDashboardPage: React.FC = () => {
                     <h3 className="text-lg font-semibold text-white">{t('admin.registeredUsers', 'Përdoruesit e Regjistruar')}</h3>
                     <div className="relative w-full sm:w-auto">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
-                        {/* PHOENIX FIX: Used 'general.search' which exists in JSON */}
                         <input type="text" placeholder={t('general.search', 'Kërko...')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full sm:w-64 pl-9 pr-4 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:ring-1 focus:ring-primary-start outline-none" />
                     </div>
                 </div>
 
                 <div className="w-full overflow-x-auto scrollbar-hide">
-                    <table className="w-full text-left text-sm text-text-secondary min-w-[800px]">
+                    <table className="w-full text-left text-sm text-text-secondary min-w-[1000px]">
                         <thead className="bg-black/20 text-text-primary uppercase text-xs">
                             <tr>
                                 <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.user', 'Përdoruesi')}</th>
+                                <th className="px-6 py-3 font-semibold tracking-wider">Organizata</th>
+                                <th className="px-6 py-3 font-semibold tracking-wider">Plani</th>
                                 <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.role', 'Roli')}</th>
                                 <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.status', 'Statusi')}</th>
                                 <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.registered', 'Regjistruar')}</th>
@@ -147,6 +154,7 @@ const AdminDashboardPage: React.FC = () => {
                         <tbody className="divide-y divide-white/5">
                             {filteredUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-white/5 transition-colors">
+                                    {/* User Info */}
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
                                             <div className="w-8 h-8 rounded-full bg-primary-start/20 flex items-center justify-center text-primary-start font-bold mr-3 border border-primary-start/30 shrink-0">
@@ -158,6 +166,27 @@ const AdminDashboardPage: React.FC = () => {
                                             </div>
                                         </div>
                                     </td>
+
+                                    {/* PHOENIX: Organization Role */}
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            {user.organization_role === 'OWNER' ? (
+                                                <Shield className="w-4 h-4 text-emerald-400" />
+                                            ) : (
+                                                <Briefcase className="w-4 h-4 text-blue-400" />
+                                            )}
+                                            <span className="text-xs font-medium text-gray-300">{user.organization_role || 'OWNER'}</span>
+                                        </div>
+                                    </td>
+
+                                    {/* PHOENIX: Plan Tier */}
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            {user.plan_tier !== 'SOLO' && <Crown className="w-3 h-3 text-amber-400" />}
+                                            <span className="text-xs font-mono uppercase text-gray-400">{user.plan_tier || 'SOLO'}</span>
+                                        </div>
+                                    </td>
+
                                     <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-medium border ${user.role.toUpperCase() === 'ADMIN' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>{user.role}</span></td>
                                     <td className="px-6 py-4">{renderStatusBadge(user)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{new Date(user.created_at).toLocaleDateString()}</td>
@@ -210,6 +239,21 @@ const AdminDashboardPage: React.FC = () => {
                                     </select>
                                 </div>
                             </div>
+
+                            {/* PHOENIX: PLAN SELECTION */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-400 uppercase mb-1">Paketa (Plan Tier)</label>
+                                <select 
+                                    value={editForm.plan_tier || 'SOLO'} 
+                                    onChange={e => setEditForm({ ...editForm, plan_tier: e.target.value })} 
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-amber-500 outline-none font-mono"
+                                >
+                                    <option value="SOLO">SOLO (1 Përdorues)</option>
+                                    <option value="STARTUP">STARTUP (5 Përdorues)</option>
+                                    <option value="GROWTH">GROWTH (10 Përdorues)</option>
+                                    <option value="ENTERPRISE">ENTERPRISE (50+)</option>
+                                </select>
+                            </div>
                             
                             <div>
                                 <label className="block text-xs font-medium text-gray-400 uppercase mb-1">{t('admin.editModal.accountStatus', 'Llogaria (Gatekeeper)')}</label>
@@ -223,9 +267,7 @@ const AdminDashboardPage: React.FC = () => {
                                 </select>
                             </div>
                             <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-white/10">
-                                {/* PHOENIX FIX: Used 'general.cancel' which exists in JSON */}
                                 <button type="button" onClick={() => setEditingUser(null)} className="px-4 py-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">{t('general.cancel', 'Anulo')}</button>
-                                {/* PHOENIX FIX: Used 'general.save' which exists in JSON */}
                                 <button type="submit" className="px-6 py-2 rounded-lg bg-primary-start hover:bg-primary-end text-white font-semibold shadow-lg shadow-primary-start/20 transition-all">{t('general.save', 'Ruaj')}</button>
                             </div>
                         </form>
