@@ -1,8 +1,7 @@
 // FILE: src/components/business/inventory/RecipeList.tsx
-// PHOENIX PROTOCOL - RECIPE LIST V3.0 (GRID LAYOUT)
-// 1. LAYOUT: Replaced the vertical list with a responsive grid for better organization.
-// 2. COMPONENT: Refactored the 'renderRecipeCard' into a dedicated card component with a vertical layout.
-// 3. STYLE: Ensured card styles are consistent with the rest of the application.
+// PHOENIX PROTOCOL - RECIPE LIST V3.1 (UI/UX ALIGNMENT)
+// 1. STYLE: Matched the 'RecipeCard' styling (font sizes, spacing) to the 'ItemCard'.
+// 2. READABILITY: Increased text size for recipe title and ingredients for better readability.
 
 import React from 'react';
 import { ChefHat, Edit, Trash2 } from 'lucide-react';
@@ -41,14 +40,15 @@ const RecipeCard: React.FC<{
                     <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-blue-400">
                         <ChefHat size={20} />
                     </div>
-                    {/* Placeholder for future top-right icons if needed */}
                 </div>
                 
+                {/* PHOENIX: Increased font size for consistency */}
                 <h2 className="text-lg font-bold text-gray-100 group-hover:text-white line-clamp-2">{recipe.product_name}</h2>
                 
-                <div className="mt-3 space-y-1.5 max-h-20 overflow-y-auto no-scrollbar pr-1">
+                <div className="mt-4 space-y-2 max-h-24 overflow-y-auto no-scrollbar pr-1">
                     {recipe.ingredients.map((ing, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-xs text-gray-400">
+                        // PHOENIX: Increased font size for readability
+                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-400">
                             <span className="opacity-50">•</span>
                             <span>{getIngredientName(ing.inventory_item_id)}</span>
                             <span className="font-mono text-blue-400">x{ing.quantity_required}</span>
@@ -93,7 +93,7 @@ export const RecipeList: React.FC<RecipeListProps> = ({ recipes, inventoryItems,
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
             {recipes.map(recipe => (
                 <RecipeCard 
                     key={recipe._id}

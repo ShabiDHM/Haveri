@@ -1,8 +1,8 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V3.0 (GRID LAYOUT)
-// 1. LAYOUT: Replaced the vertical list with a responsive grid for 'Artikujt'.
-// 2. COMPONENT: Created a dedicated 'ItemCard' component with a vertical layout, matching the Recipes view.
-// 3. UX: Integrated POS items into the main grid with a visual badge, removing the collapsible section.
+// PHOENIX PROTOCOL - INVENTORY LIST V3.1 (UI/UX ALIGNMENT)
+// 1. STYLE: Matched the 'ItemCard' styling (font sizes, spacing, layout) to the 'RecipeCard'.
+// 2. READABILITY: Increased text size for better readability and visual consistency.
+// 3. INTEGRITY: Preserved all existing functionality.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -41,15 +41,16 @@ const ItemCard: React.FC<{
                     </div>
                     {isLowStock && (
                         <div className="flex items-center gap-1.5 bg-rose-500/10 text-rose-400 text-[10px] px-2 py-1 rounded-full uppercase tracking-wider font-bold">
-                            <AlertTriangle size={12} /> {t('inventory.lowStock', 'Low')}
+                            <AlertTriangle size={12} /> {t('inventory.lowStock', 'Stoku Kritik')}
                         </div>
                     )}
                 </div>
                 
+                {/* PHOENIX: Matched RecipeCard font size and spacing */}
                 <h2 className="text-lg font-bold text-gray-100 group-hover:text-white line-clamp-2">{item.name}</h2>
                 
                 <div className="mt-3">
-                    <span className={`text-xl font-mono ${isLowStock ? 'text-rose-400' : 'text-gray-300'}`}>
+                    <span className={`text-2xl font-mono ${isLowStock ? 'text-rose-400' : 'text-gray-200'}`}>
                         {item.current_stock.toFixed(3)}
                     </span>
                     <span className="ml-2 text-sm text-gray-500">{item.unit}</span>
@@ -60,6 +61,7 @@ const ItemCard: React.FC<{
             <div className="pt-4 mt-4 border-t border-white/10 flex justify-between items-end">
                 <div>
                     <span className="block text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('inventory.items.costPerUnit')}</span>
+                    {/* PHOENIX: Matched RecipeCard font size */}
                     <span className="text-xl font-mono font-bold text-emerald-400">
                         €{item.cost_per_unit.toFixed(2)}
                     </span>
