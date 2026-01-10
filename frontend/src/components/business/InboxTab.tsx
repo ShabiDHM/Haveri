@@ -1,145 +1,121 @@
-// FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V19.5 (MOBILE SCROLL FIX)
-// 1. RESPONSIVE LAYOUT: The main content panel now uses 'h-auto' on mobile and 'h-[75vh]' on large screens.
-// 2. UX: This ensures content is fully visible on mobile without forcing a scroll, while maintaining the fixed-height scroll on desktop.
+// FILE: src/components/business/InboxTab.tsx
+// PHOENIX PROTOCOL - INBOX V2.6 (EXPORT FIX)
+// 1. CRITICAL FIX: Added the 'export' keyword to the 'InboxTab' component definition.
+// 2. RESULT: This resolves the TypeScript build error "has no exported member 'InboxTab'".
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Package, Plus, ChefHat, Loader2, FileSpreadsheet, Box, Search } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { apiService } from '../../services/api';
+import { Mail, Loader2, ArrowRight, Inbox, Archive, Trash2, AlertCircle, Phone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { InventoryItem, Recipe } from '../../data/types';
 
-import { useInventoryData } from '../../hooks/useInventoryData';
-import { InventoryList } from './inventory/InventoryList';
-import { RecipeList } from './inventory/RecipeList';
-import { InventoryItemModal } from './modals/InventoryItemModal';
-import { RecipeModal } from './modals/RecipeModal';
-import { InventoryImportModal } from './modals/InventoryImportModal';
+export interface ClientMessage {
+    id: string; client_name: string; sender_email: string; sender_phone?: string; case_title: string;
+    content: string; created_at: string; is_read: boolean; status: string;
+}
+type FolderType = 'INBOX' | 'ARCHIVED' | 'TRASHED';
 
-// --- TACTICAL UI COMPONENTS ---
-
-const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean }) => (
-    <button 
-        onClick={onClick} 
-        className={`
-            flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group
-            ${primary 
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 border border-emerald-400/50' 
-                : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10 hover:border-white/20'
-            }
-        `}
-    >
-        <span className={`transition-transform duration-300 group-hover:scale-110 ${primary ? 'text-white' : 'text-emerald-400'}`}>{icon}</span>
-        <span>{label}</span>
+const FolderButton: React.FC<{ label: string; icon: React.ElementType; isActive: boolean; onClick: () => void; count: number; }> = 
+({ label, icon: Icon, isActive, onClick, count }) => (
+    <button onClick={onClick} className={`flex items-center w-full px-4 py-3 rounded-lg text-sm font-bold transition-all ${ isActive ? 'bg-blue-600/20 text-blue-300' : 'text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+        <Icon size={16} className="mr-3"/> <span>{label}</span>
+        {count > 0 && <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${isActive ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-200'}`}>{count}</span>}
     </button>
 );
 
-const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: React.ReactNode, isActive: boolean, onClick: () => void }) => (
-    <button 
-        onClick={onClick} 
-        className={`
-            flex-1 sm:flex-initial relative px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2
-            ${isActive 
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
-                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-            }
-        `}
-    >
-        <span className="relative z-10">{icon}</span>
-        <span className="relative z-10 hidden sm:inline">{label}</span>
-        <span className="relative z-10 sm:hidden">{label}</span>
-    </button>
-);
-
-export const InventoryTab: React.FC = () => {
+// PHOENIX FIX: Added 'export' keyword
+export const InboxTab: React.FC = () => {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<'items' | 'recipes'>('items');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [messages, setMessages] = useState<ClientMessage[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedMessage, setSelectedMessage] = useState<ClientMessage | null>(null);
+    const [activeFolder, setActiveFolder] = useState<FolderType>('INBOX');
+
+    const loadMessages = useCallback(async (folder: FolderType) => {
+        setLoading(true);
+        setSelectedMessage(null);
+        try {
+            const data = await apiService.getInboundMessages(folder);
+            setMessages(data);
+            if (data.length > 0) {
+                setSelectedMessage(data[0]);
+            }
+        } catch (e) { console.error(e); } 
+        finally { setLoading(false); }
+    }, []);
+
+    useEffect(() => { loadMessages(activeFolder); }, [activeFolder, loadMessages]);
+
+    const handleAction = async (messageId: string, newStatus: FolderType) => {
+        try {
+            await apiService.updateMessageStatus(messageId, newStatus);
+            loadMessages(activeFolder);
+        } catch (error) { alert('Veprimi dështoi'); }
+    };
     
-    const { 
-        loading, items, recipes, manualItems, posItems, 
-        loadData, deleteItem, deleteRecipe, calculateRecipeCost 
-    } = useInventoryData();
-
-    const [showItemModal, setShowItemModal] = useState(false);
-    const [showRecipeModal, setShowRecipeModal] = useState(false);
-    const [showImportModal, setShowImportModal] = useState(false); 
-    const [importTarget, setImportTarget] = useState<'items' | 'recipes'>('items');
-
-    const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-    const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
-
-    const openCreateItem = () => { setEditingItem(null); setShowItemModal(true); };
-    const openEditItem = (item: InventoryItem) => { setEditingItem(item); setShowItemModal(true); };
-    const handleDeleteItem = async (id: string) => { if (window.confirm(t('general.confirmDelete'))) await deleteItem(id); };
-
-    const openCreateRecipe = () => { setEditingRecipe(null); setShowRecipeModal(true); };
-    const openEditRecipe = (recipe: Recipe) => { setEditingRecipe(recipe); setShowRecipeModal(true); };
-    const handleDeleteRecipe = async (id: string) => { if (window.confirm(t('general.confirmDelete'))) await deleteRecipe(id); };
-
-    const openImport = (target: 'items' | 'recipes') => { setImportTarget(target); setShowImportModal(true); };
-
-    const filteredManual = manualItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    const filteredPos = posItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    const filteredRecipes = recipes.filter(r => r.product_name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-emerald-500" /></div>;
+    const handleDeletePermanent = async (messageId: string) => {
+        if(window.confirm("Jeni i sigurt që doni ta fshini përgjithmonë?")) {
+            try {
+                await apiService.deleteMessage(messageId);
+                loadMessages(activeFolder);
+            } catch (error) { alert('Fshirja dështoi'); }
+        }
+    };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-             <style>{`.custom-finance-scroll::-webkit-scrollbar { width: 6px; } .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.3); border-radius: 10px; } .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.5); }`}</style>
-
-            <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
-                {activeTab === 'items' ? (
-                    <>
-                        <ActionButton primary icon={<Plus size={20} />} label={t('inventory.items.add')} onClick={openCreateItem} />
-                        <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.items.import', 'Import CSV')} onClick={() => openImport('items')} />
-                    </>
-                ) : (
-                    <>
-                         <ActionButton primary icon={<Plus size={20} />} label={t('inventory.recipes.add')} onClick={openCreateRecipe} />
-                         <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.recipes.import')} onClick={() => openImport('recipes')} />
-                    </>
-                )}
-            </div>
-
-            {/* PHOENIX: Added responsive height classes */}
-            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md h-auto lg:h-[75vh] min-h-[600px] flex flex-col shadow-2xl">
-                
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <Box className="text-emerald-500" />
-                        {t('inventory.title')}
-                    </h2>
-                    
-                    <div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md gap-1">
-                        <TabButton label={t('inventory.tabItems', 'Artikujt')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
-                        <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
-                    </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 flex flex-col bg-gray-900/60 border border-white/10 rounded-3xl p-4 backdrop-blur-md max-h-[70vh]">
+                <h3 className="text-lg font-bold text-white mb-4 px-2 flex-shrink-0">Kutia Postare</h3>
+                <div className="space-y-2 flex-shrink-0">
+                    <FolderButton label={t('inbox.folder.inbox', 'Të Pritura')} icon={Inbox} isActive={activeFolder === 'INBOX'} onClick={() => setActiveFolder('INBOX')} count={activeFolder === 'INBOX' ? messages.length : 0}/>
+                    <FolderButton label={t('inbox.folder.archived', 'Të Arkivuara')} icon={Archive} isActive={activeFolder === 'ARCHIVED'} onClick={() => setActiveFolder('ARCHIVED')} count={0}/>
+                    <FolderButton label={t('inbox.folder.trash', 'Shporta')} icon={Trash2} isActive={activeFolder === 'TRASHED'} onClick={() => setActiveFolder('TRASHED')} count={0}/>
                 </div>
-
-                <div className="flex-1 overflow-hidden relative flex flex-col">
-                    <div className="relative group mb-6">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-emerald-400 transition-colors" />
-                        <input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-base text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 focus:bg-black/60 transition-all shadow-inner" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 -mr-2">
-                        {activeTab === 'items' && (
-                            <InventoryList manualItems={filteredManual} posItems={filteredPos} onEdit={openEditItem} onDelete={handleDeleteItem} />
-                        )}
-
-                        {activeTab === 'recipes' && (
-                            <RecipeList recipes={filteredRecipes} inventoryItems={items} calculateCost={calculateRecipeCost} onEdit={openEditRecipe} onDelete={handleDeleteRecipe} />
+            </div>
+            <div className="lg:col-span-2 flex flex-col lg:flex-row gap-6 max-h-[70vh]">
+                <div className={`${selectedMessage ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-1/2 bg-gray-900/60 border border-white/10 rounded-3xl overflow-hidden backdrop-blur-md`}>
+                    <div className="p-5 border-b border-white/10 bg-white/5 flex-shrink-0"><h3 className="text-lg font-bold text-white flex items-center gap-2"><Mail size={18} className="text-blue-400"/> {activeFolder}</h3></div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1.5 min-h-0">
+                        {loading ? <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-blue-500 w-6 h-6"/></div> : 
+                        messages.length === 0 ? (
+                            <div className="text-center py-10 text-gray-500 flex flex-col items-center"><Mail size={32} className="mb-2 opacity-20"/><p>Asnjë mesazh</p></div>
+                        ) : (
+                            messages.map((msg) => (
+                                <div key={msg.id} onClick={() => setSelectedMessage(msg)} className={`p-4 rounded-xl cursor-pointer transition-all border ${selectedMessage?.id === msg.id ? 'bg-blue-600/20 border-blue-500/50' : 'bg-white/5 border-transparent hover:bg-white/10'}`}>
+                                    <div className="flex justify-between items-start mb-1"><h4 className="font-bold text-white text-sm truncate">{msg.client_name}</h4><span className="text-[10px] text-gray-400">{new Date(msg.created_at).toLocaleDateString()}</span></div>
+                                    <p className="text-xs text-blue-300 font-mono mb-2 truncate">{msg.case_title}</p>
+                                    <p className="text-xs text-gray-400 line-clamp-2">{msg.content}</p>
+                                </div>
+                            ))
                         )}
                     </div>
                 </div>
+                <div className={`${selectedMessage ? 'flex' : 'hidden lg:flex'} flex-1 bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex-col relative`}>
+                    {selectedMessage ? (
+                        <>
+                            <button onClick={() => setSelectedMessage(null)} className="lg:hidden absolute top-4 left-4 p-2 bg-white/10 rounded-lg text-white"><ArrowRight className="rotate-180" size={20}/></button>
+                            <div className="flex items-center gap-4 mb-6 border-b border-white/10 pb-6 mt-8 lg:mt-0 flex-shrink-0">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">{selectedMessage.client_name.charAt(0)}</div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">{selectedMessage.client_name}</h2>
+                                    <p className="text-sm text-blue-400">{selectedMessage.sender_email}</p>
+                                    {selectedMessage.sender_phone && <p className="text-xs text-gray-400 flex items-center gap-1 mt-1"><Phone size={12}/> {selectedMessage.sender_phone}</p>}
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0"><div className="bg-black/20 rounded-2xl p-6 border border-white/5"><p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{selectedMessage.content}</p></div></div>
+                            <div className="mt-6 pt-4 border-t border-white/10 flex justify-start items-center flex-wrap gap-2 flex-shrink-0">
+                                {activeFolder !== 'ARCHIVED' && <button onClick={() => handleAction(selectedMessage.id, 'ARCHIVED')} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg text-xs font-medium border border-white/10 transition-all"><Archive size={14}/> Arkivo</button>}
+                                {activeFolder !== 'INBOX' && <button onClick={() => handleAction(selectedMessage.id, 'INBOX')} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg text-xs font-medium border border-white/10 transition-all"><Inbox size={14}/> Kthe në Inbox</button>}
+                                {activeFolder === 'TRASHED' ?
+                                    <button onClick={() => handleDeletePermanent(selectedMessage.id)} className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium border border-red-500/20 transition-all"><AlertCircle size={14}/> Fshije Përgjithmonë</button> :
+                                    <button onClick={() => handleAction(selectedMessage.id, 'TRASHED')} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-red-500/10 text-gray-300 hover:text-red-400 rounded-lg text-xs font-medium border border-white/10 hover:border-red-500/20 transition-all"><Trash2 size={14}/> Hidh në Shportë</button>
+                                }
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-50"><Mail size={64} className="mb-4" /><p>Zgjidhni një mesazh për të lexuar</p></div>
+                    )}
+                </div>
             </div>
-
-            <InventoryItemModal isOpen={showItemModal} onClose={() => setShowItemModal(false)} onSuccess={loadData} itemToEdit={editingItem} />
-            <RecipeModal isOpen={showRecipeModal} onClose={() => setShowRecipeModal(false)} onSuccess={loadData} recipeToEdit={editingRecipe} inventoryItems={items} calculateCost={calculateRecipeCost} />
-            <InventoryImportModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} onSuccess={loadData} target={importTarget} />
-
-        </motion.div>
+        </div>
     );
 };
