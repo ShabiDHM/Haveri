@@ -1,8 +1,8 @@
 // FILE: src/components/DraftingPanel.tsx
-// PHOENIX PROTOCOL - DRAFTING PANEL V3.2 (SYNTAX & TYPE CORRECTION)
-// 1. FIX: Restored the standard React import to resolve the '{' expected syntax error.
-// 2. CLEANUP: Removed all 'React.' prefixes from hooks (useState, useEffect, etc.).
-// 3. TYPE SYNC: Retained the expanded 'JobStatus' type to ensure backend compatibility.
+// PHOENIX PROTOCOL - DRAFTING PANEL V3.3 (UI REFINEMENT)
+// 1. UI: Added a prominent 'Hartimi' title to the panel header.
+// 2. UX: Changed the prompt textarea to start as a single line (rows={1}).
+// 3. CLEANUP: Removed the 'Gati' status text from the footer.
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { apiService } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { 
   Send, Copy, Download, CheckCircle, 
-  FileText, Trash2, LayoutTemplate, Loader2, AlertCircle
+  FileText, Trash2, LayoutTemplate, Loader2, AlertCircle, PenTool
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -157,7 +157,13 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
     <div className={`flex flex-col relative overflow-hidden h-full w-full ${className}`}>
         <style>{` select option, select optgroup { background-color: #0f172a; color: #f9fafb; } `}</style>
         
-        <div className="flex flex-col gap-4 p-3 sm:p-4 border-b border-white/10 bg-white/5 z-20">
+        {/* PHOENIX: Added Title and reduced padding */}
+        <div className="flex flex-col gap-4 p-3 sm:p-4 z-20">
+            <h3 className="text-xl font-bold text-white flex items-center gap-3 px-1">
+                <PenTool className="text-indigo-400" size={20} />
+                {t('drafting.title', 'Hartimi')}
+            </h3>
+            
             <div className='relative group min-w-0'>
                 <LayoutTemplate className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-blue-400 transition-colors pointer-events-none"/>
                 <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value as TemplateType)} disabled={isWorking || !!result} className="w-full bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none text-xs pl-10 pr-4 py-3 appearance-none transition-colors cursor-pointer font-medium disabled:opacity-70">
@@ -173,12 +179,13 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
             </div>
             {!result && (
                 <form onSubmit={handleSubmit} className="flex gap-2 items-stretch">
+                    {/* PHOENIX: Changed rows to 1 */}
                     <textarea 
                         value={prompt} 
                         onChange={(e) => setPrompt(e.target.value)} 
                         placeholder={t('drafting.promptPlaceholder')} 
                         disabled={isWorking} 
-                        rows={3}
+                        rows={1}
                         className="w-full bg-black/40 border border-white/10 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-blue-600/50 focus:ring-1 focus:ring-blue-600/50 transition-all placeholder:text-gray-500 text-sm resize-none custom-scrollbar"
                     />
                     <button type="submit" disabled={isWorking || !prompt.trim()} className="px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all disabled:opacity-50 flex items-center justify-center aspect-square">
@@ -216,7 +223,8 @@ const DraftingPanel: React.FC<DraftingPanelProps> = ({ activeCaseId, className }
                 ) : status === 'FAILED' ? (
                      <span className="text-red-400 flex items-center gap-2"><AlertCircle size={14} /> {t('drafting.statusFailed', 'Dështoi')}</span>
                 ) : (
-                    <span className="text-gray-400">{t('drafting.statusReady', 'Gati')}</span>
+                    // PHOENIX: Removed 'Gati' text
+                    <span className="text-gray-400"></span>
                 )}
             </div>
             <div className="flex gap-1 sm:gap-2">
