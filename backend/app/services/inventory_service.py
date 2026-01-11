@@ -1,7 +1,8 @@
 # FILE: backend/app/services/inventory_service.py
-# PHOENIX PROTOCOL - INVENTORY SERVICE V2.3 (RECIPE IMPORT FIX 2)
-# 1. FIX: Corrected a subtle bug in 'get_recipes' where Pydantic could fail on malformed '_id'.
-# 2. FIX: Hardened 'import_recipes_bulk' to ensure it never tries to insert a null 'id' field.
+# PHOENIX PROTOCOL - INVENTORY SERVICE V5.7 (ROBUST IMPORT)
+# 1. FIX: Added try/except block around quantity conversion in 'import_recipes_bulk'.
+# 2. LOGIC: Skips rows where quantity is non-numeric (e.g., header rows included as data).
+# 3. RESULT: Prevents 500 Internal Server Error during CSV import.
 
 from typing import List, Optional, Dict, Any
 from bson import ObjectId
@@ -50,17 +51,30 @@ class InventoryService:
     def import_items_bulk(self, user_id: str, items_data: List[Dict[str, Any]]) -> int:
         clean_items = []
         for row in items_data:
-            item_obj = InventoryItem(
-                user_id=user_id,
-                name=str(row.get("name", row.get("Product", "Unknown"))),
-                unit=str(row.get("unit", row.get("Unit", "kg"))).lower(),
-                current_stock=float(row.get("current_stock", row.get("Stock", 0.0))),
-                cost_per_unit=float(row.get("cost_per_unit", row.get("Cost", 0.0))),
-                source="POS"
-            )
-            item_dict = item_obj.model_dump(by_alias=True)
-            if "_id" in item_dict: del item_dict["_id"]
-            clean_items.append(item_dict)
+            try:
+                # Safe conversion for stock and cost
+                stock_val = row.get("current_stock", row.get("Stock", 0.0))
+                cost_val = row.get("cost_per_unit", row.get("Cost", 0.0))
+                
+                try: stock = float(stock_val)
+                except: stock = 0.0
+                
+                try: cost = float(cost_val)
+                except: cost = 0.0
+
+                item_obj = InventoryItem(
+                    user_id=user_id,
+                    name=str(row.get("name", row.get("Product", "Unknown"))),
+                    unit=str(row.get("unit", row.get("Unit", "kg"))).lower(),
+                    current_stock=stock,
+                    cost_per_unit=cost,
+                    source="POS"
+                )
+                item_dict = item_obj.model_dump(by_alias=True)
+                if "_id" in item_dict: del item_dict["_id"]
+                clean_items.append(item_dict)
+            except Exception:
+                continue
         
         if clean_items:
             res = self.db["inventory"].insert_many(clean_items)
@@ -77,7 +91,16 @@ class InventoryService:
         for row in recipes_data:
             product_name = str(row.get("product_name", row.get("Product", ""))).strip()
             ingredient_name = str(row.get("ingredient_name", row.get("Ingredient", ""))).strip()
-            quantity = float(row.get("quantity_required", row.get("Quantity", 0.0)))
+            
+            # PHOENIX FIX: Safe Float Conversion
+            # If the header row is passed as data, 'quantity' will be a string (e.g., "Quantity").
+            # We must catch this to prevent a crash.
+            qty_raw = row.get("quantity_required", row.get("Quantity", 0.0))
+            try:
+                quantity = float(qty_raw)
+            except (ValueError, TypeError):
+                # Skip this row if quantity is not a valid number (likely a header row)
+                continue
             
             if not product_name or not ingredient_name:
                 continue
@@ -125,17 +148,14 @@ class InventoryService:
 
     # --- RECIPES ---
     def create_recipe(self, user_id: str, recipe_in: dict) -> Recipe:
-        # Pydantic validation now happens first
         recipe = Recipe(user_id=user_id, **recipe_in)
-        # Dump to dict, excluding 'id' if it's None. `by_alias=True` handles `_id`
         recipe_dict = recipe.model_dump(by_alias=True, exclude_none=True)
         
         if "id" in recipe_dict:
-             del recipe_dict["id"] # Should not be present, but for safety
+             del recipe_dict["id"]
 
         result = self.db["recipes"].insert_one(recipe_dict)
         
-        # Fetch the newly created document
         created_doc = self.db["recipes"].find_one({"_id": result.inserted_id})
         if not created_doc:
             raise Exception("Failed to retrieve created recipe from database.")
@@ -153,12 +173,10 @@ class InventoryService:
     def get_recipes(self, user_id: str) -> List[Recipe]:
         cursor = self.db["recipes"].find({"user_id": user_id})
         recipes = []
-        # PHOENIX FIX: Loop and validate one-by-one to avoid full-batch failure
         for item in list(cursor):
             try:
                 recipes.append(Recipe(**item))
             except Exception as e:
-                # Log the specific item that failed validation
                 print(f"Skipping recipe due to validation error: {item.get('_id')}, Error: {e}")
         return recipes
         
