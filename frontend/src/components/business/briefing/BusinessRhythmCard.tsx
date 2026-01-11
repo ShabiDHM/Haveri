@@ -1,6 +1,6 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - COMPONENT V2.1 (TEXT FIX)
-// 1. UPDATE: Changed default fallback to 'Mbyllja' without time.
+// PHOENIX PROTOCOL - COMPONENT V2.2 (UI CLEANUP)
+// 1. CLEANUP: Removed the '🔥 +On Track' badge as requested.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -19,8 +19,6 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
     const { t } = useTranslation();
     
     const progress = Math.min((currentSales / dailyTarget) * 100, 100);
-    // Simple trending logic: if above 50% of target, show positive trend
-    const isTrendingUp = progress > 50;
 
     return (
         <div className="bg-gray-900/50 border border-white/10 rounded-3xl p-6 relative overflow-hidden h-full flex flex-col justify-between group hover:border-emerald-500/30 transition-colors duration-500">
@@ -37,10 +35,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
                         <span className="text-sm text-gray-500">/ €{dailyTarget}</span>
                     </div>
                 </div>
-                {/* Dynamic Badge */}
-                <div className={`px-3 py-1 rounded-full text-xs font-bold border ${isTrendingUp ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                    {isTrendingUp ? '🔥 +On Track' : '❄️ Catch Up'}
-                </div>
+                {/* PHOENIX: Badge Removed */}
             </div>
 
             {/* Velocity Meter / Progress */}
@@ -59,7 +54,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
                     {progress >= 100 
-                        ? t('general.allGood', 'Objektivi u arrit!') 
+                        ? t('general.allGood', 'Gjithçka në rregull!') 
                         : t('dashboard.onTrackMessage', 'Jeni në rrugë të mbarë për të tejkaluar objektivin.')}
                 </p>
             </div>
