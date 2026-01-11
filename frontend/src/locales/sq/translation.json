@@ -200,7 +200,7 @@
     "clearTitle": "Pastro"
   },
   "dashboard": {
-    "dailyOverviewTitle": "Pasqyra Ditore",
+    "dailyOverviewTitle": "Pasqyra",
     "dailyOverviewSubtitle": "Përmbledhja e operacioneve dhe rekomandimet.",
     "dailyRhythm": "Ritmi i Ditës",
     "vsAvg": "vs Mesatare",
@@ -529,7 +529,7 @@
     "askAdvisor": "Pyet Asistentin Tatimor"
   },
   "analyst": {
-    "title": "Smart Data Analyst",
-    "desc": "Keni një skedar Excel ose CSV të komplikuar? Ngarkojeni këtu dhe Inteligjenca Artificiale do ta analizojë, vizualizojë dhe gjejë anomali automatikisht."
+    "title": "Analisti i të Dhënave",
+    "desc": "Keni një skedar Excel ose CSV të komplikuar? Ngarkojeni këtu dhe do ta analizojë, vizualizojë dhe gjejë anomali."
   }
 }
