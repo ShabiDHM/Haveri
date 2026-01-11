@@ -1,8 +1,6 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX ADVISOR V4.2 (MARKDOWN & TYPEWRITER)
-// 1. UI: Integrated 'MarkdownRenderer' for rich text formatting in chat.
-// 2. UX: Added 'TypewriterMessage' for streaming effect, matching the Archive Chat experience.
-// 3. INTEGRITY: Preserved existing audit logic and modal structure.
+// PHOENIX PROTOCOL - TAX ADVISOR V4.3 (I18N FIX)
+// 1. I18N FIX: Replaced hardcoded "Powered by" text with a dynamic translation key.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -88,7 +86,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
     const [auditLoading, setAuditLoading] = useState(false);
     const [auditResult, setAuditResult] = useState<TaxAuditResult | null>(null);
 
-    // Chat State: Added 'isNew' flag for typewriter trigger
+    // Chat State
     const [messages, setMessages] = useState<{role: 'user' | 'bot', text: string, isNew?: boolean}[]>([
         { role: 'bot', text: t('tax.chatWelcome', 'Përshëndetje! Unë jam asistenti juaj tatimor. Keni ndonjë pyetje për zbritshmërinë e shpenzimeve?'), isNew: true }
     ]);
@@ -96,7 +94,6 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
     const [chatLoading, setChatLoading] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
-    // Scroll to bottom
     useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, chatLoading]);
 
     // --- HANDLERS ---
@@ -122,9 +119,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
 
         const userMsg = chatInput;
         
-        // Mark old messages as NOT new
         setMessages(prev => prev.map(m => ({...m, isNew: false})));
-        
         setMessages(prev => [...prev, { role: 'user', text: userMsg, isNew: false }]);
         setChatInput('');
         setChatLoading(true);
@@ -201,7 +196,10 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                             <div className="p-4 border-b border-white/10 bg-blue-900/20 flex justify-between items-center">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400"><MessageSquare size={20} /></div>
-                                    <div><h3 className="font-bold text-white text-sm">Asistenti Tatimor</h3><p className="text-xs text-blue-300">Powered by Kosovo Tax Laws</p></div>
+                                    <div><h3 className="font-bold text-white text-sm">Asistenti Tatimor</h3>
+                                        {/* PHOENIX FIX: Hardcoded string replaced */}
+                                        <p className="text-xs text-blue-300">{t('tax.poweredBy', 'Powered by Kosovo Tax Laws')}</p>
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button onClick={handleClearChat} className="text-gray-400 hover:text-red-400 p-2 hover:bg-white/10 rounded-lg transition-colors"><Trash2 size={18} /></button>

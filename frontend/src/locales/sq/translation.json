@@ -1,3 +1,4 @@
+
 {
   "general": {
     "login": "Hyrja",
@@ -525,11 +526,12 @@
     "failedToLoad": "Dështoi ngarkimi i të dhënave."
   },
   "tax": {
-    "chatWelcome": "Përshëndetje! Unë jam asistenti juaj tatimor. Keni ndonjë pyetje për zbritshmërinë e shpenzimeve?",
-    "askAdvisor": "Pyet Asistentin Tatimor"
+    "chatWelcome": "Përshëndetje! Unë jam asistenti juaj tatimor. Keni ndonjë pyetje?",
+    "askAdvisor": "Pyet Asistentin Tatimor",
+    "poweredBy": "Ndihmës për Tatime"
   },
   "analyst": {
     "title": "Analisti i të Dhënave",
-    "desc": "Keni një skedar Excel ose CSV të komplikuar? Ngarkojeni këtu dhe do ta analizojë, vizualizojë dhe gjejë anomali."
+    "desc": "Keni një skedar Excel ose CSV të komplikuar? Ngarkojeni këtu dhe do ta analizojë, vizualizojë dhe ju prezentoj gjetjet."
   }
 }
