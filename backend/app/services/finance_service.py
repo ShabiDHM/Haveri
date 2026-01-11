@@ -1,22 +1,21 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE LOGIC V6.0 (HISTORICAL DATA FIX)
-# 1. FIX: 'create_invoice' now respects 'issue_date' from payload if provided.
-# 2. STATUS: Fully enables historical data imports.
+# PHOENIX PROTOCOL - FINANCE SERVICE V6.2 (SAFE LOGGING)
+# 1. FIX: Switched from 'structlog' to standard 'logging' to prevent import errors if structlog is missing.
+# 2. LOGIC: Maintained the Unified Import Router logic.
 
-import structlog
+import logging
 from datetime import datetime, timezone
 from bson import ObjectId
 from pymongo.database import Database
 from fastapi import HTTPException, UploadFile
-from typing import Any
+from typing import Any, List, Dict
 
-# ABSOLUTE IMPORTS
 from app.models.finance import (
     InvoiceCreate, InvoiceInDB, InvoiceUpdate, InvoiceItem, 
     ExpenseCreate, ExpenseInDB, ExpenseUpdate
 )
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 class FinanceService:
     def __init__(self, db: Database):
@@ -58,17 +57,11 @@ class FinanceService:
             return 0.0
 
     def delete_pos_transaction(self, user_id: str, transaction_id: str) -> None:
-        """
-        Deletes a POS transaction.
-        NOTE: Transactions collection uses 'user_id' as a string, unlike Invoices/Expenses which use ObjectId.
-        """
         try:
             oid = ObjectId(transaction_id)
         except:
             raise HTTPException(status_code=400, detail="Invalid Transaction ID")
         
-        # We ensure strict ownership.
-        # Note: In the 'transactions' collection, user_id is stored as a string.
         result = self.db.transactions.delete_one({"_id": oid, "user_id": str(user_id)})
         
         if result.deleted_count == 0:
@@ -87,7 +80,6 @@ class FinanceService:
         tax_amount = (subtotal * data.tax_rate) / 100
         total_amount = subtotal + tax_amount
         
-        # PHOENIX FIX: Respect provided issue_date for imports
         issue_date = data.issue_date or datetime.now(timezone.utc)
         
         invoice_doc = data.model_dump()
@@ -99,7 +91,7 @@ class FinanceService:
             "subtotal": subtotal,
             "tax_amount": tax_amount,
             "total_amount": total_amount,
-            "status": data.status or "DRAFT", # Respect provided status (e.g. PAID from CSV)
+            "status": data.status or "DRAFT",
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
         })
@@ -211,10 +203,70 @@ class FinanceService:
         expense = self.db.expenses.find_one({"_id": oid, "user_id": ObjectId(user_id)})
         if not expense: raise HTTPException(status_code=404, detail="Expense not found")
         
-        # Lazy import to break circular dependency
         from app.services.storage_service import upload_file_raw
         
         folder = f"expenses/{user_id}"
         storage_key = upload_file_raw(file, folder)
         self.db.expenses.update_one({"_id": oid}, {"$set": {"receipt_url": storage_key}})
         return storage_key
+
+    # --- PHOENIX: UNIFIED IMPORT ROUTER ---
+    def import_unified_transactions(self, user_id: str, transactions: List[Dict[str, Any]]) -> Dict[str, int]:
+        counts = {"INVOICE": 0, "EXPENSE": 0, "POS": 0, "UNKNOWN": 0}
+        
+        for row in transactions:
+            try:
+                row_type = str(row.get("Tipi", "POS")).upper().strip()
+                date_str = str(row.get("Data", datetime.now().strftime("%Y-%m-%d")))
+                try: dt = datetime.strptime(date_str, "%Y-%m-%d")
+                except: dt = datetime.now()
+                
+                description = str(row.get("Përshkrimi", "Imported Item"))
+                category = str(row.get("Kategoria", "General"))
+                amount = float(row.get("Shuma", 0.0))
+                status = str(row.get("Statusi", "PAID")).upper()
+                
+                if row_type == "INVOICE":
+                    inv_in = InvoiceCreate(
+                        client_name=description, 
+                        issue_date=dt,
+                        status=status,
+                        items=[InvoiceItem(description=category, quantity=1, unit_price=amount)],
+                        tax_rate=18.0
+                    )
+                    self.create_invoice(user_id, inv_in)
+                    counts["INVOICE"] += 1
+                    
+                elif row_type == "EXPENSE":
+                    exp_in = ExpenseCreate(
+                        category=category,
+                        amount=abs(amount),
+                        description=description,
+                        date=dt
+                    )
+                    self.create_expense(user_id, exp_in)
+                    counts["EXPENSE"] += 1
+                    
+                elif row_type == "POS":
+                    pos_doc = {
+                        "user_id": str(user_id), 
+                        "description": description,
+                        "category": category,
+                        "amount": amount,
+                        "total_amount": amount,
+                        "date_time": dt,
+                        "payment_method": "CASH", 
+                        "status": status,
+                        "source": "IMPORT"
+                    }
+                    self.db.transactions.insert_one(pos_doc)
+                    counts["POS"] += 1
+                else:
+                    counts["UNKNOWN"] += 1
+
+            except Exception as e:
+                logger.error(f"Import Error on row {row}: {e}")
+                counts["UNKNOWN"] += 1
+                continue
+                
+        return counts
