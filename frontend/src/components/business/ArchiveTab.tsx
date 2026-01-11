@@ -1,7 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE V3.8 (UNIFIED BUTTON LAYOUT)
-// 1. STYLE: Modified the ActionButton component to include 'flex-1', forcing equal width.
-// 2. LAYOUT: Adjusted the container to ensure consistent button alignment on all screen sizes.
+// PHOENIX PROTOCOL - ARCHIVE V3.9 (MOBILE BUTTON FIX)
+// 1. LAYOUT: Changed button container to 'flex-wrap' to prevent horizontal overflow on mobile.
+// 2. UX: Added 'min-w-[120px]' to buttons to ensure they remain tappable and readable, forcing a clean stack/grid layout on small screens.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -150,8 +150,17 @@ const StatusBadge = ({ status }: { status?: 'PENDING' | 'PROCESSING' | 'READY' |
     return <div className="p-1.5" title={t('archive.statusUnknown')}><Zap size={14} className="text-gray-400"/></div>; 
 };
 
-// PHOENIX: Added flex-1 to make button grow
-const ActionButton = ({ icon, label, onClick, primary = false, disabled = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean, disabled?: boolean }) => ( <button onClick={onClick} disabled={disabled} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 px-4 py-3 sm:px-6 sm:py-4 rounded-xl text-xs sm:text-sm font-bold transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${primary ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'bg-gray-800/50 hover:bg-gray-700/80 text-gray-300 border border-white/10'}`}> {icon} <span className="truncate">{label}</span> </button> );
+// PHOENIX: Added min-w-[120px] to enforce decent button size on mobile, forcing wrap if needed.
+const ActionButton = ({ icon, label, onClick, primary = false, disabled = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean, disabled?: boolean }) => ( 
+    <button 
+        onClick={onClick} 
+        disabled={disabled} 
+        className={`flex-1 sm:flex-none min-w-[120px] flex items-center justify-center gap-2 sm:gap-3 px-4 py-3 sm:px-6 sm:py-4 rounded-xl text-xs sm:text-sm font-bold transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${primary ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20' : 'bg-gray-800/50 hover:bg-gray-700/80 text-gray-300 border border-white/10'}`}
+    > 
+        {icon} 
+        <span className="truncate">{label}</span> 
+    </button> 
+);
 
 const ArchiveCard = ({ title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, onReIndex, onAskAI, isShared, isFolder, isLoading, indexingStatus }: any) => { 
     return ( 
@@ -236,8 +245,8 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
                         <input type="text" placeholder={t('header.searchPlaceholder')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 sm:py-4 bg-black/40 border border-white/10 rounded-2xl text-white" />
                     </div>
-                    {/* PHOENIX: Flex container for equal-width buttons */}
-                    <div className="flex items-center gap-2 sm:gap-3 w-full xl:w-auto">
+                    {/* PHOENIX: Added flex-wrap to container */}
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 w-full xl:w-auto">
                         {showPortalButton && portalTargetId && ( <ActionButton icon={<LinkIcon size={18} />} label="PORTAL" onClick={() => setShowShareModal(true)} /> )}
                         <ActionButton icon={<FolderPlus size={18} />} label="Krijo Dosje" onClick={() => setShowFolderModal(true)} />
                         <input type="file" ref={archiveInputRef} className="hidden" onChange={handleSmartUpload} />
