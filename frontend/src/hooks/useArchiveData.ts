@@ -1,7 +1,7 @@
 // FILE: src/hooks/useArchiveData.ts
-// PHOENIX PROTOCOL - UNIFIED SEARCH V5.1
-// 1. CRITICAL FIX: The 'filteredItems' now correctly merges filtered files and filtered case-folders.
-// 2. LOGIC: This ensures that when a user searches, both documents AND relevant case folders appear in the results.
+// PHOENIX PROTOCOL - UNIFIED SEARCH V5.2 (WORKSPACE HIDING)
+// 1. UI FIX: Filtered out the current 'initialCaseId' (The Workspace) from the list of folders displayed at the root.
+// 2. LOGIC: Prevents the "Hapësira e Punës" folder from appearing inside itself, while keeping its contents visible.
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { apiService, API_V1_URL } from '../services/api';
@@ -176,24 +176,30 @@ export const useArchiveData = (initialCaseId?: string) => {
         let caseFolders: ArchiveItemOut[] = [];
         if (currentView.type === 'ROOT') {
             caseFolders = cases
-                .filter(c => c.title.toLowerCase().includes(lowerSearch) || c.case_number.toLowerCase().includes(lowerSearch))
+                .filter(c => {
+                    // PHOENIX FIX: Exclude the current workspace from showing as a folder
+                    if (c.id === initialCaseId) return false;
+                    
+                    // Standard search filtering
+                    return c.title.toLowerCase().includes(lowerSearch) || c.case_number.toLowerCase().includes(lowerSearch);
+                })
                 .map(c => ({
                     id: c.id,
                     title: c.title,
                     item_type: 'FOLDER',
                     file_type: 'Case Folder',
                     created_at: c.created_at,
-                    // Mock the rest of the fields to match the type
                     category: 'Cases',
                     storage_key: '',
-                    file_size: 0
+                    file_size: 0,
+                    is_shared: false
                 } as ArchiveItemOut));
         }
         
         // Combine and return
         return [...caseFolders, ...items];
 
-    }, [archiveItems, cases, searchTerm, currentView.type]);
+    }, [archiveItems, cases, searchTerm, currentView.type, initialCaseId]); // Added initialCaseId dependency
 
     // This is now redundant as it's handled in filteredItems
     const filteredCases = useMemo(() => cases.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.case_number.toLowerCase().includes(searchTerm.toLowerCase())), [cases, searchTerm]);
