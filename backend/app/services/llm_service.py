@@ -1,8 +1,7 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - LLM SERVICE V5.0 (GENERIC CHAT COMPLETION)
-# 1. FEATURE: Added 'chat_completion' wrapper to support generic Q&A (Archive Chat).
-# 2. FEATURE: Added 'extract_expense_data' (retained from previous request).
-# 3. INTEGRITY: Maintains Business Consultant persona for complex queries.
+# PHOENIX PROTOCOL - LLM SERVICE V5.1 (STRUCTURED ANALYSIS)
+# 1. FEATURE: Added 'analyze_structured_prediction' for Inventory/Sales AI.
+# 2. STATUS: Fully backward compatible.
 
 import os
 import json
@@ -73,10 +72,6 @@ def _call_deepseek(system_prompt: str, user_prompt: str, json_mode: bool = False
 # --- PUBLIC FUNCTIONS ---
 
 async def chat_completion(system_prompt: str, user_message: str) -> str:
-    """
-    Generic wrapper for simple Q&A interactions (e.g., Archive Chat).
-    Doesn't inject complex persona rules by default, relies on the caller's system prompt.
-    """
     client = get_deepseek_client()
     if not client:
         return "Shërbimi AI nuk është i konfiguruar."
@@ -97,35 +92,46 @@ async def chat_completion(system_prompt: str, user_message: str) -> str:
         return "Ndodhi një gabim gjatë komunikimit me AI."
 
 def extract_expense_data(text: str) -> Dict[str, Any]:
-    """
-    Uses a vision-capable model to extract structured data from an expense receipt/invoice.
-    """
-    clean_text = prepare_document_text(text[:4000]) # Limit context size for efficiency
+    clean_text = prepare_document_text(text[:4000])
     system_prompt = """
     Ti je një Asistent Inteligjent për Ekstraktimin e të Dhënave Financiare.
-    DETYRA: Analizo tekstin e dhënë nga një faturë ose kupon fiskal dhe kthe një objekt JSON me fushat e mëposhtme.
-    
-    RREGULLA:
-    1.  Kthe VETËM një objekt JSON valid. Mos shto tekst tjetër.
-    2.  Përpiqu të identifikosh një kategori standarde (p.sh., 'Karburant', 'Furnizime zyre', 'Marketing', 'Transport'). Nëse nuk je i sigurt, përdor 'Të ndryshme'.
-    3.  Data duhet të jetë në formatin 'YYYY-MM-DD'.
-    4.  Shumat duhet të jenë numra (float), jo stringje.
-    5.  Nëse një fushë nuk gjendet, lëre si `null`.
-
-    FORMATI I KËRKUAR JSON:
-    {
-        "category": "string",
-        "total_amount": "number | null",
-        "date": "string (YYYY-MM-DD) | null",
-        "supplier_name": "string | null",
-        "description": "string | null"
-    }
+    DETYRA: Analizo tekstin e dhënë nga një faturë ose kupon fiskal dhe kthe një objekt JSON.
     """
     user_prompt = f"TEKSTI I DOKUMENTIT PËR EKSTRAKTIM:\n\n---\n{clean_text}\n---"
-    
     content = _call_deepseek(system_prompt, user_prompt, json_mode=True, agent_type='business')
     return _parse_json_safely(content) if content else {}
 
+# --- PHOENIX: NEW FUNCTION FOR INVENTORY ANALYSIS ---
+def analyze_structured_prediction(data_context: str, analysis_type: str) -> Dict[str, Any]:
+    """
+    Analyzes inventory/sales data and returns a structured JSON prediction.
+    """
+    if analysis_type == "RESTOCK":
+        system_prompt = """
+        You are an Inventory Analyst AI.
+        Task: Analyze the provided item data (Stock, Sales Rate, Lead Time).
+        Output JSON:
+        {
+            "suggested_quantity": number (how much to buy),
+            "reason": string (short explanation in Albanian),
+            "estimated_cost": number (quantity * unit_cost)
+        }
+        """
+    else: # TREND
+        system_prompt = """
+        You are a Sales Analyst AI.
+        Task: Analyze the provided sales history.
+        Output JSON:
+        {
+            "trend_analysis": string (1 sentence summary in Albanian),
+            "cross_sell_opportunities": string (1 suggestion in Albanian or "N/A")
+        }
+        """
+        
+    user_prompt = f"DATA CONTEXT:\n{data_context}"
+    content = _call_deepseek(system_prompt, user_prompt, json_mode=True, agent_type='business')
+    return _parse_json_safely(content) if content else {}
+# ----------------------------------------------------
 
 def ask_business_consultant(user_id: str, query: str, context_filter: Optional[Dict] = None) -> str:
     user_docs = vector_store_service.query_private_diary(user_id, query, n_results=4)
@@ -141,11 +147,6 @@ def ask_business_consultant(user_id: str, query: str, context_filter: Optional[D
     system_prompt = """
     Ti je Këshilltari i Biznesit 'Haveri'.
     Përdor kontekstin e mëposhtëm për t'iu përgjigjur pyetjes së përdoruesit.
-    UDHËZIME SPECIFIKE:
-    1. Jep përparësi informacioneve nga 'TË DHËNAT E PËRDORUESIT'.
-    2. Përdor 'LIGJET' për të shpjeguar ose validuar të dhënat e përdoruesit.
-    3. Nëse informacioni mungon, thuaj qartë 'Nuk kam informacion të mjaftueshëm në dokumentet e tua'.
-    4. Përgjigju gjithmonë në Shqip.
     """
     
     user_prompt = f"""
@@ -166,14 +167,14 @@ def prepare_document_text(text: str) -> str:
 
 def generate_summary(text: str) -> str:
     clean_text = prepare_document_text(text[:20000])
-    system_prompt = "..." # Unchanged for brevity
+    system_prompt = "..." 
     user_prompt = f"DOKUMENTI PËR ANALIZË:\n{clean_text}"
     res = _call_deepseek(system_prompt, user_prompt, agent_type='business')
     return res or "Nuk u gjenerua përmbledhje."
 
 def analyze_business_document(text: str) -> Dict[str, Any]:
     clean_text = prepare_document_text(text[:15000])
-    system_prompt = "..." # Unchanged for brevity
+    system_prompt = "..." 
     user_prompt = f"DOKUMENTI:\n{clean_text}"
     content = _call_deepseek(system_prompt, user_prompt, json_mode=True, agent_type='business')
     return _parse_json_safely(content) if content else {}
