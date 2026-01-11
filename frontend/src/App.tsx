@@ -1,7 +1,7 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V3.2 (INBOX ADDED)
-// 1. ROUTING: Added the missing route '/business/inbox'.
-// 2. LOGIC: This connects the Dashboard button to the actual Inbox view.
+// PHOENIX PROTOCOL - ROUTING V3.3 (INVITE FLOW COMPLETE)
+// 1. ROUTING: Added '/accept-invite' public route.
+// 2. STATUS: Invitation system logic is now fully connected from email to activation.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -11,6 +11,7 @@ import MainLayout from './pages/MainLayout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import AcceptInvitePage from './pages/AcceptInvitePage'; // PHOENIX: Imported
 import CaseViewPage from './pages/CaseViewPage';
 import CalendarPage from './pages/CalendarPage';
 import SupportPage from './pages/SupportPage';
@@ -63,6 +64,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={isAuthenticated ? <Navigate to="/business" /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/business" /> : <RegisterPage />} />
       
+      {/* PHOENIX: Public Invite Acceptance Route */}
+      <Route path="/accept-invite" element={<AcceptInvitePage />} />
+      
       {/* Client Portal Route (Public Access via Link) */}
       <Route path="/portal/:caseId" element={<ClientPortalPage />} />
 
@@ -83,8 +87,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/business/archive" element={<BusinessPage view="archive" />} />
         <Route path="/business/insights" element={<BusinessPage view="insights" />} />
         <Route path="/business/profile" element={<BusinessPage view="profile" />} />
-        
-        {/* PHOENIX: The Missing Link */}
         <Route path="/business/inbox" element={<BusinessPage view="inbox" />} />
       </Route>
 

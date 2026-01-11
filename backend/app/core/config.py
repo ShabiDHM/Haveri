@@ -1,7 +1,7 @@
 # FILE: backend/app/core/config.py
-# PHOENIX PROTOCOL - CONFIGURATION V7.1 (OPENROUTER SUPPORT)
-# 1. FEATURE: Added 'OPENAI_API_KEY' and 'OPENAI_BASE_URL'.
-# 2. REASONING: Required to prevent Pydantic from stripping the OpenRouter credentials.
+# PHOENIX PROTOCOL - CONFIGURATION V7.2 (EMAIL INTEGRATION)
+# 1. FEATURE: Added SMTP configuration for sending transactional emails (e.g., invitations).
+# 2. STATUS: Ready for the next phase of invitation logic implementation.
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Union
@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     DATABASE_URI: str = ""
     REDIS_URL: str = "redis://redis:6379/0"
 
+    # --- PHOENIX: Email Settings ---
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAILS_FROM_EMAIL: str = "" # e.g., no-reply@haveri.tech
+    EMAILS_FROM_NAME: str = "Haveri AI"
+    # --------------------------------
+
     # --- External Services (Storage) ---
     B2_KEY_ID: str = ""
     B2_APPLICATION_KEY: str = ""
@@ -44,11 +53,9 @@ class Settings(BaseSettings):
     B2_BUCKET_NAME: str = ""
 
     # --- AI Engines (OpenRouter / OpenAI / DeepSeek) ---
-    # Put your OpenRouter Key here
     OPENAI_API_KEY: str = "" 
-    # Defaults to OpenAI, but you can set this to "https://openrouter.ai/api/v1" in .env
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
-    OPENAI_MODEL: str = "gpt-4o" # Model to use via OpenRouter
+    OPENAI_MODEL: str = "gpt-4o"
 
     DEEPSEEK_API_KEY: str = ""
     LOCAL_LLM_URL: str = "http://host.docker.internal:11434/api/generate"

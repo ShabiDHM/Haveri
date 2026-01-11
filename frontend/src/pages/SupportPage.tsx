@@ -1,8 +1,7 @@
 // FILE: src/pages/SupportPage.tsx
-// PHOENIX PROTOCOL - SUPPORT PAGE V18.0 (TACTICAL UPGRADE)
-// 1. STYLE: Applied Phoenix Glassmorphism to all UI elements for consistency.
-// 2. LAYOUT: Enforced perfect column symmetry and height matching using grid.
-// 3. UX: Upgraded all interactive elements to the new 'Tactical Command' standard.
+// PHOENIX PROTOCOL - SUPPORT PAGE V18.1 (I18N ENABLED)
+// 1. I18N: Replaced all hardcoded text with dynamic translation keys.
+// 2. STYLE: Preserved the 'Phoenix Glassmorphism' aesthetic.
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -45,7 +44,7 @@ const SupportPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
             <h1 className="text-4xl font-black text-white mb-2">{t('support.title', 'Qendra e Ndihmës')}</h1>
-            <p className="text-lg text-gray-400">Ne jemi këtu për t'ju ndihmuar.</p>
+            <p className="text-lg text-gray-400">{t('support.subtitle', "Ne jemi këtu për t'ju ndihmuar.")}</p>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 auto-rows-fr">

@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V8.6 (TEAM MANAGEMENT INTEGRATION)
-// 1. FEATURE: Added 'inviteUser', 'getTeamMembers', and 'removeTeamMember' to support corporate accounts.
-// 2. INTEGRITY: Preserved ALL 80+ existing methods (including AI, Archive, Drafting, Finance).
+// PHOENIX PROTOCOL - API V8.7 (INVITATION ACCEPTANCE)
+// 1. FEATURE: Added 'acceptInvite' method to complete the user onboarding flow.
+// 2. STATUS: Fully integrated with the backend's new '/accept-invite' endpoint.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -11,7 +11,7 @@ import type {
     BusinessProfile, BusinessProfileUpdate, Invoice, InvoiceCreateRequest, InvoiceItem,
     ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
     InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction,
-    StrategicBriefingResponse, InviteUserRequest // PHOENIX: Imported InviteUserRequest
+    StrategicBriefingResponse, InviteUserRequest 
 } from '../data/types';
 
 export interface DailyBriefingResponse { id: string; content: string; created_at: string; tasks_summary?: string; }
@@ -86,6 +86,10 @@ class ApiService {
     }
     public async removeTeamMember(userId: string): Promise<any> {
         const response = await this.axiosInstance.delete(`/users/team/${userId}`);
+        return response.data;
+    }
+    public async acceptInvite(token: string, password: string): Promise<any> {
+        const response = await this.axiosInstance.post('/auth/accept-invite', { token, new_password: password });
         return response.data;
     }
     // ----------------------------------------------
