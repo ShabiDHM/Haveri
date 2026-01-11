@@ -1,8 +1,4 @@
 # FILE: backend/app/services/case_service.py
-# PHOENIX PROTOCOL - CASE SERVICE V5.6 (PORTAL AUTH FIX)
-# 1. FIX: 'get_public_case_events' now checks for an 'is_shared' flag on the case document.
-# 2. LOGIC: Removed the ambiguous "Zero-Share Protection" block.
-# 3. RESULT: Client Portal access is now correctly governed by the master share toggle.
 
 import re
 import importlib
@@ -118,8 +114,8 @@ def get_case_by_id(db: Database, case_id: ObjectId, owner: UserInDB) -> Optional
 def delete_case_by_id(db: Database, case_id: ObjectId, owner: UserInDB):
     storage_service = importlib.import_module("app.services.storage_service")
     vector_store_service = importlib.import_module("app.services.vector_store_service")
-    graph_service_module = importlib.import_module("app.services.graph_service")
-    graph_service = getattr(graph_service_module, "graph_service")
+    
+       
     case = db.cases.find_one({"_id": case_id, "$or": [{"owner_id": owner.id}, {"user_id": owner.id}]})
     if not case: raise HTTPException(status_code=404, detail="Case not found.")
     case_id_str = str(case_id)
@@ -133,8 +129,7 @@ def delete_case_by_id(db: Database, case_id: ObjectId, owner: UserInDB):
             except Exception: pass
         try: vector_store_service.delete_document_embeddings(document_id=doc_id_str)
         except Exception: pass
-        try: graph_service.delete_document_nodes(doc_id_str)
-        except Exception: pass
+        
     archive_items = db.archives.find(any_id_query)
     for item in archive_items:
         if "storage_key" in item:
@@ -166,19 +161,14 @@ def rename_document(db: Database, case_id: ObjectId, doc_id: ObjectId, new_name:
 
 # --- PUBLIC PORTAL FUNCTIONS ---
 def get_public_case_events(db: Database, case_id: str) -> Optional[Dict[str, Any]]:
-    """
-    Fetches public-safe data for the Client Portal.
-    """
     try:
         case_oid = ObjectId(case_id)
         case = db.cases.find_one({"_id": case_oid})
         if not case: return None
 
-        # PHOENIX FIX: Add a master check for the 'is_shared' flag on the case.
         if case.get("is_shared") is not True:
             return None
         
-        # 1. Fetch Timeline
         events_cursor = db.calendar_events.find({
             "$or": [{"case_id": case_id}, {"case_id": case_oid}],
             "$or": [
@@ -200,7 +190,6 @@ def get_public_case_events(db: Database, case_id: str) -> Optional[Dict[str, Any
                 "description": clean_desc
             })
         
-        # 2. Fetch Shared Documents (Strictly Active)
         docs_cursor = db.documents.find({
             "$or": [{"case_id": case_id}, {"case_id": case_oid}],
             "is_shared": True,
@@ -217,7 +206,6 @@ def get_public_case_events(db: Database, case_id: str) -> Optional[Dict[str, Any
                 "source": "ACTIVE"
             })
 
-        # 3. Fetch Archive Items (Only if file exists)
         archive_cursor = db.archives.find({
             "$or": [{"case_id": case_id}, {"case_id": case_oid}],
             "is_shared": True,
@@ -235,7 +223,6 @@ def get_public_case_events(db: Database, case_id: str) -> Optional[Dict[str, Any
                 "source": "ARCHIVE"
             })
 
-        # 4. Fetch Invoices (UPDATED STRICT WHITELIST)
         invoices_cursor = db.invoices.find({
             "related_case_id": case_id,
             "status": {"$in": ["PAID", "SENT", "OVERDUE"]}
@@ -251,10 +238,6 @@ def get_public_case_events(db: Database, case_id: str) -> Optional[Dict[str, Any
                 "date": inv.get("issue_date")
             })
 
-        # PHOENIX FIX: Removed the "Zero-Share Protection" block
-        # The master 'is_shared' flag is now the single source of truth.
-
-        # --- BRANDING RETRIEVAL ---
         owner_id = case.get("owner_id") or case.get("user_id")
         organization_name = "Zyra Ligjore"
         logo_path = None

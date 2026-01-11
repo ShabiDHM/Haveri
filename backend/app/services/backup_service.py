@@ -1,8 +1,7 @@
 # FILE: backend/app/services/backup_service.py
-# PHOENIX PROTOCOL - THE BLACK BOX (B2 BACKUP)
-# 1. HOT BACKUP: Exports MongoDB and Neo4j without stopping services.
-# 2. OFFSITE STORAGE: Uploads to Backblaze B2 via S3 protocol.
-# 3. DATA INTEGRITY: JSON serializes BSON types (ObjectId, datetime) correctly.
+# PHOENIX PROTOCOL - BACKUP SERVICE V2.0 (CLEANED)
+# 1. CLEANUP: Removed all Neo4j/Graph backup logic.
+# 2. FOCUS: Now exclusively handles MongoDB Data and B2 Offsite Storage.
 
 import os
 import json
@@ -13,7 +12,6 @@ import structlog
 from datetime import datetime
 from bson import ObjectId, json_util
 from pymongo import MongoClient
-from .graph_service import graph_service
 
 logger = structlog.get_logger(__name__)
 
@@ -61,39 +59,6 @@ class BackupService:
         
         logger.info("✅ MongoDB Dump Complete.")
 
-    def _dump_neo4j(self, timestamp_dir: str):
-        """Exports Graph Data using APOC."""
-        logger.info("🕸️  Starting Neo4j Graph Dump...")
-        dump_path = os.path.join(timestamp_dir, "neo4j")
-        os.makedirs(dump_path, exist_ok=True)
-        file_path = os.path.join(dump_path, "graph_dump.json")
-
-        # Cypher query to export all nodes/rels
-        query = """
-        CALL apoc.export.json.all(null, {stream: true})
-        YIELD data
-        RETURN data
-        """
-        
-        try:
-            # Use the existing graph service connection
-            graph_service._connect()
-            if not graph_service._driver:
-                logger.error("❌ Neo4j Driver unavailable. Skipping Graph Dump.")
-                return
-
-            with graph_service._driver.session() as session:
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    result = session.run(query)
-                    # Concatenate the stream parts
-                    for record in result:
-                        f.write(record["data"])
-            
-            logger.info("✅ Neo4j Dump Complete.")
-        except Exception as e:
-            logger.error(f"❌ Neo4j Export Failed: {e}")
-            # Don't crash the whole backup if graph fails
-
     def perform_full_backup(self):
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         run_dir = os.path.join(BACKUP_DIR, timestamp)
@@ -103,9 +68,8 @@ class BackupService:
         try:
             logger.info(f"🚀 Starting Backup Sequence: {timestamp}")
             
-            # 1. Dump Data
+            # 1. Dump Data (MongoDB Only)
             self._dump_mongodb(run_dir)
-            self._dump_neo4j(run_dir)
 
             # 2. Compress
             logger.info("📦 Compressing Archive...")
@@ -114,11 +78,15 @@ class BackupService:
             final_zip = run_dir + ".zip"
             
             # 3. Upload to B2
-            logger.info(f"☁️  Uploading to B2 Bucket: {B2_BUCKET}...")
-            s3 = self._get_s3_client()
-            s3.upload_file(final_zip, B2_BUCKET, zip_filename)
+            if B2_KEY_ID and B2_BUCKET:
+                logger.info(f"☁️  Uploading to B2 Bucket: {B2_BUCKET}...")
+                s3 = self._get_s3_client()
+                s3.upload_file(final_zip, B2_BUCKET, zip_filename)
+                logger.info("✅ Upload Successful.")
+            else:
+                logger.warning("⚠️ B2 Credentials missing. Skipping Cloud Upload.")
+                logger.info(f"✅ Local Backup saved at: {final_zip}")
             
-            logger.info("✅ Upload Successful.")
             return zip_filename
 
         except Exception as e:

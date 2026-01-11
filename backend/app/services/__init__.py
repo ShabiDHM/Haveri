@@ -29,7 +29,6 @@ from . import (
     spreadsheet_service,
     archive_service,
     finance_service,
-    graph_service,
     pdf_service,
     social_service,
     inventory_service,
