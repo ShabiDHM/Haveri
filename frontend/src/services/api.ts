@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V8.7 (INVITATION ACCEPTANCE)
-// 1. FEATURE: Added 'acceptInvite' method to complete the user onboarding flow.
-// 2. STATUS: Fully integrated with the backend's new '/accept-invite' endpoint.
+// PHOENIX PROTOCOL - API V8.8 (BULK DELETE)
+// 1. FEATURE: Added 'bulkDeletePosTransaction' method.
+// 2. INTEGRATION: Connects to the backend's new '/transactions/bulk-delete' endpoint.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -147,13 +147,10 @@ class ApiService {
         try { const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message }); return response.data.response; } 
         catch (e) { return "Më falni, shërbimi i asistencës tatimore është përkohësisht jashtë funksionit."; }
     }
-    
-    // PHOENIX: New method for Archive Document Q&A
     public async askDocumentQuestion(documentId: string, question: string): Promise<{ answer: string }> {
         const response = await this.axiosInstance.post<{ answer: string }>(`/archive/items/${documentId}/chat`, { question });
         return response.data;
     }
-
     public async predictRestock(itemId: string): Promise<RestockPrediction> {
         try { const response = await this.axiosInstance.post<RestockPrediction>('/analysis/inventory/predict', { item_id: itemId }); return response.data; } 
         catch (e) { return { suggested_quantity: 0, reason: "Analiza e padisponueshme për momentin.", estimated_cost: 0 }; }
@@ -189,6 +186,15 @@ class ApiService {
     public async getExpenseReceiptBlob(expenseId: string): Promise<{ blob: Blob, filename: string }> { const response = await this.axiosInstance.get(`/finance/expenses/${expenseId}/receipt`, { responseType: 'blob' }); const disposition = response.headers['content-disposition']; let filename = `receipt-${expenseId}.pdf`; if (disposition && disposition.indexOf('filename=') !== -1) { const matches = /filename="([^"]*)"/.exec(disposition); if (matches != null && matches[1]) filename = matches[1]; } return { blob: response.data, filename }; }
     public async getPosTransactions(): Promise<PosTransaction[]> { const response = await this.axiosInstance.get<any>('/finance/import/transactions'); if (Array.isArray(response.data)) { return response.data; } if (response.data && Array.isArray(response.data.transactions)) { return response.data.transactions; } return []; }
     public async deletePosTransaction(transactionId: string): Promise<void> { await this.axiosInstance.delete(`/finance/transactions/${transactionId}`); }
+    
+    // PHOENIX: NEW BULK DELETE METHOD
+    public async bulkDeletePosTransaction(transactionIds: string[]): Promise<any> {
+        const response = await this.axiosInstance.post('/finance/transactions/bulk-delete', {
+            transaction_ids: transactionIds
+        });
+        return response.data;
+    }
+
     public async getWizardState(month: number, year: number): Promise<WizardState> { const response = await this.axiosInstance.get<WizardState>('/finance/wizard/state', { params: { month, year } }); return response.data; }
     public async downloadMonthlyReport(month: number, year: number): Promise<void> { const response = await this.axiosInstance.get('/finance/wizard/report/pdf', { params: { month, year }, responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([response.data])); const link = document.createElement('a'); link.href = url; link.setAttribute('download', `Raporti_${month}_${year}.pdf`); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); }
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }

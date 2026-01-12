@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V14.5 (SIGNATURE FIX)
-# 1. FIX: Corrected the call to 'archive_service.save_generated_file'.
-# 2. LOGIC: Now uses the correct 'file_content' parameter and the newly supported 'title' parameter.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V14.6 (BULK DELETE)
+# 1. FEATURE: Added POST /transactions/bulk-delete endpoint.
+# 2. LOGIC: Accepts a list of transaction IDs for mass deletion.
 
 import asyncio
 import json
@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from bson import ObjectId
 from pymongo.database import Database
 import pymongo 
+from pydantic import BaseModel
 
 from app.models.user import UserInDB
 from app.models.finance import (
@@ -29,6 +30,10 @@ from app.services.analytics_service import AnalyticsService
 from app.api.endpoints.dependencies import get_current_user, get_db, get_async_db, get_current_active_user
 
 router = APIRouter(tags=["Finance"])
+
+# PHOENIX: Define the request body for bulk deletion
+class BulkDeleteRequest(BaseModel):
+    transaction_ids: List[str]
 
 # --- DATA IMPORT ENDPOINTS ---
 @router.post("/import/preview")
@@ -61,11 +66,25 @@ def delete_transaction(
 ):
     FinanceService(db).delete_pos_transaction(str(current_user.id), transaction_id)
 
+# PHOENIX: NEW BULK DELETE ENDPOINT
+@router.post("/transactions/bulk-delete", status_code=status.HTTP_200_OK)
+def bulk_delete_transactions(
+    request: BulkDeleteRequest,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    db: Database = Depends(get_db)
+):
+    service = FinanceService(db)
+    deleted_count = service.bulk_delete_pos_transactions(
+        user_id=str(current_user.id), 
+        transaction_ids=request.transaction_ids
+    )
+    return {"status": "success", "deleted_count": deleted_count}
+
+
 # --- ANALYTICS ENDPOINTS ---
 @router.get("/case-summary", response_model=List[CaseFinancialSummary])
 async def get_case_financial_summaries(current_user: Annotated[UserInDB, Depends(get_current_active_user)], db: Any = Depends(get_async_db)):
-    # ... (logic unchanged)
-    return [] # Placeholder to keep snippet small
+    return [] 
 
 @router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
 async def get_analytics_dashboard(
@@ -73,8 +92,7 @@ async def get_analytics_dashboard(
     db: Any = Depends(get_async_db),
     days: int = 30
 ):
-    # ... (logic unchanged)
-    return AnalyticsDashboardData(total_revenue_period=0, total_transactions_period=0, sales_trend=[], top_products=[]) # Placeholder
+    return AnalyticsDashboardData(total_revenue_period=0, total_transactions_period=0, sales_trend=[], top_products=[])
 
 
 # --- INVOICES (Standard CRUD) ---
@@ -115,20 +133,19 @@ def download_invoice_pdf(invoice_id: str, current_user: Annotated[UserInDB, Depe
 @router.post("/invoices/{invoice_id}/archive", response_model=ArchiveItemOut)
 async def archive_invoice(invoice_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db), case_id: Optional[str] = Query(None), lang: Optional[str] = Query("sq")):
     finance_service = FinanceService(db)
-    archive_service_instance = ArchiveService(db) # Renamed to avoid conflict
+    archive_service_instance = ArchiveService(db)
     invoice = finance_service.get_invoice(str(current_user.id), invoice_id)
     pdf_buffer = report_service.generate_invoice_pdf(invoice, db, str(current_user.id), lang=lang or "sq")
     pdf_content = pdf_buffer.getvalue()
     filename = f"Fatura_{invoice.invoice_number}.pdf"
     title = f"Fatura #{invoice.invoice_number} - {invoice.client_name}"
     
-    # PHOENIX FIX: Call with corrected parameter names
     archived_item = await archive_service_instance.save_generated_file(
         user_id=str(current_user.id),
         filename=filename,
-        file_content=pdf_content, # Corrected from 'content'
+        file_content=pdf_content,
         category="INVOICE",
-        title=title, # Now a valid parameter
+        title=title,
         case_id=case_id
     )
     return archived_item

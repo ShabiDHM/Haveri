@@ -1,11 +1,11 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V6.2 (SAFE LOGGING)
-# 1. FIX: Switched from 'structlog' to standard 'logging' to prevent import errors if structlog is missing.
-# 2. LOGIC: Maintained the Unified Import Router logic.
+# PHOENIX PROTOCOL - FINANCE SERVICE V6.3 (BULK DELETE)
+# 1. FEATURE: Added 'bulk_delete_pos_transactions' to handle mass deletion.
+# 2. SECURITY: The query ensures users can only delete their own transactions.
 
 import logging
 from datetime import datetime, timezone
-from bson import ObjectId
+from bson import ObjectId, errors as bson_errors
 from pymongo.database import Database
 from fastapi import HTTPException, UploadFile
 from typing import Any, List, Dict
@@ -31,27 +31,11 @@ class FinanceService:
                 end_date = datetime(year, month + 1, 1)
 
             pipeline = [
-                {
-                    "$match": {
-                        "user_id": ObjectId(user_id),
-                        "date_time": {
-                            "$gte": start_date,
-                            "$lt": end_date
-                        }
-                    }
-                },
-                {
-                    "$group": {
-                        "_id": None,
-                        "total_revenue": {"$sum": "$total_amount"}
-                    }
-                }
+                {"$match": {"user_id": ObjectId(user_id), "date_time": {"$gte": start_date, "$lt": end_date}}},
+                {"$group": {"_id": None, "total_revenue": {"$sum": "$total_amount"}}}
             ]
-
             result = await async_db["transactions"].aggregate(pipeline).to_list(length=1)
-            if result:
-                return float(result[0]["total_revenue"])
-            return 0.0
+            return float(result[0]["total_revenue"]) if result else 0.0
         except Exception as e:
             logger.error(f"Error calculating POS revenue: {e}")
             return 0.0
@@ -59,13 +43,29 @@ class FinanceService:
     def delete_pos_transaction(self, user_id: str, transaction_id: str) -> None:
         try:
             oid = ObjectId(transaction_id)
-        except:
+        except bson_errors.InvalidId:
             raise HTTPException(status_code=400, detail="Invalid Transaction ID")
         
         result = self.db.transactions.delete_one({"_id": oid, "user_id": str(user_id)})
         
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Transaction not found")
+
+    # PHOENIX: NEW BULK DELETE METHOD
+    def bulk_delete_pos_transactions(self, user_id: str, transaction_ids: List[str]) -> int:
+        if not transaction_ids:
+            return 0
+        try:
+            oids = [ObjectId(tid) for tid in transaction_ids]
+        except bson_errors.InvalidId:
+            raise HTTPException(status_code=400, detail="One or more provided IDs are invalid.")
+        
+        result = self.db.transactions.delete_many({
+            "_id": {"$in": oids},
+            "user_id": user_id
+        })
+        
+        return result.deleted_count
 
     # --- INVOICE LOGIC ---
     def _generate_invoice_number(self, user_id: str) -> str:
@@ -227,46 +227,21 @@ class FinanceService:
                 status = str(row.get("Statusi", "PAID")).upper()
                 
                 if row_type == "INVOICE":
-                    inv_in = InvoiceCreate(
-                        client_name=description, 
-                        issue_date=dt,
-                        status=status,
-                        items=[InvoiceItem(description=category, quantity=1, unit_price=amount)],
-                        tax_rate=18.0
-                    )
+                    inv_in = InvoiceCreate(client_name=description, issue_date=dt, status=status, items=[InvoiceItem(description=category, quantity=1, unit_price=amount)], tax_rate=18.0)
                     self.create_invoice(user_id, inv_in)
                     counts["INVOICE"] += 1
-                    
                 elif row_type == "EXPENSE":
-                    exp_in = ExpenseCreate(
-                        category=category,
-                        amount=abs(amount),
-                        description=description,
-                        date=dt
-                    )
+                    exp_in = ExpenseCreate(category=category, amount=abs(amount), description=description, date=dt)
                     self.create_expense(user_id, exp_in)
                     counts["EXPENSE"] += 1
-                    
                 elif row_type == "POS":
-                    pos_doc = {
-                        "user_id": str(user_id), 
-                        "description": description,
-                        "category": category,
-                        "amount": amount,
-                        "total_amount": amount,
-                        "date_time": dt,
-                        "payment_method": "CASH", 
-                        "status": status,
-                        "source": "IMPORT"
-                    }
+                    pos_doc = {"user_id": str(user_id), "description": description, "category": category, "amount": amount, "total_amount": amount, "date_time": dt, "payment_method": "CASH", "status": status, "source": "IMPORT"}
                     self.db.transactions.insert_one(pos_doc)
                     counts["POS"] += 1
                 else:
                     counts["UNKNOWN"] += 1
-
             except Exception as e:
                 logger.error(f"Import Error on row {row}: {e}")
                 counts["UNKNOWN"] += 1
                 continue
-                
         return counts
