@@ -1,8 +1,7 @@
 // FILE: src/components/business/modals/InventoryImportModal.tsx
-// PHOENIX PROTOCOL - UI POLISH V1.3
-// 1. FIX: Removed ugly horizontal scrollbar.
-// 2. UI: Formatted column instructions as a clean code block.
-// 3. STATUS: Production Ready.
+// PHOENIX PROTOCOL - CONTEXTUAL UI V2.0
+// 1. REFACTOR: Replaced internal logic with 'title' and 'requiredColumns' props.
+// 2. UI: Modal now displays the exact instructions provided by its parent component.
 
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,9 +13,12 @@ interface InventoryImportModalProps {
     onClose: () => void;
     onSuccess: () => void;
     target: 'items' | 'recipes';
+    // PHOENIX: New props for contextual UI
+    title: string;
+    requiredColumns: string;
 }
 
-export const InventoryImportModal: React.FC<InventoryImportModalProps> = ({ isOpen, onClose, onSuccess, target }) => {
+export const InventoryImportModal: React.FC<InventoryImportModalProps> = ({ isOpen, onClose, onSuccess, target, title, requiredColumns }) => {
     const { t } = useTranslation();
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
@@ -40,6 +42,7 @@ export const InventoryImportModal: React.FC<InventoryImportModalProps> = ({ isOp
             alert(t('error.generic'));
         } finally {
             setLoading(false);
+            setFile(null); // Reset file input after import
         }
     };
 
@@ -52,25 +55,21 @@ export const InventoryImportModal: React.FC<InventoryImportModalProps> = ({ isOp
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/5 mb-4">
                         <FileSpreadsheet className="w-6 h-6 text-emerald-400" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">
-                        {target === 'recipes' ? t('inventory.recipes.import') : t('inventory.items.import', 'Import Inventory Items')}
-                    </h3>
+                    {/* PHOENIX: Use title prop */}
+                    <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
                     <p className="text-gray-400 text-sm">
-                        {t('inventory.import.instruction')}
+                        {t('inventory.import.instruction', 'Ngarkoni një skedar CSV ose Excel për të importuar të dhënat.')}
                     </p>
                 </div>
 
-                {/* Professional Code Block for Columns */}
                 <div className="bg-black/40 rounded-lg p-3 border border-white/10 mb-6 text-left">
                     <div className="flex items-center gap-2 mb-2">
                         <Info size={12} className="text-blue-400" />
-                        <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Struktura e Kërkuar (CSV/Excel)</span>
+                        <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">{t('inventory.import.requiredStructure', 'Struktura e Kërkuar (CSV/Excel)')}</span>
                     </div>
+                    {/* PHOENIX: Use requiredColumns prop */}
                     <code className="text-xs font-mono text-gray-300 break-words block leading-relaxed">
-                        {target === 'recipes' 
-                            ? t('inventory.import.columns') 
-                            : t('inventory.import.columnsItems')
-                        }
+                        {requiredColumns}
                     </code>
                 </div>
 
@@ -98,7 +97,7 @@ export const InventoryImportModal: React.FC<InventoryImportModalProps> = ({ isOp
                     <button onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white transition-colors">{t('general.cancel')}</button>
                     <button onClick={handleImport} disabled={!file || loading} className="px-6 py-2 bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-700 text-white rounded-lg font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-600/20">
                         {loading && <Loader2 size={16} className="animate-spin" />}
-                        {t('inventory.import.button')}
+                        {t('inventory.import.button', 'Importo Tani')}
                     </button>
                 </div>
             </div>

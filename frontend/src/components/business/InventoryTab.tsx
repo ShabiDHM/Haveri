@@ -1,7 +1,7 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V19.6 (RECIPE SEARCH FIX)
-// 1. FIX: Applied search filtering to Recipes logic (previously missing).
-// 2. UX: Ensures search bar works seamlessly across both tabs.
+// PHOENIX PROTOCOL - INVENTORY TAB V19.8 (DELETE PROP WIRING)
+// 1. INTEGRATION: The 'handleDeleteItem' function is now passed to the InventoryItemModal.
+// 2. UX: Enables deletion directly from the 'Edit Item' modal.
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -78,11 +78,8 @@ export const InventoryTab: React.FC = () => {
 
     const openImport = (target: 'items' | 'recipes') => { setImportTarget(target); setShowImportModal(true); };
 
-    // PHOENIX: Filtering Logic for BOTH Items and Recipes
     const filteredManual = manualItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const filteredPos = posItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    // Fixed: Now filtering recipes as well
     const filteredRecipes = recipes.filter(r => r.product_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-emerald-500" /></div>;
@@ -100,7 +97,7 @@ export const InventoryTab: React.FC = () => {
                 {activeTab === 'items' ? (
                     <>
                         <ActionButton primary icon={<Plus size={20} />} label={t('inventory.items.add')} onClick={openCreateItem} />
-                        <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.items.import', 'Import CSV')} onClick={() => openImport('items')} />
+                        <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.items.import', 'Importo Artikujt')} onClick={() => openImport('items')} />
                     </>
                 ) : (
                     <>
@@ -148,7 +145,7 @@ export const InventoryTab: React.FC = () => {
 
                         {activeTab === 'recipes' && (
                             <RecipeList 
-                                recipes={filteredRecipes} // PHOENIX: Passed filtered list
+                                recipes={filteredRecipes}
                                 inventoryItems={items} 
                                 calculateCost={calculateRecipeCost}
                                 onEdit={openEditRecipe}
@@ -159,9 +156,29 @@ export const InventoryTab: React.FC = () => {
                 </div>
             </div>
 
-            <InventoryItemModal isOpen={showItemModal} onClose={() => setShowItemModal(false)} onSuccess={loadData} itemToEdit={editingItem} />
+            {/* PHOENIX: onDelete prop is now passed to the modal */}
+            <InventoryItemModal 
+                isOpen={showItemModal} 
+                onClose={() => setShowItemModal(false)} 
+                onSuccess={loadData} 
+                itemToEdit={editingItem} 
+                onDelete={handleDeleteItem} 
+            />
+            
             <RecipeModal isOpen={showRecipeModal} onClose={() => setShowRecipeModal(false)} onSuccess={loadData} recipeToEdit={editingRecipe} inventoryItems={items} calculateCost={calculateRecipeCost} />
-            <InventoryImportModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} onSuccess={loadData} target={importTarget} />
+            
+            <InventoryImportModal 
+                isOpen={showImportModal} 
+                onClose={() => setShowImportModal(false)} 
+                onSuccess={loadData} 
+                target={importTarget}
+                title={importTarget === 'items' 
+                    ? t('inventory.items.importTitle', 'Importo Artikujt e Inventarit') 
+                    : t('inventory.recipes.importTitle', 'Importo Recetat')}
+                requiredColumns={importTarget === 'items' 
+                    ? "Emri, Njesia, Kosto, Stoku, LowStockThreshold" 
+                    : "Product Name, Ingredient, Quantity"}
+            />
 
         </motion.div>
     );
