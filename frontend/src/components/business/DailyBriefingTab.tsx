@@ -1,7 +1,7 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V4.9 (DATE LOGIC FIX)
-// 1. FIX: Changed date comparison to String-based (YYYY-MM-DD) to fix empty bars.
-// 2. LOGIC: Eliminates timezone issues where 00:00 might shift to previous day.
+// PHOENIX PROTOCOL - DASHBOARD V5.0 (EDGE CASE HANDLING)
+// 1. LOGIC: peakTime state is now initialized to null.
+// 2. INTEGRITY: If no transactions exist, the state remains null, indicating "no data".
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,17 +30,15 @@ export const DailyBriefingTab: React.FC = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     
-    // Hooks
     const { data: briefingData, loading: briefingLoading, error: briefingError, refreshData } = useStrategicBriefing();
     const { displayIncome, loading: financeLoading } = useFinanceData();
 
-    // Local State
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
     const [cases, setCases] = useState<Case[]>([]);
     const [messageCount, setMessageCount] = useState(0);
     
     const [salesHistory, setSalesHistory] = useState<DailySalesData>({ labels: [], data: [] });
-    const [peakTime, setPeakTime] = useState<string>("12:00 - 13:00");
+    const [peakTime, setPeakTime] = useState<string | null>(null); // PHOENIX: Initialize as null
     const [historyLoading, setHistoryLoading] = useState(true);
 
     const months = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
@@ -52,16 +50,12 @@ export const DailyBriefingTab: React.FC = () => {
             try {
                 const casesData = await apiService.getCases();
                 setCases(casesData);
-                
                 const msgs = await apiService.getInboundMessages('INBOX');
                 setMessageCount(msgs.length);
-
                 const transactions = await apiService.getPosTransactions();
                 
-                // Safe casting for analysis
                 processSalesHistory(transactions as any[]);
                 analyzePeakTraffic(transactions as any[]);
-
             } catch (err) {
                 console.error("Failed to load dashboard data", err);
             } finally {
@@ -71,54 +65,34 @@ export const DailyBriefingTab: React.FC = () => {
         loadData();
     }, [i18n.language]);
 
-    // Helper: Aggregate Month-to-Date (String Comparison)
     const processSalesHistory = (transactions: RawTransaction[]) => {
         const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth();
-        const currentDay = now.getDate();
-
         const dates: Date[] = [];
-        for (let d = 1; d <= currentDay; d++) {
-            dates.push(new Date(currentYear, currentMonth, d));
+        for (let d = 1; d <= now.getDate(); d++) {
+            dates.push(new Date(now.getFullYear(), now.getMonth(), d));
         }
 
-        const labels = dates.map(date => 
-            date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
-        );
-
+        const labels = dates.map(date => date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }));
         const data = dates.map(targetDate => {
-            // Convert target loop date to "YYYY-MM-DD"
-            // Note: Use local string to ensure we match the day represented by the loop
-            const targetStr = targetDate.toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD local
-
+            const targetStr = targetDate.toLocaleDateString('en-CA');
             const dailySum = transactions.reduce((sum, tx) => {
                 const dateVal = tx.transaction_date || tx.date;
                 if (!dateVal) return sum;
-
-                // Parse transaction date
                 const txDate = new Date(dateVal);
                 if (isNaN(txDate.getTime())) return sum;
-
-                // Convert transaction date to "YYYY-MM-DD" local
                 const txStr = txDate.toLocaleDateString('en-CA');
-
-                // Compare Strings
-                if (txStr === targetStr) {
-                    return sum + (tx.total_price || tx.amount || 0);
-                }
-                return sum;
+                return txStr === targetStr ? sum + (tx.total_price || tx.amount || 0) : sum;
             }, 0);
-            
             return dailySum;
         });
-
         setSalesHistory({ labels, data });
     };
 
-    // Helper: Find Peak Traffic Hour
     const analyzePeakTraffic = (transactions: RawTransaction[]) => {
-        if (!transactions || transactions.length === 0) return;
+        if (!transactions || transactions.length === 0) {
+            setPeakTime(null); // PHOENIX: Explicitly set null for "no data" case
+            return;
+        }
 
         const hourCounts: Record<number, number> = {};
         const thirtyDaysAgo = new Date();
@@ -127,18 +101,19 @@ export const DailyBriefingTab: React.FC = () => {
         transactions.forEach(tx => {
             const dateVal = tx.transaction_date || tx.date;
             if (!dateVal) return;
-
             const txDate = new Date(dateVal);
-            
             if (txDate >= thirtyDaysAgo && !isNaN(txDate.getTime())) {
                 const hour = txDate.getHours();
                 hourCounts[hour] = (hourCounts[hour] || 0) + 1;
             }
         });
 
-        let maxHour = 12; 
-        let maxCount = 0;
+        if (Object.keys(hourCounts).length === 0) {
+             setPeakTime(null); // No recent transactions found
+             return;
+        }
 
+        let maxHour = -1, maxCount = 0;
         Object.entries(hourCounts).forEach(([hour, count]) => {
             if (count > maxCount) {
                 maxCount = count;
@@ -146,7 +121,7 @@ export const DailyBriefingTab: React.FC = () => {
             }
         });
 
-        setPeakTime(`${maxHour}:00 - ${maxHour + 1}:00`);
+        setPeakTime(maxHour !== -1 ? `${maxHour}:00 - ${maxHour + 1}:00` : null);
     };
 
     const handleEventUpdate = () => {
@@ -161,9 +136,7 @@ export const DailyBriefingTab: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 sm:space-y-8 pb-10">
             <AnimatePresence>
-                {selectedEvent && (
-                    <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={handleEventUpdate} cases={cases} />
-                )}
+                {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={handleEventUpdate} cases={cases} />}
             </AnimatePresence>
             
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950 to-slate-900 border border-white/10 p-6 sm:p-10 text-center sm:text-left shadow-2xl">
@@ -181,47 +154,27 @@ export const DailyBriefingTab: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
-                
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                    <BusinessRhythmCard 
-                        currentSales={displayIncome} 
-                        salesHistory={salesHistory} 
-                    /> 
+                    <BusinessRhythmCard currentSales={displayIncome} salesHistory={salesHistory} /> 
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                    <BusinessPulseCard 
-                        signals={briefingData?.market.signals} 
-                        currentSales={displayIncome}
-                        peakTime={peakTime} 
-                    />
+                    <BusinessPulseCard signals={briefingData?.market.signals} currentSales={displayIncome} peakTime={peakTime} />
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-6">
-                    <motion.div 
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => navigate('/business/inbox')}
-                        className="group relative bg-gray-900/60 hover:bg-gray-900/80 border border-white/10 rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md"
-                    >
+                    <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} onClick={() => navigate('/business/inbox')} className="group relative bg-gray-900/60 hover:bg-gray-900/80 border border-white/10 rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
-                                <div className="p-3 rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/20">
-                                    <Mail size={20} />
-                                </div>
+                                <div className="p-3 rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/20"><Mail size={20} /></div>
                                 <div>
                                     <h3 className="font-bold text-white text-lg">Inbox</h3>
-                                    <p className="text-sm text-gray-400">
-                                        {messageCount} {t('inbox.newMessages', 'mesazhe të reja')}
-                                    </p>
+                                    <p className="text-sm text-gray-400">{messageCount} {t('inbox.newMessages', 'mesazhe të reja')}</p>
                                 </div>
                             </div>
-                            <div className="p-2 rounded-full bg-white/5 group-hover:bg-blue-500/20 group-hover:text-blue-300 transition-all text-gray-400">
-                                <ArrowRight size={20} />
-                            </div>
+                            <div className="p-2 rounded-full bg-white/5 group-hover:bg-blue-500/20 group-hover:text-blue-300 transition-all text-gray-400"><ArrowRight size={20} /></div>
                         </div>
                     </motion.div>
-
                     <div className="flex-1 min-h-0">
                         {briefingData && <SmartAgendaCard agenda={briefingData.agenda} onEventClick={(event) => setSelectedEvent(event)} />}
                     </div>
