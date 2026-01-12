@@ -1,4 +1,3 @@
-
 {
   "general": {
     "login": "Hyrja",
@@ -33,6 +32,27 @@
     "confirmClearChat": "A jeni i sigurt që doni të fshini bisedën?",
     "backToYears": "Kthehu te Vitet",
     "backTo": "Kthehu te"
+  },
+  "navigation": {
+    "integrations": "Integrimet"
+  },
+  "settings": {
+    "integrations": {
+      "title": "Integrimet & Automatizimi",
+      "subtitle": "Lidhni shërbimet tjera dhe automatizoni proceset e punës.",
+      "emailIngest": {
+        "title": "Automatizimi me Email",
+        "subtitle": "Dërgoni raportet ditore automatikisht.",
+        "yourAddress": "Adresa Juaj Unike",
+        "copy": "Kopjo",
+        "loading": "Duke ngarkuar adresën...",
+        "setupTitle": "Udhëzime",
+        "step1": "Hyni në panelin e POS sistemit tuaj.",
+        "step2": "Gjeni seksionin për raporte ditore automatike (Daily Reports / Z Report).",
+        "step3": "Vendosni adresën tuaj unike si pranues (recipient) i raportit.",
+        "step4": "Sigurohuni që raporti të dërgohet si skedar .CSV ose .XLSX."
+      }
+    }
   },
   "sidebar": {
       "business": "Zyra Ime",
