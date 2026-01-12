@@ -1,7 +1,7 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// PHOENIX PROTOCOL - TRANSACTION EXPLORER V6.1 (LINTER FIX)
-// 1. FIX: Corrected the 'lucide-react' import statement by adding the missing 'ArrowRight' icon and removing the unused 'Calendar' icon.
-// 2. STATUS: This file is now clean, error-free, and correctly implements the drill-down card layout.
+// PHOENIX PROTOCOL - RESTORATION V6.3
+// 1. CRITICAL FIX: Restored corrupted React import statement to resolve all compilation errors.
+// 2. UI FIX: Re-applied the change to make action icons permanently visible.
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,7 +29,24 @@ const TransactionCard: React.FC<{ tx: TransactionItem, props: TransactionListPro
             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="group flex items-center justify-between p-3 rounded-xl bg-black/40 hover:bg-black/60 transition-colors"
         >
             <div className="flex items-center gap-3 min-w-0"><div className={`p-2 rounded-lg shrink-0 ${ tx.type === 'invoice' ? 'bg-emerald-500/10 text-emerald-400' : tx.type === 'expense' ? 'bg-rose-500/10 text-rose-400' : 'bg-purple-500/10 text-purple-400' }`}>{tx.type === 'invoice' ? <ArrowDownRight size={16} /> : tx.type === 'pos' ? <ShoppingCart size={16} /> : getCategoryIcon(tx.label)}</div><div className="min-w-0"><p className="text-sm font-medium text-white truncate">{tx.label}</p><p className="text-[10px] text-gray-500 uppercase tracking-wider">{tx.type}</p></div></div>
-            <div className="flex items-center gap-4"><span className={`font-mono text-sm font-bold ${tx.type === 'expense' ? 'text-rose-400' : 'text-emerald-400'}`}>{tx.type === 'expense' ? '-' : '+'}€{tx.amount.toFixed(2)}</span><div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">{hasSourceDocument && (<button onClick={() => props.onViewSourceDocument((tx.raw as Expense).source_archive_id!, tx.label)} className="p-1.5 hover:bg-white/10 rounded-md text-sky-400"><FileText size={14} /></button>)}{tx.type !== 'pos' ? (<><button onClick={() => tx.type === 'invoice' ? props.onEditInvoice(tx.raw as Invoice) : props.onEditExpense(tx.raw as Expense)} className="p-1.5 hover:bg-white/10 rounded-md text-amber-400"><Edit2 size={14} /></button><button onClick={() => tx.type === 'invoice' ? props.onViewInvoice(tx.raw as Invoice) : props.onViewExpense(tx.raw as Expense)} disabled={props.openingDocId === tx.id} className="p-1.5 hover:bg-white/10 rounded-md text-blue-400">{props.openingDocId === tx.id ? <Loader2 size={14} className="animate-spin"/> : <Eye size={14} />}</button><button onClick={() => tx.type === 'invoice' ? props.onDownloadInvoice(tx.id) : props.onDownloadExpense(tx.raw as Expense)} className="p-1.5 hover:bg-white/10 rounded-md text-green-400"><Download size={14} /></button><button onClick={() => tx.type === 'invoice' ? props.onArchiveInvoice(tx.id) : props.onArchiveExpense(tx.id)} className="p-1.5 hover:bg-white/10 rounded-md text-indigo-400"><Archive size={14} /></button><button onClick={() => tx.type === 'invoice' ? props.onDeleteInvoice(tx.id) : props.onDeleteExpense(tx.id)} className="p-1.5 hover:bg-white/10 rounded-md text-red-400"><Trash2 size={14} /></button></>) : (<button onClick={() => props.onDeletePos(tx.id)} className="p-1.5 hover:bg-white/10 rounded-md text-red-400"><Trash2 size={14} /></button>)}</div></div>
+            <div className="flex items-center gap-4">
+                <span className={`font-mono text-sm font-bold ${tx.type === 'expense' ? 'text-rose-400' : 'text-emerald-400'}`}>{tx.type === 'expense' ? '-' : '+'}€{tx.amount.toFixed(2)}</span>
+                {/* PHOENIX: Removed opacity-0 group-hover:opacity-100 */}
+                <div className="flex items-center gap-1 transition-opacity">
+                    {hasSourceDocument && (<button onClick={() => props.onViewSourceDocument((tx.raw as Expense).source_archive_id!, tx.label)} className="p-1.5 hover:bg-white/10 rounded-md text-sky-400"><FileText size={14} /></button>)}
+                    {tx.type !== 'pos' ? (
+                        <>
+                            <button onClick={() => tx.type === 'invoice' ? props.onEditInvoice(tx.raw as Invoice) : props.onEditExpense(tx.raw as Expense)} className="p-1.5 hover:bg-white/10 rounded-md text-amber-400"><Edit2 size={14} /></button>
+                            <button onClick={() => tx.type === 'invoice' ? props.onViewInvoice(tx.raw as Invoice) : props.onViewExpense(tx.raw as Expense)} disabled={props.openingDocId === tx.id} className="p-1.5 hover:bg-white/10 rounded-md text-blue-400">{props.openingDocId === tx.id ? <Loader2 size={14} className="animate-spin"/> : <Eye size={14} />}</button>
+                            <button onClick={() => tx.type === 'invoice' ? props.onDownloadInvoice(tx.id) : props.onDownloadExpense(tx.raw as Expense)} className="p-1.5 hover:bg-white/10 rounded-md text-green-400"><Download size={14} /></button>
+                            <button onClick={() => tx.type === 'invoice' ? props.onArchiveInvoice(tx.id) : props.onArchiveExpense(tx.id)} className="p-1.5 hover:bg-white/10 rounded-md text-indigo-400"><Archive size={14} /></button>
+                            <button onClick={() => tx.type === 'invoice' ? props.onDeleteInvoice(tx.id) : props.onDeleteExpense(tx.id)} className="p-1.5 hover:bg-white/10 rounded-md text-red-400"><Trash2 size={14} /></button>
+                        </>
+                    ) : (
+                        <button onClick={() => props.onDeletePos(tx.id)} className="p-1.5 hover:bg-white/10 rounded-md text-red-400"><Trash2 size={14} /></button>
+                    )}
+                </div>
+            </div>
         </motion.div>
     );
 };
