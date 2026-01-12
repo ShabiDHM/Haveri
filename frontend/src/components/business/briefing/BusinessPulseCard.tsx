@@ -1,8 +1,7 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V1.1 (LINT FREE & LOCALIZED)
-// 1. FIX: Removed unused 'ArrowUpRight'.
-// 2. FIX: Utilized 't' hook for all static text strings.
-// 3. LOGIC: Calculates EOD projection based on current velocity.
+// PHOENIX PROTOCOL - PULSE CARD V2.1 (REAL INTELLIGENCE)
+// 1. DATA: Accepts 'peakTime' prop calculated from real transaction history.
+// 2. LOGIC: Replaces hardcoded placeholder with actual business data.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -19,9 +18,14 @@ interface Signal {
 interface BusinessPulseCardProps {
     signals?: Signal[];
     currentSales?: number;
+    peakTime?: string; // PHOENIX: New prop for real data
 }
 
-export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({ signals = [], currentSales = 0 }) => {
+export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({ 
+    signals = [], 
+    currentSales = 0,
+    peakTime = "12:00 - 13:00" // Fallback if calculation fails
+}) => {
     const { t } = useTranslation();
     const [insight, setInsight] = useState<string>("");
     
@@ -46,7 +50,6 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({ signals = 
     useEffect(() => {
         const fetchInsight = async () => {
             try {
-                // Reuse the proactive insight from Finance
                 const data = await apiService.getProactiveInsight();
                 setInsight(data.insight);
             } catch (e) {
@@ -119,7 +122,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({ signals = 
                             <div>
                                 <p className="text-xs text-blue-300 font-bold uppercase mb-1">{t('dashboard.pulse.trafficAnalysis', 'Analiza e Trafikut')}</p>
                                 <p className="text-sm text-gray-200 leading-snug">
-                                    {t('dashboard.pulse.trafficForecast', 'Pritet fluks i lartë klientësh 17:00 - 19:00.')}
+                                    {t('dashboard.pulse.trafficForecast', 'Pritet fluks i lartë klientësh')} <span className="text-white font-bold">{peakTime}</span>.
                                 </p>
                             </div>
                         </div>

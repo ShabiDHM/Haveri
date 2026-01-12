@@ -1,7 +1,8 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V4.3 (INBOX UI REFACTOR)
-// 1. STYLE: Redesigned the 'Inbox' card to match the glassmorphism aesthetic of the other dashboard widgets.
-// 2. UX: Ensured the new design is clean, consistent, and provides clear visual feedback on hover.
+// PHOENIX PROTOCOL - DASHBOARD V4.7 (FULL REAL DATA)
+// 1. INTELLIGENCE: Analyzes transaction timestamps to find 'Peak Traffic' hours.
+// 2. INTEGRATION: Feeds calculated peak time to BusinessPulseCard.
+// 3. INTEGRATION: Feeds Month-to-Date data to RhythmCard.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,49 +13,129 @@ import { useStrategicBriefing, UIAgendaItem } from '../../hooks/useStrategicBrie
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { EventDetailModal } from '../modals/EventDetailModal';
 import { apiService } from '../../services/api';
-import { Case } from '../../data/types';
+import { Case, PosTransaction } from '../../data/types';
 
-import { BusinessRhythmCard } from './briefing/BusinessRhythmCard';
+import { BusinessRhythmCard, DailySalesData } from './briefing/BusinessRhythmCard';
 import { BusinessPulseCard } from './briefing/BusinessPulseCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
 
 export const DailyBriefingTab: React.FC = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     
+    // Hooks
     const { data: briefingData, loading: briefingLoading, error: briefingError, refreshData } = useStrategicBriefing();
     const { displayIncome, loading: financeLoading } = useFinanceData();
 
+    // Local State
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
     const [cases, setCases] = useState<Case[]>([]);
     const [messageCount, setMessageCount] = useState(0);
+    
+    // PHOENIX: State for Sales History & Intelligence
+    const [salesHistory, setSalesHistory] = useState<DailySalesData>({ labels: [], data: [] });
+    const [peakTime, setPeakTime] = useState<string>("12:00 - 13:00");
+    const [historyLoading, setHistoryLoading] = useState(true);
 
     const months = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
     const today = new Date();
     const finalDate = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
     
+    // Data Loading Effect
     useEffect(() => {
         const loadData = async () => {
             try {
-                // Fetch Cases
+                // 1. Fetch Cases
                 const casesData = await apiService.getCases();
                 setCases(casesData);
                 
-                // Fetch Message Count
+                // 2. Fetch Message Count
                 const msgs = await apiService.getInboundMessages('INBOX');
                 setMessageCount(msgs.length);
+
+                // 3. Fetch Transactions for Analysis
+                const transactions = await apiService.getPosTransactions();
+                
+                // 4. Run Analysis
+                processSalesHistory(transactions);
+                analyzePeakTraffic(transactions);
+
             } catch (err) {
                 console.error("Failed to load dashboard data", err);
+            } finally {
+                setHistoryLoading(false);
             }
         };
         loadData();
-    }, []);
+    }, [i18n.language]);
+
+    // Helper: Aggregate Month-to-Date
+    const processSalesHistory = (transactions: PosTransaction[]) => {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        const currentDay = now.getDate();
+
+        const dates: Date[] = [];
+        for (let d = 1; d <= currentDay; d++) {
+            dates.push(new Date(currentYear, currentMonth, d));
+        }
+
+        const labels = dates.map(date => 
+            date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
+        );
+
+        const data = dates.map(date => {
+            const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
+
+            const dailyTx = transactions.filter(tx => {
+                const txDate = new Date(tx.transaction_date || '');
+                return txDate >= startOfDay && txDate <= endOfDay;
+            });
+            
+            return dailyTx.reduce((sum, tx) => sum + (tx.total_price || 0), 0);
+        });
+
+        setSalesHistory({ labels, data });
+    };
+
+    // Helper: Find Peak Traffic Hour (Last 30 Days)
+    const analyzePeakTraffic = (transactions: PosTransaction[]) => {
+        if (!transactions || transactions.length === 0) return;
+
+        const hourCounts: Record<number, number> = {};
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        transactions.forEach(tx => {
+            const txDate = new Date(tx.transaction_date || '');
+            // Only consider recent data for accuracy
+            if (txDate >= thirtyDaysAgo) {
+                const hour = txDate.getHours();
+                hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+            }
+        });
+
+        let maxHour = 12; 
+        let maxCount = 0;
+
+        // Find hour with max transactions
+        Object.entries(hourCounts).forEach(([hour, count]) => {
+            if (count > maxCount) {
+                maxCount = count;
+                maxHour = parseInt(hour);
+            }
+        });
+
+        setPeakTime(`${maxHour}:00 - ${maxHour + 1}:00`);
+    };
 
     const handleEventUpdate = () => {
         if(refreshData) refreshData();
     };
 
-    const isLoading = briefingLoading || financeLoading;
+    const isLoading = briefingLoading || financeLoading || historyLoading;
 
     if (isLoading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
     if (briefingError) return <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-center"><AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" /><h3 className="text-white font-bold">{t('error.generic')}</h3><p>{t('error.failedToLoad')}</p></div>;
@@ -67,6 +148,7 @@ export const DailyBriefingTab: React.FC = () => {
                 )}
             </AnimatePresence>
             
+            {/* Header */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950 to-slate-900 border border-white/10 p-6 sm:p-10 text-center sm:text-left shadow-2xl">
                 <div className="absolute top-0 right-0 p-40 bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
                 <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -81,18 +163,25 @@ export const DailyBriefingTab: React.FC = () => {
                 </div>
             </div>
 
+            {/* Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
+                
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                    <BusinessRhythmCard currentSales={displayIncome} /> 
+                    <BusinessRhythmCard 
+                        currentSales={displayIncome} 
+                        salesHistory={salesHistory} 
+                    /> 
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                    <BusinessPulseCard signals={briefingData?.market.signals} currentSales={displayIncome} />
+                    <BusinessPulseCard 
+                        signals={briefingData?.market.signals} 
+                        currentSales={displayIncome}
+                        peakTime={peakTime} // PHOENIX: Real Calculated Data
+                    />
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-6">
-                    
-                    {/* PHOENIX: Redesigned Inbox Card */}
                     <motion.div 
                         whileHover={{ scale: 1.02, y: -2 }}
                         whileTap={{ scale: 0.98 }}
@@ -117,7 +206,6 @@ export const DailyBriefingTab: React.FC = () => {
                         </div>
                     </motion.div>
 
-                    {/* Existing Agenda Card */}
                     <div className="flex-1 min-h-0">
                         {briefingData && <SmartAgendaCard agenda={briefingData.agenda} onEventClick={(event) => setSelectedEvent(event)} />}
                     </div>
