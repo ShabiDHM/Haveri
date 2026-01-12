@@ -1,7 +1,8 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - EDITABLE COST V6.3
-// 1. FEATURE: 'Kosto Totale' is now editable, allowing manual overrides of the calculated price.
-// 2. LOGIC: Added 'manualCost' state. Prioritizes manual input; falls back to auto-calculation if cleared.
+// PHOENIX PROTOCOL - ID CORRECTION & COMPLETION V6.5
+// 1. FIX: Changed all instances of '.id' to '._id' to match MongoDB's schema.
+// 2. INTEGRITY: Ensures the correct item ID is passed to AI services and PO generation.
+// 3. COMPLETION: Restored interrupted code transfer.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,14 +30,13 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
     // Form States
     const [poQuantity, setPoQuantity] = useState(0);
     const [poSupplier, setPoSupplier] = useState("");
-    const [manualCost, setManualCost] = useState<string>(""); // PHOENIX: Track manual input as string
+    const [manualCost, setManualCost] = useState<string>("");
 
-    // Update derived values when prediction arrives
     useEffect(() => {
         if (aiData.prediction) {
             setPoQuantity(aiData.prediction.suggested_quantity);
             setPoSupplier(aiData.prediction.supplier_name || "Furnitori Primar");
-            setManualCost(""); // Reset manual override on new prediction
+            setManualCost(""); 
         }
     }, [aiData.prediction]);
 
@@ -44,9 +44,10 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
         setSelectedItem(item); 
         setLoading(true); 
         setAiData({ prediction: null, trend: null });
-        setManualCost(""); // Reset
+        setManualCost("");
         try {
-            const itemIdAsString = String(item.id);
+            // PHOENIX: CORRECTED from .id to ._id
+            const itemIdAsString = String(item._id); 
             const [prediction, trend] = await Promise.all([
                 apiService.predictRestock(itemIdAsString), 
                 apiService.analyzeSalesTrend(itemIdAsString)
@@ -61,8 +62,6 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
         setShowPOModal(true);
     };
 
-    // PHOENIX: Logic to determine which price to use
-    // If user typed something, use it. Otherwise, calculate (Quantity * UnitCost).
     const calculatedCost = (selectedItem?.cost_per_unit ?? 0) * poQuantity;
     const finalCostValue = manualCost !== "" ? parseFloat(manualCost) || 0 : calculatedCost;
 
@@ -71,11 +70,12 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
         setDrafting(true);
         try {
             await apiService.createPurchaseOrder({
-                item_id: String(selectedItem.id), 
+                // PHOENIX: CORRECTED from .id to ._id
+                item_id: String(selectedItem._id), 
                 item_name: selectedItem.name, 
                 unit: selectedItem.unit,
                 quantity: poQuantity,
-                estimated_cost: finalCostValue, // Use the finalized value
+                estimated_cost: finalCostValue,
                 supplier_name: poSupplier
             });
             alert(t('inventory.orderDrafted', 'Porosia u draftua dhe u dërgua në Arkivë!'));
@@ -143,8 +143,12 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                         <div className="bg-black/40 border border-white/10 rounded-xl p-4 relative overflow-hidden">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
                                             <h4 className="text-sm font-bold text-blue-400 mb-2 flex items-center gap-2"><ShoppingCart size={16} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}</h4>
-                                            <p className="text-gray-300 text-sm mb-3 leading-relaxed">{aiData.prediction?.reason || ""}</p>
-                                            <button onClick={handleOpenDraftModal} disabled={!aiData.prediction} className="w-full mt-3 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2">
+                                            <p className="text-gray-300 text-sm mb-3 leading-relaxed">{aiData.prediction?.reason || t('inventory.analysis.unavailable', 'E padisponueshme')}</p>
+                                            <button 
+                                                onClick={handleOpenDraftModal} 
+                                                disabled={!aiData.prediction || aiData.prediction.suggested_quantity === 0} 
+                                                className="w-full mt-3 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-bold text-sm shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2"
+                                            >
                                                 {t('inventory.analysis.draftOrder', 'Drafto Porosinë')} <ArrowRight size={16} />
                                             </button>
                                         </div>
@@ -195,15 +199,11 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-400 uppercase">{t('inventory.poModal.totalCost', 'Kosto Totale')}</label>
-                                        
-                                        {/* PHOENIX: EDITABLE COST LOGIC */}
                                         <input 
                                             type="number" 
-                                            // If manualCost is set, show it. Otherwise show calculation.
                                             value={manualCost !== "" ? manualCost : calculatedCost.toFixed(2)}
                                             onChange={(e) => setManualCost(e.target.value)}
                                             onBlur={() => {
-                                                // Optional: Format on blur if strictly numeric needed
                                                 if (manualCost !== "") {
                                                     const val = parseFloat(manualCost);
                                                     if (!isNaN(val)) setManualCost(val.toFixed(2));
