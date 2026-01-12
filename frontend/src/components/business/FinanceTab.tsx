@@ -1,7 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V2.1 (CHART POLISH)
-// 1. STYLE: Removed the box-shadow from Recharts tooltips for a cleaner look.
-// 2. I18N: Implemented a custom formatter to translate tooltip labels (e.g., 'total_revenue' -> 'Shitjet').
+// PHOENIX PROTOCOL - FINANCE TAB V2.2 (BULK DELETE HANDLER)
+// 1. FEATURE: Implemented 'handleBulkDeletePos' to call the bulk delete API.
+// 2. INTEGRATION: Passed the handler function to TransactionList, resolving the build error.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -228,6 +228,18 @@ export const FinanceTab: React.FC = () => {
     const handleDeleteExpense = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await hookDeleteExpense(id); } catch { alert(t('error.generic')); } };
     const handleDeletePos = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await hookDeletePos(id); } catch { alert(t('documentsPanel.deleteFailed')); } };
 
+    // PHOENIX: NEW BULK DELETE HANDLER
+    const handleBulkDeletePos = async (transactionIds: string[]) => {
+        try {
+            await apiService.bulkDeletePosTransaction(transactionIds);
+            alert(t('finance.bulkDelete.success', 'Transactions deleted successfully.'));
+            refreshData(); // Refresh data from the hook
+        } catch (error) {
+            console.error('Bulk delete failed:', error);
+            alert(t('finance.bulkDelete.failure', 'Failed to delete transactions.'));
+        }
+    };
+
     const handleViewInvoice = async (invoice: Invoice) => { setOpeningDocId(invoice.id); try { const blob = await apiService.getInvoicePdfBlob(invoice.id, i18n.language || 'sq'); const url = window.URL.createObjectURL(blob); setViewingUrl(url); setViewingDoc({ id: invoice.id, file_name: `${t('finance.invoicePrefix')}${invoice.invoice_number}`, mime_type: 'application/pdf', status: 'READY' } as any); } catch { alert(t('error.generic')); } finally { setOpeningDocId(null); } };
     const handleDownloadInvoice = async (id: string) => { try { await apiService.downloadInvoicePdf(id, i18n.language || 'sq'); } catch { alert(t('error.generic')); } };
     const handleArchiveInvoice = (id: string) => { setSelectedInvoiceId(id); setShowArchiveInvoiceModal(true); };
@@ -264,7 +276,7 @@ export const FinanceTab: React.FC = () => {
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md h-[70vh] min-h-[600px] flex flex-col shadow-2xl">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6"><h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3"><Activity className="text-blue-500" />{t('finance.activityAndReports')}</h2><div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md gap-1"><TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} /><TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} /></div></div>
                 <div className="flex-1 overflow-hidden relative">
-                    {activeTab === 'transactions' && (<div className="flex flex-col h-full space-y-6"><div className="relative group"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-base text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:bg-black/60 transition-all shadow-inner" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div><div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-3">{loading ? (<div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>) : (<TransactionList allTransactions={allTransactions} openingDocId={openingDocId} onEditInvoice={handleEditInvoice} onEditExpense={handleEditExpense} onViewInvoice={handleViewInvoice} onViewExpense={handleViewExpense} onDownloadInvoice={handleDownloadInvoice} onDownloadExpense={handleDownloadExpense} onArchiveInvoice={handleArchiveInvoice} onArchiveExpense={handleArchiveExpense} onDeleteInvoice={handleDeleteInvoice} onDeleteExpense={handleDeleteExpense} onDeletePos={handleDeletePos} onViewSourceDocument={handleViewSourceDocument} />)}</div></div>)}
+                    {activeTab === 'transactions' && (<div className="flex flex-col h-full space-y-6"><div className="relative group"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-base text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:bg-black/60 transition-all shadow-inner" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div><div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-3">{loading ? (<div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>) : (<TransactionList allTransactions={allTransactions} openingDocId={openingDocId} onEditInvoice={handleEditInvoice} onEditExpense={handleEditExpense} onViewInvoice={handleViewInvoice} onViewExpense={handleViewExpense} onDownloadInvoice={handleDownloadInvoice} onDownloadExpense={handleDownloadExpense} onArchiveInvoice={handleArchiveInvoice} onArchiveExpense={handleArchiveExpense} onDeleteInvoice={handleDeleteInvoice} onDeleteExpense={handleDeleteExpense} onDeletePos={handleDeletePos} onViewSourceDocument={handleViewSourceDocument} onBulkDeletePos={handleBulkDeletePos} />)}</div></div>)}
                     {activeTab === 'reports' && (<div className="h-full overflow-y-auto custom-finance-scroll pr-2">{!analyticsData ? <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> : (<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
                             <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-blue-400" /> {t('finance.analytics.salesTrend')}</h4>
