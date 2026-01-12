@@ -1,12 +1,13 @@
 # FILE: backend/app/models/user.py
-# PHOENIX PROTOCOL - USER MODEL V5.4 (TIERED PLANS)
-# 1. ADDED: 'plan_tier' field to track subscription level.
-# 2. DEFINED: 'PLAN_LIMITS' constant for centralized quota management.
+# PHOENIX PROTOCOL - USER MODEL V5.5 (EMAIL INGEST)
+# 1. ADDED: 'inbound_email_token' field to UserInDB.
+# 2. PURPOSE: Stores a unique token to identify the user from automated email reports.
 
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 from .common import PyObjectId
+import secrets # Used for token generation
 
 # --- PHOENIX: PLAN CONFIGURATION ---
 PLAN_LIMITS = {
@@ -31,7 +32,6 @@ class UserBase(BaseModel):
     organization_name: Optional[str] = None
     logo: Optional[str] = None 
     
-    # PHOENIX: Plan Tier (Defaults to SOLO)
     plan_tier: str = Field(default="SOLO", description="Subscription Tier: SOLO, STARTUP, GROWTH, ENTERPRISE")
 
 # Model for creating a new user (Registration)
@@ -61,6 +61,9 @@ class UserInDB(UserBase):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     last_login: Optional[datetime] = None
     
+    # PHOENIX: New field for the unique part of the inbound email address
+    inbound_email_token: Optional[str] = Field(default_factory=lambda: secrets.token_urlsafe(16), description="Unique token for email-based data ingestion.")
+
     model_config = ConfigDict(
         populate_by_name=True,
         arbitrary_types_allowed=True,
@@ -72,6 +75,9 @@ class UserOut(UserBase):
     created_at: datetime
     last_login: Optional[datetime] = None
     
+    # PHOENIX: Expose the token only to the user themselves
+    inbound_email_token: Optional[str] = None
+
     model_config = ConfigDict(
         populate_by_name=True,
         from_attributes=True,

@@ -1,7 +1,7 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V9.2 (PO DRAFTING ROUTER)
-# 1. ADDED: Imported and included the new synchronous 'drafting_router'.
-# 2. EFFECT: Enables the '/api/v1/drafting/purchase-order' endpoint for PDF generation.
+# PHOENIX PROTOCOL - MAIN APPLICATION V9.3 (INBOUND EMAIL ROUTER)
+# 1. ADDED: Imported and included the new 'inbound_router'.
+# 2. EFFECT: Enables the '/api/v1/inbound/email-webhook' endpoint for automated data ingestion.
 
 from fastapi import FastAPI, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,8 +28,9 @@ from app.api.endpoints.inventory import router as inventory_router
 from app.api.endpoints.daily_briefing import router as daily_briefing_router
 from app.api.endpoints.briefing import router as strategic_briefing_router
 from app.api.endpoints.analysis import router as analysis_router 
-# PHOENIX: Import the new synchronous drafting router
 from app.api.endpoints.drafting import router as drafting_router 
+# PHOENIX: Import the new inbound email router
+from app.api.endpoints.inbound import router as inbound_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -69,8 +70,10 @@ api_v1_router.include_router(stream_router, prefix="/stream", tags=["Streaming"]
 api_v1_router.include_router(support_router, prefix="/support", tags=["Support"])
 api_v1_router.include_router(finance_wizard.router, prefix="/finance/wizard", tags=["Finance Wizard"])
 api_v1_router.include_router(analysis_router, prefix="/analysis", tags=["Smart Analysis"]) 
-# PHOENIX: Include the new synchronous drafting router
 api_v1_router.include_router(drafting_router, prefix="/drafting", tags=["Drafting"])
+# PHOENIX: Include the new inbound email router
+api_v1_router.include_router(inbound_router, prefix="/inbound", tags=["Inbound Data"])
+
 
 api_v2_router = APIRouter(prefix="/api/v2")
 api_v2_router.include_router(drafting_v2_router, prefix="/drafting", tags=["Drafting V2"])
