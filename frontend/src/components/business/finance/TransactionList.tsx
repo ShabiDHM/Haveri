@@ -1,8 +1,7 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// PHOENIX PROTOCOL - BULK DELETE UI V7.0
-// 1. FEATURE: Added 'onBulkDeletePos' prop to handle bulk deletion calls.
-// 2. UI: Created a new 'DrillDownCardWithDelete' component with a visible delete icon.
-// 3. LOGIC: Implemented handlers to collect transaction IDs by year, month, or day and trigger a confirmation before deletion.
+// PHOENIX PROTOCOL - IMPORT FIX V7.2
+// 1. CRITICAL FIX: Added 'TrendingUp' and 'TrendingDown' to lucide-react import to fix compilation errors.
+// 2. LINT FIX: Removed unused 'ArrowRight' import.
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,14 +9,13 @@ import {
     ShoppingCart, Edit2, Eye, Download, 
     Archive, Trash2, Loader2, 
     Car, Utensils, Coffee, Building, Users, Landmark, Zap, Wifi, ArrowUpRight, ArrowDownRight,
-    FileText, ArrowLeft, ArrowRight
+    FileText, ArrowLeft, Hash, TrendingUp, TrendingDown // PHOENIX: Corrected Imports
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Invoice, Expense } from '../../../data/types';
 
 export type TransactionItem = { id: string; type: 'invoice' | 'expense' | 'pos'; date: string; amount: number; label: string; raw: any; };
 
-// PHOENIX: Added onBulkDeletePos to props
 interface TransactionListProps { 
     allTransactions: TransactionItem[]; 
     openingDocId: string | null; 
@@ -50,21 +48,37 @@ const TransactionCard: React.FC<{ tx: TransactionItem, props: TransactionListPro
     );
 };
 
-// PHOENIX: NEW CARD WITH DELETE BUTTON
-const DrillDownCardWithDelete: React.FC<{ title: string, total: number, onDrillDown: () => void, onDelete: () => void }> = ({ title, total, onDrillDown, onDelete }) => (
-    <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="group relative bg-gray-900/60 hover:bg-gray-800/80 border border-white/10 hover:border-blue-500/30 p-6 rounded-3xl transition-all duration-300">
-        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="absolute top-3 right-3 z-10 p-2 rounded-full text-gray-500 bg-transparent hover:bg-red-500/10 hover:text-red-400 transition-colors">
-            <Trash2 size={16} />
-        </button>
-        <div onClick={onDrillDown} className="cursor-pointer">
-            <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-white">{title}</h3>
-                <span className={`text-xl font-mono font-bold ${total >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{total >= 0 ? '+' : ''}€{total.toFixed(2)}</span>
+const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: number, onDrillDown: () => void, onDelete: () => void }> = ({ title, total, count, onDrillDown, onDelete }) => {
+    const { t } = useTranslation();
+    return (
+        <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="group relative bg-gray-900/60 hover:bg-gray-800/80 border border-white/10 hover:border-blue-500/30 p-5 rounded-3xl transition-all duration-300 flex flex-col gap-4">
+            <div onClick={onDrillDown} className="cursor-pointer flex-1 flex flex-col">
+                <div className="flex items-start justify-between">
+                    <h3 className="text-2xl font-bold text-white">{title}</h3>
+                    <div className={`p-3 rounded-xl ${total >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                        {total >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                    </div>
+                </div>
+                <div className="flex-1 mt-2">
+                    <span className={`text-3xl font-mono font-bold ${total >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{total >= 0 ? '+' : ''}€{total.toFixed(2)}</span>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{t('finance.netBalance', 'Balansi Neto')}</p>
+                </div>
             </div>
-            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"><ArrowRight className="text-blue-400" size={20}/></div>
-        </div>
-    </motion.div>
-);
+
+            <hr className="border-white/10" />
+
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Hash size={14}/>
+                    <span className="font-bold">{count}</span> {t('finance.transactions', 'transaksione')}
+                </div>
+                <button onClick={onDelete} className="p-2 rounded-lg text-gray-500 bg-transparent hover:bg-red-500/10 hover:text-red-400 transition-colors">
+                    <Trash2 size={16} />
+                </button>
+            </div>
+        </motion.div>
+    );
+};
 
 
 export const TransactionList: React.FC<TransactionListProps> = (props) => {
@@ -97,7 +111,6 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         else if (view === 'months') setView('years');
     };
 
-    // PHOENIX: BULK DELETE HANDLER
     const handleBulkDelete = (ids: string[], scope: string) => {
         const posIds = ids; 
         if(posIds.length === 0) {
@@ -112,29 +125,37 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
     const renderContent = () => {
         switch (view) {
             case 'years':
-                const yearData = Object.entries(hierarchy).map(([year, months]) => ({
-                    year,
-                    total: Object.values(months).flatMap(m => Object.values(m).flat()).reduce((acc, tx) => tx.type === 'expense' ? acc - tx.amount : acc + tx.amount, 0),
-                    txIds: Object.values(months).flatMap(m => Object.values(m).flat()).filter(tx => tx.type === 'pos').map(tx => tx.id)
-                }));
+                const yearData = Object.entries(hierarchy).map(([year, months]) => {
+                    const allTxs = Object.values(months).flatMap(m => Object.values(m).flat());
+                    return {
+                        year,
+                        total: allTxs.reduce((acc, tx) => tx.type === 'expense' ? acc - tx.amount : acc + tx.amount, 0),
+                        txCount: allTxs.length,
+                        txIds: allTxs.filter(tx => tx.type === 'pos').map(tx => tx.id)
+                    };
+                });
                 return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {yearData.sort((a,b) => parseInt(b.year) - parseInt(a.year)).map(({ year, total, txIds }) => (
-                            <DrillDownCardWithDelete key={year} title={year} total={total} onDrillDown={() => { setSelectedYear(year); setView('months'); }} onDelete={() => handleBulkDelete(txIds, year)} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {yearData.sort((a,b) => parseInt(b.year) - parseInt(a.year)).map(({ year, total, txCount, txIds }) => (
+                            <DrillDownCardWithDelete key={year} title={year} total={total} count={txCount} onDrillDown={() => { setSelectedYear(year); setView('months'); }} onDelete={() => handleBulkDelete(txIds, year)} />
                         ))}
                     </div>
                 );
             case 'months':
                 if (!selectedYear || !hierarchy[selectedYear]) return null;
-                const monthData = Object.entries(hierarchy[selectedYear]).map(([month, days]) => ({
-                    month,
-                    total: Object.values(days).flat().reduce((acc, tx) => tx.type === 'expense' ? acc - tx.amount : acc + tx.amount, 0),
-                    txIds: Object.values(days).flat().filter(tx => tx.type === 'pos').map(tx => tx.id)
-                }));
+                const monthData = Object.entries(hierarchy[selectedYear]).map(([month, days]) => {
+                    const allTxs = Object.values(days).flat();
+                    return {
+                        month,
+                        total: allTxs.reduce((acc, tx) => tx.type === 'expense' ? acc - tx.amount : acc + tx.amount, 0),
+                        txCount: allTxs.length,
+                        txIds: allTxs.filter(tx => tx.type === 'pos').map(tx => tx.id)
+                    };
+                });
                 return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {monthData.map(({ month, total, txIds }) => (
-                            <DrillDownCardWithDelete key={month} title={month} total={total} onDrillDown={() => { setSelectedMonth(month); setView('days'); }} onDelete={() => handleBulkDelete(txIds, `${month} ${selectedYear}`)} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {monthData.map(({ month, total, txCount, txIds }) => (
+                            <DrillDownCardWithDelete key={month} title={month} total={total} count={txCount} onDrillDown={() => { setSelectedMonth(month); setView('days'); }} onDelete={() => handleBulkDelete(txIds, `${month} ${selectedYear}`)} />
                         ))}
                     </div>
                 );
@@ -143,12 +164,13 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                 const dayData = Object.entries(hierarchy[selectedYear][selectedMonth]).map(([day, txs]) => ({
                     day,
                     total: txs.reduce((acc, tx) => tx.type === 'expense' ? acc - tx.amount : acc + tx.amount, 0),
+                    txCount: txs.length,
                     txIds: txs.filter(tx => tx.type === 'pos').map(tx => tx.id)
                 }));
                 return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                         {dayData.sort((a,b) => new Date(b.day).getTime() - new Date(a.day).getTime()).map(({ day, total, txIds }) => (
-                            <DrillDownCardWithDelete key={day} title={day} total={total} onDrillDown={() => { setSelectedDay(day); setView('transactions'); }} onDelete={() => handleBulkDelete(txIds, day)} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                         {dayData.sort((a,b) => new Date(b.day).getTime() - new Date(a.day).getTime()).map(({ day, total, txCount, txIds }) => (
+                            <DrillDownCardWithDelete key={day} title={day} total={total} count={txCount} onDrillDown={() => { setSelectedDay(day); setView('transactions'); }} onDelete={() => handleBulkDelete(txIds, day)} />
                         ))}
                     </div>
                 );
