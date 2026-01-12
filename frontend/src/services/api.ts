@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V8.8 (BULK DELETE)
-// 1. FEATURE: Added 'bulkDeletePosTransaction' method.
-// 2. INTEGRATION: Connects to the backend's new '/transactions/bulk-delete' endpoint.
+// PHOENIX PROTOCOL - API V8.9 (UNIFIED BULK DELETE)
+// 1. FEATURE: Replaced 'bulkDeletePosTransaction' with a generic 'bulkDeleteTransactions'.
+// 2. INTEGRATION: The method now sends a categorized payload for deleting invoices, expenses, and POS items.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -186,12 +186,10 @@ class ApiService {
     public async getExpenseReceiptBlob(expenseId: string): Promise<{ blob: Blob, filename: string }> { const response = await this.axiosInstance.get(`/finance/expenses/${expenseId}/receipt`, { responseType: 'blob' }); const disposition = response.headers['content-disposition']; let filename = `receipt-${expenseId}.pdf`; if (disposition && disposition.indexOf('filename=') !== -1) { const matches = /filename="([^"]*)"/.exec(disposition); if (matches != null && matches[1]) filename = matches[1]; } return { blob: response.data, filename }; }
     public async getPosTransactions(): Promise<PosTransaction[]> { const response = await this.axiosInstance.get<any>('/finance/import/transactions'); if (Array.isArray(response.data)) { return response.data; } if (response.data && Array.isArray(response.data.transactions)) { return response.data.transactions; } return []; }
     public async deletePosTransaction(transactionId: string): Promise<void> { await this.axiosInstance.delete(`/finance/transactions/${transactionId}`); }
-    
-    // PHOENIX: NEW BULK DELETE METHOD
-    public async bulkDeletePosTransaction(transactionIds: string[]): Promise<any> {
-        const response = await this.axiosInstance.post('/finance/transactions/bulk-delete', {
-            transaction_ids: transactionIds
-        });
+
+    // PHOENIX: UNIFIED BULK DELETE METHOD
+    public async bulkDeleteTransactions(ids: { invoice_ids?: string[], expense_ids?: string[], pos_ids?: string[] }): Promise<any> {
+        const response = await this.axiosInstance.post('/finance/transactions/bulk-delete', ids);
         return response.data;
     }
 

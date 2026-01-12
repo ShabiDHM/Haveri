@@ -1,7 +1,8 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// PHOENIX PROTOCOL - IMPORT FIX V7.2
-// 1. CRITICAL FIX: Added 'TrendingUp' and 'TrendingDown' to lucide-react import to fix compilation errors.
-// 2. LINT FIX: Removed unused 'ArrowRight' import.
+// PHOENIX PROTOCOL - UNIFIED BULK DELETE V7.3
+// 1. CRITICAL FIX: The bulk delete handler now correctly categorizes ALL transaction types (invoices, expenses, POS).
+// 2. LOGIC: Replaced the POS-only filter, ensuring that all items in a period are deleted as intended.
+// 3. PROPS: Renamed 'onBulkDeletePos' to 'onBulkDelete' and updated its signature for the unified payload.
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,13 +10,14 @@ import {
     ShoppingCart, Edit2, Eye, Download, 
     Archive, Trash2, Loader2, 
     Car, Utensils, Coffee, Building, Users, Landmark, Zap, Wifi, ArrowUpRight, ArrowDownRight,
-    FileText, ArrowLeft, Hash, TrendingUp, TrendingDown // PHOENIX: Corrected Imports
+    FileText, ArrowLeft, Hash, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Invoice, Expense } from '../../../data/types';
 
 export type TransactionItem = { id: string; type: 'invoice' | 'expense' | 'pos'; date: string; amount: number; label: string; raw: any; };
 
+// PHOENIX: Upgraded props for unified bulk delete
 interface TransactionListProps { 
     allTransactions: TransactionItem[]; 
     openingDocId: string | null; 
@@ -31,7 +33,7 @@ interface TransactionListProps {
     onDeleteExpense: (id: string) => void; 
     onDeletePos: (id: string) => void; 
     onViewSourceDocument: (archiveId: string, title: string) => void;
-    onBulkDeletePos: (transactionIds: string[]) => void;
+    onBulkDelete: (ids: { invoice_ids: string[], expense_ids: string[], pos_ids: string[] }) => void;
 }
 
 const getCategoryIcon = (category: string) => { const cat = category.toLowerCase(); if (cat.includes('transport') || cat.includes('naft') || cat.includes('vetur')) return <Car size={16} />; if (cat.includes('ushqim') || cat.includes('drek')) return <Utensils size={16} />; if (cat.includes('kafe')) return <Coffee size={16} />; if (cat.includes('zyr') || cat.includes('rent')) return <Building size={16} />; if (cat.includes('pag') || cat.includes('rrog')) return <Users size={16} />; if (cat.includes('tatim')) return <Landmark size={16} />; if (cat.includes('rrym')) return <Zap size={16} />; if (cat.includes('internet')) return <Wifi size={16} />; return <ArrowUpRight size={16} />; };
@@ -64,9 +66,7 @@ const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: n
                     <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{t('finance.netBalance', 'Balansi Neto')}</p>
                 </div>
             </div>
-
             <hr className="border-white/10" />
-
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Hash size={14}/>
@@ -82,7 +82,7 @@ const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: n
 
 
 export const TransactionList: React.FC<TransactionListProps> = (props) => {
-    const { allTransactions, onBulkDeletePos } = props;
+    const { allTransactions, onBulkDelete } = props;
     const { t, i18n } = useTranslation();
 
     const [view, setView] = useState<'years' | 'months' | 'days' | 'transactions'>('years');
@@ -111,14 +111,21 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         else if (view === 'months') setView('years');
     };
 
-    const handleBulkDelete = (ids: string[], scope: string) => {
-        const posIds = ids; 
-        if(posIds.length === 0) {
-            alert(t('finance.bulkDelete.noPosItems', 'No POS transactions to delete in this period.'));
+    // PHOENIX: UPGRADED BULK DELETE HANDLER
+    const handleBulkDelete = (transactions: TransactionItem[], scope: string) => {
+        const idsToProcess = {
+            invoice_ids: transactions.filter(tx => tx.type === 'invoice').map(tx => tx.id),
+            expense_ids: transactions.filter(tx => tx.type === 'expense').map(tx => tx.id),
+            pos_ids: transactions.filter(tx => tx.type === 'pos').map(tx => tx.id),
+        };
+        const totalCount = idsToProcess.invoice_ids.length + idsToProcess.expense_ids.length + idsToProcess.pos_ids.length;
+
+        if(totalCount === 0) {
+            alert(t('finance.bulkDelete.noItems', 'No transactions to delete in this period.'));
             return;
         }
-        if (window.confirm(t('finance.bulkDelete.confirm', `Are you sure you want to delete all {{count}} transactions for '{{scope}}'? This cannot be undone.`, { count: posIds.length, scope }))) {
-            onBulkDeletePos(posIds);
+        if (window.confirm(t('finance.bulkDelete.confirm', `Are you sure you want to delete all {{count}} transactions for '{{scope}}'? This cannot be undone.`, { count: totalCount, scope }))) {
+            onBulkDelete(idsToProcess);
         }
     };
 
@@ -131,13 +138,13 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                         year,
                         total: allTxs.reduce((acc, tx) => tx.type === 'expense' ? acc - tx.amount : acc + tx.amount, 0),
                         txCount: allTxs.length,
-                        txIds: allTxs.filter(tx => tx.type === 'pos').map(tx => tx.id)
+                        allTxs,
                     };
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {yearData.sort((a,b) => parseInt(b.year) - parseInt(a.year)).map(({ year, total, txCount, txIds }) => (
-                            <DrillDownCardWithDelete key={year} title={year} total={total} count={txCount} onDrillDown={() => { setSelectedYear(year); setView('months'); }} onDelete={() => handleBulkDelete(txIds, year)} />
+                        {yearData.sort((a,b) => parseInt(b.year) - parseInt(a.year)).map(({ year, total, txCount, allTxs }) => (
+                            <DrillDownCardWithDelete key={year} title={year} total={total} count={txCount} onDrillDown={() => { setSelectedYear(year); setView('months'); }} onDelete={() => handleBulkDelete(allTxs, year)} />
                         ))}
                     </div>
                 );
@@ -149,13 +156,13 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                         month,
                         total: allTxs.reduce((acc, tx) => tx.type === 'expense' ? acc - tx.amount : acc + tx.amount, 0),
                         txCount: allTxs.length,
-                        txIds: allTxs.filter(tx => tx.type === 'pos').map(tx => tx.id)
+                        allTxs,
                     };
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {monthData.map(({ month, total, txCount, txIds }) => (
-                            <DrillDownCardWithDelete key={month} title={month} total={total} count={txCount} onDrillDown={() => { setSelectedMonth(month); setView('days'); }} onDelete={() => handleBulkDelete(txIds, `${month} ${selectedYear}`)} />
+                        {monthData.map(({ month, total, txCount, allTxs }) => (
+                            <DrillDownCardWithDelete key={month} title={month} total={total} count={txCount} onDrillDown={() => { setSelectedMonth(month); setView('days'); }} onDelete={() => handleBulkDelete(allTxs, `${month} ${selectedYear}`)} />
                         ))}
                     </div>
                 );
@@ -165,12 +172,12 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                     day,
                     total: txs.reduce((acc, tx) => tx.type === 'expense' ? acc - tx.amount : acc + tx.amount, 0),
                     txCount: txs.length,
-                    txIds: txs.filter(tx => tx.type === 'pos').map(tx => tx.id)
+                    allTxs: txs
                 }));
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                         {dayData.sort((a,b) => new Date(b.day).getTime() - new Date(a.day).getTime()).map(({ day, total, txCount, txIds }) => (
-                            <DrillDownCardWithDelete key={day} title={day} total={total} count={txCount} onDrillDown={() => { setSelectedDay(day); setView('transactions'); }} onDelete={() => handleBulkDelete(txIds, day)} />
+                         {dayData.sort((a,b) => new Date(b.day).getTime() - new Date(a.day).getTime()).map(({ day, total, txCount, allTxs }) => (
+                            <DrillDownCardWithDelete key={day} title={day} total={total} count={txCount} onDrillDown={() => { setSelectedDay(day); setView('transactions'); }} onDelete={() => handleBulkDelete(allTxs, day)} />
                         ))}
                     </div>
                 );
