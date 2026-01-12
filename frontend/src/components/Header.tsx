@@ -1,17 +1,17 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.8 (ROBUST ADMIN & NAV FIX)
-// 1. CRITICAL FIX: Changed role check to 'user?.role?.toUpperCase() === "ADMIN"' to handle case-insensitivity.
-// 2. STATUS: This ensures the Admin tab appears correctly regardless of 'ADMIN' or 'admin' from the API.
+// PHOENIX PROTOCOL - HEADER V6.9 (INTEGRATIONS LINK)
+// 1. UI: Added a new navigation link for 'Integrations' in the user profile dropdown menu.
+// 2. ICON: Imported the 'Share2' icon to support the new menu item.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, 
     MessageSquare, Menu, FileText, Package, FolderOpen, 
-    Sparkles, Building2, X, Shield 
+    Sparkles, Building2, X, Shield, Share2 // PHOENIX: Imported Share2 Icon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import LanguageSwitcher from './LanguageSwitcher';
 import BrandLogo from './BrandLogo';
@@ -20,6 +20,7 @@ const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate(); // PHOENIX: Added useNavigate for dropdown actions
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
@@ -80,7 +81,6 @@ const Header: React.FC = () => {
       { label: t('sidebar.haveri_ai', 'Haveri AI'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
   ];
 
-  // PHOENIX: ROBUST ADMIN CHECK (Case-insensitive)
   if (user?.role?.toUpperCase() === 'ADMIN') {
       navItems.push({
           label: t('sidebar.admin', 'Admin'),
@@ -89,6 +89,11 @@ const Header: React.FC = () => {
           exact: false
       } as any);
   }
+
+  const handleDropdownNavigate = (path: string) => {
+    setIsProfileOpen(false);
+    navigate(path);
+  };
 
   return (
     <header className="h-16 bg-background-dark/80 backdrop-blur-md border-b border-glass-edge flex items-center justify-between px-4 sm:px-6 z-40 sticky top-0">
@@ -142,8 +147,15 @@ const Header: React.FC = () => {
           {isProfileOpen && (
             <div ref={dropdownRef} className="absolute right-0 mt-2 w-56 bg-background-dark border border-glass-edge rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
               <div className="px-4 py-3 border-b border-glass-edge mb-1"><p className="text-base text-white font-medium truncate">{user?.username}</p><p className="text-xs text-text-secondary truncate">{user?.email}</p></div>
-              <Link to="/account" className="flex items-center px-4 py-2 text-base text-text-secondary hover:text-white hover:bg-white/5 transition-colors" onClick={() => setIsProfileOpen(false)}><UserIcon size={18} className="mr-3 text-blue-400" />{t('sidebar.account')}</Link>
-              <Link to="/support" className="flex items-center px-4 py-2 text-base text-text-secondary hover:text-white hover:bg-white/5 transition-colors" onClick={() => setIsProfileOpen(false)}><MessageSquare size={18} className="mr-3 text-emerald-400" />{t('sidebar.support')}</Link>
+              <button onClick={() => handleDropdownNavigate('/account')} className="w-full text-left flex items-center px-4 py-2 text-base text-text-secondary hover:text-white hover:bg-white/5 transition-colors"><UserIcon size={18} className="mr-3 text-blue-400" />{t('sidebar.account')}</button>
+              
+              {/* PHOENIX: New Integrations Link */}
+              <button onClick={() => handleDropdownNavigate('/integrations')} className="w-full text-left flex items-center px-4 py-2 text-base text-text-secondary hover:text-white hover:bg-white/5 transition-colors">
+                  <Share2 size={18} className="mr-3 text-purple-400" />
+                  {t('navigation.integrations', 'Integrations')}
+              </button>
+
+              <button onClick={() => handleDropdownNavigate('/support')} className="w-full text-left flex items-center px-4 py-2 text-base text-text-secondary hover:text-white hover:bg-white/5 transition-colors"><MessageSquare size={18} className="mr-3 text-emerald-400" />{t('sidebar.support')}</button>
               <div className="h-px bg-glass-edge my-1"></div>
               <button onClick={() => { setIsProfileOpen(false); logout(); }} className="w-full flex items-center px-4 py-2 text-base text-red-400 hover:bg-red-500/10 transition-colors"><LogOut size={18} className="mr-3" />{t('header.logout')}</button>
             </div>

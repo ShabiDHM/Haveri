@@ -1,7 +1,7 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V3.3 (INVITE FLOW COMPLETE)
-// 1. ROUTING: Added '/accept-invite' public route.
-// 2. STATUS: Invitation system logic is now fully connected from email to activation.
+// PHOENIX PROTOCOL - ROUTING V3.4 (INTEGRATIONS PAGE)
+// 1. IMPORT: Imported the new IntegrationsPage component.
+// 2. ROUTING: Added '/integrations' as a new protected route within the MainLayout.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -11,7 +11,7 @@ import MainLayout from './pages/MainLayout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import AcceptInvitePage from './pages/AcceptInvitePage'; // PHOENIX: Imported
+import AcceptInvitePage from './pages/AcceptInvitePage';
 import CaseViewPage from './pages/CaseViewPage';
 import CalendarPage from './pages/CalendarPage';
 import SupportPage from './pages/SupportPage';
@@ -21,6 +21,7 @@ import AccountPage from './pages/AccountPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import FinanceWizardPage from './pages/FinanceWizardPage';
 import ClientPortalPage from './pages/ClientPortalPage';
+import { IntegrationsPage } from './pages/IntegrationsPage'; // PHOENIX: Imported
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -63,11 +64,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/" element={isAuthenticated ? <Navigate to="/business" /> : <LandingPage />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/business" /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/business" /> : <RegisterPage />} />
-      
-      {/* PHOENIX: Public Invite Acceptance Route */}
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
-      
-      {/* Client Portal Route (Public Access via Link) */}
       <Route path="/portal/:caseId" element={<ClientPortalPage />} />
 
       {/* Standalone Protected Routes (No Sidebar) */}
@@ -79,6 +76,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/account" element={<AccountPage />} />
+        
+        {/* PHOENIX: New Integrations Route */}
+        <Route path="/integrations" element={<IntegrationsPage />} />
 
         {/* Business Sub-Routes (Mapped to Global Header) */}
         <Route path="/business" element={<BusinessPage view="briefing" />} />
