@@ -1,8 +1,7 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V4.7 (FULL REAL DATA)
-// 1. INTELLIGENCE: Analyzes transaction timestamps to find 'Peak Traffic' hours.
-// 2. INTEGRATION: Feeds calculated peak time to BusinessPulseCard.
-// 3. INTEGRATION: Feeds Month-to-Date data to RhythmCard.
+// PHOENIX PROTOCOL - DASHBOARD V4.8 (MAPPING FIX)
+// 1. CRITICAL FIX: Handled JSON key mismatches ('date' vs 'transaction_date', 'amount' vs 'total_price').
+// 2. DATA: Ensures bars render by mapping raw backend fields correctly.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,11 +12,21 @@ import { useStrategicBriefing, UIAgendaItem } from '../../hooks/useStrategicBrie
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { EventDetailModal } from '../modals/EventDetailModal';
 import { apiService } from '../../services/api';
-import { Case, PosTransaction } from '../../data/types';
+import { Case } from '../../data/types';
 
 import { BusinessRhythmCard, DailySalesData } from './briefing/BusinessRhythmCard';
 import { BusinessPulseCard } from './briefing/BusinessPulseCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
+
+// PHOENIX: Interface for Raw Backend Data (before type casting)
+// The backend sends "date" and "amount" due to Pydantic aliases.
+interface RawTransaction {
+    date?: string;
+    transaction_date?: string;
+    amount?: number;
+    total_price?: number;
+    [key: string]: any;
+}
 
 export const DailyBriefingTab: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -32,7 +41,6 @@ export const DailyBriefingTab: React.FC = () => {
     const [cases, setCases] = useState<Case[]>([]);
     const [messageCount, setMessageCount] = useState(0);
     
-    // PHOENIX: State for Sales History & Intelligence
     const [salesHistory, setSalesHistory] = useState<DailySalesData>({ labels: [], data: [] });
     const [peakTime, setPeakTime] = useState<string>("12:00 - 13:00");
     const [historyLoading, setHistoryLoading] = useState(true);
@@ -41,7 +49,6 @@ export const DailyBriefingTab: React.FC = () => {
     const today = new Date();
     const finalDate = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
     
-    // Data Loading Effect
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -53,12 +60,12 @@ export const DailyBriefingTab: React.FC = () => {
                 const msgs = await apiService.getInboundMessages('INBOX');
                 setMessageCount(msgs.length);
 
-                // 3. Fetch Transactions for Analysis
+                // 3. Fetch Transactions
                 const transactions = await apiService.getPosTransactions();
                 
-                // 4. Run Analysis
-                processSalesHistory(transactions);
-                analyzePeakTraffic(transactions);
+                // 4. Run Analysis (using 'any' cast to handle raw fields safely)
+                processSalesHistory(transactions as any[]);
+                analyzePeakTraffic(transactions as any[]);
 
             } catch (err) {
                 console.error("Failed to load dashboard data", err);
@@ -70,7 +77,7 @@ export const DailyBriefingTab: React.FC = () => {
     }, [i18n.language]);
 
     // Helper: Aggregate Month-to-Date
-    const processSalesHistory = (transactions: PosTransaction[]) => {
+    const processSalesHistory = (transactions: RawTransaction[]) => {
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
@@ -90,18 +97,21 @@ export const DailyBriefingTab: React.FC = () => {
             const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
 
             const dailyTx = transactions.filter(tx => {
-                const txDate = new Date(tx.transaction_date || '');
+                // CHECK BOTH FIELDS (Backend Alias vs Frontend Type)
+                const dateStr = tx.transaction_date || tx.date || '';
+                const txDate = new Date(dateStr);
                 return txDate >= startOfDay && txDate <= endOfDay;
             });
             
-            return dailyTx.reduce((sum, tx) => sum + (tx.total_price || 0), 0);
+            // CHECK BOTH FIELDS (Backend Alias vs Frontend Type)
+            return dailyTx.reduce((sum, tx) => sum + (tx.total_price || tx.amount || 0), 0);
         });
 
         setSalesHistory({ labels, data });
     };
 
-    // Helper: Find Peak Traffic Hour (Last 30 Days)
-    const analyzePeakTraffic = (transactions: PosTransaction[]) => {
+    // Helper: Find Peak Traffic Hour
+    const analyzePeakTraffic = (transactions: RawTransaction[]) => {
         if (!transactions || transactions.length === 0) return;
 
         const hourCounts: Record<number, number> = {};
@@ -109,9 +119,10 @@ export const DailyBriefingTab: React.FC = () => {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
         transactions.forEach(tx => {
-            const txDate = new Date(tx.transaction_date || '');
-            // Only consider recent data for accuracy
-            if (txDate >= thirtyDaysAgo) {
+            const dateStr = tx.transaction_date || tx.date || '';
+            const txDate = new Date(dateStr);
+            
+            if (txDate >= thirtyDaysAgo && !isNaN(txDate.getTime())) {
                 const hour = txDate.getHours();
                 hourCounts[hour] = (hourCounts[hour] || 0) + 1;
             }
@@ -120,7 +131,6 @@ export const DailyBriefingTab: React.FC = () => {
         let maxHour = 12; 
         let maxCount = 0;
 
-        // Find hour with max transactions
         Object.entries(hourCounts).forEach(([hour, count]) => {
             if (count > maxCount) {
                 maxCount = count;
@@ -177,7 +187,7 @@ export const DailyBriefingTab: React.FC = () => {
                     <BusinessPulseCard 
                         signals={briefingData?.market.signals} 
                         currentSales={displayIncome}
-                        peakTime={peakTime} // PHOENIX: Real Calculated Data
+                        peakTime={peakTime} 
                     />
                 </motion.div>
                 

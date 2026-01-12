@@ -1,7 +1,7 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V2.1 (REAL INTELLIGENCE)
-// 1. DATA: Accepts 'peakTime' prop calculated from real transaction history.
-// 2. LOGIC: Replaces hardcoded placeholder with actual business data.
+// PHOENIX PROTOCOL - PULSE CARD V2.2 (TEXT FIX)
+// 1. FIX: Removed legacy translation key that caused double timestamps.
+// 2. UI: Cleaned up the traffic analysis text structure.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,18 +18,18 @@ interface Signal {
 interface BusinessPulseCardProps {
     signals?: Signal[];
     currentSales?: number;
-    peakTime?: string; // PHOENIX: New prop for real data
+    peakTime?: string; 
 }
 
 export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({ 
     signals = [], 
     currentSales = 0,
-    peakTime = "12:00 - 13:00" // Fallback if calculation fails
+    peakTime = "12:00 - 13:00"
 }) => {
     const { t } = useTranslation();
     const [insight, setInsight] = useState<string>("");
     
-    // 1. Velocity Calculation (Projected EOD Revenue)
+    // 1. Velocity Calculation
     const projection = useMemo(() => {
         const now = new Date();
         const startHour = 8; // 8:00 AM
@@ -46,7 +46,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
         return currentSales + (velocityPerHour * remainingHours);
     }, [currentSales]);
 
-    // 2. Fetch AI Insight on Mount
+    // 2. Fetch AI Insight
     useEffect(() => {
         const fetchInsight = async () => {
             try {
@@ -59,7 +59,6 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
         fetchInsight();
     }, [t]);
 
-    // 3. Identify Hot Item (Anomaly)
     const hotItem = useMemo(() => signals.find(s => s.type === 'bestseller'), [signals]);
 
     return (
@@ -122,7 +121,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                             <div>
                                 <p className="text-xs text-blue-300 font-bold uppercase mb-1">{t('dashboard.pulse.trafficAnalysis', 'Analiza e Trafikut')}</p>
                                 <p className="text-sm text-gray-200 leading-snug">
-                                    {t('dashboard.pulse.trafficForecast', 'Pritet fluks i lartë klientësh')} <span className="text-white font-bold">{peakTime}</span>.
+                                    {t('dashboard.pulse.trafficHigh', 'Pritet fluks i lartë:')} <span className="text-white font-bold">{peakTime}</span>.
                                 </p>
                             </div>
                         </div>
