@@ -1,8 +1,7 @@
 // FILE: src/components/business/TransactionImporter.tsx
-// PHOENIX PROTOCOL - GUIDED IMPORT WIZARD V21.0
-// 1. FEATURE: Implemented a 'selection' step to differentiate between POS and Bank imports.
-// 2. LOGIC: The component now dynamically adjusts required fields and auto-mapping based on user's choice.
-// 3. API: The 'confirmImport' call now sends an 'importType' to the backend for specialized processing.
+// PHOENIX PROTOCOL - I18N V21.1
+// 1. REFACTOR: Replaced all hardcoded strings with i18next 't()' function calls.
+// 2. INTEGRITY: The Guided Import Wizard is now fully translatable.
 
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2, ShoppingCart, Landmark } from 'lucide-react';
@@ -37,8 +36,8 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
 
     const bankRequiredFields = [
         { key: 'description', label: t('finance.description'), required: true },
-        { key: 'debit', label: t('finance.import.debit', 'Debit (Expense)'), required: false },
-        { key: 'credit', label: t('finance.import.credit', 'Credit (Income)'), required: false },
+        { key: 'debit', label: t('finance.import.debit'), required: false },
+        { key: 'credit', label: t('finance.import.credit'), required: false },
         { key: 'date', label: t('finance.date'), required: true },
     ];
 
@@ -94,7 +93,6 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
         setStep('processing');
         
         try {
-            // PHOENIX: Pass the importType to the backend
             await apiService.confirmImport(file, mapping, importType);
             onSuccess();
             onClose();
@@ -138,12 +136,12 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                 <div className="p-6 overflow-y-auto flex-1 custom-finance-scroll">
                     {step === 'selection' && (
                         <div className="text-center py-10 space-y-6">
-                            <h3 className="text-lg font-bold text-white">{t('finance.import.selectTypeTitle', 'Çfarë jeni duke importuar?')}</h3>
+                            <h3 className="text-lg font-bold text-white">{t('finance.import.selectTypeTitle')}</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
                                 <button onClick={() => handleSelectType('pos')} className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/50 hover:bg-emerald-500/10 transition-all"><ShoppingCart size={32} className="text-emerald-400"/>
-                                    <span className="font-bold text-white">{t('finance.import.typePos', 'Shitje nga POS')}</span></button>
+                                    <span className="font-bold text-white">{t('finance.import.typePos')}</span></button>
                                 <button onClick={() => handleSelectType('bank')} className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/10 transition-all"><Landmark size={32} className="text-blue-400"/>
-                                    <span className="font-bold text-white">{t('finance.import.typeBank', 'Pasqyrë Bankare')}</span></button>
+                                    <span className="font-bold text-white">{t('finance.import.typeBank')}</span></button>
                             </div>
                         </div>
                     )}
@@ -154,7 +152,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                                 <Upload size={36} className="text-emerald-400" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-white">{importType === 'pos' ? t('finance.import.uploadTitlePos', 'Ngarko Raportin e POS') : t('finance.import.uploadTitleBank', 'Ngarko Pasqyrën Bankare')}</h3>
+                                <h3 className="text-lg font-bold text-white">{importType === 'pos' ? t('finance.import.uploadTitlePos') : t('finance.import.uploadTitleBank')}</h3>
                                 <p className="text-gray-400 text-sm mt-1">{t('finance.import.uploadDesc')}</p>
                             </div>
                             <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv, .xlsx" />

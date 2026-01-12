@@ -169,14 +169,12 @@
     "slide5_title": "Menaxhimi Financiar",
     "slide5_desc": "Menaxhoni financat, faturat dhe llogaritni shpenzimet automatikisht."
   },
-
   "header": {
     "searchPlaceholder": "Kërko...",
     "profile": "Profili",
     "settings": "Cilësimet",
     "logout": "Dilni"
     },
-  
   "chatPanel": {
     "title": "Bisedo",
     "titleLegal": "Hartuesi Ligjor",
@@ -187,7 +185,6 @@
     "statusConnected": "Lidhur",
     "confirmClear": "Pastro bisedën?"
   },
-  
   "drafting": {
     "title": "Harto",
     "subtitle": "Krijoni dokumente profesionale me fuqinë e AI.",
@@ -324,7 +321,14 @@
       "productName": "Emri i Produktit",
       "typeLabel": "Lloji (Faturë/Shpenzim)",
       "statusLabel": "Statusi",
-      "importFailed": "Importi dështoi. Kontrolloni konsolën."
+      "importFailed": "Importi dështoi. Kontrolloni konsolën.",
+      "selectTypeTitle": "Çfarë jeni duke importuar?",
+      "typePos": "Shitje nga POS",
+      "typeBank": "Pasqyrë Bankare",
+      "uploadTitlePos": "Ngarko Raportin e POS",
+      "uploadTitleBank": "Ngarko Pasqyrën Bankare",
+      "debit": "Debit (Shpenzim)",
+      "credit": "Kredi (e Hyrë)"
     },
     "smartAnalyst": {
       "bannerTitle": "Inteligjenca Artificiale",
@@ -423,7 +427,8 @@
         "cost": "Kosto / Njësi",
         "stock": "Stoku Aktual",
         "lowStock": "Pragu i Stokut Kritik",
-        "importedCount": "Artikuj të importuar"
+        "importedCount": "Artikuj të importuar",
+        "noItems": "Nuk u gjet asnjë artikull."
     },
     "recipes": { 
         "add": "Krijo Recetë", 
