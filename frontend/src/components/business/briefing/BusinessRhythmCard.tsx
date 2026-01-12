@@ -1,11 +1,11 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - RHYTHM CARD V4.2 (LINT FREE)
-// 1. FIX: Removed unused 'TrendingUp' import.
-// 2. LOGIC: Month-to-Date visual density adjustments retained.
+// PHOENIX PROTOCOL - RHYTHM CARD V4.3 (LOCALIZATION FIX)
+// 1. FIX: Localized "Target Achieved" string.
+// 2. UI: Preserved existing chart configuration.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays } from 'lucide-react'; // Removed TrendingUp
+import { CalendarDays } from 'lucide-react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -46,7 +46,6 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
     
     const progress = Math.min((currentSales / dailyTarget) * 100, 100);
 
-    // Dynamic bar width based on number of days (thinner later in the month)
     const isLateInMonth = salesHistory.labels.length > 15;
 
     const chartData = {
@@ -58,7 +57,6 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
             backgroundColor: (context: any) => {
                 const index = context.dataIndex;
                 const count = context.dataset.data.length;
-                // Highlight Today (last bar)
                 return index === count - 1 ? 'rgba(16, 185, 129, 0.9)' : 'rgba(16, 185, 129, 0.3)';
             },
             borderColor: 'rgba(16, 185, 129, 1)',
@@ -114,7 +112,6 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
 
     return (
         <div className="bg-gray-900/50 border border-white/10 rounded-3xl p-6 relative overflow-hidden h-full flex flex-col justify-between group hover:border-emerald-500/30 transition-colors duration-500">
-            {/* Background Glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[60px] rounded-full group-hover:bg-emerald-500/20 transition-all" />
 
             <div className="flex justify-between items-start mb-4 relative z-10">
@@ -129,7 +126,6 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
                 </div>
             </div>
 
-            {/* PHOENIX: DAILY TREND CHART */}
             <div className="h-48 w-full relative z-10">
                 <Bar options={chartOptions} data={chartData} />
             </div>
@@ -137,7 +133,10 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
             <div className="flex items-center justify-between text-xs text-gray-500 mt-2 relative z-10">
                 <span>{t('dashboard.monthToDate', 'Muaji deri më sot')}</span>
                 <span className={progress >= 100 ? "text-emerald-400 font-bold" : "text-gray-400"}>
-                    {progress >= 100 ? "Target Achieved" : `${progress.toFixed(0)}% e targetit`}
+                    {progress >= 100 
+                        ? t('dashboard.targetAchieved', 'Objektivi u arrit!') 
+                        : `${progress.toFixed(0)}% ${t('dashboard.ofTarget', 'e targetit')}`
+                    }
                 </span>
             </div>
         </div>

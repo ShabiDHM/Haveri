@@ -1,7 +1,7 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V4.8 (MAPPING FIX)
-// 1. CRITICAL FIX: Handled JSON key mismatches ('date' vs 'transaction_date', 'amount' vs 'total_price').
-// 2. DATA: Ensures bars render by mapping raw backend fields correctly.
+// PHOENIX PROTOCOL - DASHBOARD V4.9 (DATE LOGIC FIX)
+// 1. FIX: Changed date comparison to String-based (YYYY-MM-DD) to fix empty bars.
+// 2. LOGIC: Eliminates timezone issues where 00:00 might shift to previous day.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,8 +18,6 @@ import { BusinessRhythmCard, DailySalesData } from './briefing/BusinessRhythmCar
 import { BusinessPulseCard } from './briefing/BusinessPulseCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
 
-// PHOENIX: Interface for Raw Backend Data (before type casting)
-// The backend sends "date" and "amount" due to Pydantic aliases.
 interface RawTransaction {
     date?: string;
     transaction_date?: string;
@@ -52,18 +50,15 @@ export const DailyBriefingTab: React.FC = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                // 1. Fetch Cases
                 const casesData = await apiService.getCases();
                 setCases(casesData);
                 
-                // 2. Fetch Message Count
                 const msgs = await apiService.getInboundMessages('INBOX');
                 setMessageCount(msgs.length);
 
-                // 3. Fetch Transactions
                 const transactions = await apiService.getPosTransactions();
                 
-                // 4. Run Analysis (using 'any' cast to handle raw fields safely)
+                // Safe casting for analysis
                 processSalesHistory(transactions as any[]);
                 analyzePeakTraffic(transactions as any[]);
 
@@ -76,7 +71,7 @@ export const DailyBriefingTab: React.FC = () => {
         loadData();
     }, [i18n.language]);
 
-    // Helper: Aggregate Month-to-Date
+    // Helper: Aggregate Month-to-Date (String Comparison)
     const processSalesHistory = (transactions: RawTransaction[]) => {
         const now = new Date();
         const currentYear = now.getFullYear();
@@ -92,19 +87,30 @@ export const DailyBriefingTab: React.FC = () => {
             date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
         );
 
-        const data = dates.map(date => {
-            const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
-            const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
+        const data = dates.map(targetDate => {
+            // Convert target loop date to "YYYY-MM-DD"
+            // Note: Use local string to ensure we match the day represented by the loop
+            const targetStr = targetDate.toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD local
 
-            const dailyTx = transactions.filter(tx => {
-                // CHECK BOTH FIELDS (Backend Alias vs Frontend Type)
-                const dateStr = tx.transaction_date || tx.date || '';
-                const txDate = new Date(dateStr);
-                return txDate >= startOfDay && txDate <= endOfDay;
-            });
+            const dailySum = transactions.reduce((sum, tx) => {
+                const dateVal = tx.transaction_date || tx.date;
+                if (!dateVal) return sum;
+
+                // Parse transaction date
+                const txDate = new Date(dateVal);
+                if (isNaN(txDate.getTime())) return sum;
+
+                // Convert transaction date to "YYYY-MM-DD" local
+                const txStr = txDate.toLocaleDateString('en-CA');
+
+                // Compare Strings
+                if (txStr === targetStr) {
+                    return sum + (tx.total_price || tx.amount || 0);
+                }
+                return sum;
+            }, 0);
             
-            // CHECK BOTH FIELDS (Backend Alias vs Frontend Type)
-            return dailyTx.reduce((sum, tx) => sum + (tx.total_price || tx.amount || 0), 0);
+            return dailySum;
         });
 
         setSalesHistory({ labels, data });
@@ -119,8 +125,10 @@ export const DailyBriefingTab: React.FC = () => {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
         transactions.forEach(tx => {
-            const dateStr = tx.transaction_date || tx.date || '';
-            const txDate = new Date(dateStr);
+            const dateVal = tx.transaction_date || tx.date;
+            if (!dateVal) return;
+
+            const txDate = new Date(dateVal);
             
             if (txDate >= thirtyDaysAgo && !isNaN(txDate.getTime())) {
                 const hour = txDate.getHours();
@@ -158,7 +166,6 @@ export const DailyBriefingTab: React.FC = () => {
                 )}
             </AnimatePresence>
             
-            {/* Header */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950 to-slate-900 border border-white/10 p-6 sm:p-10 text-center sm:text-left shadow-2xl">
                 <div className="absolute top-0 right-0 p-40 bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
                 <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -173,7 +180,6 @@ export const DailyBriefingTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
