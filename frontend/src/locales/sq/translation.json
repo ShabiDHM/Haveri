@@ -442,7 +442,8 @@
         "selectIngredient": "Zgjidh Përbërësin",
         "costPreview": "Kosto e vlerësuar:",
         "importedCount": "Receta të importuara",
-        "cost": "Kosto e Vlerësuar"
+        "cost": "Kosto e Vlerësuar",
+        "noRecipes": "Nuk u gjet asnjë recetë."
     },
     "import": {
         "instruction": "Ngarkoni një skedar CSV ose Excel për të importuar të dhënat.",
