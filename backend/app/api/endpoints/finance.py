@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V14.6 (BULK DELETE)
-# 1. FEATURE: Added POST /transactions/bulk-delete endpoint.
-# 2. LOGIC: Accepts a list of transaction IDs for mass deletion.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V14.7 (UNIFIED BULK DELETE)
+# 1. FEATURE: Upgraded POST /transactions/bulk-delete endpoint to handle all transaction types.
+# 2. LOGIC: Request body now accepts separate lists for invoices, expenses, and POS transactions.
 
 import asyncio
 import json
@@ -31,9 +31,11 @@ from app.api.endpoints.dependencies import get_current_user, get_db, get_async_d
 
 router = APIRouter(tags=["Finance"])
 
-# PHOENIX: Define the request body for bulk deletion
+# PHOENIX: Upgraded request body for unified bulk deletion
 class BulkDeleteRequest(BaseModel):
-    transaction_ids: List[str]
+    invoice_ids: Optional[List[str]] = []
+    expense_ids: Optional[List[str]] = []
+    pos_ids: Optional[List[str]] = []
 
 # --- DATA IMPORT ENDPOINTS ---
 @router.post("/import/preview")
@@ -66,7 +68,7 @@ def delete_transaction(
 ):
     FinanceService(db).delete_pos_transaction(str(current_user.id), transaction_id)
 
-# PHOENIX: NEW BULK DELETE ENDPOINT
+# PHOENIX: UPGRADED UNIFIED BULK DELETE ENDPOINT
 @router.post("/transactions/bulk-delete", status_code=status.HTTP_200_OK)
 def bulk_delete_transactions(
     request: BulkDeleteRequest,
@@ -74,10 +76,15 @@ def bulk_delete_transactions(
     db: Database = Depends(get_db)
 ):
     service = FinanceService(db)
-    deleted_count = service.bulk_delete_pos_transactions(
+    deleted_count = service.bulk_delete_transactions(
         user_id=str(current_user.id), 
-        transaction_ids=request.transaction_ids
+        invoice_ids=request.invoice_ids or [],
+        expense_ids=request.expense_ids or [],
+        pos_ids=request.pos_ids or []
     )
+    if deleted_count == 0:
+        # Provide more specific feedback if nothing was deleted but the request was valid
+        return {"status": "no items matched the criteria for deletion", "deleted_count": 0}
     return {"status": "success", "deleted_count": deleted_count}
 
 

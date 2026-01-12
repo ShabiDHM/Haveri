@@ -1,7 +1,8 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V6.3 (BULK DELETE)
-# 1. FEATURE: Added 'bulk_delete_pos_transactions' to handle mass deletion.
-# 2. SECURITY: The query ensures users can only delete their own transactions.
+# PHOENIX PROTOCOL - FINANCE SERVICE V6.4 (UNIFIED BULK DELETE)
+# 1. FEATURE: Replaced 'bulk_delete_pos_transactions' with a generic 'bulk_delete_transactions'.
+# 2. LOGIC: The new method accepts separate lists for invoices, expenses, and POS transactions.
+# 3. INTEGRITY: Performs delete_many across multiple collections and returns the total count.
 
 import logging
 from datetime import datetime, timezone
@@ -51,21 +52,52 @@ class FinanceService:
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Transaction not found")
 
-    # PHOENIX: NEW BULK DELETE METHOD
-    def bulk_delete_pos_transactions(self, user_id: str, transaction_ids: List[str]) -> int:
-        if not transaction_ids:
-            return 0
+    # PHOENIX: UNIFIED BULK DELETE METHOD
+    def bulk_delete_transactions(
+        self, 
+        user_id: str, 
+        invoice_ids: List[str] = [], 
+        expense_ids: List[str] = [], 
+        pos_ids: List[str] = []
+    ) -> int:
+        total_deleted = 0
+        user_oid = ObjectId(user_id) # For invoices and expenses that use ObjectId
+
         try:
-            oids = [ObjectId(tid) for tid in transaction_ids]
+            # Delete Invoices
+            if invoice_ids:
+                invoice_oids = [ObjectId(tid) for tid in invoice_ids]
+                result = self.db.invoices.delete_many({
+                    "_id": {"$in": invoice_oids},
+                    "user_id": user_oid,
+                    "is_locked": {"$ne": True} # Safety check
+                })
+                total_deleted += result.deleted_count
+
+            # Delete Expenses
+            if expense_ids:
+                expense_oids = [ObjectId(tid) for tid in expense_ids]
+                result = self.db.expenses.delete_many({
+                    "_id": {"$in": expense_oids},
+                    "user_id": user_oid,
+                    "is_locked": {"$ne": True} # Safety check
+                })
+                total_deleted += result.deleted_count
+            
+            # Delete POS Transactions
+            if pos_ids:
+                pos_oids = [ObjectId(tid) for tid in pos_ids]
+                # POS transactions collection uses string user_id
+                result = self.db.transactions.delete_many({
+                    "_id": {"$in": pos_oids},
+                    "user_id": user_id 
+                })
+                total_deleted += result.deleted_count
+
         except bson_errors.InvalidId:
             raise HTTPException(status_code=400, detail="One or more provided IDs are invalid.")
         
-        result = self.db.transactions.delete_many({
-            "_id": {"$in": oids},
-            "user_id": user_id
-        })
-        
-        return result.deleted_count
+        return total_deleted
 
     # --- INVOICE LOGIC ---
     def _generate_invoice_number(self, user_id: str) -> str:
