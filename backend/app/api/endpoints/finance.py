@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V14.7 (UNIFIED BULK DELETE)
-# 1. FEATURE: Upgraded POST /transactions/bulk-delete endpoint to handle all transaction types.
-# 2. LOGIC: Request body now accepts separate lists for invoices, expenses, and POS transactions.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V14.8 (GUIDED IMPORT)
+# 1. FEATURE: 'confirm_import' endpoint now accepts an 'importType' form field.
+# 2. LOGIC: Passes the import type to the parsing service for conditional processing.
 
 import asyncio
 import json
@@ -31,7 +31,6 @@ from app.api.endpoints.dependencies import get_current_user, get_db, get_async_d
 
 router = APIRouter(tags=["Finance"])
 
-# PHOENIX: Upgraded request body for unified bulk deletion
 class BulkDeleteRequest(BaseModel):
     invoice_ids: Optional[List[str]] = []
     expense_ids: Optional[List[str]] = []
@@ -43,12 +42,23 @@ async def preview_import_file(file: UploadFile = File(...), db: Database = Depen
     service = ParsingService(db)
     return await service.preview_file(file)
 
+# PHOENIX: Updated endpoint to accept importType
 @router.post("/import/confirm")
-async def confirm_import(current_user: Annotated[UserInDB, Depends(get_current_user)], file: UploadFile = File(...), mapping: str = Form(...), db: Database = Depends(get_db)):
-    try: mapping_dict = json.loads(mapping)
-    except Exception: raise HTTPException(status_code=400, detail="Invalid mapping format")
+async def confirm_import(
+    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    file: UploadFile = File(...), 
+    mapping: str = Form(...), 
+    importType: str = Form('pos'), # New field
+    db: Database = Depends(get_db)
+):
+    try: 
+        mapping_dict = json.loads(mapping)
+    except Exception: 
+        raise HTTPException(status_code=400, detail="Invalid mapping format")
+    
     service = ParsingService(db)
-    return await service.process_import(file, str(current_user.id), mapping_dict)
+    # Pass importType to the service
+    return await service.process_import(file, str(current_user.id), mapping_dict, import_type=importType)
 
 @router.get("/import/transactions", response_model=List[PosTransactionOut])
 async def get_imported_transactions(
@@ -68,7 +78,6 @@ def delete_transaction(
 ):
     FinanceService(db).delete_pos_transaction(str(current_user.id), transaction_id)
 
-# PHOENIX: UPGRADED UNIFIED BULK DELETE ENDPOINT
 @router.post("/transactions/bulk-delete", status_code=status.HTTP_200_OK)
 def bulk_delete_transactions(
     request: BulkDeleteRequest,
@@ -83,7 +92,6 @@ def bulk_delete_transactions(
         pos_ids=request.pos_ids or []
     )
     if deleted_count == 0:
-        # Provide more specific feedback if nothing was deleted but the request was valid
         return {"status": "no items matched the criteria for deletion", "deleted_count": 0}
     return {"status": "success", "deleted_count": deleted_count}
 
@@ -148,12 +156,7 @@ async def archive_invoice(invoice_id: str, current_user: Annotated[UserInDB, Dep
     title = f"Fatura #{invoice.invoice_number} - {invoice.client_name}"
     
     archived_item = await archive_service_instance.save_generated_file(
-        user_id=str(current_user.id),
-        filename=filename,
-        file_content=pdf_content,
-        category="INVOICE",
-        title=title,
-        case_id=case_id
+        user_id=str(current_user.id), filename=filename, file_content=pdf_content, category="INVOICE", title=title, case_id=case_id
     )
     return archived_item
 

@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V8.9 (UNIFIED BULK DELETE)
-// 1. FEATURE: Replaced 'bulkDeletePosTransaction' with a generic 'bulkDeleteTransactions'.
-// 2. INTEGRATION: The method now sends a categorized payload for deleting invoices, expenses, and POS items.
+// PHOENIX PROTOCOL - API V9.0 (GUIDED IMPORT SYNC)
+// 1. CRITICAL FIX: Updated the 'confirmImport' method signature to accept the 'importType' argument.
+// 2. INTEGRATION: Ensures the frontend API call matches the component's implementation, resolving the build error.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -186,8 +186,7 @@ class ApiService {
     public async getExpenseReceiptBlob(expenseId: string): Promise<{ blob: Blob, filename: string }> { const response = await this.axiosInstance.get(`/finance/expenses/${expenseId}/receipt`, { responseType: 'blob' }); const disposition = response.headers['content-disposition']; let filename = `receipt-${expenseId}.pdf`; if (disposition && disposition.indexOf('filename=') !== -1) { const matches = /filename="([^"]*)"/.exec(disposition); if (matches != null && matches[1]) filename = matches[1]; } return { blob: response.data, filename }; }
     public async getPosTransactions(): Promise<PosTransaction[]> { const response = await this.axiosInstance.get<any>('/finance/import/transactions'); if (Array.isArray(response.data)) { return response.data; } if (response.data && Array.isArray(response.data.transactions)) { return response.data.transactions; } return []; }
     public async deletePosTransaction(transactionId: string): Promise<void> { await this.axiosInstance.delete(`/finance/transactions/${transactionId}`); }
-
-    // PHOENIX: UNIFIED BULK DELETE METHOD
+    
     public async bulkDeleteTransactions(ids: { invoice_ids?: string[], expense_ids?: string[], pos_ids?: string[] }): Promise<any> {
         const response = await this.axiosInstance.post('/finance/transactions/bulk-delete', ids);
         return response.data;
@@ -196,7 +195,16 @@ class ApiService {
     public async getWizardState(month: number, year: number): Promise<WizardState> { const response = await this.axiosInstance.get<WizardState>('/finance/wizard/state', { params: { month, year } }); return response.data; }
     public async downloadMonthlyReport(month: number, year: number): Promise<void> { const response = await this.axiosInstance.get('/finance/wizard/report/pdf', { params: { month, year }, responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([response.data])); const link = document.createElement('a'); link.href = url; link.setAttribute('download', `Raporti_${month}_${year}.pdf`); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); }
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
-    public async confirmImport(file: File, mapping: Record<string, string>): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); formData.append('mapping', JSON.stringify(mapping)); const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData); return response.data; }
+    
+    // PHOENIX: CORRECTED METHOD SIGNATURE
+    public async confirmImport(file: File, mapping: Record<string, string>, importType: 'pos' | 'bank'): Promise<ImportResult> { 
+        const formData = new FormData(); 
+        formData.append('file', file); 
+        formData.append('mapping', JSON.stringify(mapping));
+        formData.append('importType', importType); // Add the import type to the form data
+        const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData); 
+        return response.data; 
+    }
 
     // --- INVENTORY ---
     public async getInventoryItems(): Promise<InventoryItem[]> { const response = await this.axiosInstance.get<InventoryItem[]>('/inventory/items'); return response.data; }
