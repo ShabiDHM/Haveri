@@ -1,7 +1,7 @@
 # FILE: backend/scripts/ingest_laws.py
-# PHOENIX PROTOCOL - INGESTION SCRIPT V2.2 (CORRECT EMBEDDING CLASS)
-# 1. FIX: Updated the import and instantiation to use 'HaveriEmbeddingFunction'.
-# 2. ALIGNMENT: Ensures the script uses the current, refactored core components.
+# PHOENIX PROTOCOL - INGESTION SCRIPT V2.3 (CORRECT PATH)
+# 1. FIX: Corrected the default directory path to '/app/data/laws/ks'.
+# 2. STATUS: Aligns the script's default path with the Docker volume mapping.
 
 import os
 import sys
@@ -20,7 +20,6 @@ try:
 
     from langchain.text_splitter import RecursiveCharacterTextSplitter
     import chromadb
-    # --- PHOENIX FIX: Import the correct, renamed class ---
     from app.core.embeddings import HaveriEmbeddingFunction 
     from chromadb.api.types import Metadata
 except ImportError as e:
@@ -61,7 +60,6 @@ def ingest_legal_docs(directory_path: str):
     
     try:
         client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
-        # --- PHOENIX FIX: Instantiate the correct class ---
         collection = client.get_or_create_collection(
             name=COLLECTION_NAME,
             embedding_function=HaveriEmbeddingFunction()
@@ -164,7 +162,8 @@ def ingest_legal_docs(directory_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest laws into ChromaDB (KOSOVO EXCLUSIVE).")
-    parser.add_argument("path", nargs="?", default="/app/app/data/laws/ks", help="Path to documents folder")
+    # --- PHOENIX FIX: Corrected the default path to match the Docker volume ---
+    parser.add_argument("path", nargs="?", default="/app/data/laws/ks", help="Path to documents folder")
     
     args = parser.parse_args()
     ingest_legal_docs(args.path)
