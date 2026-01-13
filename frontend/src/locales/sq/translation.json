@@ -31,7 +31,8 @@
     "clear": "Pastro",
     "confirmClearChat": "A jeni i sigurt që doni të fshini bisedën?",
     "backToYears": "Kthehu te Vitet",
-    "backTo": "Kthehu te"
+    "backTo": "Kthehu te",
+    "backToDashboard": "Kthehu tek Paneli Kryesor"
   },
   "navigation": {
     "integrations": "Integrimet"
@@ -277,6 +278,19 @@
     "tax": { "estimator": "Vlerësimi i TVSH-së" },
     "inventory": { "title": "Inteligjenca e Stokut" },
     "tip": "Këshillë: Përdorni butonin WhatsApp tek borxhet për të përshpejtuar arkëtimin me 40%."
+  },
+  "graph": {
+    "title": "Topologjia Nexus",
+    "desc": "Vizualizoni lidhjet e fshehura midis klientëve, faturave dhe rrjedhës së kapitalit.",
+    "loading": "DUKE INICIALIZUAR NEXUS...",
+    "noNodes": "Nuk u gjetën nyje të dhënash",
+    "legend": "Entitetet e Sistemit",
+    "details": "Detaje",
+    "inspect": "Inspekto",
+    "trace": "Gjurmo",
+    "client": "Klient",
+    "invoice": "Faturë",
+    "expense": "Shpenzim"
   },
   "finance": {
     "income": "Të Hyrat",
@@ -557,7 +571,7 @@
     "poweredBy": "Ndihmës për Tatime"
   },
   "analyst": {
-    "title": "Analisti i të Dhënave",
+    "title": "Analisti Inteligjent",
     "desc": "Keni një skedar Excel ose CSV të komplikuar? Ngarkojeni këtu dhe do ta analizojë, vizualizojë dhe ju prezentoj gjetjet."
   }
 }
