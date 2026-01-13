@@ -1,33 +1,33 @@
 # FILE: backend/app/api/endpoints/graph.py
-# PHOENIX PROTOCOL - GRAPH API V2.2 (DEBUGGING ENABLED)
-# 1. DEBUG: Added print statements to trace MongoDB query results.
-# 2. LOGIC: Ensures exact parity with FinanceService query structure.
+# PHOENIX PROTOCOL - GRAPH API V2.3 (SYNC DRIVER FALLBACK)
+# 1. ARCHITECTURE CHANGE: Switched from Async (Motor) to Sync (PyMongo) to match FinanceService.
+# 2. DEBUG: Enhanced logging to trace exactly why queries might return 0 results.
 
 from fastapi import APIRouter, Depends
 from typing import Dict, List, Any
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo.database import Database
 from app.api.endpoints.dependencies import get_current_active_user
 from app.models.user import UserInDB as User
-from app.core.db import get_async_db 
+from app.core.db import get_db 
 
 router = APIRouter()
 
 class MongoGraphService:
-    def __init__(self, db: AsyncIOMotorDatabase):
+    def __init__(self, db: Database):
         self.db = db
 
-    async def build_financial_topology(self, user_id: str) -> Dict[str, List[Dict[str, Any]]]:
-        print(f"--- [GRAPH DEBUG] Building topology for User ID: {user_id} ---")
+    def build_financial_topology(self, user_id: str) -> Dict[str, List[Dict[str, Any]]]:
+        print(f"--- [GRAPH DEBUG] Sync Query for User ID: {user_id} ---")
         
         nodes = []
         links = []
         node_ids = set()
         
-        # --- 1. FETCH DATA ---
-        # Querying exactly as FinanceService does: user_id is a string
-        cases = await self.db.cases.find({"user_id": user_id}).to_list(length=100)
-        invoices = await self.db.invoices.find({"user_id": user_id}).to_list(length=200)
-        expenses = await self.db.expenses.find({"user_id": user_id}).to_list(length=200)
+        # --- 1. FETCH DATA (Synchronous) ---
+        # Using dictionary access ["collection"] to be 100% safe
+        cases = list(self.db["cases"].find({"user_id": user_id}))
+        invoices = list(self.db["invoices"].find({"user_id": user_id}))
+        expenses = list(self.db["expenses"].find({"user_id": user_id}))
 
         print(f"--- [GRAPH DEBUG] Found: {len(cases)} Cases, {len(invoices)} Invoices, {len(expenses)} Expenses ---")
 
@@ -35,14 +35,12 @@ class MongoGraphService:
         clients_map = {} 
         
         for inv in invoices:
-            # Check for client_name vs client.name structure
             c_name = inv.get("client_name")
-            # Fallback for nested client object if schema differs
+            # Fallback for nested client object
             if not c_name and "client" in inv and isinstance(inv["client"], dict):
                 c_name = inv["client"].get("name")
             
-            if not c_name: 
-                c_name = "Unknown Client"
+            if not c_name: c_name = "Unknown Client"
 
             amount = inv.get("total_amount", 0)
             status = inv.get("status", "DRAFT")
@@ -80,7 +78,6 @@ class MongoGraphService:
         for inv in invoices:
             inv_id = str(inv["_id"])
             
-            # Client Name Resolution
             c_name = inv.get("client_name")
             if not c_name and "client" in inv and isinstance(inv["client"], dict):
                 c_name = inv["client"].get("name")
@@ -122,6 +119,7 @@ class MongoGraphService:
             
             if "related_case_id" in exp and exp["related_case_id"]:
                 case_link_id = str(exp["related_case_id"])
+                # Only add link if case node will exist
                 links.append({"source": case_link_id, "target": exp_id, "value": 1})
 
         # Cases
@@ -146,19 +144,17 @@ class MongoGraphService:
 
         valid_links = [l for l in links if l["source"] in node_ids and l["target"] in node_ids]
         
-        print(f"--- [GRAPH DEBUG] Generated {len(nodes)} Nodes and {len(valid_links)} Links ---")
         return {"nodes": nodes, "links": valid_links}
 
 
 @router.get("/visualize", response_model=Dict[str, List[Dict[str, Any]]], tags=["Graph"])
-async def get_graph_data(
+def get_graph_data(
     current_user: User = Depends(get_current_active_user),
-    db: AsyncIOMotorDatabase = Depends(get_async_db)
+    db: Database = Depends(get_db)
 ):
     service = MongoGraphService(db)
-    graph_data = await service.build_financial_topology(str(current_user.id))
+    graph_data = service.build_financial_topology(str(current_user.id))
     
-    # Fallback Seed
     if not graph_data["nodes"]:
         print("--- [GRAPH DEBUG] No data found. Returning Seed Data. ---")
         return {
