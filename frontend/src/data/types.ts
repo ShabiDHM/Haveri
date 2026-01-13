@@ -1,7 +1,7 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V2.6 (PLAN TIER ADDED)
-// 1. SCHEMA CHANGE: Added 'plan_tier' to User interface.
-// 2. PURPOSE: Allows the UI to show the current subscription level and enforce visual quotas.
+// PHOENIX PROTOCOL - TYPES V2.7 (GRAPH INTERFACES ADDED)
+// 1. SCHEMA CHANGE: Added interfaces for GraphNode, GraphLink, and GraphData.
+// 2. PURPOSE: To provide type safety for the "Interconnected Intelligence" feature.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -21,7 +21,7 @@ export interface User {
     organization_role?: 'OWNER' | 'MEMBER' | 'VIEWER';
     organization_name?: string;
     logo?: string;
-    plan_tier?: 'SOLO' | 'STARTUP' | 'GROWTH' | 'ENTERPRISE'; // PHOENIX: Added Plan Tier
+    plan_tier?: 'SOLO' | 'STARTUP' | 'GROWTH' | 'ENTERPRISE';
 }
 
 export type AdminUser = User;
@@ -31,126 +31,22 @@ export interface Case { id: string; case_number: string; case_name: string; titl
 export interface Document { id: string; file_name: string; file_type: string; mime_type?: string; storage_key: string; uploaded_by: string; created_at: string; status: 'UPLOADING' | 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED'; summary?: string; risk_score?: number; ocr_status?: string; processed_text_storage_key?: string; preview_storage_key?: string; error_message?: string; progress_percent?: number; progress_message?: string; is_shared?: boolean; }
 export interface ChatMessage { role: 'user' | 'ai'; content: string; timestamp: string; }
 
-export interface CalendarEvent { 
-    id: string; 
-    title: string; 
-    description?: string; 
-    start_date: string; 
-    end_date: string; 
-    is_all_day: boolean; 
-    event_type: 'APPOINTMENT' | 'TASK' | 'PAYMENT_DUE' | 'TAX_DEADLINE' | 'PERSONAL' | 'OTHER'; 
-    status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE' | 'ARCHIVED'; 
-    case_id?: string; 
-    document_id?: string; 
-    location?: string; 
-    notes?: string; 
-    priority?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'; 
-    attendees?: string[]; 
-    is_public?: boolean; 
-}
-
-export interface UIAgendaItem {
-    id: string;
-    title: string;
-    description?: string;
-    start_date: string;
-    end_date: string;
-    is_all_day: boolean;
-    status: CalendarEvent['status'];
-    type: CalendarEvent['event_type'];
-    attendees?: string[];
-    location?: string;
-    notes?: string;
-    case_id?: string;
-    time: string;
-    priority: 'high' | 'medium' | 'low';
-    isCompleted: boolean;
-    kind: 'event' | 'alert';
-    raw: any;
-}
-
+export interface CalendarEvent { id: string; title: string; description?: string; start_date: string; end_date: string; is_all_day: boolean; event_type: 'APPOINTMENT' | 'TASK' | 'PAYMENT_DUE' | 'TAX_DEADLINE' | 'PERSONAL' | 'OTHER'; status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE' | 'ARCHIVED'; case_id?: string; document_id?: string; location?: string; notes?: string; priority?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'; attendees?: string[]; is_public?: boolean; }
+export interface UIAgendaItem { id: string; title: string; description?: string; start_date: string; end_date: string; is_all_day: boolean; status: CalendarEvent['status']; type: CalendarEvent['event_type']; attendees?: string[]; location?: string; notes?: string; case_id?: string; time: string; priority: 'high' | 'medium' | 'low'; isCompleted: boolean; kind: 'event' | 'alert'; raw: any; }
 export interface BusinessProfile { id: string; firm_name: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color: string; logo_url?: string; is_complete: boolean; vat_rate?: number; target_margin?: number; currency?: string; }
 export interface BusinessProfileUpdate { firm_name?: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color?: string; vat_rate?: number; target_margin?: number; currency?: string; }
-
-export interface StrategicBriefingResponse {
-    staffPerformance: {
-        efficiencyStatus: 'sleep' | 'stable' | 'fire';
-        efficiencyScore: number;
-        mvpName: string;
-        mvpTotal: number;
-        mvpInsight: {
-            key: string;
-            values?: Record<string, string | number>;
-        };
-        actionBravo: boolean;
-    };
-    market: { 
-        signals: Array<{ 
-            id: number; 
-            type: 'bestseller' | 'low_stock' | 'diaspora' | 'weather' | 'competitor' | 'holiday';
-            label: string; 
-            impact: 'high' | 'medium' | 'low'; 
-            message: string; 
-            action: string; 
-        }>; 
-    };
-    agenda: UIAgendaItem[];
-}
-
+export interface StrategicBriefingResponse { staffPerformance: { efficiencyStatus: 'sleep' | 'stable' | 'fire'; efficiencyScore: number; mvpName: string; mvpTotal: number; mvpInsight: { key: string; values?: Record<string, string | number>; }; actionBravo: boolean; }; market: { signals: Array<{ id: number; type: 'bestseller' | 'low_stock' | 'diaspora' | 'weather' | 'competitor' | 'holiday'; label: string; impact: 'high' | 'medium' | 'low'; message: string; action: string; }>; }; agenda: UIAgendaItem[]; }
 export interface InvoiceItem { description: string; quantity: number; unit_price: number; total: number; }
 export interface Invoice { id: string; invoice_number: string; client_name: string; client_email?: string; client_address?: string; issue_date: string; due_date: string; items: InvoiceItem[]; subtotal: number; tax_rate: number; tax_amount: number; total_amount: number; currency: string; status: 'DRAFT' | 'SENT' | 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED'; notes?: string; related_case_id?: string; }
 export interface InvoiceCreateRequest { client_name: string; client_email?: string; client_address?: string; items: InvoiceItem[]; tax_rate: number; due_date?: string; notes?: string; related_case_id?: string; status?: string; }
-
-export interface Expense { 
-    id: string; 
-    category: string; 
-    amount: number; 
-    description?: string; 
-    date: string; 
-    currency: string; 
-    receipt_url?: string; 
-    related_case_id?: string; 
-    source_archive_id?: string; 
-}
-
-export interface ExpenseCreateRequest { 
-    category: string; 
-    amount: number; 
-    description?: string; 
-    date?: string; 
-    related_case_id?: string; 
-    source_archive_id?: string; 
-}
-
-export interface ExpenseUpdate { 
-    category?: string; 
-    amount?: number; 
-    description?: string; 
-    date?: string; 
-    related_case_id?: string; 
-    source_archive_id?: string; 
-}
-
+export interface Expense { id: string; category: string; amount: number; description?: string; date: string; currency: string; receipt_url?: string; related_case_id?: string; source_archive_id?: string; }
+export interface ExpenseCreateRequest { category: string; amount: number; description?: string; date?: string; related_case_id?: string; source_archive_id?: string; }
+export interface ExpenseUpdate { category?: string; amount?: number; description?: string; date?: string; related_case_id?: string; source_archive_id?: string; }
 export interface CaseFinancialSummary { case_id: string; case_title: string; case_number: string; total_billed: number; total_expenses: number; net_balance: number; }
 export interface SalesTrendPoint { date: string; amount: number; }
 export interface TopProductItem { product_name: string; total_quantity: number; total_revenue: number; }
 export interface AnalyticsDashboardData { total_revenue_period: number; total_transactions_period: number; sales_trend: SalesTrendPoint[]; top_products: TopProductItem[]; total_profit_period?: number; }
-
-export interface ArchiveItemOut { 
-    id: string; 
-    title: string; 
-    file_type: string; 
-    category: string; 
-    storage_key: string; 
-    file_size: number; 
-    created_at: string; 
-    case_id?: string; 
-    parent_id?: string; 
-    item_type?: 'FILE' | 'FOLDER'; 
-    is_shared?: boolean; 
-    indexing_status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED';
-}
-
+export interface ArchiveItemOut { id: string; title: string; file_type: string; category: string; storage_key: string; file_size: number; created_at: string; case_id?: string; parent_id?: string; item_type?: 'FILE' | 'FOLDER'; is_shared?: boolean; indexing_status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED'; }
 export interface PosTransaction { id: string; product_name: string; quantity: number; total_price: number; transaction_date: string; payment_method: string; }
 export interface InventoryItem { _id: string; name: string; unit: string; current_stock: number; cost_per_unit: number; low_stock_threshold: number; }
 export interface InventoryItemCreate { name: string; unit: string; current_stock: number; cost_per_unit: number; low_stock_threshold?: number; }
@@ -158,17 +54,32 @@ export interface Ingredient { inventory_item_id: string; quantity_required: numb
 export interface Recipe { _id: string; product_name: string; ingredients: Ingredient[]; }
 export interface RecipeCreate { product_name: string; ingredients: Ingredient[]; }
 export interface RecipeImportResult { recipes_created: number; missing_ingredients: string[]; }
-
 export interface LoginRequest { username: string; password: string; }
 export interface RegisterRequest { email: string; password: string; username: string; full_name?: string; }
 export interface ChangePasswordRequest { current_password: string; new_password: string; }
 export interface UpdateUserRequest { username?: string; email?: string; role?: string; subscription_status?: string; status?: 'active' | 'inactive'; }
-
 export interface InviteUserRequest { email: string; role: 'MEMBER' | 'VIEWER' | 'ADMIN'; }
-
 export interface CreateCaseRequest { case_number: string; title: string; case_name?: string; description?: string; clientName?: string; clientEmail?: string; clientPhone?: string; status?: string; }
 export interface DeletedDocumentResponse { documentId: string; deletedFindingIds: string[]; }
 export interface CalendarEventCreateRequest { title: string; description?: string; start_date: string; end_date?: string; is_all_day?: boolean; event_type: string; case_id?: string; location?: string; notes?: string; priority?: string; attendees?: string[]; is_public?: boolean; }
 export interface CreateDraftingJobRequest { user_prompt: string; template_id?: string; case_id?: string; context?: string; draft_type?: string; document_type?: string; use_library?: boolean; }
 export type DraftingJobStatus = { job_id: string; status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; error?: string; result_summary?: string; };
 export type DraftingJobResult = { document_text: string; document_html?: string; result_text?: string; job_id?: string; status?: string; };
+
+// --- INTERCONNECTED INTELLIGENCE (GRAPH) TYPES ---
+export interface GraphNode {
+    id: string | number;
+    label: string;
+    group: string;
+}
+  
+export interface GraphLink {
+    source: string | number;
+    target: string | number;
+    label: string;
+}
+  
+export interface GraphData {
+    nodes: GraphNode[];
+    links: GraphLink[];
+}
