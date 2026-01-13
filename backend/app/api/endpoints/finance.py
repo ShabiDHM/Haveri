@@ -1,15 +1,12 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V14.8 (GUIDED IMPORT)
-# 1. FEATURE: 'confirm_import' endpoint now accepts an 'importType' form field.
-# 2. LOGIC: Passes the import type to the parsing service for conditional processing.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V15.0 (GRAPH INTEGRATION)
+# 1. FEATURE: Invoices created or updated are now synced to the Neo4j graph database.
+# 2. ARCHITECTURE: Injects GraphService and calls it after successful DB operations.
 
-import asyncio
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
-from typing import List, Annotated, Optional, Any, Dict
-from datetime import datetime, timedelta
-from bson import ObjectId
+from typing import List, Annotated, Optional, Any
 from pymongo.database import Database
 import pymongo 
 from pydantic import BaseModel
@@ -18,13 +15,13 @@ from app.models.user import UserInDB
 from app.models.finance import (
     InvoiceCreate, InvoiceOut, InvoiceUpdate, 
     ExpenseCreate, ExpenseOut, ExpenseUpdate,
-    AnalyticsDashboardData, SalesTrendPoint, TopProductItem,
-    CaseFinancialSummary, PosTransactionOut
+    AnalyticsDashboardData, CaseFinancialSummary, PosTransactionOut
 )
 from app.models.archive import ArchiveItemOut 
 from app.services.finance_service import FinanceService
 from app.services.archive_service import ArchiveService
 from app.services.parsing_service import ParsingService 
+from app.services.graph_service import GraphService
 from app.services import report_service
 from app.services.analytics_service import AnalyticsService
 from app.api.endpoints.dependencies import get_current_user, get_db, get_async_db, get_current_active_user
@@ -36,19 +33,18 @@ class BulkDeleteRequest(BaseModel):
     expense_ids: Optional[List[str]] = []
     pos_ids: Optional[List[str]] = []
 
-# --- DATA IMPORT ENDPOINTS ---
+# (Other endpoints are unchanged)
 @router.post("/import/preview")
 async def preview_import_file(file: UploadFile = File(...), db: Database = Depends(get_db)):
     service = ParsingService(db)
     return await service.preview_file(file)
 
-# PHOENIX: Updated endpoint to accept importType
 @router.post("/import/confirm")
 async def confirm_import(
     current_user: Annotated[UserInDB, Depends(get_current_user)], 
     file: UploadFile = File(...), 
     mapping: str = Form(...), 
-    importType: str = Form('pos'), # New field
+    importType: str = Form('pos'),
     db: Database = Depends(get_db)
 ):
     try: 
@@ -57,7 +53,6 @@ async def confirm_import(
         raise HTTPException(status_code=400, detail="Invalid mapping format")
     
     service = ParsingService(db)
-    # Pass importType to the service
     return await service.process_import(file, str(current_user.id), mapping_dict, import_type=importType)
 
 @router.get("/import/transactions", response_model=List[PosTransactionOut])
@@ -96,7 +91,6 @@ def bulk_delete_transactions(
     return {"status": "success", "deleted_count": deleted_count}
 
 
-# --- ANALYTICS ENDPOINTS ---
 @router.get("/case-summary", response_model=List[CaseFinancialSummary])
 async def get_case_financial_summaries(current_user: Annotated[UserInDB, Depends(get_current_active_user)], db: Any = Depends(get_async_db)):
     return [] 
@@ -110,27 +104,52 @@ async def get_analytics_dashboard(
     return AnalyticsDashboardData(total_revenue_period=0, total_transactions_period=0, sales_trend=[], top_products=[])
 
 
-# --- INVOICES (Standard CRUD) ---
 @router.get("/invoices", response_model=List[InvoiceOut])
 def get_invoices(current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
     return FinanceService(db).get_invoices(str(current_user.id))
 
 @router.post("/invoices", response_model=InvoiceOut, status_code=status.HTTP_201_CREATED)
-def create_invoice(invoice_in: InvoiceCreate, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
-    return FinanceService(db).create_invoice(str(current_user.id), invoice_in)
+def create_invoice(
+    invoice_in: InvoiceCreate, 
+    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    db: Database = Depends(get_db),
+    graph_service: GraphService = Depends()
+):
+    # The finance_service now returns InvoiceInDB, which is what we need
+    new_invoice_db = FinanceService(db).create_invoice(str(current_user.id), invoice_in)
+    graph_service.add_or_update_client_and_invoice(new_invoice_db)
+    # FastAPI will automatically convert the final return type to InvoiceOut
+    return new_invoice_db
 
 @router.get("/invoices/{invoice_id}", response_model=InvoiceOut)
 def get_invoice_details(invoice_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
     return FinanceService(db).get_invoice(str(current_user.id), invoice_id)
 
 @router.put("/invoices/{invoice_id}", response_model=InvoiceOut)
-def update_invoice(invoice_id: str, invoice_update: InvoiceUpdate, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
-    return FinanceService(db).update_invoice(str(current_user.id), invoice_id, invoice_update)
+def update_invoice(
+    invoice_id: str, 
+    invoice_update: InvoiceUpdate, 
+    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    db: Database = Depends(get_db),
+    graph_service: GraphService = Depends()
+):
+    updated_invoice_db = FinanceService(db).update_invoice(str(current_user.id), invoice_id, invoice_update)
+    graph_service.add_or_update_client_and_invoice(updated_invoice_db)
+    return updated_invoice_db
 
 @router.put("/invoices/{invoice_id}/status", response_model=InvoiceOut)
-def update_invoice_status(invoice_id: str, status_update: InvoiceUpdate, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
+def update_invoice_status(
+    invoice_id: str, 
+    status_update: InvoiceUpdate, 
+    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    db: Database = Depends(get_db),
+    graph_service: GraphService = Depends()
+):
     if not status_update.status: raise HTTPException(status_code=400, detail="Status is required")
-    return FinanceService(db).update_invoice_status(str(current_user.id), invoice_id, status_update.status)
+    updated_invoice_db = FinanceService(db).update_invoice_status(str(current_user.id), invoice_id, status_update.status)
+    graph_service.add_or_update_client_and_invoice(updated_invoice_db)
+    return updated_invoice_db
+
 
 @router.delete("/invoices/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_invoice(invoice_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
@@ -160,7 +179,6 @@ async def archive_invoice(invoice_id: str, current_user: Annotated[UserInDB, Dep
     )
     return archived_item
 
-# --- EXPENSES ---
 @router.post("/expenses", response_model=ExpenseOut, status_code=status.HTTP_201_CREATED)
 def create_expense(expense_in: ExpenseCreate, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
     return FinanceService(db).create_expense(str(current_user.id), expense_in)

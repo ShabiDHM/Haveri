@@ -1,7 +1,7 @@
 # FILE: backend/app/core/config.py
-# PHOENIX PROTOCOL - CONFIGURATION V7.2 (EMAIL INTEGRATION)
-# 1. FEATURE: Added SMTP configuration for sending transactional emails (e.g., invitations).
-# 2. STATUS: Ready for the next phase of invitation logic implementation.
+# PHOENIX PROTOCOL - CONFIGURATION V8.0 (GRAPH DB INTEGRATION)
+# 1. FEATURE: Added Neo4j Graph Database credentials.
+# 2. STATUS: Ready for graph service implementation.
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Union
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     
     # --- Auth ---
     SECRET_KEY: str = "changeme"
-    ALGORITHM: str = "HS256"
+    ALGORITHM: str = "HS2256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 10080
 
@@ -36,13 +36,19 @@ class Settings(BaseSettings):
     # --- Database & Broker ---
     DATABASE_URI: str = ""
     REDIS_URL: str = "redis://redis:6379/0"
+    
+    # --- GRAPH DATABASE (NEO4J) ---
+    NEO4J_URI: str = "neo4j://neo4j:7687"
+    NEO4J_USER: str = "neo4j"
+    NEO4J_PASSWORD: str = "password"
+    # --------------------------------
 
     # --- PHOENIX: Email Settings ---
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
-    EMAILS_FROM_EMAIL: str = "" # e.g., no-reply@haveri.tech
+    EMAILS_FROM_EMAIL: str = ""
     EMAILS_FROM_NAME: str = "Haveri AI"
     # --------------------------------
 
@@ -52,11 +58,10 @@ class Settings(BaseSettings):
     B2_ENDPOINT_URL: str = ""
     B2_BUCKET_NAME: str = ""
 
-    # --- AI Engines (OpenRouter / OpenAI / DeepSeek) ---
+    # --- AI Engines ---
     OPENAI_API_KEY: str = "" 
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     OPENAI_MODEL: str = "gpt-4o"
-
     DEEPSEEK_API_KEY: str = ""
     LOCAL_LLM_URL: str = "http://host.docker.internal:11434/api/generate"
     HF_TOKEN: str = ""

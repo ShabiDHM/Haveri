@@ -1,7 +1,7 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V9.3 (INBOUND EMAIL ROUTER)
-# 1. ADDED: Imported and included the new 'inbound_router'.
-# 2. EFFECT: Enables the '/api/v1/inbound/email-webhook' endpoint for automated data ingestion.
+# PHOENIX PROTOCOL - MAIN APPLICATION V10.0 (GRAPH API INTEGRATION)
+# 1. ADDED: Imported and included the new 'graph_router'.
+# 2. EFFECT: Enables the '/api/v1/graph/visualize' endpoint for "Interconnected Intelligence".
 
 from fastapi import FastAPI, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,8 +29,8 @@ from app.api.endpoints.daily_briefing import router as daily_briefing_router
 from app.api.endpoints.briefing import router as strategic_briefing_router
 from app.api.endpoints.analysis import router as analysis_router 
 from app.api.endpoints.drafting import router as drafting_router 
-# PHOENIX: Import the new inbound email router
 from app.api.endpoints.inbound import router as inbound_router
+from app.api.endpoints.graph import router as graph_router # <-- IMPORT GRAPH ROUTER
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -65,13 +65,13 @@ api_v1_router.include_router(inventory_router, prefix="/inventory", tags=["Inven
 api_v1_router.include_router(archive_router, prefix="/archive", tags=["Archive"])
 api_v1_router.include_router(daily_briefing_router, prefix="/daily-briefing", tags=["Daily Briefing (Legacy)"])
 api_v1_router.include_router(strategic_briefing_router, prefix="/briefing", tags=["Briefing"])
+api_v1_router.include_router(graph_router, prefix="/graph", tags=["Graph"]) # <-- INCLUDE GRAPH ROUTER
 api_v1_router.include_router(share_router, prefix="/share", tags=["Share"])
 api_v1_router.include_router(stream_router, prefix="/stream", tags=["Streaming"])
 api_v1_router.include_router(support_router, prefix="/support", tags=["Support"])
 api_v1_router.include_router(finance_wizard.router, prefix="/finance/wizard", tags=["Finance Wizard"])
 api_v1_router.include_router(analysis_router, prefix="/analysis", tags=["Smart Analysis"]) 
 api_v1_router.include_router(drafting_router, prefix="/drafting", tags=["Drafting"])
-# PHOENIX: Include the new inbound email router
 api_v1_router.include_router(inbound_router, prefix="/inbound", tags=["Inbound Data"])
 
 

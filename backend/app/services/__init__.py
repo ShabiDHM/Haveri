@@ -1,8 +1,7 @@
 # FILE: backend/app/services/__init__.py
-# PHOENIX PROTOCOL - SERVICES INIT V2.0
-# 1. REMOVED: Deleted imports for 'document_processing_service' and 'albanian_document_processor'.
-# 2. REASON: These files were deleted as their intelligence was consolidated into the unified Celery worker.
-# 3. STATUS: Resolves the circular import error and allows the application to start.
+# PHOENIX PROTOCOL - SERVICES INIT V3.0 (GRAPH SERVICE INTEGRATION)
+# 1. ADDED: Added 'graph_service' to the list of available services.
+# 2. STATUS: Prepares the application for "Interconnected Intelligence" features.
 
 from . import (
     admin_service,
@@ -12,29 +11,29 @@ from . import (
     chat_service,
     conversion_service,
     deadline_service,
-    # document_processing_service, # PHOENIX: Removed, logic migrated to Celery task
     document_service,
     drafting_service,
     email_service,
     embedding_service,
     encryption_service,
+    finance_service,
+    graph_service, # <-- ADDED FOR INTERCONNECTED INTELLIGENCE
+    inventory_service,
     llm_service,
     ocr_service,
+    parsing_service,
+    pdf_service,
     report_service,
+    share_service,
+    social_service,
+    spreadsheet_service,
     storage_service,
+    archive_service,
+    daily_briefing_service,
     text_extraction_service,
     text_sterilization_service,
     user_service,
     vector_store_service,
-    spreadsheet_service,
-    archive_service,
-    finance_service,
-    pdf_service,
-    social_service,
-    inventory_service,
-    daily_briefing_service,
-    parsing_service,
-    share_service,
     
     # Albanian Specific Services
     albanian_language_detector,

@@ -1,8 +1,7 @@
 # FILE: backend/app/core/lifespan.py
-# PHOENIX PROTOCOL - LIFESPAN MANAGER V3.1 (RENAMED)
-# 1. FIX: Updated import from 'JuristiRemoteEmbeddings' to 'HaveriEmbeddingFunction'.
-# 2. ALIGNMENT: Ensures the lifespan manager uses the correctly named core components.
-# 3. STATUS: This is the final, architecturally sound version.
+# PHOENIX PROTOCOL - LIFESPAN MANAGER V4.0 (GRAPH DB INTEGRATION)
+# 1. FEATURE: Integrated Neo4j connection and disconnection into the app lifecycle.
+# 2. STATUS: All databases are now managed by the lifespan context.
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -14,13 +13,14 @@ from .db import (
     connect_to_mongo,
     connect_to_redis,
     connect_to_motor,
+    connect_to_neo4j, # <-- IMPORT NEO4J CONNECT
     close_mongo_connections,
     close_redis_connection,
+    close_neo4j_connection, # <-- IMPORT NEO4J CLOSE
     db_instance, 
     async_db_instance 
 )
 from .config import settings
-# PHOENIX FIX: Import the correctly named class
 from .embeddings import HaveriEmbeddingFunction
 
 logger = logging.getLogger(__name__)
@@ -31,13 +31,13 @@ def initialize_chromadb():
         logger.info("--- [Lifespan] Initializing ChromaDB connection... ---")
         client = chromadb.HttpClient(host=settings.CHROMA_HOST, port=settings.CHROMA_PORT)
         
-        # PHOENIX FIX: Instantiate the correctly named class
         embedding_function = HaveriEmbeddingFunction()
-        client.get_or_create_collection(
+        # Ensure collection exists and get document count
+        collection = client.get_or_create_collection(
             name="legal_knowledge_base",
             embedding_function=embedding_function
         )
-        logger.info("--- [Lifespan] ✅ Successfully connected to ChromaDB. ---")
+        logger.info(f"--- [Lifespan] ✅ Collection '{collection.name}' is available with {collection.count()} documents. ---")
     except Exception as e:
         logger.error(f"--- [Lifespan] ❌ FAILED to initialize ChromaDB: {e} ---")
 
@@ -45,7 +45,7 @@ async def create_mongo_indexes(app: FastAPI):
     """Creates MongoDB indexes for performance."""
     try:
         if not hasattr(app.state, "async_mongo_db") or app.state.async_mongo_db is None:
-            logger.warning("--- [Indexes] ⚠️ Async MongoDB not found in app.state. Skipping indexing. ---")
+            logger.warning("--- [Indexes] ⚠️ MongoDB not found in app.state. Skipping indexing. ---")
             return
 
         db = app.state.async_mongo_db
@@ -67,15 +67,18 @@ async def create_mongo_indexes(app: FastAPI):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handles application startup and shutdown events."""
-    logger.info("--- [Lifespan] Application startup sequence initiated... ---")
+    logger.info("--- [Lifespan] Application startup sequence initiated. ---")
     
+    # --- Connect to all databases ---
     connect_to_mongo()
     connect_to_redis()
     await connect_to_motor()
+    connect_to_neo4j() # <-- CONNECT TO NEO4J
     
     app.state.mongo_db = db_instance
     app.state.async_mongo_db = async_db_instance
     
+    # --- Initialize services and indexes ---
     initialize_chromadb()
     await create_mongo_indexes(app)
     
@@ -83,7 +86,9 @@ async def lifespan(app: FastAPI):
     
     yield
     
+    # --- Disconnect from all databases ---
     logger.info("--- [Lifespan] Application shutdown sequence initiated. ---")
     close_mongo_connections()
     close_redis_connection()
+    close_neo4j_connection() # <-- DISCONNECT FROM NEO4J
     logger.info("--- [Lifespan] All connections closed gracefully. Shutdown complete. ---")
