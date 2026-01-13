@@ -5,21 +5,19 @@ import { apiService } from '../services/api';
 import { GraphData } from '../data/types';
 import { useResizeDetector } from 'react-resize-detector';
 
-// --- Professional Color Palette & Styling Constants ---
+// --- Enterprise Theme Constants ---
 const THEME = {
-  background: '#0f172a', // Slate 900
-  grid: 'rgba(255, 255, 255, 0.05)',
-  text: {
-    primary: '#F8FAFC',
-    secondary: '#94A3B8'
-  }
+  background: '#020617', // Slate 950 (Deep dark)
+  grid: 'rgba(56, 189, 248, 0.05)', // Subtle Cyan grid
+  text: { primary: '#F1F5F9', secondary: '#94A3B8' }
 };
 
-const GROUP_STYLES: { [key: string]: { bg: string; border: string; glow: string } } = {
-  'Client':  { bg: '#1E3A8A', border: '#60A5FA', glow: 'rgba(96, 165, 250, 0.4)' }, // Blue
-  'Invoice': { bg: '#064E3B', border: '#34D399', glow: 'rgba(52, 211, 153, 0.4)' }, // Emerald
-  'Expense': { bg: '#7F1D1D', border: '#F87171', glow: 'rgba(248, 113, 113, 0.4)' }, // Red
-  'Default': { bg: '#374151', border: '#9CA3AF', glow: 'rgba(156, 163, 175, 0.4)' }, // Gray
+// --- Professional Icon & Color Mapping ---
+const NODE_CONFIG: { [key: string]: { color: string; icon: string; labelColor: string } } = {
+  'Client':  { color: '#3B82F6', icon: '👤', labelColor: '#60A5FA' }, // Blue
+  'Invoice': { color: '#10B981', icon: '📄', labelColor: '#34D399' }, // Emerald
+  'Expense': { color: '#EF4444', icon: '💸', labelColor: '#F87171' }, // Red
+  'Default': { color: '#64748B', icon: '📦', labelColor: '#94A3B8' }, // Slate
 };
 
 const GraphVisualization: React.FC = () => {
@@ -27,7 +25,7 @@ const GraphVisualization: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const fgRef = useRef<ForceGraphMethods>();
   
-  // Detect both width and height to fill the parent container perfectly
+  // Responsive sizing
   const { width, height, ref: containerRef } = useResizeDetector({
     refreshMode: 'debounce',
     refreshRate: 100,
@@ -38,12 +36,16 @@ const GraphVisualization: React.FC = () => {
       try {
         setIsLoading(true);
         const graphData = await apiService.getGraphData();
-        // Add minimal initial jitter to prevent 0,0 stacking
-        const processedData = {
-            ...graphData,
-            nodes: graphData.nodes.map(n => ({ ...n, x: Math.random(), y: Math.random() }))
-        };
-        setData(processedData);
+        
+        // --- Data Enrichment ---
+        const enrichedNodes = graphData.nodes.map(n => ({
+            ...n,
+            x: Math.random() * 100, 
+            y: Math.random() * 100,
+            val: 1 
+        }));
+
+        setData({ nodes: enrichedNodes, links: graphData.links });
       } catch (error) {
         console.error("Graph load failed:", error);
       } finally {
@@ -53,88 +55,84 @@ const GraphVisualization: React.FC = () => {
     loadGraphData();
   }, []);
 
-  // Helper to draw rounded rectangles compatibly
-  const drawRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-  };
-
-  const nodeCanvasObject = useCallback((node: NodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const label = String((node as any).label || 'Unknown');
-    const group = (node as any).group || 'Default';
-    const styles = GROUP_STYLES[group] || GROUP_STYLES['Default'];
-    
-    // Determine visibility based on zoom level to declutter
-    const isFocused = globalScale >= 1.5; 
-    
-    // Font sizing
-    const fontSize = 14 / globalScale;
-    ctx.font = `600 ${fontSize}px Inter, ui-sans-serif, system-ui`;
-    
-    const textMetrics = ctx.measureText(label);
-    const textWidth = textMetrics.width;
-    const paddingX = 16 / globalScale;
-    const paddingY = 10 / globalScale;
-    
-    const nodeWidth = textWidth + (paddingX * 2);
-    const nodeHeight = fontSize + (paddingY * 2);
-    const r = 4 / globalScale; // Corner radius
-
-    const x = node.x! - nodeWidth / 2;
-    const y = node.y! - nodeHeight / 2;
-
-    // 1. Draw Glow/Shadow
-    if (isFocused) {
-        ctx.shadowColor = styles.glow;
-        ctx.shadowBlur = 10;
-    } else {
-        ctx.shadowBlur = 0;
+  // --- Physics Engine Tuning ---
+  useEffect(() => {
+    if (fgRef.current) {
+      // Access the internal d3 force engine to apply custom settings
+      // Increase repulsion (negative strength) to prevent bunching
+      fgRef.current.d3Force('charge')?.strength(-200); 
+      // Add a centering force that isn't too aggressive
+      fgRef.current.d3Force('center')?.strength(0.05);
     }
+  }, [data]); // Re-apply when data loads
 
-    // 2. Draw Background
-    ctx.fillStyle = styles.bg;
-    drawRoundRect(ctx, x, y, nodeWidth, nodeHeight, r);
+  // --- The Renderer ---
+  const nodeCanvasObject = useCallback((node: NodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    const group = (node as any).group || 'Default';
+    const config = NODE_CONFIG[group] || NODE_CONFIG['Default'];
+    const label = String((node as any).label || 'Unknown');
+    
+    const radius = 12;
+    const x = node.x!;
+    const y = node.y!;
+    
+    // 1. Outer Glow (Halo)
+    const glowRadius = radius + (2 * Math.sin(Date.now() / 600)); 
+    const gradient = ctx.createRadialGradient(x, y, radius, x, y, glowRadius + 5);
+    gradient.addColorStop(0, config.color);
+    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(x, y, glowRadius + 5, 0, 2 * Math.PI, false);
     ctx.fill();
 
-    // 3. Draw Border
-    ctx.shadowBlur = 0; // Reset shadow for border
-    ctx.strokeStyle = styles.border;
-    ctx.lineWidth = 1.5 / globalScale;
+    // 2. Main Circle Body
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+    ctx.fillStyle = '#0F172A'; 
+    ctx.fill();
+    ctx.strokeStyle = config.color;
+    ctx.lineWidth = 2;
     ctx.stroke();
 
-    // 4. Draw Text
+    // 3. Icon (Centered)
+    const fontSize = 14;
+    ctx.font = `${fontSize}px Sans-Serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = THEME.text.primary;
-    ctx.fillText(label, node.x!, node.y!);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(config.icon, x, y + 1); 
 
+    // 4. Text Label (Below the node)
+    if (globalScale > 0.8) {
+        const labelDist = radius + 8;
+        const labelSize = 4;
+        ctx.font = `600 ${labelSize}px Inter, system-ui, sans-serif`;
+        
+        const textWidth = ctx.measureText(label).width;
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+        ctx.roundRect(x - textWidth/2 - 2, y + labelDist - 3, textWidth + 4, labelSize + 4, 2);
+        ctx.fill();
+
+        ctx.fillStyle = config.labelColor;
+        ctx.fillText(label, x, y + labelDist + (labelSize/2));
+    }
   }, []);
 
   if (isLoading) {
     return (
-      <div className="w-full h-96 flex flex-col justify-center items-center bg-slate-900 rounded-lg border border-slate-800">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
-        <span className="text-slate-400 font-medium">Duke inicializuar rrjetin neuronal...</span>
+      <div className="w-full h-96 flex flex-col justify-center items-center bg-slate-950 border border-slate-900 rounded-xl">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mb-4 shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+        <span className="text-blue-400 font-mono text-sm tracking-wider animate-pulse">ANALYZING NETWORK TOPOLOGY...</span>
       </div>
     );
   }
 
   if (!data || data.nodes.length === 0) {
     return (
-      <div className="w-full h-96 flex flex-col justify-center items-center bg-slate-900 rounded-lg border border-slate-800 text-slate-400">
-        <svg className="w-12 h-12 mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-        <p>Nuk u gjetën të dhëna për vizualizim.</p>
+      <div className="w-full h-96 flex flex-col justify-center items-center bg-slate-950 border border-slate-900 rounded-xl text-slate-500">
+        <div className="text-4xl mb-4 grayscale opacity-30">🕸️</div>
+        <p className="font-medium">No Data Nodes Found</p>
       </div>
     );
   }
@@ -142,12 +140,15 @@ const GraphVisualization: React.FC = () => {
   return (
     <div 
         ref={containerRef} 
-        className="w-full h-full min-h-[600px] bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-slate-800 relative"
+        className="w-full h-[600px] bg-slate-950 rounded-xl overflow-hidden shadow-2xl border border-slate-900 relative group"
     >
-      {/* Background Grid Pattern */}
-      <div className="absolute inset-0 pointer-events-none opacity-20" 
-           style={{ backgroundImage: 'radial-gradient(#64748b 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
-      </div>
+        {/* Subtle Grid Background */}
+        <div className="absolute inset-0 pointer-events-none opacity-20" 
+           style={{ 
+             backgroundImage: `linear-gradient(${THEME.grid} 1px, transparent 1px), linear-gradient(90deg, ${THEME.grid} 1px, transparent 1px)`, 
+             backgroundSize: '40px 40px' 
+           }}>
+        </div>
 
       <ForceGraph2D
         ref={fgRef}
@@ -156,53 +157,65 @@ const GraphVisualization: React.FC = () => {
         height={height || 600}
         
         // --- Physics Engine Configuration ---
-        // High negative charge to separate nodes, weak gravity to keep them centered
-        d3AlphaDecay={0.02} // Slower decay = more time to settle
-        d3VelocityDecay={0.3} // Friction
-        cooldownTicks={100} // Pre-calculate 100 frames before first render
-        onEngineStop={() => {
-            // Only zoom to fit once the physics have settled
-            fgRef.current?.zoomToFit(400, 50);
-        }}
-
-        // --- Rendering ---
+        d3AlphaDecay={0.01} 
+        d3VelocityDecay={0.4} 
+        warmupTicks={50} 
+        
+        // --- Visuals ---
+        backgroundColor="rgba(0,0,0,0)"
         nodeCanvasObject={nodeCanvasObject}
         nodePointerAreaPaint={(node, color, ctx) => {
-            const size = 20; // Hitbox size
             ctx.fillStyle = color;
-            ctx.fillRect(node.x! - size, node.y! - size, size * 2, size * 2);
+            ctx.beginPath();
+            ctx.arc(node.x!, node.y!, 15, 0, 2 * Math.PI, false);
+            ctx.fill();
         }}
         
-        // --- Links ---
-        linkColor={() => '#475569'}
+        // --- Links & Particles ---
+        linkColor={() => '#334155'}
         linkWidth={1.5}
-        linkDirectionalArrowLength={4}
-        linkDirectionalArrowRelPos={1}
-        
+        linkDirectionalParticles={2}
+        linkDirectionalParticleSpeed={0.005}
+        linkDirectionalParticleWidth={2}
+        linkCurvature={0.2}
+
         // --- Interaction ---
-        backgroundColor="rgba(0,0,0,0)" // Transparent to show CSS grid
         onNodeClick={(node) => {
-            fgRef.current?.centerAt(node.x, node.y, 800);
-            fgRef.current?.zoom(3, 800);
+            fgRef.current?.centerAt(node.x, node.y, 1000);
+            fgRef.current?.zoom(4, 1000);
         }}
         onBackgroundClick={() => {
-            fgRef.current?.zoomToFit(800, 50);
+            fgRef.current?.zoomToFit(1000, 50);
         }}
       />
       
-      {/* Overlay Legend */}
-      <div className="absolute bottom-4 right-4 bg-slate-800/90 backdrop-blur p-3 rounded-lg border border-slate-700 text-xs">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-          <span className="text-slate-300">Klientë</span>
+      {/* HUD / Legend Overlay */}
+      <div className="absolute top-4 left-4 flex gap-4 pointer-events-none">
+        <div className="bg-slate-900/80 backdrop-blur px-3 py-1.5 rounded-full border border-slate-800 flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-mono">NODES:</span>
+            <span className="text-sm text-white font-bold">{data.nodes.length}</span>
         </div>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span className="text-slate-300">Fatura</span>
+        <div className="bg-slate-900/80 backdrop-blur px-3 py-1.5 rounded-full border border-slate-800 flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-mono">LINKS:</span>
+            <span className="text-sm text-white font-bold">{data.links.length}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-red-500"></span>
-          <span className="text-slate-300">Shpenzime</span>
+      </div>
+
+      <div className="absolute bottom-4 right-4 bg-slate-900/90 backdrop-blur p-4 rounded-xl border border-slate-800 shadow-xl">
+        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Legend</h4>
+        <div className="space-y-2">
+            {Object.entries(NODE_CONFIG).map(([key, config]) => {
+                if (key === 'Default') return null;
+                return (
+                    <div key={key} className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs border" 
+                             style={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', borderColor: config.color, color: config.labelColor }}>
+                            {config.icon}
+                        </div>
+                        <span className="text-xs text-slate-300 font-medium">{key}s</span>
+                    </div>
+                );
+            })}
         </div>
       </div>
     </div>
