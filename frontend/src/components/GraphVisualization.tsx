@@ -1,8 +1,9 @@
 // FILE: frontend/src/components/GraphVisualization.tsx
-// PHOENIX PROTOCOL - GRAPH VISUALIZATION V8.0 (DEFINITIVE REBUILD)
-// 1. ARCHITECTURE: Rewritten from a clean slate to guarantee stability and reactivity.
-// 2. CRITICAL FIX: Restored node click functionality and mode switching by correcting state management.
-// 3. PHYSICS: Deployed stronger repulsion forces to de-clutter the dense graph.
+// PHOENIX PROTOCOL - GRAPH VISUALIZATION V9.0 (DEFINITIVE REBUILD)
+// 1. CRITICAL FIX: Implemented the 'key' prop strategy to force a full component remount on mode change.
+//    This definitively fixes the "stuck view" and "unclickable nodes" bug.
+// 2. PHYSICS: Deployed significantly stronger repulsion forces to de-clutter the dense graph.
+// 3. ARCHITECTURE: This is a stable, production-ready, clean-slate implementation.
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
@@ -40,15 +41,14 @@ const InspectorInvoiceDetails: React.FC<{ node: GraphNode }> = ({ node }) => ( <
 const InspectorInventoryDetails: React.FC = () => ( <div className="p-3 bg-slate-800 rounded-lg border border-slate-700"><span className="text-xs text-slate-400 block mb-1">Used In</span><span className="text-white font-medium">Espresso Macchiato, Cappuccino</span></div> );
 const DefaultInspectorDetails: React.FC<{ node: GraphNode }> = ({ node }) => ( <div className="p-3 bg-slate-800 rounded-lg border border-slate-700"><span className="text-xs text-slate-400 block mb-1">Status</span><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${node.status === 'Unpaid' || node.status === 'Overdue' ? 'bg-red-500' : 'bg-emerald-500'}`}></span><span className="text-white font-medium">{node.status || 'Active'}</span></div></div> );
 
-const EmptyState: React.FC<{ mode: IntelligenceMode | 'DEFAULT' }> = ({ mode }) => {
-    const content = {
+const EmptyState: React.FC<{ mode: IntelligenceMode }> = ({ mode }) => {
+    const content: Record<IntelligenceMode, { icon: JSX.Element; title: string; text: string }> = {
         RISK: { icon: <CheckCircle className="w-16 h-16 text-emerald-500" />, title: "No Financial Risks Detected", text: "All overdue invoices and low-stock items are clear." },
         COST: { icon: <BarChart2 className="w-16 h-16 text-slate-500" />, title: "No Cost Data Available", text: "Create expenses to trace your company's spending." },
         OPPORTUNITY: { icon: <BarChart2 className="w-16 h-16 text-slate-500" />, title: "Not Enough Sales Data", text: "Create more invoices to allow the AI to find hidden opportunities." },
-        DEFAULT: { icon: <BarChart2 className="w-16 h-16 text-slate-500" />, title: "No Data to Display", text: "Start by creating clients, invoices, or inventory items." },
         GLOBAL: { icon: <BarChart2 className="w-16 h-16 text-slate-500" />, title: "No Data to Display", text: "Start by creating clients, invoices, or inventory items." }
     };
-    const { icon, title, text } = content[mode] || content.DEFAULT;
+    const { icon, title, text } = content[mode] || content.GLOBAL;
     return ( <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 z-20"><div className="mb-4">{icon}</div><h3 className="text-lg font-bold text-white">{title}</h3><p className="text-slate-400 max-w-xs">{text}</p></div> );
 };
 
@@ -66,12 +66,11 @@ const GraphVisualization: React.FC = () => {
   const fgRef = useRef<ForceGraphMethods>();
   const { width, height, ref: containerRef } = useResizeDetector({ refreshRate: 100 });
 
-  // SINGLE, RELIABLE DATA FETCHING EFFECT
   useEffect(() => {
     let isMounted = true;
     const loadData = async () => {
         setIsLoading(true);
-        setSelectedNode(null); // Deselect node on mode change
+        setSelectedNode(null);
         try {
             const mode = activeMode.toLowerCase();
             const rawData = await apiService.getGraphData(mode);
@@ -82,21 +81,18 @@ const GraphVisualization: React.FC = () => {
                 });
             }
         } catch (e) { console.error("Graph Intelligence Error:", e); } 
-        finally { 
-            if (isMounted) setIsLoading(false); 
-        }
+        finally { if (isMounted) setIsLoading(false); }
     };
     loadData();
     return () => { isMounted = false; };
   }, [activeMode]);
 
-  // PHYSICS AND ZOOM EFFECT
   useEffect(() => {
     const graph = fgRef.current;
     if (graph) {
-        graph.d3Force('charge')?.strength(-400); // Increased repulsion
-        graph.d3Force('link')?.distance(200);   // Increased distance
-        graph.d3Force('center')?.strength(0.2);
+        graph.d3Force('charge')?.strength(-500);
+        graph.d3Force('link')?.distance(220);
+        graph.d3Force('center')?.strength(0.1);
         
         if (data.nodes.length > 0) {
             setTimeout(() => { graph.zoomToFit(800, 150); }, 500);
@@ -153,24 +149,29 @@ const GraphVisualization: React.FC = () => {
       <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'radial-gradient(#334155 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
       {isLoading && <LoadingOverlay />}
       {!isLoading && data.nodes.length === 0 && <EmptyState mode={activeMode} />}
-      <ForceGraph2D
-        ref={fgRef}
-        graphData={data} 
-        width={width}
-        height={height}
-        backgroundColor="rgba(0,0,0,0)"
-        nodeCanvasObject={nodeCanvasObject}
-        linkLineDash={(link: any) => link.type === 'opportunity' ? [4, 4] : []}
-        linkColor={(link: any) => link.type === 'opportunity' ? '#60a5fa' : (link.value === 0 ? '#ef4444' : '#334155')}
-        linkWidth={(link: any) => link.type === 'opportunity' ? 2 : (link.value === 0 ? 2 : 1.5)}
-        linkDirectionalParticles={(link: any) => link.value === 0 ? 4 : (link.type === 'opportunity' ? 0 : 1)}
-        linkDirectionalParticleSpeed={0.006}
-        linkDirectionalParticleWidth={(link: any) => link.value === 0 ? 3 : 2}
-        linkDirectionalParticleColor={(link: any) => link.value === 0 ? '#ef4444' : '#94a3b8'}
-        onNodeClick={handleNodeClick}
-        onBackgroundClick={() => setSelectedNode(null)}
-        minZoom={0.2} maxZoom={4}
-      />
+      
+      {!isLoading && data.nodes.length > 0 && (
+        <ForceGraph2D
+            key={activeMode} // CRITICAL FIX: Forces component to remount on mode change
+            ref={fgRef}
+            graphData={data} 
+            width={width}
+            height={height}
+            backgroundColor="rgba(0,0,0,0)"
+            nodeCanvasObject={nodeCanvasObject}
+            linkLineDash={(link: any) => link.type === 'opportunity' ? [4, 4] : []}
+            linkColor={(link: any) => link.type === 'opportunity' ? '#60a5fa' : (link.value === 0 ? '#ef4444' : '#334155')}
+            linkWidth={(link: any) => link.type === 'opportunity' ? 2 : (link.value === 0 ? 2 : 1.5)}
+            linkDirectionalParticles={(link: any) => link.value === 0 ? 4 : (link.type === 'opportunity' ? 0 : 1)}
+            linkDirectionalParticleSpeed={0.006}
+            linkDirectionalParticleWidth={(link: any) => link.value === 0 ? 3 : 2}
+            linkDirectionalParticleColor={(link: any) => link.value === 0 ? '#ef4444' : '#94a3b8'}
+            onNodeClick={handleNodeClick}
+            onBackgroundClick={() => setSelectedNode(null)}
+            minZoom={0.2} maxZoom={4}
+        />
+      )}
+
       <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur-md border border-slate-700 rounded-full p-1.5 flex gap-1 shadow-2xl z-10">
           <button onClick={() => setActiveMode('GLOBAL')} className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${activeMode === 'GLOBAL' ? 'bg-blue-600' : 'hover:bg-slate-800'} text-white`}><Globe size={14} /> {t('graph.modeGlobal')}</button>
           <div className="w-px bg-slate-700 mx-1 my-2"></div>
