@@ -1,32 +1,42 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - REVERSE PROXY CONFIG V2.0 (PRODUCTION ALIGNMENT)
-# 1. STATUS: Domain updated from api.juristi.tech to api.haveri.tech to match live environment.
-# 2. LOGIC: Caddy will now perform automatic HTTPS for the correct domain, resolving the SSL protocol error.
-# 3. ENHANCEMENT: Maintained security headers for system integrity.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V3.0
+# 1. STATUS: Multi-Tenant / Multi-Project Gateway.
+# 2. ARCHITECTURE: 
+#    - Haveri: Routed via internal Docker DNS (backend:8000).
+#    - Juristi: Routed via Host Gateway (172.17.0.1:8001).
+# 3. SECURITY: Strict Headers maintained for both domains.
 
 {
-    # This email is used for ACME (Let's Encrypt) notifications.
     email shabanbala@gmail.com
 }
 
-# Define the server block for the correct production domain.
+# ----------------------------------------
+# PROJECT 1: HAVERI (Primary / Existing)
+# ----------------------------------------
 api.haveri.tech {
-    # Reverse proxy all traffic to the backend service container on port 8000.
+    # Internal Docker Routing (Container-to-Container)
     reverse_proxy backend:8000
 
-    # Security Headers for System Integrity
     header {
-        # Enable HTTP Strict Transport Security (HSTS)
-        # Tells browsers to always use HTTPS for this site for the next year.
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        
-        # Prevent browsers from MIME-sniffing a response away from the declared content-type.
         X-Content-Type-Options "nosniff"
-        
-        # Prevent the page from being displayed in an iframe (clickjacking protection).
         X-Frame-Options "DENY"
-        
-        # Enable the browser's built-in Cross-Site Scripting (XSS) filter.
+        X-XSS-Protection "1; mode=block"
+    }
+}
+
+# ----------------------------------------
+# PROJECT 2: JURISTI (Secondary / New)
+# ----------------------------------------
+api.juristi.tech {
+    # HOST Routing (Port Offsetting Strategy)
+    # 172.17.0.1 is the Docker Gateway IP allowing Caddy to talk to the Host's port 8001
+    reverse_proxy 172.17.0.1:8001
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
         X-XSS-Protection "1; mode=block"
     }
 }
