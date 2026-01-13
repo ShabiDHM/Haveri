@@ -274,6 +274,8 @@
   "insights": {
     "title": "Inteligjenca e Biznesit",
     "subtitle": "Analizë e thelluar për të marrë vendime më të zgjuara.",
+    "systemActive": "Sistemi Aktiv",
+    "liveMetrics": "Metrikat Live",
     "debt": { "title": "Analiza e Borxheve" },
     "tax": { "estimator": "Vlerësimi i TVSH-së" },
     "inventory": { "title": "Inteligjenca e Stokut" },
@@ -282,6 +284,7 @@
   "graph": {
     "title": "Topologjia Nexus",
     "desc": "Vizualizoni lidhjet e fshehura midis klientëve, faturave dhe rrjedhës së kapitalit.",
+    "launch": "Nis Vizualizimin",
     "loading": "DUKE INICIALIZUAR NEXUS...",
     "noNodes": "Nuk u gjetën nyje të dhënash",
     "legend": "Entitetet e Sistemit",
@@ -572,6 +575,7 @@
   },
   "analyst": {
     "title": "Analisti Inteligjent",
-    "desc": "Keni një skedar Excel ose CSV të komplikuar? Ngarkojeni këtu dhe do ta analizojë, vizualizojë dhe ju prezentoj gjetjet."
+    "desc": "Keni një skedar Excel ose CSV të komplikuar? Ngarkojeni këtu dhe do ta analizojë, vizualizojë dhe ju prezentoj gjetjet.",
+    "initialize": "Inicializo Motorin"
   }
 }

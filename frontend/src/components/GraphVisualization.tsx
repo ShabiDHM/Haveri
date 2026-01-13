@@ -4,6 +4,7 @@ import ForceGraph2D, { ForceGraphMethods, NodeObject } from 'react-force-graph-2
 import { apiService } from '../services/api';
 import { GraphData } from '../data/types';
 import { useResizeDetector } from 'react-resize-detector';
+import { useTranslation } from 'react-i18next';
 
 // --- Nexus Theme Configuration ---
 const THEME = {
@@ -21,6 +22,7 @@ const NODE_TYPES: { [key: string]: { color: string; glow: string; icon: string }
 };
 
 const GraphVisualization: React.FC = () => {
+  const { t } = useTranslation();
   const [data, setData] = useState<GraphData>({ nodes: [], links: [] });
   const [hoverNode, setHoverNode] = useState<NodeObject | null>(null);
   const [selectedNode, setSelectedNode] = useState<NodeObject | null>(null);
@@ -54,7 +56,6 @@ const GraphVisualization: React.FC = () => {
   useEffect(() => {
     if (fgRef.current) {
         // Strong repulsion to create space, but gentle center gravity
-        // We safely access d3Force internal methods without external d3 types
         fgRef.current.d3Force('charge')?.strength(-300);
         fgRef.current.d3Force('link')?.distance(70);
         fgRef.current.d3Force('center')?.strength(0.08);
@@ -62,8 +63,6 @@ const GraphVisualization: React.FC = () => {
   }, [data]);
 
   // --- 3. The "Focus Mode" Engine (Type-Safe) ---
-  
-  // Helper to safely get ID from a link source/target which might be an object or string
   const getLinkId = (item: string | number | NodeObject | undefined): string | number | undefined => {
     if (!item) return undefined;
     if (typeof item === 'object') return (item as any).id;
@@ -157,7 +156,6 @@ const GraphVisualization: React.FC = () => {
     ctx.fillText(style.icon, x, y + 1);
 
     // --- LAYER 5: Smart Labels (Adaptive) ---
-    // Show labels if: Node is hovered OR selected OR zoom is high OR it's a neighbor of hovered
     const shouldShowLabel = globalScale > 1.2 || isHovered || isSelected || (isNeighbor && globalScale > 0.8);
     
     if (shouldShowLabel) {
@@ -181,7 +179,7 @@ const GraphVisualization: React.FC = () => {
   }, [hoverNode, selectedNode, highlightNodes]);
 
   // --- Render ---
-  if (isLoading) return <div className="h-[600px] w-full bg-slate-950 flex items-center justify-center text-blue-500 animate-pulse">INITIALIZING NEXUS...</div>;
+  if (isLoading) return <div className="h-[600px] w-full bg-slate-950 flex items-center justify-center text-blue-500 animate-pulse">{t('graph.loading')}</div>;
 
   return (
     <div 
@@ -202,7 +200,6 @@ const GraphVisualization: React.FC = () => {
         // Interaction Settings
         onNodeHover={(node) => {
             setHoverNode(node || null);
-            // Change cursor
             if (containerRef.current) {
                 containerRef.current.style.cursor = node ? 'pointer' : 'default';
             }
@@ -223,7 +220,7 @@ const GraphVisualization: React.FC = () => {
         // Link Styling
         linkColor={(link) => highlightLinks.has(link) ? '#F8FAFC' : '#334155'}
         linkWidth={(link) => highlightLinks.has(link) ? 2 : 1}
-        linkDirectionalParticles={(link) => highlightLinks.has(link) ? 4 : 0} // Only show flow on highlighted paths
+        linkDirectionalParticles={(link) => highlightLinks.has(link) ? 4 : 0} 
         linkDirectionalParticleWidth={3}
         linkDirectionalParticleSpeed={0.008}
         
@@ -237,12 +234,12 @@ const GraphVisualization: React.FC = () => {
       <div className="absolute bottom-6 right-6 flex flex-col gap-2">
          {/* Simple Legend */}
          <div className="bg-slate-900/90 backdrop-blur p-3 rounded-lg border border-slate-800 shadow-xl">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">System Entities</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">{t('graph.legend')}</span>
             {Object.entries(NODE_TYPES).map(([type, style]) => (
                  type !== 'Default' && (
                     <div key={type} className="flex items-center gap-2 mb-1 last:mb-0">
                         <span style={{ color: style.color }}>{style.icon}</span>
-                        <span className="text-xs text-slate-400 font-medium">{type}</span>
+                        <span className="text-xs text-slate-400 font-medium">{t(`graph.${type.toLowerCase()}`)}</span>
                     </div>
                  )
             ))}
@@ -252,12 +249,12 @@ const GraphVisualization: React.FC = () => {
       {/* Context info if selected */}
       {selectedNode && (
           <div className="absolute top-6 left-6 bg-slate-900/95 backdrop-blur border-l-4 border-blue-500 p-4 rounded-r-lg shadow-2xl max-w-xs animate-in slide-in-from-left-4 fade-in duration-300">
-              <h3 className="text-sm font-bold text-slate-200">{(selectedNode as any).group} Details</h3>
+              <h3 className="text-sm font-bold text-slate-200">{(selectedNode as any).group} {t('graph.details')}</h3>
               <div className="text-2xl font-bold text-white mt-1 mb-1">{(selectedNode as any).label}</div>
               <p className="text-xs text-slate-400">ID: {selectedNode.id}</p>
               <div className="mt-3 flex gap-2">
-                  <button className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded transition-colors">Inspect</button>
-                  <button className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition-colors">Trace</button>
+                  <button className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded transition-colors">{t('graph.inspect')}</button>
+                  <button className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition-colors">{t('graph.trace')}</button>
               </div>
           </div>
       )}
