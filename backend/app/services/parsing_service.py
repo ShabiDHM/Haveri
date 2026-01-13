@@ -1,7 +1,7 @@
 # FILE: backend/app/services/parsing_service.py
-# PHOENIX PROTOCOL - PARSING SERVICE V7.0 (GUIDED IMPORT LOGIC)
-# 1. FEATURE: Added '_process_bank_statement_row' for bank-specific CSV structures.
-# 2. LOGIC: 'process_import' now accepts an 'import_type' to conditionally route data to the correct parser.
+# PHOENIX PROTOCOL - PARSING SERVICE V7.1 (RESILIENT PARSER)
+# 1. FIX: Added 'on_bad_lines='skip'' to the pandas CSV reader.
+# 2. EFFECT: The parser will now automatically ignore malformed rows (like extra commas) instead of crashing.
 
 import pandas as pd
 import io
@@ -35,7 +35,8 @@ class ParsingService:
     async def preview_file(self, file: UploadFile) -> Dict[str, Any]:
         try:
             contents = await file.read()
-            df = pd.read_csv(io.StringIO(contents.decode('utf-8')), sep=',', engine='python', header=0)
+            # PHOENIX FIX: Add on_bad_lines='skip' to gracefully handle errors
+            df = pd.read_csv(io.StringIO(contents.decode('utf-8')), sep=',', engine='python', header=0, on_bad_lines='skip')
             await file.seek(0)
             df = df.fillna("")
             headers = [str(h) for h in df.columns.tolist()]
@@ -45,7 +46,6 @@ class ParsingService:
             logger.error(f"Error previewing file: {e}")
             raise HTTPException(status_code=400, detail=f"Failed to read file. Please ensure it is a valid CSV. Error: {str(e)}")
 
-    # PHOENIX: NEW METHOD FOR BANK STATEMENT LOGIC
     def _process_bank_statement_row(self, user_id: str, row: pd.Series, mapping: Dict[str, str]):
         field_to_column = {v: k for k, v in mapping.items()}
         
@@ -64,21 +64,21 @@ class ParsingService:
         debit_amount = self._normalize_currency(row.get(debit_col, 0.0))
         credit_amount = self._normalize_currency(row.get(credit_col, 0.0))
 
-        if debit_amount > 0: # This is an expense
+        if debit_amount > 0:
             expense_data = ExpenseCreate(category="E importuar nga Banka", amount=debit_amount, description=description, date=parsed_date)
             self.finance_service.create_expense(user_id, expense_data)
-        elif credit_amount > 0: # This is income
+        elif credit_amount > 0:
             invoice_item = InvoiceItem(description="Të hyra nga banka", quantity=1, unit_price=credit_amount, total=credit_amount)
             invoice_data = InvoiceCreate(client_name=description, items=[invoice_item], tax_rate=0, issue_date=parsed_date, status="PAID")
             self.finance_service.create_invoice(user_id, invoice_data)
         else:
             raise ValueError("Row has neither a valid debit nor credit amount.")
 
-    # PHOENIX: UPDATED METHOD to accept import_type
     async def process_import(self, file: UploadFile, user_id: str, mapping: Dict[str, str], import_type: str = 'pos') -> Dict[str, Any]:
         contents = await file.read()
         try:
-            df = pd.read_csv(io.StringIO(contents.decode('utf-8')), sep=',', engine='python', header=0)
+            # PHOENIX FIX: Add on_bad_lines='skip' to gracefully handle errors
+            df = pd.read_csv(io.StringIO(contents.decode('utf-8')), sep=',', engine='python', header=0, on_bad_lines='skip')
         except Exception as e:
              raise HTTPException(status_code=400, detail=f"File read error: {str(e)}")
             
