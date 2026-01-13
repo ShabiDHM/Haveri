@@ -56,7 +56,7 @@ export const InsightsTab: React.FC = () => {
                 </div>
             </div>
             <div className="text-xs font-mono text-slate-500 uppercase tracking-widest hidden sm:block">
-                System Active
+                {t('insights.systemActive')}
             </div>
         </div>
     );
@@ -76,7 +76,6 @@ export const InsightsTab: React.FC = () => {
                     >
                         <ViewHeader title={t('analyst.title', 'Smart Data Analyst')} icon={FileSpreadsheet} />
                         <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative">
-                             {/* Component loads here */}
                              <SpreadsheetAnalysisPanel />
                         </div>
                     </motion.div>
@@ -93,7 +92,6 @@ export const InsightsTab: React.FC = () => {
                     >
                         <ViewHeader title={t('graph.title', 'Nexus Topology')} icon={Network} />
                         <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative h-[700px]">
-                             {/* Component loads here with full height */}
                              <GraphVisualization />
                         </div>
                     </motion.div>
@@ -136,7 +134,7 @@ export const InsightsTab: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="mt-6 flex items-center text-xs font-mono text-blue-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Initialize Engine <span className="ml-2">→</span>
+                                        {t('analyst.initialize')} <span className="ml-2">→</span>
                                     </div>
                                 </div>
                             </motion.button>
@@ -166,7 +164,7 @@ export const InsightsTab: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="mt-6 flex items-center text-xs font-mono text-emerald-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Launch Visualization <span className="ml-2">→</span>
+                                        {t('graph.launch')} <span className="ml-2">→</span>
                                     </div>
                                 </div>
                             </motion.button>
@@ -176,11 +174,10 @@ export const InsightsTab: React.FC = () => {
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-slate-500 mb-2">
                                 <Cpu size={16} />
-                                <span className="text-xs font-bold uppercase tracking-widest">Live Metrics Feed</span>
+                                <span className="text-xs font-bold uppercase tracking-widest">{t('insights.liveMetrics')}</span>
                             </div>
                             
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                {/* These are the critical business modules you need to keep */}
                                 <DebtModule data={debtAnalytics} />
                                 <TaxModule data={taxAnalytics} />
                                 <ProfitModule data={profitAnalytics} />
@@ -191,7 +188,7 @@ export const InsightsTab: React.FC = () => {
                         <div className="flex items-center justify-center p-4 border-t border-slate-800/50">
                             <span className="text-slate-500 text-xs flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                                System Operational • V4.0.1
+                                {t('insights.systemActive')} • V4.0.1
                             </span>
                         </div>
                     </motion.div>
