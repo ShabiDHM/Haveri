@@ -1,15 +1,14 @@
 # FILE: backend/scripts/ingest_laws.py
-# PHOENIX PROTOCOL - INGESTION SCRIPT V2.1 (CASE INSENSITIVE)
-# 1. FIX: Added support for .PDF, .DOCX, .TXT (Uppercase extensions).
-# 2. DEBUG: Prints absolute path to confirm Docker volume mapping.
-# 3. STATUS: Capable of seeing all files.
+# PHOENIX PROTOCOL - INGESTION SCRIPT V2.2 (CORRECT EMBEDDING CLASS)
+# 1. FIX: Updated the import and instantiation to use 'HaveriEmbeddingFunction'.
+# 2. ALIGNMENT: Ensures the script uses the current, refactored core components.
 
 import os
 import sys
 import glob
 import hashlib
 import argparse
-from typing import List, Dict
+from typing import List
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -21,7 +20,8 @@ try:
 
     from langchain.text_splitter import RecursiveCharacterTextSplitter
     import chromadb
-    from app.core.embeddings import JuristiRemoteEmbeddings 
+    # --- PHOENIX FIX: Import the correct, renamed class ---
+    from app.core.embeddings import HaveriEmbeddingFunction 
     from chromadb.api.types import Metadata
 except ImportError as e:
     print(f"❌ MISSING LIBRARIES: {e}")
@@ -61,16 +61,16 @@ def ingest_legal_docs(directory_path: str):
     
     try:
         client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
+        # --- PHOENIX FIX: Instantiate the correct class ---
         collection = client.get_or_create_collection(
             name=COLLECTION_NAME,
-            embedding_function=JuristiRemoteEmbeddings()
+            embedding_function=HaveriEmbeddingFunction()
         )
         print("✅ Connected to Knowledge Base.")
     except Exception as e:
         print(f"❌ DB Connection Failed: {e}")
         return
 
-    # PHOENIX FIX: Added Uppercase Extensions
     supported_extensions = ['*.pdf', '*.PDF', '*.docx', '*.DOCX', '*.txt', '*.TXT']
     all_files = []
     
@@ -78,7 +78,6 @@ def ingest_legal_docs(directory_path: str):
         found = glob.glob(os.path.join(directory_path, "**", ext), recursive=True)
         all_files.extend(found)
 
-    # Deduplicate list just in case of weird OS behavior
     all_files = sorted(list(set(all_files)))
 
     if not all_files:
@@ -106,7 +105,6 @@ def ingest_legal_docs(directory_path: str):
             ids = existing_records.get('ids', [])
             metas = existing_records.get('metadatas', [])
             
-            # Check for hash match AND strict jurisdiction match
             if ids and metas and metas[0].get("file_hash") == current_hash and metas[0].get("jurisdiction") == TARGET_JURISDICTION:
                 print(f"⏭️  Skipped (Unchanged): {filename}")
                 stats["skipped"] += 1
@@ -166,7 +164,7 @@ def ingest_legal_docs(directory_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest laws into ChromaDB (KOSOVO EXCLUSIVE).")
-    parser.add_argument("path", nargs="?", default="/app/data/laws", help="Path to documents folder")
+    parser.add_argument("path", nargs="?", default="/app/app/data/laws/ks", help="Path to documents folder")
     
     args = parser.parse_args()
     ingest_legal_docs(args.path)
