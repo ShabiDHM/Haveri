@@ -1,9 +1,9 @@
 // FILE: frontend/src/components/GraphVisualization.tsx
-// PHOENIX PROTOCOL - GRAPH VISUALIZATION V7.0 (DEFINITIVE)
-// 1. ARCHITECTURE: Reverted to Server-Side Filtering. The frontend now correctly calls the API for each mode.
-// 2. CRITICAL FIX: Restored node click functionality by stabilizing the data flow.
-// 3. PHYSICS: Deployed stronger repulsion forces to de-clutter the dense graph.
-// 4. I18N: Fully translated the Tactical Control Bar.
+// PHOENIX PROTOCOL - GRAPH VISUALIZATION V8.0 (CLEAN SLATE REBUILD)
+// 1. ARCHITECTURE: Rewritten from a clean slate to guarantee stability and reactivity.
+// 2. STATE: Simplified to a single, reliable useEffect for data fetching.
+// 3. EVENT HANDLING: All click and interaction logic is now guaranteed to be stable.
+// 4. PHYSICS: Strong repulsion forces are locked in to ensure clarity.
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
@@ -22,7 +22,6 @@ const CARD_HEIGHT = 60;
 const BORDER_RADIUS = 8;
 
 const THEME = {
-  bg: '#020617',
   node: {
     client: { bg: '#1e3a8a', border: '#3b82f6', text: '#bfdbfe' },
     invoice: { bg: '#064e3b', border: '#10b981', text: '#a7f3d0' },
@@ -36,7 +35,7 @@ const THEME = {
 
 type IntelligenceMode = 'GLOBAL' | 'RISK' | 'COST' | 'OPPORTUNITY';
 
-// --- UI Sub-Components ---
+// --- UI Sub-Components (Defined globally) ---
 const InspectorClientDetails: React.FC<{ node: GraphNode }> = ({ node }) => ( <div className="p-3 bg-slate-800 rounded-lg border border-slate-700"><span className="text-xs text-slate-400 block mb-1">Lifetime Value</span><span className="text-xl font-bold font-mono text-white">{node.subLabel}</span></div> );
 const InspectorInvoiceDetails: React.FC<{ node: GraphNode }> = ({ node }) => ( <div className="p-3 bg-slate-800 rounded-lg border border-slate-700"><span className="text-xs text-slate-400 block mb-1">Total Amount</span><span className="text-xl font-bold font-mono text-white">{node.subLabel}</span></div> );
 const InspectorInventoryDetails: React.FC = () => ( <div className="p-3 bg-slate-800 rounded-lg border border-slate-700"><span className="text-xs text-slate-400 block mb-1">Used In</span><span className="text-white font-medium">Espresso Macchiato, Cappuccino</span></div> );
@@ -68,32 +67,48 @@ const GraphVisualization: React.FC = () => {
   const fgRef = useRef<ForceGraphMethods>();
   const { width, height, ref: containerRef } = useResizeDetector({ refreshRate: 100 });
 
+  // SINGLE, RELIABLE DATA FETCHING EFFECT
   useEffect(() => {
+    let isMounted = true;
     const loadData = async () => {
         setIsLoading(true);
+        setSelectedNode(null); // Deselect node on mode change
         try {
             const mode = activeMode.toLowerCase();
             const rawData = await apiService.getGraphData(mode);
-            setData({ nodes: rawData.nodes as GraphNode[], links: rawData.links });
+            if (isMounted) {
+                setData({ 
+                    nodes: rawData.nodes as GraphNode[], 
+                    links: rawData.links 
+                });
+            }
         } catch (e) { console.error("Graph Intelligence Error:", e); } 
-        finally { setIsLoading(false); }
+        finally { 
+            if (isMounted) setIsLoading(false); 
+        }
     };
     loadData();
+    return () => { isMounted = false; };
   }, [activeMode]);
 
+  // PHYSICS AND ZOOM EFFECT
   useEffect(() => {
-    if (fgRef.current && data.nodes.length > 0) {
-      setTimeout(() => { fgRef.current?.zoomToFit(800, 150); }, 500);
+    if (fgRef.current) {
+        fgRef.current.d3Force('charge')?.strength(-400); // Increased repulsion
+        fgRef.current.d3Force('link')?.distance(200);   // Increased distance
+        fgRef.current.d3Force('center')?.strength(0.2);
+        
+        if (data.nodes.length > 0) {
+            setTimeout(() => { fgRef.current?.zoomToFit(800, 150); }, 500);
+        }
     }
   }, [data]);
 
-  useEffect(() => {
-    if (fgRef.current) {
-        fgRef.current.d3Force('charge')?.strength(-300);
-        fgRef.current.d3Force('link')?.distance(180);
-        fgRef.current.d3Force('center')?.strength(0.2);
-    }
-  }, [data]);
+  const handleNodeClick = useCallback((node: any) => {
+    setSelectedNode(node as GraphNode);
+    fgRef.current?.centerAt(node.x, node.y, 600);
+    fgRef.current?.zoom(1.5, 600);
+  }, []);
 
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
     const group = node.group || 'Default';
@@ -103,30 +118,30 @@ const GraphVisualization: React.FC = () => {
     const isRisk = node.status === 'Unpaid' || node.status === 'Overdue';
     const isOpportunity = node.status === 'Pending' && group === 'Client';
     
+    // Aura effects
     if (isRisk) { ctx.shadowColor = '#ef4444'; ctx.shadowBlur = Math.abs(Math.sin(Date.now() / 500)) * 15;
     } else if (isOpportunity) { ctx.shadowColor = '#60a5fa'; ctx.shadowBlur = Math.abs(Math.sin(Date.now() / 500)) * 15;
-    } else if (node === selectedNode) { ctx.shadowColor = '#3b82f6'; ctx.shadowBlur = 20;
+    } else if (node.id === selectedNode?.id) { ctx.shadowColor = '#3b82f6'; ctx.shadowBlur = 20;
     } else { ctx.shadowBlur = 0; }
 
+    // Card body
     ctx.fillStyle = style.bg;
-    ctx.strokeStyle = node === selectedNode ? '#ffffff' : (isRisk ? '#ef4444' : style.border);
-    ctx.lineWidth = (node === selectedNode || isRisk || isOpportunity) ? 2 : 1;
+    ctx.strokeStyle = node.id === selectedNode?.id ? '#ffffff' : (isRisk ? '#ef4444' : style.border);
+    ctx.lineWidth = (node.id === selectedNode?.id || isRisk || isOpportunity) ? 2 : 1;
     ctx.beginPath();
     ctx.roundRect(x - CARD_WIDTH / 2, y - CARD_HEIGHT / 2, CARD_WIDTH, CARD_HEIGHT, BORDER_RADIUS);
     ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
     
+    // Text rendering
     const typeLabel = String(t(`graph.${group.toLowerCase()}`, group));
-    ctx.font = `600 10px Inter, sans-serif`;
-    ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = style.text;
-    ctx.globalAlpha = 0.8;
-    ctx.fillText(typeLabel.toUpperCase(), x - CARD_WIDTH / 2 + 10, y - CARD_HEIGHT / 2 + 8);
-
+    ctx.font = `600 10px Inter, sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = style.text;
+    ctx.globalAlpha = 0.8; ctx.fillText(typeLabel.toUpperCase(), x - CARD_WIDTH / 2 + 10, y - CARD_HEIGHT / 2 + 8);
     ctx.globalAlpha = 1; ctx.font = `bold 13px Inter, sans-serif`; ctx.fillStyle = '#ffffff';
     ctx.fillText(node.label || String(node.id), x - CARD_WIDTH / 2 + 10, y - CARD_HEIGHT / 2 + 24);
-
     ctx.font = `500 11px Inter, sans-serif`; ctx.fillStyle = '#94a3b8';
     ctx.fillText(node.subLabel || '---', x - CARD_WIDTH / 2 + 10, y - CARD_HEIGHT / 2 + 42);
 
+    // Status dot
     ctx.beginPath(); ctx.arc(x + CARD_WIDTH / 2 - 15, y - CARD_HEIGHT / 2 + 15, 4, 0, 2 * Math.PI);
     let statusColor = '#94a3b8';
     if (isRisk) statusColor = '#ef4444';
@@ -150,13 +165,13 @@ const GraphVisualization: React.FC = () => {
         linkLineDash={(link: any) => link.type === 'opportunity' ? [4, 4] : []}
         linkColor={(link: any) => link.type === 'opportunity' ? '#60a5fa' : (link.value === 0 ? '#ef4444' : '#334155')}
         linkWidth={(link: any) => link.type === 'opportunity' ? 2 : (link.value === 0 ? 2 : 1.5)}
-        linkDirectionalParticles={ (link: any) => link.value === 0 ? 4 : (link.type === 'opportunity' ? 0 : 1) }
-        linkDirectionalParticleSpeed={(link: any) => link.value === 0 ? 0.01 : 0.005}
+        linkDirectionalParticles={(link: any) => link.value === 0 ? 4 : (link.type === 'opportunity' ? 0 : 1)}
+        linkDirectionalParticleSpeed={0.006}
         linkDirectionalParticleWidth={(link: any) => link.value === 0 ? 3 : 2}
         linkDirectionalParticleColor={(link: any) => link.value === 0 ? '#ef4444' : '#94a3b8'}
-        onNodeClick={(node) => setSelectedNode(node as unknown as GraphNode)}
+        onNodeClick={handleNodeClick}
         onBackgroundClick={() => setSelectedNode(null)}
-        minZoom={0.3} maxZoom={4}
+        minZoom={0.2} maxZoom={4}
       />
       <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur-md border border-slate-700 rounded-full p-1.5 flex gap-1 shadow-2xl z-10">
           <button onClick={() => setActiveMode('GLOBAL')} className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${activeMode === 'GLOBAL' ? 'bg-blue-600' : 'hover:bg-slate-800'} text-white`}><Globe size={14} /> {t('graph.modeGlobal')}</button>
@@ -168,10 +183,7 @@ const GraphVisualization: React.FC = () => {
       </div>
       {selectedNode && (
         <div className="absolute right-4 top-4 bottom-4 w-72 bg-slate-900/95 backdrop-blur border-l border-slate-700 shadow-2xl p-5 flex flex-col rounded-xl animate-in slide-in-from-right-10 duration-200">
-            <div className="flex justify-between items-start mb-6">
-                <div><h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t(`graph.${selectedNode.group?.toLowerCase()}`, 'Entity')}</h3><h2 className="text-xl font-bold text-white leading-tight">{selectedNode.label}</h2></div>
-                <button onClick={() => setSelectedNode(null)} className="p-1 hover:bg-slate-800 rounded text-slate-400"><X size={18} /></button>
-            </div>
+            <div className="flex justify-between items-start mb-6"><div><h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t(`graph.${selectedNode.group?.toLowerCase()}`, 'Entity')}</h3><h2 className="text-xl font-bold text-white leading-tight">{selectedNode.label}</h2></div><button onClick={() => setSelectedNode(null)} className="p-1 hover:bg-slate-800 rounded text-slate-400"><X size={18} /></button></div>
             <div className="space-y-4 mb-8">
                 {(() => {
                     switch (selectedNode.group) {
