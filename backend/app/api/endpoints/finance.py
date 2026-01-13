@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V15.0 (GRAPH INTEGRATION)
-# 1. FEATURE: Invoices created or updated are now synced to the Neo4j graph database.
-# 2. ARCHITECTURE: Injects GraphService and calls it after successful DB operations.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V15.1 (STRATEGIC LOGGING)
+# 1. DEBUG: Added print statements to trace the execution flow of create_invoice.
+# 2. GOAL: Prove that the GraphService call is being executed.
 
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
@@ -15,7 +15,7 @@ from app.models.user import UserInDB
 from app.models.finance import (
     InvoiceCreate, InvoiceOut, InvoiceUpdate, 
     ExpenseCreate, ExpenseOut, ExpenseUpdate,
-    AnalyticsDashboardData, CaseFinancialSummary, PosTransactionOut
+    AnalyticsDashboardData, CaseFinancialSummary, PosTransactionOut, InvoiceInDB
 )
 from app.models.archive import ArchiveItemOut 
 from app.services.finance_service import FinanceService
@@ -33,7 +33,7 @@ class BulkDeleteRequest(BaseModel):
     expense_ids: Optional[List[str]] = []
     pos_ids: Optional[List[str]] = []
 
-# (Other endpoints are unchanged)
+# --- DATA IMPORT ENDPOINTS ---
 @router.post("/import/preview")
 async def preview_import_file(file: UploadFile = File(...), db: Database = Depends(get_db)):
     service = ParsingService(db)
@@ -91,6 +91,7 @@ def bulk_delete_transactions(
     return {"status": "success", "deleted_count": deleted_count}
 
 
+# --- ANALYTICS ENDPOINTS ---
 @router.get("/case-summary", response_model=List[CaseFinancialSummary])
 async def get_case_financial_summaries(current_user: Annotated[UserInDB, Depends(get_current_active_user)], db: Any = Depends(get_async_db)):
     return [] 
@@ -104,6 +105,7 @@ async def get_analytics_dashboard(
     return AnalyticsDashboardData(total_revenue_period=0, total_transactions_period=0, sales_trend=[], top_products=[])
 
 
+# --- INVOICES (Standard CRUD) ---
 @router.get("/invoices", response_model=List[InvoiceOut])
 def get_invoices(current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
     return FinanceService(db).get_invoices(str(current_user.id))
@@ -115,10 +117,11 @@ def create_invoice(
     db: Database = Depends(get_db),
     graph_service: GraphService = Depends()
 ):
-    # The finance_service now returns InvoiceInDB, which is what we need
-    new_invoice_db = FinanceService(db).create_invoice(str(current_user.id), invoice_in)
+    print("--- [FINANCE DEBUG] 1/3: Inside create_invoice endpoint. ---")
+    new_invoice_db: InvoiceInDB = FinanceService(db).create_invoice(str(current_user.id), invoice_in)
+    print(f"--- [FINANCE DEBUG] 2/3: Invoice {new_invoice_db.id} created in MongoDB. Now calling GraphService. ---")
     graph_service.add_or_update_client_and_invoice(new_invoice_db)
-    # FastAPI will automatically convert the final return type to InvoiceOut
+    print("--- [FINANCE DEBUG] 3/3: GraphService call complete. Returning response. ---")
     return new_invoice_db
 
 @router.get("/invoices/{invoice_id}", response_model=InvoiceOut)
@@ -150,7 +153,6 @@ def update_invoice_status(
     graph_service.add_or_update_client_and_invoice(updated_invoice_db)
     return updated_invoice_db
 
-
 @router.delete("/invoices/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_invoice(invoice_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
     FinanceService(db).delete_invoice(str(current_user.id), invoice_id)
@@ -179,6 +181,7 @@ async def archive_invoice(invoice_id: str, current_user: Annotated[UserInDB, Dep
     )
     return archived_item
 
+# --- EXPENSES ---
 @router.post("/expenses", response_model=ExpenseOut, status_code=status.HTTP_201_CREATED)
 def create_expense(expense_in: ExpenseCreate, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
     return FinanceService(db).create_expense(str(current_user.id), expense_in)

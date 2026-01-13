@@ -1,7 +1,7 @@
 # FILE: backend/app/core/db.py
-# PHOENIX PROTOCOL - DB MGMT V5.2 (AGGRESSIVE DEBUG)
-# 1. DEBUG: Temporarily removed the try...except block from connect_to_neo4j.
-# 2. GOAL: Force the application to crash on startup if it cannot connect to Neo4j, providing a full stack trace.
+# PHOENIX PROTOCOL - DB MGMT V5.1 (PYLANCE COMPLIANT - RESTORED)
+# 1. RESTORED: Re-added the try...except block to the Neo4j connection logic for production safety.
+# 2. STATUS: Production Ready.
 
 import pymongo
 import redis
@@ -22,9 +22,7 @@ async_db_instance = None
 neo4j_driver: Union[Driver, None] = None
 
 # --- Connection Logic ---
-
 def connect_to_mongo():
-    # ... (unchanged) ...
     global sync_mongo_client, db_instance
     if db_instance is not None: return
     
@@ -43,7 +41,6 @@ def connect_to_mongo():
         raise
 
 def connect_to_redis():
-    # ... (unchanged) ...
     global redis_sync_client
     if redis_sync_client is not None: return
 
@@ -58,7 +55,6 @@ def connect_to_redis():
         raise
 
 async def connect_to_motor():
-    # ... (unchanged) ...
     global async_mongo_client, async_db_instance
     if async_db_instance is not None: return
     
@@ -76,22 +72,24 @@ async def connect_to_motor():
         print(f"--- [DB] CRITICAL: Could not connect to Async MongoDB (Motor): {e} ---")
         raise
 
-def connect_to_neo4j(): # <-- MODIFIED FUNCTION
+def connect_to_neo4j():
     global neo4j_driver
     if neo4j_driver is not None: return
 
-    print("--- [DB] AGGRESSIVE DEBUG: Attempting to connect to Neo4j... ---")
-    # NO try...except block. Let it crash if it fails.
-    driver = GraphDatabase.driver(
-        settings.NEO4J_URI, 
-        auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD)
-    )
-    driver.verify_connectivity()
-    neo4j_driver = driver
-    print("--- [DB] Successfully connected to Neo4j Graph Database. ---")
+    print("--- [DB] Attempting to connect to Neo4j Graph Database... ---")
+    try:
+        driver = GraphDatabase.driver(
+            settings.NEO4J_URI, 
+            auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD)
+        )
+        driver.verify_connectivity()
+        neo4j_driver = driver
+        print("--- [DB] Successfully connected to Neo4j Graph Database. ---")
+    except Exception as e:
+        print(f"--- [DB] CRITICAL: Could not connect to Neo4j: {e} ---")
+        raise
 
-
-# --- Shutdown Logic (unchanged) ---
+# --- Shutdown Logic ---
 def close_mongo_connections():
     if sync_mongo_client: sync_mongo_client.close(); print("--- [DB] Sync MongoDB connection closed. ---")
     if async_mongo_client: async_mongo_client.close(); print("--- [DB] Async MongoDB (Motor) connection closed. ---")
@@ -102,7 +100,7 @@ def close_redis_connection():
 def close_neo4j_connection():
     if neo4j_driver: neo4j_driver.close(); print("--- [DB] Neo4j connection closed. ---")
 
-# --- Dependency Providers (unchanged) ---
+# --- Dependency Providers ---
 def get_db():
     if db_instance is None: raise RuntimeError("Sync DB not connected.")
     yield db_instance
