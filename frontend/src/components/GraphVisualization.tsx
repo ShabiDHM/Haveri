@@ -1,8 +1,8 @@
 // FILE: frontend/src/components/GraphVisualization.tsx
-// PHOENIX PROTOCOL - GRAPH VISUALIZATION V2.0 (PROFESSIONAL RENDERER)
-// 1. FEATURE: Implemented a professional custom node renderer.
-// 2. STYLE: Nodes are now drawn with colored backgrounds, borders, and centered text.
-// 3. UX: Added automatic resizing to fit the container and improved interactivity.
+// PHOENIX PROTOCOL - GRAPH VISUALIZATION V2.1 (PROFESSIONAL RENDERER)
+// 1. FIX: Implemented a professional custom node renderer with styled boxes and clean text.
+// 2. UX: Added automatic resizing, better zooming, and click-to-center functionality.
+// 3. ROBUSTNESS: Improved label handling to prevent ugly text rendering.
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ForceGraph2D, { ForceGraphMethods, NodeObject } from 'react-force-graph-2d';
@@ -10,12 +10,12 @@ import { apiService } from '../services/api';
 import { GraphData } from '../data/types';
 import { useResizeDetector } from 'react-resize-detector';
 
-// --- COLOR PALETTE FOR NODE GROUPS ---
-const GROUP_COLORS: { [key: string]: { bg: string; border: string } } = {
-  'Client': { bg: 'rgba(59, 130, 246, 0.6)', border: '#3B82F6' },
-  'Invoice': { bg: 'rgba(16, 185, 129, 0.6)', border: '#10B981' },
-  'Expense': { bg: 'rgba(239, 68, 68, 0.6)', border: '#EF4444' },
-  'Default': { bg: 'rgba(107, 114, 128, 0.6)', border: '#6B7280' },
+// --- Professional Color Palette for Node Groups ---
+const GROUP_COLORS: { [key: string]: { bg: string; border: string; text: string } } = {
+  'Client':  { bg: 'rgba(59, 130, 246, 0.2)', border: '#3B82F6', text: '#BFDBFE' },
+  'Invoice': { bg: 'rgba(16, 185, 129, 0.2)', border: '#10B981', text: '#A7F3D0' },
+  'Expense': { bg: 'rgba(239, 68, 68, 0.2)',  border: '#EF4444', text: '#FECACA' },
+  'Default': { bg: 'rgba(107, 114, 128, 0.2)', border: '#6B7280', text: '#D1D5DB' },
 };
 
 const GraphVisualization: React.FC = () => {
@@ -23,9 +23,9 @@ const GraphVisualization: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const fgRef = useRef<ForceGraphMethods>();
   
-  // --- DYNAMIC RESIZING ---
+  // --- Dynamic Resizing ---
   const { width, ref: containerRef } = useResizeDetector();
-  const height = 600; // Fixed height, dynamic width
+  const height = 600; // Fixed height, dynamic width for responsiveness
 
   useEffect(() => {
     const loadGraphData = async () => {
@@ -38,66 +38,74 @@ const GraphVisualization: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Zoom to fit all nodes after data is loaded
     if (fgRef.current && data.nodes.length > 0) {
-      fgRef.current.zoomToFit(400, 150);
+      fgRef.current.zoomToFit(400, 100);
     }
   }, [data]);
 
   const nodeCanvasObject = useCallback((node: NodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const label = (node as any).label || '';
+    const label = String((node as any).label || '');
     const group = (node as any).group || 'Default';
     const colors = GROUP_COLORS[group] || GROUP_COLORS['Default'];
 
-    // --- Calculate text width for dynamic node size ---
+    // --- Dynamic node size based on text length ---
+    const fontSize = 12 / globalScale;
+    ctx.font = `${fontSize}px Sans-Serif`;
     const textWidth = ctx.measureText(label).width;
-    const nodeWidth = textWidth + 20; // Add padding
+    const nodeWidth = textWidth + 24; // Horizontal padding
+    const nodeHeight = 28; // Vertical padding
 
-    // --- Draw the node background ---
+    // --- Draw the node body (a rounded rectangle) ---
     ctx.fillStyle = colors.bg;
-    ctx.beginPath();
-    ctx.roundRect(node.x! - nodeWidth / 2, node.y! - 12, nodeWidth, 24, 8);
-    ctx.fill();
-
-    // --- Draw the node border ---
     ctx.strokeStyle = colors.border;
-    ctx.lineWidth = 1 / globalScale;
+    ctx.lineWidth = 2 / globalScale;
+    
     ctx.beginPath();
-    ctx.roundRect(node.x! - nodeWidth / 2, node.y! - 12, nodeWidth, 24, 8);
+    ctx.roundRect(node.x! - nodeWidth / 2, node.y! - nodeHeight / 2, nodeWidth, nodeHeight, 8);
+    ctx.fill();
     ctx.stroke();
     
     // --- Draw the text label ---
-    const fontSize = 12 / globalScale;
-    ctx.font = `${fontSize}px Sans-Serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillStyle = colors.text;
     ctx.fillText(label, node.x!, node.y!);
 
   }, []);
 
 
   if (isLoading) {
-    return <div className="flex justify-center items-center" style={{ height }}>Duke ngarkuar Inteligjencën Ndërlidhëse...</div>;
+    return <div className="flex justify-center items-center text-gray-400" style={{ height }}>Duke ngarkuar Inteligjencën Ndërlidhëse...</div>;
   }
 
-  if (data.nodes.length === 0) {
-    return <div className="flex justify-center items-center" style={{ height }}>Nuk ka të dhëna për të ndërtuar grafikun. Krijoni disa fatura për të filluar.</div>;
+  if (!data || data.nodes.length === 0) {
+    return <div className="flex justify-center items-center text-gray-400" style={{ height }}>Nuk ka të dhëna për të ndërtuar grafikun. Krijoni disa fatura për të filluar.</div>;
   }
 
   return (
-    <div ref={containerRef} className="graph-container">
+    <div ref={containerRef} className="graph-container w-full h-full">
       <ForceGraph2D
         ref={fgRef}
         graphData={data}
         width={width}
         height={height}
-        // Use the custom renderer
+        // Use our professional custom renderer
         nodeCanvasObject={nodeCanvasObject}
-        // Disable default node drawing
-        nodeVal={() => 0} 
+        nodePointerAreaPaint={(node, color, ctx) => {
+          // Makes the clickable area larger for better UX
+          const label = String((node as any).label || '');
+          const textWidth = ctx.measureText(label).width;
+          const nodeWidth = textWidth + 24;
+          const nodeHeight = 28;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.roundRect(node.x! - nodeWidth / 2, node.y! - nodeHeight / 2, nodeWidth, nodeHeight, 8);
+          ctx.fill();
+        }}
         
         // Link styling
-        linkColor={() => 'rgba(255,255,255,0.2)'}
+        linkColor={() => 'rgba(107, 114, 128, 0.4)'}
         linkWidth={1}
         linkDirectionalArrowLength={3.5}
         linkDirectionalArrowRelPos={1}
