@@ -1,7 +1,7 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V2.7 (GRAPH INTERFACES ADDED)
-// 1. SCHEMA CHANGE: Added interfaces for GraphNode, GraphLink, and GraphData.
-// 2. PURPOSE: To provide type safety for the "Interconnected Intelligence" feature.
+// PHOENIX PROTOCOL - TYPES V3.0 (INTELLIGENCE ENGINE)
+// 1. SCHEMA UPGRADE: Enhanced GraphNode with financial properties (value, status, meta).
+// 2. PURPOSE: Enables real-time kinetic visualization of cash flow and risk.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -15,8 +15,6 @@ export interface User {
     token?: string; 
     subscription_status?: string; 
     business_profile?: BusinessProfile;
-    
-    // Multi-Tenant Fields
     organization_id?: string;
     organization_role?: 'OWNER' | 'MEMBER' | 'VIEWER';
     organization_name?: string;
@@ -26,7 +24,7 @@ export interface User {
 
 export type AdminUser = User;
 
-// ... (Existing Interfaces - Unchanged) ...
+// ... (Existing Business Interfaces) ...
 export interface Case { id: string; case_number: string; case_name: string; title: string; status: 'open' | 'closed' | 'pending' | 'archived'; client?: { name: string; phone: string; email: string; }; opposing_party?: { name: string; lawyer: string; }; court_info?: { name: string; judge: string; }; description: string; created_at: string; updated_at: string; tags: string[]; chat_history?: ChatMessage[]; document_count?: number; alert_count?: number; event_count?: number; is_shared?: boolean; }
 export interface Document { id: string; file_name: string; file_type: string; mime_type?: string; storage_key: string; uploaded_by: string; created_at: string; status: 'UPLOADING' | 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED'; summary?: string; risk_score?: number; ocr_status?: string; processed_text_storage_key?: string; preview_storage_key?: string; error_message?: string; progress_percent?: number; progress_message?: string; is_shared?: boolean; }
 export interface ChatMessage { role: 'user' | 'ai'; content: string; timestamp: string; }
@@ -66,17 +64,38 @@ export interface CreateDraftingJobRequest { user_prompt: string; template_id?: s
 export type DraftingJobStatus = { job_id: string; status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; error?: string; result_summary?: string; };
 export type DraftingJobResult = { document_text: string; document_html?: string; result_text?: string; job_id?: string; status?: string; };
 
-// --- INTERCONNECTED INTELLIGENCE (GRAPH) TYPES ---
+// --- INTERCONNECTED INTELLIGENCE (GRAPH) TYPES v3.0 ---
 export interface GraphNode {
     id: string | number;
     label: string;
-    group: string;
+    group: 'Client' | 'Invoice' | 'Expense' | 'Document' | 'Case' | 'Default'; // Strict Typing
+    
+    // Financial Intelligence
+    value?: number;          // e.g., Invoice Amount or Client LTV
+    currency?: string;       // 'EUR', 'USD'
+    status?: 'Active' | 'Paid' | 'Unpaid' | 'Overdue' | 'Draft' | 'Pending';
+    
+    // Visuals
+    color?: string;
+    icon?: string;
+    
+    // Metadata
+    subLabel?: string;       // Displayed under the main label
+    meta?: Record<string, any>; // Arbitrary data (phone, email, dates)
+    
+    // Physics (D3)
+    x?: number;
+    y?: number;
+    fx?: number;
+    fy?: number;
 }
   
 export interface GraphLink {
-    source: string | number;
-    target: string | number;
-    label: string;
+    source: string | number | GraphNode; // D3 converts ID to Node object
+    target: string | number | GraphNode;
+    label?: string;
+    value?: number; // Strength of connection (e.g. transaction size)
+    type?: 'transaction' | 'ownership' | 'reference';
 }
   
 export interface GraphData {

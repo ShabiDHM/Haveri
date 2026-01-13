@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
 import { apiService } from '../services/api';
-import { GraphData } from '../data/types';
+import { GraphData, GraphNode } from '../data/types'; // Importing strict types
 import { useResizeDetector } from 'react-resize-detector';
 import { useTranslation } from 'react-i18next';
 import { X, ExternalLink, Phone, FileText, AlertTriangle } from 'lucide-react';
@@ -25,30 +25,50 @@ const THEME = {
 const GraphVisualization: React.FC = () => {
   const { t } = useTranslation();
   const [data, setData] = useState<GraphData>({ nodes: [], links: [] });
-  const [selectedNode, setSelectedNode] = useState<any | null>(null);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   const fgRef = useRef<ForceGraphMethods>();
   const { width, height, ref: containerRef } = useResizeDetector({ refreshRate: 100 });
 
-  // --- 1. Data Loading ---
+  // --- 1. Data Loading & Intelligence Adapter ---
   useEffect(() => {
     const init = async () => {
       try {
         const rawData = await apiService.getGraphData();
         
-        // ENRICHMENT: Injecting mock business data for visualization
-        const enrichedNodes = rawData.nodes.map(n => ({ 
-            ...n, 
-            subLabel: (n as any).group === 'Invoice' ? '€ 1,250.00' : 
-                      (n as any).group === 'Client' ? '+383 44 000 000' : 'Pending',
-            status: (n as any).group === 'Invoice' ? 'Unpaid' : 'Active',
-            val: 1 
-        }));
+        // INTELLIGENCE ADAPTER:
+        // Maps raw API data to the strict GraphNode schema with financial logic.
+        // In the future, the backend will return this structure directly.
+        const enrichedNodes: GraphNode[] = rawData.nodes.map(n => {
+            const group = (n as any).group || 'Default';
+            let status: GraphNode['status'] = 'Active';
+            let subLabel = '---';
+
+            // Simulating Business Logic based on Group
+            if (group === 'Invoice') {
+                status = 'Unpaid';
+                subLabel = '€ 1,250.00';
+            } else if (group === 'Client') {
+                status = 'Active';
+                subLabel = '+383 44 000 000';
+            } else if (group === 'Expense') {
+                status = 'Paid';
+                subLabel = '€ 450.00';
+            }
+
+            return { 
+                ...n, 
+                group: group as GraphNode['group'], // Strict cast
+                status: status,
+                subLabel: subLabel,
+                value: 1 // Physics weight
+            };
+        });
 
         setData({ nodes: enrichedNodes, links: rawData.links });
       } catch (e) {
-        console.error(e);
+        console.error("Graph Intelligence Error:", e);
       } finally {
         setIsLoading(false);
       }
@@ -68,14 +88,17 @@ const GraphVisualization: React.FC = () => {
   // --- 3. Physics Tuning ---
   useEffect(() => {
     if (fgRef.current) {
-        fgRef.current.d3Force('charge')?.strength(-100);
-        fgRef.current.d3Force('link')?.distance(100);
-        fgRef.current.d3Force('center')?.strength(0.2);
+        fgRef.current.d3Force('charge')?.strength(-150);
+        fgRef.current.d3Force('link')?.distance(120);
+        fgRef.current.d3Force('center')?.strength(0.15);
     }
   }, [data]);
 
   // --- 4. The "Business Card" Renderer ---
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
+    // Note: node is 'any' here because d3 adds internal props (x, y, vx, vy) 
+    // that overlap with our GraphNode type in complex ways during render.
+    
     const group = node.group || 'Default';
     const styleKey = group.toLowerCase() in THEME.node ? group.toLowerCase() : 'default';
     const style = (THEME.node as any)[styleKey];
@@ -100,7 +123,7 @@ const GraphVisualization: React.FC = () => {
     ctx.fillStyle = style.text;
     ctx.globalAlpha = 0.8;
     
-    // SAFE TYPE CASTING FOR TRANSLATION
+    // Translation safe-guard
     const typeLabel = String(t(`graph.${group.toLowerCase()}`, group));
     ctx.fillText(typeLabel.toUpperCase(), x - CARD_WIDTH / 2 + 10, y - CARD_HEIGHT / 2 + 8);
 
@@ -108,7 +131,7 @@ const GraphVisualization: React.FC = () => {
     ctx.globalAlpha = 1;
     ctx.font = `bold 13px Inter, sans-serif`;
     ctx.fillStyle = '#ffffff';
-    let label = node.label || node.id;
+    let label = node.label || String(node.id);
     if (label.length > 18) label = label.substring(0, 16) + '...';
     ctx.fillText(label, x - CARD_WIDTH / 2 + 10, y - CARD_HEIGHT / 2 + 24);
 
@@ -120,7 +143,14 @@ const GraphVisualization: React.FC = () => {
     // Draw Status Indicator (Dot)
     ctx.beginPath();
     ctx.arc(x + CARD_WIDTH / 2 - 15, y - CARD_HEIGHT / 2 + 15, 4, 0, 2 * Math.PI);
-    ctx.fillStyle = node.status === 'Unpaid' ? '#ef4444' : '#10b981';
+    
+    // Status Logic
+    let statusColor = '#94a3b8'; // gray
+    if (node.status === 'Unpaid' || node.status === 'Overdue') statusColor = '#ef4444'; // red
+    if (node.status === 'Active' || node.status === 'Paid') statusColor = '#10b981'; // green
+    if (node.status === 'Pending' || node.status === 'Draft') statusColor = '#eab308'; // yellow
+    
+    ctx.fillStyle = statusColor;
     ctx.fill();
 
   }, [selectedNode, t]);
@@ -157,7 +187,8 @@ const GraphVisualization: React.FC = () => {
         
         // Interaction
         onNodeClick={(node) => {
-            setSelectedNode(node);
+            // Safe cast for strict mode
+            setSelectedNode(node as unknown as GraphNode);
             fgRef.current?.centerAt(node.x, node.y, 600);
             fgRef.current?.zoom(1.5, 600); 
         }}
@@ -187,7 +218,10 @@ const GraphVisualization: React.FC = () => {
                 <div className="p-3 bg-slate-800 rounded-lg border border-slate-700">
                     <span className="text-xs text-slate-400 block mb-1">Status</span>
                     <div className="flex items-center gap-2">
-                         <span className={`w-2 h-2 rounded-full ${selectedNode.status === 'Unpaid' ? 'bg-red-500' : 'bg-emerald-500'}`}></span>
+                         <span className={`w-2 h-2 rounded-full ${
+                             selectedNode.status === 'Unpaid' || selectedNode.status === 'Overdue' ? 'bg-red-500' : 
+                             selectedNode.status === 'Pending' ? 'bg-yellow-500' : 'bg-emerald-500'
+                         }`}></span>
                          <span className="text-white font-medium">{selectedNode.status || 'Active'}</span>
                     </div>
                 </div>
