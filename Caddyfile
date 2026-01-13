@@ -1,37 +1,10 @@
-# FILE: Haveri/Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V4.1 (DEBUG MODE)
-# 1. ARCHITECTURE: Shared Docker network communication is in place.
-# 2. FIX: Added the 'debug' directive to the Juristi site to enable verbose logging.
-# 3. GOAL: Force Caddy to reveal the root cause of the 500 error.
-
+# FILE: Haveri/Caddyfile (Temporary Stable Version)
 {
     email shabanbala@gmail.com
 }
 
-# ----------------------------------------
-# PROJECT 1: HAVERI (Primary / Existing)
-# ----------------------------------------
 api.haveri.tech {
-    # Internal Docker Routing (Container-to-Container on 'phoenix_net')
     reverse_proxy backend:8000
-
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        X-XSS-Protection "1; mode=block"
-    }
-}
-
-# ----------------------------------------
-# PROJECT 2: JURISTI (Secondary / New)
-# ----------------------------------------
-api.juristi.tech {
-    # Enable verbose logging for this site only.
-    debug
-
-    # Internal Docker Routing (Container-to-Container on 'shared_gateway_net')
-    reverse_proxy juristi-backend:8000
 
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
