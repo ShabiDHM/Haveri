@@ -1,7 +1,8 @@
 # FILE: Haveri/Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V4.0 (SHARED NETWORK)
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V4.0 (SHARED NETWORK - PRODUCTION)
 # 1. ARCHITECTURE: Both projects communicate over a shared Docker network.
-# 2. FIX: Juristi is routed via its stable container name ('juristi-backend:8000').
+# 2. ROUTING: Juristi is routed via its stable container name ('juristi-backend:8000').
+# 3. STATUS: Production Ready. Debug logging is disabled.
 
 {
     email shabanbala@gmail.com
