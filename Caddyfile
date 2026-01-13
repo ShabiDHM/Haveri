@@ -1,10 +1,11 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V3.0
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V3.1 (CORRECTED GATEWAY IP)
 # 1. STATUS: Multi-Tenant / Multi-Project Gateway.
-# 2. ARCHITECTURE: 
+# 2. FIX: Updated Juristi reverse_proxy to use the server's actual gateway IP (172.18.0.1).
+# 3. ARCHITECTURE: 
 #    - Haveri: Routed via internal Docker DNS (backend:8000).
-#    - Juristi: Routed via Host Gateway (172.17.0.1:8001).
-# 3. SECURITY: Strict Headers maintained for both domains.
+#    - Juristi: Routed via Host Gateway (172.18.0.1:8001).
+# 4. SECURITY: Strict Headers maintained for both domains.
 
 {
     email shabanbala@gmail.com
@@ -29,9 +30,8 @@ api.haveri.tech {
 # PROJECT 2: JURISTI (Secondary / New)
 # ----------------------------------------
 api.juristi.tech {
-    # HOST Routing (Port Offsetting Strategy)
-    # 172.17.0.1 is the Docker Gateway IP allowing Caddy to talk to the Host's port 8001
-    reverse_proxy 172.17.0.1:8001
+    # HOST Routing using the CORRECT Gateway IP for this server.
+    reverse_proxy 172.18.0.1:8001
 
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
