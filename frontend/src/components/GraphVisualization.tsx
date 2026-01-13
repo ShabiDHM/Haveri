@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
 import { apiService } from '../services/api';
-import { GraphData, GraphNode } from '../data/types'; // Importing strict types
+import { GraphData, GraphNode, GraphLink } from '../data/types';
 import { useResizeDetector } from 'react-resize-detector';
 import { useTranslation } from 'react-i18next';
 import { X, ExternalLink, Phone, FileText, AlertTriangle } from 'lucide-react';
@@ -39,15 +39,13 @@ const GraphVisualization: React.FC = () => {
         
         // INTELLIGENCE ADAPTER:
         // Maps raw API data to the strict GraphNode schema with financial logic.
-        // In the future, the backend will return this structure directly.
         const enrichedNodes: GraphNode[] = rawData.nodes.map(n => {
             const group = (n as any).group || 'Default';
             let status: GraphNode['status'] = 'Active';
             let subLabel = '---';
 
-            // Simulating Business Logic based on Group
             if (group === 'Invoice') {
-                status = 'Unpaid';
+                status = 'Unpaid'; // Forced 'Unpaid' to demonstrate Risk Pulse
                 subLabel = '€ 1,250.00';
             } else if (group === 'Client') {
                 status = 'Active';
@@ -59,14 +57,26 @@ const GraphVisualization: React.FC = () => {
 
             return { 
                 ...n, 
-                group: group as GraphNode['group'], // Strict cast
+                group: group as GraphNode['group'],
                 status: status,
                 subLabel: subLabel,
-                value: 1 // Physics weight
+                value: 1
             };
         });
 
-        setData({ nodes: enrichedNodes, links: rawData.links });
+        // ENRICH LINKS: Give links meaning (Status/Flow)
+        // We assume connections to 'Unpaid' nodes are 'Blocked' flows
+        const enrichedLinks: GraphLink[] = rawData.links.map(link => {
+            const targetNode = enrichedNodes.find(n => n.id === link.target);
+            const isRisk = targetNode?.status === 'Unpaid' || targetNode?.status === 'Overdue';
+            return {
+                ...link,
+                type: isRisk ? 'transaction' : 'ownership', // misuse type for visual logic
+                value: isRisk ? 0 : 1 // 0 = risk/blocked
+            };
+        });
+
+        setData({ nodes: enrichedNodes, links: enrichedLinks });
       } catch (e) {
         console.error("Graph Intelligence Error:", e);
       } finally {
@@ -88,17 +98,14 @@ const GraphVisualization: React.FC = () => {
   // --- 3. Physics Tuning ---
   useEffect(() => {
     if (fgRef.current) {
-        fgRef.current.d3Force('charge')?.strength(-150);
-        fgRef.current.d3Force('link')?.distance(120);
-        fgRef.current.d3Force('center')?.strength(0.15);
+        fgRef.current.d3Force('charge')?.strength(-200);
+        fgRef.current.d3Force('link')?.distance(150); // More space for particles
+        fgRef.current.d3Force('center')?.strength(0.3);
     }
   }, [data]);
 
   // --- 4. The "Business Card" Renderer ---
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
-    // Note: node is 'any' here because d3 adds internal props (x, y, vx, vy) 
-    // that overlap with our GraphNode type in complex ways during render.
-    
     const group = node.group || 'Default';
     const styleKey = group.toLowerCase() in THEME.node ? group.toLowerCase() : 'default';
     const style = (THEME.node as any)[styleKey];
@@ -106,15 +113,33 @@ const GraphVisualization: React.FC = () => {
     const x = node.x!;
     const y = node.y!;
     
+    const isRisk = node.status === 'Unpaid' || node.status === 'Overdue';
+    
+    // --- EFFECT: PULSING AURA (For Risk Items) ---
+    if (isRisk) {
+        const time = Date.now() / 1000;
+        const pulse = Math.abs(Math.sin(time * 2)) * 15; // Fast pulse
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = pulse;
+    } else if (node === selectedNode) {
+        ctx.shadowColor = '#3b82f6';
+        ctx.shadowBlur = 20;
+    } else {
+        ctx.shadowBlur = 0;
+    }
+
     // Draw Card Background
     ctx.fillStyle = style.bg;
-    ctx.strokeStyle = node === selectedNode ? '#ffffff' : style.border;
-    ctx.lineWidth = node === selectedNode ? 2 : 1;
+    ctx.strokeStyle = node === selectedNode ? '#ffffff' : (isRisk ? '#ef4444' : style.border);
+    ctx.lineWidth = (node === selectedNode || isRisk) ? 2 : 1;
     
     ctx.beginPath();
     ctx.roundRect(x - CARD_WIDTH / 2, y - CARD_HEIGHT / 2, CARD_WIDTH, CARD_HEIGHT, BORDER_RADIUS);
     ctx.fill();
     ctx.stroke();
+    
+    // Reset Shadow for text
+    ctx.shadowBlur = 0;
 
     // Draw "Header" (Group Name)
     ctx.font = `600 10px Inter, sans-serif`;
@@ -123,7 +148,6 @@ const GraphVisualization: React.FC = () => {
     ctx.fillStyle = style.text;
     ctx.globalAlpha = 0.8;
     
-    // Translation safe-guard
     const typeLabel = String(t(`graph.${group.toLowerCase()}`, group));
     ctx.fillText(typeLabel.toUpperCase(), x - CARD_WIDTH / 2 + 10, y - CARD_HEIGHT / 2 + 8);
 
@@ -144,11 +168,10 @@ const GraphVisualization: React.FC = () => {
     ctx.beginPath();
     ctx.arc(x + CARD_WIDTH / 2 - 15, y - CARD_HEIGHT / 2 + 15, 4, 0, 2 * Math.PI);
     
-    // Status Logic
-    let statusColor = '#94a3b8'; // gray
-    if (node.status === 'Unpaid' || node.status === 'Overdue') statusColor = '#ef4444'; // red
-    if (node.status === 'Active' || node.status === 'Paid') statusColor = '#10b981'; // green
-    if (node.status === 'Pending' || node.status === 'Draft') statusColor = '#eab308'; // yellow
+    let statusColor = '#94a3b8';
+    if (isRisk) statusColor = '#ef4444'; // Red
+    else if (node.status === 'Active' || node.status === 'Paid') statusColor = '#10b981'; // Green
+    else if (node.status === 'Pending') statusColor = '#eab308'; // Yellow
     
     ctx.fillStyle = statusColor;
     ctx.fill();
@@ -181,13 +204,23 @@ const GraphVisualization: React.FC = () => {
             ctx.fillRect(node.x - CARD_WIDTH / 2, node.y - CARD_HEIGHT / 2, CARD_WIDTH, CARD_HEIGHT);
         }}
 
-        // Links
-        linkColor={() => '#334155'}
-        linkWidth={1.5}
+        // --- KINETIC LINKS ---
+        // Color: Red if connecting to Risk, Gray otherwise
+        linkColor={(link: any) => link.value === 0 ? '#ef4444' : '#334155'}
+        linkWidth={(link: any) => link.value === 0 ? 2 : 1.5}
+        
+        // Particles: ALWAYS ON
+        // High particle count (4) for Risk items (Unpaid), Low (1) for normal
+        linkDirectionalParticles={(link: any) => link.value === 0 ? 4 : 1}
+        // Speed: Fast for Risk (Urgency), Slow for normal
+        linkDirectionalParticleSpeed={(link: any) => link.value === 0 ? 0.01 : 0.005}
+        // Size: Bigger dots for Risk
+        linkDirectionalParticleWidth={(link: any) => link.value === 0 ? 3 : 2}
+        // Color: Matches the link (Red for risk, White/Gray for normal)
+        linkDirectionalParticleColor={(link: any) => link.value === 0 ? '#ef4444' : '#94a3b8'}
         
         // Interaction
         onNodeClick={(node) => {
-            // Safe cast for strict mode
             setSelectedNode(node as unknown as GraphNode);
             fgRef.current?.centerAt(node.x, node.y, 600);
             fgRef.current?.zoom(1.5, 600); 
@@ -219,7 +252,7 @@ const GraphVisualization: React.FC = () => {
                     <span className="text-xs text-slate-400 block mb-1">Status</span>
                     <div className="flex items-center gap-2">
                          <span className={`w-2 h-2 rounded-full ${
-                             selectedNode.status === 'Unpaid' || selectedNode.status === 'Overdue' ? 'bg-red-500' : 
+                             selectedNode.status === 'Unpaid' || selectedNode.status === 'Overdue' ? 'bg-red-500 animate-pulse' : 
                              selectedNode.status === 'Pending' ? 'bg-yellow-500' : 'bg-emerald-500'
                          }`}></span>
                          <span className="text-white font-medium">{selectedNode.status || 'Active'}</span>
