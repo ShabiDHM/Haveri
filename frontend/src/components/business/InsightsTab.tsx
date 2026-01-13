@@ -1,12 +1,14 @@
 // FILE: frontend/src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS TAB V3.1 (ICON FIX)
-// 1. FIX: Restored the 'FileSpreadsheet' icon to the 'Smart Data Analyst' button.
-// 2. STATUS: All UI elements are now correct and consistent with the previous design.
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Loader2, FileSpreadsheet, Sparkles, ArrowLeft, Share2 } from 'lucide-react';
+import { 
+    Loader2, 
+    FileSpreadsheet, 
+    ArrowLeft, 
+    Cpu, 
+    Network 
+} from 'lucide-react';
 import { useBusinessIntelligence } from '../../hooks/useBusinessIntelligence';
 
 // Modules
@@ -22,78 +24,175 @@ export const InsightsTab: React.FC = () => {
     const { t } = useTranslation();
     const { loading, debtAnalytics, profitAnalytics, taxAnalytics } = useBusinessIntelligence();
     
-    // State for view switching
-    const [isAnalystMode, setIsAnalystMode] = useState(false);
-    const [isGraphMode, setIsGraphMode] = useState(false);
+    // State for view switching - Mutually exclusive modes
+    const [viewMode, setViewMode] = useState<'dashboard' | 'analyst' | 'graph'>('dashboard');
 
-    if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary-start" /></div>;
+    if (loading) {
+        return (
+            <div className="flex flex-col justify-center items-center h-96 space-y-4">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full"></div>
+                    <Loader2 className="w-12 h-12 animate-spin text-blue-400 relative z-10" />
+                </div>
+                <span className="text-slate-400 font-mono text-sm tracking-widest animate-pulse">LOADING INTELLIGENCE...</span>
+            </div>
+        );
+    }
 
-    const handleBackToDashboard = () => {
-        setIsAnalystMode(false);
-        setIsGraphMode(false);
-    };
+    // Shared Header Component for Sub-views (Analyst & Graph)
+    const ViewHeader = ({ title, icon: Icon }: { title: string, icon: any }) => (
+        <div className="flex items-center justify-between mb-4 bg-slate-900/50 backdrop-blur border border-white/5 p-3 rounded-xl">
+            <div className="flex items-center gap-3">
+                <button 
+                    onClick={() => setViewMode('dashboard')} 
+                    className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all border border-slate-700 hover:border-slate-600"
+                >
+                    <ArrowLeft size={18} />
+                </button>
+                <div className="h-6 w-px bg-slate-700 mx-1"></div>
+                <div className="flex items-center gap-2 text-white font-medium">
+                    <Icon className="text-blue-400" size={20} />
+                    <span>{title}</span>
+                </div>
+            </div>
+            <div className="text-xs font-mono text-slate-500 uppercase tracking-widest hidden sm:block">
+                System Active
+            </div>
+        </div>
+    );
 
     return (
-        <div className="space-y-6 pb-10 min-h-[600px]">
+        <div className="min-h-[600px] text-slate-100">
             <AnimatePresence mode="wait">
                 
-                {isAnalystMode ? (
-                    <motion.div key="analyst" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }} className="space-y-4">
-                        <button onClick={handleBackToDashboard} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group mb-2">
-                            <div className="p-2 rounded-full bg-white/5 group-hover:bg-white/10"><ArrowLeft size={18} /></div>
-                            <span className="font-medium">{t('general.backToDashboard', 'Kthehu tek Paneli Kryesor')}</span>
-                        </button>
-                        <div className="bg-gray-900/50 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+                {/* --- MODE: ANALYST (SPREADSHEET) --- */}
+                {viewMode === 'analyst' && (
+                    <motion.div 
+                        key="analyst" 
+                        initial={{ opacity: 0, scale: 0.98 }} 
+                        animate={{ opacity: 1, scale: 1 }} 
+                        exit={{ opacity: 0, scale: 0.98 }} 
+                        transition={{ duration: 0.3 }}
+                    >
+                        <ViewHeader title={t('analyst.title', 'Smart Data Analyst')} icon={FileSpreadsheet} />
+                        <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative">
+                             {/* Component loads here */}
                              <SpreadsheetAnalysisPanel />
                         </div>
                     </motion.div>
+                )}
 
-                ) : isGraphMode ? (
-                    <motion.div key="graph" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }} className="space-y-4">
-                        <button onClick={handleBackToDashboard} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group mb-2">
-                            <div className="p-2 rounded-full bg-white/5 group-hover:bg-white/10"><ArrowLeft size={18} /></div>
-                            <span className="font-medium">{t('general.backToDashboard', 'Kthehu tek Paneli Kryesor')}</span>
-                        </button>
-                        <div className="bg-gray-900/50 border border-white/10 rounded-3xl p-4 sm:p-6 shadow-2xl">
+                {/* --- MODE: GRAPH (NEXUS) --- */}
+                {viewMode === 'graph' && (
+                    <motion.div 
+                        key="graph" 
+                        initial={{ opacity: 0, scale: 0.98 }} 
+                        animate={{ opacity: 1, scale: 1 }} 
+                        exit={{ opacity: 0, scale: 0.98 }} 
+                        transition={{ duration: 0.3 }}
+                    >
+                        <ViewHeader title={t('graph.title', 'Nexus Topology')} icon={Network} />
+                        <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative h-[700px]">
+                             {/* Component loads here with full height */}
                              <GraphVisualization />
                         </div>
                     </motion.div>
+                )}
 
-                ) : (
-                    <motion.div key="dashboard" initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="space-y-8">
-                        
+                {/* --- MODE: DASHBOARD (MAIN HUB) --- */}
+                {viewMode === 'dashboard' && (
+                    <motion.div 
+                        key="dashboard" 
+                        initial={{ opacity: 0, y: 20 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        exit={{ opacity: 0, y: -20 }} 
+                        className="space-y-8"
+                    >
+                        {/* Section 1: Advanced Tools Selection */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Smart Analyst Button */}
-                            <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={() => setIsAnalystMode(true)} className="w-full relative overflow-hidden group rounded-3xl text-left p-6 sm:p-8 bg-gradient-to-r from-blue-900/80 via-indigo-900/80 to-purple-900/80 border border-white/10 hover:border-blue-500/50 transition-all duration-300 flex items-center justify-between">
-                                <div className="space-y-2">
-                                    <h3 className="text-2xl font-bold text-white flex items-center gap-3"><Sparkles className="text-blue-400" />{t('analyst.title', 'Smart Data Analyst')}</h3>
-                                    <p className="text-gray-300 max-w-xl">{t('analyst.desc', 'Ngarkoni skedarë Excel/CSV për analizë të thelluar, vizualizim dhe zbulim të anomalive.')}</p>
-                                </div>
-                                {/* --- ICON RESTORED --- */}
-                                <div className="hidden sm:flex h-16 w-16 bg-blue-500/20 rounded-2xl items-center justify-center border border-blue-500/30 group-hover:bg-blue-500/30 transition-all">
-                                    <FileSpreadsheet className="text-blue-300 h-8 w-8" />
+                            
+                            {/* Card 1: Analyst Button */}
+                            <motion.button 
+                                whileHover={{ scale: 1.02, boxShadow: '0 0 30px rgba(59, 130, 246, 0.15)' }} 
+                                whileTap={{ scale: 0.98 }} 
+                                onClick={() => setViewMode('analyst')} 
+                                className="relative overflow-hidden group rounded-2xl p-px bg-gradient-to-b from-blue-500/20 to-slate-800/20 text-left h-full"
+                            >
+                                <div className="absolute inset-0 bg-slate-900/95 rounded-2xl z-0" />
+                                <div className="absolute inset-0 bg-grid-slate-800/[0.2] z-0" style={{ backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '20px 20px', opacity: 0.1 }} />
+                                
+                                <div className="relative z-10 p-6 flex flex-col h-full justify-between">
+                                    <div className="space-y-3">
+                                        <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20 group-hover:border-blue-500/50 transition-colors">
+                                            <FileSpreadsheet className="text-blue-400" size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+                                                {t('analyst.title', 'Smart Analyst')}
+                                            </h3>
+                                            <p className="text-slate-400 text-sm mt-1 leading-relaxed">
+                                                {t('analyst.desc', 'Deep dive into excel data with AI-powered anomaly detection.')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 flex items-center text-xs font-mono text-blue-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
+                                        Initialize Engine <span className="ml-2">→</span>
+                                    </div>
                                 </div>
                             </motion.button>
                             
-                            {/* Interconnected Intelligence Button */}
-                            <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} onClick={() => setIsGraphMode(true)} className="w-full relative overflow-hidden group rounded-3xl text-left p-6 sm:p-8 bg-gradient-to-r from-teal-900/80 via-emerald-900/80 to-green-900/80 border border-white/10 hover:border-teal-500/50 transition-all duration-300 flex items-center justify-between">
-                                <div className="space-y-2">
-                                    <h3 className="text-2xl font-bold text-white flex items-center gap-3"><Share2 className="text-teal-400" />{t('graph.title', 'Inteligjenca Ndërlidhëse')}</h3>
-                                    <p className="text-gray-300 max-w-xl">{t('graph.desc', 'Eksploroni lidhjet e fshehura mes klientëve, faturave dhe shpenzimeve në një pamje vizuale interaktive.')}</p>
+                            {/* Card 2: Graph (Nexus) Button */}
+                            <motion.button 
+                                whileHover={{ scale: 1.02, boxShadow: '0 0 30px rgba(16, 185, 129, 0.15)' }} 
+                                whileTap={{ scale: 0.98 }} 
+                                onClick={() => setViewMode('graph')} 
+                                className="relative overflow-hidden group rounded-2xl p-px bg-gradient-to-b from-emerald-500/20 to-slate-800/20 text-left h-full"
+                            >
+                                <div className="absolute inset-0 bg-slate-900/95 rounded-2xl z-0" />
+                                <div className="absolute inset-0 bg-grid-slate-800/[0.2] z-0" style={{ backgroundImage: 'radial-gradient(#10b981 1px, transparent 1px)', backgroundSize: '20px 20px', opacity: 0.1 }} />
+
+                                <div className="relative z-10 p-6 flex flex-col h-full justify-between">
+                                    <div className="space-y-3">
+                                        <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20 group-hover:border-emerald-500/50 transition-colors">
+                                            <Network className="text-emerald-400" size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
+                                                {t('graph.title', 'Nexus Topology')}
+                                            </h3>
+                                            <p className="text-slate-400 text-sm mt-1 leading-relaxed">
+                                                {t('graph.desc', 'Visualize hidden connections between clients and capital flow.')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 flex items-center text-xs font-mono text-emerald-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
+                                        Launch Visualization <span className="ml-2">→</span>
+                                    </div>
                                 </div>
-                                {/* Placeholder for a future icon if needed */}
                             </motion.button>
                         </div>
                         
-                        {/* Existing Dashboard Grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
-                            <DebtModule data={debtAnalytics} />
-                            <TaxModule data={taxAnalytics} />
-                            <ProfitModule data={profitAnalytics} />
+                        {/* Section 2: Real-time Metrics (Modules) */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-slate-500 mb-2">
+                                <Cpu size={16} />
+                                <span className="text-xs font-bold uppercase tracking-widest">Live Metrics Feed</span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* These are the critical business modules you need to keep */}
+                                <DebtModule data={debtAnalytics} />
+                                <TaxModule data={taxAnalytics} />
+                                <ProfitModule data={profitAnalytics} />
+                            </div>
                         </div>
 
-                        <div className="text-center text-gray-500 text-sm mt-8 border-t border-white/5 pt-6">
-                            <p>💡 {t('insights.tip', 'Këshillë: Përdorni butonin WhatsApp tek borxhet për të përshpejtuar arkëtimin me 40%.')}</p>
+                        {/* Footer Tip */}
+                        <div className="flex items-center justify-center p-4 border-t border-slate-800/50">
+                            <span className="text-slate-500 text-xs flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                System Operational • V4.0.1
+                            </span>
                         </div>
                     </motion.div>
                 )}
