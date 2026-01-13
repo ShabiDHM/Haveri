@@ -1,8 +1,8 @@
 # FILE: Haveri/Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V4.0 (SHARED NETWORK)
-# 1. ARCHITECTURE: Both projects now communicate over a shared Docker network.
-# 2. FIX: Juristi is now routed via its stable container name ('juristi-backend:8000'), 
-#    which is more reliable than a host IP.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V4.1 (DEBUG MODE)
+# 1. ARCHITECTURE: Shared Docker network communication is in place.
+# 2. FIX: Added the 'debug' directive to the Juristi site to enable verbose logging.
+# 3. GOAL: Force Caddy to reveal the root cause of the 500 error.
 
 {
     email shabanbala@gmail.com
@@ -27,6 +27,9 @@ api.haveri.tech {
 # PROJECT 2: JURISTI (Secondary / New)
 # ----------------------------------------
 api.juristi.tech {
+    # Enable verbose logging for this site only.
+    debug
+
     # Internal Docker Routing (Container-to-Container on 'shared_gateway_net')
     reverse_proxy juristi-backend:8000
 
