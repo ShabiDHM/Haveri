@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
 import { apiService } from '../services/api';
-import { GraphData, GraphNode, GraphLink } from '../data/types';
+import { GraphData, GraphNode } from '../data/types';
 import { useResizeDetector } from 'react-resize-detector';
 import { useTranslation } from 'react-i18next';
 import { X, ExternalLink, Phone, FileText, AlertTriangle } from 'lucide-react';
@@ -18,6 +18,7 @@ const THEME = {
     client: { bg: '#1e3a8a', border: '#3b82f6', text: '#bfdbfe' },
     invoice: { bg: '#064e3b', border: '#10b981', text: '#a7f3d0' },
     expense: { bg: '#7f1d1d', border: '#ef4444', text: '#fecaca' },
+    case:    { bg: '#374151', border: '#6b7280', text: '#e5e7eb' },
     default: { bg: '#1f2937', border: '#4b5563', text: '#e5e7eb' },
   }
 };
@@ -31,52 +32,21 @@ const GraphVisualization: React.FC = () => {
   const fgRef = useRef<ForceGraphMethods>();
   const { width, height, ref: containerRef } = useResizeDetector({ refreshRate: 100 });
 
-  // --- 1. Data Loading & Intelligence Adapter ---
+  // --- 1. Data Loading (REAL DATA ONLY) ---
   useEffect(() => {
     const init = async () => {
       try {
         const rawData = await apiService.getGraphData();
         
-        // INTELLIGENCE ADAPTER:
-        // Maps raw API data to the strict GraphNode schema with financial logic.
-        const enrichedNodes: GraphNode[] = rawData.nodes.map(n => {
-            const group = (n as any).group || 'Default';
-            let status: GraphNode['status'] = 'Active';
-            let subLabel = '---';
-
-            if (group === 'Invoice') {
-                status = 'Unpaid'; // Forced 'Unpaid' to demonstrate Risk Pulse
-                subLabel = '€ 1,250.00';
-            } else if (group === 'Client') {
-                status = 'Active';
-                subLabel = '+383 44 000 000';
-            } else if (group === 'Expense') {
-                status = 'Paid';
-                subLabel = '€ 450.00';
-            }
-
-            return { 
-                ...n, 
-                group: group as GraphNode['group'],
-                status: status,
-                subLabel: subLabel,
-                value: 1
-            };
+        // PHOENIX PROTOCOL: NO SIMULATION.
+        // We trust the backend to provide 'status', 'subLabel', and 'value'.
+        // We only cast types here to ensure TypeScript is happy.
+        
+        setData({ 
+            nodes: rawData.nodes as GraphNode[], 
+            links: rawData.links 
         });
 
-        // ENRICH LINKS: Give links meaning (Status/Flow)
-        // We assume connections to 'Unpaid' nodes are 'Blocked' flows
-        const enrichedLinks: GraphLink[] = rawData.links.map(link => {
-            const targetNode = enrichedNodes.find(n => n.id === link.target);
-            const isRisk = targetNode?.status === 'Unpaid' || targetNode?.status === 'Overdue';
-            return {
-                ...link,
-                type: isRisk ? 'transaction' : 'ownership', // misuse type for visual logic
-                value: isRisk ? 0 : 1 // 0 = risk/blocked
-            };
-        });
-
-        setData({ nodes: enrichedNodes, links: enrichedLinks });
       } catch (e) {
         console.error("Graph Intelligence Error:", e);
       } finally {
@@ -99,7 +69,7 @@ const GraphVisualization: React.FC = () => {
   useEffect(() => {
     if (fgRef.current) {
         fgRef.current.d3Force('charge')?.strength(-200);
-        fgRef.current.d3Force('link')?.distance(150); // More space for particles
+        fgRef.current.d3Force('link')?.distance(150);
         fgRef.current.d3Force('center')?.strength(0.3);
     }
   }, [data]);
@@ -113,12 +83,13 @@ const GraphVisualization: React.FC = () => {
     const x = node.x!;
     const y = node.y!;
     
+    // Risk Detection (From Backend Data)
     const isRisk = node.status === 'Unpaid' || node.status === 'Overdue';
     
     // --- EFFECT: PULSING AURA (For Risk Items) ---
     if (isRisk) {
         const time = Date.now() / 1000;
-        const pulse = Math.abs(Math.sin(time * 2)) * 15; // Fast pulse
+        const pulse = Math.abs(Math.sin(time * 2)) * 15;
         ctx.shadowColor = '#ef4444';
         ctx.shadowBlur = pulse;
     } else if (node === selectedNode) {
@@ -138,7 +109,7 @@ const GraphVisualization: React.FC = () => {
     ctx.fill();
     ctx.stroke();
     
-    // Reset Shadow for text
+    // Reset Shadow
     ctx.shadowBlur = 0;
 
     // Draw "Header" (Group Name)
@@ -209,14 +180,10 @@ const GraphVisualization: React.FC = () => {
         linkColor={(link: any) => link.value === 0 ? '#ef4444' : '#334155'}
         linkWidth={(link: any) => link.value === 0 ? 2 : 1.5}
         
-        // Particles: ALWAYS ON
-        // High particle count (4) for Risk items (Unpaid), Low (1) for normal
+        // Particles
         linkDirectionalParticles={(link: any) => link.value === 0 ? 4 : 1}
-        // Speed: Fast for Risk (Urgency), Slow for normal
         linkDirectionalParticleSpeed={(link: any) => link.value === 0 ? 0.01 : 0.005}
-        // Size: Bigger dots for Risk
         linkDirectionalParticleWidth={(link: any) => link.value === 0 ? 3 : 2}
-        // Color: Matches the link (Red for risk, White/Gray for normal)
         linkDirectionalParticleColor={(link: any) => link.value === 0 ? '#ef4444' : '#94a3b8'}
         
         // Interaction
