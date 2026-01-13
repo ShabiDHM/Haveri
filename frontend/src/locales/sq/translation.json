@@ -293,7 +293,14 @@
     "trace": "Gjurmo",
     "client": "Klient",
     "invoice": "Faturë",
-    "expense": "Shpenzim"
+    "expense": "Shpenzim",
+    "case": "Rast",
+    "inventory": "Stoku",
+    "product": "Produkt",
+    "modeGlobal": "Pamja Globale",
+    "modeRisk": "Skanim i Rrezikut",
+    "modeCost": "Gjurmim i Kostos",
+    "modeOpportunity": "Mundësitë"
   },
   "finance": {
     "income": "Të Hyrat",

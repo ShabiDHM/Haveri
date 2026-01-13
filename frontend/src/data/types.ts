@@ -1,7 +1,7 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V3.0 (INTELLIGENCE ENGINE)
-// 1. SCHEMA UPGRADE: Enhanced GraphNode with financial properties (value, status, meta).
-// 2. PURPOSE: Enables real-time kinetic visualization of cash flow and risk.
+// PHOENIX PROTOCOL - TYPES V3.1 (OPERATIONAL LAYER SYNC)
+// 1. SCHEMA SYNC: Added 'Inventory' and 'Product' to the GraphNode group type.
+// 2. PURPOSE: Resolves TypeScript compilation errors by aligning frontend types with backend API reality.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -64,15 +64,16 @@ export interface CreateDraftingJobRequest { user_prompt: string; template_id?: s
 export type DraftingJobStatus = { job_id: string; status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; error?: string; result_summary?: string; };
 export type DraftingJobResult = { document_text: string; document_html?: string; result_text?: string; job_id?: string; status?: string; };
 
-// --- INTERCONNECTED INTELLIGENCE (GRAPH) TYPES v3.0 ---
+// --- INTERCONNECTED INTELLIGENCE (GRAPH) TYPES v3.1 ---
 export interface GraphNode {
     id: string | number;
     label: string;
-    group: 'Client' | 'Invoice' | 'Expense' | 'Document' | 'Case' | 'Default'; // Strict Typing
+    // UPDATED: Added Inventory and Product to the allowed groups
+    group: 'Client' | 'Invoice' | 'Expense' | 'Document' | 'Case' | 'Default' | 'Inventory' | 'Product';
     
     // Financial Intelligence
-    value?: number;          // e.g., Invoice Amount or Client LTV
-    currency?: string;       // 'EUR', 'USD'
+    value?: number;
+    currency?: string;
     status?: 'Active' | 'Paid' | 'Unpaid' | 'Overdue' | 'Draft' | 'Pending';
     
     // Visuals
@@ -80,8 +81,8 @@ export interface GraphNode {
     icon?: string;
     
     // Metadata
-    subLabel?: string;       // Displayed under the main label
-    meta?: Record<string, any>; // Arbitrary data (phone, email, dates)
+    subLabel?: string;
+    meta?: Record<string, any>;
     
     // Physics (D3)
     x?: number;
@@ -91,10 +92,10 @@ export interface GraphNode {
 }
   
 export interface GraphLink {
-    source: string | number | GraphNode; // D3 converts ID to Node object
+    source: string | number | GraphNode;
     target: string | number | GraphNode;
     label?: string;
-    value?: number; // Strength of connection (e.g. transaction size)
+    value?: number;
     type?: 'transaction' | 'ownership' | 'reference';
 }
   

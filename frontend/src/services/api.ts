@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V9.2 (METHOD RESTORED & GRAPH INTEGRATED)
-// 1. CRITICAL FIX: Restored the 'getArchiveFileBlob' method that was accidentally removed.
-// 2. ADDED: The 'getGraphData' method for "Interconnected Intelligence".
+// PHOENIX PROTOCOL - API V9.3 (GRAPH MODES ENABLED)
+// 1. MODIFIED: 'getGraphData' now accepts an optional 'mode' parameter.
+// 2. PURPOSE: Allows the frontend to request specific intelligence views (Risk, Opportunity) from the backend.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -202,10 +202,12 @@ class ApiService {
     public async getStrategicBriefing(): Promise<StrategicBriefingResponse> { const response = await this.axiosInstance.get<StrategicBriefingResponse>('/briefing/strategic'); return response.data; }
     public async sendContactForm(data: { firstName: string; lastName: string; email: string; phone: string; message: string }): Promise<void> { await this.axiosInstance.post('/support/contact', { first_name: data.firstName, last_name: data.lastName, email: data.email, phone: data.phone, message: data.message }); }
     
-    // --- INTERCONNECTED INTELLIGENCE (NEW METHOD) ---
-    public async getGraphData(): Promise<GraphData> {
+    // --- INTERCONNECTED INTELLIGENCE (UPGRADED) ---
+    public async getGraphData(mode: string = 'global'): Promise<GraphData> {
         try {
-            const response = await this.axiosInstance.get<GraphData>('/graph/visualize');
+            const response = await this.axiosInstance.get<GraphData>('/graph/visualize', {
+                params: { mode }
+            });
             return response.data || { nodes: [], links: [] };
         } catch (error) {
             console.error("Failed to fetch graph data:", error);
