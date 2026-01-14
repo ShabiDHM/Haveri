@@ -5,11 +5,9 @@ import { apiService } from '../services/api';
 import { GraphData, GraphNode } from '../data/types';
 import { useResizeDetector } from 'react-resize-detector';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { 
     X, ShieldAlert, Globe, TrendingDown, Sparkles,
-    Briefcase, MessageCircle, FileText, Edit, History, Eye, Mail, CheckCircle, BarChart2,
-    BrainCircuit, Lightbulb, TrendingUp
+    CheckCircle, BarChart2, BrainCircuit, Lightbulb, Eye
 } from 'lucide-react';
 
 // --- Configuration ---
@@ -28,16 +26,14 @@ const THEME = {
 
 type IntelligenceMode = 'GLOBAL' | 'RISK' | 'COST' | 'OPPORTUNITY';
 
-// --- ADVANCED ALBANIAN AI ENGINE (Dynamic Simulation) ---
+// --- ADVANCED ALBANIAN AI ENGINE ---
 const generateDeepInsight = async (node: GraphNode, mode: IntelligenceMode): Promise<{ insight: string, recommendation: string, confidence: number }> => {
     return new Promise((resolve) => {
-        const delay = 800 + Math.random() * 800; // Random "thinking" time 0.8s - 1.6s
+        const delay = 800 + Math.random() * 800; 
         
         setTimeout(() => {
             const name = node.label || "Entiteti";
             const value = node.subLabel || "vlerë";
-            
-            // Random scenario selector (0, 1, or 2)
             const scenario = Math.floor(Math.random() * 3);
 
             let result = { insight: "", recommendation: "", confidence: 85 };
@@ -105,7 +101,7 @@ const generateDeepInsight = async (node: GraphNode, mode: IntelligenceMode): Pro
                 const s = scenarios[scenario];
                 result = { insight: s.insight, recommendation: s.recommendation, confidence: s.conf };
             } else {
-                // GLOBAL / DEFAULT Scenarios
+                // GLOBAL / DEFAULT
                 const scenarios = [
                     {
                         insight: `'${name}' është një nyje kritike. Humbja e këtij klienti do të ndikonte në 3 referenca të tjera.`,
@@ -225,7 +221,6 @@ const EmptyState: React.FC<{ mode: IntelligenceMode }> = ({ mode }) => {
 // --- MAIN COMPONENT ---
 const GraphVisualization: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   
   const [data, setData] = useState<GraphData>({ nodes: [], links: [] });
   const [activeMode, setActiveMode] = useState<IntelligenceMode>('GLOBAL');
@@ -278,7 +273,6 @@ const GraphVisualization: React.FC = () => {
   const runAIAnalysis = useCallback(async (node: GraphNode) => {
       setAiLoading(true);
       setAiData(null);
-      // Simulate backend call with dynamic scenarios
       const analysis = await generateDeepInsight(node, activeMode);
       setAiLoading(false);
       setAiData(analysis);
@@ -359,19 +353,6 @@ const GraphVisualization: React.FC = () => {
     ctx.roundRect(x - CARD_WIDTH / 2, y - CARD_HEIGHT / 2, CARD_WIDTH, CARD_HEIGHT, BORDER_RADIUS);
     ctx.fill();
   }, []);
-
-  // 6. Action Logic
-  const handleAction = (actionType: string, node: GraphNode) => {
-      switch (actionType) {
-          case 'DRAFT_EMAIL': navigate(`/communications/compose?recipient=${node.id}`); break;
-          case 'OPEN_CASE': navigate(`/cases/${node.id}`); break;
-          case 'VIEW_DETAILS': alert(t('messages.viewing', `Duke shikuar detajet për ${node.label}`)); break;
-          case 'EDIT': alert(t('messages.editing', `Duke redaktuar ${node.label}`)); break;
-          case 'HISTORY': alert(t('messages.history', `Historia për ${node.label}`)); break;
-          case 'SEND_REMINDER': alert(t('messages.remind', `Rikujtesë në pritje për ${node.label}`)); break;
-          default: break;
-      }
-  };
 
   return (
     <div ref={containerRef} className="relative w-full h-[700px] bg-slate-950 rounded-xl overflow-hidden shadow-2xl border border-slate-900 flex flex-col font-sans">
@@ -457,16 +438,8 @@ const GraphVisualization: React.FC = () => {
 
             {/* AI ADVISOR PANEL (The "Brain") */}
             <AIAdvisorPanel loading={aiLoading} data={aiData} />
-
-            {/* Action Command Center */}
-            <div className="mt-auto pt-6 border-t border-slate-800">
-                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <TrendingUp size={12} /> {t('general.actions', 'QENDRA E KOMANDËS')}
-                </h4>
-                <div className="grid grid-cols-1 gap-3">
-                    <ActionButton node={selectedNode} activeMode={activeMode} onAction={handleAction} />
-                </div>
-            </div>
+            
+            {/* Action Command Center - REMOVED PER REQUEST */}
         </div>
       )}
     </div>
@@ -480,48 +453,6 @@ const ModeButton: React.FC<{ active: boolean; onClick: () => void; icon: JSX.Ele
         className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${active ? `${color} text-white shadow-lg shadow-${color}/25 scale-105` : 'hover:bg-slate-800 text-slate-400 hover:text-white'}`}
     >
         {icon} <span>{label}</span>
-    </button>
-);
-
-const ActionButton: React.FC<{ node: GraphNode, activeMode: IntelligenceMode, onAction: (type: string, node: GraphNode) => void }> = ({ node, activeMode, onAction }) => {
-    const { t } = useTranslation();
-    const status = node.status || '';
-    const actions = [];
-
-    if (node.group === 'Client') {
-        if (activeMode === 'OPPORTUNITY') {
-             actions.push(<ButtonBase key="email" onClick={() => onAction('DRAFT_EMAIL', node)} icon={<Mail size={16} />} text={t('actions.draftSales', 'Harto Ofertë Shitjeje')} color="bg-purple-600 hover:bg-purple-500" />);
-        }
-        actions.push(<ButtonBase key="case" onClick={() => onAction('OPEN_CASE', node)} icon={<Briefcase size={16} />} text={t('actions.clientProfile', 'Hap Profilin e Klientit')} color="bg-blue-600 hover:bg-blue-500" />);
-    } else if (node.group === 'Invoice') {
-        actions.push(<ButtonBase key="details" onClick={() => onAction('VIEW_DETAILS', node)} icon={<FileText size={16} />} text={t('actions.viewInvoice', 'Shiko PDF të Faturës')} color="bg-slate-700 hover:bg-slate-600" />);
-        if (['Unpaid', 'Overdue'].includes(status)) {
-            actions.push(<ButtonBase key="remind" onClick={() => onAction('SEND_REMINDER', node)} icon={<MessageCircle size={16} />} text={t('actions.remind', 'Dërgo Rikujtesë')} color="bg-emerald-600 hover:bg-emerald-500" />);
-        }
-    }
-
-    if (actions.length === 0) {
-        actions.push(<ButtonBase key="view" onClick={() => onAction('VIEW_DETAILS', node)} icon={<Eye size={16} />} text={t('actions.view', 'Shiko Detajet')} color="bg-slate-700 hover:bg-slate-600" />);
-    }
-    
-    return (
-        <div className="space-y-2">
-            {actions}
-            <div className="grid grid-cols-2 gap-2 mt-2">
-                <button onClick={() => onAction('EDIT', node)} className="flex items-center justify-center gap-2 bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 py-2 rounded text-xs font-medium transition-colors">
-                    <Edit size={14} /> {t('actions.edit', 'Ndrysho')}
-                </button>
-                <button onClick={() => onAction('HISTORY', node)} className="flex items-center justify-center gap-2 bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 py-2 rounded text-xs font-medium transition-colors">
-                    <History size={14} /> {t('actions.history', 'Historia')}
-                </button>
-            </div>
-        </div>
-    );
-};
-
-const ButtonBase: React.FC<{ icon: JSX.Element, text: string, color: string, onClick: () => void }> = ({ icon, text, color, onClick }) => (
-    <button onClick={onClick} className={`w-full flex items-center justify-center gap-3 ${color} text-white py-3 rounded-lg transition-all font-semibold text-sm shadow-md hover:shadow-lg active:scale-[0.98]`}>
-        {icon} {text}
     </button>
 );
 
