@@ -14,18 +14,18 @@ import {
 // --- Configuration ---
 const CARD_WIDTH = 180;
 const CARD_HEIGHT = 65;
-const BORDER_RADIUS = 4;
+const BORDER_RADIUS = 6;
 
 // --- THEME: High-Contrast Corporate ---
 const THEME = {
   node: {
-    client:    { bg: '#0b1120', border: '#3b82f6', text: '#bfdbfe' }, // Dark Navy
-    invoice:   { bg: '#022c22', border: '#10b981', text: '#a7f3d0' }, // Dark Emerald
-    expense:   { bg: '#450a0a', border: '#ef4444', text: '#fecaca' }, // Dark Red
-    case:      { bg: '#18181b', border: '#71717a', text: '#e4e4e7' }, // Zinc
-    inventory: { bg: '#431407', border: '#f97316', text: '#fed7aa' }, // Dark Orange
-    product:   { bg: '#3b0764', border: '#a855f7', text: '#e9d5ff' }, // Dark Purple
-    default:   { bg: '#0f172a', border: '#475569', text: '#e2e8f0' }, // Slate
+    client:    { bg: '#0b1120', border: '#3b82f6', text: '#bfdbfe' }, 
+    invoice:   { bg: '#022c22', border: '#10b981', text: '#a7f3d0' }, 
+    expense:   { bg: '#450a0a', border: '#ef4444', text: '#fecaca' }, 
+    case:      { bg: '#18181b', border: '#71717a', text: '#e4e4e7' }, 
+    inventory: { bg: '#431407', border: '#f97316', text: '#fed7aa' }, 
+    product:   { bg: '#3b0764', border: '#a855f7', text: '#e9d5ff' }, 
+    default:   { bg: '#0f172a', border: '#475569', text: '#e2e8f0' }, 
   }
 };
 
@@ -147,16 +147,25 @@ const GraphVisualization: React.FC = () => {
     return () => { isMounted = false; };
   }, [activeMode]);
 
-  // 2. Physics & Engine Settings
+  // 2. Physics & Engine Settings (Native Tuning)
   useEffect(() => {
     const graph = fgRef.current;
     if (graph) {
-        graph.d3Force('charge')?.strength(-3000); 
-        graph.d3Force('link')?.distance(300);
-        graph.d3Force('center')?.strength(0.08);
+        // High gravity to keep it centered
+        graph.d3Force('center')?.strength(0.5);
         
+        // Repulsion tuned to separate cards (180px width) without sending them to space
+        // -800 provides enough buffer for the cards to sit next to each other
+        graph.d3Force('charge')?.strength(-800);
+        
+        // Short links to force clustering
+        graph.d3Force('link')?.distance(80);
+
+        // Initial Smart Zoom
         if (data.nodes.length > 0) {
-            setTimeout(() => { graph.zoomToFit(600, 100); }, 500);
+            setTimeout(() => { 
+                graph.zoomToFit(800, 50); 
+            }, 600);
         }
     }
   }, [data]);
@@ -164,7 +173,7 @@ const GraphVisualization: React.FC = () => {
   const handleNodeClick = useCallback((node: any) => {
     setSelectedNode(node as GraphNode);
     fgRef.current?.centerAt(node.x, node.y, 800);
-    fgRef.current?.zoom(1.1, 800);
+    fgRef.current?.zoom(1.3, 800);
   }, []);
 
   // 3. High-Fidelity Rendering
@@ -181,17 +190,17 @@ const GraphVisualization: React.FC = () => {
     const isOpportunity = status === 'Pending' && group === 'Client';
     const isSelected = node.id === selectedNode?.id;
 
-    // -- SHADOWS --
+    // -- SHADOWS (Clean & Communicative) --
     ctx.shadowBlur = 0; 
     if (isSelected) {
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.2)'; 
-        ctx.shadowBlur = 30;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.3)'; 
+        ctx.shadowBlur = 20;
     } else if (isRisk) {
-        ctx.shadowColor = 'rgba(239, 68, 68, 0.4)'; 
-        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(239, 68, 68, 0.5)'; // Red for Risk
+        ctx.shadowBlur = 15;
     } else if (isOpportunity) {
-        ctx.shadowColor = 'rgba(168, 85, 247, 0.4)'; 
-        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(168, 85, 247, 0.5)'; // Purple for Opportunity
+        ctx.shadowBlur = 15;
     }
 
     // -- CARD BODY --
@@ -207,25 +216,25 @@ const GraphVisualization: React.FC = () => {
 
     // -- HEADER --
     const typeLabel = group.toUpperCase();
-    ctx.font = `600 9px "Inter", system-ui, sans-serif`;
+    ctx.font = `700 9px "Inter", system-ui, sans-serif`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle = style.text;
-    ctx.globalAlpha = 0.8;
-    ctx.fillText(typeLabel, x - CARD_WIDTH / 2 + 14, y - CARD_HEIGHT / 2 + 12);
+    ctx.globalAlpha = 0.9;
+    ctx.fillText(typeLabel, x - CARD_WIDTH / 2 + 14, y - CARD_HEIGHT / 2 + 10);
 
     // -- TITLE --
     ctx.globalAlpha = 1;
     ctx.font = `bold 13px "Inter", system-ui, sans-serif`;
     ctx.fillStyle = '#ffffff';
     let title = node.label || String(node.id);
-    if (title.length > 22) title = title.substring(0, 20) + '...';
-    ctx.fillText(title, x - CARD_WIDTH / 2 + 14, y - CARD_HEIGHT / 2 + 26);
+    if (title.length > 20) title = title.substring(0, 19) + '...';
+    ctx.fillText(title, x - CARD_WIDTH / 2 + 14, y - CARD_HEIGHT / 2 + 24);
 
     // -- SUBTITLE --
-    ctx.font = `400 11px "Inter", system-ui, sans-serif`;
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(node.subLabel || '---', x - CARD_WIDTH / 2 + 14, y - CARD_HEIGHT / 2 + 44);
+    ctx.font = `500 11px "Inter", system-ui, sans-serif`;
+    ctx.fillStyle = '#cbd5e1'; 
+    ctx.fillText(node.subLabel || '---', x - CARD_WIDTH / 2 + 14, y - CARD_HEIGHT / 2 + 42);
 
     // -- STATUS INDICATOR --
     ctx.beginPath();
@@ -256,7 +265,6 @@ const GraphVisualization: React.FC = () => {
               navigate(`/communications/compose?recipient=${node.id}`);
               break;
           case 'CALL_CLIENT':
-              // Fallback to alert for system actions without routes yet
               alert(t('messages.callingClient', `Initiating call with ${node.label}...`));
               break;
           case 'SEND_REMINDER':
@@ -296,20 +304,21 @@ const GraphVisualization: React.FC = () => {
             nodeCanvasObject={nodeCanvasObject}
             nodePointerAreaPaint={nodePointerAreaPaint}
             
+            // LINKS
             linkLineDash={(link: any) => link.type === 'opportunity' ? [5, 5] : []}
-            linkColor={(link: any) => link.type === 'opportunity' ? '#6366f1' : '#1e293b'} 
-            linkWidth={1} 
+            linkColor={(link: any) => link.type === 'opportunity' ? '#6366f1' : '#334155'} 
+            linkWidth={2} 
             
             linkDirectionalParticles={1} 
             linkDirectionalParticleSpeed={0.003} 
             linkDirectionalParticleWidth={2}
-            linkDirectionalParticleColor={() => '#475569'}
+            linkDirectionalParticleColor={() => '#64748b'}
 
             onNodeClick={handleNodeClick}
             onBackgroundClick={() => setSelectedNode(null)}
             
-            minZoom={0.2} 
-            maxZoom={2.0}
+            minZoom={0.5}
+            maxZoom={2.5}
         />
       )}
 
