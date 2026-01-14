@@ -17,7 +17,6 @@ const CARD_WIDTH = 200;
 const CARD_HEIGHT = 70;
 const BORDER_RADIUS = 8;
 
-// --- THEME: Enterprise Dashboard ---
 const THEME = {
   node: {
     client:    { bg: '#0f172a', header: '#1e3a8a', border: '#3b82f6', text: '#ffffff' }, 
@@ -29,37 +28,107 @@ const THEME = {
 
 type IntelligenceMode = 'GLOBAL' | 'RISK' | 'COST' | 'OPPORTUNITY';
 
-// --- ALBANIAN AI ENGINE (Simulated Intelligence) ---
+// --- ADVANCED ALBANIAN AI ENGINE (Dynamic Simulation) ---
 const generateDeepInsight = async (node: GraphNode, mode: IntelligenceMode): Promise<{ insight: string, recommendation: string, confidence: number }> => {
     return new Promise((resolve) => {
+        const delay = 800 + Math.random() * 800; // Random "thinking" time 0.8s - 1.6s
+        
         setTimeout(() => {
+            const name = node.label || "Entiteti";
+            const value = node.subLabel || "vlerë";
+            
+            // Random scenario selector (0, 1, or 2)
+            const scenario = Math.floor(Math.random() * 3);
+
+            let result = { insight: "", recommendation: "", confidence: 85 };
+
             if (mode === 'RISK' && node.group === 'Invoice') {
-                resolve({
-                    insight: "Klienti e ka hapur faturën 5 herë në 48 orët e fundit por nuk ka iniciuar pagesën. Ky model ka 85% korrelacion me vështirësi afatshkurtra të rrjedhës së parasë.",
-                    recommendation: "Mos dërgoni rikujtesë gjenerike. Telefononi dhe ofroni një plan pagese 50/50 për të siguruar të ardhura të pjesshme të menjëhershme.",
-                    confidence: 92
-                });
+                const scenarios = [
+                    {
+                        insight: `Klienti ka hapur faturën '${name}' 5 herë në 24 orë, por nuk ka paguar. Kjo tregon hezitim ose problem me likuiditetin.`,
+                        recommendation: "Telefononi menjëherë për të konfirmuar nëse kanë ndonjë problem teknik ose financiar.",
+                        conf: 92
+                    },
+                    {
+                        insight: `Fatura '${name}' është vonuar për 7 ditë. Ky klient zakonisht paguan ditën e 3-të. Ky devijim është shqetësues.`,
+                        recommendation: "Dërgoni një rikujtesë të butë manuale përmes WhatsApp, jo email automatik.",
+                        conf: 88
+                    },
+                    {
+                        insight: `Shuma prej ${value} është më e lartë se mesatarja e zakonshme për këtë klient, gjë që rrit rrezikun e vonesës.`,
+                        recommendation: "Ofroni mundësinë e pagesës me dy këste për të siguruar gjysmën e shumës sot.",
+                        conf: 75
+                    }
+                ];
+                const s = scenarios[scenario];
+                result = { insight: s.insight, recommendation: s.recommendation, confidence: s.conf };
+
             } else if (mode === 'OPPORTUNITY' && node.group === 'Client') {
-                resolve({
-                    insight: "Historia e blerjeve tregon një zbrazëti në ciklin e zakonshëm të 'Furnizimit Sezonal'. Konkurrenti 'Barcaffe' së fundmi ka nisur një promo në rajonin e tyre.",
-                    recommendation: "Ata ka gjasa po vlerësojnë konkurrentët. Përgatisni paraprakisht një email 'Vlerësimi për Besnikërinë' me 5% zbritje për porosinë e tyre të zakonshme me shumicë.",
-                    confidence: 88
-                });
+                const scenarios = [
+                    {
+                        insight: `Blerjet e '${name}' janë rritur me 15% muajin e kaluar. Ata po zgjerohen.`,
+                        recommendation: "Propozoni kontratën 'Premium' e cila u ofron zbritje për volum më të madh.",
+                        conf: 94
+                    },
+                    {
+                        insight: `'${name}' nuk ka porositur produktin sezonal që zakonisht e merr në këtë kohë. Konkurrentët mund të kenë ndërhyrë.`,
+                        recommendation: "Dërgoni një ofertë speciale 'Rikthim' me 10% zbritje brenda 48 orëve.",
+                        conf: 82
+                    },
+                    {
+                        insight: `Bazuar në historikun e '${name}', ata shpesh blejnë kafe por kurrë sheqer. Kjo është një mundësi e humbur 'Cross-sell'.`,
+                        recommendation: "Dërgoni mostër falas të sheqerit me porosinë e ardhshme.",
+                        conf: 78
+                    }
+                ];
+                const s = scenarios[scenario];
+                result = { insight: s.insight, recommendation: s.recommendation, confidence: s.conf };
+
             } else if (mode === 'COST' && node.group === 'Expense') {
-                resolve({
-                    insight: "Kjo kategori shpenzimesh 'Logjistika' është rritur 12% nga muaji në muaj, duke tejkaluar rritjen e të ardhurave. Ky është një vrasës i heshtur i marzhës.",
-                    recommendation: "Rishikoni kushtet e kontratës me 'DHL' ose konsolidoni dërgesat për të ulur frekuencën.",
-                    confidence: 95
-                });
+                const scenarios = [
+                    {
+                        insight: `Kategoria '${name}' është rritur papritur. Kostot e logjistikës po hanë 12% të marzhës.`,
+                        recommendation: "Negocioni me furnitorin ose kërkoni oferta alternative menjëherë.",
+                        conf: 95
+                    },
+                    {
+                        insight: `Shpenzimi prej ${value} për '${name}' duket i lartë për këtë periudhë të vitit (jashtë sezonit).`,
+                        recommendation: "Auditoni faturat e fundit për të parë nëse ka gabime në çmime.",
+                        conf: 85
+                    },
+                    {
+                        insight: `Ky shpenzim është frekuent por me vlera të vogla. Tarifat e transaksionit po akumulohen.`,
+                        recommendation: "Konsolidoni porositë për të bërë një blerje të madhe mujore në vend të 4 të vogla.",
+                        conf: 90
+                    }
+                ];
+                const s = scenarios[scenario];
+                result = { insight: s.insight, recommendation: s.recommendation, confidence: s.conf };
             } else {
-                // Default / Global
-                resolve({
-                    insight: "Ndërlidhja e nyjeve sugjeron se ky entitet është një qendër kryesore në rrjetin tuaj. Ndërprerja këtu do të ndikonte në 4 rrjedha të lidhura të të ardhurave.",
-                    recommendation: "Shënojeni këtë llogari si 'VIP' për të siguruar prioritet mbështetjeje 24/7 dhe për të parandaluar largimin.",
-                    confidence: 75
-                });
+                // GLOBAL / DEFAULT Scenarios
+                const scenarios = [
+                    {
+                        insight: `'${name}' është një nyje kritike. Humbja e këtij klienti do të ndikonte në 3 referenca të tjera.`,
+                        recommendation: "Caktoni një takim kortezie për të forcuar marrëdhënien.",
+                        conf: 80
+                    },
+                    {
+                        insight: `Aktiviteti i '${name}' është i qëndrueshëm, por pa rritje prej 6 muajsh.`,
+                        recommendation: "Kërkoni feedback për të parë nëse ka nevoja të paplotësuara.",
+                        conf: 70
+                    },
+                    {
+                        insight: `Të dhënat për '${name}' janë të paplota. Mungon numri i telefonit të menaxherit.`,
+                        recommendation: "Përditësoni profilin CRM për të siguruar komunikim efikas.",
+                        conf: 98
+                    }
+                ];
+                const s = scenarios[scenario];
+                result = { insight: s.insight, recommendation: s.recommendation, confidence: s.conf };
             }
-        }, 1200); 
+            
+            resolve(result);
+        }, delay); 
     });
 };
 
@@ -116,8 +185,8 @@ const AIAdvisorPanel: React.FC<{ loading: boolean, data: { insight: string, reco
                     <h5 className="text-[10px] text-slate-400 font-bold uppercase mb-1 flex items-center gap-1">
                         <Eye size={10} /> Vëzhgim
                     </h5>
-                    <p className="text-sm text-slate-200 leading-relaxed">
-                        {data.insight}
+                    <p className="text-sm text-slate-200 leading-relaxed italic">
+                        "{data.insight}"
                     </p>
                 </div>
 
@@ -209,7 +278,7 @@ const GraphVisualization: React.FC = () => {
   const runAIAnalysis = useCallback(async (node: GraphNode) => {
       setAiLoading(true);
       setAiData(null);
-      // Simulate backend call
+      // Simulate backend call with dynamic scenarios
       const analysis = await generateDeepInsight(node, activeMode);
       setAiLoading(false);
       setAiData(analysis);
@@ -217,7 +286,7 @@ const GraphVisualization: React.FC = () => {
 
   const handleNodeClick = useCallback((node: any) => {
     setSelectedNode(node as GraphNode);
-    runAIAnalysis(node as GraphNode); // Trigger AI
+    runAIAnalysis(node as GraphNode); 
     fgRef.current?.centerAt(node.x, node.y, 800);
     fgRef.current?.zoom(1.2, 800);
   }, [runAIAnalysis]);
