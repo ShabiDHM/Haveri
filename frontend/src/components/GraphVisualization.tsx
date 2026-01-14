@@ -29,38 +29,37 @@ const THEME = {
 
 type IntelligenceMode = 'GLOBAL' | 'RISK' | 'COST' | 'OPPORTUNITY';
 
-// --- MOCK AI ENGINE (To be replaced by real backend endpoint) ---
-// This simulates the LLM analyzing the specific node context to find "hidden insights"
+// --- ALBANIAN AI ENGINE (Simulated Intelligence) ---
 const generateDeepInsight = async (node: GraphNode, mode: IntelligenceMode): Promise<{ insight: string, recommendation: string, confidence: number }> => {
     return new Promise((resolve) => {
         setTimeout(() => {
             if (mode === 'RISK' && node.group === 'Invoice') {
                 resolve({
-                    insight: "This client has opened the invoice 5 times in the last 48 hours but hasn't initiated payment. This pattern has a 85% correlation with short-term cash flow anxiety.",
-                    recommendation: "Do not send a generic reminder. Call and offer a 50/50 split payment plan to secure immediate partial revenue.",
+                    insight: "Klienti e ka hapur faturën 5 herë në 48 orët e fundit por nuk ka iniciuar pagesën. Ky model ka 85% korrelacion me vështirësi afatshkurtra të rrjedhës së parasë.",
+                    recommendation: "Mos dërgoni rikujtesë gjenerike. Telefononi dhe ofroni një plan pagese 50/50 për të siguruar të ardhura të pjesshme të menjëhershme.",
                     confidence: 92
                 });
             } else if (mode === 'OPPORTUNITY' && node.group === 'Client') {
                 resolve({
-                    insight: "Purchase history shows a gap in their usual 'Seasonal Stock-up' cycle. Competitor 'Barcaffe' recently launched a promo in their region.",
-                    recommendation: "They are likely evaluating competitors. Pre-emptively draft a 'Loyalty Appreciation' email with a 5% discount on their usual bulk order.",
+                    insight: "Historia e blerjeve tregon një zbrazëti në ciklin e zakonshëm të 'Furnizimit Sezonal'. Konkurrenti 'Barcaffe' së fundmi ka nisur një promo në rajonin e tyre.",
+                    recommendation: "Ata ka gjasa po vlerësojnë konkurrentët. Përgatisni paraprakisht një email 'Vlerësimi për Besnikërinë' me 5% zbritje për porosinë e tyre të zakonshme me shumicë.",
                     confidence: 88
                 });
             } else if (mode === 'COST' && node.group === 'Expense') {
                 resolve({
-                    insight: "This expense category 'Logistics' has grown 12% month-over-month, outpacing revenue growth. This is a silent margin killer.",
-                    recommendation: "Review the 'DHL' contract terms or consolidate shipments to reducing frequency.",
+                    insight: "Kjo kategori shpenzimesh 'Logjistika' është rritur 12% nga muaji në muaj, duke tejkaluar rritjen e të ardhurave. Ky është një vrasës i heshtur i marzhës.",
+                    recommendation: "Rishikoni kushtet e kontratës me 'DHL' ose konsolidoni dërgesat për të ulur frekuencën.",
                     confidence: 95
                 });
             } else {
                 // Default / Global
                 resolve({
-                    insight: "Node connectivity suggests this entity is a central hub in your network. Disruption here would impact 4 connected revenue streams.",
-                    recommendation: "Flag this account as 'VIP' to ensure 24/7 support priority and preventing churn.",
+                    insight: "Ndërlidhja e nyjeve sugjeron se ky entitet është një qendër kryesore në rrjetin tuaj. Ndërprerja këtu do të ndikonte në 4 rrjedha të lidhura të të ardhurave.",
+                    recommendation: "Shënojeni këtë llogari si 'VIP' për të siguruar prioritet mbështetjeje 24/7 dhe për të parandaluar largimin.",
                     confidence: 75
                 });
             }
-        }, 1200); // 1.2s delay to simulate "Thinking"
+        }, 1200); 
     });
 };
 
@@ -76,14 +75,14 @@ const InspectorHeader: React.FC<{ title: string, value: string }> = ({ title, va
     </div>
 );
 
-// NEW: AI Advisor Component
+// ALBANIAN AI ADVISOR PANEL
 const AIAdvisorPanel: React.FC<{ loading: boolean, data: { insight: string, recommendation: string, confidence: number } | null }> = ({ loading, data }) => {
     if (loading) {
         return (
             <div className="mt-6 p-5 bg-indigo-950/30 border border-indigo-500/30 rounded-lg relative overflow-hidden">
                 <div className="flex items-center gap-3 mb-3">
                     <BrainCircuit className="text-indigo-400 animate-pulse" size={20} />
-                    <span className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Nexus AI Analysis</span>
+                    <span className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Duke analizuar...</span>
                 </div>
                 <div className="space-y-2">
                     <div className="h-2 bg-indigo-500/20 rounded w-full animate-pulse"></div>
@@ -102,10 +101,10 @@ const AIAdvisorPanel: React.FC<{ loading: boolean, data: { insight: string, reco
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <Sparkles className="text-purple-400" size={16} />
-                    <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">AI Strategic Advisor</span>
+                    <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">Këshilltar Strategjik AI</span>
                 </div>
                 <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                    {data.confidence}% Confidence
+                    {data.confidence}% Besueshmëria
                 </span>
             </div>
 
@@ -115,7 +114,7 @@ const AIAdvisorPanel: React.FC<{ loading: boolean, data: { insight: string, reco
                 {/* Observation */}
                 <div className="mb-4">
                     <h5 className="text-[10px] text-slate-400 font-bold uppercase mb-1 flex items-center gap-1">
-                        <Eye size={10} /> Observation
+                        <Eye size={10} /> Vëzhgim
                     </h5>
                     <p className="text-sm text-slate-200 leading-relaxed">
                         {data.insight}
@@ -125,7 +124,7 @@ const AIAdvisorPanel: React.FC<{ loading: boolean, data: { insight: string, reco
                 {/* Recommendation */}
                 <div>
                     <h5 className="text-[10px] text-emerald-400 font-bold uppercase mb-1 flex items-center gap-1">
-                        <Lightbulb size={10} /> Recommended Action
+                        <Lightbulb size={10} /> Veprim i Rekomanduar
                     </h5>
                     <p className="text-sm text-white font-medium leading-relaxed">
                         {data.recommendation}
@@ -139,10 +138,10 @@ const AIAdvisorPanel: React.FC<{ loading: boolean, data: { insight: string, reco
 const EmptyState: React.FC<{ mode: IntelligenceMode }> = ({ mode }) => {
     const { t } = useTranslation();
     const content: Record<IntelligenceMode, { icon: JSX.Element; title: string; text: string }> = {
-        RISK: { icon: <CheckCircle className="w-16 h-16 text-emerald-500 mb-6 opacity-60" />, title: t('graph.empty.riskTitle', 'Risk Assessment Clear'), text: t('graph.empty.riskText', 'No overdue invoices or high-risk clients detected.') },
-        COST: { icon: <BarChart2 className="w-16 h-16 text-slate-600 mb-6 opacity-50" />, title: t('graph.empty.costTitle', 'No Expense Data'), text: t('graph.empty.costText', 'Add expenses to visualize cost centers and cash flow.') },
-        OPPORTUNITY: { icon: <Sparkles className="w-16 h-16 text-purple-500 mb-6 opacity-60" />, title: t('graph.empty.oppTitle', 'Building Intelligence'), text: t('graph.empty.oppText', 'The AI needs more transaction history to identify sales opportunities.') },
-        GLOBAL: { icon: <Globe className="w-16 h-16 text-slate-600 mb-6 opacity-50" />, title: t('graph.empty.globalTitle', 'Initialize Nexus'), text: t('graph.empty.globalText', 'Create your first Client or Invoice to generate the intelligence map.') }
+        RISK: { icon: <CheckCircle className="w-16 h-16 text-emerald-500 mb-6 opacity-60" />, title: t('graph.empty.riskTitle', 'Skanimi i Rrezikut: Pastër'), text: t('graph.empty.riskText', 'Nuk u zbuluan fatura të vonuara ose klientë me rrezik të lartë.') },
+        COST: { icon: <BarChart2 className="w-16 h-16 text-slate-600 mb-6 opacity-50" />, title: t('graph.empty.costTitle', 'Pa të Dhëna Shpenzimesh'), text: t('graph.empty.costText', 'Shtoni shpenzime për të vizualizuar qendrat e kostos dhe rrjedhën e parasë.') },
+        OPPORTUNITY: { icon: <Sparkles className="w-16 h-16 text-purple-500 mb-6 opacity-60" />, title: t('graph.empty.oppTitle', 'Duke Ndërtuar Inteligjencë'), text: t('graph.empty.oppText', 'AI ka nevojë për më shumë histori transaksionesh për të identifikuar mundësi shitjeje.') },
+        GLOBAL: { icon: <Globe className="w-16 h-16 text-slate-600 mb-6 opacity-50" />, title: t('graph.empty.globalTitle', 'Inicializimi i Nexus'), text: t('graph.empty.globalText', 'Krijoni klientin ose faturën tuaj të parë për të gjeneruar hartën e inteligjencës.') }
     };
     const { icon, title, text } = content[mode] || content.GLOBAL;
     return ( 
@@ -297,10 +296,10 @@ const GraphVisualization: React.FC = () => {
       switch (actionType) {
           case 'DRAFT_EMAIL': navigate(`/communications/compose?recipient=${node.id}`); break;
           case 'OPEN_CASE': navigate(`/cases/${node.id}`); break;
-          case 'VIEW_DETAILS': alert(`Viewing details for ${node.label}`); break;
-          case 'EDIT': alert(`Editing ${node.label}`); break;
-          case 'HISTORY': alert(`History for ${node.label}`); break;
-          case 'SEND_REMINDER': alert(`Reminder queued for ${node.label}`); break;
+          case 'VIEW_DETAILS': alert(t('messages.viewing', `Duke shikuar detajet për ${node.label}`)); break;
+          case 'EDIT': alert(t('messages.editing', `Duke redaktuar ${node.label}`)); break;
+          case 'HISTORY': alert(t('messages.history', `Historia për ${node.label}`)); break;
+          case 'SEND_REMINDER': alert(t('messages.remind', `Rikujtesë në pritje për ${node.label}`)); break;
           default: break;
       }
   };
@@ -345,10 +344,10 @@ const GraphVisualization: React.FC = () => {
 
       {/* Mode Switcher */}
       <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/95 backdrop-blur border border-slate-700 rounded-full p-2 flex gap-3 shadow-2xl z-10">
-          <ModeButton active={activeMode === 'GLOBAL'} onClick={() => setActiveMode('GLOBAL')} icon={<Globe size={16} />} label={t('graph.modeGlobal', 'Map')} color="bg-blue-600" />
-          <ModeButton active={activeMode === 'RISK'} onClick={() => setActiveMode('RISK')} icon={<ShieldAlert size={16} />} label={t('graph.modeRisk', 'Risk')} color="bg-red-600" />
-          <ModeButton active={activeMode === 'COST'} onClick={() => setActiveMode('COST')} icon={<TrendingDown size={16} />} label={t('graph.modeCost', 'Cost')} color="bg-orange-600" />
-          <ModeButton active={activeMode === 'OPPORTUNITY'} onClick={() => setActiveMode('OPPORTUNITY')} icon={<Sparkles size={16} />} label={t('graph.modeOpportunity', 'Oppty')} color="bg-purple-600" />
+          <ModeButton active={activeMode === 'GLOBAL'} onClick={() => setActiveMode('GLOBAL')} icon={<Globe size={16} />} label={t('graph.modeGlobal', 'Pamja Globale')} color="bg-blue-600" />
+          <ModeButton active={activeMode === 'RISK'} onClick={() => setActiveMode('RISK')} icon={<ShieldAlert size={16} />} label={t('graph.modeRisk', 'Skanim i Rrezikut')} color="bg-red-600" />
+          <ModeButton active={activeMode === 'COST'} onClick={() => setActiveMode('COST')} icon={<TrendingDown size={16} />} label={t('graph.modeCost', 'Gjurmim i Kostos')} color="bg-orange-600" />
+          <ModeButton active={activeMode === 'OPPORTUNITY'} onClick={() => setActiveMode('OPPORTUNITY')} icon={<Sparkles size={16} />} label={t('graph.modeOpportunity', 'Mundësitë')} color="bg-purple-600" />
       </div>
 
       {/* Enterprise Inspector Panel */}
@@ -362,7 +361,7 @@ const GraphVisualization: React.FC = () => {
                             {selectedNode.group}
                         </span>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${selectedNode.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'}`}>
-                            {selectedNode.status || 'Active'}
+                            {selectedNode.status || 'Aktiv'}
                         </span>
                     </div>
                     <h2 className="text-2xl font-bold text-white leading-tight break-words">
@@ -377,13 +376,13 @@ const GraphVisualization: React.FC = () => {
             {/* Key Metrics */}
             <div className="grid grid-cols-2 gap-3 mb-6">
                 {selectedNode.group === 'Client' && (
-                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.ltv', 'Lifetime Value')} value={selectedNode.subLabel || '€0.00'} /></div>
+                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.ltv', 'Vlera Totale')} value={selectedNode.subLabel || '€0.00'} /></div>
                 )}
                 {selectedNode.group === 'Invoice' && (
-                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.amount', 'Invoice Amount')} value={selectedNode.subLabel || '€0.00'} /></div>
+                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.amount', 'Shuma e Faturës')} value={selectedNode.subLabel || '€0.00'} /></div>
                 )}
                 {selectedNode.group === 'Expense' && (
-                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.cost', 'Cost Impact')} value={selectedNode.subLabel || '€0.00'} /></div>
+                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.cost', 'Ndikimi në Kosto')} value={selectedNode.subLabel || '€0.00'} /></div>
                 )}
             </div>
 
@@ -393,7 +392,7 @@ const GraphVisualization: React.FC = () => {
             {/* Action Command Center */}
             <div className="mt-auto pt-6 border-t border-slate-800">
                 <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <TrendingUp size={12} /> {t('general.actions', 'COMMAND CENTER')}
+                    <TrendingUp size={12} /> {t('general.actions', 'QENDRA E KOMANDËS')}
                 </h4>
                 <div className="grid grid-cols-1 gap-3">
                     <ActionButton node={selectedNode} activeMode={activeMode} onAction={handleAction} />
@@ -422,18 +421,18 @@ const ActionButton: React.FC<{ node: GraphNode, activeMode: IntelligenceMode, on
 
     if (node.group === 'Client') {
         if (activeMode === 'OPPORTUNITY') {
-             actions.push(<ButtonBase key="email" onClick={() => onAction('DRAFT_EMAIL', node)} icon={<Mail size={16} />} text={t('actions.draftSales', 'Draft Sales Pitch')} color="bg-purple-600 hover:bg-purple-500" />);
+             actions.push(<ButtonBase key="email" onClick={() => onAction('DRAFT_EMAIL', node)} icon={<Mail size={16} />} text={t('actions.draftSales', 'Harto Ofertë Shitjeje')} color="bg-purple-600 hover:bg-purple-500" />);
         }
-        actions.push(<ButtonBase key="case" onClick={() => onAction('OPEN_CASE', node)} icon={<Briefcase size={16} />} text={t('actions.clientProfile', 'Open Client Profile')} color="bg-blue-600 hover:bg-blue-500" />);
+        actions.push(<ButtonBase key="case" onClick={() => onAction('OPEN_CASE', node)} icon={<Briefcase size={16} />} text={t('actions.clientProfile', 'Hap Profilin e Klientit')} color="bg-blue-600 hover:bg-blue-500" />);
     } else if (node.group === 'Invoice') {
-        actions.push(<ButtonBase key="details" onClick={() => onAction('VIEW_DETAILS', node)} icon={<FileText size={16} />} text={t('actions.viewInvoice', 'View Invoice PDF')} color="bg-slate-700 hover:bg-slate-600" />);
+        actions.push(<ButtonBase key="details" onClick={() => onAction('VIEW_DETAILS', node)} icon={<FileText size={16} />} text={t('actions.viewInvoice', 'Shiko PDF të Faturës')} color="bg-slate-700 hover:bg-slate-600" />);
         if (['Unpaid', 'Overdue'].includes(status)) {
-            actions.push(<ButtonBase key="remind" onClick={() => onAction('SEND_REMINDER', node)} icon={<MessageCircle size={16} />} text={t('actions.remind', 'Send Reminder')} color="bg-emerald-600 hover:bg-emerald-500" />);
+            actions.push(<ButtonBase key="remind" onClick={() => onAction('SEND_REMINDER', node)} icon={<MessageCircle size={16} />} text={t('actions.remind', 'Dërgo Rikujtesë')} color="bg-emerald-600 hover:bg-emerald-500" />);
         }
     }
 
     if (actions.length === 0) {
-        actions.push(<ButtonBase key="view" onClick={() => onAction('VIEW_DETAILS', node)} icon={<Eye size={16} />} text={t('actions.view', 'View Details')} color="bg-slate-700 hover:bg-slate-600" />);
+        actions.push(<ButtonBase key="view" onClick={() => onAction('VIEW_DETAILS', node)} icon={<Eye size={16} />} text={t('actions.view', 'Shiko Detajet')} color="bg-slate-700 hover:bg-slate-600" />);
     }
     
     return (
@@ -441,10 +440,10 @@ const ActionButton: React.FC<{ node: GraphNode, activeMode: IntelligenceMode, on
             {actions}
             <div className="grid grid-cols-2 gap-2 mt-2">
                 <button onClick={() => onAction('EDIT', node)} className="flex items-center justify-center gap-2 bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 py-2 rounded text-xs font-medium transition-colors">
-                    <Edit size={14} /> {t('actions.edit', 'Edit')}
+                    <Edit size={14} /> {t('actions.edit', 'Ndrysho')}
                 </button>
                 <button onClick={() => onAction('HISTORY', node)} className="flex items-center justify-center gap-2 bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 py-2 rounded text-xs font-medium transition-colors">
-                    <History size={14} /> {t('actions.history', 'History')}
+                    <History size={14} /> {t('actions.history', 'Historia')}
                 </button>
             </div>
         </div>
