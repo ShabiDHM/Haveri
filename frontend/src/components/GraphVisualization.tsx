@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
     X, ShieldAlert, Globe, TrendingDown, Sparkles,
     Briefcase, MessageCircle, FileText, Edit, History, Eye, Mail, CheckCircle, BarChart2,
-    ArrowRightCircle, Activity, Link as LinkIcon, AlertTriangle, Wallet
+    BrainCircuit, Lightbulb, TrendingUp
 } from 'lucide-react';
 
 // --- Configuration ---
@@ -29,48 +29,108 @@ const THEME = {
 
 type IntelligenceMode = 'GLOBAL' | 'RISK' | 'COST' | 'OPPORTUNITY';
 
+// --- MOCK AI ENGINE (To be replaced by real backend endpoint) ---
+// This simulates the LLM analyzing the specific node context to find "hidden insights"
+const generateDeepInsight = async (node: GraphNode, mode: IntelligenceMode): Promise<{ insight: string, recommendation: string, confidence: number }> => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            if (mode === 'RISK' && node.group === 'Invoice') {
+                resolve({
+                    insight: "This client has opened the invoice 5 times in the last 48 hours but hasn't initiated payment. This pattern has a 85% correlation with short-term cash flow anxiety.",
+                    recommendation: "Do not send a generic reminder. Call and offer a 50/50 split payment plan to secure immediate partial revenue.",
+                    confidence: 92
+                });
+            } else if (mode === 'OPPORTUNITY' && node.group === 'Client') {
+                resolve({
+                    insight: "Purchase history shows a gap in their usual 'Seasonal Stock-up' cycle. Competitor 'Barcaffe' recently launched a promo in their region.",
+                    recommendation: "They are likely evaluating competitors. Pre-emptively draft a 'Loyalty Appreciation' email with a 5% discount on their usual bulk order.",
+                    confidence: 88
+                });
+            } else if (mode === 'COST' && node.group === 'Expense') {
+                resolve({
+                    insight: "This expense category 'Logistics' has grown 12% month-over-month, outpacing revenue growth. This is a silent margin killer.",
+                    recommendation: "Review the 'DHL' contract terms or consolidate shipments to reducing frequency.",
+                    confidence: 95
+                });
+            } else {
+                // Default / Global
+                resolve({
+                    insight: "Node connectivity suggests this entity is a central hub in your network. Disruption here would impact 4 connected revenue streams.",
+                    recommendation: "Flag this account as 'VIP' to ensure 24/7 support priority and preventing churn.",
+                    confidence: 75
+                });
+            }
+        }, 1200); // 1.2s delay to simulate "Thinking"
+    });
+};
+
 // --- UI Sub-Components ---
 const InspectorHeader: React.FC<{ title: string, value: string }> = ({ title, value }) => (
-    <div className="p-5 bg-slate-900/80 rounded-lg border border-slate-800 backdrop-blur-sm shadow-inner">
-        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold block mb-2">
+    <div className="p-4 bg-slate-900/80 rounded-lg border border-slate-800 backdrop-blur-sm shadow-inner">
+        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold block mb-1">
             {title}
         </span>
-        <span className="text-3xl font-bold font-mono text-white tracking-tight">
+        <span className="text-2xl font-bold font-mono text-white tracking-tight">
             {value}
         </span>
     </div>
 );
 
-// Displays specific items with context-aware icons
-const InsightList: React.FC<{ title: string, items: string[], mode: IntelligenceMode }> = ({ title, items, mode }) => {
-    let Icon = Activity;
-    let iconColor = "text-slate-400";
-
-    switch(mode) {
-        case 'RISK': Icon = AlertTriangle; iconColor = "text-red-400"; break;
-        case 'COST': Icon = Wallet; iconColor = "text-orange-400"; break;
-        case 'OPPORTUNITY': Icon = Sparkles; iconColor = "text-purple-400"; break;
-        default: Icon = LinkIcon; iconColor = "text-blue-400"; break;
+// NEW: AI Advisor Component
+const AIAdvisorPanel: React.FC<{ loading: boolean, data: { insight: string, recommendation: string, confidence: number } | null }> = ({ loading, data }) => {
+    if (loading) {
+        return (
+            <div className="mt-6 p-5 bg-indigo-950/30 border border-indigo-500/30 rounded-lg relative overflow-hidden">
+                <div className="flex items-center gap-3 mb-3">
+                    <BrainCircuit className="text-indigo-400 animate-pulse" size={20} />
+                    <span className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Nexus AI Analysis</span>
+                </div>
+                <div className="space-y-2">
+                    <div className="h-2 bg-indigo-500/20 rounded w-full animate-pulse"></div>
+                    <div className="h-2 bg-indigo-500/20 rounded w-3/4 animate-pulse"></div>
+                    <div className="h-2 bg-indigo-500/20 rounded w-5/6 animate-pulse"></div>
+                </div>
+            </div>
+        );
     }
 
+    if (!data) return null;
+
     return (
-        <div className="mt-4">
-            <h4 className={`text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2`}>
-                <Icon size={12} className={iconColor} /> {title}
-            </h4>
-            <div className="space-y-2">
-                {items.length > 0 ? (
-                    items.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 bg-slate-900/50 border border-slate-800 rounded-md hover:bg-slate-800 transition-colors cursor-default group">
-                            <span className="text-sm text-slate-300 font-medium truncate pr-2">{item}</span>
-                            <ArrowRightCircle size={14} className="text-slate-600 group-hover:text-white transition-colors" />
-                        </div>
-                    ))
-                ) : (
-                    <div className="p-3 border border-dashed border-slate-800 rounded text-xs text-slate-600 italic text-center">
-                        No signals detected in this sector.
-                    </div>
-                )}
+        <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                    <Sparkles className="text-purple-400" size={16} />
+                    <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">AI Strategic Advisor</span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                    {data.confidence}% Confidence
+                </span>
+            </div>
+
+            {/* Content Card */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-900 border border-purple-500/30 rounded-lg p-4 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
+                
+                {/* Observation */}
+                <div className="mb-4">
+                    <h5 className="text-[10px] text-slate-400 font-bold uppercase mb-1 flex items-center gap-1">
+                        <Eye size={10} /> Observation
+                    </h5>
+                    <p className="text-sm text-slate-200 leading-relaxed">
+                        {data.insight}
+                    </p>
+                </div>
+
+                {/* Recommendation */}
+                <div>
+                    <h5 className="text-[10px] text-emerald-400 font-bold uppercase mb-1 flex items-center gap-1">
+                        <Lightbulb size={10} /> Recommended Action
+                    </h5>
+                    <p className="text-sm text-white font-medium leading-relaxed">
+                        {data.recommendation}
+                    </p>
+                </div>
             </div>
         </div>
     );
@@ -78,56 +138,21 @@ const InsightList: React.FC<{ title: string, items: string[], mode: Intelligence
 
 const EmptyState: React.FC<{ mode: IntelligenceMode }> = ({ mode }) => {
     const { t } = useTranslation();
-    
     const content: Record<IntelligenceMode, { icon: JSX.Element; title: string; text: string }> = {
         RISK: { icon: <CheckCircle className="w-16 h-16 text-emerald-500 mb-6 opacity-60" />, title: t('graph.empty.riskTitle', 'Risk Assessment Clear'), text: t('graph.empty.riskText', 'No overdue invoices or high-risk clients detected.') },
         COST: { icon: <BarChart2 className="w-16 h-16 text-slate-600 mb-6 opacity-50" />, title: t('graph.empty.costTitle', 'No Expense Data'), text: t('graph.empty.costText', 'Add expenses to visualize cost centers and cash flow.') },
         OPPORTUNITY: { icon: <Sparkles className="w-16 h-16 text-purple-500 mb-6 opacity-60" />, title: t('graph.empty.oppTitle', 'Building Intelligence'), text: t('graph.empty.oppText', 'The AI needs more transaction history to identify sales opportunities.') },
         GLOBAL: { icon: <Globe className="w-16 h-16 text-slate-600 mb-6 opacity-50" />, title: t('graph.empty.globalTitle', 'Initialize Nexus'), text: t('graph.empty.globalText', 'Create your first Client or Invoice to generate the intelligence map.') }
     };
-
     const { icon, title, text } = content[mode] || content.GLOBAL;
-
     return ( 
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-20 pointer-events-none select-none">
             {icon}
             <h3 className="text-xl font-bold text-slate-200 mb-2">{title}</h3>
-            <p className="text-slate-500 text-sm max-w-sm leading-relaxed">
-                {text}
-            </p>
+            <p className="text-slate-500 text-sm max-w-sm leading-relaxed">{text}</p>
         </div> 
     );
 };
-
-// --- HELPER LOGIC (Universal Intelligence) ---
-const getInsightTitle = (mode: IntelligenceMode, group: string): string => {
-    // FIX: Incorporate 'group' to make titles dynamic and solve unused variable warning
-    const prefix = group ? `${group} ` : '';
-    
-    if (mode === 'RISK') return `${prefix}Risk Factors`;
-    if (mode === 'COST') return `${prefix}Cost Drivers`;
-    if (mode === 'OPPORTUNITY') return `${prefix}Opportunities`;
-    return `${prefix}Network Connections`; // GLOBAL
-};
-
-const getSmartSuggestions = (mode: IntelligenceMode, group: string): string[] => {
-    // These generate realistic-looking "AI Insights" if real data is missing, ensuring no dead cards.
-    if (mode === 'RISK') {
-        if (group === 'Client') return ['Credit Score Verification Needed', 'Late Payment Probability: High', 'Contract Renewal Pending'];
-        if (group === 'Invoice') return ['Aging: 45 Days', 'Client viewed Invoice 3 times', 'Auto-reminder scheduled'];
-    }
-    if (mode === 'COST') {
-        if (group === 'Inventory') return ['Supplier Price Increase (+5%)', 'Alternative Supplier Found', 'Stock Turnover: Low'];
-        if (group === 'Client') return ['Service Cost Ratio: High', 'Low Margin Account'];
-    }
-    if (mode === 'OPPORTUNITY') {
-        if (group === 'Client') return ['Recommended: Premium Service Plan', 'New Location Detected', 'Competitor Contract Expiring'];
-    }
-    // GLOBAL / Default
-    if (group === 'Client') return ['Key Stakeholder: Arben S.', 'Region: Prishtina', 'Tax ID: 882910'];
-    return ['No additional signals'];
-};
-
 
 // --- MAIN COMPONENT ---
 const GraphVisualization: React.FC = () => {
@@ -137,7 +162,10 @@ const GraphVisualization: React.FC = () => {
   const [data, setData] = useState<GraphData>({ nodes: [], links: [] });
   const [activeMode, setActiveMode] = useState<IntelligenceMode>('GLOBAL');
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
-  const [relatedNodes, setRelatedNodes] = useState<string[]>([]);
+  
+  // AI State
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiData, setAiData] = useState<{ insight: string, recommendation: string, confidence: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   const fgRef = useRef<ForceGraphMethods>();
@@ -172,43 +200,28 @@ const GraphVisualization: React.FC = () => {
         graph.d3Force('center')?.strength(0.1);
         graph.d3Force('charge')?.strength(-1500);
         graph.d3Force('link')?.distance(250);
-
         if (data.nodes.length > 0) {
-            setTimeout(() => { 
-                graph.zoomToFit(600, 100); 
-            }, 600);
+            setTimeout(() => { graph.zoomToFit(600, 100); }, 600);
         }
     }
   }, [data]);
 
-  // 3. Smart Relation Finder
-  const findRelations = useCallback((node: GraphNode) => {
-    if (!data.nodes || !data.links) return [];
-    
-    // Find actual graph links
-    const connectedLinks = data.links.filter((link: any) => {
-        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
-        const targetId = typeof link.target === 'object' ? link.target.id : link.target;
-        return sourceId === node.id || targetId === node.id;
-    });
-
-    const relations = connectedLinks.map((link: any) => {
-        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
-        const targetId = typeof link.target === 'object' ? link.target.id : link.target;
-        const otherId = sourceId === node.id ? targetId : sourceId;
-        const otherNode = data.nodes.find(n => n.id === otherId);
-        return otherNode ? otherNode.label : null;
-    }).filter(Boolean) as string[];
-
-    return relations;
-  }, [data]);
+  // 3. AI Analysis Trigger
+  const runAIAnalysis = useCallback(async (node: GraphNode) => {
+      setAiLoading(true);
+      setAiData(null);
+      // Simulate backend call
+      const analysis = await generateDeepInsight(node, activeMode);
+      setAiLoading(false);
+      setAiData(analysis);
+  }, [activeMode]);
 
   const handleNodeClick = useCallback((node: any) => {
     setSelectedNode(node as GraphNode);
-    setRelatedNodes(findRelations(node as GraphNode));
+    runAIAnalysis(node as GraphNode); // Trigger AI
     fgRef.current?.centerAt(node.x, node.y, 800);
     fgRef.current?.zoom(1.2, 800);
-  }, [findRelations]);
+  }, [runAIAnalysis]);
 
   // 4. Canvas Rendering
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
@@ -224,7 +237,6 @@ const GraphVisualization: React.FC = () => {
     const isOpportunity = status === 'Pending' && group === 'Client';
     const isSelected = node.id === selectedNode?.id;
 
-    // Shadows
     if (isSelected) {
         ctx.shadowBlur = 30; ctx.shadowColor = 'rgba(59, 130, 246, 0.5)';
     } else if (isRisk) {
@@ -235,7 +247,6 @@ const GraphVisualization: React.FC = () => {
         ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
     }
 
-    // Card
     ctx.fillStyle = style.bg;
     ctx.strokeStyle = isSelected ? '#ffffff' : (isRisk ? '#ef4444' : style.border);
     ctx.lineWidth = isSelected ? 3 : 1;
@@ -243,13 +254,11 @@ const GraphVisualization: React.FC = () => {
     ctx.roundRect(x - CARD_WIDTH / 2, y - CARD_HEIGHT / 2, CARD_WIDTH, CARD_HEIGHT, BORDER_RADIUS);
     ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0; 
 
-    // Header
     ctx.fillStyle = style.header;
     ctx.beginPath();
     ctx.roundRect(x - CARD_WIDTH / 2, y - CARD_HEIGHT / 2, CARD_WIDTH, 24, [BORDER_RADIUS, BORDER_RADIUS, 0, 0]);
     ctx.fill();
 
-    // Text & Icons
     ctx.font = `700 10px "Inter", sans-serif`;
     ctx.fillStyle = '#cbd5e1';
     ctx.textAlign = 'left';
@@ -319,20 +328,16 @@ const GraphVisualization: React.FC = () => {
             width={width}
             height={height}
             backgroundColor="rgba(0,0,0,0)" 
-            
             nodeCanvasObject={nodeCanvasObject}
             nodePointerAreaPaint={nodePointerAreaPaint}
-            
             linkLineDash={(link: any) => link.type === 'opportunity' ? [5, 5] : []}
             linkColor={(link: any) => link.type === 'opportunity' ? '#6366f1' : '#475569'} 
             linkWidth={1.5} 
             linkDirectionalParticles={1} 
             linkDirectionalParticleSpeed={0.002} 
             linkDirectionalParticleWidth={3}
-
             onNodeClick={handleNodeClick}
             onBackgroundClick={() => setSelectedNode(null)}
-            
             minZoom={0.4}
             maxZoom={3.0}
         />
@@ -370,28 +375,26 @@ const GraphVisualization: React.FC = () => {
             </div>
             
             {/* Key Metrics */}
-            <div className="space-y-4 mb-6">
+            <div className="grid grid-cols-2 gap-3 mb-6">
                 {selectedNode.group === 'Client' && (
-                    <InspectorHeader title={t('graph.inspector.ltv', 'Lifetime Value')} value={selectedNode.subLabel || '€0.00'} />
+                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.ltv', 'Lifetime Value')} value={selectedNode.subLabel || '€0.00'} /></div>
                 )}
                 {selectedNode.group === 'Invoice' && (
-                    <InspectorHeader title={t('graph.inspector.amount', 'Invoice Amount')} value={selectedNode.subLabel || '€0.00'} />
+                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.amount', 'Invoice Amount')} value={selectedNode.subLabel || '€0.00'} /></div>
                 )}
                 {selectedNode.group === 'Expense' && (
-                    <InspectorHeader title={t('graph.inspector.cost', 'Cost Impact')} value={selectedNode.subLabel || '€0.00'} />
+                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.cost', 'Cost Impact')} value={selectedNode.subLabel || '€0.00'} /></div>
                 )}
             </div>
 
-            {/* UNIVERSAL INSIGHT LIST (Active in ALL tabs) */}
-            <InsightList 
-                title={getInsightTitle(activeMode, selectedNode.group)} 
-                mode={activeMode}
-                items={relatedNodes.length > 0 ? relatedNodes : getSmartSuggestions(activeMode, selectedNode.group)} 
-            />
-            
+            {/* AI ADVISOR PANEL (The "Brain") */}
+            <AIAdvisorPanel loading={aiLoading} data={aiData} />
+
             {/* Action Command Center */}
             <div className="mt-auto pt-6 border-t border-slate-800">
-                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4">{t('general.actions', 'COMMAND CENTER')}</h4>
+                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <TrendingUp size={12} /> {t('general.actions', 'COMMAND CENTER')}
+                </h4>
                 <div className="grid grid-cols-1 gap-3">
                     <ActionButton node={selectedNode} activeMode={activeMode} onAction={handleAction} />
                 </div>
@@ -415,11 +418,8 @@ const ModeButton: React.FC<{ active: boolean; onClick: () => void; icon: JSX.Ele
 const ActionButton: React.FC<{ node: GraphNode, activeMode: IntelligenceMode, onAction: (type: string, node: GraphNode) => void }> = ({ node, activeMode, onAction }) => {
     const { t } = useTranslation();
     const status = node.status || '';
-
-    // Prioritized Actions
     const actions = [];
 
-    // Context-Aware Actions
     if (node.group === 'Client') {
         if (activeMode === 'OPPORTUNITY') {
              actions.push(<ButtonBase key="email" onClick={() => onAction('DRAFT_EMAIL', node)} icon={<Mail size={16} />} text={t('actions.draftSales', 'Draft Sales Pitch')} color="bg-purple-600 hover:bg-purple-500" />);
@@ -432,7 +432,6 @@ const ActionButton: React.FC<{ node: GraphNode, activeMode: IntelligenceMode, on
         }
     }
 
-    // Fallback / Universal Actions
     if (actions.length === 0) {
         actions.push(<ButtonBase key="view" onClick={() => onAction('VIEW_DETAILS', node)} icon={<Eye size={16} />} text={t('actions.view', 'View Details')} color="bg-slate-700 hover:bg-slate-600" />);
     }
