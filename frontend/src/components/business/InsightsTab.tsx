@@ -1,4 +1,9 @@
 // FILE: frontend/src/components/business/InsightsTab.tsx
+// PHOENIX PROTOCOL - INSIGHTS UI V1.1 (ADMIN ACCESS CONTROL)
+// 1. IMPORT: Added 'useAuth' hook to access the current user's session data.
+// 2. ACCESS CONTROL: The "Nexus Topology" card is now conditionally rendered ONLY if the user's role is 'ADMIN'.
+// 3. RESPONSIVE UI: The grid layout dynamically adjusts from 2 columns to 1 for non-admin users to prevent empty space.
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -7,9 +12,11 @@ import {
     FileSpreadsheet, 
     ArrowLeft, 
     Cpu, 
-    Network 
+    Network,
+    Lock
 } from 'lucide-react';
 import { useBusinessIntelligence } from '../../hooks/useBusinessIntelligence';
+import { useAuth } from '../../context/AuthContext'; // PHOENIX: Imported auth hook
 
 // Modules
 import { DebtModule } from './insights/DebtModule';
@@ -22,10 +29,13 @@ import GraphVisualization from '../GraphVisualization';
 
 export const InsightsTab: React.FC = () => {
     const { t } = useTranslation();
+    const { user } = useAuth(); // PHOENIX: Get user data from context
     const { loading, debtAnalytics, profitAnalytics, taxAnalytics } = useBusinessIntelligence();
     
-    // State for view switching - Mutually exclusive modes
     const [viewMode, setViewMode] = useState<'dashboard' | 'analyst' | 'graph'>('dashboard');
+
+    // PHOENIX: Check for admin role
+    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
     if (loading) {
         return (
@@ -39,7 +49,6 @@ export const InsightsTab: React.FC = () => {
         );
     }
 
-    // Shared Header Component for Sub-views (Analyst & Graph)
     const ViewHeader = ({ title, icon: Icon }: { title: string, icon: any }) => (
         <div className="flex items-center justify-between mb-4 bg-slate-900/50 backdrop-blur border border-white/5 p-3 rounded-xl">
             <div className="flex items-center gap-3">
@@ -55,9 +64,12 @@ export const InsightsTab: React.FC = () => {
                     <span>{title}</span>
                 </div>
             </div>
-            <div className="text-xs font-mono text-slate-500 uppercase tracking-widest hidden sm:block">
-                {t('insights.systemActive')}
-            </div>
+            {isAdmin && (
+                 <div className="text-xs font-mono text-amber-400 uppercase tracking-widest hidden sm:flex items-center gap-2">
+                    <Lock size={12} />
+                    {t('insights.adminView', 'Admin View')}
+                </div>
+            )}
         </div>
     );
 
@@ -82,7 +94,7 @@ export const InsightsTab: React.FC = () => {
                 )}
 
                 {/* --- MODE: GRAPH (NEXUS) --- */}
-                {viewMode === 'graph' && (
+                {viewMode === 'graph' && isAdmin && ( // PHOENIX: Also protected here
                     <motion.div 
                         key="graph" 
                         initial={{ opacity: 0, scale: 0.98 }} 
@@ -107,7 +119,7 @@ export const InsightsTab: React.FC = () => {
                         className="space-y-8"
                     >
                         {/* Section 1: Advanced Tools Selection */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
                             
                             {/* Card 1: Analyst Button */}
                             <motion.button 
@@ -139,35 +151,37 @@ export const InsightsTab: React.FC = () => {
                                 </div>
                             </motion.button>
                             
-                            {/* Card 2: Graph (Nexus) Button */}
-                            <motion.button 
-                                whileHover={{ scale: 1.02, boxShadow: '0 0 30px rgba(16, 185, 129, 0.15)' }} 
-                                whileTap={{ scale: 0.98 }} 
-                                onClick={() => setViewMode('graph')} 
-                                className="relative overflow-hidden group rounded-2xl p-px bg-gradient-to-b from-emerald-500/20 to-slate-800/20 text-left h-full"
-                            >
-                                <div className="absolute inset-0 bg-slate-900/95 rounded-2xl z-0" />
-                                <div className="absolute inset-0 bg-grid-slate-800/[0.2] z-0" style={{ backgroundImage: 'radial-gradient(#10b981 1px, transparent 1px)', backgroundSize: '20px 20px', opacity: 0.1 }} />
+                            {/* PHOENIX: Card 2 is now conditionally rendered */}
+                            {isAdmin && (
+                                <motion.button 
+                                    whileHover={{ scale: 1.02, boxShadow: '0 0 30px rgba(16, 185, 129, 0.15)' }} 
+                                    whileTap={{ scale: 0.98 }} 
+                                    onClick={() => setViewMode('graph')} 
+                                    className="relative overflow-hidden group rounded-2xl p-px bg-gradient-to-b from-emerald-500/20 to-slate-800/20 text-left h-full"
+                                >
+                                    <div className="absolute inset-0 bg-slate-900/95 rounded-2xl z-0" />
+                                    <div className="absolute inset-0 bg-grid-slate-800/[0.2] z-0" style={{ backgroundImage: 'radial-gradient(#10b981 1px, transparent 1px)', backgroundSize: '20px 20px', opacity: 0.1 }} />
 
-                                <div className="relative z-10 p-6 flex flex-col h-full justify-between">
-                                    <div className="space-y-3">
-                                        <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20 group-hover:border-emerald-500/50 transition-colors">
-                                            <Network className="text-emerald-400" size={24} />
+                                    <div className="relative z-10 p-6 flex flex-col h-full justify-between">
+                                        <div className="space-y-3">
+                                            <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20 group-hover:border-emerald-500/50 transition-colors">
+                                                <Network className="text-emerald-400" size={24} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
+                                                    {t('graph.title', 'Nexus Topology')}
+                                                </h3>
+                                                <p className="text-slate-400 text-sm mt-1 leading-relaxed">
+                                                    {t('graph.desc', 'Visualize hidden connections between clients and capital flow.')}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
-                                                {t('graph.title', 'Nexus Topology')}
-                                            </h3>
-                                            <p className="text-slate-400 text-sm mt-1 leading-relaxed">
-                                                {t('graph.desc', 'Visualize hidden connections between clients and capital flow.')}
-                                            </p>
+                                        <div className="mt-6 flex items-center text-xs font-mono text-emerald-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {t('graph.launch')} <span className="ml-2">→</span>
                                         </div>
                                     </div>
-                                    <div className="mt-6 flex items-center text-xs font-mono text-emerald-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-                                        {t('graph.launch')} <span className="ml-2">→</span>
-                                    </div>
-                                </div>
-                            </motion.button>
+                                </motion.button>
+                            )}
                         </div>
                         
                         {/* Section 2: Real-time Metrics (Modules) */}

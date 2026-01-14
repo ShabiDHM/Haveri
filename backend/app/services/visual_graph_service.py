@@ -1,8 +1,8 @@
 # FILE: backend/app/services/visual_graph_service.py
-# PHOENIX PROTOCOL - VISUALIZATION GRAPH SERVICE V1.0
-# 1. NEW FILE: Created to handle on-demand graph generation for the UI from MongoDB.
-# 2. ISOLATION: Separates visualization logic from the persistent Neo4j graph service.
-# 3. FEATURE: Contains distinct topology builders for 'global', 'risk', 'cost', and 'opportunity' views.
+# PHOENIX PROTOCOL - VISUALIZATION GRAPH SERVICE V1.1
+# 1. FIX: Enhanced 'cost' and 'opportunity' topologies to handle zero-data scenarios.
+# 2. UX: Instead of returning an empty graph, the service now returns a single, informative placeholder node.
+# 3. GUIDANCE: The placeholder nodes guide the user on what data to create to populate the view.
 
 from pymongo.database import Database
 from typing import Dict, List, Any
@@ -125,6 +125,13 @@ class MongoVisualGraphService:
     def build_cost_topology(self, user_id: str) -> Dict[str, List[Dict[str, Any]]]:
         data = self._get_base_data(user_id)
         expenses = data["expenses"]
+
+        if not expenses:
+            return {
+                "nodes": [{"id": "no_cost_data", "label": "No Expenses Logged", "group": "System", "subLabel": "Add expenses to track costs here", "status": "Pending"}],
+                "links": []
+            }
+
         nodes: List[Dict[str, Any]] = []
         links: List[Dict[str, Any]] = []
         node_ids = set()
@@ -160,7 +167,12 @@ class MongoVisualGraphService:
                 if product_name:
                     product_sales[product_name].add(client)
 
-        if not product_sales or not all_clients: return {"nodes": [], "links": []}
+        if not product_sales or len(all_clients) < 2:
+            return {
+                "nodes": [{"id": "no_opportunity_data", "label": "Not Enough Sales Data", "group": "System", "subLabel": "Log sales with item descriptions to find opportunities", "status": "Pending"}],
+                "links": []
+            }
+
         top_products = sorted(product_sales.items(), key=lambda item: len(item[1]), reverse=True)[:3]
         nodes, links, node_ids = [], [], set()
 
