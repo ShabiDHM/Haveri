@@ -7,107 +7,59 @@ import { useResizeDetector } from 'react-resize-detector';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { 
-    X, Phone, ShieldAlert, Globe, TrendingDown, Sparkles,
-    Briefcase, ShoppingCart, MessageCircle, CheckCircle, BarChart2, Mail
+    X, ShieldAlert, Globe, TrendingDown, Sparkles,
+    Briefcase, MessageCircle, FileText, Edit, History, Eye, Mail, CheckCircle, BarChart2
 } from 'lucide-react';
 
 // --- Configuration ---
-const CARD_WIDTH = 180;
-const CARD_HEIGHT = 65;
-const BORDER_RADIUS = 6;
+const CARD_WIDTH = 200; 
+const CARD_HEIGHT = 70;
+const BORDER_RADIUS = 8;
 
-// --- THEME: High-Contrast Corporate ---
+// --- THEME: Enterprise Dashboard ---
 const THEME = {
   node: {
-    client:    { bg: '#0b1120', border: '#3b82f6', text: '#bfdbfe' }, 
-    invoice:   { bg: '#022c22', border: '#10b981', text: '#a7f3d0' }, 
-    expense:   { bg: '#450a0a', border: '#ef4444', text: '#fecaca' }, 
-    case:      { bg: '#18181b', border: '#71717a', text: '#e4e4e7' }, 
-    inventory: { bg: '#431407', border: '#f97316', text: '#fed7aa' }, 
-    product:   { bg: '#3b0764', border: '#a855f7', text: '#e9d5ff' }, 
-    default:   { bg: '#0f172a', border: '#475569', text: '#e2e8f0' }, 
+    client:    { bg: '#0f172a', header: '#1e3a8a', border: '#3b82f6', text: '#ffffff' }, 
+    invoice:   { bg: '#0f172a', header: '#065f46', border: '#10b981', text: '#ffffff' }, 
+    expense:   { bg: '#0f172a', header: '#7f1d1d', border: '#ef4444', text: '#ffffff' }, 
+    default:   { bg: '#0f172a', header: '#334155', border: '#64748b', text: '#ffffff' }, 
   }
 };
 
 type IntelligenceMode = 'GLOBAL' | 'RISK' | 'COST' | 'OPPORTUNITY';
 
 // --- UI Sub-Components ---
-const InspectorClientDetails: React.FC<{ node: GraphNode }> = ({ node }) => {
-    const { t } = useTranslation();
-    return (
-        <div className="p-4 bg-slate-900 rounded border border-slate-800">
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 block mb-1">
-                {t('graph.inspector.lifetimeValue', 'LIFETIME VALUE')}
-            </span>
-            <span className="text-2xl font-bold font-mono text-white tracking-tight">
-                {node.subLabel}
-            </span>
-        </div>
-    );
-};
-
-const InspectorInvoiceDetails: React.FC<{ node: GraphNode }> = ({ node }) => {
-    const { t } = useTranslation();
-    return (
-        <div className="p-4 bg-slate-900 rounded border border-slate-800">
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 block mb-1">
-                {t('graph.inspector.amount', 'TOTAL AMOUNT')}
-            </span>
-            <span className="text-2xl font-bold font-mono text-white tracking-tight">
-                {node.subLabel}
-            </span>
-        </div>
-    );
-};
-
-const InspectorInventoryDetails: React.FC = () => {
-    const { t } = useTranslation();
-    return (
-        <div className="p-4 bg-slate-900 rounded border border-slate-800">
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 block mb-1">
-                {t('graph.inspector.allocations', 'ALLOCATIONS')}
-            </span>
-            <span className="text-white font-medium text-sm">
-                Espresso Macchiato, Cappuccino
-            </span>
-        </div>
-    );
-};
-
-const DefaultInspectorDetails: React.FC<{ node: GraphNode }> = ({ node }) => {
-    const { t } = useTranslation();
-    const status = node.status || 'Active';
-    const isRisk = ['Unpaid', 'Overdue'].includes(status);
-    
-    return (
-        <div className="p-4 bg-slate-900 rounded border border-slate-800">
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 block mb-1">
-                {t('graph.inspector.status', 'CURRENT STATUS')}
-            </span>
-            <div className="flex items-center gap-3 mt-1">
-                <span className={`w-2.5 h-2.5 rounded-full ${isRisk ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-emerald-500'}`}></span>
-                <span className="text-white font-bold text-sm tracking-wide">
-                    {status.toUpperCase()}
-                </span>
-            </div>
-        </div>
-    );
-};
+const InspectorHeader: React.FC<{ title: string, value: string }> = ({ title, value }) => (
+    <div className="p-5 bg-slate-900/80 rounded-lg border border-slate-800 backdrop-blur-sm">
+        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold block mb-2">
+            {title}
+        </span>
+        <span className="text-3xl font-bold font-mono text-white tracking-tight">
+            {value}
+        </span>
+    </div>
+);
 
 const EmptyState: React.FC<{ mode: IntelligenceMode }> = ({ mode }) => {
     const { t } = useTranslation();
+    
+    // Restored Context-Aware Help Text
     const content: Record<IntelligenceMode, { icon: JSX.Element; title: string; text: string }> = {
-        RISK: { icon: <CheckCircle className="w-12 h-12 text-emerald-500 mb-4 opacity-80" />, title: t('graph.empty.riskTitle', 'Safe and Secure'), text: t('graph.empty.riskText', 'No financial risks or overdue items detected.') },
-        COST: { icon: <BarChart2 className="w-12 h-12 text-slate-600 mb-4 opacity-50" />, title: t('graph.empty.costTitle', 'No Cost Data'), text: t('graph.empty.costText', 'Add expenses to start tracking costs.') },
-        OPPORTUNITY: { icon: <Sparkles className="w-12 h-12 text-purple-500 mb-4 opacity-80" />, title: t('graph.empty.oppTitle', 'Analyzing Patterns'), text: t('graph.empty.oppText', 'More data required to generate AI leads.') },
-        GLOBAL: { icon: <Globe className="w-12 h-12 text-slate-600 mb-4 opacity-50" />, title: t('graph.empty.globalTitle', 'Canvas Empty'), text: t('graph.empty.globalText', 'System is ready. Add your first client.') }
+        RISK: { icon: <CheckCircle className="w-16 h-16 text-emerald-500 mb-6 opacity-60" />, title: t('graph.empty.riskTitle', 'Risk Assessment Clear'), text: t('graph.empty.riskText', 'No overdue invoices or high-risk clients detected.') },
+        COST: { icon: <BarChart2 className="w-16 h-16 text-slate-600 mb-6 opacity-50" />, title: t('graph.empty.costTitle', 'No Expense Data'), text: t('graph.empty.costText', 'Add expenses to visualize cost centers and cash flow.') },
+        OPPORTUNITY: { icon: <Sparkles className="w-16 h-16 text-purple-500 mb-6 opacity-60" />, title: t('graph.empty.oppTitle', 'Building Intelligence'), text: t('graph.empty.oppText', 'The AI needs more transaction history to identify sales opportunities.') },
+        GLOBAL: { icon: <Globe className="w-16 h-16 text-slate-600 mb-6 opacity-50" />, title: t('graph.empty.globalTitle', 'Initialize Nexus'), text: t('graph.empty.globalText', 'Create your first Client or Invoice to generate the intelligence map.') }
     };
+
     const { icon, title, text } = content[mode] || content.GLOBAL;
+
     return ( 
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-20 pointer-events-none select-none">
             {icon}
-            <h3 className="text-lg font-bold text-slate-200 mb-2">{title}</h3>
-            <p className="text-slate-500 text-sm max-w-xs leading-relaxed">{text}</p>
+            <h3 className="text-xl font-bold text-slate-200 mb-2">{title}</h3>
+            <p className="text-slate-500 text-sm max-w-sm leading-relaxed">
+                {text}
+            </p>
         </div> 
     );
 };
@@ -147,24 +99,17 @@ const GraphVisualization: React.FC = () => {
     return () => { isMounted = false; };
   }, [activeMode]);
 
-  // 2. Physics & Engine Settings (Native Tuning)
+  // 2. Physics & Engine Settings
   useEffect(() => {
     const graph = fgRef.current;
     if (graph) {
-        // High gravity to keep it centered
-        graph.d3Force('center')?.strength(0.5);
-        
-        // Repulsion tuned to separate cards (180px width) without sending them to space
-        // -800 provides enough buffer for the cards to sit next to each other
-        graph.d3Force('charge')?.strength(-800);
-        
-        // Short links to force clustering
-        graph.d3Force('link')?.distance(80);
+        graph.d3Force('center')?.strength(0.1);
+        graph.d3Force('charge')?.strength(-1500);
+        graph.d3Force('link')?.distance(250);
 
-        // Initial Smart Zoom
         if (data.nodes.length > 0) {
             setTimeout(() => { 
-                graph.zoomToFit(800, 50); 
+                graph.zoomToFit(600, 100); 
             }, 600);
         }
     }
@@ -173,10 +118,10 @@ const GraphVisualization: React.FC = () => {
   const handleNodeClick = useCallback((node: any) => {
     setSelectedNode(node as GraphNode);
     fgRef.current?.centerAt(node.x, node.y, 800);
-    fgRef.current?.zoom(1.3, 800);
+    fgRef.current?.zoom(1.2, 800);
   }, []);
 
-  // 3. High-Fidelity Rendering
+  // 3. High-Fidelity Canvas Rendering
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
     const group = node.group || 'Default';
     const styleKey = (group.toLowerCase() in THEME.node) ? group.toLowerCase() : 'default';
@@ -190,61 +135,62 @@ const GraphVisualization: React.FC = () => {
     const isOpportunity = status === 'Pending' && group === 'Client';
     const isSelected = node.id === selectedNode?.id;
 
-    // -- SHADOWS (Clean & Communicative) --
-    ctx.shadowBlur = 0; 
+    // -- SHADOWS (Now using isOpportunity) --
     if (isSelected) {
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.3)'; 
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = 'rgba(59, 130, 246, 0.5)';
     } else if (isRisk) {
-        ctx.shadowColor = 'rgba(239, 68, 68, 0.5)'; // Red for Risk
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(239, 68, 68, 0.4)';
     } else if (isOpportunity) {
-        ctx.shadowColor = 'rgba(168, 85, 247, 0.5)'; // Purple for Opportunity
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(168, 85, 247, 0.4)'; // Purple glow
+    } else {
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
     }
 
-    // -- CARD BODY --
+    // -- CARD CONTAINER --
     ctx.fillStyle = style.bg;
-    ctx.strokeStyle = isSelected ? '#ffffff' : style.border;
-    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.strokeStyle = isSelected ? '#ffffff' : (isRisk ? '#ef4444' : style.border);
+    ctx.lineWidth = isSelected ? 3 : 1;
     
     ctx.beginPath();
     ctx.roundRect(x - CARD_WIDTH / 2, y - CARD_HEIGHT / 2, CARD_WIDTH, CARD_HEIGHT, BORDER_RADIUS);
     ctx.fill();
     ctx.stroke();
-    ctx.shadowBlur = 0;
+    ctx.shadowBlur = 0; // Reset
 
-    // -- HEADER --
-    const typeLabel = group.toUpperCase();
-    ctx.font = `700 9px "Inter", system-ui, sans-serif`;
+    // -- HEADER BAR --
+    ctx.fillStyle = style.header;
+    ctx.beginPath();
+    ctx.roundRect(x - CARD_WIDTH / 2, y - CARD_HEIGHT / 2, CARD_WIDTH, 24, [BORDER_RADIUS, BORDER_RADIUS, 0, 0]);
+    ctx.fill();
+
+    // -- HEADER TEXT --
+    ctx.font = `700 10px "Inter", sans-serif`;
+    ctx.fillStyle = '#cbd5e1';
     ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = style.text;
-    ctx.globalAlpha = 0.9;
-    ctx.fillText(typeLabel, x - CARD_WIDTH / 2 + 14, y - CARD_HEIGHT / 2 + 10);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(group.toUpperCase(), x - CARD_WIDTH / 2 + 12, y - CARD_HEIGHT / 2 + 12);
 
-    // -- TITLE --
-    ctx.globalAlpha = 1;
-    ctx.font = `bold 13px "Inter", system-ui, sans-serif`;
+    // -- HEADER STATUS ICON --
+    ctx.beginPath();
+    ctx.arc(x + CARD_WIDTH / 2 - 14, y - CARD_HEIGHT / 2 + 12, 4, 0, 2 * Math.PI);
+    ctx.fillStyle = isRisk ? '#ef4444' : (['Paid', 'Active'].includes(status) ? '#10b981' : '#94a3b8');
+    ctx.fill();
+
+    // -- BODY TITLE --
+    ctx.font = `bold 14px "Inter", sans-serif`;
     ctx.fillStyle = '#ffffff';
     let title = node.label || String(node.id);
-    if (title.length > 20) title = title.substring(0, 19) + '...';
-    ctx.fillText(title, x - CARD_WIDTH / 2 + 14, y - CARD_HEIGHT / 2 + 24);
+    if (title.length > 22) title = title.substring(0, 20) + '...';
+    ctx.fillText(title, x - CARD_WIDTH / 2 + 12, y - CARD_HEIGHT / 2 + 42);
 
-    // -- SUBTITLE --
-    ctx.font = `500 11px "Inter", system-ui, sans-serif`;
-    ctx.fillStyle = '#cbd5e1'; 
-    ctx.fillText(node.subLabel || '---', x - CARD_WIDTH / 2 + 14, y - CARD_HEIGHT / 2 + 42);
-
-    // -- STATUS INDICATOR --
-    ctx.beginPath();
-    ctx.arc(x + CARD_WIDTH / 2 - 14, y - CARD_HEIGHT / 2 + 14, 3, 0, 2 * Math.PI);
-    let statusColor = '#475569'; 
-    if (isRisk) statusColor = '#ef4444';
-    else if (['Active', 'Paid'].includes(status)) statusColor = '#10b981';
-    else if (status === 'Pending') statusColor = '#f59e0b';
-    ctx.fillStyle = statusColor;
-    ctx.fill();
+    // -- BODY SUBTITLE --
+    ctx.font = `500 12px "Inter", sans-serif`;
+    ctx.fillStyle = isRisk ? '#fca5a5' : '#94a3b8';
+    ctx.fillText(node.subLabel || '---', x - CARD_WIDTH / 2 + 12, y - CARD_HEIGHT / 2 + 58);
 
   }, [selectedNode, t]);
 
@@ -261,32 +207,26 @@ const GraphVisualization: React.FC = () => {
   // 5. Action Logic
   const handleAction = (actionType: string, node: GraphNode) => {
       switch (actionType) {
-          case 'DRAFT_EMAIL':
-              navigate(`/communications/compose?recipient=${node.id}`);
-              break;
-          case 'CALL_CLIENT':
-              alert(t('messages.callingClient', `Initiating call with ${node.label}...`));
-              break;
-          case 'SEND_REMINDER':
-              alert(t('messages.sendingReminder', `Reminder queued for Invoice #${node.label}`));
-              break;
-          case 'OPEN_CASE':
-              navigate(`/cases/${node.id}`);
-              break;
-          default:
-              break;
+          case 'DRAFT_EMAIL': navigate(`/communications/compose?recipient=${node.id}`); break;
+          case 'OPEN_CASE': navigate(`/cases/${node.id}`); break;
+          case 'VIEW_DETAILS': alert(`Viewing details for ${node.label}`); break;
+          case 'EDIT': alert(`Editing ${node.label}`); break;
+          case 'HISTORY': alert(`History for ${node.label}`); break;
+          case 'SEND_REMINDER': alert(`Reminder queued for ${node.label}`); break;
+          default: break;
       }
   };
 
   return (
-    <div ref={containerRef} className="relative w-full h-[650px] bg-slate-950 rounded-lg overflow-hidden shadow-xl border border-slate-900 flex flex-col font-sans">
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" 
-           style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '50px 50px' }}>
+    <div ref={containerRef} className="relative w-full h-[700px] bg-slate-950 rounded-xl overflow-hidden shadow-2xl border border-slate-900 flex flex-col font-sans">
+      
+      <div className="absolute inset-0 pointer-events-none opacity-[0.05]" 
+           style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
       </div>
 
       {isLoading && (
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-30">
-            <Sparkles className="w-8 h-8 text-indigo-500 animate-pulse" />
+            <Sparkles className="w-10 h-10 text-indigo-500 animate-pulse" />
         </div>
       )}
 
@@ -304,68 +244,70 @@ const GraphVisualization: React.FC = () => {
             nodeCanvasObject={nodeCanvasObject}
             nodePointerAreaPaint={nodePointerAreaPaint}
             
-            // LINKS
             linkLineDash={(link: any) => link.type === 'opportunity' ? [5, 5] : []}
-            linkColor={(link: any) => link.type === 'opportunity' ? '#6366f1' : '#334155'} 
-            linkWidth={2} 
-            
+            linkColor={(link: any) => link.type === 'opportunity' ? '#6366f1' : '#475569'} 
+            linkWidth={1.5} 
             linkDirectionalParticles={1} 
-            linkDirectionalParticleSpeed={0.003} 
-            linkDirectionalParticleWidth={2}
-            linkDirectionalParticleColor={() => '#64748b'}
+            linkDirectionalParticleSpeed={0.002} 
+            linkDirectionalParticleWidth={3}
 
             onNodeClick={handleNodeClick}
             onBackgroundClick={() => setSelectedNode(null)}
             
-            minZoom={0.5}
-            maxZoom={2.5}
+            minZoom={0.4}
+            maxZoom={3.0}
         />
       )}
 
       {/* Mode Switcher */}
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur border border-slate-800 rounded-full p-1.5 flex gap-2 shadow-2xl z-10">
-          <ModeButton active={activeMode === 'GLOBAL'} onClick={() => setActiveMode('GLOBAL')} icon={<Globe size={14} />} label={t('graph.modeGlobal', 'Global')} color="bg-blue-600" />
-          <ModeButton active={activeMode === 'RISK'} onClick={() => setActiveMode('RISK')} icon={<ShieldAlert size={14} />} label={t('graph.modeRisk', 'Risk')} color="bg-red-600" />
-          <ModeButton active={activeMode === 'COST'} onClick={() => setActiveMode('COST')} icon={<TrendingDown size={14} />} label={t('graph.modeCost', 'Cost')} color="bg-orange-600" />
-          <ModeButton active={activeMode === 'OPPORTUNITY'} onClick={() => setActiveMode('OPPORTUNITY')} icon={<Sparkles size={14} />} label={t('graph.modeOpportunity', 'Oppty')} color="bg-purple-600" />
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/95 backdrop-blur border border-slate-700 rounded-full p-2 flex gap-3 shadow-2xl z-10">
+          <ModeButton active={activeMode === 'GLOBAL'} onClick={() => setActiveMode('GLOBAL')} icon={<Globe size={16} />} label={t('graph.modeGlobal', 'Map')} color="bg-blue-600" />
+          <ModeButton active={activeMode === 'RISK'} onClick={() => setActiveMode('RISK')} icon={<ShieldAlert size={16} />} label={t('graph.modeRisk', 'Risk')} color="bg-red-600" />
+          <ModeButton active={activeMode === 'COST'} onClick={() => setActiveMode('COST')} icon={<TrendingDown size={16} />} label={t('graph.modeCost', 'Cost')} color="bg-orange-600" />
+          <ModeButton active={activeMode === 'OPPORTUNITY'} onClick={() => setActiveMode('OPPORTUNITY')} icon={<Sparkles size={16} />} label={t('graph.modeOpportunity', 'Oppty')} color="bg-purple-600" />
       </div>
 
       {/* Inspector Panel */}
       {selectedNode && (
-        <div className="absolute right-0 top-0 bottom-0 w-80 bg-slate-950/95 backdrop-blur-xl border-l border-slate-800 shadow-2xl p-6 flex flex-col animate-in slide-in-from-right-10 duration-200 z-20">
+        <div className="absolute right-0 top-0 bottom-0 w-96 bg-slate-950/95 backdrop-blur-xl border-l border-slate-800 shadow-2xl p-6 flex flex-col animate-in slide-in-from-right-10 duration-200 z-20">
+            {/* Header */}
             <div className="flex justify-between items-start mb-8">
                 <div>
-                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                        {t(`graph.entity.${selectedNode.group?.toLowerCase()}`, selectedNode.group)}
-                    </h3>
-                    <h2 className="text-xl font-bold text-white leading-snug break-words">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${['Unpaid', 'Overdue'].includes(selectedNode.status || '') ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                            {selectedNode.group}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${selectedNode.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'}`}>
+                            {selectedNode.status || 'Active'}
+                        </span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white leading-tight break-words">
                         {selectedNode.label}
                     </h2>
                 </div>
-                <button onClick={() => setSelectedNode(null)} className="p-1.5 hover:bg-slate-800 rounded-full text-slate-400 transition-colors">
+                <button onClick={() => setSelectedNode(null)} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 transition-colors">
                     <X size={20} />
                 </button>
             </div>
             
+            {/* Key Metrics */}
             <div className="space-y-4 mb-8">
-                {(() => {
-                    switch (selectedNode.group) {
-                        case 'Client': return <InspectorClientDetails node={selectedNode} />;
-                        case 'Invoice': return <InspectorInvoiceDetails node={selectedNode} />;
-                        case 'Inventory': return <InspectorInventoryDetails />;
-                        default: return <DefaultInspectorDetails node={selectedNode} />;
-                    }
-                })()}
+                {selectedNode.group === 'Client' && (
+                    <InspectorHeader title={t('graph.inspector.ltv', 'Lifetime Value')} value={selectedNode.subLabel || '€0.00'} />
+                )}
+                {selectedNode.group === 'Invoice' && (
+                    <InspectorHeader title={t('graph.inspector.amount', 'Invoice Amount')} value={selectedNode.subLabel || '€0.00'} />
+                )}
+                {selectedNode.group === 'Expense' && (
+                    <InspectorHeader title={t('graph.inspector.cost', 'Cost Impact')} value={selectedNode.subLabel || '€0.00'} />
+                )}
             </div>
             
-            <div className="mt-auto pt-6 border-t border-slate-900">
-                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4">{t('general.actions', 'AVAILABLE ACTIONS')}</h4>
-                <div className="space-y-3">
-                    <ActionButton 
-                        node={selectedNode} 
-                        activeMode={activeMode} 
-                        onAction={handleAction}
-                    />
+            {/* Action Command Center */}
+            <div className="mt-auto pt-6 border-t border-slate-800">
+                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4">{t('general.actions', 'COMMAND CENTER')}</h4>
+                <div className="grid grid-cols-1 gap-3">
+                    <ActionButton node={selectedNode} activeMode={activeMode} onAction={handleAction} />
                 </div>
             </div>
         </div>
@@ -374,11 +316,11 @@ const GraphVisualization: React.FC = () => {
   );
 };
 
-// --- Sub-Components ---
+// --- Helper Components ---
 const ModeButton: React.FC<{ active: boolean; onClick: () => void; icon: JSX.Element; label: string; color: string }> = ({ active, onClick, icon, label, color }) => (
     <button 
         onClick={onClick} 
-        className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 ${active ? `${color} text-white shadow-lg` : 'hover:bg-slate-800 text-slate-400 hover:text-white'}`}
+        className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${active ? `${color} text-white shadow-lg shadow-${color}/25 scale-105` : 'hover:bg-slate-800 text-slate-400 hover:text-white'}`}
     >
         {icon} <span>{label}</span>
     </button>
@@ -388,27 +330,44 @@ const ActionButton: React.FC<{ node: GraphNode, activeMode: IntelligenceMode, on
     const { t } = useTranslation();
     const status = node.status || '';
 
-    if (node.group === 'Client' && activeMode === 'OPPORTUNITY') {
-        return <ButtonBase onClick={() => onAction('DRAFT_EMAIL', node)} icon={<Mail size={16} />} text={t('actions.draftEmail', 'Draft Sales Email')} color="bg-purple-600 hover:bg-purple-500" />;
-    }
+    // Prioritized Actions
+    const actions = [];
+
+    // Context-Aware Actions
     if (node.group === 'Client') {
-        return <ButtonBase onClick={() => onAction('CALL_CLIENT', node)} icon={<Phone size={16} />} text={t('actions.callClient', 'Call Client')} color="bg-blue-600 hover:bg-blue-500" />;
+        if (activeMode === 'OPPORTUNITY') {
+             actions.push(<ButtonBase key="email" onClick={() => onAction('DRAFT_EMAIL', node)} icon={<Mail size={16} />} text={t('actions.draftSales', 'Draft Sales Pitch')} color="bg-purple-600 hover:bg-purple-500" />);
+        }
+        actions.push(<ButtonBase key="case" onClick={() => onAction('OPEN_CASE', node)} icon={<Briefcase size={16} />} text={t('actions.clientProfile', 'Open Client Profile')} color="bg-blue-600 hover:bg-blue-500" />);
+    } else if (node.group === 'Invoice') {
+        actions.push(<ButtonBase key="details" onClick={() => onAction('VIEW_DETAILS', node)} icon={<FileText size={16} />} text={t('actions.viewInvoice', 'View Invoice PDF')} color="bg-slate-700 hover:bg-slate-600" />);
+        if (['Unpaid', 'Overdue'].includes(status)) {
+            actions.push(<ButtonBase key="remind" onClick={() => onAction('SEND_REMINDER', node)} icon={<MessageCircle size={16} />} text={t('actions.remind', 'Send Reminder')} color="bg-emerald-600 hover:bg-emerald-500" />);
+        }
     }
-    if (node.group === 'Invoice' && ['Unpaid', 'Overdue'].includes(status)) {
-        return <ButtonBase onClick={() => onAction('SEND_REMINDER', node)} icon={<MessageCircle size={16} />} text={t('actions.sendReminder', 'Send Reminder')} color="bg-emerald-600 hover:bg-emerald-500" />;
-    }
-    if (node.group === 'Inventory' && status === 'Unpaid') {
-        return <ButtonBase onClick={() => onAction('REORDER', node)} icon={<ShoppingCart size={16} />} text={t('actions.reorder', 'Reorder Stock')} color="bg-orange-600 hover:bg-orange-500" />;
-    }
-    if (node.group === 'Case') {
-        return <ButtonBase onClick={() => onAction('OPEN_CASE', node)} icon={<Briefcase size={16} />} text={t('actions.viewCase', 'View Case Files')} color="bg-slate-700 hover:bg-slate-600" />;
+
+    // Fallback / Universal Actions
+    if (actions.length === 0) {
+        actions.push(<ButtonBase key="view" onClick={() => onAction('VIEW_DETAILS', node)} icon={<Eye size={16} />} text={t('actions.view', 'View Details')} color="bg-slate-700 hover:bg-slate-600" />);
     }
     
-    return <div className="text-center text-xs text-slate-600 italic py-2 border-t border-dashed border-slate-800">{t('actions.none', 'No specific actions available')}</div>;
+    return (
+        <div className="space-y-2">
+            {actions}
+            <div className="grid grid-cols-2 gap-2 mt-2">
+                <button onClick={() => onAction('EDIT', node)} className="flex items-center justify-center gap-2 bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 py-2 rounded text-xs font-medium transition-colors">
+                    <Edit size={14} /> {t('actions.edit', 'Edit')}
+                </button>
+                <button onClick={() => onAction('HISTORY', node)} className="flex items-center justify-center gap-2 bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-300 py-2 rounded text-xs font-medium transition-colors">
+                    <History size={14} /> {t('actions.history', 'History')}
+                </button>
+            </div>
+        </div>
+    );
 };
 
 const ButtonBase: React.FC<{ icon: JSX.Element, text: string, color: string, onClick: () => void }> = ({ icon, text, color, onClick }) => (
-    <button onClick={onClick} className={`w-full flex items-center justify-center gap-3 ${color} text-white py-3 rounded-md transition-all font-semibold text-sm shadow-md hover:shadow-lg active:scale-95`}>
+    <button onClick={onClick} className={`w-full flex items-center justify-center gap-3 ${color} text-white py-3 rounded-lg transition-all font-semibold text-sm shadow-md hover:shadow-lg active:scale-[0.98]`}>
         {icon} {text}
     </button>
 );
