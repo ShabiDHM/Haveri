@@ -1,7 +1,6 @@
 # FILE: Haveri/docker-compose.yml
 # PHOENIX PROTOCOL - DEPLOYMENT FIX V2.0 (SHARED NETWORK)
 # 1. FIX: Attached the 'caddy' service to the external 'shared_gateway_net'.
-# 2. EFFECT: Caddy can now see and route traffic to the Juristi project's containers.
 
 services:
   ai-core-service:
