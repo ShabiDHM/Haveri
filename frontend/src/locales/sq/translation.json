@@ -282,10 +282,10 @@
     "tip": "Këshillë: Përdorni butonin WhatsApp tek borxhet për të përshpejtuar arkëtimin me 40%."
   },
   "graph": {
-    "title": "Topologjia Nexus",
+    "title": "Lidhjet",
     "desc": "Vizualizoni lidhjet e fshehura midis klientëve, faturave dhe rrjedhës së kapitalit.",
-    "launch": "Nis Vizualizimin",
-    "loading": "DUKE INICIALIZUAR NEXUS...",
+    "launch": "Vizualizo",
+    "loading": "DUKE INICIALIzuar...",
     "noNodes": "Nuk u gjetën nyje të dhënash",
     "legend": "Entitetet e Sistemit",
     "details": "Detaje",
@@ -297,10 +297,10 @@
     "case": "Rast",
     "inventory": "Stoku",
     "product": "Produkt",
-    "modeGlobal": "Pamja Globale",
-    "modeRisk": "Skanim i Rrezikut",
-    "modeCost": "Gjurmim i Kostos",
-    "modeOpportunity": "Mundësitë"
+    "modeGlobal": "Pamja",
+    "modeRisk": "Rrezik",
+    "modeCost": "Kostos",
+    "modeOpportunity": "Mundësi"
   },
   "finance": {
     "income": "Të Hyrat",
@@ -356,7 +356,7 @@
     },
     "smartAnalyst": {
       "bannerTitle": "Inteligjenca Artificiale",
-      "modalTitle": "Analisti Inteligjent",
+      "modalTitle": "Analisti",
       "executiveSummary": "Përmbledhje Ekzekutive",
       "keyContributors": "Kontribuesit Kryesorë",
       "analyzing": "Duke analizuar të dhënat financiare...",
@@ -581,7 +581,7 @@
     "poweredBy": "Ndihmës për Tatime"
   },
   "analyst": {
-    "title": "Analisti Inteligjent",
+    "title": "Analisti",
     "desc": "Keni një skedar Excel ose CSV të komplikuar? Ngarkojeni këtu dhe do ta analizojë, vizualizojë dhe ju prezentoj gjetjet.",
     "initialize": "Inicializo Motorin"
   }
