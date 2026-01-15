@@ -7,7 +7,7 @@ import { useResizeDetector } from 'react-resize-detector';
 import { useTranslation } from 'react-i18next';
 import { 
     X, ShieldAlert, Globe, TrendingDown, Sparkles,
-    CheckCircle, BarChart2, BrainCircuit, Lightbulb, Eye
+    BrainCircuit, Lightbulb, Eye
 } from 'lucide-react';
 
 // --- Configuration ---
@@ -20,6 +20,7 @@ const THEME = {
     client:    { bg: '#0f172a', header: '#1e3a8a', border: '#3b82f6', text: '#ffffff' }, 
     invoice:   { bg: '#0f172a', header: '#065f46', border: '#10b981', text: '#ffffff' }, 
     expense:   { bg: '#0f172a', header: '#7f1d1d', border: '#ef4444', text: '#ffffff' }, 
+    system:    { bg: '#172554', header: '#1e293b', border: '#475569', text: '#94a3b8' }, 
     default:   { bg: '#0f172a', header: '#334155', border: '#64748b', text: '#ffffff' }, 
   }
 };
@@ -32,6 +33,16 @@ const generateDeepInsight = async (node: GraphNode, mode: IntelligenceMode): Pro
         const delay = 800 + Math.random() * 800; 
         
         setTimeout(() => {
+            // Safety Check: Don't analyze System nodes
+            if ((node.group as string) === 'System') {
+                resolve({
+                    insight: "Kjo është një nyje sistemi që tregon mungesë të dhënash.",
+                    recommendation: "Shtoni të dhëna të reja (Fatura, Klientë) për të aktivizuar analizën.",
+                    confidence: 100
+                });
+                return;
+            }
+
             const name = node.label || "Entiteti";
             const value = node.subLabel || "vlerë";
             const scenario = Math.floor(Math.random() * 3);
@@ -200,24 +211,6 @@ const AIAdvisorPanel: React.FC<{ loading: boolean, data: { insight: string, reco
     );
 };
 
-const EmptyState: React.FC<{ mode: IntelligenceMode }> = ({ mode }) => {
-    const { t } = useTranslation();
-    const content: Record<IntelligenceMode, { icon: JSX.Element; title: string; text: string }> = {
-        RISK: { icon: <CheckCircle className="w-16 h-16 text-emerald-500 mb-6 opacity-60" />, title: t('graph.empty.riskTitle', 'Skanimi i Rrezikut: Pastër'), text: t('graph.empty.riskText', 'Nuk u zbuluan fatura të vonuara ose klientë me rrezik të lartë.') },
-        COST: { icon: <BarChart2 className="w-16 h-16 text-slate-600 mb-6 opacity-50" />, title: t('graph.empty.costTitle', 'Pa të Dhëna Shpenzimesh'), text: t('graph.empty.costText', 'Shtoni shpenzime për të vizualizuar qendrat e kostos dhe rrjedhën e parasë.') },
-        OPPORTUNITY: { icon: <Sparkles className="w-16 h-16 text-purple-500 mb-6 opacity-60" />, title: t('graph.empty.oppTitle', 'Duke Ndërtuar Inteligjencë'), text: t('graph.empty.oppText', 'AI ka nevojë për më shumë histori transaksionesh për të identifikuar mundësi shitjeje.') },
-        GLOBAL: { icon: <Globe className="w-16 h-16 text-slate-600 mb-6 opacity-50" />, title: t('graph.empty.globalTitle', 'Inicializimi i Nexus'), text: t('graph.empty.globalText', 'Krijoni klientin ose faturën tuaj të parë për të gjeneruar hartën e inteligjencës.') }
-    };
-    const { icon, title, text } = content[mode] || content.GLOBAL;
-    return ( 
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-20 pointer-events-none select-none">
-            {icon}
-            <h3 className="text-xl font-bold text-slate-200 mb-2">{title}</h3>
-            <p className="text-slate-500 text-sm max-w-sm leading-relaxed">{text}</p>
-        </div> 
-    );
-};
-
 // --- MAIN COMPONENT ---
 const GraphVisualization: React.FC = () => {
   const { t } = useTranslation();
@@ -287,8 +280,20 @@ const GraphVisualization: React.FC = () => {
 
   // 4. Canvas Rendering
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
-    const group = node.group || 'Default';
-    const styleKey = (group.toLowerCase() in THEME.node) ? group.toLowerCase() : 'default';
+    const originalGroup = node.group || 'Default';
+    let groupLabel = originalGroup.toUpperCase();
+    
+    if ((originalGroup as string) === 'System') {
+        groupLabel = 'SISTEMI';
+    }
+
+    let title = node.label || String(node.id);
+    if (title === 'No Data Available') title = 'Nuk ka të dhëna';
+
+    let subTitle = node.subLabel || '---';
+    if (subTitle.includes('No data found')) subTitle = 'Nuk u gjetën të dhëna';
+
+    const styleKey = (originalGroup.toLowerCase() in THEME.node) ? originalGroup.toLowerCase() : 'default';
     const style = (THEME.node as any)[styleKey];
     
     const x = node.x!;
@@ -296,7 +301,7 @@ const GraphVisualization: React.FC = () => {
     const status = node.status || '';
     
     const isRisk = ['Unpaid', 'Overdue'].includes(status);
-    const isOpportunity = status === 'Pending' && group === 'Client';
+    const isOpportunity = status === 'Pending' && originalGroup === 'Client';
     const isSelected = node.id === selectedNode?.id;
 
     if (isSelected) {
@@ -325,22 +330,21 @@ const GraphVisualization: React.FC = () => {
     ctx.fillStyle = '#cbd5e1';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(group.toUpperCase(), x - CARD_WIDTH / 2 + 12, y - CARD_HEIGHT / 2 + 12);
+    ctx.fillText(groupLabel, x - CARD_WIDTH / 2 + 12, y - CARD_HEIGHT / 2 + 12);
 
     ctx.beginPath();
     ctx.arc(x + CARD_WIDTH / 2 - 14, y - CARD_HEIGHT / 2 + 12, 4, 0, 2 * Math.PI);
-    ctx.fillStyle = isRisk ? '#ef4444' : (['Paid', 'Active'].includes(status) ? '#10b981' : '#94a3b8');
+    ctx.fillStyle = isRisk ? '#ef4444' : (['Paid', 'Active'].includes(status) ? '#10b981' : ((originalGroup as string) === 'System' ? '#ef4444' : '#94a3b8'));
     ctx.fill();
 
     ctx.font = `bold 14px "Inter", sans-serif`;
     ctx.fillStyle = '#ffffff';
-    let title = node.label || String(node.id);
     if (title.length > 22) title = title.substring(0, 20) + '...';
     ctx.fillText(title, x - CARD_WIDTH / 2 + 12, y - CARD_HEIGHT / 2 + 42);
 
     ctx.font = `500 12px "Inter", sans-serif`;
     ctx.fillStyle = isRisk ? '#fca5a5' : '#94a3b8';
-    ctx.fillText(node.subLabel || '---', x - CARD_WIDTH / 2 + 12, y - CARD_HEIGHT / 2 + 58);
+    ctx.fillText(subTitle, x - CARD_WIDTH / 2 + 12, y - CARD_HEIGHT / 2 + 58);
 
   }, [selectedNode, t]);
 
@@ -366,8 +370,6 @@ const GraphVisualization: React.FC = () => {
             <Sparkles className="w-10 h-10 text-indigo-500 animate-pulse" />
         </div>
       )}
-
-      {!isLoading && data.nodes.length === 0 && <EmptyState mode={activeMode} />}
       
       {!isLoading && data.nodes.length > 0 && (
         <ForceGraph2D
@@ -407,15 +409,23 @@ const GraphVisualization: React.FC = () => {
             <div className="flex justify-between items-start mb-6">
                 <div>
                     <div className="flex items-center gap-2 mb-2">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${['Unpaid', 'Overdue'].includes(selectedNode.status || '') ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                            {selectedNode.group}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${selectedNode.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'}`}>
-                            {selectedNode.status || 'Aktiv'}
-                        </span>
+                        {(selectedNode.group as string) !== 'System' && (
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${['Unpaid', 'Overdue'].includes(selectedNode.status || '') ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                {selectedNode.group}
+                            </span>
+                        )}
+                        {(selectedNode.group as string) === 'System' ? (
+                             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-400">
+                                Info
+                            </span>
+                        ) : (
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${selectedNode.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'}`}>
+                                {selectedNode.status || 'Aktiv'}
+                            </span>
+                        )}
                     </div>
                     <h2 className="text-2xl font-bold text-white leading-tight break-words">
-                        {selectedNode.label}
+                        {selectedNode.label === 'No Data Available' ? 'Nuk ka të dhëna' : selectedNode.label}
                     </h2>
                 </div>
                 <button onClick={() => setSelectedNode(null)} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 transition-colors">
@@ -423,23 +433,24 @@ const GraphVisualization: React.FC = () => {
                 </button>
             </div>
             
-            {/* Key Metrics */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-                {selectedNode.group === 'Client' && (
-                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.ltv', 'Vlera Totale')} value={selectedNode.subLabel || '€0.00'} /></div>
-                )}
-                {selectedNode.group === 'Invoice' && (
-                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.amount', 'Shuma e Faturës')} value={selectedNode.subLabel || '€0.00'} /></div>
-                )}
-                {selectedNode.group === 'Expense' && (
-                    <div className="col-span-2"><InspectorHeader title={t('graph.inspector.cost', 'Ndikimi në Kosto')} value={selectedNode.subLabel || '€0.00'} /></div>
-                )}
-            </div>
+            {/* Key Metrics - Only show if not System node */}
+            {(selectedNode.group as string) !== 'System' && (
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                    {selectedNode.group === 'Client' && (
+                        <div className="col-span-2"><InspectorHeader title={t('graph.inspector.ltv', 'Vlera Totale')} value={selectedNode.subLabel || '€0.00'} /></div>
+                    )}
+                    {selectedNode.group === 'Invoice' && (
+                        <div className="col-span-2"><InspectorHeader title={t('graph.inspector.amount', 'Shuma e Faturës')} value={selectedNode.subLabel || '€0.00'} /></div>
+                    )}
+                    {selectedNode.group === 'Expense' && (
+                        <div className="col-span-2"><InspectorHeader title={t('graph.inspector.cost', 'Ndikimi në Kosto')} value={selectedNode.subLabel || '€0.00'} /></div>
+                    )}
+                </div>
+            )}
 
             {/* AI ADVISOR PANEL (The "Brain") */}
             <AIAdvisorPanel loading={aiLoading} data={aiData} />
             
-            {/* Action Command Center - REMOVED PER REQUEST */}
         </div>
       )}
     </div>
