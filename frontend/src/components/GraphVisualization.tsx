@@ -33,15 +33,35 @@ const generateDeepInsight = async (node: GraphNode, mode: IntelligenceMode): Pro
         const delay = 800 + Math.random() * 800; 
         
         setTimeout(() => {
-            // Safety Check: Don't analyze System nodes
+            // --- HANDLING "NO DATA" SYSTEM NODES PER TAB ---
             if ((node.group as string) === 'System') {
-                resolve({
-                    insight: "Kjo është një nyje sistemi që tregon mungesë të dhënash.",
-                    recommendation: "Shtoni të dhëna të reja (Fatura, Klientë) për të aktivizuar analizën.",
-                    confidence: 100
-                });
+                let insight = "";
+                let recommendation = "";
+                
+                switch (mode) {
+                    case 'RISK':
+                        insight = "Lajm i mirë: Skanimi i rrezikut nuk zbuloi asnjë faturë të vonuar ose klient me rrezik të lartë.";
+                        recommendation = "Vazhdoni të monitoroni. Situata financiare duket e qëndrueshme dhe e shëndetshme.";
+                        break;
+                    case 'COST':
+                        insight = "Nuk u gjetën të dhëna për shpenzime ose kategori kostoje në këtë periudhë.";
+                        recommendation = "Regjistroni shpenzimet e para (qira, furnizime, rroga) për të aktivizuar analizën e marzhit.";
+                        break;
+                    case 'OPPORTUNITY':
+                        insight = "Algoritmi nuk mund të identifikojë mundësi shitjeje pa pasur histori transaksionesh.";
+                        recommendation = "Shtoni më shumë klientë ose fatura për të trajnuar modelin e parashikimit.";
+                        break;
+                    case 'GLOBAL':
+                    default:
+                        insight = "Baza e të dhënave është aktualisht bosh ose nuk u gjetën rezultate për këtë pamje.";
+                        recommendation = "Filloni duke krijuar Klientin ose Faturën tuaj të parë në sistem.";
+                        break;
+                }
+                
+                resolve({ insight, recommendation, confidence: 100 });
                 return;
             }
+            // -----------------------------------------------
 
             const name = node.label || "Entiteti";
             const value = node.subLabel || "vlerë";
@@ -278,7 +298,7 @@ const GraphVisualization: React.FC = () => {
     fgRef.current?.zoom(1.2, 800);
   }, [runAIAnalysis]);
 
-  // 4. Canvas Rendering
+  // 4. Canvas Rendering (WITH TRANSLATION INTERCEPTION)
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
     const originalGroup = node.group || 'Default';
     let groupLabel = originalGroup.toUpperCase();
