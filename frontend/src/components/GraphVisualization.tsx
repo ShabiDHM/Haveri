@@ -33,35 +33,34 @@ const generateDeepInsight = async (node: GraphNode, mode: IntelligenceMode): Pro
         const delay = 800 + Math.random() * 800; 
         
         setTimeout(() => {
-            // --- HANDLING "NO DATA" SYSTEM NODES PER TAB ---
+            // Safety Check: Don't analyze System nodes
             if ((node.group as string) === 'System') {
                 let insight = "";
                 let recommendation = "";
                 
                 switch (mode) {
                     case 'RISK':
-                        insight = "Lajm i mirë: Skanimi i rrezikut nuk zbuloi asnjë faturë të vonuar ose klient me rrezik të lartë.";
-                        recommendation = "Vazhdoni të monitoroni. Situata financiare duket e qëndrueshme dhe e shëndetshme.";
+                        insight = "Lajm i mirë: Skanimi i rrezikut nuk zbuloi asnjë faturë të vonuara.";
+                        recommendation = "Vazhdoni të monitoroni. Situata financiare duket e qëndrueshme.";
                         break;
                     case 'COST':
-                        insight = "Nuk u gjetën të dhëna për shpenzime ose kategori kostoje në këtë periudhë.";
-                        recommendation = "Regjistroni shpenzimet e para (qira, furnizime, rroga) për të aktivizuar analizën e marzhit.";
+                        insight = "Nuk u gjetën të dhëna për shpenzime në këtë periudhë.";
+                        recommendation = "Regjistroni shpenzimet e para për të aktivizuar analizën e kostos.";
                         break;
                     case 'OPPORTUNITY':
-                        insight = "Algoritmi nuk mund të identifikojë mundësi shitjeje pa pasur histori transaksionesh.";
-                        recommendation = "Shtoni më shumë klientë ose fatura për të trajnuar modelin e parashikimit.";
+                        insight = "Algoritmi nuk gjeti mundësi aktive shitjeje.";
+                        recommendation = "Shtoni më shumë fatura për të trajnuar modelin e parashikimit.";
                         break;
                     case 'GLOBAL':
                     default:
-                        insight = "Baza e të dhënave është aktualisht bosh ose nuk u gjetën rezultate për këtë pamje.";
-                        recommendation = "Filloni duke krijuar Klientin ose Faturën tuaj të parë në sistem.";
+                        insight = "Baza e të dhënave është bosh për këtë pamje.";
+                        recommendation = "Krijoni entitetin e parë për të nisur analizën.";
                         break;
                 }
                 
                 resolve({ insight, recommendation, confidence: 100 });
                 return;
             }
-            // -----------------------------------------------
 
             const name = node.label || "Entiteti";
             const value = node.subLabel || "vlerë";
@@ -298,20 +297,43 @@ const GraphVisualization: React.FC = () => {
     fgRef.current?.zoom(1.2, 800);
   }, [runAIAnalysis]);
 
-  // 4. Canvas Rendering (WITH TRANSLATION INTERCEPTION)
+  // 4. Canvas Rendering (WITH TAB-AWARE TRANSLATION INTERCEPTION)
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D) => {
     const originalGroup = node.group || 'Default';
     let groupLabel = originalGroup.toUpperCase();
     
+    // Default Titles/Subtitles from Data
+    let title = node.label || String(node.id);
+    let subTitle = node.subLabel || '---';
+
+    // --- SYSTEM NODE OVERRIDE START ---
+    // This block forces the card to display Albanian text based on the ACTIVE TAB
+    // effectively hiding whatever English message comes from the backend.
     if ((originalGroup as string) === 'System') {
         groupLabel = 'SISTEMI';
+        
+        // Context-Aware Overrides
+        switch(activeMode) {
+            case 'RISK':
+                title = "Nuk ka Rreziqe";
+                subTitle = "Sistemi është i pastër.";
+                break;
+            case 'COST':
+                title = "Nuk ka Shpenzime";
+                subTitle = "Nuk u gjetën të dhëna kostoje.";
+                break;
+            case 'OPPORTUNITY':
+                title = "Nuk ka Mundësi";
+                subTitle = "S'ka mundësi të reja.";
+                break;
+            case 'GLOBAL':
+            default:
+                title = "Nuk ka të dhëna";
+                subTitle = "Baza e të dhënave është bosh.";
+                break;
+        }
     }
-
-    let title = node.label || String(node.id);
-    if (title === 'No Data Available') title = 'Nuk ka të dhëna';
-
-    let subTitle = node.subLabel || '---';
-    if (subTitle.includes('No data found')) subTitle = 'Nuk u gjetën të dhëna';
+    // --- SYSTEM NODE OVERRIDE END ---
 
     const styleKey = (originalGroup.toLowerCase() in THEME.node) ? originalGroup.toLowerCase() : 'default';
     const style = (THEME.node as any)[styleKey];
@@ -324,6 +346,7 @@ const GraphVisualization: React.FC = () => {
     const isOpportunity = status === 'Pending' && originalGroup === 'Client';
     const isSelected = node.id === selectedNode?.id;
 
+    // Drawing Logic
     if (isSelected) {
         ctx.shadowBlur = 30; ctx.shadowColor = 'rgba(59, 130, 246, 0.5)';
     } else if (isRisk) {
@@ -366,7 +389,7 @@ const GraphVisualization: React.FC = () => {
     ctx.fillStyle = isRisk ? '#fca5a5' : '#94a3b8';
     ctx.fillText(subTitle, x - CARD_WIDTH / 2 + 12, y - CARD_HEIGHT / 2 + 58);
 
-  }, [selectedNode, t]);
+  }, [selectedNode, t, activeMode]); // ADDED activeMode to dependencies
 
   // 5. Hit Detection
   const nodePointerAreaPaint = useCallback((node: any, color: string, ctx: CanvasRenderingContext2D) => {
