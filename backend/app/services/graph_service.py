@@ -1,7 +1,7 @@
 # FILE: backend/app/services/graph_service.py
-# PHOENIX PROTOCOL - GRAPH SERVICE V2.0 (DELETION SYNC)
-# 1. NEW FEATURE: Added delete_node method to handle entity removal.
-# 2. LOGIC: Executes 'DETACH DELETE' to ensure no orphaned relationships remain.
+# PHOENIX PROTOCOL - GRAPH SERVICE V2.1 (UNIVERSAL DELETE)
+# 1. ROBUSTNESS: delete_node now checks invoiceId, expenseId, inventoryId, productId, and documentId.
+# 2. COVERAGE: Ensures expenses, recipes, and inventory items are properly wiped from the graph.
 
 from neo4j import Driver, ManagedTransaction
 from fastapi import Depends
@@ -19,7 +19,6 @@ class GraphService:
     def add_or_update_client_and_invoice(self, invoice: InvoiceInDB): 
         """
         Creates or updates a Client node and an Invoice node, ensuring a relationship exists.
-        This is the core of building the financial graph.
         """
         if not self.driver:
             logger.warning("--- [GraphService] Neo4j driver not available. Skipping graph update. ---")
@@ -47,8 +46,8 @@ class GraphService:
 
     def delete_node(self, node_id: str):
         """
-        Removes a node and its relationships from the graph.
-        Used for synchronization when deleting Invoices or Expenses from MongoDB.
+        Universally removes a node from the graph by checking ALL potential ID fields.
+        This handles Invoices, Expenses, Inventory, Products, and Documents.
         """
         if not self.driver:
             return
@@ -69,10 +68,6 @@ class GraphService:
         invoice_total: float, 
         invoice_status: str
     ):
-        """
-        A single, atomic transaction to create nodes and relationships.
-        This ensures data integrity.
-        """
         query = (
             "MERGE (c:Client {name: $client_name, userId: $user_id}) "
             "MERGE (i:Invoice {invoiceId: $invoice_id, userId: $user_id}) "
@@ -87,12 +82,17 @@ class GraphService:
     @staticmethod
     def _execute_node_deletion(tx: ManagedTransaction, node_id: str):
         """
-        Hard delete of the node and its connections.
-        Matches primarily on 'invoiceId' or generic 'id'.
+        Universal Search & Destroy.
+        Checks every possible ID variant to ensure the node is found and removed.
         """
         query = (
             "MATCH (n) "
-            "WHERE n.invoiceId = $node_id OR n.id = $node_id "
+            "WHERE n.id = $node_id "
+            "   OR n.invoiceId = $node_id "
+            "   OR n.expenseId = $node_id "
+            "   OR n.inventoryId = $node_id "
+            "   OR n.productId = $node_id "
+            "   OR n.documentId = $node_id "
             "DETACH DELETE n"
         )
         tx.run(query, node_id=node_id)
