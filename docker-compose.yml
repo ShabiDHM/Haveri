@@ -1,6 +1,4 @@
-# FILE: Haveri/docker-compose.yml
-# PHOENIX PROTOCOL - DEPLOYMENT FIX V2.0 (SHARED NETWORK)
-# 1. FIX: Attached the 'caddy' service to the external 'shared_gateway_net'.
+version: '3.8'
 
 services:
   ai-core-service:
@@ -41,7 +39,7 @@ services:
       - caddy_data:/data
     networks: 
       - phoenix_net
-      - shared_gateway_net # <-- ATTACHED TO SHARED NETWORK
+      - shared_gateway_net
     depends_on:
       backend:
         condition: service_healthy
@@ -79,7 +77,6 @@ services:
       mongo: { condition: service_healthy }
       backend: { condition: service_started }
 
-  # ... (mongo, redis, chroma, neo4j services are unchanged) ...
   mongo:
     image: mongo:6.0
     restart: unless-stopped
@@ -113,8 +110,9 @@ services:
     image: neo4j:5
     restart: unless-stopped
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      # PHOENIX FIX: Changed to 7475 and 7688 to prevent conflict with Jurisi app
+      - "7475:7474" 
+      - "7688:7687"
     environment:
       - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-password}
       - NEO4J_PLUGINS=["apoc"]
@@ -134,7 +132,6 @@ services:
       retries: 5
 
 volumes:
-  # ... (volumes are unchanged) ...
   mongo_data: {}
   chroma_data: {}
   redis_data: {}
@@ -147,5 +144,5 @@ volumes:
 networks:
   phoenix_net:
     driver: bridge
-  shared_gateway_net: # <-- DEFINE THE SHARED NETWORK
+  shared_gateway_net:
     external: true
