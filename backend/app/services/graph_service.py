@@ -1,7 +1,7 @@
 # FILE: backend/app/services/graph_service.py
-# PHOENIX PROTOCOL - GRAPH SERVICE V2.1 (UNIVERSAL DELETE)
-# 1. ROBUSTNESS: delete_node now checks invoiceId, expenseId, inventoryId, productId, and documentId.
-# 2. COVERAGE: Ensures expenses, recipes, and inventory items are properly wiped from the graph.
+# PHOENIX PROTOCOL - GRAPH SERVICE V2.3 (ORPHAN CLEANUP)
+# 1. IMPROVEMENT: Added _cleanup_orphans to remove Clients with no active connections.
+# 2. RESULT: Deleting the last invoice of a client will now remove the client node too.
 
 from neo4j import Driver, ManagedTransaction
 from fastapi import Depends
@@ -15,13 +15,11 @@ logger = logging.getLogger(__name__)
 class GraphService:
     def __init__(self, driver: Driver = Depends(get_neo4j_driver)):
         self.driver = driver
+        self.database_name = "neo4j" 
 
     def add_or_update_client_and_invoice(self, invoice: InvoiceInDB): 
-        """
-        Creates or updates a Client node and an Invoice node, ensuring a relationship exists.
-        """
         if not self.driver:
-            logger.warning("--- [GraphService] Neo4j driver not available. Skipping graph update. ---")
+            logger.error("--- [GraphService] DRIVER MISSING. Cannot write to Neo4j. ---")
             return
 
         client_name = invoice.client_name
@@ -30,34 +28,36 @@ class GraphService:
         invoice_status = invoice.status
         user_id = str(invoice.user_id)
 
-        try:
-            with self.driver.session() as session:
-                session.execute_write(
-                    self._create_client_invoice_relationship,
-                    user_id,
-                    client_name,
-                    invoice_id,
-                    invoice_total,
-                    invoice_status
-                )
-            logger.info(f"--- [GraphService] Successfully added/updated nodes for Invoice ID: {invoice_id} ---")
-        except Exception as e:
-            logger.error(f"--- [GraphService] Failed to update graph for Invoice ID {invoice_id}: {e} ---")
+        print(f"--- [GraphService] Attempting Write: Invoice {invoice_id} for Client {client_name} ---")
+
+        with self.driver.session(database=self.database_name) as session:
+            session.execute_write(
+                self._create_client_invoice_relationship,
+                user_id,
+                client_name,
+                invoice_id,
+                invoice_total,
+                invoice_status
+            )
+        print(f"--- [GraphService] SUCCESS: Wrote Invoice {invoice_id} to Neo4j ---")
 
     def delete_node(self, node_id: str):
         """
-        Universally removes a node from the graph by checking ALL potential ID fields.
-        This handles Invoices, Expenses, Inventory, Products, and Documents.
+        1. Deletes the specific node (Invoice, Expense, etc.)
+        2. Scans for any 'Client' nodes that are now empty (Orphans) and deletes them.
         """
         if not self.driver:
             return
 
-        try:
-            with self.driver.session() as session:
-                session.execute_write(self._execute_node_deletion, node_id)
-            logger.info(f"--- [GraphService] Successfully deleted node with ID: {node_id} ---")
-        except Exception as e:
-            logger.error(f"--- [GraphService] Failed to delete node {node_id}: {e} ---")
+        print(f"--- [GraphService] Attempting Delete: Node ID {node_id} ---")
+        
+        with self.driver.session(database=self.database_name) as session:
+            # Step 1: Delete the target node
+            session.execute_write(self._execute_node_deletion, node_id)
+            # Step 2: Cleanup any Clients left behind with no connections
+            session.execute_write(self._cleanup_orphans)
+            
+        print(f"--- [GraphService] SUCCESS: Deleted Node {node_id} and cleaned orphans ---")
 
     @staticmethod
     def _create_client_invoice_relationship(
@@ -76,15 +76,10 @@ class GraphService:
             "MERGE (c)-[r:HAS_INVOICE]->(i) "
             "RETURN c, i, r"
         )
-        result = tx.run(query, user_id=user_id, client_name=client_name, invoice_id=invoice_id, invoice_total=invoice_total, invoice_status=invoice_status)
-        return [record for record in result]
+        tx.run(query, user_id=user_id, client_name=client_name, invoice_id=invoice_id, invoice_total=invoice_total, invoice_status=invoice_status)
 
     @staticmethod
     def _execute_node_deletion(tx: ManagedTransaction, node_id: str):
-        """
-        Universal Search & Destroy.
-        Checks every possible ID variant to ensure the node is found and removed.
-        """
         query = (
             "MATCH (n) "
             "WHERE n.id = $node_id "
@@ -96,3 +91,12 @@ class GraphService:
             "DETACH DELETE n"
         )
         tx.run(query, node_id=node_id)
+
+    @staticmethod
+    def _cleanup_orphans(tx: ManagedTransaction):
+        """
+        Finds any Client nodes that have NO relationships (--) to anything else
+        and deletes them. Keeps the graph clean.
+        """
+        query = "MATCH (c:Client) WHERE NOT (c)--() DELETE c"
+        tx.run(query)
