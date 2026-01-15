@@ -178,11 +178,11 @@
     },
   "chatPanel": {
     "title": "Bisedo",
-    "titleLegal": "Hartuesi Ligjor",
+    "titleLegal": "Hartuesi",
     "inputPlaceholder": "Shtypni pyetjen tuaj këtu...",
     "thinking": "Duke menduar...",
     "welcomeMessage": "Përshëndetje! Unë jam Këshilltari juaj i Biznesit.",
-    "welcomeLegal": "Përshëndetje! Unë jam Asistenti juaj Ligjor.",
+    "welcomeLegal": "Përshëndetje! Unë jam Asistenti juaj.",
     "statusConnected": "Lidhur",
     "confirmClear": "Pastro bisedën?"
   },
@@ -231,12 +231,12 @@
     "soldUnits": "të shitura",
     "lowStockAlert": "Stoku Kritik",
     "only": "vetëm",
-    "smartAgenda": "Axhenda Inteligjente",
+    "smartAgenda": "Axhenda",
     "priorityTasks": "Prioritetet e ditës",
     "viewCalendar": "Shiko Kalendarin",
     "noEvents": "Nuk ka ngjarje për sot.",
     "pulse": {
-      "title": "Pulsi i Biznesit",
+      "title": "Pulsi",
       "eodForecast": "Parashikimi i Ditës",
       "basedOnVelocity": "Bazuar në ritmin aktual",
       "analyzing": "Duke analizuar...",
@@ -272,13 +272,13 @@
     "logoUploadFailed": "Ngarkimi i logos dështoi."
   },
   "insights": {
-    "title": "Inteligjenca e Biznesit",
+    "title": "Inteligjenca",
     "subtitle": "Analizë e thelluar për të marrë vendime më të zgjuara.",
     "systemActive": "Sistemi Aktiv",
     "liveMetrics": "Metrikat Live",
-    "debt": { "title": "Analiza e Borxheve" },
+    "debt": { "title": "Borxhet" },
     "tax": { "estimator": "Vlerësimi i TVSH-së" },
-    "inventory": { "title": "Inteligjenca e Stokut" },
+    "inventory": { "title": "Stoku" },
     "tip": "Këshillë: Përdorni butonin WhatsApp tek borxhet për të përshpejtuar arkëtimin me 40%."
   },
   "graph": {
