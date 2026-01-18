@@ -1,73 +1,29 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V5.0 (BRUTE FORCE)
-# 1. FIX: Uses explicit, separate site blocks for www and non-www to guarantee origin matching.
-# 2. FIX: Consolidates all headers into a single block per site to prevent overrides.
-# 3. STATUS: Final Attempt.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V6.0 (PURE PROXY)
+# 1. FIX: Removed manual CORS headers. Delegated strict control to FastAPI backend.
+# 2. FIX: Eliminated origin mismatches by passing all traffic transparency.
 
 {
     email shabanbala@gmail.com
 }
 
 # ----------------------------------------
-# PROJECT 1: HAVERI (WWW)
+# PROJECT 1: HAVERI
 # ----------------------------------------
+# Frontend/Main Domain Proxy (If applicable)
 www.haveri.tech {
-    # Respond to browser permission checks
-    @options method OPTIONS
-    respond @options 204
-    
-    # Add ALL headers in ONE block
-    header {
-        Access-Control-Allow-Origin "https://www.haveri.tech"
-        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        Access-Control-Allow-Headers "*"
-        Access-Control-Allow-Credentials "true"
-        Strict-Transport-Security "max-age=31536000;"
-    }
-
-    # Proxy to the backend
     reverse_proxy backend:8000
 }
 
-# ----------------------------------------
-# PROJECT 1: HAVERI (non-WWW)
-# ----------------------------------------
+# API Subdomain
 api.haveri.tech {
-    # Respond to browser permission checks
-    @options method OPTIONS
-    respond @options 204
-    
-    # Add ALL headers in ONE block
-    header {
-        Access-Control-Allow-Origin "https://haveri.tech"
-        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        Access-Control-Allow-Headers "*"
-        Access-Control-Allow-Credentials "true"
-        Strict-Transport-Security "max-age=31536000;"
-    }
-
-    # Proxy to the backend
     reverse_proxy backend:8000
 }
-
 
 # ----------------------------------------
 # PROJECT 2: JURISTI
 # ----------------------------------------
+# API Subdomain
 api.juristi.tech {
-    # Respond to browser permission checks
-    @options method OPTIONS
-    respond @options 204
-    
-    # Add ALL headers in ONE block
-    header {
-        Access-Control-Allow-Origin "https://juristi.tech"
-        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        Access-Control-Allow-Headers "*"
-        Access-Control-Allow-Credentials "true"
-        Strict-Transport-Security "max-age=31536000;"
-    }
-    
-    # Proxy to the backend
     reverse_proxy juristi-backend:8000
 }
