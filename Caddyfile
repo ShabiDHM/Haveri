@@ -1,18 +1,21 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V4.1 (CORS ENABLED)
-# 1. FIX: Added CORS headers and preflight handling for api.juristi.tech.
-# 2. BEST PRACTICE: Added a placeholder CORS block for api.haveri.tech.
-# 3. STATUS: Production Ready.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V4.2 (ATOMIC)
+# 1. FIX: Restructured to be more explicit for Caddy's parser.
+# 2. LOGIC: Separates CORS handling from proxying.
 
 {
     email shabanbala@gmail.com
 }
 
 # ----------------------------------------
-# PROJECT 1: HAVERI (Primary / Existing)
+# PROJECT 1: HAVERI
 # ----------------------------------------
 api.haveri.tech {
-    # CORS HEADERS (Modify origin if haveri has a different frontend URL)
+    # 1. Handle CORS Preflight
+    @options method OPTIONS
+    respond @options 204
+    
+    # 2. Add CORS headers to actual requests
     header {
         Access-Control-Allow-Origin "https://haveri.tech"
         Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
@@ -21,14 +24,10 @@ api.haveri.tech {
         Access-Control-Max-Age "86400"
     }
 
-    # PREFLIGHT HANDLING
-    @options method OPTIONS
-    respond @options 204
-    
-    # Internal Docker Routing
+    # 3. Proxy to the backend
     reverse_proxy backend:8000
 
-    # SECURITY HEADERS
+    # 4. Add Security Headers
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         X-Content-Type-Options "nosniff"
@@ -38,10 +37,14 @@ api.haveri.tech {
 }
 
 # ----------------------------------------
-# PROJECT 2: JURISTI (Secondary / New)
+# PROJECT 2: JURISTI
 # ----------------------------------------
 api.juristi.tech {
-    # CORS HEADERS (This is the critical fix)
+    # 1. Handle CORS Preflight
+    @options method OPTIONS
+    respond @options 204
+    
+    # 2. Add CORS headers to actual requests
     header {
         Access-Control-Allow-Origin "https://juristi.tech"
         Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
@@ -50,14 +53,10 @@ api.juristi.tech {
         Access-Control-Max-Age "86400"
     }
 
-    # PREFLIGHT HANDLING (Responds to the browser's permission check)
-    @options method OPTIONS
-    respond @options 204
-    
-    # Internal Docker Routing
+    # 3. Proxy to the backend
     reverse_proxy juristi-backend:8000
 
-    # SECURITY HEADERS
+    # 4. Add Security Headers
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         X-Content-Type-Options "nosniff"
