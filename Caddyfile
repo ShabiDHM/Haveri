@@ -1,7 +1,6 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V4.2 (ATOMIC)
-# 1. FIX: Restructured to be more explicit for Caddy's parser.
-# 2. LOGIC: Separates CORS handling from proxying.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V4.3 (MULTI-ORIGIN CORS)
+# 1. FIX: Allows both 'haveri.tech' and 'www.haveri.tech' in CORS headers.
 
 {
     email shabanbala@gmail.com
@@ -17,7 +16,8 @@ api.haveri.tech {
     
     # 2. Add CORS headers to actual requests
     header {
-        Access-Control-Allow-Origin "https://haveri.tech"
+        # PHOENIX FIX: Allow both www and non-www origins
+        Access-Control-Allow-Origin "https://haveri.tech, https://www.haveri.tech"
         Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
         Access-Control-Allow-Headers "*"
         Access-Control-Allow-Credentials "true"
@@ -37,7 +37,7 @@ api.haveri.tech {
 }
 
 # ----------------------------------------
-# PROJECT 2: JURISTI
+# PROJECT 2: JURISTI (Keep as is)
 # ----------------------------------------
 api.juristi.tech {
     # 1. Handle CORS Preflight
