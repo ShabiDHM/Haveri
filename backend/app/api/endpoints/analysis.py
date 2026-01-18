@@ -1,10 +1,9 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V3.7 (FULL RESTORATION)
-# 1. FIX: Restored the full logic for 'generate_kpi_insight' (Income, Expense, Profit, COGS) which was accidentally truncated.
-# 2. INTEGRITY: Kept the robust 're.escape' fixes for Inventory/Sales endpoints.
-# 3. RESULT: Smart Analyst now works for BOTH Financial KPIs and Inventory predictions.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V3.9 (FUNCTION NAME FIX)
+# 1. FIX: Corrected the service call from 'analyze_spreadsheet_file' to 'analyze_financial_spreadsheet'.
+# 2. STATUS: Resolves the 'AttributeError' and the 404/500 error chain.
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -12,11 +11,13 @@ from pymongo.database import Database
 from bson import ObjectId
 import re
 import logging
+import asyncio
 
 from app.api.endpoints.dependencies import get_current_user, get_db
 from app.models.user import UserInDB
 from app.services.finance_service import FinanceService
-from app.services import llm_service 
+from app.services import llm_service
+from app.services import spreadsheet_service
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -50,14 +51,39 @@ def _normalize(text: str) -> str: return str(text).strip().lower()
 
 # --- ENDPOINTS ---
 
+@router.post("/analyze-spreadsheet")
+async def analyze_spreadsheet_endpoint(
+    current_user: UserInDB = Depends(get_current_user),
+    file: UploadFile = File(...)
+):
+    """
+    Analyzes an uploaded Excel/CSV file for financial data.
+    """
+    try:
+        content = await file.read()
+        filename = file.filename or "unknown.xlsx"
+        
+        # PHOENIX FIX: Use the correct function name
+        # We run this sync function in a thread to prevent blocking the event loop.
+        result = await asyncio.to_thread(spreadsheet_service.analyze_financial_spreadsheet, file_contents=content, filename=filename)
+
+        if result.get("error"):
+             raise HTTPException(status_code=400, detail=result["error"])
+
+        return result
+    except ValueError as ve: 
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Spreadsheet Analysis Error: {e}")
+        raise HTTPException(status_code=500, detail="Analysis failed.")
+
 @router.post("/finance/kpi-insight", response_model=KpiInsightResponse)
 def generate_kpi_insight(
     request: KpiInsightRequest,
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db)
 ):
-    # Context Aware ID
-    context_id = str(current_user.organization_id) if current_user.organization_id else str(current_user.id)
+    context_id = str(current_user.organization_id) if hasattr(current_user, 'organization_id') and current_user.organization_id else str(current_user.id)
     user_filter = {
         "$or": [
             {"user_id": context_id},
@@ -70,7 +96,6 @@ def generate_kpi_insight(
     summary = "Analiza e të dhënave e padisponueshme."
     contributors = []
     
-    # Dynamically determine the year to analyze
     analysis_year = _get_latest_activity_year(db, user_filter)
     analysis_start_date = datetime(analysis_year, 1, 1)
     analysis_end_date = datetime(analysis_year, 12, 31, 23, 59, 59)
@@ -85,7 +110,7 @@ def generate_kpi_insight(
         total_income = sum(i.total_amount for i in period_invoices)
         
         clients = {}
-        for inv in period_invoices: clients[inv.client_name] = clients.get(inv.client_name, 0) + inv.total_amount
+        for inv in period_invoices: clients[getattr(inv, 'client_name', 'Unknown')] = clients.get(getattr(inv, 'client_name', 'Unknown'), 0) + inv.total_amount
         sorted_clients = sorted(clients.items(), key=lambda x: x[1], reverse=True)
         contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_clients[:4]]
         
@@ -115,7 +140,6 @@ def generate_kpi_insight(
         ai_context_data = f"Net Profit: €{net}. Revenue: €{period_income}. Expenses: €{period_expense}. Margin: {margin:.1f}%. Year: {analysis_year}."
 
     elif request.kpi_type == 'cogs':
-        # 1. Fetch Inventory & Recipes
         inv_items = list(db["inventory"].find(user_filter, {"_id": 1, "name": 1, "cost_per_unit": 1}))
         recipes = list(db["recipes"].find(user_filter))
         
@@ -128,16 +152,14 @@ def generate_kpi_insight(
             for ing in r.get("ingredients", []):
                 i_id = ing.get("inventory_item_id")
                 qty = _safe_float(ing.get("quantity_required", 0))
-                if i_id in cost_by_id: r_cost += cost_by_id[i_id] * qty
+                if i_id and str(i_id) in cost_by_id: r_cost += cost_by_id[str(i_id)] * qty
             if r_cost > 0: product_costs[_normalize(r.get("product_name", ""))] = r_cost
 
-        # 2. Fetch Sales
         sales = list(db["transactions"].find({**user_filter, "$or": [{"date": date_filter}, {"date_time": date_filter}]}))
         
         total_cogs_inventory = 0.0
         item_cogs_breakdown = {}
         
-        # 3. Calculate COGS
         for sale in sales:
             p_name_raw = sale.get("description") or sale.get("product_name") or ""
             p_name_norm = _normalize(p_name_raw)
@@ -161,7 +183,6 @@ def generate_kpi_insight(
             if line_cost > 0: 
                 item_cogs_breakdown[p_name_raw] = item_cogs_breakdown.get(p_name_raw, 0) + line_cost
 
-        # 4. Fallback: Expense-Based COGS
         total_cogs_expenses = 0.0
         expense_breakdown = {}
         if total_cogs_inventory == 0:
@@ -173,7 +194,6 @@ def generate_kpi_insight(
                         total_cogs_expenses += e.amount
                         expense_breakdown[e.category] = expense_breakdown.get(e.category, 0) + e.amount
 
-        # 5. Build Result
         if total_cogs_inventory > 0:
             sorted_cogs = sorted(item_cogs_breakdown.items(), key=lambda x: x[1], reverse=True)
             contributors = [f"{c[0]}: €{c[1]:.2f}" for c in sorted_cogs[:4]]
@@ -196,7 +216,6 @@ def generate_kpi_insight(
             - Focus on efficiency and margins.
             - Do not just repeat numbers.
             """
-            # Note: passing user_id helps vector store if we wanted RAG, but here we use context stuffing
             ai_response = llm_service.ask_business_consultant(user_id=str(current_user.id), query=prompt)
             summary = ai_response.strip().replace('"', '')
         except Exception as e:
