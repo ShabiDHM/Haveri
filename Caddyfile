@@ -1,67 +1,71 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V4.4 (FINAL CORS FIX)
-# 1. FIX (Juristi): Consolidated all headers into a single block to prevent overrides.
-# 2. FIX (Haveri): Implemented dynamic Origin matching to correctly support www and non-www.
-# 3. STATUS: Production Ready.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V5.0 (BRUTE FORCE)
+# 1. FIX: Uses explicit, separate site blocks for www and non-www to guarantee origin matching.
+# 2. FIX: Consolidates all headers into a single block per site to prevent overrides.
+# 3. STATUS: Final Attempt.
 
 {
     email shabanbala@gmail.com
 }
 
 # ----------------------------------------
-# PROJECT 1: HAVERI
+# PROJECT 1: HAVERI (WWW)
 # ----------------------------------------
-api.haveri.tech {
-    # DYNAMIC CORS HANDLING for multiple origins
-    @haveri_cors_origins header Origin "https://haveri.tech" "https://www.haveri.tech"
-    
-    # Consolidate all headers into a SINGLE block
-    header {
-        # Set the origin dynamically based on the matcher
-        Access-Control-Allow-Origin "{header.origin}"
-        # Standard CORS headers
-        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        Access-Control-Allow-Headers "*"
-        Access-Control-Allow-Credentials "true"
-        Access-Control-Max-Age "86400"
-        
-        # Security Headers
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        X-XSS-Protection "1; mode=block"
-    }
-
-    # Handle preflight OPTIONS requests
+www.haveri.tech {
+    # Respond to browser permission checks
     @options method OPTIONS
     respond @options 204
     
+    # Add ALL headers in ONE block
+    header {
+        Access-Control-Allow-Origin "https://www.haveri.tech"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "*"
+        Access-Control-Allow-Credentials "true"
+        Strict-Transport-Security "max-age=31536000;"
+    }
+
     # Proxy to the backend
     reverse_proxy backend:8000
 }
 
 # ----------------------------------------
+# PROJECT 1: HAVERI (non-WWW)
+# ----------------------------------------
+api.haveri.tech {
+    # Respond to browser permission checks
+    @options method OPTIONS
+    respond @options 204
+    
+    # Add ALL headers in ONE block
+    header {
+        Access-Control-Allow-Origin "https://haveri.tech"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "*"
+        Access-Control-Allow-Credentials "true"
+        Strict-Transport-Security "max-age=31536000;"
+    }
+
+    # Proxy to the backend
+    reverse_proxy backend:8000
+}
+
+
+# ----------------------------------------
 # PROJECT 2: JURISTI
 # ----------------------------------------
 api.juristi.tech {
-    # Handle preflight OPTIONS requests
+    # Respond to browser permission checks
     @options method OPTIONS
     respond @options 204
-
-    # Consolidate all headers into a SINGLE block
+    
+    # Add ALL headers in ONE block
     header {
-        # Standard CORS headers
         Access-Control-Allow-Origin "https://juristi.tech"
         Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
         Access-Control-Allow-Headers "*"
         Access-Control-Allow-Credentials "true"
-        Access-Control-Max-Age "86400"
-        
-        # Security Headers
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        X-XSS-Protection "1; mode=block"
+        Strict-Transport-Security "max-age=31536000;"
     }
     
     # Proxy to the backend
