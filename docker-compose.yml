@@ -35,7 +35,8 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # PHOENIX FIX: Removed ':ro' to allow live reloads
+      - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
     networks: 
       - phoenix_net
@@ -110,7 +111,6 @@ services:
     image: neo4j:5
     restart: unless-stopped
     ports:
-      # PHOENIX FIX: Changed to 7475 and 7688 to prevent conflict with Jurisi app
       - "7475:7474" 
       - "7688:7687"
     environment:
