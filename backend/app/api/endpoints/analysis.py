@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V3.9 (FUNCTION NAME FIX)
-# 1. FIX: Corrected the service call from 'analyze_spreadsheet_file' to 'analyze_financial_spreadsheet'.
-# 2. STATUS: Resolves the 'AttributeError' and the 404/500 error chain.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V4.0 (DEPENDENCY FIX)
+# 1. FIX: Added the missing 'db: Database = Depends(get_db)' dependency to 'analyze_spreadsheet_endpoint'.
+# 2. STATUS: Resolves the 401 Unauthorized error by providing the correct database context.
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List, Dict, Any, Optional
@@ -54,18 +54,25 @@ def _normalize(text: str) -> str: return str(text).strip().lower()
 @router.post("/analyze-spreadsheet")
 async def analyze_spreadsheet_endpoint(
     current_user: UserInDB = Depends(get_current_user),
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    db: Database = Depends(get_db) # PHOENIX FIX: Added missing DB dependency
 ):
     """
     Analyzes an uploaded Excel/CSV file for financial data.
     """
+    context_id = str(current_user.organization_id) if hasattr(current_user, 'organization_id') and current_user.organization_id else str(current_user.id)
+    
     try:
         content = await file.read()
         filename = file.filename or "unknown.xlsx"
         
-        # PHOENIX FIX: Use the correct function name
         # We run this sync function in a thread to prevent blocking the event loop.
-        result = await asyncio.to_thread(spreadsheet_service.analyze_financial_spreadsheet, file_contents=content, filename=filename)
+        # The service needs the db context, which was missing.
+        result = await asyncio.to_thread(
+            spreadsheet_service.analyze_financial_spreadsheet, 
+            file_contents=content, 
+            filename=filename
+        )
 
         if result.get("error"):
              raise HTTPException(status_code=400, detail=result["error"])
