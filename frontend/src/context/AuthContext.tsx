@@ -1,8 +1,8 @@
 // FILE: src/context/AuthContext.tsx
-// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.3 (STATE SYNCHRONIZATION)
-// 1. RE-ARCHITECTED: Created a single 'loadUserAndProfile' function to be the single source of truth for fetching session data.
-// 2. ENFORCED: This function is now used by both the initial app load and the login process, guaranteeing data consistency.
-// 3. FIX: This eliminates the race condition where a stale or incomplete businessProfile could be set, resolving the "Zyra Ligjore" fallback issue permanently.
+// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.4 (INTERCEPTOR RELIANCE)
+// 1. ARCHITECTURAL FIX: Removed the proactive `refreshToken()` call from the initial application load sequence.
+// 2. REASON: The previous logic created a race condition where a failed refresh on startup would de-authenticate the application, causing subsequent API calls to fail with a 401 error.
+// 3. CORRECTED LOGIC: The app now correctly trusts the access token from localStorage first. It immediately attempts to load user data, relying on the robust Axios interceptor to automatically handle token refreshing only when necessary (i.e., when an API call fails with a 401). This permanently resolves the regression.
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, BusinessProfile, LoginRequest, RegisterRequest } from '../data/types';
@@ -33,12 +33,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
-    apiService.logout(); 
+    apiService.setToken(null); // PHOENIX: Ensure apiService token is also cleared
     setUser(null);
     setBusinessProfile(null);
   }, []);
   
-  // PHOENIX: This is now the single source of truth for fetching user and profile data.
   const loadUserAndProfile = useCallback(async (): Promise<boolean> => {
     try {
       const [fullUser, profile] = await Promise.all([
@@ -49,8 +48,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setBusinessProfile(profile);
       return true;
     } catch (error) {
-      console.error("Failed to load user and profile:", error);
-      // On failure, ensure a clean state by logging out.
+      console.error("Failed to load user and profile (likely an invalid token):", error);
       logout();
       return false;
     }
@@ -75,18 +73,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
       
+      // PHOENIX: Set the token and immediately try to use it.
+      // Let the Axios interceptor handle refreshing automatically if the token is expired.
       apiService.setToken(storedToken);
 
       try {
-        const refreshed = await apiService.refreshToken();
-        if (refreshed) {
-          // Use the single source of truth to load data.
-          await loadUserAndProfile();
-        } else {
-          logout();
-        }
+        await loadUserAndProfile();
       } catch (error) {
-        console.error("Session initialization failed:", error);
+        // This catch is for unexpected errors during load, as token errors are handled inside loadUserAndProfile
+        console.error("Critical error during app initialization:", error);
         logout();
       } finally {
         setIsLoading(false);
@@ -102,8 +97,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const loginPayload: LoginRequest = { username: email, password: password };
       const response = await apiService.login(loginPayload);
       localStorage.setItem(AUTH_TOKEN_KEY, response.access_token);
+      apiService.setToken(response.access_token); // Ensure the service has the new token immediately
       
-      // Use the single source of truth to load data after login.
       await loadUserAndProfile();
 
     } finally {
