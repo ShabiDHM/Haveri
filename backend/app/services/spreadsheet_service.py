@@ -1,14 +1,15 @@
 # FILE: backend/app/services/spreadsheet_service.py
-# PHOENIX PROTOCOL - REVISION V9 (MOBILE SCANNING)
-# 1. FEATURE: Added `analyze_scanned_image` function to process images with a vision LLM.
-# 2. ARCHITECTURE: The image analysis function performs OCR and then pipes the resulting CSV data into the existing `analyze_financial_spreadsheet` function for maximum code reuse.
-# 3. REFACTOR: Moved OpenAI client initialization into a helper function (`_get_client`).
+# PHOENIX PROTOCOL - REVISION V10 (STRUCTURED AI INSIGHT)
+# 1. AI ENHANCEMENT: Re-engineered the LLM prompt to request a structured JSON output with distinct fields for a summary, primary risk, and key recommendation.
+# 2. DATA STRUCTURE: The function now returns a nested `ai_summary` object, providing the frontend with richer, more actionable intelligence.
+# 3. ROBUSTNESS: Added JSON parsing with a fallback to the old method to ensure the system remains stable even if the LLM fails to return valid JSON.
 
 import pandas as pd
 import io
 import os
 import re
 import base64
+import json
 from app.core.config import settings
 from openai import OpenAI
 from typing import Dict, Any, List, Tuple
@@ -32,7 +33,6 @@ def analyze_scanned_image(file_contents: bytes) -> Dict[str, Any]:
 
     model_name = getattr(settings, 'OPENAI_MODEL', "gpt-4o")
     
-    # Encode the image to base64
     base64_image = base64.b64encode(file_contents).decode('utf-8')
 
     try:
@@ -63,13 +63,9 @@ def analyze_scanned_image(file_contents: bytes) -> Dict[str, Any]:
         if not csv_data_string or not isinstance(csv_data_string, str):
              return {"error": "AI nuk arriti të nxirrte të dhëna nga imazhi."}
 
-        # Clean potential markdown code blocks from the response
         csv_data_string = csv_data_string.strip().replace("```csv", "").replace("```", "").strip()
-
-        # Convert the CSV string to bytes to pass to the spreadsheet analyzer
         csv_bytes = csv_data_string.encode('utf-8')
 
-        # PHOENIX: REUSE existing analysis logic
         return analyze_financial_spreadsheet(file_contents=csv_bytes, filename="skanim.csv")
 
     except Exception as e:
@@ -128,38 +124,31 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
         avg_transaction = float(df[amount_col].mean())
         transaction_count = int(len(df))
 
-        # 5. ANOMALY DETECTION (TRANSLATED)
+        # 5. ANOMALY DETECTION
         anomalies: List[Dict[str, Any]] = []
-        
         suspicious_round = df[(df[amount_col] > 50) & (df[amount_col] % 50 == 0) & (df[amount_col] != 0)]
         for idx, row in suspicious_round.head(3).iterrows():
             anomalies.append({
-                "type": "Numër i Rrumbullakët",
-                "severity": "medium",
+                "type": "Numër i Rrumbullakët", "severity": "medium",
                 "description": f"Rreshti {idx}: Shumë e plotë prej {row[amount_col]:.2f} (Dyshim për vlerësim/manipulim)",
                 "row_id": int(idx)
             })
-
         if has_dates and date_col:
             weekend_tx = df[df[date_col].dt.dayofweek >= 5]
             for idx, row in weekend_tx.head(3).iterrows():
                 try:
-                    date_str = row[date_col].strftime('%Y-%m-%d')
                     anomalies.append({
-                        "type": "Aktivitet në Fundjavë",
-                        "severity": "low",
-                        "description": f"Rreshti {idx}: Transaksion i kryer në fundjavë ({date_str})",
+                        "type": "Aktivitet në Fundjavë", "severity": "low",
+                        "description": f"Rreshti {idx}: Transaksion i kryer në fundjavë ({row[date_col].strftime('%Y-%m-%d')})",
                         "row_id": int(idx)
                     })
                 except: continue
-
         if transaction_count > 5:
             cutoff = df[amount_col].std() * 3
             outliers = df[df[amount_col] > (avg_transaction + cutoff)]
             for idx, row in outliers.head(3).iterrows():
                  anomalies.append({
-                    "type": "Vlerë e Jashtëzakonshme",
-                    "severity": "high",
+                    "type": "Vlerë e Jashtëzakonshme", "severity": "high",
                     "description": f"Rreshti {idx}: Shuma {row[amount_col]:.2f} është jashtëzakonisht e lartë krahasuar me mesataren.",
                     "row_id": int(idx)
                 })
@@ -178,23 +167,43 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
                 df['category'] = pd.cut(df[amount_col], bins=bins, labels=labels)
                 counts = df['category'].value_counts()
                 chart_data = [{"label": str(label), "value": int(counts.get(label, 0))} for label in labels]
-
-        # 7. AI NARRATIVE
-        system_prompt = "Ti je një Ekspert i Forenzikës Financiare. Analizo të dhënat statistikore dhe shkruaj një përmbledhje ekzekutive të shkurtër (max 3 fjali) në gjuhën SHQIPE, duke theksuar volumin total, numrin e transaksioneve, dhe anomalitë kryesore."
-        user_content = f"Emri i Skedarit: {filename}, Rreshta: {transaction_count}, Totali: {total_sum:.2f}, Anomali: {len(anomalies)}, Detaje: {[a['description'] for a in anomalies[:2]]}"
+        
+        # 7. STRUCTURED AI NARRATIVE
+        system_prompt = """
+        You are a Financial Forensics Expert AI. Analyze the provided data and return a JSON object in Albanian.
+        The JSON object must have three keys: "summary", "primary_risk", and "key_recommendation".
+        - summary: A 2-sentence executive summary of the financial data.
+        - primary_risk: A 1-sentence description of the most significant financial risk identified.
+        - key_recommendation: A 1-sentence, actionable recommendation to mitigate the risk or improve financial health.
+        Respond ONLY with the raw JSON object.
+        """
+        user_content = f"File: {filename}, Total Rows: {transaction_count}, Total Sum: {total_sum:.2f}, Anomalies Found: {len(anomalies)}, Anomaly Examples: {[a['description'] for a in anomalies[:2]]}"
 
         response = client.chat.completions.create(
             model=model_name,
+            response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content}
             ],
-            temperature=0.3
+            temperature=0.4
         )
-        narrative = response.choices[0].message.content
+        
+        ai_narrative_structured = {"summary": "Analiza përfundoi.", "primary_risk": "Nuk u identifikua asnjë rrezik specifik.", "key_recommendation": "Vazhdoni monitorimin e rregullt."}
+        try:
+            raw_response = response.choices[0].message.content
+            if raw_response:
+                ai_narrative_structured = json.loads(raw_response)
+        except (json.JSONDecodeError, IndexError) as e:
+            print(f"AI JSON parsing failed, falling back to old method. Error: {e}")
+            # Fallback logic if JSON fails
+            fallback_narrative = response.choices[0].message.content or "Analiza përfundoi por përmbledhja nuk mund të gjenerohej."
+            ai_narrative_structured["summary"] = fallback_narrative
+
 
         return {
-            "status": "success", "summary": narrative,
+            "status": "success", 
+            "ai_summary": ai_narrative_structured,
             "stats": { "total_sum": total_sum, "transaction_count": transaction_count, "average": avg_transaction },
             "chart_data": chart_data, "anomalies": anomalies
         }
@@ -205,30 +214,25 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
 def smart_detect_columns(df: pd.DataFrame) -> Tuple[Any, Any]:
     cols = df.columns
     cols_lower = cols.str.lower()
-    
     date_keywords = ['date', 'data', 'time', 'koha', 'day', 'dita']
     high_priority_amount = ['total', 'shuma', 'amount', 'vlera', 'sum', 'balance']
     low_priority_amount = ['price', 'cmimi', 'cost', 'vlere', 'credit', 'debit']
     ignore = ['id', 'code', 'zip', 'phone', 'vat', 'tvsh', 'qty', 'sasia']
     date_col, amount_col, best_amount_score = None, None, -1
-
     for i, col_name in enumerate(cols_lower):
         if not date_col and any(k in col_name for k in date_keywords): date_col = cols[i]
         if any(bad in col_name for bad in ignore): continue
         score = 0
         if any(k in col_name for k in high_priority_amount): score = 2
         elif any(k in col_name for k in low_priority_amount): score = 1
-        if score > best_amount_score:
-            best_amount_score = score
-            amount_col = cols[i]
+        if score > best_amount_score: best_amount_score = score; amount_col = cols[i]
     if not date_col:
         for col in cols:
             sample = df[col].dropna().head(20).astype(str)
             if sample.empty: continue
             try:
                 converted = pd.to_datetime(sample, dayfirst=True, errors='coerce')
-                if converted.notna().mean() > 0.8:
-                    date_col = col; break
+                if converted.notna().mean() > 0.8: date_col = col; break
             except: continue
     if not amount_col:
         max_mean = -1
@@ -238,8 +242,6 @@ def smart_detect_columns(df: pd.DataFrame) -> Tuple[Any, Any]:
                 numeric_series = pd.to_numeric(df[col].astype(str).str.replace(r'[^\d,.-]', '', regex=True).str.replace(',', '.'), errors='coerce')
                 if numeric_series.notna().mean() > 0.8:
                     current_mean = numeric_series.mean()
-                    if current_mean > max_mean:
-                        max_mean = current_mean
-                        amount_col = col
+                    if current_mean > max_mean: max_mean = current_mean; amount_col = col
             except: continue
     return date_col, amount_col
