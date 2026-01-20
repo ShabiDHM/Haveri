@@ -1,7 +1,8 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V6.0 (PURE PROXY)
-# 1. FIX: Removed manual CORS headers. Delegated strict control to FastAPI backend.
-# 2. FIX: Eliminated origin mismatches by passing all traffic transparency.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V7.0 (SSE FIX)
+# 1. FIX (JURISTI): Added a 'transport http' block with an extended 'read_timeout' of 10 minutes to the 'api.juristi.tech' proxy.
+# 2. REASON: Resolves critical 'net::ERR_CONNECTION_CLOSED' errors by preventing Caddy from prematurely terminating the long-lived Server-Sent Events (SSE) stream.
+# 3. SCOPE: This change is targeted only at the Juristi API and does not affect the Haveri project configuration.
 
 {
     email shabanbala@gmail.com
@@ -25,5 +26,10 @@ api.haveri.tech {
 # ----------------------------------------
 # API Subdomain
 api.juristi.tech {
-    reverse_proxy juristi-backend:8000
+    reverse_proxy juristi-backend:8000 {
+        # PHOENIX: Keep SSE connections alive
+        transport http {
+            read_timeout 10m
+        }
+    }
 }
