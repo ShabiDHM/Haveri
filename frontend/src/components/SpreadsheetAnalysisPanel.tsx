@@ -1,8 +1,8 @@
 // FILE: frontend/src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - REVISION V6.2 (DUAL MOBILE ACTIONS)
-// 1. FEATURE: The mobile view now correctly displays BOTH a "Scan Document" and an "Upload File" button.
-// 2. UI: Established a clear visual hierarchy with a primary scan button and a secondary upload button for mobile.
-// 3. DESKTOP: The large drag-and-drop interface is preserved for desktop users.
+// PHOENIX PROTOCOL - REVISION V8.0 (CENTRAL CLIENT INTEGRATION)
+// 1. ARCHITECTURE: Refactored to use the central `apiService` for all API calls, inheriting its robust authentication and error handling.
+// 2. BUGFIX: Permanently corrects the "401 Unauthorized" error by removing the fragile, component-level `fetch` call.
+// 3. CLEANUP: Removed local type definitions and API URL constants, deferring to the centralized service and type files.
 // 4. COMPLETENESS: This is the full and final version of the file.
 
 import React, { useState, useRef } from 'react';
@@ -21,19 +21,11 @@ import {
     X,
     BarChart3,
     Camera,
-    FileUp // PHOENIX: New Icon
+    FileUp
 } from 'lucide-react';
-import { API_V1_URL } from '../services/api';
-
-// --- TYPES ---
-interface Anomaly { type: string; severity: 'low' | 'medium' | 'high'; description: string; row_id: number; }
-interface ChartItem { label: string; value: number; }
-interface AnalysisResult {
-    summary: string;
-    stats: { total_sum: number; transaction_count: number; average: number; };
-    chart_data: ChartItem[];
-    anomalies: Anomaly[];
-}
+import { apiService } from '../services/api'; // PHOENIX: Using central API service
+import { AnalysisResult } from '../data/types'; // PHOENIX: Using central types
+import { AxiosError } from 'axios';
 
 // --- COMPONENT ---
 const SpreadsheetAnalysisPanel: React.FC = () => {
@@ -71,37 +63,26 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         setStatus('uploading');
         setErrorMsg('');
         
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-
-        const isImage = selectedFile.type.startsWith('image/') || selectedFile.name.match(/\.(jpg|jpeg|png)$/i);
-        const endpoint = isImage 
-            ? `${API_V1_URL}/analysis/analyze-scanned-image` 
-            : `${API_V1_URL}/analysis/analyze-spreadsheet`;
-        
         try {
             setTimeout(() => setStatus('analyzing'), 800);
 
-            const token = localStorage.getItem('token');
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
-            });
+            // PHOENIX: Replaced raw fetch with a call to the robust, central apiService
+            const data = await apiService.analyzeDocument(selectedFile);
 
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.detail || 'Analysis failed');
-            }
-
-            const data = await response.json();
             setResult(data);
             setStatus('complete');
 
         } catch (err: any) {
-            console.error(err);
+            console.error("Analysis Error:", err);
             setStatus('error');
-            setErrorMsg(err.message || "Failed to analyze file.");
+            let message = "Failed to analyze file.";
+            // PHOENIX: Use AxiosError type for more specific error messages from the backend
+            if (err instanceof AxiosError && err.response?.data?.detail) {
+                message = err.response.data.detail;
+            } else if (err.message) {
+                message = err.message;
+            }
+            setErrorMsg(message);
         }
     };
 
@@ -117,7 +98,6 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     if (status === 'idle') {
         return (
             <div className="min-h-[500px] flex flex-col items-center justify-center p-4 text-center">
-                {/* PHOENIX: Desktop Drag & Drop Area */}
                 <div 
                     className="hidden sm:flex min-h-[450px] w-full flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-3xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group"
                     onDragOver={(e) => e.preventDefault()}
@@ -134,7 +114,6 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                         {t('analyst.selectButton', 'Zgjidh Skedarin')}
                     </button>
                 </div>
-                {/* PHOENIX: Mobile Dual-Action Area */}
                 <div className="sm:hidden w-full flex flex-col items-center justify-center">
                     <h2 className="text-2xl font-bold text-white mb-4">{t('analyst.mobileTitle', 'Analizo një Dokument')}</h2>
                     <p className="text-gray-400 mb-8 max-w-md mx-auto">
@@ -153,7 +132,6 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     </div>
                 </div>
                 
-                {/* Hidden Inputs */}
                 <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept=".csv, .xlsx, .xls, .png, .jpg, .jpeg"/>
                 <input type="file" ref={scanInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" capture="environment"/>
             </div>

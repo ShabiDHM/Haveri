@@ -1,7 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V9.3 (GRAPH MODES ENABLED)
-// 1. MODIFIED: 'getGraphData' now accepts an optional 'mode' parameter.
-// 2. PURPOSE: Allows the frontend to request specific intelligence views (Risk, Opportunity) from the backend.
+// PHOENIX PROTOCOL - API V9.4 (ANALYSIS METHOD ADDED)
+// 1. ADDED: New `analyzeDocument` method to handle spreadsheet and image analysis uploads.
+// 2. ARCHITECTURE: Encapsulates the analysis API endpoint logic within the central service, ensuring it benefits from the authentication interceptors.
+// 3. TYPES: Imported `AnalysisResult` and related types for strong type safety.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -12,7 +13,8 @@ import type {
     ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
     InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction,
     StrategicBriefingResponse, InviteUserRequest,
-    GraphData
+    GraphData,
+    AnalysisResult // PHOENIX: Added Type
 } from '../data/types';
 
 // ... (other interface definitions are unchanged) ...
@@ -123,6 +125,20 @@ class ApiService {
     public async analyzeSalesTrend(itemId: string): Promise<SalesTrendAnalysis> { try { const response = await this.axiosInstance.post<SalesTrendAnalysis>('/analysis/inventory/trend', { item_id: itemId }); return response.data; } catch (e) { return { trend_analysis: "E padisponueshme", cross_sell_opportunities: "E padisponueshme" }; } }
     public async getKpiInsight(kpiType: string): Promise<KpiInsightResponse> { try { const response = await this.axiosInstance.post<KpiInsightResponse>('/analysis/finance/kpi-insight', { kpi_type: kpiType }); return response.data; } catch (e) { return { summary: "Shërbimi i analizës është offline.", key_contributors: [] }; } }
     public async getProactiveInsight(): Promise<GeneralInsightResponse> { try { const response = await this.axiosInstance.get<GeneralInsightResponse>('/analysis/finance/proactive-insight'); return response.data; } catch (e) { return { insight: "Shtoni transaksione për të parë analizat e AI.", sentiment: "neutral" }; } }
+    
+    // PHOENIX: NEW METHOD
+    public async analyzeDocument(file: File): Promise<AnalysisResult> {
+        const formData = new FormData();
+        formData.append('file', file);
+    
+        const isImage = file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png)$/i);
+        const endpoint = isImage 
+            ? `/analysis/analyze-scanned-image` 
+            : `/analysis/analyze-spreadsheet`;
+            
+        const response = await this.axiosInstance.post<AnalysisResult>(endpoint, formData);
+        return response.data;
+    }
 
     // --- FINANCE & ANALYTICS ---
     public async getAnalyticsDashboard(days: number = 30): Promise<AnalyticsDashboardData> { const response = await this.axiosInstance.get<AnalyticsDashboardData>(`/finance/analytics/dashboard`, { params: { days } }); return response.data; }

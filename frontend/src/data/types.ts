@@ -1,7 +1,8 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V3.1 (OPERATIONAL LAYER SYNC)
+// PHOENIX PROTOCOL - TYPES V3.2 (ANALYSIS TYPES ADDED)
 // 1. SCHEMA SYNC: Added 'Inventory' and 'Product' to the GraphNode group type.
 // 2. PURPOSE: Resolves TypeScript compilation errors by aligning frontend types with backend API reality.
+// 3. ADDED: Appended and exported `Anomaly`, `ChartItem`, and `AnalysisResult` interfaces to resolve compilation errors.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -102,4 +103,28 @@ export interface GraphLink {
 export interface GraphData {
     nodes: GraphNode[];
     links: GraphLink[];
+}
+
+// --- PHOENIX: ADDED ANALYSIS TYPES ---
+export interface Anomaly {
+    type: string;
+    severity: 'low' | 'medium' | 'high';
+    description: string;
+    row_id: number;
+}
+
+export interface ChartItem {
+    label: string;
+    value: number;
+}
+
+export interface AnalysisResult {
+    summary: string;
+    stats: {
+        total_sum: number;
+        transaction_count: number;
+        average: number;
+    };
+    chart_data: ChartItem[];
+    anomalies: Anomaly[];
 }
