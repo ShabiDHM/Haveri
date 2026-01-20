@@ -1,13 +1,14 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.9 (INTEGRATIONS LINK)
-// 1. UI: Added a new navigation link for 'Integrations' in the user profile dropdown menu.
-// 2. ICON: Imported the 'Share2' icon to support the new menu item.
+// PHOENIX PROTOCOL - HEADER V7.0 (RACE CONDITION FIX)
+// 1. BUGFIX: Resolved the persistent "401 Unauthorized" error by fixing a critical startup race condition.
+// 2. LOGIC: Modified the `useEffect` hooks for `fetchPrimaryWorkspace` and `checkAlerts` to depend on the `isAuthenticated` flag from the AuthContext.
+// 3. REASON: This guarantees that no authenticated API calls are made until the AuthContext has finished its asynchronous initialization and confirmed a valid user session, permanently eliminating the race condition.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, 
     MessageSquare, Menu, FileText, Package, FolderOpen, 
-    Sparkles, Building2, X, Shield, Share2 // PHOENIX: Imported Share2 Icon
+    Sparkles, Building2, X, Shield, Share2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -17,10 +18,10 @@ import LanguageSwitcher from './LanguageSwitcher';
 import BrandLogo from './BrandLogo';
 
 const Header: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth(); // PHOENIX: Added isAuthenticated
   const { t } = useTranslation();
   const location = useLocation();
-  const navigate = useNavigate(); // PHOENIX: Added useNavigate for dropdown actions
+  const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
@@ -36,30 +37,35 @@ const Header: React.FC = () => {
     }
   }, [location.pathname]);
 
+  // PHOENIX: This hook now waits for authentication to be confirmed before running.
   useEffect(() => {
     const fetchPrimaryWorkspace = async () => {
-      try {
-        const projects = await apiService.getCases();
-        if (projects && projects.length > 0) {
-          setWorkspaceId(projects[0].id);
-        }
-      } catch (error) { console.error("Could not fetch primary workspace:", error); }
+      if (isAuthenticated) { // PHOENIX: Guard against running before auth is ready
+        try {
+          const projects = await apiService.getCases();
+          if (projects && projects.length > 0) {
+            setWorkspaceId(projects[0].id);
+          }
+        } catch (error) { console.error("Could not fetch primary workspace:", error); }
+      }
     };
     fetchPrimaryWorkspace();
-  }, []);
+  }, [isAuthenticated]); // PHOENIX: Dependency added
 
+  // PHOENIX: This hook's dependency on `user` already served as a correct guard, but we make it explicit with `isAuthenticated` for consistency.
   useEffect(() => {
     const checkAlerts = async () => {
-      if (!user) return;
-      try {
-        const data = await apiService.getAlertsCount();
-        setAlertCount(data.count);
-      } catch (err) { console.warn("Alert check skipped"); }
+      if (isAuthenticated) { // PHOENIX: Guard against running before auth is ready
+        try {
+          const data = await apiService.getAlertsCount();
+          setAlertCount(data.count);
+        } catch (err) { console.warn("Alert check failed or was skipped."); }
+      }
     };
     checkAlerts();
     const interval = setInterval(checkAlerts, 60000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [isAuthenticated]); // PHOENIX: Dependency changed from `user` for consistency
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -148,13 +154,10 @@ const Header: React.FC = () => {
             <div ref={dropdownRef} className="absolute right-0 mt-2 w-56 bg-background-dark border border-glass-edge rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2">
               <div className="px-4 py-3 border-b border-glass-edge mb-1"><p className="text-base text-white font-medium truncate">{user?.username}</p><p className="text-xs text-text-secondary truncate">{user?.email}</p></div>
               <button onClick={() => handleDropdownNavigate('/account')} className="w-full text-left flex items-center px-4 py-2 text-base text-text-secondary hover:text-white hover:bg-white/5 transition-colors"><UserIcon size={18} className="mr-3 text-blue-400" />{t('sidebar.account')}</button>
-              
-              {/* PHOENIX: New Integrations Link */}
               <button onClick={() => handleDropdownNavigate('/integrations')} className="w-full text-left flex items-center px-4 py-2 text-base text-text-secondary hover:text-white hover:bg-white/5 transition-colors">
                   <Share2 size={18} className="mr-3 text-purple-400" />
                   {t('navigation.integrations', 'Integrations')}
               </button>
-
               <button onClick={() => handleDropdownNavigate('/support')} className="w-full text-left flex items-center px-4 py-2 text-base text-text-secondary hover:text-white hover:bg-white/5 transition-colors"><MessageSquare size={18} className="mr-3 text-emerald-400" />{t('sidebar.support')}</button>
               <div className="h-px bg-glass-edge my-1"></div>
               <button onClick={() => { setIsProfileOpen(false); logout(); }} className="w-full flex items-center px-4 py-2 text-base text-red-400 hover:bg-red-500/10 transition-colors"><LogOut size={18} className="mr-3" />{t('header.logout')}</button>
