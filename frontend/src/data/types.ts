@@ -1,8 +1,7 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V3.2 (ANALYSIS TYPES ADDED)
-// 1. SCHEMA SYNC: Added 'Inventory' and 'Product' to the GraphNode group type.
-// 2. PURPOSE: Resolves TypeScript compilation errors by aligning frontend types with backend API reality.
-// 3. ADDED: Appended and exported `Anomaly`, `ChartItem`, and `AnalysisResult` interfaces to resolve compilation errors.
+// PHOENIX PROTOCOL - TYPES V3.3 (STRUCTURED INSIGHT ALIGNMENT)
+// 1. SCHEMA SYNC: Modified the `AnalysisResult` interface to expect a structured `ai_summary` object instead of a simple `summary` string.
+// 2. PURPOSE: Aligns the frontend's data contract with the enhanced backend API response, enabling the display of richer, structured AI insights.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -66,60 +65,21 @@ export type DraftingJobStatus = { job_id: string; status: 'PENDING' | 'PROCESSIN
 export type DraftingJobResult = { document_text: string; document_html?: string; result_text?: string; job_id?: string; status?: string; };
 
 // --- INTERCONNECTED INTELLIGENCE (GRAPH) TYPES v3.1 ---
-export interface GraphNode {
-    id: string | number;
-    label: string;
-    // UPDATED: Added Inventory and Product to the allowed groups
-    group: 'Client' | 'Invoice' | 'Expense' | 'Document' | 'Case' | 'Default' | 'Inventory' | 'Product';
-    
-    // Financial Intelligence
-    value?: number;
-    currency?: string;
-    status?: 'Active' | 'Paid' | 'Unpaid' | 'Overdue' | 'Draft' | 'Pending';
-    
-    // Visuals
-    color?: string;
-    icon?: string;
-    
-    // Metadata
-    subLabel?: string;
-    meta?: Record<string, any>;
-    
-    // Physics (D3)
-    x?: number;
-    y?: number;
-    fx?: number;
-    fy?: number;
-}
-  
-export interface GraphLink {
-    source: string | number | GraphNode;
-    target: string | number | GraphNode;
-    label?: string;
-    value?: number;
-    type?: 'transaction' | 'ownership' | 'reference';
-}
-  
-export interface GraphData {
-    nodes: GraphNode[];
-    links: GraphLink[];
-}
+export interface GraphNode { id: string | number; label: string; group: 'Client' | 'Invoice' | 'Expense' | 'Document' | 'Case' | 'Default' | 'Inventory' | 'Product'; value?: number; currency?: string; status?: 'Active' | 'Paid' | 'Unpaid' | 'Overdue' | 'Draft' | 'Pending'; color?: string; icon?: string; subLabel?: string; meta?: Record<string, any>; x?: number; y?: number; fx?: number; fy?: number; }
+export interface GraphLink { source: string | number | GraphNode; target: string | number | GraphNode; label?: string; value?: number; type?: 'transaction' | 'ownership' | 'reference'; }
+export interface GraphData { nodes: GraphNode[]; links: GraphLink[]; }
 
 // --- PHOENIX: ADDED ANALYSIS TYPES ---
-export interface Anomaly {
-    type: string;
-    severity: 'low' | 'medium' | 'high';
-    description: string;
-    row_id: number;
-}
+export interface Anomaly { type: string; severity: 'low' | 'medium' | 'high'; description: string; row_id: number; }
+export interface ChartItem { label: string; value: number; }
 
-export interface ChartItem {
-    label: string;
-    value: number;
-}
-
+// PHOENIX: MODIFIED FOR STRUCTURED AI INSIGHT
 export interface AnalysisResult {
-    summary: string;
+    ai_summary: {
+        summary: string;
+        primary_risk: string;
+        key_recommendation: string;
+    };
     stats: {
         total_sum: number;
         transaction_count: number;
