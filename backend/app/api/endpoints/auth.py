@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/auth.py
-# PHOENIX PROTOCOL - AUTH ENGINE V5.3 (INVITE ACCEPTANCE)
-# 1. FEATURE: Added the '/accept-invite' endpoint to activate new team members.
-# 2. LOGIC: This endpoint receives the invitation token and new password to finalize account setup.
+# PHOENIX PROTOCOL - AUTH ENGINE V5.4 (CROSS-SUBDOMAIN COOKIE FIX)
+# 1. CRITICAL FIX: Added the `domain` attribute to the `set_cookie` and `delete_cookie` calls for the refresh token.
+# 2. REASON: This resolves the persistent "401 Unauthorized" error on application load by allowing the refresh token cookie to be sent on requests originating from any subdomain of 'haveri.tech' (e.g., www.haveri.tech) to the API (api.haveri.tech). This corrects the browser security policy issue that was preventing the token refresh mechanism from working.
 
 from datetime import timedelta
 from typing import Any
@@ -24,7 +24,6 @@ class ChangePasswordSchema(BaseModel):
     old_password: str
     new_password: str
 
-# PHOENIX: Schema for the invitation acceptance
 class AcceptInviteSchema(BaseModel):
     token: str
     new_password: str
@@ -55,12 +54,16 @@ async def login_access_token(response: Response, form_data: UserLogin, db: Datab
     refresh_token_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
     refresh_token = security.create_refresh_token(data={"id": str(user.id)}, expires_delta=refresh_token_expires)
     
+    # PHOENIX: Determine the parent domain for the cookie for production environments
+    cookie_domain = ".haveri.tech" if settings.ENVIRONMENT != "development" else None
+
     response.set_cookie(
         key="refresh_token", 
         value=refresh_token, 
         httponly=True, 
         secure=settings.ENVIRONMENT != "development", 
-        samesite="lax", 
+        samesite="lax",
+        domain=cookie_domain,  # PHOENIX: CRITICAL FIX ADDED HERE
         max_age=int(refresh_token_expires.total_seconds())
     )
     
@@ -101,15 +104,11 @@ async def register_user(user_in: UserCreate, db: Database = Depends(get_db)) -> 
     user = user_service.create(db, obj_in=user_in)
     return {"message": "Registration successful. Please wait for admin approval."}
 
-# --- PHOENIX: NEW ENDPOINT ---
 @router.post("/accept-invite", status_code=status.HTTP_200_OK)
 async def accept_invitation(
     invite_data: AcceptInviteSchema,
     db: Database = Depends(get_db)
 ) -> Any:
-    """
-    Activates a user account using an invitation token and sets their password.
-    """
     try:
         activated_user = user_service.activate_invited_user(
             db=db,
@@ -142,7 +141,14 @@ async def refresh_token(current_user: UserInDB = Depends(get_user_from_refresh_t
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout(response: Response):
-    response.delete_cookie(key="refresh_token", httponly=True, secure=settings.ENVIRONMENT != "development", samesite="lax")
+    cookie_domain = ".haveri.tech" if settings.ENVIRONMENT != "development" else None
+    response.delete_cookie(
+        key="refresh_token", 
+        httponly=True, 
+        secure=settings.ENVIRONMENT != "development", 
+        samesite="lax",
+        domain=cookie_domain
+    )
     return {"message": "Logged out successfully"}
 
 @router.post("/change-password", status_code=status.HTTP_200_OK)
