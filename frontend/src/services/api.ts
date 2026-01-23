@@ -1,8 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V9.4 (ANALYSIS METHOD ADDED)
-// 1. ADDED: New `analyzeDocument` method to handle spreadsheet and image analysis uploads.
-// 2. ARCHITECTURE: Encapsulates the analysis API endpoint logic within the central service, ensuring it benefits from the authentication interceptors.
-// 3. TYPES: Imported `AnalysisResult` and related types for strong type safety.
+// PHOENIX PROTOCOL - API V9.5 (MOBILE HANDOFF)
+// 1. ADDED: Methods for creating, polling, and retrieving files via the mobile handoff (QR Code) workflow.
+// 2. METHODS: createHandoffSession, getHandoffStatus, retrieveHandoffFile, uploadMobileFile.
+// 3. STATUS: Aligns the ApiService with the new frontend components to resolve TypeScript errors.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -14,7 +14,7 @@ import type {
     InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction,
     StrategicBriefingResponse, InviteUserRequest,
     GraphData,
-    AnalysisResult // PHOENIX: Added Type
+    AnalysisResult
 } from '../data/types';
 
 // ... (other interface definitions are unchanged) ...
@@ -95,6 +95,26 @@ class ApiService {
     public async updateUser(userId: string, data: UpdateUserRequest): Promise<User> { const response = await this.axiosInstance.put<User>(`/admin/users/${userId}`, data); return response.data; }
     public async deleteUser(userId: string): Promise<void> { await this.axiosInstance.delete(`/admin/users/${userId}`); }
 
+    // --- PHOENIX: MOBILE HANDOFF METHODS ---
+    public async createHandoffSession(): Promise<{ token: string }> {
+        const response = await this.axiosInstance.post<{ token: string }>('/mobile-handoff/create');
+        return response.data;
+    }
+    public async uploadMobileFile(token: string, file: File): Promise<{ message: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await this.axiosInstance.post(`/mobile-handoff/upload/${token}`, formData);
+        return response.data;
+    }
+    public async getHandoffStatus(token: string): Promise<{ status: 'pending' | 'complete', filename?: string }> {
+        const response = await this.axiosInstance.get(`/mobile-handoff/status/${token}`);
+        return response.data;
+    }
+    public async retrieveHandoffFile(token: string, filename: string): Promise<File> {
+        const response = await this.axiosInstance.get(`/mobile-handoff/retrieve/${token}`, { responseType: 'blob' });
+        return new File([response.data], filename, { type: response.headers['content-type'] });
+    }
+
     // --- CASES ---
     public async getCases(): Promise<Case[]> { const response = await this.axiosInstance.get<any>('/cases'); return Array.isArray(response.data) ? response.data : (response.data?.cases || []); }
     public async createCase(data: CreateCaseRequest): Promise<Case> { const response = await this.axiosInstance.post<Case>('/cases', data); return response.data; }
@@ -126,17 +146,11 @@ class ApiService {
     public async getKpiInsight(kpiType: string): Promise<KpiInsightResponse> { try { const response = await this.axiosInstance.post<KpiInsightResponse>('/analysis/finance/kpi-insight', { kpi_type: kpiType }); return response.data; } catch (e) { return { summary: "Shërbimi i analizës është offline.", key_contributors: [] }; } }
     public async getProactiveInsight(): Promise<GeneralInsightResponse> { try { const response = await this.axiosInstance.get<GeneralInsightResponse>('/analysis/finance/proactive-insight'); return response.data; } catch (e) { return { insight: "Shtoni transaksione për të parë analizat e AI.", sentiment: "neutral" }; } }
     
-    // PHOENIX: NEW METHOD
     public async analyzeDocument(file: File): Promise<AnalysisResult> {
         const formData = new FormData();
         formData.append('file', file);
-    
-        const isImage = file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png)$/i);
-        const endpoint = isImage 
-            ? `/analysis/analyze-scanned-image` 
-            : `/analysis/analyze-spreadsheet`;
             
-        const response = await this.axiosInstance.post<AnalysisResult>(endpoint, formData);
+        const response = await this.axiosInstance.post<AnalysisResult>(`/analysis/analyze-spreadsheet`, formData);
         return response.data;
     }
 

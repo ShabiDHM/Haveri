@@ -1,7 +1,8 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V4.0 (DEPENDENCY FIX)
-# 1. FIX: Added the missing 'db: Database = Depends(get_db)' dependency to 'analyze_spreadsheet_endpoint'.
-# 2. STATUS: Resolves the 401 Unauthorized error by providing the correct database context.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V4.1 (OCR ENABLED)
+# 1. FIX: Added MIME type detection to route images to the 'analyze_scanned_image' service.
+# 2. FEATURE: Now supports PNG, JPEG, and WEBP for financial document analysis.
+# 3. STATUS: Resolves the "Analysis failed" error when uploading images.
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List, Dict, Any, Optional
@@ -12,6 +13,7 @@ from bson import ObjectId
 import re
 import logging
 import asyncio
+import mimetypes
 
 from app.api.endpoints.dependencies import get_current_user, get_db
 from app.models.user import UserInDB
@@ -55,34 +57,46 @@ def _normalize(text: str) -> str: return str(text).strip().lower()
 async def analyze_spreadsheet_endpoint(
     current_user: UserInDB = Depends(get_current_user),
     file: UploadFile = File(...),
-    db: Database = Depends(get_db) # PHOENIX FIX: Added missing DB dependency
+    db: Database = Depends(get_db)
 ):
     """
-    Analyzes an uploaded Excel/CSV file for financial data.
+    Analyzes an uploaded Excel/CSV file OR an Image (OCR) for financial data.
     """
     context_id = str(current_user.organization_id) if hasattr(current_user, 'organization_id') and current_user.organization_id else str(current_user.id)
     
     try:
         content = await file.read()
-        filename = file.filename or "unknown.xlsx"
+        filename = file.filename or "unknown"
         
+        # PHOENIX INTELLIGENCE: MIME Type Detection
+        mime_type, _ = mimetypes.guess_type(filename)
+        is_image = mime_type and mime_type.startswith('image/')
+        
+        # Helper wrapper to call the right service function
+        def process_file():
+            if is_image:
+                logger.info(f"Processing OCR for image: {filename}")
+                return spreadsheet_service.analyze_scanned_image(content)
+            else:
+                logger.info(f"Processing spreadsheet: {filename}")
+                return spreadsheet_service.analyze_financial_spreadsheet(content, filename)
+
         # We run this sync function in a thread to prevent blocking the event loop.
-        # The service needs the db context, which was missing.
-        result = await asyncio.to_thread(
-            spreadsheet_service.analyze_financial_spreadsheet, 
-            file_contents=content, 
-            filename=filename
-        )
+        result = await asyncio.to_thread(process_file)
 
         if result.get("error"):
+             # If it's a specific error from the service, return 400
              raise HTTPException(status_code=400, detail=result["error"])
 
         return result
+        
+    except HTTPException:
+        raise
     except ValueError as ve: 
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        logger.error(f"Spreadsheet Analysis Error: {e}")
-        raise HTTPException(status_code=500, detail="Analysis failed.")
+        logger.error(f"Analysis Engine Error: {e}")
+        raise HTTPException(status_code=500, detail="Analysis failed due to an unexpected server error.")
 
 @router.post("/finance/kpi-insight", response_model=KpiInsightResponse)
 def generate_kpi_insight(

@@ -1,7 +1,7 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V3.4 (INTEGRATIONS PAGE)
-// 1. IMPORT: Imported the new IntegrationsPage component.
-// 2. ROUTING: Added '/integrations' as a new protected route within the MainLayout.
+// PHOENIX PROTOCOL - ROUTING V3.5 (MOBILE UPLOAD)
+// 1. IMPORT: Imported the new MobileUploadPage component.
+// 2. ROUTING: Added '/mobile-upload/:token' as a new public, standalone route.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -21,7 +21,8 @@ import AccountPage from './pages/AccountPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import FinanceWizardPage from './pages/FinanceWizardPage';
 import ClientPortalPage from './pages/ClientPortalPage';
-import { IntegrationsPage } from './pages/IntegrationsPage'; // PHOENIX: Imported
+import { IntegrationsPage } from './pages/IntegrationsPage';
+import MobileUploadPage from './pages/MobileUploadPage'; // <-- IMPORT MOBILE PAGE
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -70,6 +71,9 @@ const AppRoutes: React.FC = () => {
       {/* Standalone Protected Routes (No Sidebar) */}
       <Route path="/finance/wizard" element={<ProtectedRoute><FinanceWizardPage /></ProtectedRoute>} />
 
+      {/* PHOENIX: Mobile Handoff Route (Public, No Layout) */}
+      <Route path="/mobile-upload/:token" element={<MobileUploadPage />} />
+
       {/* Standard Protected Routes (With Sidebar) */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="/cases/:caseId" element={<CaseViewPage />} />
@@ -77,10 +81,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/support" element={<SupportPage />} />
         <Route path="/account" element={<AccountPage />} />
         
-        {/* PHOENIX: New Integrations Route */}
         <Route path="/integrations" element={<IntegrationsPage />} />
 
-        {/* Business Sub-Routes (Mapped to Global Header) */}
+        {/* Business Sub-Routes */}
         <Route path="/business" element={<BusinessPage view="briefing" />} />
         <Route path="/business/finance" element={<BusinessPage view="finance" />} />
         <Route path="/business/inventory" element={<BusinessPage view="inventory" />} />

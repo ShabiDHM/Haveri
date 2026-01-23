@@ -1,20 +1,21 @@
 // FILE: frontend/src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - REVISION V9.1 (CODE CLEANUP)
-// 1. CLEANUP: Removed the unused 'FileText' import from `lucide-react` as identified by the linter.
-// 2. STATUS: This resolves the "is declared but its value is never read" warning, resulting in a clean, production-ready component. No functional changes have been made.
+// PHOENIX PROTOCOL - REVISION V10.1 (TYPE SAFETY)
+// 1. FIX: Added a type guard `&& filename` to ensure the filename exists before retrieving the handoff file.
+// 2. STATUS: Resolves the TypeScript error ts(2345) and prevents a potential runtime crash.
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { 
     UploadCloud, FileSpreadsheet, Loader2, CheckCircle2, AlertTriangle, TrendingUp, 
-    DollarSign, Activity, X, BarChart3, Camera, FileUp,
-    ShieldAlert, Sparkles // PHOENIX: New Icons
+    DollarSign, Activity, X, BarChart3, Camera, FileUp, Smartphone,
+    ShieldAlert, Sparkles 
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { AnalysisResult } from '../data/types';
 import { AxiosError } from 'axios';
-import clsx from 'clsx'; // Utility for conditional classes
+import clsx from 'clsx';
+import QRCode from 'qrcode.react';
 
 // --- COMPONENT ---
 const SpreadsheetAnalysisPanel: React.FC = () => {
@@ -25,11 +26,58 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     const [errorMsg, setErrorMsg] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scanInputRef = useRef<HTMLInputElement>(null);
+    
+    const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+    const [handoffToken, setHandoffToken] = useState<string | null>(null);
+    const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // --- HANDOFF LOGIC ---
+    const startHandoff = async () => {
+        try {
+            const { token } = await apiService.createHandoffSession();
+            setHandoffToken(token);
+            setIsQrModalOpen(true);
+        } catch (error) {
+            alert("Dështoi krijimi i sesionit për celular.");
+        }
+    };
+
+    useEffect(() => {
+        if (isQrModalOpen && handoffToken) {
+            pollingIntervalRef.current = setInterval(async () => {
+                try {
+                    const { status: handoffStatus, filename } = await apiService.getHandoffStatus(handoffToken);
+                    
+                    // PHOENIX FIX: Ensure filename exists before proceeding
+                    if (handoffStatus === 'complete' && filename) {
+                        const fileData = await apiService.retrieveHandoffFile(handoffToken, filename);
+                        handleUpload(fileData);
+                        setIsQrModalOpen(false); // Close modal on success
+                    }
+                } catch (error) {
+                     console.error("Polling error:", error);
+                }
+            }, 3000);
+        }
+        // Cleanup on component unmount or modal close
+        return () => {
+            if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+            }
+        };
+    }, [isQrModalOpen, handoffToken]);
+
+    const closeQrModal = () => {
+        setIsQrModalOpen(false);
+        setHandoffToken(null);
+        if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+        }
+    };
 
     // --- HANDLERS ---
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
             handleUpload(e.target.files[0]);
         }
     };
@@ -39,7 +87,6 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             const droppedFile = e.dataTransfer.files[0];
             if (droppedFile.name.match(/\.(csv|xlsx|xls|jpg|jpeg|png)$/i)) {
-                 setFile(droppedFile);
                  handleUpload(droppedFile);
             } else {
                 alert(t('analyst.errorFileType', 'Ky lloj i skedarit nuk mbështetet.'));
@@ -81,6 +128,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 1. UPLOAD STATE
     if (status === 'idle') {
         return (
+            <>
             <div className="min-h-[500px] flex flex-col items-center justify-center p-4 text-center">
                 <div 
                     className="hidden sm:flex min-h-[450px] w-full flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-3xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer group"
@@ -91,9 +139,13 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                         <UploadCloud className="w-16 h-16 text-blue-400" />
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">{t('analyst.dropTitle', 'Ngarko ose Hidh Skedarin')}</h2>
-                    <p className="text-gray-400 mb-8 max-w-md mx-auto">{t('analyst.dropDesc', 'Tërhiqni një skedar Excel, CSV, ose imazh.')}</p>
-                    <button onClick={() => fileInputRef.current?.click()} className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">{t('analyst.selectButton', 'Zgjidh Skedarin')}</button>
+                    <p className="text-gray-400 mb-6 max-w-md mx-auto">{t('analyst.dropDesc', 'Tërhiqni një skedar Excel, CSV, ose imazh.')}</p>
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => fileInputRef.current?.click()} className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">{t('analyst.selectButton', 'Zgjidh Skedarin')}</button>
+                        <button onClick={startHandoff} className="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2"><Smartphone size={18} /> Skano nga Telefoni</button>
+                    </div>
                 </div>
+                {/* Mobile View */}
                 <div className="sm:hidden w-full flex flex-col items-center justify-center">
                     <h2 className="text-2xl font-bold text-white mb-4">{t('analyst.mobileTitle', 'Analizo një Dokument')}</h2>
                     <p className="text-gray-400 mb-8 max-w-md mx-auto">{t('analyst.mobileDesc', 'Skanoni një dokument me kamerë ose ngarkoni një skedar nga telefoni juaj.')}</p>
@@ -106,6 +158,23 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                 <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept=".csv, .xlsx, .xls, .png, .jpg, .jpeg"/>
                 <input type="file" ref={scanInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" capture="environment"/>
             </div>
+            
+            {isQrModalOpen && handoffToken && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#1f2937] border border-white/10 p-8 rounded-2xl w-full max-w-sm shadow-2xl text-center relative">
+                        <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-full"><X size={18} /></button>
+                        <h3 className="text-xl font-bold text-white mb-2">Skano për të Ngarkuar</h3>
+                        <p className="text-gray-400 mb-6">Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.</p>
+                        <div className="bg-white p-4 rounded-lg inline-block">
+                            <QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={200} />
+                        </div>
+                        <div className="mt-6 flex items-center justify-center gap-2 text-gray-500 animate-pulse">
+                           <Loader2 className="w-4 h-4 animate-spin"/> Duke pritur për skedarin...
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+            </>
         );
     }
     
@@ -146,7 +215,6 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     </div>
                     <button onClick={reset} className="self-end sm:self-auto p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
                 </div>
-                {/* PHOENIX: Stat cards with dynamic coloring */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                     <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
                         <div className="flex items-center gap-3 mb-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider"><DollarSign size={16} /> Total Volum</div>
@@ -165,7 +233,6 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                {/* PHOENIX: Enhanced AI Summary Section */}
                 <div className="space-y-6">
                     <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 p-4 sm:p-6 rounded-2xl border border-blue-500/20">
                         <h3 className="text-base sm:text-lg font-bold text-blue-300 mb-3 flex items-center gap-2"><CheckCircle2 size={18} /> Përmbledhja Ekzekutive</h3>

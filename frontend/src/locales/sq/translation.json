@@ -62,6 +62,23 @@
       "support": "Mbështetja",
       "admin": "Admin"
   },
+  "account": {
+    "title": "Llogaria Ime",
+    "profileInfo": "Informacionet Personale",
+    "username": "Përdoruesi",
+    "email": "Email",
+    "role": "Roli",
+    "security": "Siguria",
+    "currentPassword": "Fjalëkalimi Aktual",
+    "newPassword": "Fjalëkalimi i Ri",
+    "confirmPassword": "Konfirmo Fjalëkalimin",
+    "passwordMismatch": "Fjalëkalimet nuk përputhen!",
+    "passwordUpdated": "Fjalëkalimi u ndryshua me sukses.",
+    "dangerZone": "Zona e Rrezikut",
+    "deleteWarning": "Fshirja e llogarisë do të largojë përgjithmonë të gjitha të dhënat tuaja. Ky veprim nuk mund të kthehet prapa.",
+    "deleteAccount": "Fshi Llogarinë",
+    "confirmDelete": "A jeni absolutisht të sigurt? Të gjitha të dhënat do të humbasin përgjithmonë."
+  },
   "support": {
       "title": "Qendra e Ndihmës",
       "subtitle": "Ne jemi këtu për t'ju ndihmuar.",
@@ -329,6 +346,7 @@
     "monthlyClose": "Mbyllja Mujore",
     "viewSourceDoc": "Shiko Burimin",
     "noTransactions": "Nuk ka transaksione për këtë periudhë.",
+    "scanFromPhone": "Skano nga Telefoni",
     "import": { 
       "title": "Importo Transaksione",
       "uploadTitle": "Ngarko CSV/Excel",
