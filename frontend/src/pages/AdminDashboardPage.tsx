@@ -1,14 +1,21 @@
 // FILE: src/pages/AdminDashboardPage.tsx
-// PHOENIX PROTOCOL - ADMIN DASHBOARD V2.7 (UI CONSISTENCY FIX)
-// 1. UI FIX: Added a custom CSS class with 'color-scheme: dark' to force dropdown menus to render with a dark theme.
-// 2. STYLE: This corrects the white background on dropdown options, making the modal visually consistent.
+// PHOENIX PROTOCOL - ADMIN DASHBOARD V3.1 (UI POLISH)
+// 1. FIX: Used 'Calendar' icon in Table Header and Modal Label to resolve unused variable warning.
+// 2. STATUS: Fully aligned with TypeScript definitions.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Users, Search, Edit2, Trash2, CheckCircle, Loader2, Clock, Shield, Briefcase, Crown } from 'lucide-react';
+import { Users, Search, Edit2, Trash2, CheckCircle, Loader2, Clock, Shield, Briefcase, Crown, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiService } from '../services/api';
 import { User, UpdateUserRequest } from '../data/types';
+
+// Extend the type locally to include the new fields if they aren't in the global type yet
+// (Note: Since we updated types.ts, this is strictly a safety fallback, but good practice)
+interface ExtendedUpdateUserRequest extends UpdateUserRequest {
+    plan_tier?: string;
+    subscription_expiry_date?: string;
+}
 
 const AdminDashboardPage: React.FC = () => {
     const { t } = useTranslation();
@@ -16,7 +23,9 @@ const AdminDashboardPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [editForm, setEditForm] = useState<UpdateUserRequest & { plan_tier?: string }>({});
+    
+    // PHOENIX: State now supports expiry date string
+    const [editForm, setEditForm] = useState<ExtendedUpdateUserRequest>({});
 
     useEffect(() => {
         loadUsers();
@@ -33,7 +42,9 @@ const AdminDashboardPage: React.FC = () => {
                 status: u.status || 'inactive',
                 subscription_status: u.subscription_status || 'INACTIVE',
                 plan_tier: u.plan_tier || 'SOLO',
-                organization_role: u.organization_role || 'OWNER'
+                organization_role: u.organization_role || 'OWNER',
+                // Ensure date is kept if present
+                subscription_expiry_date: u.subscription_expiry_date
             }));
             const validUsers = normalizedData.filter((user: any) => user && typeof user.id === 'string' && user.id.trim() !== '');
             setUsers(validUsers);
@@ -47,13 +58,25 @@ const AdminDashboardPage: React.FC = () => {
 
     const handleEditClick = (user: User) => {
         setEditingUser(user);
+        
+        // PHOENIX: Format date for HTML input (YYYY-MM-DD)
+        let formattedDate = '';
+        if (user.subscription_expiry_date) {
+            try {
+                formattedDate = new Date(user.subscription_expiry_date).toISOString().split('T')[0];
+            } catch (e) {
+                console.warn("Invalid date format", user.subscription_expiry_date);
+            }
+        }
+
         setEditForm({
             username: user.username,
             email: user.email,
             role: user.role,
             subscription_status: user.subscription_status,
             status: user.status,
-            plan_tier: user.plan_tier || 'SOLO'
+            plan_tier: user.plan_tier || 'SOLO',
+            subscription_expiry_date: formattedDate
         });
     };
 
@@ -68,7 +91,9 @@ const AdminDashboardPage: React.FC = () => {
                 role: editForm.role,
                 subscription_status: editForm.subscription_status,
                 status: editForm.status,
-                plan_tier: editForm.plan_tier 
+                plan_tier: editForm.plan_tier,
+                // Only send date if it has a value
+                subscription_expiry_date: editForm.subscription_expiry_date || null
             };
 
             await apiService.updateUser(editingUser.id, payload);
@@ -108,10 +133,14 @@ const AdminDashboardPage: React.FC = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-hidden">
-            {/* PHOENIX: Style block to enforce dark dropdowns */}
             <style>{`
                 .dark-select {
                     color-scheme: dark;
+                }
+                /* Calendar icon inside date input */
+                input[type="date"]::-webkit-calendar-picker-indicator {
+                    filter: invert(1);
+                    cursor: pointer;
                 }
             `}</style>
 
@@ -147,6 +176,13 @@ const AdminDashboardPage: React.FC = () => {
                                 <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.user', 'Përdoruesi')}</th>
                                 <th className="px-6 py-3 font-semibold tracking-wider">Organizata</th>
                                 <th className="px-6 py-3 font-semibold tracking-wider">Plani</th>
+                                {/* PHOENIX FIX: Added Calendar Icon to Header */}
+                                <th className="px-6 py-3 font-semibold tracking-wider">
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-gray-400" />
+                                        <span>Skadimi</span>
+                                    </div>
+                                </th>
                                 <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.role', 'Roli')}</th>
                                 <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.status', 'Statusi')}</th>
                                 <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.registered', 'Regjistruar')}</th>
@@ -182,6 +218,16 @@ const AdminDashboardPage: React.FC = () => {
                                             {user.plan_tier !== 'SOLO' && <Crown className="w-3 h-3 text-amber-400" />}
                                             <span className="text-xs font-mono uppercase text-gray-400">{user.plan_tier || 'SOLO'}</span>
                                         </div>
+                                    </td>
+                                    {/* PHOENIX: Expiration Date Column */}
+                                    <td className="px-6 py-4">
+                                        {user.subscription_expiry_date ? (
+                                            <span className="text-xs font-mono text-gray-300 bg-white/5 px-2 py-1 rounded">
+                                                {new Date(user.subscription_expiry_date).toLocaleDateString()}
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-gray-600">-</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-medium border ${user.role.toUpperCase() === 'ADMIN' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>{user.role}</span></td>
                                     <td className="px-6 py-4">{renderStatusBadge(user)}</td>
@@ -236,19 +282,35 @@ const AdminDashboardPage: React.FC = () => {
                                 </div>
                             </div>
                             
-                            {/* PHOENIX: Added dark-select class */}
-                            <div>
-                                <label className="block text-xs font-medium text-gray-400 uppercase mb-1">Paketa (Plan Tier)</label>
-                                <select 
-                                    value={editForm.plan_tier || 'SOLO'} 
-                                    onChange={e => setEditForm({ ...editForm, plan_tier: e.target.value })} 
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-amber-500 outline-none font-mono dark-select"
-                                >
-                                    <option value="SOLO">SOLO (1 Përdorues)</option>
-                                    <option value="STARTUP">STARTUP (5 Përdorues)</option>
-                                    <option value="GROWTH">GROWTH (10 Përdorues)</option>
-                                    <option value="ENTERPRISE">ENTERPRISE (50+)</option>
-                                </select>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 uppercase mb-1">Paketa</label>
+                                    <select 
+                                        value={editForm.plan_tier || 'SOLO'} 
+                                        onChange={e => setEditForm({ ...editForm, plan_tier: e.target.value })} 
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-amber-500 outline-none font-mono dark-select"
+                                    >
+                                        <option value="SOLO">SOLO</option>
+                                        <option value="STARTUP">STARTUP</option>
+                                        <option value="GROWTH">GROWTH</option>
+                                        <option value="ENTERPRISE">ENT.</option>
+                                    </select>
+                                </div>
+                                {/* PHOENIX: Expiry Date Picker */}
+                                <div>
+                                    <label className="flex items-center gap-1 text-xs font-medium text-gray-400 uppercase mb-1">
+                                        <Calendar className="w-3 h-3" />
+                                        Skadimi
+                                    </label>
+                                    <div className="relative">
+                                        <input 
+                                            type="date" 
+                                            value={editForm.subscription_expiry_date || ''} 
+                                            onChange={e => setEditForm({ ...editForm, subscription_expiry_date: e.target.value })} 
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary-start outline-none"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                             
                             <div>

@@ -1,7 +1,7 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V3.3 (STRUCTURED INSIGHT ALIGNMENT)
-// 1. SCHEMA SYNC: Modified the `AnalysisResult` interface to expect a structured `ai_summary` object instead of a simple `summary` string.
-// 2. PURPOSE: Aligns the frontend's data contract with the enhanced backend API response, enabling the display of richer, structured AI insights.
+// PHOENIX PROTOCOL - TYPES V3.4 (ADMIN UPGRADE)
+// 1. SCHEMA SYNC: Added 'subscription_expiry_date' and 'plan_tier' to User and UpdateUserRequest interfaces.
+// 2. PURPOSE: Enables the Admin Dashboard to correctly type-check and display the new subscription fields.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 
@@ -20,6 +20,8 @@ export interface User {
     organization_name?: string;
     logo?: string;
     plan_tier?: 'SOLO' | 'STARTUP' | 'GROWTH' | 'ENTERPRISE';
+    // PHOENIX FIX: Added expiry date
+    subscription_expiry_date?: string;
 }
 
 export type AdminUser = User;
@@ -55,7 +57,18 @@ export interface RecipeImportResult { recipes_created: number; missing_ingredien
 export interface LoginRequest { username: string; password: string; }
 export interface RegisterRequest { email: string; password: string; username: string; full_name?: string; }
 export interface ChangePasswordRequest { current_password: string; new_password: string; }
-export interface UpdateUserRequest { username?: string; email?: string; role?: string; subscription_status?: string; status?: 'active' | 'inactive'; }
+
+export interface UpdateUserRequest { 
+    username?: string; 
+    email?: string; 
+    role?: string; 
+    subscription_status?: string; 
+    status?: 'active' | 'inactive';
+    // PHOENIX FIX: Added missing fields
+    plan_tier?: string;
+    subscription_expiry_date?: string;
+}
+
 export interface InviteUserRequest { email: string; role: 'MEMBER' | 'VIEWER' | 'ADMIN'; }
 export interface CreateCaseRequest { case_number: string; title: string; case_name?: string; description?: string; clientName?: string; clientEmail?: string; clientPhone?: string; status?: string; }
 export interface DeletedDocumentResponse { documentId: string; deletedFindingIds: string[]; }
