@@ -1,24 +1,68 @@
 # FILE: backend/app/services/calendar_service.py
-# PHOENIX PROTOCOL - ARCHITECTURE UNIFICATION V1.1 (SYNC)
-# 1. FIX: Converted service to synchronous 'def' to match PyMongo driver.
-# 2. FIX: Replaced 'get_default_database' with direct 'db' argument passing.
-# 3. VERIFICATION: All original business logic is preserved. No truncation.
+# PHOENIX PROTOCOL - INTELLIGENT BUSINESS CALENDAR V2.2 (SANITIZED)
+# 1. FIX: Removed all markdown artifacts/citations from file footer.
+# 2. STATUS: Pure Python syntax verified.
 
-from typing import List
-from datetime import datetime, timezone, timedelta
+from typing import List, Optional, Tuple
+from datetime import datetime, timezone, timedelta, date
 from bson import ObjectId
 from fastapi import HTTPException, status
 from pymongo.database import Database
 
-from app.models.calendar import CalendarEventInDB, CalendarEventCreate, EventStatus
+try:
+    import holidays
+except ImportError:
+    holidays = None
+
+from app.models.calendar import (
+    CalendarEventInDB, 
+    CalendarEventCreate, 
+    EventStatus, 
+    EventType
+)
 
 class CalendarService:
     
+    def __init__(self):
+        self.xk_holidays = {}
+        if holidays:
+            try:
+                self.xk_holidays = holidays.country_holidays("XK", observed=True)
+            except Exception:
+                self.xk_holidays = {}
+
+    def _is_working_day(self, check_date: date) -> bool:
+        if check_date.weekday() >= 5:
+            return False
+        if check_date in self.xk_holidays:
+            return False
+        return True
+
+    def _get_next_working_day(self, original_dt: datetime) -> Tuple[datetime, str]:
+        current_dt = original_dt
+        reason = []
+        
+        for _ in range(30):
+            check_date = current_dt.date()
+            is_holiday = check_date in self.xk_holidays
+            is_weekend = check_date.weekday() >= 5
+
+            if not is_holiday and not is_weekend:
+                break
+            
+            if not reason:
+                if is_holiday:
+                    name = self.xk_holidays.get(check_date, "Public Holiday")
+                    reason.append(f"Holiday: {name}")
+                elif is_weekend:
+                    reason.append("Weekend")
+
+            current_dt += timedelta(days=1)
+        
+        return current_dt, ", ".join(reason)
+
     def create_event(self, db: Database, event_data: CalendarEventCreate, user_id: ObjectId) -> CalendarEventInDB:
-        # PHOENIX PRESERVED: Conditional case ownership check
         if event_data.case_id:
-            # Note: The original file used owner_id, but your other services use user_id. 
-            # Standardizing to check both for robustness.
             case = db.cases.find_one({
                 "_id": ObjectId(event_data.case_id),
                 "$or": [{"owner_id": user_id}, {"user_id": user_id}]
@@ -29,9 +73,32 @@ class CalendarService:
                     detail="Case not found or does not belong to the current user."
                 )
 
+        smart_types = [EventType.TAX_DEADLINE, EventType.PAYMENT_DUE]
+        
+        final_start_date = event_data.start_date
+        final_end_date = event_data.end_date
+        auto_note = ""
+
+        if event_data.event_type in smart_types:
+            adjusted_start, reason = self._get_next_working_day(final_start_date)
+            
+            if adjusted_start.date() != final_start_date.date():
+                auto_note = f"\n[System]: Auto-Rescheduled from {final_start_date.date()} ({reason})."
+                final_start_date = adjusted_start
+                
+                if final_end_date:
+                    duration = final_end_date - event_data.start_date
+                    final_end_date = final_start_date + duration
+
         event_dict = event_data.model_dump()
         event_dict["owner_id"] = user_id
+        event_dict["start_date"] = final_start_date
+        event_dict["end_date"] = final_end_date
         
+        if auto_note:
+            current_notes = event_dict.get("notes") or ""
+            event_dict["notes"] = current_notes + auto_note
+
         if event_data.case_id:
             event_dict["case_id"] = str(event_data.case_id)
         else:
@@ -69,14 +136,12 @@ class CalendarService:
         now = datetime.now(timezone.utc)
         future = now + timedelta(days=days)
         
-        # This query is more robust for Mongo's native datetime objects
         query = {
             "owner_id": user_id,
-            "status": "PENDING",
+            "status": EventStatus.PENDING,
             "start_date": {"$gte": now, "$lt": future}
         }
         
         return db.calendar_events.count_documents(query)
 
-# Instantiate a single service object for routers to import
 calendar_service = CalendarService()
