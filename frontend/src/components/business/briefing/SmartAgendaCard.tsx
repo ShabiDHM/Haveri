@@ -1,8 +1,8 @@
 // FILE: src/components/business/briefing/SmartAgendaCard.tsx
-// PHOENIX PROTOCOL - SMART GREETING & CONTEXTUAL UI V4.3
-// 1. FIX: Removed unused 'format' import to resolve TS6133.
-// 2. FEATURE: Personalized greetings (Time-based) + Kosovo Work Context.
-// 3. STATUS: Pure implementation, no unused declarations.
+// PHOENIX PROTOCOL - SMART GREETING V4.4 (CLEAN UI)
+// 1. REFINEMENT: Removed redundant username to avoid duplication with page header.
+// 2. LOGIC: Maintained time-based greetings and Kosovo-specific contextual messages.
+// 3. STATUS: Pure, streamlined implementation.
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -26,7 +26,7 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda, onEven
     const now = new Date();
     const hour = now.getHours();
 
-    // 1. Temporal Logic: Determine Greeting
+    // 1. Temporal Logic: Determine Greeting (without hardcoded name)
     const getGreeting = () => {
         if (hour >= 5 && hour < 12) return { text: "Mirëmëngjes", icon: <Sunrise className="text-amber-400" /> };
         if (hour >= 12 && hour < 18) return { text: "Mirëdita", icon: <Sun className="text-yellow-400" /> };
@@ -51,14 +51,14 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda, onEven
             {/* Background Decorative Gradient */}
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors" />
 
-            {/* Header: Personalized Greeting */}
+            {/* Header: Contextual Greeting (Name removed to prevent redundancy) */}
             <div className="mb-6 relative z-10">
                 <div className="flex items-center gap-3 mb-1">
                     <div className="p-2 bg-white/5 rounded-xl border border-white/10">
                         {greeting.icon}
                     </div>
                     <h2 className="text-2xl font-bold text-white tracking-tight">
-                        {greeting.text}, Shaban!
+                        {greeting.text}!
                     </h2>
                 </div>
                 <div className="flex items-center gap-2 text-sm font-medium text-gray-400 ml-1">
