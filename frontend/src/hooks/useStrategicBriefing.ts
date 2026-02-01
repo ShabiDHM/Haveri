@@ -1,56 +1,33 @@
 // FILE: src/hooks/useStrategicBriefing.ts
-// PHOENIX PROTOCOL - STRATEGIC HOOK V2.1 (DATA CONTRACT FIX)
-// 1. FIX: Reverted to the full UIAgendaItem interface to match the modal's expectations.
-// 2. FIX: Maintained the critical setData(null) logic to prevent stale data.
+// PHOENIX PROTOCOL - STRATEGIC HOOK V3.0 (TYPE UNIFICATION)
+// 1. FIX: Removed local 'UIAgendaItem' definition to resolve TS2352/TS2322.
+// 2. SYNC: Now strictly imports types from 'src/data/types.ts'.
+// 3. STATUS: Unblocks Vercel build by removing type shadowing.
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/api';
-import { StrategicBriefingResponse, CalendarEvent } from '../data/types';
-
-// PHOENIX FIX: This is the full, correct interface the application expects
-export interface UIAgendaItem {
-    id: string;
-    title: string;
-    description?: string;
-    start_date: string;
-    end_date: string;
-    is_all_day: boolean;
-    status: CalendarEvent['status'];
-    type: CalendarEvent['event_type'];
-    attendees?: string[];
-    location?: string;
-    notes?: string;
-    case_id?: string;
-    time: string;
-    priority: 'high' | 'medium' | 'low';
-    isCompleted: boolean;
-    kind: 'event' | 'alert';
-    raw: CalendarEvent;
-}
-
-interface EnhancedBriefingData extends Omit<StrategicBriefingResponse, 'agenda'> {
-    agenda: UIAgendaItem[];
-}
+import { StrategicBriefingResponse } from '../data/types';
 
 export const useStrategicBriefing = () => {
-    const [data, setData] = useState<EnhancedBriefingData | null>(null);
+    const [data, setData] = useState<StrategicBriefingResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
         setError(false);
-        setData(null); // Prevent stale data
+        setData(null); // PHOENIX: Prevent stale data display during refresh
         
         try {
-            // The backend now returns the complete, correct data structure
+            // The backend returns StrategicBriefingResponse which already 
+            // contains the unified UIAgendaItem[] array.
             const briefingResult = await apiService.getStrategicBriefing();
-            setData(briefingResult as EnhancedBriefingData);
+            setData(briefingResult);
 
         } catch (e) {
             console.error("Failed to load strategic briefing:", e);
             setError(true);
-            setData(null); // Clear data on error
+            setData(null); // Clear data on error for safety
         } finally {
             setLoading(false);
         }

@@ -1,18 +1,21 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V5.0 (EDGE CASE HANDLING)
-// 1. LOGIC: peakTime state is now initialized to null.
-// 2. INTEGRITY: If no transactions exist, the state remains null, indicating "no data".
+// PHOENIX PROTOCOL - DASHBOARD V5.1 (BUILD FIX)
+// 1. FIX: Unified 'UIAgendaItem' import to resolve Vercel build errors TS2322/TS2345.
+// 2. INTEGRITY: Removed legacy type imports from hooks.
+// 3. STATUS: Pure implementation with synchronized priority levels.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Target, AlertTriangle, Mail, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useStrategicBriefing, UIAgendaItem } from '../../hooks/useStrategicBriefing';
+
+// PHOENIX: Hooks now only provide logic, Types provide structure
+import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { EventDetailModal } from '../modals/EventDetailModal';
 import { apiService } from '../../services/api';
-import { Case } from '../../data/types';
+import { Case, UIAgendaItem } from '../../data/types'; // Unified source of truth
 
 import { BusinessRhythmCard, DailySalesData } from './briefing/BusinessRhythmCard';
 import { BusinessPulseCard } from './briefing/BusinessPulseCard';
@@ -33,12 +36,13 @@ export const DailyBriefingTab: React.FC = () => {
     const { data: briefingData, loading: briefingLoading, error: briefingError, refreshData } = useStrategicBriefing();
     const { displayIncome, loading: financeLoading } = useFinanceData();
 
+    // PHOENIX: State now matches the unified UIAgendaItem
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
     const [cases, setCases] = useState<Case[]>([]);
     const [messageCount, setMessageCount] = useState(0);
     
     const [salesHistory, setSalesHistory] = useState<DailySalesData>({ labels: [], data: [] });
-    const [peakTime, setPeakTime] = useState<string | null>(null); // PHOENIX: Initialize as null
+    const [peakTime, setPeakTime] = useState<string | null>(null); 
     const [historyLoading, setHistoryLoading] = useState(true);
 
     const months = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
@@ -48,14 +52,16 @@ export const DailyBriefingTab: React.FC = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const casesData = await apiService.getCases();
-                setCases(casesData);
-                const msgs = await apiService.getInboundMessages('INBOX');
-                setMessageCount(msgs.length);
-                const transactions = await apiService.getPosTransactions();
+                const [casesData, msgs, transactions] = await Promise.all([
+                    apiService.getCases(),
+                    apiService.getInboundMessages('INBOX'),
+                    apiService.getPosTransactions()
+                ]);
                 
-                processSalesHistory(transactions as any[]);
-                analyzePeakTraffic(transactions as any[]);
+                setCases(casesData);
+                setMessageCount(msgs.length);
+                processSalesHistory(transactions as RawTransaction[]);
+                analyzePeakTraffic(transactions as RawTransaction[]);
             } catch (err) {
                 console.error("Failed to load dashboard data", err);
             } finally {
@@ -75,7 +81,7 @@ export const DailyBriefingTab: React.FC = () => {
         const labels = dates.map(date => date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }));
         const data = dates.map(targetDate => {
             const targetStr = targetDate.toLocaleDateString('en-CA');
-            const dailySum = transactions.reduce((sum, tx) => {
+            return transactions.reduce((sum, tx) => {
                 const dateVal = tx.transaction_date || tx.date;
                 if (!dateVal) return sum;
                 const txDate = new Date(dateVal);
@@ -83,14 +89,13 @@ export const DailyBriefingTab: React.FC = () => {
                 const txStr = txDate.toLocaleDateString('en-CA');
                 return txStr === targetStr ? sum + (tx.total_price || tx.amount || 0) : sum;
             }, 0);
-            return dailySum;
         });
         setSalesHistory({ labels, data });
     };
 
     const analyzePeakTraffic = (transactions: RawTransaction[]) => {
         if (!transactions || transactions.length === 0) {
-            setPeakTime(null); // PHOENIX: Explicitly set null for "no data" case
+            setPeakTime(null);
             return;
         }
 
@@ -108,13 +113,14 @@ export const DailyBriefingTab: React.FC = () => {
             }
         });
 
-        if (Object.keys(hourCounts).length === 0) {
-             setPeakTime(null); // No recent transactions found
+        const hourEntries = Object.entries(hourCounts);
+        if (hourEntries.length === 0) {
+             setPeakTime(null);
              return;
         }
 
         let maxHour = -1, maxCount = 0;
-        Object.entries(hourCounts).forEach(([hour, count]) => {
+        hourEntries.forEach(([hour, count]) => {
             if (count > maxCount) {
                 maxCount = count;
                 maxHour = parseInt(hour);
