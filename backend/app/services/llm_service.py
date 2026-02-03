@@ -1,15 +1,15 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - LLM SERVICE V6.1 (STABILITY LAYER)
-# 1. ADDED: 'api_semaphore' to limit concurrent API calls to 10.
-# 2. LOGIC: Prevents "Rate Limit" errors when multiple users upload docs.
-# 3. STATUS: Safe for multi-user/multi-app environment.
+# PHOENIX PROTOCOL - LLM SERVICE V6.2 (STREAMING SYNC)
+# 1. ADDED: 'stream_text_async' function to enable true token streaming.
+# 2. SYNC: Brings Haveri LLM service to architectural parity with Juristi.
+# 3. FIX: Resolves "unknown import symbol" in drafting_service.py.
 
 import os
 import json
 import logging
 import re
 import asyncio
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, AsyncGenerator
 from openai import AsyncOpenAI 
 
 from .text_sterilization_service import sterilize_text_for_llm
@@ -51,10 +51,7 @@ def get_async_client() -> Optional[AsyncOpenAI]:
     return None
 
 def get_semaphore() -> asyncio.Semaphore:
-    """
-    Lazily initializes the Semaphore to ensure it's attached to the correct event loop.
-    We set the limit to 10 concurrent requests.
-    """
+    """Lazily initializes the Semaphore with a limit of 10 concurrent requests."""
     global _api_semaphore
     if _api_semaphore is None:
         _api_semaphore = asyncio.Semaphore(10)
@@ -75,13 +72,12 @@ def chunk_text(text: str, chunk_size: int = 4000) -> List[str]:
 
 async def _call_deepseek_async(system_prompt: str, user_prompt: str, json_mode: bool = False) -> Optional[str]:
     client = get_async_client()
-    sem = get_semaphore() # Get the traffic light
+    sem = get_semaphore()
     
     if not client: 
         logger.warning("AI Service not configured (Missing API Key)")
         return None
         
-    # The Traffic Light Logic: Only 10 requests can execute this block at once
     async with sem:
         try:
             full_system_prompt = f"{system_prompt}\n\n{BUSINESS_CONSULTANT_RULES}"
@@ -108,14 +104,45 @@ async def process_chunks_parallel(text: str, system_prompt: str, chunk_size: int
 
     logger.info(f"Hydra Activated: Processing {len(chunks)} chunks with Semaphore throttling.")
     
-    tasks = [
-        _call_deepseek_async(system_prompt, f"PARTIAL CONTENT SEGMENT:\n{chunk}") 
-        for chunk in chunks
-    ]
+    tasks = [_call_deepseek_async(system_prompt, f"PARTIAL CONTENT SEGMENT:\n{chunk}") for chunk in chunks]
     
-    # asyncio.gather will launch all, but _call_deepseek_async will wait for the semaphore
     results = await asyncio.gather(*tasks)
     return [res for res in results if res]
+
+# --- PHOENIX: STREAMING FUNCTION ADDED FOR ARCHITECTURAL PARITY ---
+
+async def stream_text_async(system_prompt: str, user_prompt: str, temp: float = 0.1) -> AsyncGenerator[str, None]:
+    """
+    Provides a true, token-by-token stream for drafting, respecting the Global Semaphore.
+    """
+    client = get_async_client()
+    sem = get_semaphore()
+    
+    if not client:
+        yield "[GABIM: Shërbimi AI nuk është i konfiguruar.]"
+        return
+
+    # A streaming call still counts as one 'lane' in the semaphore
+    async with sem:
+        try:
+            full_system_prompt = f"{system_prompt}\n\n{BUSINESS_CONSULTANT_RULES}"
+            model = os.getenv("OPENAI_MODEL", OPENROUTER_MODEL)
+            
+            stream = await client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": full_system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=temp,
+                stream=True
+            )
+            async for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+        except Exception as e:
+            logger.error(f"Streaming Call Failed: {e}")
+            yield f"[GABIM NË SISTEM: {e}]"
 
 # --- PUBLIC ASYNC FUNCTIONS ---
 
