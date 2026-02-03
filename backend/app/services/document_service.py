@@ -1,12 +1,12 @@
 # FILE: backend/app/services/document_service.py
-# PHOENIX PROTOCOL - DOCUMENT SERVICE V7.0 (SMART DELETE)
-# 1. MODIFIED: Delete logic now PRESERVES Findings and Calendar Events.
-# 2. REASONING: Business users want to keep extracted intelligence (deadlines, insights) even if they delete the source PDF.
-# 3. CLEANUP: Still removes S3 files and Vector Embeddings to prevent "Ghost References" in chat.
+# PHOENIX PROTOCOL - DOCUMENT SERVICE V7.1 (HYDRA ENABLED)
+# 1. NEW: Added 'analyze_document_parallel' using Map-Reduce pattern.
+# 2. LOGIC: Calls 'llm_service.process_chunks_parallel' for high-speed processing.
+# 3. SAFETY: Preserved all existing Delete/Create/Get logic exactly as is.
 
 import logging
 import datetime
-import importlib
+import asyncio
 from datetime import timezone
 from typing import List, Optional, Tuple, Any, Dict
 from bson import ObjectId
@@ -18,9 +18,54 @@ from ..models.document import DocumentOut, DocumentStatus
 from ..models.user import UserInDB
 
 # Only essential services
-from . import vector_store_service, storage_service
+from . import vector_store_service, storage_service, llm_service
 
 logger = logging.getLogger(__name__)
+
+# --- HYDRA TACTIC IMPLEMENTATION ---
+
+async def analyze_document_parallel(text: str, analysis_type: str = "SUMMARY") -> str:
+    """
+    Orchestrates the Map-Reduce logic for large documents using the Hydra Tactic.
+    
+    1. MAP: Splits text into chunks and processes them in parallel via LLM Service.
+    2. REDUCE: Combines partial results into a final cohesive analysis.
+    """
+    if not text:
+        return ""
+
+    # Define Prompts based on intent
+    if analysis_type == "SUMMARY":
+        map_prompt = "Summarize this specific section of the document in Albanian. Capture key dates, parties, and obligations."
+        reduce_prompt = "Combine these partial summaries into one coherent, professional executive summary in Albanian."
+    elif analysis_type == "ENTITIES":
+        map_prompt = "Extract key entities (Names, Companies, Dates, Monetary Amounts) from this section. Return as bullet points."
+        reduce_prompt = "Consolidate these lists of entities, removing duplicates and formatting cleanly."
+    else:
+        map_prompt = "Analyze this text segment for key business insights."
+        reduce_prompt = "Synthesize these insights into a final report."
+
+    # 1. MAP PHASE (Parallel Execution)
+    # This calls the Async Hydra engine we built in llm_service
+    partial_results = await llm_service.process_chunks_parallel(text, map_prompt)
+    
+    if not partial_results:
+        return "Nuk u gjenerua analizë (Bosh)."
+
+    # If document was small enough to fit in one chunk, return immediately
+    if len(partial_results) == 1:
+        return partial_results[0]
+
+    # 2. REDUCE PHASE (Synthesis)
+    combined_partials = "\n---\n".join(partial_results)
+    final_summary = await llm_service.chat_completion(
+        system_prompt=reduce_prompt,
+        user_message=f"PARTIAL RESULTS:\n{combined_partials}"
+    )
+    
+    return final_summary
+
+# --- EXISTING CRUD LOGIC (PRESERVED) ---
 
 def create_document_record(
     db: Database, owner: UserInDB, case_id: str, file_name: str, storage_key: str, mime_type: str
@@ -141,8 +186,6 @@ def delete_document_by_id(db: Database, redis_client: redis.Redis, doc_id: Objec
     processed_key = document_to_delete.get("processed_text_storage_key")
     preview_key = document_to_delete.get("preview_storage_key")
 
-    # 1. DELETE VECTOR EMBEDDINGS (AI Memory)
-    # We remove this so the AI doesn't hallucinate by quoting text from a deleted file.
     try:
         vector_store_service.delete_document_embeddings(
             user_id=str(owner.id),
@@ -151,7 +194,6 @@ def delete_document_by_id(db: Database, redis_client: redis.Redis, doc_id: Objec
     except Exception as e:
         logger.error(f"Vector store cleanup failed: {e}")
     
-    # 2. DELETE S3 FILES (Storage Cleanup)
     if storage_key: 
         try: storage_service.delete_file(storage_key=storage_key)
         except: pass
@@ -162,13 +204,8 @@ def delete_document_by_id(db: Database, redis_client: redis.Redis, doc_id: Objec
         try: storage_service.delete_file(storage_key=preview_key)
         except: pass
 
-    # PHOENIX CHANGE: Findings and Calendar Events are NOT deleted.
-    # This preserves the "Business Intelligence" even if the raw file is removed.
-    
-    # 3. DELETE DOCUMENT RECORD
     db.documents.delete_one({"_id": doc_id})
     
-    # Return empty list as we didn't delete findings
     return []
 
 def bulk_delete_documents(db: Database, redis_client: redis.Redis, document_ids: List[str], owner: UserInDB) -> Dict[str, Any]:
@@ -182,7 +219,6 @@ def bulk_delete_documents(db: Database, redis_client: redis.Redis, document_ids:
                 continue
             
             doc_oid = ObjectId(doc_id_str)
-            # Re-use the safe delete logic
             finding_ids = delete_document_by_id(db, redis_client, doc_oid, owner)
             all_deleted_finding_ids.extend(finding_ids)
             deleted_count += 1

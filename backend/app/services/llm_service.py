@@ -1,14 +1,16 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - LLM SERVICE V5.2 (ROBUST & SYNCHRONIZED)
-# 1. INTEGRITY: Includes 'analyze_structured_prediction' for Inventory Analysis.
-# 2. SAFETY: Handles missing API keys gracefully without crashing the caller.
+# PHOENIX PROTOCOL - LLM SERVICE V6.0 (HYDRA TACTIC ENABLED)
+# 1. ARCHITECTURE: Switched to AsyncOpenAI for non-blocking I/O.
+# 2. HYDRA: Added 'process_chunks_parallel' using asyncio.gather.
+# 3. UTILITY: Added 'chunk_text' for safe Map-Reduce handling.
 
 import os
 import json
 import logging
 import re
+import asyncio
 from typing import List, Dict, Any, Optional
-from openai import OpenAI 
+from openai import AsyncOpenAI 
 
 from .text_sterilization_service import sterilize_text_for_llm
 from . import vector_store_service
@@ -20,7 +22,7 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODEL = "deepseek/deepseek-chat"
 
-_deepseek_client: Optional[OpenAI] = None
+_async_client: Optional[AsyncOpenAI] = None
 
 # --- AGENT CONSTITUTIONS ---
 BUSINESS_CONSULTANT_RULES = """
@@ -32,9 +34,12 @@ RREGULLAT E KËSHILLIMIT (PRAKTIKA MË E MIRË):
 3. STIILI: Profesional, i qartë, në gjuhën Shqipe.
 """
 
-def get_deepseek_client() -> Optional[OpenAI]:
-    global _deepseek_client
-    if _deepseek_client: return _deepseek_client
+def get_async_client() -> Optional[AsyncOpenAI]:
+    """
+    Singleton provider for the Asynchronous OpenAI Client.
+    """
+    global _async_client
+    if _async_client: return _async_client
     
     # Try OpenRouter/DeepSeek first
     api_key = DEEPSEEK_API_KEY or os.getenv("OPENAI_API_KEY")
@@ -42,10 +47,10 @@ def get_deepseek_client() -> Optional[OpenAI]:
     
     if api_key:
         try: 
-            _deepseek_client = OpenAI(api_key=api_key, base_url=base_url)
-            return _deepseek_client
+            _async_client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+            return _async_client
         except Exception as e: 
-            logger.error(f"AI Client Init Failed: {e}")
+            logger.error(f"Async AI Client Init Failed: {e}")
     return None
 
 def _parse_json_safely(content: str) -> Dict[str, Any]:
@@ -58,8 +63,20 @@ def _parse_json_safely(content: str) -> Dict[str, Any]:
             except: pass
         return {}
 
-def _call_deepseek(system_prompt: str, user_prompt: str, json_mode: bool = False, agent_type: str = 'business') -> Optional[str]:
-    client = get_deepseek_client()
+def chunk_text(text: str, chunk_size: int = 4000) -> List[str]:
+    """
+    Splits text into manageable chunks to avoid Context Window limits.
+    Roughly 4000 characters ~ 1000 tokens.
+    """
+    if not text:
+        return []
+    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+
+async def _call_deepseek_async(system_prompt: str, user_prompt: str, json_mode: bool = False) -> Optional[str]:
+    """
+    Internal Async Wrapper for LLM calls.
+    """
+    client = get_async_client()
     if not client: 
         logger.warning("AI Service not configured (Missing API Key)")
         return None
@@ -75,29 +92,48 @@ def _call_deepseek(system_prompt: str, user_prompt: str, json_mode: bool = False
         }
         if json_mode: kwargs["response_format"] = {"type": "json_object"}
         
-        response = client.chat.completions.create(**kwargs)
+        # Non-blocking await
+        response = await client.chat.completions.create(**kwargs)
         return response.choices[0].message.content
     except Exception as e:
-        logger.warning(f"⚠️ AI Call Failed: {e}")
+        logger.warning(f"⚠️ Async AI Call Failed: {e}")
         return None
 
-# --- PUBLIC FUNCTIONS ---
+# --- HYDRA TACTIC IMPLEMENTATION ---
+
+async def process_chunks_parallel(text: str, system_prompt: str, chunk_size: int = 6000) -> List[str]:
+    """
+    THE HYDRA: Splits text and processes all chunks simultaneously using asyncio.gather.
+    Returns a list of results for the 'Reduce' phase.
+    """
+    chunks = chunk_text(text, chunk_size)
+    if not chunks:
+        return []
+
+    logger.info(f"Hydra Activated: Processing {len(chunks)} chunks in parallel.")
+    
+    # Create a list of coroutine objects (tasks)
+    tasks = [
+        _call_deepseek_async(system_prompt, f"PARTIAL CONTENT SEGMENT:\n{chunk}") 
+        for chunk in chunks
+    ]
+    
+    # Execute all simultaneously
+    results = await asyncio.gather(*tasks)
+    
+    # Filter out None results from failed calls
+    valid_results = [res for res in results if res]
+    return valid_results
+
+# --- PUBLIC ASYNC FUNCTIONS ---
 
 async def chat_completion(system_prompt: str, user_message: str) -> str:
-    client = get_deepseek_client()
-    if not client: return "Shërbimi AI nuk është i konfiguruar."
-    try:
-        response = client.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL", OPENROUTER_MODEL),
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}],
-            temperature=0.3, max_tokens=1000
-        )
-        return response.choices[0].message.content or "Nuk u gjenerua përgjigje."
-    except Exception: return "Gabim në komunikim me AI."
+    result = await _call_deepseek_async(system_prompt, user_message)
+    return result or "Nuk u gjenerua përgjigje."
 
-def analyze_structured_prediction(data_context: str, analysis_type: str) -> Dict[str, Any]:
+async def analyze_structured_prediction(data_context: str, analysis_type: str) -> Dict[str, Any]:
     """
-    Analyzes inventory/sales data and returns a structured JSON prediction.
+    Async version of prediction analysis.
     """
     if analysis_type == "RESTOCK":
         system_prompt = """
@@ -112,28 +148,30 @@ def analyze_structured_prediction(data_context: str, analysis_type: str) -> Dict
         Output JSON: { "trend_analysis": "1 sentence summary in Albanian", "cross_sell_opportunities": "1 suggestion in Albanian or 'N/A'" }
         """
         
-    content = _call_deepseek(system_prompt, f"DATA CONTEXT:\n{data_context}", json_mode=True)
+    content = await _call_deepseek_async(system_prompt, f"DATA CONTEXT:\n{data_context}", json_mode=True)
     return _parse_json_safely(content) if content else {}
 
-# --- EXISTING FUNCTIONS (Preserved) ---
-def ask_business_consultant(user_id: str, query: str, context_filter: Optional[Dict] = None) -> str:
-    user_docs = vector_store_service.query_private_diary(user_id, query, n_results=4)
-    user_context = "\n".join([f"- {d['content']}" for d in user_docs])
-    
-    response = _call_deepseek(
-        "Je Këshilltar Biznesi. Përgjigju shkurt në Shqip.",
-        f"PYETJA: {query}\nKONTEKSTI:\n{user_context}"
-    )
-    return response or "Sistemi i ngarkuar."
+async def ask_business_consultant(user_id: str, query: str) -> str:
+    # Note: vector_store_service might be sync. If so, wrap it in to_thread if it blocks heavily.
+    # For now, we assume it's fast enough or allows sync execution.
+    try:
+        user_docs = await asyncio.to_thread(vector_store_service.query_private_diary, user_id, query, n_results=4)
+        user_context = "\n".join([f"- {d['content']}" for d in user_docs])
+        
+        response = await _call_deepseek_async(
+            "Je Këshilltar Biznesi. Përgjigju shkurt në Shqip.",
+            f"PYETJA: {query}\nKONTEKSTI:\n{user_context}"
+        )
+        return response or "Sistemi i ngarkuar."
+    except Exception as e:
+        logger.error(f"Consultant Error: {e}")
+        return "Gabim teknik."
 
-def extract_expense_data(text: str) -> Dict[str, Any]:
+async def extract_expense_data(text: str) -> Dict[str, Any]:
     clean = sterilize_text_for_llm(text[:3000], redact_names=False)
     sys = "Extract JSON: {category, total_amount, date(YYYY-MM-DD), supplier_name, description}"
-    res = _call_deepseek(sys, clean, json_mode=True)
+    res = await _call_deepseek_async(sys, clean, json_mode=True)
     return _parse_json_safely(res) if res else {}
 
-def analyze_business_document(text: str) -> Dict[str, Any]:
-    return {} # Placeholder for brevity if unused currently
-
-def draft_business_document(system_prompt: str, full_prompt: str) -> Optional[str]:
-    return _call_deepseek(system_prompt, full_prompt)
+async def draft_business_document(system_prompt: str, full_prompt: str) -> Optional[str]:
+    return await _call_deepseek_async(system_prompt, full_prompt)
