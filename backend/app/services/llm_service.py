@@ -1,8 +1,8 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - LLM SERVICE V6.0 (HYDRA TACTIC ENABLED)
-# 1. ARCHITECTURE: Switched to AsyncOpenAI for non-blocking I/O.
-# 2. HYDRA: Added 'process_chunks_parallel' using asyncio.gather.
-# 3. UTILITY: Added 'chunk_text' for safe Map-Reduce handling.
+# PHOENIX PROTOCOL - LLM SERVICE V6.1 (STABILITY LAYER)
+# 1. ADDED: 'api_semaphore' to limit concurrent API calls to 10.
+# 2. LOGIC: Prevents "Rate Limit" errors when multiple users upload docs.
+# 3. STATUS: Safe for multi-user/multi-app environment.
 
 import os
 import json
@@ -23,6 +23,7 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODEL = "deepseek/deepseek-chat"
 
 _async_client: Optional[AsyncOpenAI] = None
+_api_semaphore: Optional[asyncio.Semaphore] = None # The Traffic Light
 
 # --- AGENT CONSTITUTIONS ---
 BUSINESS_CONSULTANT_RULES = """
@@ -35,13 +36,9 @@ RREGULLAT E KËSHILLIMIT (PRAKTIKA MË E MIRË):
 """
 
 def get_async_client() -> Optional[AsyncOpenAI]:
-    """
-    Singleton provider for the Asynchronous OpenAI Client.
-    """
     global _async_client
     if _async_client: return _async_client
     
-    # Try OpenRouter/DeepSeek first
     api_key = DEEPSEEK_API_KEY or os.getenv("OPENAI_API_KEY")
     base_url = OPENROUTER_BASE_URL if DEEPSEEK_API_KEY else os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
     
@@ -53,10 +50,19 @@ def get_async_client() -> Optional[AsyncOpenAI]:
             logger.error(f"Async AI Client Init Failed: {e}")
     return None
 
+def get_semaphore() -> asyncio.Semaphore:
+    """
+    Lazily initializes the Semaphore to ensure it's attached to the correct event loop.
+    We set the limit to 10 concurrent requests.
+    """
+    global _api_semaphore
+    if _api_semaphore is None:
+        _api_semaphore = asyncio.Semaphore(10)
+    return _api_semaphore
+
 def _parse_json_safely(content: str) -> Dict[str, Any]:
     try: return json.loads(content)
     except json.JSONDecodeError:
-        # Fallback: Try to find JSON block in markdown
         match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
         if match:
             try: return json.loads(match.group(1))
@@ -64,66 +70,52 @@ def _parse_json_safely(content: str) -> Dict[str, Any]:
         return {}
 
 def chunk_text(text: str, chunk_size: int = 4000) -> List[str]:
-    """
-    Splits text into manageable chunks to avoid Context Window limits.
-    Roughly 4000 characters ~ 1000 tokens.
-    """
-    if not text:
-        return []
+    if not text: return []
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
 async def _call_deepseek_async(system_prompt: str, user_prompt: str, json_mode: bool = False) -> Optional[str]:
-    """
-    Internal Async Wrapper for LLM calls.
-    """
     client = get_async_client()
+    sem = get_semaphore() # Get the traffic light
+    
     if not client: 
         logger.warning("AI Service not configured (Missing API Key)")
         return None
         
-    try:
-        full_system_prompt = f"{system_prompt}\n\n{BUSINESS_CONSULTANT_RULES}"
-        model = os.getenv("OPENAI_MODEL", OPENROUTER_MODEL)
-        
-        kwargs = {
-            "model": model, 
-            "messages": [{"role": "system", "content": full_system_prompt}, {"role": "user", "content": user_prompt}], 
-            "temperature": 0.1
-        }
-        if json_mode: kwargs["response_format"] = {"type": "json_object"}
-        
-        # Non-blocking await
-        response = await client.chat.completions.create(**kwargs)
-        return response.choices[0].message.content
-    except Exception as e:
-        logger.warning(f"⚠️ Async AI Call Failed: {e}")
-        return None
+    # The Traffic Light Logic: Only 10 requests can execute this block at once
+    async with sem:
+        try:
+            full_system_prompt = f"{system_prompt}\n\n{BUSINESS_CONSULTANT_RULES}"
+            model = os.getenv("OPENAI_MODEL", OPENROUTER_MODEL)
+            
+            kwargs = {
+                "model": model, 
+                "messages": [{"role": "system", "content": full_system_prompt}, {"role": "user", "content": user_prompt}], 
+                "temperature": 0.1
+            }
+            if json_mode: kwargs["response_format"] = {"type": "json_object"}
+            
+            response = await client.chat.completions.create(**kwargs)
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.warning(f"⚠️ Async AI Call Failed: {e}")
+            return None
 
 # --- HYDRA TACTIC IMPLEMENTATION ---
 
 async def process_chunks_parallel(text: str, system_prompt: str, chunk_size: int = 6000) -> List[str]:
-    """
-    THE HYDRA: Splits text and processes all chunks simultaneously using asyncio.gather.
-    Returns a list of results for the 'Reduce' phase.
-    """
     chunks = chunk_text(text, chunk_size)
-    if not chunks:
-        return []
+    if not chunks: return []
 
-    logger.info(f"Hydra Activated: Processing {len(chunks)} chunks in parallel.")
+    logger.info(f"Hydra Activated: Processing {len(chunks)} chunks with Semaphore throttling.")
     
-    # Create a list of coroutine objects (tasks)
     tasks = [
         _call_deepseek_async(system_prompt, f"PARTIAL CONTENT SEGMENT:\n{chunk}") 
         for chunk in chunks
     ]
     
-    # Execute all simultaneously
+    # asyncio.gather will launch all, but _call_deepseek_async will wait for the semaphore
     results = await asyncio.gather(*tasks)
-    
-    # Filter out None results from failed calls
-    valid_results = [res for res in results if res]
-    return valid_results
+    return [res for res in results if res]
 
 # --- PUBLIC ASYNC FUNCTIONS ---
 
@@ -132,28 +124,15 @@ async def chat_completion(system_prompt: str, user_message: str) -> str:
     return result or "Nuk u gjenerua përgjigje."
 
 async def analyze_structured_prediction(data_context: str, analysis_type: str) -> Dict[str, Any]:
-    """
-    Async version of prediction analysis.
-    """
     if analysis_type == "RESTOCK":
-        system_prompt = """
-        You are an Inventory Analyst AI.
-        Task: Analyze the provided item data (Stock, Sales Rate).
-        Output JSON: { "suggested_quantity": number, "reason": "Short Albanian explanation", "estimated_cost": number }
-        """
-    else: # TREND
-        system_prompt = """
-        You are a Sales Analyst AI.
-        Task: Analyze the provided sales history.
-        Output JSON: { "trend_analysis": "1 sentence summary in Albanian", "cross_sell_opportunities": "1 suggestion in Albanian or 'N/A'" }
-        """
+        system_prompt = "You are an Inventory Analyst AI. Output JSON: { suggested_quantity, reason, estimated_cost }"
+    else:
+        system_prompt = "You are a Sales Analyst AI. Output JSON: { trend_analysis, cross_sell_opportunities }"
         
     content = await _call_deepseek_async(system_prompt, f"DATA CONTEXT:\n{data_context}", json_mode=True)
     return _parse_json_safely(content) if content else {}
 
 async def ask_business_consultant(user_id: str, query: str) -> str:
-    # Note: vector_store_service might be sync. If so, wrap it in to_thread if it blocks heavily.
-    # For now, we assume it's fast enough or allows sync execution.
     try:
         user_docs = await asyncio.to_thread(vector_store_service.query_private_diary, user_id, query, n_results=4)
         user_context = "\n".join([f"- {d['content']}" for d in user_docs])

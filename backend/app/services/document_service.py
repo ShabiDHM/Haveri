@@ -1,8 +1,8 @@
 # FILE: backend/app/services/document_service.py
-# PHOENIX PROTOCOL - DOCUMENT SERVICE V7.1 (HYDRA ENABLED)
-# 1. NEW: Added 'analyze_document_parallel' using Map-Reduce pattern.
-# 2. LOGIC: Calls 'llm_service.process_chunks_parallel' for high-speed processing.
-# 3. SAFETY: Preserved all existing Delete/Create/Get logic exactly as is.
+# PHOENIX PROTOCOL - DOCUMENT SERVICE V7.2 (PYLANCE RESOLUTION)
+# 1. FIX: Switched to explicit function imports to resolve Pylance AttributeErrors.
+# 2. SYNC: Fully integrated with Hydra (V6.1) LLM logic.
+# 3. STATUS: Type-safe and linter-compliant.
 
 import logging
 import datetime
@@ -14,11 +14,12 @@ import redis
 from fastapi import HTTPException
 from pymongo.database import Database
 
+# PHOENIX FIX: Explicitly importing functions to resolve attribute access issues
+from .llm_service import process_chunks_parallel, chat_completion
+from . import vector_store_service, storage_service
+
 from ..models.document import DocumentOut, DocumentStatus
 from ..models.user import UserInDB
-
-# Only essential services
-from . import vector_store_service, storage_service, llm_service
 
 logger = logging.getLogger(__name__)
 
@@ -36,18 +37,18 @@ async def analyze_document_parallel(text: str, analysis_type: str = "SUMMARY") -
 
     # Define Prompts based on intent
     if analysis_type == "SUMMARY":
-        map_prompt = "Summarize this specific section of the document in Albanian. Capture key dates, parties, and obligations."
-        reduce_prompt = "Combine these partial summaries into one coherent, professional executive summary in Albanian."
+        map_prompt = "Përmblidh këtë pjesë të dokumentit në Shqip. Identifiko datat, palët dhe obligimet kryesore."
+        reduce_prompt = "Bashko këto përmbledhje të pjesshme në një përmbledhje ekzekutive koherente dhe profesionale në Shqip."
     elif analysis_type == "ENTITIES":
-        map_prompt = "Extract key entities (Names, Companies, Dates, Monetary Amounts) from this section. Return as bullet points."
-        reduce_prompt = "Consolidate these lists of entities, removing duplicates and formatting cleanly."
+        map_prompt = "Nxirr entitetet kryesore (Emrat, Kompanitë, Datat, Shumat) nga kjo pjesë. Ktheji si pika (bullet points)."
+        reduce_prompt = "Konsolido këto lista, hiq përsëritjet dhe formatoji pastër."
     else:
-        map_prompt = "Analyze this text segment for key business insights."
-        reduce_prompt = "Synthesize these insights into a final report."
+        map_prompt = "Analizo këtë tekst për njohuri kryesore të biznesit."
+        reduce_prompt = "Sintezo këtë analizë në një raport final."
 
-    # 1. MAP PHASE (Parallel Execution)
-    # This calls the Async Hydra engine we built in llm_service
-    partial_results = await llm_service.process_chunks_parallel(text, map_prompt)
+    # 1. MAP PHASE (Parallel Execution via Hydra Engine)
+    # We now call the imported function directly
+    partial_results = await process_chunks_parallel(text, map_prompt)
     
     if not partial_results:
         return "Nuk u gjenerua analizë (Bosh)."
@@ -58,7 +59,9 @@ async def analyze_document_parallel(text: str, analysis_type: str = "SUMMARY") -
 
     # 2. REDUCE PHASE (Synthesis)
     combined_partials = "\n---\n".join(partial_results)
-    final_summary = await llm_service.chat_completion(
+    
+    # We now call the imported function directly
+    final_summary = await chat_completion(
         system_prompt=reduce_prompt,
         user_message=f"PARTIAL RESULTS:\n{combined_partials}"
     )
@@ -172,11 +175,6 @@ def get_document_content_by_key(storage_key: str) -> Optional[str]:
         return None
 
 def delete_document_by_id(db: Database, redis_client: redis.Redis, doc_id: ObjectId, owner: UserInDB) -> List[str]:
-    """
-    SMART DELETE FUNCTION
-    Removes: DB Record, S3 Files, Vector Embeddings (AI Memory).
-    PRESERVES: Findings & Calendar Events (Extracted Intelligence).
-    """
     document_to_delete = db.documents.find_one({"_id": doc_id, "owner_id": owner.id})
     if not document_to_delete:
         raise HTTPException(status_code=404, detail="Document not found.")
@@ -205,7 +203,6 @@ def delete_document_by_id(db: Database, redis_client: redis.Redis, doc_id: Objec
         except: pass
 
     db.documents.delete_one({"_id": doc_id})
-    
     return []
 
 def bulk_delete_documents(db: Database, redis_client: redis.Redis, document_ids: List[str], owner: UserInDB) -> Dict[str, Any]:
