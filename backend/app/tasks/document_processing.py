@@ -1,7 +1,8 @@
 # FILE: backend/app/tasks/document_processing.py
-# PHOENIX PROTOCOL - UNIFIED INTELLIGENCE WORKER V14.2 (IMPORT FIX)
-# 1. FIXED: Changed imports to match Havery's implicit service registration logic.
-# 2. STATUS: Resolves all Pylance import errors and integrates Accountant dual-ingestion.
+# PHOENIX PROTOCOL - UNIFIED INTELLIGENCE WORKER V14.3 (SMART DATA INGESTION)
+# 1. FEATURE: Implemented 'smart_chunker' to preserve row integrity for CSV/Excel data.
+# 2. FEATURE: Header-Injection for CSV chunks to provide context to the Forensic Agent.
+# 3. STATUS: Complete and unabridged replacement.
 
 import logging
 import os
@@ -16,7 +17,6 @@ from datetime import datetime
 from app.celery_app import celery_app
 from app.core import db
 
-# PHOENIX FIX: Importing the entire service package allows access to all registered modules
 from app.services import (
     vector_store_service,
     accountant_vector_service,
@@ -24,7 +24,7 @@ from app.services import (
     text_extraction_service,
     llm_service,
     document_service,
-    embedding_service # <--- Explicitly included to ensure visibility for a known worker dependency
+    embedding_service
 )
 from app.services.albanian_language_detector import AlbanianLanguageDetector
 
@@ -43,8 +43,24 @@ def publish_sse_update(user_id: str, data: Dict[str, Any]):
         except Exception as e:
             logger.error(f"Failed to publish SSE: {e}")
 
-# --- Simple Text Chunker (Fallback) ---
-def simple_chunker(text: str, chunk_size: int = 1500, chunk_overlap: int = 200) -> list[str]:
+# --- PHOENIX: Smart Row-Aware Chunker ---
+def smart_chunker(text: str, file_type: str, chunk_size: int = 1500, chunk_overlap: int = 200) -> list[str]:
+    """
+    Specialized chunking:
+    - CSV/XLSX: Splits by line and injects headers for AI context.
+    - Standard: Uses character splitting.
+    """
+    clean_type = file_type.lower().strip('.')
+    
+    if clean_type in ['csv', 'xlsx', 'xls']:
+        lines = [l.strip() for l in text.splitlines() if l.strip()]
+        if not lines:
+            return []
+        
+        header = lines[0]
+        # Create row-based chunks with header context for the Accountant
+        return [f"HEADER: {header} | DATA_ROW: {line}" for line in lines[1:]]
+
     from langchain.text_splitter import RecursiveCharacterTextSplitter
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -65,6 +81,7 @@ def simple_chunker(text: str, chunk_size: int = 1500, chunk_overlap: int = 200) 
 def process_archive_document(self, archive_item_id: str):
     """
     Dual-Ingestion Pipeline: Feeds both standard RAG and the Forensic Accountant.
+    Uses smart row-aware chunking for financial data files.
     """
     if db.db_instance is None: db.connect_to_mongo()
     db_conn = db.db_instance
@@ -77,22 +94,25 @@ def process_archive_document(self, archive_item_id: str):
 
         user_id = str(archive_item["user_id"])
         doc_title = archive_item.get("title") or "Untitled Document"
+        file_ext = archive_item.get("file_type", "").lower()
         raw_case_id = archive_item.get("case_id")
         case_id_str = str(raw_case_id) if raw_case_id else ""
 
         db_conn.archives.update_one({"_id": oid}, {"$set": {"indexing_status": "PROCESSING"}})
         publish_sse_update(user_id, {"type": "DOCUMENT_STATUS", "document_id": archive_item_id, "status": "PROCESSING"})
         
-        suffix = os.path.splitext(doc_title)[1] or ".tmp"
+        # Download & Extract
+        suffix = f".{file_ext}" if file_ext else ".tmp"
         temp_fd, temp_file_path = tempfile.mkstemp(suffix=suffix)
         file_stream = storage_service.get_file_stream(archive_item["storage_key"])
         with os.fdopen(temp_fd, 'wb') as temp_file: shutil.copyfileobj(file_stream, temp_file)
         if hasattr(file_stream, 'close'): file_stream.close()
         
-        raw_text = text_extraction_service.extract_text(temp_file_path, archive_item.get("file_type", "").lower())
+        raw_text = text_extraction_service.extract_text(temp_file_path, file_ext)
         if not raw_text or not raw_text.strip(): raise ValueError("Document is empty.")
 
-        chunks = simple_chunker(raw_text)
+        # PHOENIX: Use Smart Chunker to preserve financial row integrity
+        chunks = smart_chunker(raw_text, file_ext)
         if not chunks: raise ValueError("Chunking resulted in zero chunks.")
         
         is_albanian = AlbanianLanguageDetector.detect_language(raw_text)
@@ -113,9 +133,9 @@ def process_archive_document(self, archive_item_id: str):
                 chunks=chunks,
                 metadatas=[base_metadata.copy() for _ in chunks]
             )
-            logger.info(f"✅ Document {archive_item_id} added to Accountant Knowledge Base.")
+            logger.info(f"✅ Row-integrated document {archive_item_id} added to Accountant KB.")
         except Exception as acc_e:
-            logger.error(f"⚠️ Accountant Ingestion Failed (Non-blocking): {acc_e}")
+            logger.error(f"⚠️ Accountant Ingestion Failed: {acc_e}")
 
         db_conn.archives.update_one({"_id": oid}, {"$set": {"indexing_status": "READY"}})
         publish_sse_update(user_id, {"type": "DOCUMENT_STATUS", "document_id": archive_item_id, "status": "READY"})
