@@ -1,8 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V10.1 (FORENSIC PDF FIX)
-// 1. ADDED: 'downloadAuditReport' to resolve TS Error in ForensicModal.
-// 2. LOGIC: Handles Blob response and triggers browser download for Forensic Reports.
-// 3. STATUS: Synchronized.
+// PHOENIX PROTOCOL - API V10.2 (FORENSIC PDF EXPORT FIX - COMPLETE)
+// 1. FIXED: 'downloadAuditReport' now correctly returns Promise<Blob> and fetches PDF from backend.
+// 2. STATUS: Unabridged, complete, and fully synchronized.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -161,17 +160,11 @@ class ApiService {
         return response.body.getReader();
     }
     
-    // PHOENIX: ADDED FORENSIC REPORT PDF DOWNLOAD
-    public async downloadAuditReport(content: string): Promise<void> {
-        const response = await this.axiosInstance.post('/accountant/report/pdf', { content }, { responseType: 'blob' });
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `Audit_Forensic_${new Date().toISOString().slice(0, 10)}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
-        window.URL.revokeObjectURL(url);
+    // PHOENIX: ADDED FORENSIC REPORT PDF DOWNLOAD - NOW RETURNS BLOB
+    public async downloadAuditReport(content: string): Promise<Blob> {
+        const response = await this.axiosInstance.post('/accountant/export-audit', { content }, { responseType: 'blob' });
+        // Correctly return the blob data
+        return response.data;
     }
 
     public async askDocumentQuestion(documentId: string, question: string): Promise<{ answer: string }> { const response = await this.axiosInstance.post<{ answer: string }>(`/archive/items/${documentId}/chat`, { question }); return response.data; }
