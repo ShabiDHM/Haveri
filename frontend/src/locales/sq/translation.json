@@ -36,10 +36,15 @@
     "welcome_name": "Mirësevini, {{name}}",
     "email_label": "Email",
     "email_placeholder": "kolegu@zyra.com",
-    "button_close": "Mbyll"
+    "button_close": "Mbyll",
+    "document": "Dokument"
   },
   "navigation": {
     "integrations": "Integrimet"
+  },
+  "ai": {
+    "doc_assistant_intro": "Përshëndetje! Jam asistenti juaj për dokumentin \"{{title}}\".",
+    "ask_placeholder": "Pyet..."
   },
   "settings": {
     "integrations": {
@@ -600,7 +605,14 @@
     "statusReady": "Gati për AI",
     "statusProcessing": "Duke procesuar...",
     "statusPending": "Në pritje",
-    "statusFailed": "Dështoi"
+    "statusFailed": "Dështoi",
+    "portal_access": "PORTAL",
+    "reindex": "Ri-Indekso",
+    "ask_ai": "Pyet AI",
+    "create_folder_title": "Krijo Dosje",
+    "createFolder": "Krijo Dosje",
+    "rename_title": "Riemërto",
+    "upload": "Ngarko"
   },
   "category": {
     "general": "Të Përgjithshme",
@@ -656,7 +668,8 @@
     "analyzing": "Duke analizuar arkivën...",
     "placeholder": "Pyetni p.sh: 'A ka ndonjë faturë të dyshimtë këtë muaj?'",
     "privacy_note": "Të dhënat tuaja analizohen në mënyrë të sigurt dhe private.",
-    "chat_cleared": "Biseda u pastrua. Jam gati për analizë të re."
+    "chat_cleared": "Biseda u pastrua. Jam gati për analizë të re.",
+    "export_pdf": "Eksporto PDF"
   },
   "admin": {
     "dashboard_title": "Administrimi i Havery.tech",
