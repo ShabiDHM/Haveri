@@ -1,8 +1,7 @@
 # FILE: backend/app/services/accountant_vector_service.py
-# PHOENIX PROTOCOL - ACCOUNTANT VECTOR V1.7 (DEEP SEARCH)
-# 1. OPTIMIZATION: Increased n_results to 20 to capture entire CSV tables.
-# 2. ISOLATION: Strictly utilizes Havery's Global Knowledge Bases.
-# 3. STATUS: Unabridged replacement.
+# PHOENIX PROTOCOL - ACCOUNTANT VECTOR V1.8 (MAX-RECALL)
+# 1. OPTIMIZATION: Increased recall to ensure CSV rows are always prioritized.
+# 2. STATUS: Fully synchronized for Forensic Audit.
 
 from __future__ import annotations
 import logging
@@ -12,12 +11,7 @@ from . import embedding_service
 
 logger = logging.getLogger(__name__)
 
-__all__ = [
-    "store_finance_embeddings",
-    "query_user_financials",
-    "query_tax_and_business_laws",
-    "get_combined_context"
-]
+__all__ = ["store_finance_embeddings", "query_user_financials", "query_tax_and_business_laws", "get_combined_context"]
 
 def store_finance_embeddings(user_id: str, document_id: str, file_name: str, chunks: List[str], metadatas: List[Dict[str, Any]]) -> bool:
     try:
@@ -25,48 +19,51 @@ def store_finance_embeddings(user_id: str, document_id: str, file_name: str, chu
         embeddings = [embedding_service.generate_embedding(c, language=meta.get('language')) for c, meta in zip(chunks, metadatas)]
         valid_embeddings = cast(Any, [emb for emb in embeddings if emb is not None])
         if not valid_embeddings: return False
-
         ids = [f"fin_{document_id}_{i}" for i in range(len(valid_embeddings))]
         final_metadatas = []
         for meta in metadatas:
             final_meta = meta.copy()
             final_meta.update({"owner_id": str(user_id), "source_document_id": str(document_id), "file_name": file_name})
             final_metadatas.append(final_meta)
-            
         collection.add(embeddings=valid_embeddings, documents=chunks, metadatas=cast(Any, final_metadatas), ids=ids)
         return True
     except Exception as e:
-        logger.error(f"Accountant Ingestion Failed: {e}")
+        logger.error(f"Ingestion failed: {e}")
         return False
 
-def query_user_financials(user_id: str, query_text: str, n_results: int = 20) -> List[Dict[str, Any]]:
-    # PHOENIX: Increased n_results to 20 to ensure small CSVs are read entirely
+def query_user_financials(user_id: str, query_text: str, n_results: int = 30) -> List[Dict[str, Any]]:
+    # PHOENIX: Increased to 30 results to capture all rows of small financial CSVs
     return havery_vs.query_private_diary(user_id, query_text, n_results=n_results)
 
-def query_tax_and_business_laws(query_text: str, n_results: int = 10) -> List[Dict[str, Any]]:
-    # PHOENIX: Increased law retrieval depth
-    legal_findings = havery_vs.query_public_library(query_text, n_results=6, agent_type='legal')
-    business_findings = havery_vs.query_public_library(query_text, n_results=4, agent_type='business')
+def query_tax_and_business_laws(query_text: str, n_results: int = 15) -> List[Dict[str, Any]]:
+    # PHOENIX: Deep legal retrieval
+    legal_findings = havery_vs.query_public_library(query_text, n_results=10, agent_type='legal')
+    business_findings = havery_vs.query_public_library(query_text, n_results=5, agent_type='business')
     return legal_findings + business_findings
 
 def get_combined_context(user_id: str, query: str) -> str:
+    # Perform a broad search to ensure we don't miss the CSV data
     private_data = query_user_financials(user_id, query)
+    # If the user query is specific, we also do a broad "financials" fallback search
+    if len(private_data) < 5:
+        private_data += query_user_financials(user_id, "fatura transaksione shpenzime", n_results=10)
+        
     global_rules = query_tax_and_business_laws(query)
     
-    # Debug log to verify if data is actually coming out of the DB
-    logger.info(f"🔎 Audit Search: Found {len(private_data)} user snippets and {len(global_rules)} law snippets.")
-
-    context = "--- DOKUMENTET FINANCIARE TË PËRDORUESIT ---\n"
+    context = "--- DOKUMENTET FINANCIARE TË GJETURA NË ARKIVË ---\n"
     if private_data:
-        # PHOENIX: Added labels to help AI identify content vs source
-        context += "\n".join([f"E DHËNË: {d['content']} | BURIMI: {d['source']}" for d in private_data])
+        # Deduplicate results based on content to save tokens
+        seen = set()
+        for d in private_data:
+            if d['content'] not in seen:
+                context += f"DOKUMENTI: {d['source']} | DATA: {d['content']}\n"
+                seen.add(d['content'])
     else:
-        context += "ALARM: Nuk u gjet asnjë dokument relevant në arkivë.\n"
+        context += "Nuk u gjet asnjë dokument në arkivë.\n"
     
-    context += "\n\n--- RREGULLAT E ATK DHE LIGJET ---\n"
+    context += "\n--- BAZA LIGJORE DHE RREGULLORET (ATK) ---\n"
     if global_rules:
-        context += "\n".join([f"LIGJI: {l['content']} | BURIMI: {l['source']}" for l in global_rules])
-    else:
-        context += "S'ka ligje relevante të gjetura.\n"
-    
+        for l in global_rules:
+            context += f"LIGJI: {l['content']} | BURIMI: {l['source']}\n"
+            
     return context
