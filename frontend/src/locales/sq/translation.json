@@ -32,7 +32,11 @@
     "confirmClearChat": "A jeni i sigurt që doni të fshini bisedën?",
     "backToYears": "Kthehu te Vitet",
     "backTo": "Kthehu te",
-    "backToDashboard": "Kthehu tek Paneli Kryesor"
+    "backToDashboard": "Kthehu tek Paneli Kryesor",
+    "welcome_name": "Mirësevini, {{name}}",
+    "email_label": "Email",
+    "email_placeholder": "kolegu@zyra.com",
+    "button_close": "Mbyll"
   },
   "navigation": {
     "integrations": "Integrimet"
@@ -56,11 +60,11 @@
     }
   },
   "sidebar": {
-      "business": "Zyra Ime",
-      "haveri_ai": "Haveri AI",
-      "account": "Llogaria",
-      "support": "Mbështetja",
-      "admin": "Admin"
+    "business": "Zyra Ime",
+    "haveri_ai": "Haveri AI",
+    "account": "Llogaria",
+    "support": "Mbështetja",
+    "admin": "Admin"
   },
   "account": {
     "title": "Llogaria Ime",
@@ -80,16 +84,16 @@
     "confirmDelete": "A jeni absolutisht të sigurt? Të gjitha të dhënat do të humbasin përgjithmonë."
   },
   "support": {
-      "title": "Qendra e Ndihmës",
-      "subtitle": "Ne jemi këtu për t'ju ndihmuar.",
-      "contactInfo": "Informacion Kontakti",
-      "legalInfo": "Informacione Ligjore",
-      "legalDesc": "Lexoni politikën tonë të privatësisë për të kuptuar se si i mbrojmë të dhënat tuaja.",
-      "privacyTitle": "Politika e Privatësisë",
-      "sendMessage": "Na Dërgoni Mesazh",
-      "messagePlaceholder": "Mesazhi juaj...",
-      "sendButton": "Dërgo",
-      "successMessage": "Mesazhi u dërgua me sukses!"
+    "title": "Qendra e Ndihmës",
+    "subtitle": "Ne jemi këtu për t'ju ndihmuar.",
+    "contactInfo": "Informacion Kontakti",
+    "legalInfo": "Informacione Ligjore",
+    "legalDesc": "Lexoni politikën tonë të privatësisë për të kuptuar se si i mbrojmë të dhënat tuaja.",
+    "privacyTitle": "Politika e Privatësisë",
+    "sendMessage": "Na Dërgoni Mesazh",
+    "messagePlaceholder": "Mesazhi juaj...",
+    "sendButton": "Dërgo",
+    "successMessage": "Mesazhi u dërgua me sukses!"
   },
   "auth": {
     "loginTitle": "Hyni në Haveri",
@@ -125,7 +129,8 @@
   },
   "common": {
     "today": "SOT",
-    "urgent": "Urgjente"
+    "urgent": "Urgjente",
+    "error_occurred": "Ndodhi një gabim gjatë procesimit."
   },
   "branding": {
     "default": "Haveri Portal"
@@ -145,10 +150,6 @@
     "access_denied": "Qasja u Refuzua",
     "error_not_found": "Dosja nuk u gjet ose nuk keni qasje.",
     "loading": "Duke ngarkuar të dhënat..."
-  },
-  "actions": {
-    "view": "Shiko",
-    "download": "Shkarko"
   },
   "status": {
     "OPEN": "E Hapur",
@@ -179,7 +180,7 @@
     "slide1_title": "Dhoma e Strategjisë",
     "slide1_desc": "Gjeni mospërputhjet automatikisht. AI kryqëzon të dhënat dhe zbulon çdo kontradiktë.",
     "slide2_title": "Skanim I Thellë OCR",
-    "slide2_desc": "Skanoni dokumente. Teknologjia jonë 'Hawk-Eye' lexon edhe skanimet më të dobëta.",
+    "slide2_desc": "Skanoni dokumente. Teknologjia jonë 'Hawk-Eye' lexon even skanimet më të dobëta.",
     "slide3_title": "Hartim i Shpejtë",
     "slide3_desc": "Ju shkruani strategjinë, ne shkruajmë detajet. Gjeneroni dokumente profesionale.",
     "slide4_title": "Arkiva e Gjallë",
@@ -192,7 +193,7 @@
     "profile": "Profili",
     "settings": "Cilësimet",
     "logout": "Dilni"
-    },
+  },
   "chatPanel": {
     "title": "Bisedo",
     "titleLegal": "Hartuesi",
@@ -272,6 +273,7 @@
     "finance": "Financat",
     "archive": "Arkiva",
     "insights": "Inteligjenca",
+    "team": "Ekipi",
     "welcome": "Mirësevini {{name}}",
     "clientName": "Emri i Klientit",
     "publicEmail": "Email Publik",
@@ -293,9 +295,15 @@
     "subtitle": "Analizë e thelluar për të marrë vendime më të zgjuara.",
     "systemActive": "Sistemi Aktiv",
     "liveMetrics": "Metrikat Live",
-    "debt": { "title": "Borxhet" },
-    "tax": { "estimator": "Vlerësimi i TVSH-së" },
-    "inventory": { "title": "Stoku" },
+    "debt": {
+      "title": "Borxhet"
+    },
+    "tax": {
+      "estimator": "Vlerësimi i TVSH-së"
+    },
+    "inventory": {
+      "title": "Stoku"
+    },
     "tip": "Këshillë: Përdorni butonin WhatsApp tek borxhet për të përshpejtuar arkëtimin me 40%."
   },
   "graph": {
@@ -347,7 +355,7 @@
     "viewSourceDoc": "Shiko Burimin",
     "noTransactions": "Nuk ka transaksione për këtë periudhë.",
     "scanFromPhone": "Skano nga Telefoni",
-    "import": { 
+    "import": {
       "title": "Importo Transaksione",
       "uploadTitle": "Ngarko CSV/Excel",
       "uploadDesc": "Ngarkoni raportin e shitjeve nga POS ose banka juaj.",
@@ -381,41 +389,41 @@
       "failed": "Analiza dështoi."
     },
     "wizard": {
-        "stepAudit": "Auditimi",
-        "stepTax": "Llogaritja e Taksave",
-        "stepFinalize": "Finalizimi",
-        "cleanRecordTitle": "Regjistër i Pastër",
-        "cleanRecordDesc": "Nuk u gjetën probleme për këtë muaj. Mund të vazhdoni.",
-        "criticalIssues": "Probleme Kritike",
-        "mustFix": "Kërkohet Rregullim",
-        "warnings": "Paralajmërime",
-        "recommended": "Rekomandohet",
-        "regimeSmall": "Regjimi: Biznes i Vogël",
-        "regimeVat": "Regjimi: TVSH",
-        "rate9": "Tatimi 9% mbi fitimin bruto",
-        "rate18": "TVSH standarde 18%",
-        "totalSales": "Shitjet Totale (Bruto)",
-        "vatCollected": "TVSH e Mbledhur",
-        "operationalExpenses": "Shpenzimet Operacionale",
-        "totalPurchases": "Blerjet Totale",
-        "vatDeductible": "TVSH e Zbritshme",
-        "noTaxEffect": "Pa efekt tatimor direkt",
-        "readyToFile": "Gati për Deklarim",
-        "atk": {
-            "openEdi": "Hap EDI (ATK)",
-            "copyInstruction": "Kopjoni vlerat e mëposhtme në kutitë përkatëse në formularin e ATK-së:",
-            "box9": "Kutia [9] - Qarkullimi",
-            "box11": "Kutia [11] - Tatimi për të paguar",
-            "box10": "Kutia [10] - Shitjet",
-            "box23": "Kutia [23] - Blerjet",
-            "box48": "Kutia [48] - Obligimi Neto",
-            "copy": "Kopjo",
-            "copied": "Kopjuar"
-        },
-        "downloadReport": "Shkarko Raportin Mujor",
-        "fixIssues": "Rregullo Problemet",
-        "next": "Vazhdo",
-        "back": "Kthehu"
+      "stepAudit": "Auditimi",
+      "stepTax": "Llogaritja e Taksave",
+      "stepFinalize": "Finalizimi",
+      "cleanRecordTitle": "Regjistër i Pastër",
+      "cleanRecordDesc": "Nuk u gjetën probleme për këtë muaj. Mund të vazhdoni.",
+      "criticalIssues": "Probleme Kritike",
+      "mustFix": "Kërkohet Rregullim",
+      "warnings": "Paralajmërime",
+      "recommended": "Rekomandohet",
+      "regimeSmall": "Regjimi: Biznes i Vogël",
+      "regimeVat": "Regjimi: TVSH",
+      "rate9": "Tatimi 9% mbi fitimin bruto",
+      "rate18": "TVSH standarde 18%",
+      "totalSales": "Shitjet Totale (Bruto)",
+      "vatCollected": "TVSH e Mbledhur",
+      "operationalExpenses": "Shpenzimet Operacionale",
+      "totalPurchases": "Blerjet Totale",
+      "vatDeductible": "TVSH e Zbritshme",
+      "noTaxEffect": "Pa efekt tatimor direkt",
+      "readyToFile": "Gati për Deklarim",
+      "atk": {
+        "openEdi": "Hap EDI (ATK)",
+        "copyInstruction": "Kopjoni vlerat e mëposhtme në kutitë përkatëse në formularin e ATK-së:",
+        "box9": "Kutia [9] - Qarkullimi",
+        "box11": "Kutia [11] - Tatimi për të paguar",
+        "box10": "Kutia [10] - Shitjet",
+        "box23": "Kutia [23] - Blerjet",
+        "box48": "Kutia [48] - Obligimi Neto",
+        "copy": "Kopjo",
+        "copied": "Kopjuar"
+      },
+      "downloadReport": "Shkarko Raportin Mujor",
+      "fixIssues": "Rregullo Problemet",
+      "next": "Vazhdo",
+      "back": "Kthehu"
     },
     "digitalReceipt": {
       "title": "Dëshmi Digjitale",
@@ -424,7 +432,7 @@
       "date": "Data:",
       "description": "Përshkrimi:",
       "noDescription": "Pa përshkrim",
-      "generated": "Gjeneruar automatikisht nga Haveri AI",
+      "generated": "Gjeneruar automatikasht nga Haveri AI",
       "fileNamePrefix": "Deshmi_Digjitale"
     },
     "activityAndReports": "Aktiviteti & Raportet",
@@ -432,21 +440,23 @@
     "tabReports": "Raportet",
     "archiveDoc": "Dokument Arkive",
     "categories": {
-        "rent": "Qira", "salary": "Paga", "supplies": "Furnizime",
-        "transport": "Transport", "utilities": "Shërbime (Rrymë/Ujë)",
-        "marketing": "Marketing", "tax": "Tatime", "other": "Tjetër"
+      "rent": "Qira",
+      "salary": "Paga",
+      "supplies": "Furnizime",
+      "transport": "Transport",
+      "utilities": "Shërbime (Rrymë/Ujë)",
+      "marketing": "Marketing",
+      "tax": "Tatime",
+      "other": "Tjetër"
     },
-    "status": {
-        "draft": "Draft", "sent": "E Dërguar", "paid": "E Paguar",
-        "overdue": "E Vonuar", "cancelled": "E Anuluar"
-    },
+    "overdue": "E Vonuar",
     "analytics": {
-        "salesTrend": "Trendi i Shitjeve",
-        "topProducts": "Produktet Kryesore",
-        "keys": {
-          "amount": "Vlera",
-          "total_revenue": "Shitjet"
-        }
+      "salesTrend": "Trendi i Shitjeve",
+      "topProducts": "Produktet Kryesore",
+      "keys": {
+        "amount": "Vlera",
+        "total_revenue": "Shitjet"
+      }
     },
     "reports": {
       "noData": "Nuk ka të dhëna analitike për këtë periudhë."
@@ -458,48 +468,46 @@
     "tabItems_short": "Stoku",
     "tabRecipes": "Recetat",
     "lowStock": "Stoku Kritik",
-    "cancel": "Anulo",
-    "save": "Ruaj",
-    "items": { 
-        "add": "Shto Artikull", 
-        "edit": "Ndrysho Artikullin",
-        "import": "Importo CSV",
-        "name": "Emri i Artikullit",
-        "unit": "Njësia",
-        "cost": "Kosto / Njësi",
-        "stock": "Stoku Aktual",
-        "lowStock": "Pragu i Stokut Kritik",
-        "importedCount": "Artikuj të importuar",
-        "noItems": "Nuk u gjet asnjë artikull."
+    "items": {
+      "add": "Shto Artikull",
+      "edit": "Ndrysho Artikullin",
+      "import": "Importo CSV",
+      "name": "Emri i Artikullit",
+      "unit": "Njësia",
+      "cost": "Kosto / Njësi",
+      "stock": "Stoku Aktual",
+      "lowStock": "Pragu i Stokut Kritik",
+      "importedCount": "Artikuj të importuar",
+      "noItems": "Nuk u gjet asnjë artikull."
     },
-    "recipes": { 
-        "add": "Krijo Recetë", 
-        "edit": "Ndrysho Recetën",
-        "import": "Importo CSV",
-        "productName": "Emri i Produktit",
-        "productNameDesc": "Ky emër do të shfaqet në pikën e shitjes (POS).",
-        "example": "psh. Espresso Macchiato",
-        "ingredients": "Përbërësit",
-        "addIngredient": "Shto Përbërës",
-        "selectIngredient": "Zgjidh Përbërësin",
-        "costPreview": "Kosto e vlerësuar:",
-        "importedCount": "Receta të importuara",
-        "cost": "Kosto e Vlerësuar",
-        "noRecipes": "Nuk u gjet asnjë recetë."
+    "recipes": {
+      "add": "Krijo Recetë",
+      "edit": "Ndrysho Recetën",
+      "import": "Importo CSV",
+      "productName": "Emri i Produktit",
+      "productNameDesc": "Ky emër do të shfaqet në pikën e shitjes (POS).",
+      "example": "psh. Espresso Macchiato",
+      "ingredients": "Përbërësit",
+      "addIngredient": "Shto Përbërës",
+      "selectIngredient": "Zgjidh Përbërësin",
+      "costPreview": "Kosto e vlerësuar:",
+      "importedCount": "Receta të importuara",
+      "cost": "Kosto e Vlerësuar",
+      "noRecipes": "Nuk u gjet asnjë recetë."
     },
     "import": {
-        "instruction": "Ngarkoni një skedar CSV ose Excel për të importuar të dhënat.",
-        "columns": "Kolonat e kërkuara: Emri, Përbërësit...",
-        "columnsItems": "Kolonat e kërkuara: Emri, Njësia, Kosto, Stoku...",
-        "clickToSelect": "Klikoni për të zgjedhur skedarin",
-        "button": "Importo Tani"
+      "instruction": "Ngarkoni një skedar CSV ose Excel për të importuar të dhënat.",
+      "columns": "Kolonat e kërkuara: Emri, Përbërësit...",
+      "columnsItems": "Kolonat e kërkuara: Emri, Njësia, Kosto, Stoku...",
+      "clickToSelect": "Klikoni për të zgjedhur skedarin",
+      "button": "Importo Tani"
     },
-    "units": { 
-        "kg": "Kilogram (kg)", 
-        "liters": "Litra (l)", 
-        "pieces": "Copë", 
-        "grams": "Gram (g)", 
-        "milliliters": "Mililitra (ml)" 
+    "units": {
+      "kg": "Kilogram (kg)",
+      "liters": "Litra (l)",
+      "pieces": "Copë",
+      "grams": "Gram (g)",
+      "milliliters": "Mililitra (ml)"
     },
     "posBatch": "Import POS",
     "itemsCount": "artikuj",
@@ -544,22 +552,37 @@
     "upcomingAlerts": "Alarmet e Ardhshme",
     "eventTypes": "Llojet e Ngjarjeve",
     "types": {
-      "APPOINTMENT": "Takim", "TASK": "Detyrë", "PAYMENT_DUE": "Pagesë",
-      "TAX_DEADLINE": "Afat Tatimor", "PERSONAL": "Personale"
+      "APPOINTMENT": "Takim",
+      "TASK": "Detyrë",
+      "PAYMENT_DUE": "Pagesë",
+      "TAX_DEADLINE": "Afat Tatimor",
+      "PERSONAL": "Personale"
     },
-    "priorities": { "HIGH": "Lartë", "MEDIUM": "Mesatare", "LOW": "Ulët" },
+    "priorities": {
+      "HIGH": "Lartë",
+      "MEDIUM": "Mesatare",
+      "LOW": "Ulët"
+    },
     "detailModal": {
       "deleteConfirm": "Jeni i sigurt që doni të fshini këtë ngjarje?",
       "deleteFailed": "Fshirja e ngjarjes dështoi.",
-      "description": "Përshkrimi", "startDate": "Data e Fillimit",
-      "location": "Vendndodhja", "attendees": "Pjesëmarrësit",
-      "notes": "Shënime", "close": "Mbyll", "delete": "Fshij"
+      "description": "Përshkrimi",
+      "startDate": "Data e Fillimit",
+      "location": "Vendndodhja",
+      "attendees": "Pjesّمarrësit",
+      "notes": "Shënime",
+      "close": "Mbyll",
+      "delete": "Fshij"
     },
     "createModal": {
-      "createFailed": "Krijimi i ngjarjes dështoi.", "title": "Krijo Ngjarje të Re",
-      "eventTitle": "Titulli i Ngjarjes", "eventType": "Lloji i Ngjarjes",
-      "priority": "Prioriteti", "eventDate": "Data e Ngjarjes",
-      "cancel": "Anulo", "create": "Krijo Ngjarje"
+      "createFailed": "Krijimi i ngjarjes dështoi.",
+      "title": "Krijo Ngjarje të Re",
+      "eventTitle": "Titulli i Ngjarjes",
+      "eventType": "Lloji i Ngjarjes",
+      "priority": "Prioriteti",
+      "eventDate": "Data e Ngjarjes",
+      "cancel": "Anulo",
+      "create": "Krijo Ngjarje"
     }
   },
   "archive": {
@@ -596,11 +619,82 @@
   "tax": {
     "chatWelcome": "Përshëndetje! Unë jam asistenti juaj tatimor. Keni ndonjë pyetje?",
     "askAdvisor": "Pyet Asistentin Tatimor",
-    "poweredBy": "Ndihmës për Tatime"
+    "poweredBy": "Ndihmës për Tatime",
+    "audit_with_ai": "Audito me AI",
+    "open_forensic_auditor": "Hap Auditorin Forenzik"
   },
   "analyst": {
     "title": "Analisti",
     "desc": "Keni një skedar Excel ose CSV të komplikuar? Ngarkojeni këtu dhe do ta analizojë, vizualizojë dhe ju prezentoj gjetjet.",
     "initialize": "Inicializo Motorin"
+  },
+  "team": {
+    "manage_team_title": "Menaxhimi i Ekipit",
+    "manage_team_subtitle": "Ftoni kolegët për të bashkëpunuar në raste dhe dokumente.",
+    "invite_member_button": "Fto Anëtar",
+    "plan_usage_label": "Përdorimi i Planit",
+    "status_active": "Aktiv",
+    "status_limit_reached": "Limiti u Arrit",
+    "table_user": "Përdoruesi",
+    "table_role": "Roli",
+    "table_status": "Statusi",
+    "table_actions": "Veprime",
+    "status_pending": "Në Pritje",
+    "action_remove": "Largo Anëtarin",
+    "label_current_user": "Përdoruesi Aktual",
+    "label_no_actions": "S'ka Veprime",
+    "invite_modal_title": "Fto Anëtar",
+    "invite_modal_subtitle": "Dërgoni një lidhje ftese një kolegu.",
+    "invite_success_detail": "Ftesa u dërgua me sukses.",
+    "invite_error_generic": "Dërgimi i ftesës dështoi.",
+    "confirm_remove_member": "A jeni i sigurt që doni të largoni këtë anëtar?",
+    "button_send_invite": "Dërgo Ftesën"
+  },
+  "forensic": {
+    "title": "Auditori Forenzik AI",
+    "welcome_message": "Unë jam Auditori juaj Forenzik. Kam qasje në arkivën tuaj dhe në Ligjet Tatimore të Kosovës. Çfarë dëshironi të kontrolloni sot?",
+    "analyzing": "Duke analizuar arkivën...",
+    "placeholder": "Pyetni p.sh: 'A ka ndonjë faturë të dyshimtë këtë muaj?'",
+    "privacy_note": "Të dhënat tuaja analizohen në mënyrë të sigurt dhe private.",
+    "chat_cleared": "Biseda u pastrua. Jam gati për analizë të re."
+  },
+  "admin": {
+    "dashboard_title": "Administrimi i Havery.tech",
+    "dashboard_subtitle": "Menaxhimi i Funksioneve dhe Kapacitetit",
+    "user_base_title": "Baza e Përdoruesve",
+    "seats": "Vende",
+    "manage_saas_profile": "Menaxho Profilin SaaS",
+    "section_features_ai": "Funksionet & Aksesi AI",
+    "label_subscription_tier": "Niveli i Abonimit",
+    "option_tier_basic": "BASIC (Standard)",
+    "option_tier_pro": "PRO (AI + Forenzika)",
+    "section_capacity_quotas": "Kapaciteti & Kuotat",
+    "label_product_plan": "Plani i Produktit",
+    "option_plan_solo": "SOLO (1 Vend)",
+    "option_plan_team": "TEAM (10 Vende)",
+    "label_account_type": "Tipi i Llogarisë",
+    "option_account_individual": "Individual",
+    "option_account_organization": "Firmë/Organizatë",
+    "section_lifecycle_status": "Cikli i Jetës & Statusi",
+    "label_gatekeeper_status": "Statusi i Gatekeeper",
+    "option_status_active": "ACTIVE (Akses i Lejuar)",
+    "option_status_inactive": "INACTIVE (Akses i Refuzuar)",
+    "label_expiry_date": "Data e Skadimit",
+    "placeholder_no_expiry": "Pa Skadim",
+    "button_save_profile": "Ruaj Profilin SaaS",
+    "status": {
+      "invite_pending": "FTESË",
+      "expired": "SKADUAR",
+      "active": "AKTIV",
+      "pending": "PRITJE"
+    },
+    "table": {
+      "user": "Përdoruesi",
+      "plan_type": "Tipi i Planit",
+      "feature_tier": "Niveli i Funksioneve",
+      "capacity": "Kapaciteti",
+      "status": "Statusi",
+      "actions": "Veprime"
+    }
   }
 }

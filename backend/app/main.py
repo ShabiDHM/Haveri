@@ -1,7 +1,7 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V11.0 (MOBILE HANDOFF)
-# 1. ADDED: Imported and included the new 'mobile_handoff_router'.
-# 2. EFFECT: Enables the QR Code "Scan to Upload" functionality.
+# PHOENIX PROTOCOL - MAIN APPLICATION V12.0 (ACCOUNTANT INTEGRATION)
+# 1. ADDED: Registered 'accountant_router' to expose the Forensic Agent API.
+# 2. STATUS: End-to-End backend pipeline for Accountant Agent is now LIVE.
 
 from fastapi import FastAPI, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,7 +31,8 @@ from app.api.endpoints.analysis import router as analysis_router
 from app.api.endpoints.drafting import router as drafting_router 
 from app.api.endpoints.inbound import router as inbound_router
 from app.api.endpoints.graph import router as graph_router
-from app.api.endpoints.mobile_handoff import router as mobile_handoff_router # <-- IMPORT HANDOFF ROUTER
+from app.api.endpoints.mobile_handoff import router as mobile_handoff_router
+from app.api.endpoints.accountant import router as accountant_router # <-- PHOENIX: IMPORT ACCOUNTANT ROUTER
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -74,7 +75,8 @@ api_v1_router.include_router(finance_wizard.router, prefix="/finance/wizard", ta
 api_v1_router.include_router(analysis_router, prefix="/analysis", tags=["Smart Analysis"]) 
 api_v1_router.include_router(drafting_router, prefix="/drafting", tags=["Drafting"])
 api_v1_router.include_router(inbound_router, prefix="/inbound", tags=["Inbound Data"])
-api_v1_router.include_router(mobile_handoff_router, prefix="/mobile-handoff", tags=["Mobile Handoff"]) # <-- INCLUDE HANDOFF ROUTER
+api_v1_router.include_router(mobile_handoff_router, prefix="/mobile-handoff", tags=["Mobile Handoff"])
+api_v1_router.include_router(accountant_router, prefix="/accountant", tags=["Forensic Accountant"]) # <-- PHOENIX: INCLUDE ACCOUNTANT ROUTER
 
 
 api_v2_router = APIRouter(prefix="/api/v2")

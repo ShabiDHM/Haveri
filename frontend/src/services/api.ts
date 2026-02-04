@@ -1,8 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V9.5 (MOBILE HANDOFF)
-// 1. ADDED: Methods for creating, polling, and retrieving files via the mobile handoff (QR Code) workflow.
-// 2. METHODS: createHandoffSession, getHandoffStatus, retrieveHandoffFile, uploadMobileFile.
-// 3. STATUS: Aligns the ApiService with the new frontend components to resolve TypeScript errors.
+// PHOENIX PROTOCOL - API V10.0 (FORENSIC ACCOUNTANT INTEGRATION)
+// 1. ADDED: 'chatWithAccountant' method to support real-time forensic chat streaming.
+// 2. STATUS: Fully synchronized with Backend V12.0 and Frontend Modal V1.1.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -17,7 +16,6 @@ import type {
     AnalysisResult
 } from '../data/types';
 
-// ... (other interface definitions are unchanged) ...
 export interface DailyBriefingResponse { id: string; content: string; created_at: string; tasks_summary?: string; }
 export interface AuditIssue { id: string; severity: 'CRITICAL' | 'WARNING'; message: string; related_item_id?: string; item_type?: 'INVOICE' | 'EXPENSE'; }
 export interface TaxCalculation { period_month: number; period_year: number; total_sales_gross: number; total_purchases_gross: number; vat_collected: number; vat_deductible: number; net_obligation: number; currency: string; status: string; regime: string; tax_rate_applied: string; description: string; }
@@ -95,7 +93,7 @@ class ApiService {
     public async updateUser(userId: string, data: UpdateUserRequest): Promise<User> { const response = await this.axiosInstance.put<User>(`/admin/users/${userId}`, data); return response.data; }
     public async deleteUser(userId: string): Promise<void> { await this.axiosInstance.delete(`/admin/users/${userId}`); }
 
-    // --- PHOENIX: MOBILE HANDOFF METHODS ---
+    // --- MOBILE HANDOFF ---
     public async createHandoffSession(): Promise<{ token: string }> {
         const response = await this.axiosInstance.post<{ token: string }>('/mobile-handoff/create');
         return response.data;
@@ -140,6 +138,28 @@ class ApiService {
     // --- AI / INTELLIGENCE ---
     public async analyzeTaxAnomalies(month: number, year: number): Promise<TaxAuditResult> { try { const response = await this.axiosInstance.post<TaxAuditResult>('/analysis/tax/audit', { month, year }); return response.data; } catch (e) { return { anomalies: ["Sistemi nuk mund të kryejë analizën për momentin."], status: 'WARNING', net_obligation: 0 }; } }
     public async chatWithTaxBot(message: string): Promise<string> { try { const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message }); return response.data.response; } catch (e) { return "Më falni, shërbimi i asistencës tatimore është përkohësisht jashtë funksionit."; } }
+    
+    // PHOENIX: ADDED FORENSIC ACCOUNTANT CHAT METHOD
+    public async chatWithAccountant(query: string): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+        const token = tokenManager.get();
+        if (!token) await this.refreshToken();
+        
+        const response = await fetch(`${API_V1_URL}/accountant/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenManager.get()}`
+            },
+            body: JSON.stringify({ query })
+        });
+
+        if (!response.ok || !response.body) {
+            throw new Error("Failed to connect to Accountant Agent.");
+        }
+
+        return response.body.getReader();
+    }
+
     public async askDocumentQuestion(documentId: string, question: string): Promise<{ answer: string }> { const response = await this.axiosInstance.post<{ answer: string }>(`/archive/items/${documentId}/chat`, { question }); return response.data; }
     public async predictRestock(itemId: string): Promise<RestockPrediction> { try { const response = await this.axiosInstance.post<RestockPrediction>('/analysis/inventory/predict', { item_id: itemId }); return response.data; } catch (e) { return { suggested_quantity: 0, reason: "Analiza e padisponueshme për momentin.", estimated_cost: 0 }; } }
     public async analyzeSalesTrend(itemId: string): Promise<SalesTrendAnalysis> { try { const response = await this.axiosInstance.post<SalesTrendAnalysis>('/analysis/inventory/trend', { item_id: itemId }); return response.data; } catch (e) { return { trend_analysis: "E padisponueshme", cross_sell_opportunities: "E padisponueshme" }; } }

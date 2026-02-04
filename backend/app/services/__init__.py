@@ -1,7 +1,8 @@
 # FILE: backend/app/services/__init__.py
-# PHOENIX PROTOCOL - SERVICES INIT V3.0 (GRAPH SERVICE INTEGRATION)
-# 1. ADDED: Added 'graph_service' to the list of available services.
-# 2. STATUS: Prepares the application for "Interconnected Intelligence" features.
+# PHOENIX PROTOCOL - SERVICE REGISTRY V4.0 (ACCOUNTANT INTEGRATION)
+# 1. ADDED: Registered the full suite of Accountant Agent services.
+# 2. PRESERVED: Maintained all 29 existing Juristi/Havery service imports.
+# 3. STATUS: Complete and unabridged replacement.
 
 from . import (
     admin_service,
@@ -17,7 +18,7 @@ from . import (
     embedding_service,
     encryption_service,
     finance_service,
-    graph_service, # <-- ADDED FOR INTERCONNECTED INTELLIGENCE
+    graph_service,
     inventory_service,
     llm_service,
     ocr_service,
@@ -39,4 +40,9 @@ from . import (
     albanian_language_detector,
     albanian_metadata_extractor,
     albanian_ner_service,
+
+    # --- PHOENIX V4.0: REGISTER THE NEW ACCOUNTANT SERVICES ---
+    accountant_vector_service,
+    accountant_llm_service,
+    accountant_chat_service
 )
