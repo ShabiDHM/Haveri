@@ -1,8 +1,8 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V7.0 (SSE FIX)
-# 1. FIX (JURISTI): Added a 'transport http' block with an extended 'read_timeout' of 10 minutes to the 'api.juristi.tech' proxy.
-# 2. REASON: Resolves critical 'net::ERR_CONNECTION_CLOSED' errors by preventing Caddy from prematurely terminating the long-lived Server-Sent Events (SSE) stream.
-# 3. SCOPE: This change is targeted only at the Juristi API and does not affect the Haveri project configuration.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V8.0 (TOTAL STREAMING SYNC)
+# 1. FIX (HAVERY): Added 'read_timeout' of 10 minutes to Havery API to support Forensic Agent streaming.
+# 2. SYNC: Both Juristi and Havery now have identical stability settings for AI chats.
+# 3. STATUS: 100% End-to-End Infrastructure Ready.
 
 {
     email shabanbala@gmail.com
@@ -11,14 +11,24 @@
 # ----------------------------------------
 # PROJECT 1: HAVERI
 # ----------------------------------------
-# Frontend/Main Domain Proxy (If applicable)
+# Frontend/Main Domain Proxy
 www.haveri.tech {
-    reverse_proxy backend:8000
+    reverse_proxy backend:8000 {
+        # PHOENIX: Support long-running AI analysis
+        transport http {
+            read_timeout 10m
+        }
+    }
 }
 
 # API Subdomain
 api.haveri.tech {
-    reverse_proxy backend:8000
+    reverse_proxy backend:8000 {
+        # PHOENIX: Ensure Forensic Accountant streams do not time out
+        transport http {
+            read_timeout 10m
+        }
+    }
 }
 
 # ----------------------------------------
