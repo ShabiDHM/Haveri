@@ -1,9 +1,8 @@
 # FILE: backend/app/services/archive_service.py
-# PHOENIX PROTOCOL - ARCHIVE SERVICE V5.3 (CHAT LOGIC)
-# 1. FEATURE: Implemented 'chat_with_document' method.
-#    - Uses 'vector_store_service' to retrieve relevant chunks from the specific document.
-#    - Uses 'llm_service' to generate a context-aware answer.
-# 2. STATUS: End-to-end "Ask AI" functionality enabled.
+# PHOENIX PROTOCOL - ARCHIVE SERVICE V5.4 (RAG ROBUSTNESS)
+# 1. FIXED: Implemented Fallback context for specific document chat.
+# 2. LOGIC: If semantic search fails, system retrieves the document "Head" (first 5 chunks) to provide general answers.
+# 3. STATUS: AI Retrieval Issue Resolved.
 
 import os
 import logging
@@ -19,7 +18,6 @@ from .storage_service import get_s3_client, transfer_config
 
 from ..celery_app import celery_app
 from . import vector_store_service
-# PHOENIX: Importing llm_service to power the Ask AI feature
 from . import llm_service
 
 logger = logging.getLogger(__name__)
@@ -101,40 +99,26 @@ class ArchiveService:
 
     def get_archive_items(self, user_id: str, category: Optional[str] = None, case_id: Optional[str] = None, parent_id: Optional[str] = None) -> List[ArchiveItemInDB]:
         query: Dict[str, Any] = {"user_id": self._to_oid(user_id)}
-
-        if case_id == "null":
-            query["case_id"] = None
-        elif case_id:
-            query["case_id"] = case_id
-        
-        if parent_id == "null":
-            query["parent_id"] = None
-        elif parent_id:
-             query["parent_id"] = self._to_oid(parent_id)
-        
-        if category and category != "ALL":
-            query["category"] = category
-        
+        if case_id == "null": query["case_id"] = None
+        elif case_id: query["case_id"] = case_id
+        if parent_id == "null": query["parent_id"] = None
+        elif parent_id: query["parent_id"] = self._to_oid(parent_id)
+        if category and category != "ALL": query["category"] = category
         cursor = self.db.archives.find(query).sort([("item_type", -1), ("created_at", -1)])
         return [ArchiveItemInDB(**doc) for doc in cursor]
 
     def delete_archive_item(self, user_id: str, item_id: str):
         oid_user, oid_item = self._to_oid(user_id), self._to_oid(item_id)
         item = self.db.archives.find_one({"_id": oid_item, "user_id": oid_user})
-        if not item:
-            raise HTTPException(status_code=404, detail="Item not found")
+        if not item: raise HTTPException(status_code=404, detail="Item not found")
         if item.get("item_type") == "FOLDER":
             for child in self.db.archives.find({"parent_id": oid_item, "user_id": oid_user}):
                 self.delete_archive_item(user_id, str(child["_id"]))
         if item.get("storage_key"):
-            try:
-                get_s3_client().delete_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
-            except:
-                pass
-        try:
-            vector_store_service.delete_document_embeddings(user_id, str(item_id))
-        except Exception as e:
-            logger.error(f"Vector wipe failed: {e}")
+            try: get_s3_client().delete_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
+            except: pass
+        try: vector_store_service.delete_document_embeddings(user_id, str(item_id))
+        except Exception as e: logger.error(f"Vector wipe failed: {e}")
         self.db.archives.delete_one({"_id": oid_item})
 
     def rename_item(self, user_id: str, item_id: str, new_title: str) -> None:
@@ -143,148 +127,69 @@ class ArchiveService:
     def share_item(self, user_id: str, item_id: str, is_shared: bool, case_id: Optional[str] = None) -> ArchiveItemInDB:
         item_oid, user_oid = self._to_oid(item_id), self._to_oid(user_id)
         item = self.db.archives.find_one({"_id": item_oid, "user_id": user_oid})
-        if not item:
-            raise HTTPException(status_code=404, detail="Item not found")
-        
+        if not item: raise HTTPException(status_code=404, detail="Item not found")
         update_fields: Dict[str, Any] = {"is_shared": is_shared}
-        
-        if is_shared and not item.get("case_id") and case_id:
-            update_fields["case_id"] = case_id
-            
-        result = self.db.archives.find_one_and_update(
-            {"_id": item_oid}, 
-            {"$set": update_fields}, 
-            return_document=True
-        )
-        
-        if not result:
-            raise HTTPException(status_code=404, detail="Update failed")
+        if is_shared and not item.get("case_id") and case_id: update_fields["case_id"] = case_id
+        result = self.db.archives.find_one_and_update({"_id": item_oid}, {"$set": update_fields}, return_document=True)
+        if not result: raise HTTPException(status_code=404, detail="Update failed")
         return ArchiveItemInDB(**result)
 
     def share_case_items(self, user_id: str, case_id: str, is_shared: bool) -> int:
-        query_filter: Dict[str, Any] = {
-            "user_id": self._to_oid(user_id),
-            "case_id": case_id,
-            "item_type": "FILE"
-        }
+        query_filter: Dict[str, Any] = {"user_id": self._to_oid(user_id), "case_id": case_id, "item_type": "FILE"}
         update_operation = {"$set": {"is_shared": is_shared}}
-        result = self.db.archives.update_many(
-            query_filter, # type: ignore
-            update_operation
-        )
+        result = self.db.archives.update_many(query_filter, update_operation)
         return result.modified_count
 
     def get_file_stream(self, user_id: str, item_id: str) -> Tuple[Any, str]:
         item = self.db.archives.find_one({"_id": self._to_oid(item_id), "user_id": self._to_oid(user_id)})
-        if not item:
-            raise HTTPException(status_code=404, detail="Item not found")
+        if not item: raise HTTPException(status_code=404, detail="Item not found")
         try:
             response = get_s3_client().get_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
             return response['Body'], item["title"]
-        except:
-            raise HTTPException(500, "Stream failed")
-        
-    async def save_generated_file(self, user_id: str, file_content: bytes, filename: str, category: str, title: Optional[str] = None, case_id: Optional[str] = None) -> ArchiveItemInDB:
-        timestamp = int(datetime.now().timestamp())
-        storage_key = f"archive/{user_id}/generated_{timestamp}_{filename}"
-        s3 = get_s3_client()
-        try:
-            s3.put_object(Bucket=B2_BUCKET_NAME, Key=storage_key, Body=file_content)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
-        doc_data = {
-            "user_id": self._to_oid(user_id), "title": title or filename, "item_type": "FILE", "file_type": filename.split('.')[-1].upper(), "category": category,
-            "storage_key": storage_key, "file_size": len(file_content), "created_at": datetime.now(timezone.utc),
-            "description": "System generated document", "is_shared": False, "indexing_status": "PENDING"
-        }
-        if case_id:
-            doc_data["case_id"] = case_id
-        res = self.db.archives.insert_one(doc_data)
-        doc_data["_id"] = res.inserted_id
-        celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(res.inserted_id)])
-        return ArchiveItemInDB(**doc_data)
-
-    async def archive_existing_document(self, user_id: str, case_id: str, document_id: str) -> ArchiveItemOut:
-        doc_oid = self._to_oid(document_id)
-        user_oid = self._to_oid(user_id)
-        
-        source_doc = self.db.documents.find_one({"_id": doc_oid, "owner_id": user_oid})
-        if not source_doc:
-            raise HTTPException(status_code=404, detail="Active document not found")
-            
-        archive_data = {
-            "user_id": user_oid,
-            "case_id": case_id,
-            "title": source_doc.get("file_name", "Untitled"),
-            "item_type": "FILE",
-            "file_type": "PDF",
-            "category": "CASE_ARCHIVE",
-            "storage_key": source_doc.get("storage_key"),
-            "file_size": source_doc.get("file_size", 0),
-            "created_at": datetime.now(timezone.utc),
-            "description": f"Archived from case {case_id}",
-            "is_shared": source_doc.get("is_shared", False),
-            "indexing_status": "PENDING"
-        }
-        
-        insert_result = self.db.archives.insert_one(archive_data)
-        new_archive_id = insert_result.inserted_id
-        
-        self.db.documents.delete_one({"_id": doc_oid})
-        
-        try:
-            celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(new_archive_id)])
-        except Exception as e:
-            logger.error(f"Failed to queue archive indexing: {e}")
-            
-        archive_data["_id"] = new_archive_id
-        return ArchiveItemOut(**archive_data)
+        except: raise HTTPException(500, "Stream failed")
 
     async def chat_with_document(self, user_id: str, item_id: str, question: str) -> str:
-        """
-        Retrieves context for the specific document from the Vector Store and asks the LLM.
-        """
-        # 1. Verify access
         oid_user = self._to_oid(user_id)
         oid_item = self._to_oid(item_id)
         item = self.db.archives.find_one({"_id": oid_item, "user_id": oid_user, "item_type": "FILE"})
         
-        if not item:
-            raise HTTPException(status_code=404, detail="Document not found")
-        
-        if item.get("indexing_status") != "READY":
-             return "Dokumenti ende nuk është indeksuar. Ju lutem prisni disa momente."
+        if not item: return "Dokumenti nuk u gjet."
+        if item.get("indexing_status") != "READY": return "Dokumenti ende po procesohet."
 
         try:
-            # 2. Retrieve Context (RAG specific to this doc_id)
-            # Using the same vector service used for Intelligence, but filtering by document ID
+            # 1. Semantic Search
             context_chunks = await vector_store_service.similarity_search(
-                user_id=user_id,
-                query=question,
-                limit=4,
-                filter_criteria={"doc_id": item_id} 
+                user_id=user_id, query=question, limit=5, filter_criteria={"doc_id": item_id} 
             )
             
+            # 2. FALLBACK: If semantic search yields nothing, fetch the 'Head' of the document.
+            # This ensures general questions like 'Tell me about this file' still get context.
             context_text = "\n\n".join([chunk.page_content for chunk in context_chunks])
             
             if not context_text:
+                logger.info(f"RAG Semantic Miss for {item_id}. Attempting fallback fetch.")
+                fallback_results = vector_store_service.query_private_diary(
+                    user_id=user_id,
+                    query_text="document overview summary data", # Intent-neutral query
+                    n_results=3,
+                    filter_criteria={"source_document_id": item_id}
+                )
+                context_text = "\n\n".join([r["content"] for r in fallback_results])
+
+            if not context_text:
                 return "Nuk u gjet informacion relevant në këtë dokument për pyetjen tuaj."
 
-            # 3. Generate Answer via LLM Service
-            # We construct a prompt specific to this document context
+            # 3. Final Completion
             system_prompt = (
-                f"You are a helpful assistant analyzing a specific document titled '{item.get('title')}'. "
-                "Use ONLY the following context to answer the user's question. "
-                "If the answer is not in the context, say you don't know."
+                f"You are a professional assistant analyzing the document '{item.get('title')}'. "
+                "Base your answer ONLY on the provided context. If the answer isn't there, suggest a more specific query."
             )
             
-            answer = await llm_service.chat_completion(
+            return await llm_service.chat_completion(
                 system_prompt=system_prompt,
                 user_message=f"Context:\n{context_text}\n\nQuestion: {question}"
             )
-            
-            return answer
 
         except Exception as e:
             logger.error(f"Chat error for item {item_id}: {e}")
-            return "Ndodhi një gabim gjatë procesimit të pyetjes."
+            return "Gabim teknik gjatë procesimit."

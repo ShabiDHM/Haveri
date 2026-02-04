@@ -1,9 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V4.8 (I18N FULL INTEGRITY)
-// 1. FIXED: Removed hardcoded English 'PORTAL' string (Line 183).
-// 2. FIXED: Replaced hardcoded Albanian in Modals with 't()' keys.
-// 3. FIXED: Injected useTranslation into DocumentChatModal for full AI localization.
-// 4. STATUS: Fully Localized & System Integrity Verified.
+// PHOENIX PROTOCOL - ARCHIVE TAB V5.0 (DRAWER UI)
+// 1. UI: Replaced centered modal with a non-blocking Right-Side Drawer.
+// 2. STATUS: Page obstruction fixed.
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,7 +23,6 @@ interface ArchiveTabProps {
     caseId?: string;
 }
 
-// --- SUB-COMPONENT: MARKDOWN RENDERER ---
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
     const paragraphs = content.split(/\n\n+/);
     return (
@@ -51,11 +48,10 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
     );
 };
 
-// --- SUB-COMPONENT: DOCUMENT CHAT MODAL ---
 const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; onClose: () => void }> = ({ documentId, documentTitle, onClose }) => {
     const { t } = useTranslation();
     const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([
-        { role: 'assistant', content: t('ai.doc_assistant_intro', { title: documentTitle, defaultValue: `Përshëndetje! Jam asistenti juaj për dokumentin "${documentTitle}".` }) }
+        { role: 'assistant', content: t('ai.doc_assistant_intro', { title: documentTitle }) }
     ]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -72,40 +68,40 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
             const response = await apiService.askDocumentQuestion(documentId, userMsg);
             setMessages(prev => [...prev, { role: 'assistant', content: response.answer }]);
         } catch (err) {
-            setMessages(prev => [...prev, { role: 'assistant', content: t('error.generic', { defaultValue: "Ndodhi një gabim gjatë bisedës." }) }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: t('error.generic') }]);
         } finally { setLoading(false); }
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0f172a] border border-white/20 w-full max-w-lg h-[600px] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-                <div className="bg-indigo-600 p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-white font-bold text-sm">
-                        <Bot size={20} />
+        <div className="fixed inset-0 z-[110] flex justify-end pointer-events-none">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/20 backdrop-blur-[2px] pointer-events-auto" />
+            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="relative w-full max-w-md h-full bg-[#0B1120] border-l border-white/10 shadow-2xl flex flex-col pointer-events-auto">
+                <div className="bg-indigo-600 p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-white font-bold">
+                        <Bot size={22} />
                         <span className="truncate max-w-[200px]">{documentTitle}</span>
                     </div>
-                    <button onClick={onClose} className="text-white/80 hover:text-white"><X size={20}/></button>
+                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/80 hover:text-white transition-colors"><X size={24}/></button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" ref={scrollRef}>
-                    {messages.map((msg, i) => (
-                        <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white/10 text-gray-200'}`}>
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar" ref={scrollRef}>
+                    {messages.map((msg, idx) => (
+                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[90%] p-4 rounded-2xl ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white/5 border border-white/10 text-gray-200 rounded-tl-none'}`}>
                                 <MarkdownRenderer content={msg.content} />
                             </div>
                         </div>
                     ))}
-                    {loading && <div className="flex justify-center p-4"><Loader2 className="animate-spin text-indigo-400" /></div>}
+                    {loading && <div className="flex justify-start p-4"><Loader2 className="animate-spin text-indigo-400" /></div>}
                 </div>
-                <form onSubmit={handleSend} className="p-4 bg-white/5 border-t border-white/10 flex gap-2">
-                    <input autoFocus type="text" value={input} onChange={(e) => setInput(e.target.value)} className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-sm outline-none" placeholder={t('ai.ask_placeholder', { defaultValue: "Pyet..." })} />
-                    <button type="submit" disabled={loading} className="p-2 bg-indigo-600 text-white rounded-xl"><Send size={18}/></button>
+                <form onSubmit={handleSend} className="p-6 bg-white/5 border-t border-white/10 flex gap-2">
+                    <input autoFocus type="text" value={input} onChange={(e) => setInput(e.target.value)} className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder={t('ai.ask_placeholder')} />
+                    <button type="submit" disabled={loading} className="p-3 bg-indigo-600 text-white rounded-xl"><Send size={20}/></button>
                 </form>
             </motion.div>
         </div>
     );
 };
 
-// --- SUB-COMPONENT: ARCHIVE CARD ---
 const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelete, onRename, onShare, onReIndex, onAskAI, isShared, isFolder, isLoading, indexingStatus }: any) => { 
     const { t } = useTranslation();
     return ( 
@@ -125,8 +121,8 @@ const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelet
             <div className="pt-4 border-t border-white/5 flex justify-between items-center mt-4"> 
                 <div className="flex items-center gap-1.5 text-gray-600"><Calendar size={12}/> <span className="text-[10px]">{date}</span></div>
                 <div className="flex gap-1 items-center">
-                    {!isFolder && onReIndex && <button onClick={(e) => { e.stopPropagation(); onReIndex(); }} className="p-2 text-gray-400 hover:text-amber-400 transition-colors" title={t('archive.reindex', { defaultValue: "Re-Index" })}><Zap size={16} /></button>}
-                    {!isFolder && indexingStatus === 'READY' && onAskAI && <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-2 text-gray-400 hover:text-indigo-400" title={t('archive.ask_ai', { defaultValue: "Ask AI" })}><MessageSquare size={16} /></button>}
+                    {!isFolder && onReIndex && <button onClick={(e) => { e.stopPropagation(); onReIndex(); }} className="p-2 text-gray-400 hover:text-amber-400 transition-colors" title={t('archive.reindex')}><Zap size={16} /></button>}
+                    {!isFolder && indexingStatus === 'READY' && onAskAI && <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-2 text-gray-400 hover:text-indigo-400" title={t('archive.ask_ai')}><MessageSquare size={16} /></button>}
                     {onShare && <button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 ${isShared ? 'text-emerald-400' : 'text-gray-400 hover:text-white'}`}><Share2 size={16} /></button>}
                     {onRename && <button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 text-gray-400 hover:text-white transition-colors" title={t('general.edit')}><Pencil size={16}/></button>}
                     {!isFolder && (
@@ -207,7 +203,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                     <div className="flex flex-wrap gap-2">
                         {(isInsideCase || !!caseId) && (
                             <button onClick={() => setShowShareModal(true)} className="px-4 py-3 bg-gray-800 text-gray-300 rounded-xl font-bold flex items-center gap-2 border border-white/10 hover:bg-gray-700 transition-colors">
-                                <LinkIcon size={18} /><span>{t('archive.portal_access', { defaultValue: 'PORTAL' })}</span>
+                                <LinkIcon size={18} /><span>{t('archive.portal_access')}</span>
                             </button>
                         )}
                         <button onClick={() => setShowFolderModal(true)} className="px-4 py-3 bg-gray-800 text-gray-300 rounded-xl font-bold flex items-center gap-2 border border-white/10 hover:bg-gray-700 transition-colors"><FolderPlus size={18}/> {t('archive.createFolder')}</button>
@@ -234,7 +230,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                         <ArchiveCard 
                             key={item.id}
                             title={item.title} 
-                            subtitle={item.item_type === 'FOLDER' ? t('archive.caseFolders') : `${item.file_type} ${t('general.document', { defaultValue: 'Dokument' })}`} 
+                            subtitle={item.item_type === 'FOLDER' ? t('archive.caseFolders') : `${item.file_type} ${t('general.document')}`} 
                             type={item.item_type === 'FOLDER' ? 'Folder' : item.file_type} 
                             date={new Date(item.created_at).toLocaleDateString()} 
                             indexingStatus={item.indexing_status}
@@ -253,8 +249,8 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                 </AnimatePresence>
             </div>
             
-            {showFolderModal && ( <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[120] p-4"><div className="bg-[#0f172a] border border-white/10 rounded-3xl w-full max-w-sm p-6 shadow-2xl"><h3 className="text-xl font-bold text-white mb-6">{t('archive.create_folder_title', { defaultValue: 'Krijo Dosje' })}</h3><form onSubmit={handleCreateFolder}><input autoFocus type="text" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} placeholder={t('archive.folder_name_placeholder', { defaultValue: 'Emri i dosjes...' })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white mb-6 outline-none focus:ring-1 focus:ring-indigo-500" /><div className="flex justify-end gap-3"><button type="button" onClick={() => setShowFolderModal(false)} className="px-6 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors">{t('general.cancel', { defaultValue: 'Anulo' })}</button><button type="submit" className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-colors">{t('general.create', { defaultValue: 'Krijo' })}</button></div></form></div></div> )}
-            {itemToRename && ( <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[120] p-4"><div className="bg-[#0f172a] border border-white/10 rounded-3xl w-full max-w-sm p-6 shadow-2xl"><h3 className="text-xl font-bold text-white mb-6">{t('archive.rename_title', { defaultValue: 'Riemërto' })}</h3><form onSubmit={async (e) => { e.preventDefault(); if (renameValue.trim()) { await renameItem(itemToRename.id, renameValue); setItemToRename(null); } }}><input autoFocus type="text" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white mb-6 outline-none focus:ring-1 focus:ring-indigo-500" /><div className="flex justify-end gap-3"><button type="button" onClick={() => setItemToRename(null)} className="px-6 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors">{t('general.cancel', { defaultValue: 'Anulo' })}</button><button type="submit" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 transition-colors flex items-center gap-2"><Save size={16}/> {t('general.save', { defaultValue: 'Ruaj' })}</button></div></form></div></div> )}
+            {showFolderModal && ( <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[120] p-4"><div className="bg-[#0f172a] border border-white/10 rounded-3xl w-full max-w-sm p-6 shadow-2xl"><h3 className="text-xl font-bold text-white mb-6">{t('archive.create_folder_title')}</h3><form onSubmit={handleCreateFolder}><input autoFocus type="text" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} placeholder={t('archive.folder_name_placeholder')} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white mb-6 outline-none focus:ring-1 focus:ring-indigo-500" /><div className="flex justify-end gap-3"><button type="button" onClick={() => setShowFolderModal(false)} className="px-6 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors">{t('general.cancel')}</button><button type="submit" className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-colors">{t('general.create')}</button></div></form></div></div> )}
+            {itemToRename && ( <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[120] p-4"><div className="bg-[#0f172a] border border-white/10 rounded-3xl w-full max-w-sm p-6 shadow-2xl"><h3 className="text-xl font-bold text-white mb-6">{t('archive.rename_title')}</h3><form onSubmit={async (e) => { e.preventDefault(); if (renameValue.trim()) { await renameItem(itemToRename.id, renameValue); setItemToRename(null); } }}><input autoFocus type="text" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white mb-6 outline-none focus:ring-1 focus:ring-indigo-500" /><div className="flex justify-end gap-3"><button type="button" onClick={() => setItemToRename(null)} className="px-6 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors">{t('general.cancel')}</button><button type="submit" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 transition-colors flex items-center gap-2"><Save size={16}/> {t('general.save')}</button></div></form></div></div> )}
             
             <ForensicAccountantModal isOpen={showForensicModal} onClose={() => setShowForensicModal(false)} />
             <AnimatePresence>{chatDoc && <DocumentChatModal documentId={chatDoc.id} documentTitle={chatDoc.title} onClose={() => setChatDoc(null)} />}</AnimatePresence>
