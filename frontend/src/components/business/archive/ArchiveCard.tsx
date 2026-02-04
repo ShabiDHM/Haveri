@@ -1,13 +1,15 @@
 // FILE: src/components/business/archive/ArchiveCard.tsx
-// PHOENIX PROTOCOL - CARD LAYOUT FIX V1.1
-// 1. UI FIX: Removed opacity classes to make action icons always visible.
-// 2. LAYOUT FIX: Added 'flex-wrap' to the icon container to prevent overflow on narrow screens.
+// PHOENIX PROTOCOL - ARCHIVE CARD V1.3 (UI SIMPLIFICATION)
+// 1. REMOVED: 'Zap' icon to keep Forensic Accountant localized in Finance.
+// 2. KEPT: All other functional icons (Share, Rename, View, Download, Delete).
+// 3. STATUS: Clean and logically correct.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
     Calendar, Info, Hash, FileText, FolderOpen, Share2, 
-    Eye, Download, Trash2, Pencil, Loader2, FileImage, FileCode, File as FileIcon
+    Eye, Download, Trash2, Pencil, Loader2, FileImage, 
+    FileCode, File as FileIcon, FileSpreadsheet, MessageSquare
 } from 'lucide-react';
 
 interface ArchiveCardProps {
@@ -21,22 +23,25 @@ interface ArchiveCardProps {
     onDelete?: () => void;
     onRename?: () => void;
     onShare?: () => void;
+    onAskAI?: () => void; // Document Assistant
     isShared?: boolean;
     isFolder?: boolean;
     isLoading?: boolean;
+    indexingStatus?: string;
 }
 
 const getFileIcon = (fileType: string) => { 
     const ft = fileType ? fileType.toUpperCase() : ""; 
     if (ft === 'PDF') return <FileText className="w-5 h-5 text-red-400" />; 
+    if (['CSV', 'XLSX', 'XLS'].includes(ft)) return <FileSpreadsheet className="w-5 h-5 text-emerald-400" />; 
     if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-purple-400" />; 
     if (['JSON', 'JS', 'TS'].includes(ft)) return <FileCode className="w-5 h-5 text-yellow-400" />; 
     return <FileIcon className="w-5 h-5 text-blue-400" />; 
 };
 
 export const ArchiveCard: React.FC<ArchiveCardProps> = ({ 
-    title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, 
-    isShared, isFolder, isLoading 
+    title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, onAskAI,
+    isShared, isFolder, isLoading, indexingStatus 
 }) => {
     const { t } = useTranslation();
 
@@ -50,7 +55,7 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                             {icon}
                         </div>
                         {isShared && (
-                            <div className="bg-green-500/10 text-green-400 p-1.5 rounded-lg border border-green-500/20 cursor-default" title={t('archive.isShared', 'E Ndarë me Klientin')}>
+                            <div className="bg-green-500/10 text-green-400 p-1.5 rounded-lg border border-green-500/20 cursor-default" title={t('archive.isShared')}>
                                 <Share2 size={14} />
                             </div>
                         )}
@@ -70,7 +75,7 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                     </div>
                     <div className="space-y-1.5 pl-1">
                         <div className="flex items-center gap-2 text-sm sm:text-base font-medium text-gray-200">
-                            {isFolder ? <FolderOpen className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-amber-500" /> : <FileText className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-blue-500" />}
+                            {isFolder ? <FolderOpen className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-amber-500" /> : getFileIcon(type)}
                             <span className="truncate">{type}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
@@ -83,8 +88,12 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
             <div className="relative z-10 pt-3 sm:pt-4 border-t border-white/5 flex items-center justify-between min-h-[2.5rem] sm:min-h-[3rem]">
                 <span className="text-xs sm:text-sm font-medium text-indigo-400 group-hover:text-indigo-300 transition-colors flex items-center gap-1">{isFolder ? t('archive.openFolder') : ''}</span>
                 
-                {/* PHOENIX: Icons now always visible, with wrapping */}
                 <div className="flex gap-1 items-center flex-wrap justify-end">
+                    {/* Document Assistant only */}
+                    {!isFolder && indexingStatus === 'READY' && onAskAI && (
+                         <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-1.5 sm:p-2 rounded-lg text-gray-600 hover:text-indigo-400 hover:bg-indigo-400/10 transition-colors" title="Bisedo me Dokumentin"><MessageSquare size={16} /></button>
+                    )}
+                    
                     {!isFolder && onShare && (<button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-1.5 sm:p-2 rounded-lg transition-colors ${isShared ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'text-gray-600 hover:text-white hover:bg-white/10'}`} title={isShared ? t('archive.unshare') : t('archive.share')}><Share2 className="h-4 w-4" /></button>)}
                     {onRename && (<button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-1.5 sm:p-2 rounded-lg text-gray-600 hover:text-white hover:bg-white/10 transition-colors" title={t('general.edit')}><Pencil className="h-4 w-4" /></button>)}
                     {!isFolder && <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-1.5 sm:p-2 rounded-lg text-gray-600 hover:text-blue-400 hover:bg-blue-400/10 transition-colors" title={t('general.view')}>{isLoading ? <Loader2 className="h-4 w-4 animate-spin text-blue-400" /> : <Eye className="h-4 w-4" />}</button>}
