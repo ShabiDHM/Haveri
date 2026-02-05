@@ -1,7 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V10.2 (FORENSIC PDF EXPORT FIX - COMPLETE)
-// 1. FIXED: 'downloadAuditReport' now correctly returns Promise<Blob> and fetches PDF from backend.
-// 2. STATUS: Unabridged, complete, and fully synchronized.
+// PHOENIX PROTOCOL - API V10.3 (SAVE TO ARCHIVE)
+// 1. ADDED: 'saveAuditReportToArchive' method.
+// 2. STATUS: Fully synchronized.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -139,7 +139,7 @@ class ApiService {
     public async analyzeTaxAnomalies(month: number, year: number): Promise<TaxAuditResult> { try { const response = await this.axiosInstance.post<TaxAuditResult>('/analysis/tax/audit', { month, year }); return response.data; } catch (e) { return { anomalies: ["Sistemi nuk mund të kryejë analizën për momentin."], status: 'WARNING', net_obligation: 0 }; } }
     public async chatWithTaxBot(message: string): Promise<string> { try { const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message }); return response.data.response; } catch (e) { return "Më falni, shërbimi i asistencës tatimore është përkohësisht jashtë funksionit."; } }
     
-    // PHOENIX: ADDED FORENSIC ACCOUNTANT CHAT METHOD
+    // PHOENIX: FORENSIC ACCOUNTANT
     public async chatWithAccountant(query: string): Promise<ReadableStreamDefaultReader<Uint8Array>> {
         const token = tokenManager.get();
         if (!token) await this.refreshToken();
@@ -160,10 +160,15 @@ class ApiService {
         return response.body.getReader();
     }
     
-    // PHOENIX: ADDED FORENSIC REPORT PDF DOWNLOAD - NOW RETURNS BLOB
+    // PHOENIX: OLD DOWNLOAD (Deprecated or kept for other uses)
     public async downloadAuditReport(content: string): Promise<Blob> {
         const response = await this.axiosInstance.post('/accountant/export-audit', { content }, { responseType: 'blob' });
-        // Correctly return the blob data
+        return response.data;
+    }
+
+    // PHOENIX: NEW SAVE TO ARCHIVE
+    public async saveAuditReportToArchive(content: string): Promise<{ message: string, document_id: string }> {
+        const response = await this.axiosInstance.post('/accountant/save-report', { content });
         return response.data;
     }
 
