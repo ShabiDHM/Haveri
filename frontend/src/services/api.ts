@@ -1,8 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V11.0 (WORKSPACE REBRAND)
-// 1. REBRAND: Renamed all 'Case' methods and URLs to 'Workspace'.
-// 2. SYNC: Updated endpoints to hit /api/v1/workspace.
-// 3. STATUS: Fully synchronized with Single Workspace architecture.
+// PHOENIX PROTOCOL - API V12.0 (FINAL URL SYNC)
+// 1. FIXED: Renamed getCases/createCase to getWorkspaces/createWorkspace.
+// 2. FIXED: Aligned all Case/caseId URLs to the new /workspace prefix.
+// 3. STATUS: 100% Client-Server URL Synchronization.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {

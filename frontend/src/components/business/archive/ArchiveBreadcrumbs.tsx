@@ -24,7 +24,7 @@ export const ArchiveBreadcrumbs: React.FC<ArchiveBreadcrumbsProps> = ({ breadcru
                         onClick={() => onNavigate(index)} 
                         className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${index === breadcrumbs.length - 1 ? 'bg-primary-start/20 text-primary-start font-bold border border-primary-start/20 shadow-inner' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
                     >
-                        {crumb.type === 'ROOT' ? <Home size={14} /> : crumb.type === 'CASE' ? <Briefcase size={14} /> : <FolderOpen size={14} />}
+                        {crumb.type === 'ROOT' ? <Home size={14} /> : crumb.type === 'WORKSPACE' ? <Briefcase size={14} /> : <FolderOpen size={14} />}
                         {crumb.name}
                     </button>
                     {index < breadcrumbs.length - 1 && <ChevronRight size={14} className="text-gray-600 flex-shrink-0" />}

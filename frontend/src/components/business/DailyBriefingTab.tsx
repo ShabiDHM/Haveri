@@ -1,8 +1,8 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V5.1 (BUILD FIX)
-// 1. FIX: Unified 'UIAgendaItem' import to resolve Vercel build errors TS2322/TS2345.
-// 2. INTEGRITY: Removed legacy type imports from hooks.
-// 3. STATUS: Pure implementation with synchronized priority levels.
+// PHOENIX PROTOCOL - DASHBOARD V5.2 (WORKSPACE ALIGNMENT)
+// 1. REBRAND: Replaced all 'Case' references with 'Workspace'.
+// 2. FIXED: Aligned API calls and EventDetailModal props to use the new type.
+// 3. STATUS: Fully synchronized.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,12 +10,11 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Target, AlertTriangle, Mail, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// PHOENIX: Hooks now only provide logic, Types provide structure
 import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { EventDetailModal } from '../modals/EventDetailModal';
 import { apiService } from '../../services/api';
-import { Case, UIAgendaItem } from '../../data/types'; // Unified source of truth
+import { Workspace, UIAgendaItem } from '../../data/types'; // PHOENIX: Swapped Case for Workspace
 
 import { BusinessRhythmCard, DailySalesData } from './briefing/BusinessRhythmCard';
 import { BusinessPulseCard } from './briefing/BusinessPulseCard';
@@ -36,9 +35,8 @@ export const DailyBriefingTab: React.FC = () => {
     const { data: briefingData, loading: briefingLoading, error: briefingError, refreshData } = useStrategicBriefing();
     const { displayIncome, loading: financeLoading } = useFinanceData();
 
-    // PHOENIX: State now matches the unified UIAgendaItem
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
-    const [cases, setCases] = useState<Case[]>([]);
+    const [workspaces, setWorkspaces] = useState<Workspace[]>([]); // PHOENIX: Renamed state
     const [messageCount, setMessageCount] = useState(0);
     
     const [salesHistory, setSalesHistory] = useState<DailySalesData>({ labels: [], data: [] });
@@ -52,13 +50,14 @@ export const DailyBriefingTab: React.FC = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [casesData, msgs, transactions] = await Promise.all([
-                    apiService.getCases(),
+                // PHOENIX: Swapped getCases for getWorkspaces
+                const [workspacesData, msgs, transactions] = await Promise.all([
+                    apiService.getWorkspaces(),
                     apiService.getInboundMessages('INBOX'),
                     apiService.getPosTransactions()
                 ]);
                 
-                setCases(casesData);
+                setWorkspaces(workspacesData); // PHOENIX: Renamed state
                 setMessageCount(msgs.length);
                 processSalesHistory(transactions as RawTransaction[]);
                 analyzePeakTraffic(transactions as RawTransaction[]);
@@ -142,7 +141,8 @@ export const DailyBriefingTab: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 sm:space-y-8 pb-10">
             <AnimatePresence>
-                {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={handleEventUpdate} cases={cases} />}
+                {/* PHOENIX: Passed workspaces instead of cases */}
+                {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={handleEventUpdate} workspaces={workspaces} />}
             </AnimatePresence>
             
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950 to-slate-900 border border-white/10 p-6 sm:p-10 text-center sm:text-left shadow-2xl">

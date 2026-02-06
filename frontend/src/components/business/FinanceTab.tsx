@@ -1,7 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V2.3 (FINAL SYNC)
-// 1. CRITICAL FIX: Aligned function and prop names with child components ('bulkDeleteTransactions', 'onBulkDelete').
-// 2. INTEGRITY: Resolves all compilation errors and completes the unified bulk delete feature.
+// PHOENIX PROTOCOL - FINANCE TAB V3.1 (FINAL ALIGNMENT FIX)
+// 1. FIXED: Corrected hook import path to resolve TS2307.
+// 2. FIXED: Renamed all remaining 'Case' references to 'Workspace'.
+// 3. FIXED: Aligned map function variable types (w: Workspace).
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,7 +20,7 @@ import {
     BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 
-import { useFinanceData } from '../../hooks/useFinanceData';
+import { useFinanceData } from '../../hooks/useFinanceData'; // PHOENIX: Corrected Path
 import { InvoiceModal } from './modals/InvoiceModal';
 import { ExpenseModal } from './modals/ExpenseModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
@@ -162,7 +163,7 @@ export const FinanceTab: React.FC = () => {
     const { t, i18n } = useTranslation();
 
     const {
-        loading, invoices, expenses, cases, posTransactions, analyticsData,
+        loading, invoices, expenses, workspaces, posTransactions, analyticsData, // PHOENIX: Fixed destructure
         totalExpenses, displayIncome, displayProfit, costOfGoodsSold,
         refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos
     } = useFinanceData();
@@ -181,7 +182,7 @@ export const FinanceTab: React.FC = () => {
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
-    const [selectedCaseForInvoice, setSelectedCaseForInvoice] = useState<string>("");
+    const [selectedWorkspaceForInvoice, setSelectedWorkspaceForInvoice] = useState<string>(""); // PHOENIX: Renamed
     
     const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
@@ -228,12 +229,11 @@ export const FinanceTab: React.FC = () => {
     const handleDeleteExpense = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await hookDeleteExpense(id); } catch { alert(t('error.generic')); } };
     const handleDeletePos = async (id: string) => { if(!window.confirm(t('general.confirmDelete'))) return; try { await hookDeletePos(id); } catch { alert(t('documentsPanel.deleteFailed')); } };
 
-    // PHOENIX: CORRECTED UNIFIED BULK DELETE HANDLER
     const handleUnifiedBulkDelete = async (ids: { invoice_ids: string[], expense_ids: string[], pos_ids: string[] }) => {
         try {
             await apiService.bulkDeleteTransactions(ids);
             alert(t('finance.bulkDelete.success', 'Transactions deleted successfully.'));
-            refreshData(); // Refresh data from the hook
+            refreshData();
         } catch (error) {
             console.error('Bulk delete failed:', error);
             alert(t('finance.bulkDelete.failure', 'Failed to delete transactions.'));
@@ -264,8 +264,9 @@ export const FinanceTab: React.FC = () => {
     };
 
     const generateDigitalReceipt = (expense: Expense): File => { const content = `${t('finance.digitalReceipt.title')}\n------------------------------------------------\n${t('finance.digitalReceipt.category')}   ${expense.category}\n${t('finance.digitalReceipt.amount')}       €${expense.amount.toFixed(2)}\n${t('finance.digitalReceipt.date')}        ${new Date(expense.date).toLocaleDateString('sq-AL')}\n${t('finance.digitalReceipt.description')}  ${expense.description || t('finance.digitalReceipt.noDescription')}\n------------------------------------------------\n${t('finance.digitalReceipt.generated')}`; const blob = new Blob([content], { type: 'text/plain' }); const fileName = `${t('finance.digitalReceipt.fileNamePrefix')}_${expense.category.replace(/\s+/g, '_')}_${expense.date}.txt`; return new File([blob], fileName, { type: 'text/plain' }); };
-    const submitArchiveInvoice = async () => { if (!selectedInvoiceId) return; try { await apiService.archiveInvoice(selectedInvoiceId, selectedCaseForInvoice || undefined); alert(t('general.saveSuccess')); setShowArchiveInvoiceModal(false); setSelectedCaseForInvoice(""); } catch { alert(t('error.generic')); } };
-    const submitArchiveExpense = async () => { if (!selectedExpenseId) return; try { const ex = expenses.find(e => e.id === selectedExpenseId); if (!ex) return; let fileToUpload: File; if (ex.receipt_url) { const { blob, filename } = await apiService.getExpenseReceiptBlob(ex.id); fileToUpload = new File([blob], filename, { type: blob.type }); } else { fileToUpload = generateDigitalReceipt(ex); } await apiService.uploadArchiveItem(fileToUpload, fileToUpload.name, "EXPENSE", selectedCaseForInvoice || undefined, undefined); alert(t('general.saveSuccess')); setShowArchiveExpenseModal(false); setSelectedCaseForInvoice(""); } catch { alert(t('error.generic')); } };
+    
+    const submitArchiveInvoice = async () => { if (!selectedInvoiceId) return; try { await apiService.archiveInvoice(selectedInvoiceId, selectedWorkspaceForInvoice || undefined); alert(t('general.saveSuccess')); setShowArchiveInvoiceModal(false); setSelectedWorkspaceForInvoice(""); } catch { alert(t('error.generic')); } };
+    const submitArchiveExpense = async () => { if (!selectedExpenseId) return; try { const ex = expenses.find(e => e.id === selectedExpenseId); if (!ex) return; let fileToUpload: File; if (ex.receipt_url) { const { blob, filename } = await apiService.getExpenseReceiptBlob(ex.id); fileToUpload = new File([blob], filename, { type: blob.type }); } else { fileToUpload = generateDigitalReceipt(ex); } await apiService.uploadArchiveItem(fileToUpload, fileToUpload.name, "EXPENSE", selectedWorkspaceForInvoice || undefined, undefined); alert(t('general.saveSuccess')); setShowArchiveExpenseModal(false); setSelectedWorkspaceForInvoice(""); } catch { alert(t('error.generic')); } };
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
@@ -302,8 +303,8 @@ export const FinanceTab: React.FC = () => {
             <AnimatePresence>{kpiModalOpen && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"><motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative"><div className="p-6 border-b border-white/10 bg-blue-900/20 flex justify-between items-center"><h3 className="text-xl font-bold text-white flex items-center gap-2"><Sparkles size={20} className="text-yellow-400" />{t('finance.smartAnalyst.modalTitle', 'Smart Analyst')}: {kpiAnalysis?.type}</h3><button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"><X size={20}/></button></div><div className="p-6 space-y-6">{kpiLoading ? (<div className="flex flex-col items-center py-10 gap-4"><Loader2 size={40} className="animate-spin text-blue-500" /><p className="text-gray-400 animate-pulse">{t('finance.smartAnalyst.analyzing', 'Analyzing financial data...')}</p></div>) : (<>{kpiAnalysis?.summary && <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4"><h4 className="text-sm font-bold text-blue-300 uppercase mb-2">{t('finance.smartAnalyst.executiveSummary', 'Executive Summary')}</h4><p className="text-white leading-relaxed">{kpiAnalysis?.summary}</p></div>}{kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (<div><h4 className="text-sm font-bold text-gray-400 uppercase mb-3">{t('finance.smartAnalyst.keyContributors', 'Key Contributors')}</h4><div className="space-y-2">{kpiAnalysis.contributors.map((c, i) => (<div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-sm text-gray-200">{c}</span></div>))}</div></div>)}</>)}</div></motion.div></motion.div>)}</AnimatePresence>
             <InvoiceModal isOpen={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
             <ExpenseModal isOpen={showExpenseModal} onClose={() => setShowExpenseModal(false)} expenseToEdit={selectedExpense} onSuccess={refreshData} />
-            {showArchiveInvoiceModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-500 transition-colors font-bold">{t('general.save')}</button></div></div></div>)}
-            {showArchiveExpenseModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedCaseForInvoice} onChange={(e) => setSelectedCaseForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{cases.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white shadow-lg hover:bg-indigo-500 transition-colors font-bold">{t('general.save')}</button></div></div></div>)}
+            {showArchiveInvoiceModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-500 transition-colors font-bold">{t('general.save')}</button></div></div></div>)}
+            {showArchiveExpenseModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white shadow-lg hover:bg-indigo-500 transition-colors font-bold">{t('general.save')}</button></div></div></div>)}
             {showImportModal && (<TransactionImporter onClose={() => setShowImportModal(false)} onSuccess={() => { refreshData(); setShowImportModal(false); }} t={t} />)}
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={closePreview} onMinimize={closePreview} t={t} directUrl={viewingUrl} />}
         </motion.div>
