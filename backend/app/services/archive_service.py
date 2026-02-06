@@ -1,8 +1,7 @@
 # FILE: backend/app/services/archive_service.py
-# PHOENIX PROTOCOL - ARCHIVE SERVICE V5.4 (RAG ROBUSTNESS)
-# 1. FIXED: Implemented Fallback context for specific document chat.
-# 2. LOGIC: If semantic search fails, system retrieves the document "Head" (first 5 chunks) to provide general answers.
-# 3. STATUS: AI Retrieval Issue Resolved.
+# PHOENIX PROTOCOL - ARCHIVE SERVICE V5.5 (CROSS-COLLECTION MIGRATION)
+# 1. ADDED: 'archive_existing_document' to allow case documents to be archived.
+# 2. STATUS: Fully synchronized with Cases router.
 
 import os
 import logging
@@ -162,15 +161,14 @@ class ArchiveService:
                 user_id=user_id, query=question, limit=5, filter_criteria={"doc_id": item_id} 
             )
             
-            # 2. FALLBACK: If semantic search yields nothing, fetch the 'Head' of the document.
-            # This ensures general questions like 'Tell me about this file' still get context.
+            # 2. FALLBACK
             context_text = "\n\n".join([chunk.page_content for chunk in context_chunks])
             
             if not context_text:
                 logger.info(f"RAG Semantic Miss for {item_id}. Attempting fallback fetch.")
                 fallback_results = vector_store_service.query_private_diary(
                     user_id=user_id,
-                    query_text="document overview summary data", # Intent-neutral query
+                    query_text="document overview summary data",
                     n_results=3,
                     filter_criteria={"source_document_id": item_id}
                 )
@@ -193,3 +191,43 @@ class ArchiveService:
         except Exception as e:
             logger.error(f"Chat error for item {item_id}: {e}")
             return "Gabim teknik gjatë procesimit."
+
+    # PHOENIX: Added missing method required by Cases router
+    async def archive_existing_document(self, user_id: str, case_id: str, document_id: str) -> ArchiveItemOut:
+        """
+        Takes an existing document from the case folder and creates a reference entry in the user's archive.
+        """
+        oid_user = self._to_oid(user_id)
+        oid_doc = self._to_oid(document_id)
+        
+        # 1. Fetch existing document metadata
+        doc = self.db.documents.find_one({"_id": oid_doc, "user_id": oid_user})
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found.")
+
+        # 2. Create the Archive Record
+        archive_data = {
+            "user_id": oid_user,
+            "case_id": case_id,
+            "title": doc.get("file_name") or "Archived Document",
+            "item_type": "FILE",
+            "file_type": "PDF", # Case docs are processed as PDFs
+            "category": "CASES",
+            "storage_key": doc.get("storage_key"),
+            "file_size": doc.get("file_size", 0),
+            "created_at": datetime.now(timezone.utc),
+            "description": f"Archived from Case: {case_id}",
+            "is_shared": doc.get("is_shared", False),
+            "indexing_status": "PENDING"
+        }
+        
+        result = self.db.archives.insert_one(archive_data)
+        archive_data["_id"] = result.inserted_id
+        
+        # 3. Trigger Indexing for the new Archive Context
+        try:
+            celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(result.inserted_id)])
+        except Exception as e:
+            logger.error(f"Failed to queue archive indexing for migrated doc: {e}")
+
+        return ArchiveItemOut.model_validate(archive_data)

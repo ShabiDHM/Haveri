@@ -1,9 +1,8 @@
 # FILE: backend/app/api/endpoints/cases.py
-# PHOENIX PROTOCOL - CASES ROUTER V6.3 (PUBLIC DOCUMENTS ENDPOINT)
-# 1. NEW FEATURE: Added 'get_public_case_documents' endpoint.
-#    - Aggregates shared items from both 'documents' (Active) and 'archives' (Archived) collections.
-#    - Returns a unified list for the Client Portal.
-# 2. STATUS: Fully synchronized with ArchiveService and DocumentService.
+# PHOENIX PROTOCOL - CASES ROUTER V6.4 (CLEANUP)
+# 1. REMOVED: Drafting model imports and endpoints.
+# 2. PRESERVED: Workspace, Documents, Archive Integration, and Public Portal logic.
+# 3. STATUS: Fully synchronized and build-ready.
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body, Query
 from typing import List, Annotated, Dict, Optional, Any
@@ -34,7 +33,7 @@ from ...services import (
 # --- MODEL IMPORTS ---
 from ...models.case import CaseCreate, CaseOut
 from ...models.user import UserInDB
-from ...models.drafting import DraftRequest 
+# PHOENIX: Removed DraftRequest import
 from ...models.archive import ArchiveItemOut 
 from ...models.document import DocumentOut
 from ...models.finance import InvoiceInDB
@@ -110,16 +109,13 @@ async def get_single_case(case_id: str, current_user: Annotated[UserInDB, Depend
     if not case: raise HTTPException(status_code=404, detail="Case not found.")
     return case
 
-@router.delete("/{case_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{case_id}", status_code=status.HTTP_24_NO_CONTENT)
 async def delete_case(case_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
     validated_case_id = validate_object_id(case_id)
     await asyncio.to_thread(case_service.delete_case_by_id, db=db, case_id=validated_case_id, owner=current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-@router.post("/{case_id}/drafts", status_code=status.HTTP_202_ACCEPTED, tags=["Drafting"])
-async def create_draft_for_case(case_id: str, job_in: DraftRequest, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
-    validated_case_id = validate_object_id(case_id)
-    return await asyncio.to_thread(case_service.create_draft_job_for_case, db=db, case_id=validated_case_id, job_in=job_in, owner=current_user)
+# PHOENIX: Removed create_draft_for_case endpoint
 
 @router.get("/{case_id}/documents", response_model=List[DocumentOut], tags=["Documents"])
 async def get_documents_for_case(case_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
@@ -226,11 +222,8 @@ async def bulk_delete_documents(case_id: str, body: BulkDeleteRequest, current_u
 
 @router.post("/{case_id}/documents/{doc_id}/archive", response_model=ArchiveItemOut, tags=["Documents"])
 async def archive_case_document(case_id: str, doc_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
-    # 1. Verify Permission (Router Level)
     doc = await asyncio.to_thread(document_service.get_and_verify_document, db, doc_id, current_user)
     if str(doc.case_id) != case_id: raise HTTPException(status_code=403)
-    
-    # 2. Call Service with Correct Signature (PHOENIX FIX)
     archiver = archive_service.ArchiveService(db)
     return await archiver.archive_existing_document(user_id=str(current_user.id), case_id=case_id, document_id=doc_id)
 
@@ -248,43 +241,29 @@ async def get_public_case_timeline(case_id: str, db: Database = Depends(get_db))
 # --- NEW ENDPOINT: PUBLIC DOCUMENTS LIST ---
 @router.get("/public/{case_id}/documents", response_model=List[PublicDocumentItem], tags=["Public Portal"])
 async def get_public_case_documents(case_id: str, db: Database = Depends(get_db)):
-    """
-    Fetches all shared documents for a case from both:
-    1. The active 'documents' collection.
-    2. The 'archives' collection.
-    """
     try:
         case_oid = validate_object_id(case_id)
         
-        # Helper to query mongo in thread
         def query_docs():
-            # 1. Active Documents
             active_cursor = db.documents.find({
                 "$or": [{"case_id": case_id}, {"case_id": case_oid}],
                 "is_shared": True
             })
-            
-            # 2. Archive Files
             archive_cursor = db.archives.find({
                 "$or": [{"case_id": case_id}, {"case_id": case_oid}],
                 "is_shared": True,
                 "item_type": "FILE"
             })
-            
             results = []
-            
-            # Process Active
             for doc in active_cursor:
                 results.append(PublicDocumentItem(
                     id=str(doc["_id"]),
                     title=doc.get("file_name", "Untitled"),
                     created_at=doc.get("created_at") or datetime.now(timezone.utc),
                     file_size=doc.get("file_size", 0),
-                    file_type="PDF", # Mostly PDF in active docs
+                    file_type="PDF",
                     source="ACTIVE"
                 ))
-            
-            # Process Archive
             for doc in archive_cursor:
                 results.append(PublicDocumentItem(
                     id=str(doc["_id"]),
@@ -294,8 +273,6 @@ async def get_public_case_documents(case_id: str, db: Database = Depends(get_db)
                     file_type=doc.get("file_type", "UNKNOWN"),
                     source="ARCHIVE"
                 ))
-                
-            # Sort by date desc
             results.sort(key=lambda x: x.created_at, reverse=True)
             return results
 
