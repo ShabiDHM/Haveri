@@ -1,14 +1,14 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V10.4 (STORAGE SYNC FIX)
-// 1. FIXED: TokenManager now automatically syncs with localStorage.
-// 2. RESOLVED: '401 Unauthorized' loop on page reload due to stale storage.
-// 3. STATUS: Fully synchronized.
+// PHOENIX PROTOCOL - API V10.5 (TOTAL MODULE CLEANUP)
+// 1. REMOVED: All Chat, Drafting, and Case-specific AI methods.
+// 2. REMOVED: API_V2 references.
+// 3. STATUS: Synchronized with the removal of the Haveri AI module.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
     LoginRequest, RegisterRequest, Case, CreateCaseRequest, Document, User, UpdateUserRequest,
-    DeletedDocumentResponse, CalendarEvent, CalendarEventCreateRequest, CreateDraftingJobRequest,
-    DraftingJobStatus, DraftingJobResult, ChangePasswordRequest,
+    DeletedDocumentResponse, CalendarEvent, CalendarEventCreateRequest, 
+    ChangePasswordRequest,
     BusinessProfile, BusinessProfileUpdate, Invoice, InvoiceCreateRequest, InvoiceItem,
     ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
     InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction,
@@ -34,42 +34,18 @@ export interface SalesTrendAnalysis { trend_analysis: string; cross_sell_opportu
 export interface KpiInsightResponse { summary: string; key_contributors: string[]; }
 export interface GeneralInsightResponse { insight: string; sentiment: 'positive' | 'negative' | 'neutral'; }
 
-// PHOENIX: Centralized Storage Key
 export const AUTH_TOKEN_KEY = 'haveri_access_token';
 
 const getBaseUrl = (): string => { if (typeof window !== 'undefined') { const hostname = window.location.hostname; if (hostname === 'www.haveri.tech' || hostname === 'haveri.tech') { return 'https://api.haveri.tech'; } } return 'http://localhost:8000'; };
 const normalizedUrl = getBaseUrl();
 export const API_BASE_URL = normalizedUrl;
 export const API_V1_URL = `${API_BASE_URL}/api/v1`;
-export const API_V2_URL = `${API_BASE_URL}/api/v2`;
 
-// PHOENIX: Upgraded TokenManager with Storage Persistence
 class TokenManager { 
     private accessToken: string | null = null; 
-    
-    constructor() {
-        if (typeof window !== 'undefined') {
-            this.accessToken = localStorage.getItem(AUTH_TOKEN_KEY);
-        }
-    }
-
-    get(): string | null { 
-        if (!this.accessToken && typeof window !== 'undefined') {
-            this.accessToken = localStorage.getItem(AUTH_TOKEN_KEY);
-        }
-        return this.accessToken; 
-    } 
-    
-    set(token: string | null): void { 
-        this.accessToken = token; 
-        if (typeof window !== 'undefined') {
-            if (token) {
-                localStorage.setItem(AUTH_TOKEN_KEY, token);
-            } else {
-                localStorage.removeItem(AUTH_TOKEN_KEY);
-            }
-        }
-    } 
+    constructor() { if (typeof window !== 'undefined') { this.accessToken = localStorage.getItem(AUTH_TOKEN_KEY); } }
+    get(): string | null { if (!this.accessToken && typeof window !== 'undefined') { this.accessToken = localStorage.getItem(AUTH_TOKEN_KEY); } return this.accessToken; } 
+    set(token: string | null): void { this.accessToken = token; if (typeof window !== 'undefined') { if (token) { localStorage.setItem(AUTH_TOKEN_KEY, token); } else { localStorage.removeItem(AUTH_TOKEN_KEY); } } } 
 }
 const tokenManager = new TokenManager();
 
@@ -91,7 +67,6 @@ class ApiService {
                 originalRequest._retry = true; this.isRefreshing = true;
                 try { 
                     const { data } = await this.axiosInstance.post<LoginResponse>('/auth/refresh'); 
-                    // PHOENIX: This set() call now automatically updates localStorage
                     tokenManager.set(data.access_token); 
                     if (originalRequest.headers instanceof AxiosHeaders) { originalRequest.headers.set('Authorization', `Bearer ${data.access_token}`); } else { (originalRequest.headers as any).Authorization = `Bearer ${data.access_token}`; } this.processQueue(null); return this.axiosInstance(originalRequest); 
                 } catch (refreshError) { 
@@ -116,7 +91,7 @@ class ApiService {
     public async changePassword(data: ChangePasswordRequest): Promise<void> { await this.axiosInstance.post('/auth/change-password', data); }
     public async deleteAccount(): Promise<void> { await this.axiosInstance.delete('/users/me'); }
 
-    // --- PHOENIX: TEAM MANAGEMENT ---
+    // --- TEAM MANAGEMENT ---
     public async inviteUser(data: InviteUserRequest): Promise<any> { const response = await this.axiosInstance.post('/users/invite', data); return response.data; }
     public async getTeamMembers(): Promise<User[]> { const response = await this.axiosInstance.get<User[]>('/users/team'); return response.data; }
     public async removeTeamMember(userId: string): Promise<any> { const response = await this.axiosInstance.delete(`/users/team/${userId}`); return response.data; }
@@ -134,24 +109,10 @@ class ApiService {
     public async deleteUser(userId: string): Promise<void> { await this.axiosInstance.delete(`/admin/users/${userId}`); }
 
     // --- MOBILE HANDOFF ---
-    public async createHandoffSession(): Promise<{ token: string }> {
-        const response = await this.axiosInstance.post<{ token: string }>('/mobile-handoff/create');
-        return response.data;
-    }
-    public async uploadMobileFile(token: string, file: File): Promise<{ message: string }> {
-        const formData = new FormData();
-        formData.append('file', file);
-        const response = await this.axiosInstance.post(`/mobile-handoff/upload/${token}`, formData);
-        return response.data;
-    }
-    public async getHandoffStatus(token: string): Promise<{ status: 'pending' | 'complete', filename?: string }> {
-        const response = await this.axiosInstance.get(`/mobile-handoff/status/${token}`);
-        return response.data;
-    }
-    public async retrieveHandoffFile(token: string, filename: string): Promise<File> {
-        const response = await this.axiosInstance.get(`/mobile-handoff/retrieve/${token}`, { responseType: 'blob' });
-        return new File([response.data], filename, { type: response.headers['content-type'] });
-    }
+    public async createHandoffSession(): Promise<{ token: string }> { const response = await this.axiosInstance.post<{ token: string }>('/mobile-handoff/create'); return response.data; }
+    public async uploadMobileFile(token: string, file: File): Promise<{ message: string }> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post(`/mobile-handoff/upload/${token}`, formData); return response.data; }
+    public async getHandoffStatus(token: string): Promise<{ status: 'pending' | 'complete', filename?: string }> { const response = await this.axiosInstance.get(`/mobile-handoff/status/${token}`); return response.data; }
+    public async retrieveHandoffFile(token: string, filename: string): Promise<File> { const response = await this.axiosInstance.get(`/mobile-handoff/retrieve/${token}`, { responseType: 'blob' }); return new File([response.data], filename, { type: response.headers['content-type'] }); }
 
     // --- CASES ---
     public async getCases(): Promise<Case[]> { const response = await this.axiosInstance.get<any>('/cases'); return Array.isArray(response.data) ? response.data : (response.data?.cases || []); }
@@ -171,60 +132,26 @@ class ApiService {
     public async renameDocument(caseId: string, docId: string, newName: string): Promise<void> { await this.axiosInstance.put(`/cases/${caseId}/documents/${docId}/rename`, { new_name: newName }); }
     public async archiveCaseDocument(caseId: string, documentId: string): Promise<ArchiveItemOut> { const response = await this.axiosInstance.post<ArchiveItemOut>(`/cases/${caseId}/documents/${documentId}/archive`); return response.data; }
 
-    // --- CHAT ---
-    public async sendChatMessage(caseId: string, message: string, documentId?: string, jurisdiction?: string, agentType: string = 'business'): Promise<string> { const response = await this.axiosInstance.post<{ response: string }>(`/chat/case/${caseId}`, { message, document_id: documentId || null, jurisdiction: jurisdiction || 'ks', agent_type: agentType }); return response.data.response; }
-    public async clearChatHistory(caseId: string): Promise<void> { await this.axiosInstance.delete(`/chat/case/${caseId}/history`); }
-
     // --- AI / INTELLIGENCE ---
     public async analyzeTaxAnomalies(month: number, year: number): Promise<TaxAuditResult> { try { const response = await this.axiosInstance.post<TaxAuditResult>('/analysis/tax/audit', { month, year }); return response.data; } catch (e) { return { anomalies: ["Sistemi nuk mund të kryejë analizën për momentin."], status: 'WARNING', net_obligation: 0 }; } }
     public async chatWithTaxBot(message: string): Promise<string> { try { const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message }); return response.data.response; } catch (e) { return "Më falni, shërbimi i asistencës tatimore është përkohësisht jashtë funksionit."; } }
     
-    // PHOENIX: FORENSIC ACCOUNTANT
     public async chatWithAccountant(query: string): Promise<ReadableStreamDefaultReader<Uint8Array>> {
         const token = tokenManager.get();
         if (!token) await this.refreshToken();
-        
-        const response = await fetch(`${API_V1_URL}/accountant/chat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${tokenManager.get()}`
-            },
-            body: JSON.stringify({ query })
-        });
-
-        if (!response.ok || !response.body) {
-            throw new Error("Failed to connect to Accountant Agent.");
-        }
-
+        const response = await fetch(`${API_V1_URL}/accountant/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tokenManager.get()}` }, body: JSON.stringify({ query }) });
+        if (!response.ok || !response.body) throw new Error("Failed to connect to Accountant Agent.");
         return response.body.getReader();
     }
     
-    // PHOENIX: OLD DOWNLOAD (Deprecated or kept for other uses)
-    public async downloadAuditReport(content: string): Promise<Blob> {
-        const response = await this.axiosInstance.post('/accountant/export-audit', { content }, { responseType: 'blob' });
-        return response.data;
-    }
-
-    // PHOENIX: NEW SAVE TO ARCHIVE
-    public async saveAuditReportToArchive(content: string): Promise<{ message: string, document_id: string }> {
-        const response = await this.axiosInstance.post('/accountant/save-report', { content });
-        return response.data;
-    }
-
+    public async downloadAuditReport(content: string): Promise<Blob> { const response = await this.axiosInstance.post('/accountant/export-audit', { content }, { responseType: 'blob' }); return response.data; }
+    public async saveAuditReportToArchive(content: string): Promise<{ message: string, document_id: string }> { const response = await this.axiosInstance.post('/accountant/save-report', { content }); return response.data; }
     public async askDocumentQuestion(documentId: string, question: string): Promise<{ answer: string }> { const response = await this.axiosInstance.post<{ answer: string }>(`/archive/items/${documentId}/chat`, { question }); return response.data; }
     public async predictRestock(itemId: string): Promise<RestockPrediction> { try { const response = await this.axiosInstance.post<RestockPrediction>('/analysis/inventory/predict', { item_id: itemId }); return response.data; } catch (e) { return { suggested_quantity: 0, reason: "Analiza e padisponueshme për momentin.", estimated_cost: 0 }; } }
     public async analyzeSalesTrend(itemId: string): Promise<SalesTrendAnalysis> { try { const response = await this.axiosInstance.post<SalesTrendAnalysis>('/analysis/inventory/trend', { item_id: itemId }); return response.data; } catch (e) { return { trend_analysis: "E padisponueshme", cross_sell_opportunities: "E padisponueshme" }; } }
     public async getKpiInsight(kpiType: string): Promise<KpiInsightResponse> { try { const response = await this.axiosInstance.post<KpiInsightResponse>('/analysis/finance/kpi-insight', { kpi_type: kpiType }); return response.data; } catch (e) { return { summary: "Shërbimi i analizës është offline.", key_contributors: [] }; } }
     public async getProactiveInsight(): Promise<GeneralInsightResponse> { try { const response = await this.axiosInstance.get<GeneralInsightResponse>('/analysis/finance/proactive-insight'); return response.data; } catch (e) { return { insight: "Shtoni transaksione për të parë analizat e AI.", sentiment: "neutral" }; } }
-    
-    public async analyzeDocument(file: File): Promise<AnalysisResult> {
-        const formData = new FormData();
-        formData.append('file', file);
-            
-        const response = await this.axiosInstance.post<AnalysisResult>(`/analysis/analyze-spreadsheet`, formData);
-        return response.data;
-    }
+    public async analyzeDocument(file: File): Promise<AnalysisResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<AnalysisResult>(`/analysis/analyze-spreadsheet`, formData); return response.data; }
 
     // --- FINANCE & ANALYTICS ---
     public async getAnalyticsDashboard(days: number = 30): Promise<AnalyticsDashboardData> { const response = await this.axiosInstance.get<AnalyticsDashboardData>(`/finance/analytics/dashboard`, { params: { days } }); return response.data; }
@@ -268,13 +195,7 @@ class ApiService {
     public async uploadArchiveItem(file: File, title: string, category: string, caseId?: string, parentId?: string): Promise<ArchiveItemOut> { const formData = new FormData(); formData.append('file', file); formData.append('title', title); formData.append('category', category); if (caseId) formData.append('case_id', caseId); if (parentId) formData.append('parent_id', parentId); const response = await this.axiosInstance.post<ArchiveItemOut>('/archive/upload', formData); return response.data; }
     public async deleteArchiveItem(itemId: string): Promise<void> { await this.axiosInstance.delete(`/archive/items/${itemId}`); }
     public async renameArchiveItem(itemId: string, newTitle: string): Promise<void> { await this.axiosInstance.put(`/archive/items/${itemId}/rename`, { new_title: newTitle }); }
-    
-    // PHOENIX: RESTORED METHOD
-    public async getArchiveFileBlob(itemId: string): Promise<Blob> {
-        const response = await this.axiosInstance.get(`/archive/items/${itemId}/download`, { params: { preview: true }, responseType: 'blob' });
-        return response.data;
-    }
-
+    public async getArchiveFileBlob(itemId: string): Promise<Blob> { const response = await this.axiosInstance.get(`/archive/items/${itemId}/download`, { params: { preview: true }, responseType: 'blob' }); return response.data; }
     public async downloadArchiveItem(itemId: string, title: string): Promise<void> { const blob = await this.getArchiveFileBlob(itemId); const url = window.URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.setAttribute('download', title); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); }
     public async shareArchiveItem(itemId: string, isShared: boolean, caseId?: string): Promise<ArchiveItemOut> { const response = await this.axiosInstance.put<ArchiveItemOut>(`/archive/items/${itemId}/share`, { is_shared: isShared, case_id: caseId }); return response.data; }
     public async reIndexArchiveItem(itemId: string): Promise<void> { await this.axiosInstance.post(`/archive/items/${itemId}/re-index`); }
@@ -286,14 +207,6 @@ class ApiService {
     public async deleteCalendarEvent(eventId: string): Promise<void> { await this.axiosInstance.delete(`/calendar/events/${eventId}`); }
     public async getAlertsCount(): Promise<{ count: number }> { const response = await this.axiosInstance.get<{ count: number }>('/calendar/alerts'); return response.data; }
 
-    // --- DRAFTING V2 (ASYNC) ---
-    public async initiateDraftingJob(data: CreateDraftingJobRequest): Promise<DraftingJobStatus> { const response = await this.axiosInstance.post<DraftingJobStatus>(`${API_V2_URL}/drafting/jobs`, data); return response.data; }
-    public async getDraftingJobStatus(jobId: string): Promise<DraftingJobStatus> { const response = await this.axiosInstance.get<DraftingJobStatus>(`${API_V2_URL}/drafting/jobs/${jobId}/status`); return response.data; }
-    public async getDraftingJobResult(jobId: string): Promise<DraftingJobResult> { const response = await this.axiosInstance.get<DraftingJobResult>(`${API_V2_URL}/drafting/jobs/${jobId}/result`); return response.data; }
-    
-    // --- DRAFTING (SYNC) ---
-    public async createPurchaseOrder(data: { item_id: string; item_name: string; unit: string; quantity: number; estimated_cost: number; supplier_name: string; }): Promise<any> { const response = await this.axiosInstance.post('/drafting/purchase-order', data); return response.data; }
-
     // --- BUSINESS ---
     public async getBusinessProfile(): Promise<BusinessProfile> { const response = await this.axiosInstance.get<BusinessProfile>('/business/profile'); return response.data; }
     public async updateBusinessProfile(data: BusinessProfileUpdate): Promise<BusinessProfile> { const response = await this.axiosInstance.put<BusinessProfile>('/business/profile', data); return response.data; }
@@ -304,17 +217,10 @@ class ApiService {
     public async getStrategicBriefing(): Promise<StrategicBriefingResponse> { const response = await this.axiosInstance.get<StrategicBriefingResponse>('/briefing/strategic'); return response.data; }
     public async sendContactForm(data: { firstName: string; lastName: string; email: string; phone: string; message: string }): Promise<void> { await this.axiosInstance.post('/support/contact', { first_name: data.firstName, last_name: data.lastName, email: data.email, phone: data.phone, message: data.message }); }
     
-    // --- INTERCONNECTED INTELLIGENCE (UPGRADED) ---
+    // --- INTERCONNECTED INTELLIGENCE ---
     public async getGraphData(mode: string = 'global'): Promise<GraphData> {
-        try {
-            const response = await this.axiosInstance.get<GraphData>('/graph/visualize', {
-                params: { mode }
-            });
-            return response.data || { nodes: [], links: [] };
-        } catch (error) {
-            console.error("Failed to fetch graph data:", error);
-            return { nodes: [], links: [] };
-        }
+        try { const response = await this.axiosInstance.get<GraphData>('/graph/visualize', { params: { mode } }); return response.data || { nodes: [], links: [] };
+        } catch (error) { console.error("Failed to fetch graph data:", error); return { nodes: [], links: [] }; }
     }
 }
 

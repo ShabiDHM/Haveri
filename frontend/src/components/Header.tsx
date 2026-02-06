@@ -1,12 +1,11 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V7.0 (RACE CONDITION FIX)
-// 1. BUGFIX: Resolved the persistent "401 Unauthorized" error by fixing a critical startup race condition.
-// 2. LOGIC: Modified the `useEffect` hooks for `fetchPrimaryWorkspace` and `checkAlerts` to depend on the `isAuthenticated` flag from the AuthContext.
-// 3. REASON: This guarantees that no authenticated API calls are made until the AuthContext has finished its asynchronous initialization and confirmed a valid user session, permanently eliminating the race condition.
+// PHOENIX PROTOCOL - HEADER V7.1 (CLEANUP)
+// 1. REMOVED: 'Haveri AI' tab and related logic.
+// 2. CLEANUP: Removed workspace fetching logic which was only used for the AI tab link.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-    Bell, LogOut, User as UserIcon, Brain, LayoutDashboard, 
+    Bell, LogOut, User as UserIcon, LayoutDashboard, 
     MessageSquare, Menu, FileText, Package, FolderOpen, 
     Sparkles, Building2, X, Shield, Share2
 } from 'lucide-react';
@@ -18,14 +17,15 @@ import LanguageSwitcher from './LanguageSwitcher';
 import BrandLogo from './BrandLogo';
 
 const Header: React.FC = () => {
-  const { user, logout, isAuthenticated } = useAuth(); // PHOENIX: Added isAuthenticated
+  const { user, logout, isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  
+  // PHOENIX: Removed workspaceId state as it was only for the Haveri AI tab
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -37,25 +37,11 @@ const Header: React.FC = () => {
     }
   }, [location.pathname]);
 
-  // PHOENIX: This hook now waits for authentication to be confirmed before running.
-  useEffect(() => {
-    const fetchPrimaryWorkspace = async () => {
-      if (isAuthenticated) { // PHOENIX: Guard against running before auth is ready
-        try {
-          const projects = await apiService.getCases();
-          if (projects && projects.length > 0) {
-            setWorkspaceId(projects[0].id);
-          }
-        } catch (error) { console.error("Could not fetch primary workspace:", error); }
-      }
-    };
-    fetchPrimaryWorkspace();
-  }, [isAuthenticated]); // PHOENIX: Dependency added
+  // PHOENIX: Removed fetchPrimaryWorkspace useEffect
 
-  // PHOENIX: This hook's dependency on `user` already served as a correct guard, but we make it explicit with `isAuthenticated` for consistency.
   useEffect(() => {
     const checkAlerts = async () => {
-      if (isAuthenticated) { // PHOENIX: Guard against running before auth is ready
+      if (isAuthenticated) {
         try {
           const data = await apiService.getAlertsCount();
           setAlertCount(data.count);
@@ -65,7 +51,7 @@ const Header: React.FC = () => {
     checkAlerts();
     const interval = setInterval(checkAlerts, 60000);
     return () => clearInterval(interval);
-  }, [isAuthenticated]); // PHOENIX: Dependency changed from `user` for consistency
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -84,7 +70,7 @@ const Header: React.FC = () => {
       { label: t('business.archive', 'Arkiva'), path: '/business/archive', icon: FolderOpen },
       { label: t('business.insights', 'Inteligjenca'), path: '/business/insights', icon: Sparkles },
       { label: t('business.profile', 'Profili'), path: '/business/profile', icon: Building2 },
-      { label: t('sidebar.haveri_ai', 'Haveri AI'), path: workspaceId ? `/cases/${workspaceId}` : '/business', icon: Brain },
+      // PHOENIX: Removed Haveri AI tab
   ];
 
   if (user?.role?.toUpperCase() === 'ADMIN') {
@@ -114,14 +100,13 @@ const Header: React.FC = () => {
                 const isActive = item.exact 
                     ? location.pathname === item.path 
                     : location.pathname.startsWith(item.path);
-                const isHaveriActive = item.path.startsWith('/cases') && location.pathname.startsWith('/cases');
 
                 return (
                     <NavLink
                         key={item.path}
                         to={item.path}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
-                            (isActive || isHaveriActive) 
+                            isActive 
                                 ? 'text-white bg-primary-start/20 border border-primary-start/20 shadow-[0_0_10px_rgba(99,102,241,0.2)]' 
                                 : 'text-gray-400 hover:text-white hover:bg-white/5'
                         }`}

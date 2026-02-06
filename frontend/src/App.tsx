@@ -1,7 +1,7 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V3.5 (MOBILE UPLOAD)
-// 1. IMPORT: Imported the new MobileUploadPage component.
-// 2. ROUTING: Added '/mobile-upload/:token' as a new public, standalone route.
+// PHOENIX PROTOCOL - ROUTING V3.6 (CLEANUP)
+// 1. REMOVED: CaseViewPage route (Haveri AI tab removal).
+// 2. STATUS: Synchronized with Header changes.
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -12,7 +12,7 @@ import MainLayout from './pages/MainLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AcceptInvitePage from './pages/AcceptInvitePage';
-import CaseViewPage from './pages/CaseViewPage';
+// PHOENIX: Removed CaseViewPage import
 import CalendarPage from './pages/CalendarPage';
 import SupportPage from './pages/SupportPage';
 import LandingPage from './pages/LandingPage';
@@ -22,7 +22,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import FinanceWizardPage from './pages/FinanceWizardPage';
 import ClientPortalPage from './pages/ClientPortalPage';
 import { IntegrationsPage } from './pages/IntegrationsPage';
-import MobileUploadPage from './pages/MobileUploadPage'; // <-- IMPORT MOBILE PAGE
+import MobileUploadPage from './pages/MobileUploadPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -71,12 +71,12 @@ const AppRoutes: React.FC = () => {
       {/* Standalone Protected Routes (No Sidebar) */}
       <Route path="/finance/wizard" element={<ProtectedRoute><FinanceWizardPage /></ProtectedRoute>} />
 
-      {/* PHOENIX: Mobile Handoff Route (Public, No Layout) */}
+      {/* Mobile Handoff Route (Public, No Layout) */}
       <Route path="/mobile-upload/:token" element={<MobileUploadPage />} />
 
       {/* Standard Protected Routes (With Sidebar) */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-        <Route path="/cases/:caseId" element={<CaseViewPage />} />
+        {/* PHOENIX: Removed /cases/:caseId Route */}
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/account" element={<AccountPage />} />
