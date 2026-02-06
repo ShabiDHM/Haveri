@@ -1,17 +1,19 @@
 # FILE: backend/app/tasks/document_processing.py
-# PHOENIX PROTOCOL - UNIFIED INTELLIGENCE WORKER V14.4 (ROBUST INGESTION)
-# 1. FIXED: Injected "Identity Chunk" to provide a semantic anchor for conceptual queries.
-# 2. FEATURE: Header-aware chunking for CSV/Excel is now mandatory.
-# 3. STATUS: Robust retrieval fix applied.
+# PHOENIX PROTOCOL - UNIFIED INTELLIGENCE WORKER V14.5 (CSV OPTIMIZATION)
+# 1. FIXED: Proper CSV parsing using the 'csv' module to preserve row integrity.
+# 2. FIXED: Bilingual Identity Anchors (SQ/EN) for better retrieval.
+# 3. CLEANUP: Unified vector storage to prevent ID collisions.
 
 import logging
 import os
 import shutil
 import tempfile
 import json
+import csv
+import io
 import asyncio
 from bson import ObjectId
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 
 from app.celery_app import celery_app
@@ -40,24 +42,39 @@ def publish_sse_update(user_id: str, data: Dict[str, Any]):
         except Exception as e:
             logger.error(f"Failed to publish SSE: {e}")
 
-def smart_chunker(text: str, file_type: str, file_name: str, chunk_size: int = 1500, chunk_overlap: int = 200) -> list[str]:
+def smart_chunker(text: str, file_type: str, file_name: str) -> List[str]:
     clean_type = file_type.lower().strip('.')
     chunks = []
     
-    # PHOENIX: Inject an "Identity Chunk" so the AI knows what this file is conceptually.
-    identity_chunk = f"DOCUMENT_IDENTITY: This file is titled '{file_name}'. Type: {file_type}."
+    # PHOENIX: Bilingual Identity Anchor for maximum semantic overlap
+    identity_chunk = (
+        f"DOKUMENTI_ID: Ky skedar titullohet '{file_name}'. Lloji: {file_type}. "
+        f"DOCUMENT_ID: This file is titled '{file_name}'. Type: {file_type}."
+    )
     
+    # Handle Structured Data (CSV/Excel)
     if clean_type in ['csv', 'xlsx', 'xls']:
-        lines = [l.strip() for l in text.splitlines() if l.strip()]
-        if lines:
-            header = lines[0]
-            identity_chunk += f" It contains a table with columns: {header}"
-            chunks.append(identity_chunk) # Add master context
-            chunks.extend([f"FILE: {file_name} | HEADER: {header} | ROW: {line}" for line in lines[1:]])
-            return chunks
+        try:
+            f = io.StringIO(text)
+            reader = csv.reader(f)
+            rows = list(reader)
+            if rows:
+                header = ", ".join(rows[0])
+                identity_chunk += f" Përmban tabela me kolonat: {header} | Contains table with columns: {header}"
+                chunks.append(identity_chunk)
+                
+                # Group rows to provide better context per chunk (approx 5 rows per chunk)
+                for i in range(1, len(rows), 5):
+                    batch = rows[i:i+5]
+                    batch_text = "\n".join([f"ROW {i+j}: {', '.join(row)}" for j, row in enumerate(batch)])
+                    chunks.append(f"DOKUMENTI: {file_name} | KRYEZE_TABELES: {header}\n{batch_text}")
+                return chunks
+        except Exception as e:
+            logger.warning(f"Structured parse failed for {file_name}, falling back to text: {e}")
 
+    # Default Text Chunking
     from langchain.text_splitter import RecursiveCharacterTextSplitter
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=200)
     chunks.append(identity_chunk)
     chunks.extend(text_splitter.split_text(text))
     return chunks
@@ -89,29 +106,25 @@ def process_archive_document(self, archive_item_id: str):
         raw_text = text_extraction_service.extract_text(temp_file_path, file_ext)
         if not raw_text or not raw_text.strip(): raise ValueError("Document is empty.")
 
-        # PHOENIX: Improved chunking with Identity Anchor
         chunks = smart_chunker(raw_text, file_ext, doc_title)
         
         is_albanian = AlbanianLanguageDetector.detect_language(raw_text)
         base_metadata = {'language': 'sq' if is_albanian else 'en', 'file_name': doc_title}
         
-        # 1. Standard Vectorization
-        vector_store_service.create_and_store_embeddings_from_chunks(
-            user_id, archive_item_id, case_id_str, doc_title,
-            chunks, [base_metadata] * len(chunks)
-        )
-
-        # 2. Accountant Vectorization
-        accountant_vector_service.store_finance_embeddings(
+        # PHOENIX: Unified Storage Call. We use Accountant storage as it is optimized for financials.
+        success = accountant_vector_service.store_finance_embeddings(
             user_id=user_id, document_id=archive_item_id,
             file_name=doc_title, chunks=chunks,
             metadatas=[base_metadata.copy() for _ in chunks]
         )
 
+        if not success: raise ValueError("Failed to store embeddings in ChromaDB.")
+
         db_conn.archives.update_one({"_id": oid}, {"$set": {"indexing_status": "READY"}})
         publish_sse_update(user_id, {"type": "DOCUMENT_STATUS", "document_id": archive_item_id, "status": "READY"})
 
     except Exception as e:
+        logger.error(f"Archive Processing Failed for {archive_item_id}: {e}")
         db_conn.archives.update_one({"_id": ObjectId(archive_item_id)}, {"$set": {"indexing_status": "FAILED"}})
         raise self.retry(exc=e)
     finally:
