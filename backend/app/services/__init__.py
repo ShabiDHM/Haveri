@@ -1,26 +1,26 @@
 # FILE: backend/app/services/__init__.py
-# PHOENIX PROTOCOL - SERVICE REGISTRY V4.0 (ACCOUNTANT INTEGRATION)
-# 1. ADDED: Registered the full suite of Accountant Agent services.
-# 2. PRESERVED: Maintained all 29 existing Juristi/Havery service imports.
-# 3. STATUS: Complete and unabridged replacement.
+# PHOENIX PROTOCOL - SERVICE REGISTRY V4.2 (LLM RESTORATION)
+# 1. RESTORED: llm_service (required for Accountant and Analysis modules).
+# 2. REMOVED: chat_service and drafting_service (Haveri AI tab specific).
+# 3. STATUS: Finalized registry.
 
 from . import (
     admin_service,
     business_service,
     calendar_service,
     case_service,
-    chat_service,
+    # PHOENIX: chat_service removed
     conversion_service,
     deadline_service,
     document_service,
-    drafting_service,
+    # PHOENIX: drafting_service removed
     email_service,
     embedding_service,
     encryption_service,
     finance_service,
     graph_service,
     inventory_service,
-    llm_service,
+    llm_service, # PHOENIX: RESTORED
     ocr_service,
     parsing_service,
     pdf_service,
@@ -41,7 +41,7 @@ from . import (
     albanian_metadata_extractor,
     albanian_ner_service,
 
-    # --- PHOENIX V4.0: REGISTER THE NEW ACCOUNTANT SERVICES ---
+    # Accountant Services
     accountant_vector_service,
     accountant_llm_service,
     accountant_chat_service

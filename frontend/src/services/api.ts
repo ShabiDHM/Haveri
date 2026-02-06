@@ -1,8 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V10.5 (TOTAL MODULE CLEANUP)
-// 1. REMOVED: All Chat, Drafting, and Case-specific AI methods.
-// 2. REMOVED: API_V2 references.
-// 3. STATUS: Synchronized with the removal of the Haveri AI module.
+// PHOENIX PROTOCOL - API V10.6 (CROSS-MODULE RESTORATION)
+// 1. RESTORED: 'createPurchaseOrder' (required by ProfitModule in Insights).
+// 2. CLEANUP: Maintained removal of Chat and Case-RAG specific methods.
+// 3. STATUS: Build-ready.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -19,7 +19,7 @@ import type {
 
 export interface DailyBriefingResponse { id: string; content: string; created_at: string; tasks_summary?: string; }
 export interface AuditIssue { id: string; severity: 'CRITICAL' | 'WARNING'; message: string; related_item_id?: string; item_type?: 'INVOICE' | 'EXPENSE'; }
-export interface TaxCalculation { period_month: number; period_year: number; total_sales_gross: number; total_purchases_gross: number; vat_collected: number; vat_deductible: number; net_obligation: number; currency: string; status: string; regime: string; tax_rate_applied: string; description: string; }
+export interface TaxCalculation { period_month: number; period_year: number; total_sales_gross: number; total_purchases_gross: number; vat_collected: number; vat_deductible: number; net_obligation: number; currency: string; status: string; regime: string; text_rate_applied: string; description: string; }
 export interface WizardState { calculation: TaxCalculation; issues: AuditIssue[]; ready_to_close: boolean; }
 export interface InvoiceUpdate { client_name?: string; client_email?: string; client_address?: string; items?: InvoiceItem[]; tax_rate?: number; due_date?: string; status?: string; notes?: string; }
 export interface ImportPreviewResponse { filename: string; headers: string[]; sample_data: Record<string, string>[]; total_rows_estimated: number; }
@@ -152,6 +152,9 @@ class ApiService {
     public async getKpiInsight(kpiType: string): Promise<KpiInsightResponse> { try { const response = await this.axiosInstance.post<KpiInsightResponse>('/analysis/finance/kpi-insight', { kpi_type: kpiType }); return response.data; } catch (e) { return { summary: "Shërbimi i analizës është offline.", key_contributors: [] }; } }
     public async getProactiveInsight(): Promise<GeneralInsightResponse> { try { const response = await this.axiosInstance.get<GeneralInsightResponse>('/analysis/finance/proactive-insight'); return response.data; } catch (e) { return { insight: "Shtoni transaksione për të parë analizat e AI.", sentiment: "neutral" }; } }
     public async analyzeDocument(file: File): Promise<AnalysisResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<AnalysisResult>(`/analysis/analyze-spreadsheet`, formData); return response.data; }
+
+    // PHOENIX: RESTORED for ProfitModule
+    public async createPurchaseOrder(data: { item_id: string; item_name: string; unit: string; quantity: number; estimated_cost: number; supplier_name: string; }): Promise<any> { const response = await this.axiosInstance.post('/drafting/purchase-order', data); return response.data; }
 
     // --- FINANCE & ANALYTICS ---
     public async getAnalyticsDashboard(days: number = 30): Promise<AnalyticsDashboardData> { const response = await this.axiosInstance.get<AnalyticsDashboardData>(`/finance/analytics/dashboard`, { params: { days } }); return response.data; }

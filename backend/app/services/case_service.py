@@ -1,4 +1,7 @@
 # FILE: backend/app/services/case_service.py
+# PHOENIX PROTOCOL - CASE SERVICE V5.0 (DE-COUPLED)
+# 1. REMOVED: All drafting dependencies and AI job creation logic.
+# 2. STATUS: Fully synchronized with the decommissioned Haveri AI module.
 
 import re
 import importlib
@@ -12,7 +15,7 @@ from pymongo.database import Database
 
 from ..models.case import CaseCreate
 from ..models.user import UserInDB
-from ..models.drafting import DraftRequest
+# PHOENIX: Removed DraftRequest import
 from ..celery_app import celery_app
 
 # --- HELPER FUNCTIONS ---
@@ -141,11 +144,7 @@ def delete_case_by_id(db: Database, case_id: ObjectId, owner: UserInDB):
     db.calendar_events.delete_many(any_id_query)
     if "alerts" in db.list_collection_names(): db.alerts.delete_many(any_id_query)
 
-def create_draft_job_for_case(db: Database, case_id: ObjectId, job_in: DraftRequest, owner: UserInDB) -> Dict[str, Any]:
-    case = db.cases.find_one({"_id": case_id, "$or": [{"owner_id": owner.id}, {"user_id": owner.id}]})
-    if not case: raise HTTPException(status_code=404, detail="Case not found.")
-    task = celery_app.send_task("process_drafting_job", kwargs={"case_id": str(case_id), "user_id": str(owner.id), "draft_type": job_in.document_type, "user_prompt": job_in.prompt, "use_library": job_in.use_library})
-    return {"job_id": task.id, "status": "queued", "message": "Drafting job created."}
+# PHOENIX: Removed create_draft_job_for_case entirely
 
 def rename_document(db: Database, case_id: ObjectId, doc_id: ObjectId, new_name: str, owner: UserInDB) -> Dict[str, Any]:
     case = db.cases.find_one({"_id": case_id, "$or": [{"owner_id": owner.id}, {"user_id": owner.id}]})
