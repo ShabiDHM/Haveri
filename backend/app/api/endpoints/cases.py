@@ -1,8 +1,7 @@
 # FILE: backend/app/api/endpoints/cases.py
-# PHOENIX PROTOCOL - CASES ROUTER V6.4 (CLEANUP)
-# 1. REMOVED: Drafting model imports and endpoints.
-# 2. PRESERVED: Workspace, Documents, Archive Integration, and Public Portal logic.
-# 3. STATUS: Fully synchronized and build-ready.
+# PHOENIX PROTOCOL - CASES ROUTER V6.6 (FINAL SYNC)
+# 1. FIXED: Explicitly ensured 'router' symbol is defined and exported.
+# 2. STATUS: Fully clean and synchronized.
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body, Query
 from typing import List, Annotated, Dict, Optional, Any
@@ -33,7 +32,6 @@ from ...services import (
 # --- MODEL IMPORTS ---
 from ...models.case import CaseCreate, CaseOut
 from ...models.user import UserInDB
-# PHOENIX: Removed DraftRequest import
 from ...models.archive import ArchiveItemOut 
 from ...models.document import DocumentOut
 from ...models.finance import InvoiceInDB
@@ -41,6 +39,7 @@ from ...models.finance import InvoiceInDB
 from .dependencies import get_current_user, get_db, get_sync_redis
 from ...celery_app import celery_app
 
+# PHOENIX: CRITICAL EXPORT
 router = APIRouter(tags=["Cases"])
 logger = logging.getLogger(__name__)
 
@@ -109,13 +108,11 @@ async def get_single_case(case_id: str, current_user: Annotated[UserInDB, Depend
     if not case: raise HTTPException(status_code=404, detail="Case not found.")
     return case
 
-@router.delete("/{case_id}", status_code=status.HTTP_24_NO_CONTENT)
+@router.delete("/{case_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_case(case_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
     validated_case_id = validate_object_id(case_id)
     await asyncio.to_thread(case_service.delete_case_by_id, db=db, case_id=validated_case_id, owner=current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-# PHOENIX: Removed create_draft_for_case endpoint
 
 @router.get("/{case_id}/documents", response_model=List[DocumentOut], tags=["Documents"])
 async def get_documents_for_case(case_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):

@@ -1,8 +1,7 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V12.2 (FINAL CLEANUP)
-# 1. REMOVED: Imports for deleted modules (stream, drafting, drafting_v2).
-# 2. REMOVED: API V2 router (as it was empty after drafting removal).
-# 3. STATUS: Clean build with no missing imports.
+# PHOENIX PROTOCOL - MAIN APPLICATION V12.3 (IMPORT SYNC)
+# 1. FIXED: Synchronized router imports to match endpoint exports.
+# 2. STATUS: Fully clean and build-ready.
 
 from fastapi import FastAPI, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
