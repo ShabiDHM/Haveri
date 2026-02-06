@@ -1,12 +1,11 @@
 // FILE: src/context/AuthContext.tsx
-// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.4 (INTERCEPTOR RELIANCE)
-// 1. ARCHITECTURAL FIX: Removed the proactive `refreshToken()` call from the initial application load sequence.
-// 2. REASON: The previous logic created a race condition where a failed refresh on startup would de-authenticate the application, causing subsequent API calls to fail with a 401 error.
-// 3. CORRECTED LOGIC: The app now correctly trusts the access token from localStorage first. It immediately attempts to load user data, relying on the robust Axios interceptor to automatically handle token refreshing only when necessary (i.e., when an API call fails with a 401). This permanently resolves the regression.
+// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V4.5 (STORAGE ALIGNMENT)
+// 1. FIXED: Imported AUTH_TOKEN_KEY from api.ts to ensure identical storage keys.
+// 2. STATUS: Fully synchronized.
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, BusinessProfile, LoginRequest, RegisterRequest } from '../data/types';
-import { apiService } from '../services/api';
+import { apiService, AUTH_TOKEN_KEY } from '../services/api';
 import { Loader2 } from 'lucide-react';
 
 type AuthUser = User;
@@ -22,8 +21,6 @@ interface AuthContextType {
   refreshBusinessProfile: () => Promise<void>;
 }
 
-const AUTH_TOKEN_KEY = 'haveri_access_token';
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -32,8 +29,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    apiService.setToken(null); // PHOENIX: Ensure apiService token is also cleared
+    // PHOENIX: apiService.logout() now clears the TokenManager AND localStorage
+    apiService.logout();
     setUser(null);
     setBusinessProfile(null);
   }, []);
@@ -67,20 +64,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     apiService.setLogoutHandler(logout);
 
     const initializeApp = async () => {
+      // PHOENIX: Rely on centralized Key from API service
       const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+      
       if (!storedToken) {
         setIsLoading(false);
         return;
       }
       
-      // PHOENIX: Set the token and immediately try to use it.
-      // Let the Axios interceptor handle refreshing automatically if the token is expired.
+      // PHOENIX: Set the token. TokenManager will handle persistence checks.
       apiService.setToken(storedToken);
 
       try {
         await loadUserAndProfile();
       } catch (error) {
-        // This catch is for unexpected errors during load, as token errors are handled inside loadUserAndProfile
         console.error("Critical error during app initialization:", error);
         logout();
       } finally {
@@ -95,9 +92,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       const loginPayload: LoginRequest = { username: email, password: password };
-      const response = await apiService.login(loginPayload);
-      localStorage.setItem(AUTH_TOKEN_KEY, response.access_token);
-      apiService.setToken(response.access_token); // Ensure the service has the new token immediately
+      // PHOENIX: apiService.login internally calls tokenManager.set(), which saves to localStorage
+      await apiService.login(loginPayload);
       
       await loadUserAndProfile();
 

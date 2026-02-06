@@ -1,7 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V10.3 (SAVE TO ARCHIVE)
-// 1. ADDED: 'saveAuditReportToArchive' method.
-// 2. STATUS: Fully synchronized.
+// PHOENIX PROTOCOL - API V10.4 (STORAGE SYNC FIX)
+// 1. FIXED: TokenManager now automatically syncs with localStorage.
+// 2. RESOLVED: '401 Unauthorized' loop on page reload due to stale storage.
+// 3. STATUS: Fully synchronized.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -33,6 +34,8 @@ export interface SalesTrendAnalysis { trend_analysis: string; cross_sell_opportu
 export interface KpiInsightResponse { summary: string; key_contributors: string[]; }
 export interface GeneralInsightResponse { insight: string; sentiment: 'positive' | 'negative' | 'neutral'; }
 
+// PHOENIX: Centralized Storage Key
+export const AUTH_TOKEN_KEY = 'haveri_access_token';
 
 const getBaseUrl = (): string => { if (typeof window !== 'undefined') { const hostname = window.location.hostname; if (hostname === 'www.haveri.tech' || hostname === 'haveri.tech') { return 'https://api.haveri.tech'; } } return 'http://localhost:8000'; };
 const normalizedUrl = getBaseUrl();
@@ -40,7 +43,34 @@ export const API_BASE_URL = normalizedUrl;
 export const API_V1_URL = `${API_BASE_URL}/api/v1`;
 export const API_V2_URL = `${API_BASE_URL}/api/v2`;
 
-class TokenManager { private accessToken: string | null = null; get(): string | null { return this.accessToken; } set(token: string | null): void { this.accessToken = token; } }
+// PHOENIX: Upgraded TokenManager with Storage Persistence
+class TokenManager { 
+    private accessToken: string | null = null; 
+    
+    constructor() {
+        if (typeof window !== 'undefined') {
+            this.accessToken = localStorage.getItem(AUTH_TOKEN_KEY);
+        }
+    }
+
+    get(): string | null { 
+        if (!this.accessToken && typeof window !== 'undefined') {
+            this.accessToken = localStorage.getItem(AUTH_TOKEN_KEY);
+        }
+        return this.accessToken; 
+    } 
+    
+    set(token: string | null): void { 
+        this.accessToken = token; 
+        if (typeof window !== 'undefined') {
+            if (token) {
+                localStorage.setItem(AUTH_TOKEN_KEY, token);
+            } else {
+                localStorage.removeItem(AUTH_TOKEN_KEY);
+            }
+        }
+    } 
+}
 const tokenManager = new TokenManager();
 
 class ApiService {
@@ -59,7 +89,17 @@ class ApiService {
             if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh') {
                 if (this.isRefreshing) { return new Promise((resolve, reject) => { this.failedQueue.push({ resolve, reject }); }).then((token) => { if (originalRequest.headers instanceof AxiosHeaders) { originalRequest.headers.set('Authorization', `Bearer ${token}`); } else { (originalRequest.headers as any).Authorization = `Bearer ${token}`; } return this.axiosInstance(originalRequest); }); }
                 originalRequest._retry = true; this.isRefreshing = true;
-                try { const { data } = await this.axiosInstance.post<LoginResponse>('/auth/refresh'); tokenManager.set(data.access_token); if (originalRequest.headers instanceof AxiosHeaders) { originalRequest.headers.set('Authorization', `Bearer ${data.access_token}`); } else { (originalRequest.headers as any).Authorization = `Bearer ${data.access_token}`; } this.processQueue(null); return this.axiosInstance(originalRequest); } catch (refreshError) { tokenManager.set(null); this.processQueue(refreshError as Error); if (this.onUnauthorized) this.onUnauthorized(); return Promise.reject(refreshError); } finally { this.isRefreshing = false; }
+                try { 
+                    const { data } = await this.axiosInstance.post<LoginResponse>('/auth/refresh'); 
+                    // PHOENIX: This set() call now automatically updates localStorage
+                    tokenManager.set(data.access_token); 
+                    if (originalRequest.headers instanceof AxiosHeaders) { originalRequest.headers.set('Authorization', `Bearer ${data.access_token}`); } else { (originalRequest.headers as any).Authorization = `Bearer ${data.access_token}`; } this.processQueue(null); return this.axiosInstance(originalRequest); 
+                } catch (refreshError) { 
+                    tokenManager.set(null); 
+                    this.processQueue(refreshError as Error); 
+                    if (this.onUnauthorized) this.onUnauthorized(); 
+                    return Promise.reject(refreshError); 
+                } finally { this.isRefreshing = false; }
             }
             return Promise.reject(error);
         });
