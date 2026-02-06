@@ -1,7 +1,6 @@
 // FILE: src/pages/AcceptInvitePage.tsx
 // PHOENIX PROTOCOL - INVITATION LANDING PAGE V1.0
 // 1. FEATURE: Handles the 'Accept Invite' flow. Captures token from URL, validates password input, and calls API.
-// 2. UX: Uses a clean, centered layout consistent with Login/Register pages.
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
