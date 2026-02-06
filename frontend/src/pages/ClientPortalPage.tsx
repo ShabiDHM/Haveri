@@ -1,6 +1,8 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - PORTAL V8.8 (CODE CLEANUP)
-// 1. CLEANUP: Removed the unused 'businessNui' variable declaration.
+// PHOENIX PROTOCOL - PORTAL V8.9 (WORKSPACE REBRAND)
+// 1. REBRAND: Renamed 'Case' to 'Workspace' across all types and logic.
+// 2. FIXED: Updated API calls to use the /workspace prefix and correct parameter names.
+// 3. CLEANUP: Removed unused 'businessNui' variable.
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -17,8 +19,8 @@ import { useTranslation } from 'react-i18next';
 
 // --- TYPES ---
 interface SharedDocument { id: string; file_name: string; created_at: string; file_type: string; source: 'ACTIVE' | 'ARCHIVE'; }
-interface PublicCaseData { 
-    case_number: string; title: string; client_name: string; status: string; 
+interface PublicWorkspaceData { 
+    workspace_number: string; title: string; client_name: string; status: string; 
     organization_name?: string; description?: string; logo?: string; 
     owner_address?: string; address?: string; owner_nui?: string; nui?: string;
     tax_id?: string; owner_email?: string; email?: string; owner_phone?: string; phone?: string;
@@ -28,9 +30,9 @@ interface PublicCaseData {
 
 // --- MAIN COMPONENT ---
 const ClientPortalPage: React.FC = () => {
-    const { caseId } = useParams<{ caseId: string }>();
+    const { workspaceId } = useParams<{ workspaceId: string }>();
     const { t } = useTranslation();
-    const [data, setData] = useState<PublicCaseData | null>(null);
+    const [data, setData] = useState<PublicWorkspaceData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [imgError, setImgError] = useState(false);
@@ -42,15 +44,16 @@ const ClientPortalPage: React.FC = () => {
 
     useEffect(() => {
         const fetchPublicData = async () => {
-            if (!caseId) { setError("Invalid Project ID."); setLoading(false); return; }
+            if (!workspaceId) { setError("Invalid Workspace ID."); setLoading(false); return; }
             try {
-                const response = await apiService.axiosInstance.get(`${API_V1_URL}/share/portal/${caseId}`);
+                // PHOENIX: Updated to use /workspace/public/{workspaceId}/timeline endpoint
+                const response = await apiService.axiosInstance.get(`${API_V1_URL}/workspace/public/${workspaceId}/timeline`);
                 setData(response.data);
                 if (response.data) { document.title = `${response.data.title} | ${response.data.organization_name || 'Portal'}`; }
             } catch (err) { console.error(err); setError(t('portal.error_not_found')); } finally { setLoading(false); }
         };
         fetchPublicData();
-    }, [caseId, t]);
+    }, [workspaceId, t]);
 
     const getLogoUrl = () => {
         if (!data?.logo || imgError) return null;
@@ -60,12 +63,12 @@ const ClientPortalPage: React.FC = () => {
         return `${baseUrl}${path}`;
     };
 
-    const handleView = async (docId: string, source: 'ACTIVE' | 'ARCHIVE', filename: string, mimeType: string) => { try { const blob = source === 'ACTIVE' ? await apiService.getOriginalDocument(caseId!, docId) : await apiService.getArchiveFileBlob(docId); const url = window.URL.createObjectURL(blob); setViewingUrl(url); setViewingDoc({ id: docId, file_name: filename, mime_type: mimeType, status: 'READY' } as Document); } catch { alert("Could not load document preview."); } };
-    const handleDownload = async (docId: string, source: 'ACTIVE' | 'ARCHIVE', filename: string) => { try { if (source === 'ACTIVE') { const blob = await apiService.getOriginalDocument(caseId!, docId); const url = window.URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.setAttribute('download', filename); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); } else { await apiService.downloadArchiveItem(docId, filename); } } catch { alert("Could not download document."); } };
-    const handleSendMessage = async (e: React.FormEvent) => { e.preventDefault(); setSending(true); try { await apiService.sendClientMessage(caseId!, formState); setSent(true); setFormState({ firstName: '', lastName: '', email: '', phone: '', message: '' }); setTimeout(() => setSent(false), 5000); } catch { alert("Dërgimi dështoi."); } finally { setSending(false); } };
+    const handleView = async (docId: string, source: 'ACTIVE' | 'ARCHIVE', filename: string, mimeType: string) => { try { const blob = source === 'ACTIVE' ? await apiService.getOriginalDocument(workspaceId!, docId) : await apiService.getArchiveFileBlob(docId); const url = window.URL.createObjectURL(blob); setViewingUrl(url); setViewingDoc({ id: docId, file_name: filename, mime_type: mimeType, status: 'READY' } as Document); } catch { alert("Could not load document preview."); } };
+    const handleDownload = async (docId: string, source: 'ACTIVE' | 'ARCHIVE', filename: string) => { try { if (source === 'ACTIVE') { const blob = await apiService.getOriginalDocument(workspaceId!, docId); const url = window.URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.setAttribute('download', filename); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); } else { await apiService.downloadArchiveItem(docId, filename); } } catch { alert("Could not download document."); } };
+    const handleSendMessage = async (e: React.FormEvent) => { e.preventDefault(); setSending(true); try { await apiService.sendClientMessage(workspaceId!, formState); setSent(true); setFormState({ firstName: '', lastName: '', email: '', phone: '', message: '' }); setTimeout(() => setSent(false), 5000); } catch { alert("Dërgimi dështoi."); } finally { setSending(false); } };
     const closeViewer = () => { if (viewingUrl) URL.revokeObjectURL(viewingUrl); setViewingDoc(null); setViewingUrl(null); };
 
-    // --- PHOENIX: REDESIGNED INFO ROW ---
+    // --- PHOENIX: RENAMED ROW FOR CONSISTENCY ---
     const InfoRow = ({ icon: Icon, label, value, isLink = false }: { icon: any, label: string, value?: string, isLink?: boolean }) => {
         if (!value) return null;
         return (
@@ -122,21 +125,21 @@ const ClientPortalPage: React.FC = () => {
                             <span className="font-bold text-lg tracking-tight text-white leading-tight">{businessName || 'Portal'}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400 bg-emerald-500/5 px-3 py-1.5 rounded-full border border-emerald-500/10">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400 bg-emerald-500/5 px-3 py-1.5 rounded-full border border-emerald-500/10 uppercase tracking-wider">
                         <ShieldCheck size={12} />
-                        <span className="hidden sm:inline uppercase tracking-wider">Lidhje e Sigurt</span>
+                        <span className="hidden sm:inline">Lidhje e Sigurt</span>
                     </div>
                 </div>
             </header>
             <main className="max-w-6xl mx-auto px-6 pt-12 relative z-10 space-y-16">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start"><div className="space-y-6 pt-4"><div className="inline-flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20 text-xs font-bold uppercase tracking-widest"><Calendar size={12} /> {currentDate}</div><div><h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.1] mb-4">Përshëndetje,</h1><p className="text-gray-400 text-lg font-light leading-relaxed max-w-md">Këtu do të gjeni pasqyrën e plotë të dokumentacionit dhe komunikimet.</p></div></div><div className="relative group"><div className="absolute -inset-1 bg-gradient-to-br from-emerald-500/20 via-transparent to-blue-500/20 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition"></div><div className="relative bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 sm:p-10 shadow-2xl"><div className="flex items-start justify-between mb-6"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg border border-white/10"><Quote size={18} className="text-white" /></div><div><h3 className="text-sm font-bold text-white uppercase tracking-wider">Njoftim</h3><p className="text-[10px] text-emerald-400 font-mono mt-0.5 uppercase tracking-widest">Nga Drejtoria</p></div></div><AlignLeft className="text-white/20" size={24} /></div><div className="prose prose-invert prose-sm max-w-none"><p className="text-gray-300 leading-relaxed font-light whitespace-pre-wrap">{directorMessage}</p></div></div></div></motion.div>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}><div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4"><div className="flex items-center gap-4"><div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-emerald-500 rounded-full" /><h2 className="text-2xl font-bold text-white tracking-tight">Dokumentet</h2></div><span className="bg-white/5 border border-white/10 text-gray-400 px-3 py-1 rounded-full text-xs font-mono">{data.documents.length} skedarë</span></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{data.documents.length === 0 ? (<div className="col-span-full border border-dashed border-white/10 rounded-3xl p-16 text-center bg-white/5"><div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5"><FileText className="text-gray-600" size={24} /></div><p className="text-gray-500 font-medium">Nuk ka dokumente të disponueshme për momentin.</p></div>) : (data.documents.map((doc, i) => (<motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 + 0.4 }} className="group relative bg-[#1e293b]/40 hover:bg-[#1e293b]/80 border border-white/5 hover:border-emerald-500/30 rounded-2xl p-6 transition-all duration-300 flex flex-col h-48 overflow-hidden"><div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-500 pointer-events-none" /><div className="flex justify-between items-start mb-4 relative z-10"><div className="p-3 bg-black/40 rounded-xl text-emerald-400 group-hover:text-emerald-300 border border-white/5 transition-colors shadow-lg"><FileText size={20} /></div><div className="flex gap-2"><button onClick={() => handleView(doc.id, doc.source, doc.file_name, doc.file_type)} className="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/5" title="Shiko"><Eye size={16} /></button></div></div><div className="relative z-10 flex-1"><h4 className="font-bold text-gray-200 group-hover:text-white line-clamp-2 leading-snug text-base mb-1">{doc.file_name}</h4><div className="flex items-center gap-2 text-xs text-gray-500"><Calendar size={12} /><span>{new Date(doc.created_at).toLocaleDateString()}</span></div></div><div className="relative z-10 mt-4 pt-4 border-t border-white/5 flex justify-between items-center"><span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{doc.file_type || 'PDF'}</span><button onClick={() => handleDownload(doc.id, doc.source, doc.file_name)} className="flex items-center gap-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider">Shkarko <Download size={12} /></button></div></motion.div>)))}</div></motion.div>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start"><div className="space-y-6 pt-4"><div className="inline-flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20 text-xs font-bold uppercase tracking-widest"><Calendar size={12} /> {currentDate}</div><div><h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.1] mb-4">Përshëndetje,</h1><p className="text-gray-400 text-lg font-light leading-relaxed max-w-md">Këtu do të gjeni pasqyrën e plotë të dokumentacionit dhe komunikimet.</p></div></div><div className="relative group"><div className="absolute -inset-1 bg-gradient-to-br from-emerald-500/20 via-transparent to-blue-500/20 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition"></div><div className="relative bg-[#0f172a]/80 border border-white/10 rounded-3xl p-8 sm:p-10 shadow-2xl"><div className="flex items-start justify-between mb-6"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-lg border border-white/10"><Quote size={18} className="text-white" /></div><div><h3 className="text-sm font-bold text-white uppercase tracking-wider">Njoftim</h3><p className="text-[10px] text-emerald-400 font-mono mt-0.5 uppercase tracking-widest">Nga Drejtoria</p></div></div><AlignLeft className="text-white/20" size={24} /></div><div className="prose prose-invert prose-sm max-w-none"><p className="text-gray-300 leading-relaxed font-light whitespace-pre-wrap">{directorMessage}</p></div></div></div></motion.div>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}><div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4"><div className="flex items-center gap-4"><div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-emerald-500 rounded-full" /><h2 className="text-2xl font-bold text-white tracking-tight">Dokumentet</h2></div><span className="bg-white/5 border border-white/10 text-gray-400 px-3 py-1 rounded-full text-xs font-mono">{data.documents.length} skedarë</span></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{data.documents.length === 0 ? (<div className="col-span-full border border-dashed border-white/10 rounded-3xl p-16 text-center bg-white/5"><div className="w-16 h-16 bg-black/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5"><FileText className="text-gray-600" size={24} /></div><p className="text-gray-500 font-medium">Nuk ka dokumente të disponueshme për momentin.</p></div>) : (data.documents.map((doc, i) => (<motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 + 0.4 }} className="group relative bg-[#1e293b]/40 hover:bg-[#1e293b]/80 border border-white/5 hover:border-emerald-500/30 rounded-2xl p-6 flex flex-col h-48 overflow-hidden"><div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-150 duration-500 pointer-events-none" /><div className="flex justify-between items-start mb-4 relative z-10"><div className="p-3 bg-black/40 rounded-xl text-emerald-400 group-hover:text-emerald-300 border border-white/5 shadow-lg"><FileText size={20} /></div><div className="flex gap-2"><button onClick={() => handleView(doc.id, doc.source, doc.file_name, doc.file_type)} className="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/5" title="Shiko"><Eye size={16} /></button></div></div><div className="relative z-10 flex-1"><h4 className="font-bold text-gray-200 group-hover:text-white line-clamp-2 leading-snug text-base mb-1">{doc.file_name}</h4><div className="flex items-center gap-2 text-xs text-gray-500"><Calendar size={12} /><span>{new Date(doc.created_at).toLocaleDateString()}</span></div></div><div className="relative z-10 mt-4 pt-4 border-t border-white/5 flex justify-between items-center"><span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{doc.file_type || 'PDF'}</span><button onClick={() => handleDownload(doc.id, doc.source, doc.file_name)} className="flex items-center gap-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-wider">Shkarko <Download size={12} /></button></div></motion.div>)))}</div></motion.div>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="pt-8">
                     <div className="bg-[#0f172a]/50 border border-white/10 rounded-3xl overflow-hidden shadow-2xl relative backdrop-blur-md">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-blue-600" />
                         <div className="grid grid-cols-1 lg:grid-cols-5">
-                            {/* PHOENIX: LEFT COLUMN */}
-                            <div className="lg:col-span-2 p-8 sm:p-10 bg-[#020617]/30 flex flex-col border-b lg:border-b-0 lg:border-r border-white/5 relative min-h-[500px]">
+                            {/* LEFT COLUMN */}
+                            <div className="lg:col-span-2 p-8 sm:p-10 bg-[#020617]/30 flex flex-col border-b lg:border-b-0 lg:border-r border-white/5 min-h-[500px]">
                                 <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
                                 <div className="relative z-10 flex flex-col h-full justify-center">
                                     <div className="mb-10">
@@ -150,7 +153,6 @@ const ClientPortalPage: React.FC = () => {
                                         {(businessCity) && <InfoRow icon={MapPin} label="Qyteti" value={businessCity} />}
                                         <InfoRow icon={Globe} label="Website" value={businessWebsite} isLink={true} />
                                     </div>
-                                    {/* Footer Removed here */}
                                 </div>
                             </div>
 
