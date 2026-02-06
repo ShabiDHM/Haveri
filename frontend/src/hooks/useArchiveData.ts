@@ -1,16 +1,18 @@
 // FILE: src/hooks/useArchiveData.ts
-// PHOENIX PROTOCOL - UNIFIED SEARCH V5.2 (WORKSPACE HIDING)
-// 1. UI FIX: Filtered out the current 'initialCaseId' (The Workspace) from the list of folders displayed at the root.
-// 2. LOGIC: Prevents the "Hapësira e Punës" folder from appearing inside itself, while keeping its contents visible.
+// PHOENIX PROTOCOL - UNIFIED ARCHIVE HOOK V5.3 (WORKSPACE REBRAND)
+// 1. REBRAND: Renamed 'Case' to 'Workspace' across all state and logic.
+// 2. ALIGNMENT: Synchronized with the rebranded apiService.
+// 3. LOGIC: Maintained the workspace-hiding filter to prevent recursive folder views.
+// 4. STATUS: Fully synchronized.
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { apiService, API_V1_URL } from '../services/api';
-import { ArchiveItemOut, Case } from '../data/types';
+import { ArchiveItemOut, Workspace } from '../data/types';
 import { useTranslation } from 'react-i18next';
 
-export type BreadcrumbType = { id: string | null; name: string; type: 'ROOT' | 'CASE' | 'FOLDER'; };
+export type BreadcrumbType = { id: string | null; name: string; type: 'ROOT' | 'WORKSPACE' | 'FOLDER'; };
 
-export const useArchiveData = (initialCaseId?: string) => {
+export const useArchiveData = (workspaceId?: string) => {
     const { t } = useTranslation();
     
     const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbType[]>([
@@ -19,7 +21,7 @@ export const useArchiveData = (initialCaseId?: string) => {
 
     const [loading, setLoading] = useState(true);
     const [archiveItems, setArchiveItems] = useState<ArchiveItemOut[]>([]);
-    const [cases, setCases] = useState<Case[]>([]);
+    const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [isUploading, setIsUploading] = useState(false);
     
@@ -27,8 +29,13 @@ export const useArchiveData = (initialCaseId?: string) => {
     useEffect(() => { itemsRef.current = archiveItems; }, [archiveItems]);
 
     useEffect(() => {
-        const loadCases = async () => { try { const c = await apiService.getCases(); setCases(c); } catch {} };
-        loadCases();
+        const loadWorkspaces = async () => { 
+            try { 
+                const results = await apiService.getWorkspaces(); 
+                setWorkspaces(results); 
+            } catch {} 
+        };
+        loadWorkspaces();
     }, []);
 
     const fetchArchiveContent = useCallback(async () => {
@@ -41,16 +48,16 @@ export const useArchiveData = (initialCaseId?: string) => {
             if (active.type === 'ROOT') {
                 const globalItems = await apiService.getArchiveItems(undefined, undefined, "null");
                 
-                let caseItems: any[] = [];
-                if (initialCaseId) {
+                let workspaceItems: any[] = [];
+                if (workspaceId) {
                     try {
-                        caseItems = await apiService.getArchiveItems(undefined, initialCaseId, "null");
+                        workspaceItems = await apiService.getArchiveItems(undefined, workspaceId, "null");
                     } catch (e) {
-                        console.warn("Could not fetch case items", e);
+                        console.warn("Could not fetch workspace items", e);
                     }
                 }
                 
-                rawItems = [...globalItems, ...caseItems];
+                rawItems = [...globalItems, ...workspaceItems];
                 
                 const seen = new Set();
                 rawItems = rawItems.filter(item => {
@@ -60,7 +67,7 @@ export const useArchiveData = (initialCaseId?: string) => {
                     return true;
                 });
 
-            } else if (active.type === 'CASE') {
+            } else if (active.type === 'WORKSPACE') {
                 rawItems = await apiService.getArchiveItems(undefined, active.id!, "null");
             } else if (active.type === 'FOLDER') {
                 rawItems = await apiService.getArchiveItems(undefined, undefined, active.id!);
@@ -76,7 +83,7 @@ export const useArchiveData = (initialCaseId?: string) => {
         } finally {
             setLoading(false);
         }
-    }, [breadcrumbs, initialCaseId]);
+    }, [breadcrumbs, workspaceId]);
 
     useEffect(() => { fetchArchiveContent(); }, [fetchArchiveContent]);
 
@@ -126,28 +133,28 @@ export const useArchiveData = (initialCaseId?: string) => {
 
     // Navigation
     const navigateTo = (index: number) => setBreadcrumbs(prev => prev.slice(0, index + 1));
-    const enterFolder = (id: string, name: string, type: 'FOLDER' | 'CASE') => setBreadcrumbs(prev => [...prev, { id, name, type }]);
+    const enterFolder = (id: string, name: string, type: 'FOLDER' | 'WORKSPACE') => setBreadcrumbs(prev => [...prev, { id, name, type }]);
 
     // CRUD
     const createFolder = async (name: string, category: string) => {
         const active = breadcrumbs[breadcrumbs.length - 1];
-        const targetCaseId = active.type === 'CASE' 
+        const targetWorkspaceId = active.type === 'WORKSPACE' 
             ? active.id! 
-            : (active.type === 'ROOT' ? initialCaseId : undefined);
+            : (active.type === 'ROOT' ? workspaceId : undefined);
 
-        await apiService.createArchiveFolder(name, active.type === 'FOLDER' ? active.id! : undefined, targetCaseId, category);
+        await apiService.createArchiveFolder(name, active.type === 'FOLDER' ? active.id! : undefined, targetWorkspaceId, category);
         await fetchArchiveContent();
     };
 
     const uploadFile = async (file: File) => {
         setIsUploading(true);
         const active = breadcrumbs[breadcrumbs.length - 1];
-        const targetCaseId = active.type === 'CASE' 
+        const targetWorkspaceId = active.type === 'WORKSPACE' 
             ? active.id! 
-            : (active.type === 'ROOT' ? initialCaseId : undefined);
+            : (active.type === 'ROOT' ? workspaceId : undefined);
 
         try {
-            await apiService.uploadArchiveItem(file, file.name, "GENERAL", targetCaseId, active.type === 'FOLDER' ? active.id! : undefined);
+            await apiService.uploadArchiveItem(file, file.name, "GENERAL", targetWorkspaceId, active.type === 'FOLDER' ? active.id! : undefined);
             await fetchArchiveContent();
         } catch (error) {
             console.error("Upload Failed:", error);
@@ -161,9 +168,8 @@ export const useArchiveData = (initialCaseId?: string) => {
     const shareItem = async (item: ArchiveItemOut) => { const newStatus = !item.is_shared; await apiService.shareArchiveItem(item.id, newStatus); setArchiveItems(prev => prev.map(i => i.id === item.id ? { ...i, is_shared: newStatus } : i)); };
 
     const currentView = breadcrumbs[breadcrumbs.length - 1];
-    const isInsideCase = currentView.type === 'CASE';
+    const isInsideWorkspace = currentView.type === 'WORKSPACE';
     
-    // PHOENIX: UNIFIED FILTERING LOGIC
     const filteredItems = useMemo(() => {
         const lowerSearch = searchTerm.toLowerCase();
         
@@ -172,37 +178,33 @@ export const useArchiveData = (initialCaseId?: string) => {
             item.title.toLowerCase().includes(lowerSearch)
         );
 
-        // Filter case-folders, but only if we are at the root
-        let caseFolders: ArchiveItemOut[] = [];
+        // Filter workspace-folders, but only if we are at the root
+        let workspaceFolders: ArchiveItemOut[] = [];
         if (currentView.type === 'ROOT') {
-            caseFolders = cases
-                .filter(c => {
-                    // PHOENIX FIX: Exclude the current workspace from showing as a folder
-                    if (c.id === initialCaseId) return false;
-                    
-                    // Standard search filtering
-                    return c.title.toLowerCase().includes(lowerSearch) || c.case_number.toLowerCase().includes(lowerSearch);
+            workspaceFolders = workspaces
+                .filter(w => {
+                    // PHOENIX FIX: Exclude the current singleton workspace from showing as a folder
+                    if (w.id === workspaceId) return false;
+                    return w.title.toLowerCase().includes(lowerSearch) || w.workspace_number.toLowerCase().includes(lowerSearch);
                 })
-                .map(c => ({
-                    id: c.id,
-                    title: c.title,
+                .map(w => ({
+                    id: w.id,
+                    title: w.title,
                     item_type: 'FOLDER',
-                    file_type: 'Case Folder',
-                    created_at: c.created_at,
-                    category: 'Cases',
+                    file_type: 'Workspace Folder',
+                    created_at: w.created_at,
+                    category: 'Workspace',
                     storage_key: '',
                     file_size: 0,
                     is_shared: false
                 } as ArchiveItemOut));
         }
         
-        // Combine and return
-        return [...caseFolders, ...items];
+        return [...workspaceFolders, ...items];
 
-    }, [archiveItems, cases, searchTerm, currentView.type, initialCaseId]); // Added initialCaseId dependency
+    }, [archiveItems, workspaces, searchTerm, currentView.type, workspaceId]);
 
-    // This is now redundant as it's handled in filteredItems
-    const filteredCases = useMemo(() => cases.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()) || c.case_number.toLowerCase().includes(searchTerm.toLowerCase())), [cases, searchTerm]);
+    const filteredWorkspaces = useMemo(() => workspaces.filter(w => w.title.toLowerCase().includes(searchTerm.toLowerCase()) || w.workspace_number.toLowerCase().includes(searchTerm.toLowerCase())), [workspaces, searchTerm]);
 
-    return { loading, archiveItems, breadcrumbs, currentView, filteredCases, filteredItems, searchTerm, setSearchTerm, isUploading, isInsideCase, fetchArchiveContent, navigateTo, enterFolder, createFolder, uploadFile, deleteItem, renameItem, shareItem };
+    return { loading, archiveItems, breadcrumbs, currentView, filteredWorkspaces, filteredItems, searchTerm, setSearchTerm, isUploading, isInsideWorkspace, fetchArchiveContent, navigateTo, enterFolder, createFolder, uploadFile, deleteItem, renameItem, shareItem };
 };

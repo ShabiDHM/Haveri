@@ -1,12 +1,11 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - BUSINESS KUJDESTARI UI V4.0
-// 1. UI SYNC: Added 'Smart Compliance' indicators for Tax/Payment types.
-// 2. TRANSPARENCY: Displaying System Rescheduling notes in Hover/List views.
-// 3. FIX: Unified Priority levels and optimized date-fns integration.
+// PHOENIX PROTOCOL - BUSINESS KUJDESTARI UI V4.1 (WORKSPACE ALIGNMENT)
+// 1. REBRAND: Renamed all 'Case' references to 'Workspace'.
+// 2. STATUS: Fully synchronized with Workspace architecture.
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CalendarEvent, Case, CalendarEventCreateRequest, EventPriority } from '../data/types';
+import { CalendarEvent, Workspace, CalendarEventCreateRequest, EventPriority } from '../data/types'; // PHOENIX: Swapped Case for Workspace
 import { apiService } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,7 +28,7 @@ import { EventDetailModal, UIAgendaItem } from '../components/modals/EventDetail
 const DatePicker = (ReactDatePicker as any).default;
 const localeMap: { [key: string]: Locale } = { sq: sq, al: sq, en: enUS };
 
-interface CreateEventModalProps { cases: Case[]; existingEvents: CalendarEvent[]; onClose: () => void; onCreate: () => void; }
+interface CreateEventModalProps { workspaces: Workspace[]; existingEvents: CalendarEvent[]; onClose: () => void; onCreate: () => void; } // PHOENIX: Renamed prop
 type ViewMode = 'month' | 'list';
 
 const getEventStyle = (type: string) => {
@@ -45,7 +44,7 @@ const getEventStyle = (type: string) => {
 
 const getEventId = (event: CalendarEvent): string => (event as any).id || (event as any)._id || '';
 
-const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEvents, onClose, onCreate }) => {
+const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existingEvents, onClose, onCreate }) => { // PHOENIX: Renamed prop
     const { t, i18n } = useTranslation();
     const currentLocale = localeMap[i18n.language] || enUS; 
     const [isCreating, setIsCreating] = useState(false);
@@ -55,7 +54,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEven
     const [isPublic, setIsPublic] = useState(false);
 
     const [formData, setFormData] = useState<Omit<CalendarEventCreateRequest, 'attendees' | 'start_date' | 'end_date' | 'is_public'> & { attendees: string, is_public: boolean }>({ 
-        case_id: '', title: '', description: '', event_type: 'TASK', location: '', attendees: '', is_all_day: true, priority: 'MEDIUM', notes: '', is_public: false
+        workspace_id: '', title: '', description: '', event_type: 'TASK', location: '', attendees: '', is_all_day: true, priority: 'MEDIUM', notes: '', is_public: false // PHOENIX: Updated to workspace_id
     });
 
     const isSmartType = ['TAX_DEADLINE', 'PAYMENT_DUE'].includes(formData.event_type);
@@ -113,8 +112,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEven
                         
                         <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('calendar.createModal.eventDate')}</label><DatePicker selected={eventDate} onChange={(date: Date | null) => setEventDate(date)} locale={currentLocale} dateFormat="dd.MM.yyyy" placeholderText={t('calendar.createModal.dateTimePlaceholder')} className={formElementClasses} portalId="react-datepicker-portal" required /></div>
                         
-                        <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('calendar.createModal.relatedCase')}</label><select value={formData.case_id} onChange={(e) => setFormData(prev => ({ ...prev, case_id: e.target.value }))} className={formElementClasses}><option value="">{t('calendar.noCaseRelated')}</option>{cases.map(c => <option key={c.id} value={c.id}>{c.title || c.case_name || c.case_number}</option>)}</select></div>
-
+                        <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('calendar.createModal.relatedWorkspace')}</label><select value={formData.workspace_id} onChange={(e) => setFormData(prev => ({ ...prev, workspace_id: e.target.value }))} className={formElementClasses}><option value="">{t('calendar.noCaseRelated')}</option>{workspaces.map(w => <option key={w.id} value={w.id}>{w.title || w.workspace_name || w.workspace_number}</option>)}</select></div>
+                        
                         <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 flex items-center justify-between cursor-pointer" onClick={() => setIsPublic(!isPublic)}><div className="flex items-center gap-4"><div className={`p-2 rounded-lg ${isPublic ? 'bg-indigo-500 text-white' : 'bg-white/10 text-gray-400'}`}>{isPublic ? <Eye size={18} /> : <EyeOff size={18} />}</div><div><h4 className={`text-sm font-bold ${isPublic ? 'text-indigo-200' : 'text-gray-400'}`}>{isPublic ? t('calendar.visibilityPublic') : t('calendar.visibilityPrivate')}</h4><p className="text-xs text-gray-500">{isPublic ? t('calendar.visibilityPublicDesc') : t('calendar.visibilityPrivateDesc')}</p></div></div><div className={`w-12 h-6 rounded-full relative transition-colors ${isPublic ? 'bg-indigo-500' : 'bg-gray-700'}`}><div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-0'}`} /></div></div>
                         
                         {!showAdvanced && <div className="pt-2 text-center"><button type="button" onClick={() => setShowAdvanced(true)} className="text-sm text-blue-400 hover:text-blue-300 flex items-center justify-center mx-auto gap-1"><ChevronDown className="h-4 w-4" />{t('calendar.createModal.addDetails')}</button></div>}
@@ -151,7 +150,7 @@ const CalendarPage: React.FC = () => {
     const navigate = useNavigate();
 
     const [events, setEvents] = useState<CalendarEvent[]>([]);
-    const [cases, setCases] = useState<Case[]>([]);
+    const [workspaces, setWorkspaces] = useState<Workspace[]>([]); // PHOENIX: Renamed state
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -166,7 +165,20 @@ const CalendarPage: React.FC = () => {
     const [isDayModalOpen, setIsDayModalOpen] = useState(false);
     const currentLocale = localeMap[i18n.language] || enUS;
 
-    const loadData = async () => { try { setLoading(true); setError(''); const [eventsData, casesData] = await Promise.all([apiService.getCalendarEvents(), apiService.getCases()]); setEvents(eventsData); setCases(casesData); } catch (error: any) { setError(error.response?.data?.message || error.message || t('calendar.loadFailure')); } finally { setLoading(false); } };
+    const loadData = async () => { 
+        try { 
+            setLoading(true); 
+            setError(''); 
+            // PHOENIX: Swapped getCases for getWorkspaces
+            const [eventsData, workspacesData] = await Promise.all([apiService.getCalendarEvents(), apiService.getWorkspaces()]); 
+            setEvents(eventsData); 
+            setWorkspaces(workspacesData); // PHOENIX: Renamed state
+        } catch (error: any) { 
+            setError(error.response?.data?.message || error.message || t('calendar.loadFailure')); 
+        } finally { 
+            setLoading(false); 
+        } 
+    };
 
     useEffect(() => { loadData(); }, []);
 
@@ -314,10 +326,10 @@ const CalendarPage: React.FC = () => {
             </div>
 
             <AnimatePresence>
-              {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={loadData} cases={cases} />}
+              {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={loadData} workspaces={workspaces} />}
             </AnimatePresence>
             
-            {isCreateModalOpen && <CreateEventModal cases={cases} existingEvents={events} onClose={() => setIsCreateModalOpen(false)} onCreate={loadData} />}
+            {isCreateModalOpen && <CreateEventModal workspaces={workspaces} existingEvents={events} onClose={() => setIsCreateModalOpen(false)} onCreate={loadData} />}
             <DayEventsModal isOpen={isDayModalOpen} onClose={() => setIsDayModalOpen(false)} date={selectedDateForModal} events={selectedDayEvents} t={t} onAddEvent={() => { setIsDayModalOpen(false); setIsCreateModalOpen(true); }} />
         </div>
     );

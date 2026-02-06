@@ -1,11 +1,13 @@
 // FILE: src/components/modals/EventDetailModal.tsx
-// PHOENIX PROTOCOL - TYPE CONSISTENCY V2.0
-// 1. FIX: Standardized 'event_type' to 'type' in the interface.
+// PHOENIX PROTOCOL - WORKSPACE ALIGNMENT V3.0
+// 1. REBRAND: Renamed 'Case' to 'Workspace' across interfaces and logic.
+// 2. FIXED: Updated property access to use 'workspace_id'.
+// 3. STATUS: Fully synchronized with rebranding.
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Case, CalendarEvent } from '../../data/types';
+import { Workspace, CalendarEvent } from '../../data/types'; // PHOENIX: Swapped Case for Workspace
 import { apiService } from '../../services/api';
 import { format, parseISO } from 'date-fns';
 import { sq, enUS } from 'date-fns/locale';
@@ -20,7 +22,7 @@ export interface UIAgendaItem {
     id: string;
     title: string;
     time: string;
-    type: CalendarEvent['event_type']; // PHOENIX: Standardized to 'type'
+    type: CalendarEvent['event_type'];
     priority: string;
     isCompleted: boolean;
     kind: 'event' | 'task' | 'alert';
@@ -42,10 +44,10 @@ interface EventDetailModalProps {
     event: UIAgendaItem; 
     onClose: () => void; 
     onUpdate?: () => void; 
-    cases?: Case[];
+    workspaces?: Workspace[]; // PHOENIX: Prop renamed for consistency
 }
 
-export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, onUpdate, cases = [] }) => {
+export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClose, onUpdate, workspaces = [] }) => {
     const { t, i18n } = useTranslation();
     const currentLocale = localeMap[i18n.language] || enUS; 
     const [isDeleting, setIsDeleting] = useState(false);
@@ -73,7 +75,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClo
     };
     
     const style = getEventStyle(rawEvent.event_type);
-    const relatedCase = cases.find(c => c.id === rawEvent.case_id);
+    // PHOENIX: Logic updated to use workspace_id
+    const relatedWorkspace = workspaces.find(w => w.id === rawEvent.workspace_id);
     
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
@@ -86,7 +89,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClo
                             <div className="flex flex-wrap gap-2">
                                 <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${style.bg} ${style.text} border ${style.border}`}>{t(`calendar.types.${rawEvent.event_type}`, rawEvent.event_type)}</span>
                                 {rawEvent.priority && <span className="text-xs px-3 py-1 rounded-full border border-white/10 bg-black/20 text-gray-300 font-bold uppercase tracking-wider">{t(`calendar.priorities.${rawEvent.priority}`)}</span>}
-                                {relatedCase && <span className="text-xs px-3 py-1 rounded-full border border-white/10 bg-black/20 text-gray-300 font-bold flex items-center gap-2"><Briefcase size={14}/> {relatedCase.title}</span>}
+                                {relatedWorkspace && <span className="text-xs px-3 py-1 rounded-full border border-white/10 bg-black/20 text-gray-300 font-bold flex items-center gap-2"><Briefcase size={14}/> {relatedWorkspace.title}</span>}
                             </div>
                         </div>
                     </div>
@@ -105,7 +108,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClo
                 </div>
                 <div className="flex space-x-4 mt-10 pt-6 border-t border-white/10">
                     <button onClick={onClose} className="flex-1 px-4 py-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition font-medium">{t('calendar.detailModal.close')}</button>
-                    {onUpdate && <button onClick={handleDelete} disabled={isDeleting} className="flex-1 px-4 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl transition font-medium disabled:opacity-50">{isDeleting ? t('calendar.detailModal.deleting') : t('calendar.detailModal.delete')}</button>}
+                    {onUpdate && <button onClick={handleDelete} disabled={isDeleting} className="flex-1 px-4 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl transition font-medium disabled:opacity-50">{isDeleting ? t('general.loading') : t('calendar.detailModal.delete')}</button>}
                 </div>
             </motion.div>
         </motion.div>

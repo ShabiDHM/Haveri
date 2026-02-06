@@ -1,45 +1,39 @@
 // FILE: src/hooks/useFinanceData.ts
-// PHOENIX PROTOCOL - HOOK V3.0 (ROBUST TYPE-SAFE ANALYTICS)
-// 1. FIX: Aligned 'TopProductItem' properties with types.ts (quantity_sold -> total_quantity).
-// 2. FIX: Added safety checks for undefined 'analyticsData'.
-// 3. CLEAN: Removed unused variables and ensured strict TypeScript compliance.
+// PHOENIX PROTOCOL - HOOK V3.1 (WORKSPACE REBRAND)
+// 1. REBRAND: Renamed 'Case' to 'Workspace' throughout the hook.
+// 2. SYNC: Updated API call to 'getWorkspaces'.
+// 3. STATUS: Fully synchronized.
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/api';
-import { Invoice, Expense, Case, AnalyticsDashboardData, PosTransaction, TopProductItem } from '../data/types';
+import { Invoice, Expense, Workspace, AnalyticsDashboardData, PosTransaction, TopProductItem } from '../data/types';
 
 export const useFinanceData = () => {
     const [loading, setLoading] = useState(true);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [cases, setCases] = useState<Case[]>([]);
+    const [workspaces, setWorkspaces] = useState<Workspace[]>([]); // PHOENIX: Renamed
     const [posTransactions, setPosTransactions] = useState<PosTransaction[]>([]);
     
-    // Initialized as null, populated via backend or local computation
     const [analyticsData, setAnalyticsData] = useState<AnalyticsDashboardData | null>(null);
 
-    // --- CLIENT-SIDE ANALYTICS ENGINE ---
     const computeLocalAnalytics = useCallback((
         currentInvoices: Invoice[], 
         currentExpenses: Expense[], 
         currentPos: PosTransaction[]
     ): AnalyticsDashboardData => {
         
-        // 1. Generate Date Range (Last 30 Days)
         const last30Days = Array.from({ length: 30 }, (_, i) => {
             const d = new Date();
             d.setDate(d.getDate() - (29 - i));
             return d.toISOString().split('T')[0];
         });
 
-        // 2. Calculate Sales Trend
         const sales_trend = last30Days.map(dateStr => {
-            // Sum Invoices for this day
             const invSum = currentInvoices
                 .filter(i => (i.issue_date && i.issue_date.startsWith(dateStr)) && i.status === 'PAID')
                 .reduce((sum, i) => sum + i.total_amount, 0);
             
-            // Sum POS for this day
             const posSum = currentPos
                 .filter(p => {
                     const pDate = (p as any).transaction_date || (p as any).date || ""; 
@@ -50,11 +44,9 @@ export const useFinanceData = () => {
             return { date: dateStr, amount: invSum + posSum };
         });
 
-        // 3. Calculate Top Products
         const productRevenueMap: Record<string, number> = {};
         const productQtyMap: Record<string, number> = {};
         
-        // From Invoices
         currentInvoices.forEach(inv => {
             if (inv.status === 'PAID') {
                 inv.items.forEach(item => {
@@ -65,7 +57,6 @@ export const useFinanceData = () => {
             }
         });
         
-        // From POS
         currentPos.forEach(p => {
             const name = p.product_name || (p as any).description || "POS Sale";
             const amt = p.total_price ?? (p as any).amount ?? 0;
@@ -84,7 +75,6 @@ export const useFinanceData = () => {
             .sort((a, b) => b.total_revenue - a.total_revenue)
             .slice(0, 5);
 
-        // 4. Calculate Period Totals (Last 30 days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const cutoffDate = thirtyDaysAgo.toISOString().split('T')[0];
@@ -108,20 +98,19 @@ export const useFinanceData = () => {
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
-            // Parallel Fetch
-            const [inv, exp, cs, pos] = await Promise.all([
+            // PHOENIX: Swapped getCases for getWorkspaces
+            const [inv, exp, ws, pos] = await Promise.all([
                 apiService.getInvoices().catch(() => []),
                 apiService.getExpenses().catch(() => []),
-                apiService.getCases().catch(() => []),
+                apiService.getWorkspaces().catch(() => []),
                 apiService.getPosTransactions().catch(() => []),
             ]);
 
             setInvoices(inv);
             setExpenses(exp);
-            setCases(cs);
+            setWorkspaces(ws); // PHOENIX: Renamed
             setPosTransactions(pos);
 
-            // Compute Analytics Locally immediately
             const computed = computeLocalAnalytics(inv, exp, pos);
             setAnalyticsData(computed);
 
@@ -143,7 +132,6 @@ export const useFinanceData = () => {
             setExpenses(exp);
             setPosTransactions(pos);
             
-            // Re-compute instantly on refresh
             const computed = computeLocalAnalytics(inv, exp, pos);
             setAnalyticsData(computed);
             
@@ -156,7 +144,6 @@ export const useFinanceData = () => {
         loadData();
     }, [loadData]);
 
-    // Deletion Handlers
     const deleteInvoice = async (id: string) => {
         await apiService.deleteInvoice(id);
         await refreshData();
@@ -172,11 +159,9 @@ export const useFinanceData = () => {
         await refreshData();
     };
 
-    // Derived Totals (Global, not just period)
     const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     const displayIncome = analyticsData?.total_revenue_period ?? 0;
     
-    // Safe check for undefined total_profit_period
     const displayProfit = analyticsData?.total_profit_period !== undefined 
         ? analyticsData.total_profit_period 
         : (displayIncome - totalExpenses);
@@ -188,7 +173,7 @@ export const useFinanceData = () => {
         loading,
         invoices,
         expenses,
-        cases,
+        workspaces, // PHOENIX: Renamed
         posTransactions,
         analyticsData,
         

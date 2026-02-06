@@ -1,26 +1,23 @@
 # FILE: backend/app/services/__init__.py
-# PHOENIX PROTOCOL - SERVICE REGISTRY V4.2 (LLM RESTORATION)
-# 1. RESTORED: llm_service (required for Accountant and Analysis modules).
-# 2. REMOVED: chat_service and drafting_service (Haveri AI tab specific).
-# 3. STATUS: Finalized registry.
+# PHOENIX PROTOCOL - SERVICE REGISTRY V4.3 (REBRAND SYNC)
+# 1. REBRAND: Renamed case_service to workspace_service.
+# 2. STATUS: Fully synchronized.
 
 from . import (
     admin_service,
     business_service,
     calendar_service,
-    case_service,
-    # PHOENIX: chat_service removed
+    workspace_service, # PHOENIX: Renamed from case_service
     conversion_service,
     deadline_service,
     document_service,
-    # PHOENIX: drafting_service removed
     email_service,
     embedding_service,
     encryption_service,
     finance_service,
     graph_service,
     inventory_service,
-    llm_service, # PHOENIX: RESTORED
+    llm_service,
     ocr_service,
     parsing_service,
     pdf_service,
@@ -35,13 +32,9 @@ from . import (
     text_sterilization_service,
     user_service,
     vector_store_service,
-    
-    # Albanian Specific Services
     albanian_language_detector,
     albanian_metadata_extractor,
     albanian_ner_service,
-
-    # Accountant Services
     accountant_vector_service,
     accountant_llm_service,
     accountant_chat_service

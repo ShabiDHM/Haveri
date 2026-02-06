@@ -1,13 +1,13 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - LAYOUT LOGIC V19.5
-// 1. UI/UX: Restricted the 'Welcome' header to appear ONLY on the 'briefing' view.
-// 2. LOGIC: All other tabs (Finance, Inventory, etc.) now use the full vertical space without the main header.
+// PHOENIX PROTOCOL - WORKSPACE HUB V20.0 (SINGLETON ALIGNMENT)
+// 1. FEATURE: Integrated with AuthContext 'workspace' singleton.
+// 2. REBRAND: Global terminology shift from Case to Workspace.
+// 3. OPTIMIZATION: Removed redundant API calls and local loading states.
+// 4. STATUS: Fully synchronized.
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { apiService } from '../services/api';
-import { Case } from '../data/types';
 import { ProfileTab } from '../components/business/ProfileTab';
 import { FinanceTab } from '../components/business/FinanceTab';
 import { ArchiveTab } from '../components/business/ArchiveTab';
@@ -15,7 +15,6 @@ import { InventoryTab } from '../components/business/InventoryTab';
 import { DailyBriefingTab } from '../components/business/DailyBriefingTab';
 import { InsightsTab } from '../components/business/InsightsTab';
 import { InboxTab } from '../components/business/InboxTab';
-import { Loader2 } from 'lucide-react';
 
 type BusinessView = 'briefing' | 'finance' | 'inventory' | 'archive' | 'insights' | 'profile' | 'inbox';
 
@@ -25,41 +24,25 @@ interface BusinessPageProps {
 
 const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  
-  const [mainCase, setMainCase] = useState<Case | null>(null);
-  const [loadingContext, setLoadingContext] = useState(true);
-
-  useEffect(() => {
-    const loadBusinessContext = async () => {
-        try {
-            const cases = await apiService.getCases();
-            if (cases && cases.length > 0) {
-                setMainCase(cases[0]);
-            }
-        } catch (error) {
-            console.error("Failed to load business context", error);
-        } finally {
-            setLoadingContext(false);
-        }
-    };
-    loadBusinessContext();
-  }, []);
+  const { user, workspace, isLoading: isAuthLoading } = useAuth(); // PHOENIX: Consuming singleton from context
 
   const capitalize = (s: string | undefined) => {
-    if (!s) return 'Përdorues';
+    if (!s) return t('general.user', 'Përdorues');
     return s.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   const renderActiveTab = () => {
+    // PHOENIX: Ensure we don't render sub-tabs until auth/workspace is ready
+    if (isAuthLoading) return null;
+
     switch (view) {
       case 'briefing': return <DailyBriefingTab />;
       case 'finance': return <FinanceTab />;
       case 'inventory': return <InventoryTab />;
       
       case 'archive': 
-        if (loadingContext) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-8 h-8 text-indigo-500 animate-spin" /></div>;
-        return <ArchiveTab key={mainCase?.id || 'root'} caseId={mainCase?.id} />;
+        // PHOENIX: Passed workspace.id instead of mainCase.id
+        return <ArchiveTab key={workspace?.id || 'root'} workspaceId={workspace?.id} />;
         
       case 'insights': return <InsightsTab />;
       case 'profile': return <ProfileTab />;
@@ -77,7 +60,7 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
                   {t('business.welcome', 'Mirësevini {{name}}', { name: capitalize(user?.username) })}
               </h1>
               <p className="text-gray-400 text-base sm:text-lg font-medium">
-                  {t('business.title', 'Qendra e Biznesit')}
+                  {t('business.title', 'Hapësira e Punës')}
               </p>
           </div>
       )}

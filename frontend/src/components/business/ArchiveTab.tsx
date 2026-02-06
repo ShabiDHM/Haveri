@@ -1,7 +1,7 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V5.0 (DRAWER UI)
-// 1. UI: Replaced centered modal with a non-blocking Right-Side Drawer.
-// 2. STATUS: Page obstruction fixed.
+// PHOENIX PROTOCOL - ARCHIVE TAB V5.2 (FINAL ALIGNMENT)
+// 1. FIXED: Renamed 'isInsideCase' to 'isInsideWorkspace' to match hook output.
+// 2. STATUS: Fully synchronized with useArchiveData V5.3.
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,7 +20,7 @@ import { ForensicAccountantModal } from './insights/ForensicAccountantModal';
 import { getFileIcon } from './archive/ArchiveCard';
 
 interface ArchiveTabProps {
-    caseId?: string;
+    workspaceId?: string;
 }
 
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
@@ -138,9 +138,16 @@ const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelet
     ); 
 };
 
-export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
+export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
     const { t } = useTranslation();
-    const { loading, breadcrumbs, filteredItems, isUploading, searchTerm, setSearchTerm, navigateTo, enterFolder, createFolder, uploadFile, deleteItem, renameItem, fetchArchiveContent, isInsideCase, currentView } = useArchiveData(caseId);
+    
+    // PHOENIX: Destructuring 'isInsideWorkspace' correctly to match hook output
+    const { 
+        loading, breadcrumbs, filteredItems, isUploading, 
+        searchTerm, setSearchTerm, navigateTo, enterFolder, 
+        createFolder, uploadFile, deleteItem, renameItem, 
+        fetchArchiveContent, isInsideWorkspace, currentView 
+    } = useArchiveData(workspaceId);
 
     const [newFolderName, setNewFolderName] = useState("");
     const [showFolderModal, setShowFolderModal] = useState(false);
@@ -166,7 +173,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
     const shareItem = async (item: ArchiveItemOut) => {
         const newStatus = !item.is_shared;
         try { 
-            await apiService.shareArchiveItem(item.id, newStatus, caseId); 
+            await apiService.shareArchiveItem(item.id, newStatus, workspaceId); 
             fetchArchiveContent(); 
         } catch(e) { 
             alert(t('error.generic')); 
@@ -201,7 +208,8 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                  <div className="flex flex-col xl:flex-row gap-4">
                     <div className="flex-1 relative group"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" /><input type="text" placeholder={t('header.searchPlaceholder')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 sm:py-4 bg-black/40 border border-white/10 rounded-2xl text-white outline-none" /></div>
                     <div className="flex flex-wrap gap-2">
-                        {(isInsideCase || !!caseId) && (
+                        {/* PHOENIX: Using correct alignment 'isInsideWorkspace' */}
+                        {(isInsideWorkspace || !!workspaceId) && (
                             <button onClick={() => setShowShareModal(true)} className="px-4 py-3 bg-gray-800 text-gray-300 rounded-xl font-bold flex items-center gap-2 border border-white/10 hover:bg-gray-700 transition-colors">
                                 <LinkIcon size={18} /><span>{t('archive.portal_access')}</span>
                             </button>
@@ -230,7 +238,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
                         <ArchiveCard 
                             key={item.id}
                             title={item.title} 
-                            subtitle={item.item_type === 'FOLDER' ? t('archive.caseFolders') : `${item.file_type} ${t('general.document')}`} 
+                            subtitle={item.item_type === 'FOLDER' ? t('archive.myWorkspace') : `${item.file_type} ${t('general.document')}`} 
                             type={item.item_type === 'FOLDER' ? 'Folder' : item.file_type} 
                             date={new Date(item.created_at).toLocaleDateString()} 
                             indexingStatus={item.indexing_status}
@@ -255,7 +263,8 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ caseId }) => {
             <ForensicAccountantModal isOpen={showForensicModal} onClose={() => setShowForensicModal(false)} />
             <AnimatePresence>{chatDoc && <DocumentChatModal documentId={chatDoc.id} documentTitle={chatDoc.title} onClose={() => setChatDoc(null)} />}</AnimatePresence>
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={() => setViewingDoc(null)} t={t} directUrl={viewingUrl || ""} />}
-            {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={(isInsideCase ? currentView.id : caseId) || ""} caseTitle={currentView.name} />}
+            {/* PHOENIX: Using 'isInsideWorkspace' to correctly compute caseId for ShareModal */}
+            {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={(isInsideWorkspace ? currentView.id : workspaceId) || ""} caseTitle={currentView.name} />}
         </motion.div>
     );
 };
