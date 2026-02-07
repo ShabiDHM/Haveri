@@ -187,7 +187,7 @@
     "slide4_title": "Arkiva e Gjallë",
     "slide4_desc": "Mos kërkoni kurrë më nëpër dosje fizike. Çdo dokument indeksohet dhe ruhet.",
     "slide5_title": "Menaxhimi Financiar",
-    "slide5_desc": "Menaxhoni financat, faturat dhe llogaritni shpenzimet automatikisht."
+    "slide5_desc": "Menaxhoni financat, faturat dhe llogaritni shpenzimet automatikasht."
   },
   "header": {
     "searchPlaceholder": "Kërko...",
@@ -235,7 +235,8 @@
     "logoIdentity": "Logo & Identiteti",
     "upload": "Ngarko",
     "branding": "Branding",
-    "firmData": "Të Dhënat e Firmës"
+    "firmData": "Të Dhënat e Firmës",
+    "clientName": "Emri i Klientit"
   },
   "insights": {
     "title": "Inteligjenca",
@@ -262,6 +263,9 @@
     "cogs": "Kosto e Mallrave",
     "createInvoice": "Krijo Faturë",
     "addExpense": "Shto Shpenzim",
+    "applyVat": "Apliko TVSH (18%)",
+    "services": "Shërbimet / Produktet",
+    "addLine": "Shto Rresht",
     "activityAndReports": "Aktiviteti & Raportet",
     "tabTransactions": "Transaksionet",
     "tabReports": "Raportet",
@@ -273,20 +277,27 @@
     "import": {
       "title": "Importo Transaksione",
       "uploadTitle": "Ngarko CSV/Excel",
-      "confirm": "Konfirmo Importin"
+      "confirm": "Konfirmo Importin",
+      "selectTypeTitle": "Zgjidhni llojin e importit",
+      "typePos": "Shitje nga POS",
+      "typeBank": "Pasqyrë Bankare"
     },
     "smartAnalyst": {
       "bannerTitle": "Analisti AI",
       "analyzing": "Duke analizuar të dhënat financiare...",
       "executiveSummary": "Përmbledhje Ekzekutive",
-      "keyContributors": "Kontribuesit Kryesorë"
+      "keyContributors": "Kontribuesit Kryesorë",
+      "modalTitle": "Analiza Financiare",
+      "failed": "Analiza dështoi."
     },
     "analytics": {
       "salesTrend": "Trendi i Shitjeve",
       "topProducts": "Produktet Kryesore",
       "keys": {
         "amount": "Vlera",
-        "total_revenue": "Shitjet"
+        "total_revenue": "Shitjet",
+        "total_quantity": "Sasia",
+        "product_name": "Produkti"
       }
     },
     "reports": {
