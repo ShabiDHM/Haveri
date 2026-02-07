@@ -1,8 +1,7 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V5.2 (WORKSPACE ALIGNMENT)
-// 1. REBRAND: Replaced all 'Case' references with 'Workspace'.
-// 2. FIXED: Aligned API calls and EventDetailModal props to use the new type.
-// 3. STATUS: Fully synchronized.
+// PHOENIX PROTOCOL - DASHBOARD V5.3 (DATE LOCALIZATION FIX)
+// 1. FIXED: Forced correct locale string ('sq-AL') for chart labels when language is Albanian.
+// 2. STATUS: Fully synchronized.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,7 +13,7 @@ import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { EventDetailModal } from '../modals/EventDetailModal';
 import { apiService } from '../../services/api';
-import { Workspace, UIAgendaItem } from '../../data/types'; // PHOENIX: Swapped Case for Workspace
+import { Workspace, UIAgendaItem } from '../../data/types'; 
 
 import { BusinessRhythmCard, DailySalesData } from './briefing/BusinessRhythmCard';
 import { BusinessPulseCard } from './briefing/BusinessPulseCard';
@@ -36,28 +35,33 @@ export const DailyBriefingTab: React.FC = () => {
     const { displayIncome, loading: financeLoading } = useFinanceData();
 
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
-    const [workspaces, setWorkspaces] = useState<Workspace[]>([]); // PHOENIX: Renamed state
+    const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [messageCount, setMessageCount] = useState(0);
     
     const [salesHistory, setSalesHistory] = useState<DailySalesData>({ labels: [], data: [] });
     const [peakTime, setPeakTime] = useState<string | null>(null); 
     const [historyLoading, setHistoryLoading] = useState(true);
 
-    const months = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
+    // PHOENIX: Localized Month Names for Header
+    const monthsSQ = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
+    const monthsEN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    const isAlbanian = i18n.language === 'sq' || i18n.language === 'sq-AL';
+    const currentMonths = isAlbanian ? monthsSQ : monthsEN;
+    
     const today = new Date();
-    const finalDate = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
+    const finalDate = `${today.getDate()} ${currentMonths[today.getMonth()]} ${today.getFullYear()}`;
     
     useEffect(() => {
         const loadData = async () => {
             try {
-                // PHOENIX: Swapped getCases for getWorkspaces
                 const [workspacesData, msgs, transactions] = await Promise.all([
                     apiService.getWorkspaces(),
                     apiService.getInboundMessages('INBOX'),
                     apiService.getPosTransactions()
                 ]);
                 
-                setWorkspaces(workspacesData); // PHOENIX: Renamed state
+                setWorkspaces(workspacesData);
                 setMessageCount(msgs.length);
                 processSalesHistory(transactions as RawTransaction[]);
                 analyzePeakTraffic(transactions as RawTransaction[]);
@@ -77,7 +81,11 @@ export const DailyBriefingTab: React.FC = () => {
             dates.push(new Date(now.getFullYear(), now.getMonth(), d));
         }
 
-        const labels = dates.map(date => date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' }));
+        // PHOENIX: Explicit locale handling for chart labels
+        // Force 'sq-AL' if the language is Albanian to ensure correct month abbreviations
+        const localeString = (i18n.language === 'sq' || i18n.language === 'al') ? 'sq-AL' : 'en-US';
+        
+        const labels = dates.map(date => date.toLocaleDateString(localeString, { day: 'numeric', month: 'short' }));
         const data = dates.map(targetDate => {
             const targetStr = targetDate.toLocaleDateString('en-CA');
             return transactions.reduce((sum, tx) => {
@@ -141,7 +149,6 @@ export const DailyBriefingTab: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 sm:space-y-8 pb-10">
             <AnimatePresence>
-                {/* PHOENIX: Passed workspaces instead of cases */}
                 {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={handleEventUpdate} workspaces={workspaces} />}
             </AnimatePresence>
             
