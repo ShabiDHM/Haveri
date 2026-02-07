@@ -211,10 +211,12 @@
     "smartAgenda": "Axhenda",
     "priorityTasks": "Prioritetet e ditës",
     "viewCalendar": "Shiko Kalendarin",
+    "noEvents": "Nuk ka ngjarje për sot.",
     "pulse": {
       "title": "Pulsi",
       "eodForecast": "Parashikimi i Ditës",
-      "sellingFast": "po shitet 2x më shpejt se zakonisht."
+      "sellingFast": "po shitet 2x më shpejt se zakonisht.",
+      "trafficAnalysis": "Analiza e Trafikut"
     }
   },
   "business": {
@@ -223,6 +225,7 @@
     "dashboard": "Pasqyra",
     "profile": "Profili",
     "finance": "Financat",
+    "inventory": "Stoku",
     "archive": "Arkiva",
     "insights": "Inteligjenca",
     "team": "Ekipi",
@@ -242,7 +245,7 @@
   },
   "graph": {
     "title": "Lidhjet",
-    "desc": "Vizualizoni lidhjet midis klientëve, faturave dhe rrjedhës së kapitalit.",
+    "desc": "Vizualizoni lidhjet midis klientëve, faturave dhe rrjedhës e kapitalit.",
     "launch": "Vizualizo",
     "client": "Klient",
     "invoice": "Faturë",
@@ -274,11 +277,24 @@
     },
     "smartAnalyst": {
       "bannerTitle": "Analisti AI",
-      "analyzing": "Duke analizuar të dhënat financiare..."
+      "analyzing": "Duke analizuar të dhënat financiare...",
+      "executiveSummary": "Përmbledhje Ekzekutive",
+      "keyContributors": "Kontribuesit Kryesorë"
+    },
+    "analytics": {
+      "salesTrend": "Trendi i Shitjeve",
+      "topProducts": "Produktet Kryesore",
+      "keys": {
+        "amount": "Vlera",
+        "total_revenue": "Shitjet"
+      }
+    },
+    "reports": {
+      "noData": "Nuk ka të dhëna analitike për këtë periudhë."
     }
   },
   "inventory": {
-     "title": "Menaxhimi i Stokut",
+    "title": "Menaxhimi i Stokut",
     "tabItems_short": "Stoku",
     "tabRecipes": "Recetat",
     "items": {
@@ -302,7 +318,7 @@
     }
   },
   "calendar": {
-     "pageTitle": "Kalendari",
+    "pageTitle": "Kalendari",
     "pageSubtitle": "Menaxho detyrat dhe takimet.",
     "newEvent": "Krijo Ngjarje",
     "today": "Sot",
@@ -338,10 +354,37 @@
       "cancel": "Anulo",
       "create": "Krijo",
       "creating": "Duke krijuar..."
+    },
+    "detailModal": {
+      "deleteConfirm": "A jeni i sigurt?",
+      "deleteFailed": "Fshirja dështoi",
+      "description": "Përshkrimi",
+      "startDate": "Fillimi",
+      "endDate": "Mbarimi",
+      "location": "Vendndodhja",
+      "attendees": "Pjesëmarrësit",
+      "notes": "Shënime",
+      "close": "Mbyll",
+      "delete": "Fshi",
+      "deleting": "Duke fshirë..."
+    },
+    "types": {
+      "APPOINTMENT": "Takim",
+      "TASK": "Detyrë",
+      "PAYMENT_DUE": "Pagesë",
+      "TAX_DEADLINE": "Afat Tatimor",
+      "PERSONAL": "Personale",
+      "OTHER": "Tjetër"
+    },
+    "priorities": {
+      "LOW": "Ulët",
+      "MEDIUM": "Mesatar",
+      "HIGH": "Lartë",
+      "CRITICAL": "Kritike"
     }
   },
   "archive": {
-       "myWorkspace": "Hapësira e Punës",
+    "myWorkspace": "Hapësira e Punës",
     "caseFolders": "Dosje Projektesh",
     "createFolder": "Krijo Dosje",
     "upload": "Ngarko",
