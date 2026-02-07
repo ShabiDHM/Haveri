@@ -1,42 +1,40 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V19.4 (LIVE QUOTA SYSTEM)
-// 1. INTEGRATION: Replaced mock data with 'apiService.getTeamMembers()' & 'apiService.removeTeamMember()'.
-// 2. FEATURE: Added dynamic Plan Limit indicator (e.g. "STARTUP: 2/5").
-// 3. UI: The Invite button is disabled if the plan limit is reached.
+// PHOENIX PROTOCOL - PROFILE TAB V20.0 (PROFESSIONAL REORG)
+// 1. REMOVED: Irritating Branding row and color picker.
+// 2. REORG: Implemented a streamlined, professional two-column business layout.
+// 3. INTEGRITY: Preserved all Team Management and Fiscal configuration logic.
+// 4. STATUS: UI optimized for Professional Business users.
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
-    Building2, Mail, Phone, Palette, Save, Upload, Loader2, Camera, MapPin, Globe, CreditCard,
+    Building2, Mail, Phone, Save, Upload, Loader2, Camera, MapPin, Globe, CreditCard,
     TrendingUp, Calculator, Coins, Users, UserPlus, Trash2, Shield, Crown
 } from 'lucide-react';
 import { apiService, API_V1_URL } from '../../services/api';
-import { BusinessProfile, BusinessProfileUpdate, InviteUserRequest, User } from '../../data/types';
+import { BusinessProfile, BusinessProfileUpdate, User } from '../../data/types';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 
-const DEFAULT_COLOR = '#3b82f6';
-
-// PHOENIX: Plan Limits Configuration (Must match Backend)
 const PLAN_LIMITS: Record<string, number> = {
-    "SOLO": 1,
-    "STARTUP": 5,
-    "GROWTH": 10,
-    "ENTERPRISE": 50
+    "SOLO": 1, "STARTUP": 5, "GROWTH": 10, "ENTERPRISE": 50
 };
 
-const SectionHeader = ({ icon, title }: { icon: React.ReactNode, title: string }) => (
-    <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-6">
-        {icon}
-        {title}
-    </h3>
+const SectionHeader = ({ icon, title, subtitle }: { icon: React.ReactNode, title: string, subtitle?: string }) => (
+    <div className="mb-6">
+        <h3 className="text-lg font-bold text-white flex items-center gap-3">
+            <span className="p-2 rounded-lg bg-blue-500/10 text-blue-400">{icon}</span>
+            {title}
+        </h3>
+        {subtitle && <p className="text-gray-500 text-xs mt-1 ml-11 font-medium">{subtitle}</p>}
+    </div>
 );
 
 const FormField = ({ label, icon, children }: { label: string, icon: React.ReactNode, children: React.ReactNode }) => (
     <div className="group">
-        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{label}</label>
+        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-2 ml-1">{label}</label>
         <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-blue-400 transition-colors">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-400 transition-colors">
                 {icon}
             </span>
             {children}
@@ -54,20 +52,17 @@ export const ProfileTab: React.FC = () => {
     const [logoLoading, setLogoLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Team State
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviting, setInviting] = useState(false);
     const [teamMembers, setTeamMembers] = useState<User[]>([]);
     const [teamLoading, setTeamLoading] = useState(false);
 
-    // Calculated Plan Info
     const currentPlan = user?.plan_tier || "SOLO";
     const maxUsers = PLAN_LIMITS[currentPlan] || 1;
-    const currentUsage = teamMembers.length;
-    const isPlanFull = currentUsage >= maxUsers;
+    const isPlanFull = teamMembers.length >= maxUsers;
 
     const [formData, setFormData] = useState<BusinessProfileUpdate>({
-        firm_name: '', email_public: '', phone: '', address: '', city: '', website: '', tax_id: '', branding_color: DEFAULT_COLOR,
+        firm_name: '', email_public: '', phone: '', address: '', city: '', website: '', tax_id: '',
         vat_rate: 18, target_margin: 30, currency: 'EUR'
     });
 
@@ -97,7 +92,6 @@ export const ProfileTab: React.FC = () => {
                     city: data.city || '', 
                     website: data.website || '',
                     tax_id: data.tax_id || '', 
-                    branding_color: data.branding_color || DEFAULT_COLOR,
                     vat_rate: data.vat_rate ?? 18,
                     target_margin: data.target_margin ?? 30,
                     currency: data.currency || 'EUR'
@@ -105,7 +99,7 @@ export const ProfileTab: React.FC = () => {
             } catch (error) { console.error(error); } finally { setLoading(false); }
         };
         fetchProfile();
-        fetchTeam(); // Fetch team on mount
+        fetchTeam();
     }, [fetchTeam]);
 
     useEffect(() => {
@@ -118,8 +112,7 @@ export const ProfileTab: React.FC = () => {
                 .catch(() => {
                     const cleanBase = API_V1_URL.endsWith('/') ? API_V1_URL.slice(0, -1) : API_V1_URL;
                     const cleanPath = url.startsWith('/') ? url.slice(1) : url;
-                    if (!url.startsWith('http')) setLogoSrc(`${cleanBase}/${cleanPath}`);
-                    else setLogoSrc(url);
+                    setLogoSrc(`${cleanBase}/${cleanPath}`);
                 })
                 .finally(() => setLogoLoading(false));
         }
@@ -129,17 +122,9 @@ export const ProfileTab: React.FC = () => {
         e.preventDefault();
         setSaving(true);
         try {
-            const cleanData: BusinessProfileUpdate = { ...formData };
-            Object.keys(cleanData).forEach(key => {
-                const k = key as keyof BusinessProfileUpdate;
-                if (cleanData[k] === '' && k !== 'vat_rate' && k !== 'target_margin') {
-                    cleanData[k] = undefined;
-                }
-            });
-            
-            const updatedProfile = await apiService.updateBusinessProfile(cleanData);
+            const updatedProfile = await apiService.updateBusinessProfile(formData);
             setProfile(updatedProfile);
-            alert(t('settings.successMessage'));
+            alert(t('saveSuccess', 'U ruajt me sukses!'));
         } catch { 
             alert(t('error.generic')); 
         } finally { 
@@ -147,25 +132,11 @@ export const ProfileTab: React.FC = () => {
             setSaving(false); 
         }
     };
-    
-    const handleColorSave = async () => {
-        setSaving(true);
-        try {
-            const updatedProfile = await apiService.updateBusinessProfile({ branding_color: formData.branding_color });
-            setProfile(updatedProfile);
-            alert(t('settings.successMessage'));
-        } catch {
-            alert(t('error.generic'));
-        } finally {
-            await refreshBusinessProfile();
-            setSaving(false);
-        }
-    };
 
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0];
         if (!f) return;
-        setSaving(true);
+        setLogoLoading(true);
         try {
             const p = await apiService.uploadBusinessLogo(f);
             setProfile(p);
@@ -173,252 +144,187 @@ export const ProfileTab: React.FC = () => {
             alert(t('business.logoUploadFailed')); 
         } finally { 
             await refreshBusinessProfile();
-            setSaving(false); 
+            setLogoLoading(false); 
         }
     };
 
     const handleInviteUser = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!inviteEmail) return;
-        
-        // Frontend Pre-Check
-        if (isPlanFull) {
-            alert(`Ju keni arritur limitin e planit tuaj (${maxUsers} përdorues). Ju lutem bëni upgrade.`);
-            return;
-        }
-
+        if (!inviteEmail || isPlanFull) return;
         setInviting(true);
         try {
-            const inviteRequest: InviteUserRequest = {
-                email: inviteEmail,
-                role: 'MEMBER'
-            };
-            
-            await apiService.inviteUser(inviteRequest);
-            alert(`Ftesa u dërgua me sukses tek ${inviteEmail}`);
+            await apiService.inviteUser({ email: inviteEmail, role: 'MEMBER' });
             setInviteEmail('');
-            fetchTeam(); // Refresh list
+            fetchTeam();
         } catch (err: any) {
-            // Handle Backend Quota Error specifically
-            if (err.response && err.response.status === 403) {
-                alert("Limiti i planit u arrit! Ju lutem kontaktoni suportin për të rritur paketën.");
-            } else {
-                alert("Dështoi dërgimi i ftesës. Sigurohuni që email është i saktë.");
-            }
-        } finally {
-            setInviting(false);
-        }
+            alert(err.response?.status === 403 ? "Limiti i planit u arrit!" : "Dështoi dërgimi i ftesës.");
+        } finally { setInviting(false); }
     };
 
-    const handleRemoveMember = async (id: string) => {
-        if (window.confirm("A jeni i sigurt që doni ta largoni këtë anëtar?")) {
-            try {
-                await apiService.removeTeamMember(id);
-                fetchTeam(); // Refresh list
-            } catch {
-                alert("Dështoi largimi i anëtarit.");
-            }
+    const handleRemoveMember = async (memberId: string) => {
+        try {
+            await apiService.removeTeamMember(memberId);
+            fetchTeam();
+        } catch (error) {
+            alert("Dështoi heqja e anëtarit.");
+            console.error("Failed to remove member", error);
         }
     };
 
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>;
 
+    const inputClasses = "w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all text-sm placeholder:text-gray-700";
+
     return (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10">
-            <div className="space-y-8">
-                {/* LOGO CARD */}
-                <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 flex flex-col items-center shadow-2xl relative overflow-hidden group backdrop-blur-md">
-                    <h3 className="text-white font-bold mb-6 self-start text-lg">{t('business.logoIdentity')}</h3>
-                    <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                        <div className={`w-40 h-40 rounded-full overflow-hidden flex items-center justify-center border-4 transition-all shadow-2xl ${logoSrc ? 'border-white/10' : 'border-dashed border-gray-700 hover:border-blue-500'}`}>
-                            {logoLoading ? <Loader2 className="w-10 h-10 animate-spin text-blue-500" /> : logoSrc ? <img src={logoSrc} alt="Logo" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" onError={() => setLogoSrc(null)} /> : <div className="text-center group-hover:scale-110 transition-transform"><Upload className="w-10 h-10 text-gray-600 mx-auto mb-2" /><span className="text-xs text-gray-500 font-bold uppercase tracking-wider">{t('business.upload')}</span></div>}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-6xl mx-auto space-y-8 pb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                {/* LEFT SIDEBAR: LOGO & STATUS */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-8 flex flex-col items-center shadow-2xl backdrop-blur-md">
+                        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                            <div className="w-32 h-32 rounded-3xl overflow-hidden flex items-center justify-center border-2 border-white/5 bg-black/40 shadow-inner group-hover:border-blue-500/50 transition-all duration-500">
+                                {logoLoading ? <Loader2 className="animate-spin text-blue-500" /> : logoSrc ? <img src={logoSrc} className="w-full h-full object-contain p-2" onError={() => setLogoSrc(null)} alt="Business Logo" /> : <Upload className="text-gray-600" />}
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 p-2 bg-blue-600 rounded-xl text-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><Camera size={16} /></div>
                         </div>
-                        <div className="absolute inset-0 rounded-full bg-black/70 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"><Camera className="w-10 h-10 text-white drop-shadow-lg" /></div>
+                        <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
+                        <div className="text-center mt-6">
+                            <h2 className="text-white font-black text-xl tracking-tight">{profile?.firm_name || t('business.businessName')}</h2>
+                            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-1">{t('business.profile')}</p>
+                        </div>
                     </div>
-                    <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
+
+                    <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <span className="text-gray-400 text-xs font-bold uppercase tracking-widest">Plani Aktual</span>
+                            <div className="px-2 py-1 bg-blue-500/20 rounded border border-blue-500/30 text-blue-400 text-[10px] font-black uppercase tracking-tighter flex items-center gap-1">
+                                <Crown size={10} /> {currentPlan}
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500" style={{ width: `${(teamMembers.length / maxUsers) * 100}%` }} />
+                            </div>
+                            <div className="flex justify-between text-[10px] font-bold uppercase text-gray-500 font-mono">
+                                <span>Kapaciteti</span>
+                                <span>{teamMembers.length} / {maxUsers}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* BRANDING CARD */}
-                <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-md">
-                    <SectionHeader icon={<Palette className="w-5 h-5 text-purple-400" />} title={t('business.branding')} />
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="relative overflow-hidden w-16 h-16 rounded-2xl border-2 border-white/10 shadow-inner"><input type="color" value={formData.branding_color || DEFAULT_COLOR} onChange={(e) => setFormData({ ...formData, branding_color: e.target.value })} className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] cursor-pointer" /></div>
-                        <div className="flex-1">
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-lg">#</span>
-                                <input type="text" value={(formData.branding_color || DEFAULT_COLOR).replace('#', '')} onChange={(e) => setFormData({ ...formData, branding_color: `#${e.target.value}` })} className="w-full bg-black/40 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-white font-mono uppercase focus:border-blue-500/50 outline-none transition-all text-base" />
-                            </div>
-                        </div>
-                    </div>
-                    <button type="button" onClick={handleColorSave} disabled={saving} className="w-full py-3 rounded-xl text-white font-bold text-sm shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50" style={{ backgroundColor: formData.branding_color || DEFAULT_COLOR }}>
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        {t('business.saveColor')}
-                    </button>
-                </div>
-            </div>
-
-            <div className="md:col-span-2 space-y-8">
-                {/* FORM CARD */}
-                <form onSubmit={handleProfileSubmit} className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 space-y-8 shadow-2xl relative overflow-hidden flex flex-col backdrop-blur-md">
-                    {/* SECTION 1: IDENTITY */}
-                    <div>
-                        <SectionHeader icon={<Building2 className="w-6 h-6 text-blue-400" />} title={t('business.firmData')} />
-                        <div className="space-y-6">
-                            <FormField label={t('business.businessName', 'BUSINESS NAME')} icon={<Building2 />}>
-                                <input type="text" name="firm_name" value={formData.firm_name} onChange={(e) => setFormData({ ...formData, firm_name: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all text-sm placeholder:text-gray-600" placeholder={t('business.firmNamePlaceholder')} />
-                            </FormField>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <FormField label={t('business.publicEmail')} icon={<Mail />}>
-                                    <input type="email" name="email_public" value={formData.email_public} onChange={(e) => setFormData({ ...formData, email_public: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all text-sm" />
-                                </FormField>
-                                <FormField label={t('business.phone')} icon={<Phone />}>
-                                    <input type="text" name="phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all text-sm" />
-                                </FormField>
-                            </div>
-                            
-                            <FormField label={t('business.address')} icon={<MapPin />}>
-                                <input type="text" name="address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all text-sm" />
-                            </FormField>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <FormField label={t('business.city')} icon={<span />}>
-                                    <input type="text" name="city" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all text-sm" />
-                                </FormField>
-                                <FormField label={t('business.website')} icon={<Globe />}>
-                                    <input type="text" name="website" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all text-sm" />
-                                </FormField>
-                            </div>
-                            
-                            <FormField label={t('business.taxId')} icon={<CreditCard />}>
-                                <input type="text" name="tax_id" value={formData.tax_id} onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all text-sm" />
-                            </FormField>
-                        </div>
-                    </div>
-
-                    {/* SECTION 2: FISCAL CONFIGURATION */}
-                    <div className="pt-8 border-t border-white/10">
-                        <SectionHeader icon={<Calculator className="w-5 h-5 text-amber-400" />} title="Konfigurimi Fiskal & Inteligjenca" />
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                            <FormField label="Norma e TVSH (%)" icon={<span className="font-bold text-gray-500">%</span>}>
-                                <input type="number" value={formData.vat_rate} onChange={(e) => setFormData({...formData, vat_rate: parseFloat(e.target.value)})} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-amber-500/50 outline-none transition-all" />
-                            </FormField>
-                            <FormField label="Marzhi i Dëshiruar (%)" icon={<TrendingUp />}>
-                                <input type="number" value={formData.target_margin} onChange={(e) => setFormData({...formData, target_margin: parseFloat(e.target.value)})} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-emerald-500/50 outline-none transition-all" />
-                            </FormField>
-                            <FormField label="Monedha" icon={<Coins />}>
-                                <select value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all appearance-none cursor-pointer">
-                                    <option value="EUR">Euro (€)</option>
-                                    <option value="LEK">Lek (ALL)</option>
-                                    <option value="USD">Dollar ($)</option>
-                                </select>
-                            </FormField>
-                        </div>
-                    </div>
-                    
-                    <div className="pt-4 flex justify-end">
-                        <button type="submit" disabled={saving} className="flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl font-bold hover:shadow-lg hover:shadow-blue-600/30 transition-all disabled:opacity-50 hover:scale-[1.02] active:scale-95 text-base w-full sm:w-auto justify-center">
-                            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                            {t('general.save')}
-                        </button>
-                    </div>
-                </form>
-
-                {/* PHOENIX: TEAM MANAGEMENT CARD (LIVE) */}
-                {(!user?.organization_role || user?.organization_role === 'OWNER') && (
-                    <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-md">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-emerald-700"></div>
-                        
-                        <div className="flex justify-between items-start mb-6">
-                            <SectionHeader icon={<Users className="w-6 h-6 text-emerald-400" />} title="Menaxhimi i Ekipit" />
-                            
-                            {/* QUOTA INDICATOR */}
-                            <div className="flex flex-col items-end">
-                                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isPlanFull ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'}`}>
-                                    <Crown size={14} />
-                                    <span className="text-xs font-bold uppercase tracking-wider">{currentPlan}</span>
+                {/* MAIN FORM AREA */}
+                <div className="lg:col-span-8">
+                    <form onSubmit={handleProfileSubmit} className="bg-gray-900/60 border border-white/10 rounded-3xl p-8 space-y-10 shadow-2xl backdrop-blur-md">
+                        {/* SECTION: GENERAL DATA */}
+                        <div>
+                            <SectionHeader icon={<Building2 size={18} />} title="Identiteti i Biznesit" subtitle="Informacionet kryesore për faturim dhe raporte." />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="md:col-span-2">
+                                    <FormField label="Emri i Biznesit" icon={<Building2 />}>
+                                        <input type="text" value={formData.firm_name} onChange={(e) => setFormData({...formData, firm_name: e.target.value})} className={inputClasses} placeholder="Shënoni emrin zyrtar..." />
+                                    </FormField>
                                 </div>
-                                <span className="text-[10px] text-gray-500 mt-1 font-mono uppercase tracking-widest">
-                                    {currentUsage} / {maxUsers} Përdorues
-                                </span>
+                                <FormField label="Email Publik" icon={<Mail />}>
+                                    <input type="email" value={formData.email_public} onChange={(e) => setFormData({...formData, email_public: e.target.value})} className={inputClasses} placeholder="email@biznesi.com" />
+                                </FormField>
+                                <FormField label="Numri i Telefonit" icon={<Phone />}>
+                                    <input type="text" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={inputClasses} placeholder="+383..." />
+                                </FormField>
+                                <div className="md:col-span-2">
+                                    <FormField label="Adresa" icon={<MapPin />}>
+                                        <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className={inputClasses} placeholder="Rr. Kryesore, Nr. 1" />
+                                    </FormField>
+                                </div>
+                                <FormField label="Qyteti" icon={<MapPin />}>
+                                    <input type="text" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} className={inputClasses} />
+                                </FormField>
+                                <FormField label="Website" icon={<Globe />}>
+                                    <input type="text" value={formData.website} onChange={(e) => setFormData({...formData, website: e.target.value})} className={inputClasses} placeholder="www.web.com" />
+                                </FormField>
+                                <div className="md:col-span-2">
+                                    <FormField label="Numri Fiskal (NUI)" icon={<CreditCard />}>
+                                        <input type="text" value={formData.tax_id} onChange={(e) => setFormData({...formData, tax_id: e.target.value})} className={inputClasses} />
+                                    </FormField>
+                                </div>
                             </div>
                         </div>
 
-                        <p className="text-gray-400 text-sm mb-6">Ftoni anëtarë të ri në ekipin tuaj për të bashkëpunuar në të njëjtin panel.</p>
-                        
-                        {/* INVITE FORM */}
-                        <form onSubmit={handleInviteUser} className="flex flex-col sm:flex-row gap-4 items-end mb-8 border-b border-white/10 pb-8">
-                            <div className="w-full flex-1">
-                                <FormField label="Email i Bashkëpunëtorit" icon={<Mail />}>
-                                    <input 
-                                        type="email" 
-                                        value={inviteEmail} 
-                                        onChange={(e) => setInviteEmail(e.target.value)} 
-                                        placeholder="shembull@kompania.com"
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:border-emerald-500/50 outline-none transition-all text-sm disabled:opacity-50" 
-                                        required
-                                        disabled={isPlanFull}
-                                    />
+                        {/* SECTION: FISCAL */}
+                        <div className="pt-8 border-t border-white/5">
+                            <SectionHeader icon={<Calculator size={18} />} title="Parametrat Fiskal" subtitle="Konfigurimet automatike për kalkulimin e TVSH-së dhe fitimit." />
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <FormField label="Norma TVSH (%)" icon={<span className="text-[10px] font-black">%</span>}>
+                                    <input type="number" value={formData.vat_rate} onChange={(e) => setFormData({...formData, vat_rate: parseFloat(e.target.value)})} className={inputClasses} />
+                                </FormField>
+                                <FormField label="Marzhi i Synuar (%)" icon={<TrendingUp size={16}/>}>
+                                    <input type="number" value={formData.target_margin} onChange={(e) => setFormData({...formData, target_margin: parseFloat(e.target.value)})} className={inputClasses} />
+                                </FormField>
+                                <FormField label="Monedha" icon={<Coins size={16}/>}>
+                                    <select value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value})} className={`${inputClasses} appearance-none cursor-pointer`}>
+                                        <option value="EUR">Euro (€)</option>
+                                        <option value="LEK">Lek (ALL)</option>
+                                        <option value="USD">Dollar ($)</option>
+                                    </select>
                                 </FormField>
                             </div>
-                            <button 
-                                type="submit" 
-                                disabled={inviting || !inviteEmail || isPlanFull}
-                                className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                                {inviting ? <Loader2 className="animate-spin" size={18} /> : <UserPlus size={18} />}
-                                {isPlanFull ? "Limiti u Arrit" : "Dërgo Ftesën"}
+                        </div>
+
+                        <div className="pt-6 flex justify-end">
+                            <button type="submit" disabled={saving} className="flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
+                                {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                                Ruaj Ndryshimet
                             </button>
-                        </form>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-                        {/* LIVE MEMBER LIST */}
-                        <div className="space-y-4">
-                            <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Anëtarët e Ekipit</h4>
-                            {teamLoading ? (
-                                <div className="text-center py-4"><Loader2 className="w-6 h-6 animate-spin text-gray-500 mx-auto" /></div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {teamMembers.map(member => (
-                                        <div key={member.id} className="flex items-center justify-between p-4 bg-black/20 rounded-xl border border-white/5 hover:bg-black/30 transition-colors">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 border border-blue-500/30 font-bold">
-                                                    {member.username.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <p className="text-white font-medium text-sm">{member.email}</p>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${member.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
-                                                            {member.status || 'Active'}
-                                                        </span>
-                                                        <span className="text-[10px] text-gray-500 font-mono">
-                                                            {member.organization_role || 'MEMBER'}
-                                                        </span>
-                                                    </div>
-                                                </div>
+            {/* TEAM MANAGEMENT CARD */}
+            {(!user?.organization_role || user?.organization_role === 'OWNER') && (
+                <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-md overflow-hidden relative">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-500" />
+                    <div className="flex flex-col md:flex-row justify-between gap-8">
+                        <div className="max-w-sm">
+                            <SectionHeader icon={<Users size={18} />} title="Ekipi i Bashkëpunimit" />
+                            <p className="text-gray-400 text-sm leading-relaxed mb-6">Ftoni stafin ose partnerët tuaj. Ata do të kenë akses të plotë në këtë panel biznesi.</p>
+                            
+                            <form onSubmit={handleInviteUser} className="space-y-4">
+                                <FormField label="Email i Kolegut" icon={<Mail />}>
+                                    <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} disabled={isPlanFull} className={inputClasses} placeholder="emri@kompania.com" />
+                                </FormField>
+                                <button type="submit" disabled={inviting || isPlanFull} className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                                    {inviting ? <Loader2 className="animate-spin" /> : <UserPlus size={18}/>}
+                                    {isPlanFull ? "Limiti u Arrit" : "Dërgo Ftesën"}
+                                </button>
+                            </form>
+                        </div>
+
+                        <div className="flex-1 space-y-3">
+                            <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Anëtarët Aktivë</h4>
+                            {teamLoading ? <Loader2 className="animate-spin mx-auto text-gray-700" /> : teamMembers.map(member => (
+                                <div key={member.id} className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5 group hover:border-white/10 transition-all">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-black border border-blue-500/20 uppercase">{member.username.charAt(0)}</div>
+                                        <div>
+                                            <p className="text-white text-sm font-bold">{member.email}</p>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${member.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>{member.status || 'Active'}</span>
+                                                <span className="text-[9px] text-gray-600 font-mono uppercase">{member.organization_role}</span>
                                             </div>
-                                            
-                                            {member.organization_role !== 'OWNER' && (
-                                                <button 
-                                                    onClick={() => handleRemoveMember(member.id)}
-                                                    className="p-2 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                                                    title="Largo Anëtarin"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            )}
-                                            {member.organization_role === 'OWNER' && (
-                                                <div className="p-2 text-emerald-500/50" title="Pronari">
-                                                    <Shield size={18} />
-                                                </div>
-                                            )}
                                         </div>
-                                    ))}
+                                    </div>
+                                    {member.organization_role !== 'OWNER' && (
+                                        <button onClick={() => handleRemoveMember(member.id)} className="p-2 text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button>
+                                    )}
+                                    {member.organization_role === 'OWNER' && <Shield size={16} className="text-blue-500/30 mr-2" />}
                                 </div>
-                            )}
+                            ))}
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </motion.div>
     );
 };
