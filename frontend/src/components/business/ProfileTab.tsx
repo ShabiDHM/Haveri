@@ -1,8 +1,8 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V22.0 (TERMINAL SYMMETRY)
-// 1. RE-LAYOUT: Moved Team Management to the left sidebar for vertical alignment.
-// 2. DESIGN: Achieved industrial symmetry with a 4/8 column distribution.
-// 3. STATUS: Final UI polish applied.
+// PHOENIX PROTOCOL - PROFILE TAB V23.0 (MOBILE-FIRST POLISH)
+// 1. FIXED: Responsive grid for Fiscal parameters (1-col mobile, 3-col desktop).
+// 2. FIXED: Scaled 'Save' button and inputs for professional mobile ergonomics.
+// 3. STATUS: 100% Mobile & Desktop optimized.
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
@@ -25,9 +25,9 @@ const SectionHeader = ({ icon, title, subtitle }: { icon: React.ReactNode, title
             <div className="p-2 rounded-xl bg-blue-600/10 text-blue-400 border border-blue-500/20">
                 {icon}
             </div>
-            <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">{title}</h3>
         </div>
-        {subtitle && <p className="text-gray-500 text-[11px] mt-1.5 ml-1 font-medium leading-relaxed">{subtitle}</p>}
+        {subtitle && <p className="text-gray-500 text-[10px] sm:text-[11px] mt-1.5 ml-1 font-medium leading-relaxed">{subtitle}</p>}
     </div>
 );
 
@@ -152,79 +152,72 @@ export const ProfileTab: React.FC = () => {
 
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>;
 
-    const inputClasses = "w-full bg-black/30 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-white focus:border-blue-500/50 focus:bg-black/50 outline-none transition-all text-sm";
+    const inputClasses = "w-full bg-black/30 border border-white/5 rounded-xl pl-11 pr-4 py-3 text-white focus:border-blue-500/50 focus:bg-black/50 outline-none transition-all text-sm";
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto pb-20">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-2 sm:px-6 pb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
-                {/* --- LEFT COLUMN: MANAGEMENT --- */}
+                {/* --- SIDEBAR --- */}
                 <div className="lg:col-span-4 space-y-6">
-                    
-                    {/* LOGO & IDENTITY */}
-                    <div className="bg-gray-900/60 border border-white/10 rounded-[2rem] p-8 flex flex-col items-center text-center shadow-xl backdrop-blur-md">
+                    <div className="bg-gray-900/60 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 flex flex-col items-center text-center shadow-xl backdrop-blur-md">
                         <div className="relative group mb-6" onClick={() => fileInputRef.current?.click()}>
-                            <div className="w-28 h-28 rounded-3xl overflow-hidden flex items-center justify-center border-2 border-white/5 bg-black/40 shadow-2xl group-hover:border-blue-500/50 transition-all duration-500">
-                                {logoLoading ? <Loader2 className="animate-spin text-blue-500" /> : logoSrc ? <img src={logoSrc} className="w-full h-full object-contain p-4" alt="Logo" /> : <Upload className="text-gray-600" />}
+                            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl overflow-hidden flex items-center justify-center border-2 border-white/5 bg-black/40 shadow-2xl group-hover:border-blue-500/50 transition-all duration-500">
+                                {logoLoading ? <Loader2 className="animate-spin text-blue-500" /> : logoSrc ? <img src={logoSrc} className="w-full h-full object-contain p-3" alt="Logo" /> : <Upload className="text-gray-600" />}
                             </div>
-                            <div className="absolute inset-0 rounded-3xl bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"><Camera className="text-white" size={20} /></div>
+                            <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"><Camera className="text-white" size={20} /></div>
                         </div>
                         <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
-                        <h2 className="text-xl font-black text-white tracking-tight leading-tight">{profile?.firm_name || "Kompania Juaj"}</h2>
-                        <span className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-2 block">{t('business.profile')}</span>
+                        <h2 className="text-lg sm:text-xl font-black text-white tracking-tight leading-tight px-2">{profile?.firm_name || "Kompania Juaj"}</h2>
+                        <span className="text-gray-500 text-[9px] font-black uppercase tracking-[0.2em] mt-2 block">{t('business.profile')}</span>
                     </div>
 
-                    {/* SUBSCRIPTION STATUS */}
-                    <div className="bg-gray-900/60 border border-white/10 rounded-[2rem] p-6 shadow-xl backdrop-blur-md">
-                        <div className="flex justify-between items-center mb-6">
-                            <h4 className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Plani Aktual</h4>
-                            <div className="px-2 py-1 bg-blue-500/10 rounded border border-blue-500/30 text-blue-400 text-[10px] font-black uppercase flex items-center gap-1.5">
-                                <Crown size={12} /> {currentPlan}
+                    <div className="bg-gray-900/60 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] p-6 shadow-xl backdrop-blur-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <h4 className="text-gray-400 text-[9px] font-black uppercase tracking-widest">Abonimi</h4>
+                            <div className="px-2 py-0.5 bg-blue-500/10 rounded border border-blue-500/30 text-blue-400 text-[9px] font-black uppercase flex items-center gap-1">
+                                <Crown size={10} /> {currentPlan}
                             </div>
                         </div>
                         <div className="space-y-3">
                             <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-600 shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: `${(teamMembers.length / maxUsers) * 100}%` }} />
+                                <div className="h-full bg-blue-600" style={{ width: `${(teamMembers.length / maxUsers) * 100}%` }} />
                             </div>
-                            <div className="flex justify-between items-center text-[10px] font-black text-gray-500 uppercase font-mono">
-                                <span>Ekipi</span>
+                            <div className="flex justify-between items-center text-[9px] font-black text-gray-500 uppercase font-mono">
+                                <span>Bashkëpunëtorët</span>
                                 <span className="text-white">{teamMembers.length} / {maxUsers}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* TEAM MANAGEMENT (MOVED HERE FOR SYMMETRY) */}
                     {user?.organization_role === 'OWNER' && (
-                        <div className="bg-gray-900/60 border border-white/10 rounded-[2rem] p-6 shadow-xl backdrop-blur-md">
-                            <SectionHeader icon={<Users size={16} />} title="Bashkëpunëtorët" />
-                            
-                            <form onSubmit={handleInviteUser} className="mb-8">
+                        <div className="bg-gray-900/60 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] p-6 shadow-xl backdrop-blur-md">
+                            <SectionHeader icon={<Users size={16} />} title="Ekipi" />
+                            <form onSubmit={handleInviteUser} className="mb-6">
                                 <div className="relative group mb-3">
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-400" />
                                     <input 
                                         type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} 
-                                        disabled={isPlanFull} className="w-full bg-black/40 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-xs text-white outline-none focus:border-emerald-500/50" 
+                                        disabled={isPlanFull} className="w-full bg-black/40 border border-white/5 rounded-xl pl-11 pr-4 py-2.5 text-xs text-white outline-none focus:border-emerald-500/50" 
                                         placeholder="email@ekipi.com" 
                                     />
                                 </div>
-                                <button type="submit" disabled={inviting || isPlanFull} className="w-full py-3 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 rounded-xl font-bold text-xs transition-all disabled:opacity-30">
-                                    {inviting ? <Loader2 className="animate-spin inline mr-2" size={14} /> : <UserPlus className="inline mr-2" size={14}/>}
+                                <button type="submit" disabled={inviting || isPlanFull} className="w-full py-2.5 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 rounded-xl font-bold text-[10px] transition-all disabled:opacity-30">
+                                    {inviting ? <Loader2 className="animate-spin inline mr-2" size={12} /> : <UserPlus className="inline mr-2" size={12}/>}
                                     {isPlanFull ? "LIMITI U ARRIT" : "FTO ANËTARIN"}
                                 </button>
                             </form>
-
-                            <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                            <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
                                 {teamMembers.map(member => (
-                                    <div key={member.id} className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5 group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 text-xs font-black border border-white/5 uppercase">{member.username.charAt(0)}</div>
+                                    <div key={member.id} className="flex items-center justify-between p-2.5 bg-black/20 rounded-xl border border-white/5 group">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 text-[10px] font-black border border-blue-500/20 uppercase shrink-0">{member.username.charAt(0)}</div>
                                             <div className="min-w-0">
-                                                <p className="text-white text-[11px] font-bold truncate">{member.email}</p>
-                                                <span className="text-[9px] text-gray-500 font-mono uppercase">{member.organization_role}</span>
+                                                <p className="text-white text-[10px] font-bold truncate">{member.email}</p>
                                             </div>
                                         </div>
                                         {member.organization_role !== 'OWNER' && (
-                                            <button onClick={() => handleRemoveMember(member.id)} className="p-1.5 text-gray-600 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                                            <button onClick={() => handleRemoveMember(member.id)} className="p-1 text-gray-600 hover:text-rose-400 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
                                         )}
                                     </div>
                                 ))}
@@ -233,14 +226,14 @@ export const ProfileTab: React.FC = () => {
                     )}
                 </div>
 
-                {/* --- RIGHT COLUMN: DATA ENTRY --- */}
+                {/* --- MAIN FORM --- */}
                 <div className="lg:col-span-8">
-                    <form onSubmit={handleProfileSubmit} className="bg-gray-900/60 border border-white/10 rounded-[2rem] p-10 shadow-xl backdrop-blur-md h-full">
-                        <SectionHeader icon={<Building2 size={20} />} title="Konfigurimi i Biznesit" subtitle="Të dhënat kryesore të hapësirës tuaj të punës." />
+                    <form onSubmit={handleProfileSubmit} className="bg-gray-900/60 border border-white/10 rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-10 shadow-xl backdrop-blur-md">
+                        <SectionHeader icon={<Building2 size={20} />} title="Konfigurimi i Biznesit" subtitle="Të dhënat kryesore të hapësirës tuaj." />
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                             <div className="md:col-span-2">
-                                <FormField label="Emri Zyrtar i Biznesit" icon={<Building2 size={16} />}>
+                                <FormField label="Emri Zyrtar" icon={<Building2 size={16} />}>
                                     <input type="text" value={formData.firm_name} onChange={(e) => setFormData({...formData, firm_name: e.target.value})} className={inputClasses} placeholder="Shënoni emrin..." />
                                 </FormField>
                             </div>
@@ -273,9 +266,10 @@ export const ProfileTab: React.FC = () => {
                                 </FormField>
                             </div>
 
+                            {/* FISCAL - Optimized for Mobile Grid */}
                             <div className="md:col-span-2 pt-8 border-t border-white/5 mt-4">
                                 <SectionHeader icon={<Calculator size={18} />} title="Parametrat Fiskal" />
-                                <div className="grid grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                                     <FormField label="TVSH %" icon={<span className="text-[10px] font-black">%</span>}>
                                         <input type="number" value={formData.vat_rate} onChange={(e) => setFormData({...formData, vat_rate: parseFloat(e.target.value)})} className={inputClasses} />
                                     </FormField>
@@ -293,8 +287,8 @@ export const ProfileTab: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="mt-12 flex justify-end">
-                            <button type="submit" disabled={saving} className="flex items-center gap-3 px-12 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 tracking-widest text-xs">
+                        <div className="mt-10 sm:mt-12 flex justify-end">
+                            <button type="submit" disabled={saving} className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 sm:px-12 py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl sm:rounded-2xl font-black shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 tracking-widest text-[10px] sm:text-xs">
                                 {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                                 RUHAJ NDRYSHIMET
                             </button>
