@@ -187,7 +187,7 @@
     "slide4_title": "Arkiva e Gjallë",
     "slide4_desc": "Mos kërkoni kurrë më nëpër dosje fizike. Çdo dokument indeksohet dhe ruhet.",
     "slide5_title": "Menaxhimi Financiar",
-    "slide5_desc": "Menaxhoni financat, faturat dhe llogaritni shpenzimet automatikasht."
+    "slide5_desc": "Menaxhoni financat, faturat dhe llogaritni shpenzimet automatikisht."
   },
   "header": {
     "searchPlaceholder": "Kërko...",
@@ -236,7 +236,12 @@
     "upload": "Ngarko",
     "branding": "Branding",
     "firmData": "Të Dhënat e Firmës",
-    "clientName": "Emri i Klientit"
+    "clientName": "Emri i Klientit",
+    "publicEmail": "Email Publik",
+    "phone": "Numri i Telefonit",
+    "city": "Qyteti",
+    "taxId": "Numri Fiskal",
+    "address": "Adresa"
   },
   "insights": {
     "title": "Inteligjenca",
@@ -263,9 +268,6 @@
     "cogs": "Kosto e Mallrave",
     "createInvoice": "Krijo Faturë",
     "addExpense": "Shto Shpenzim",
-    "applyVat": "Apliko TVSH (18%)",
-    "services": "Shërbimet / Produktet",
-    "addLine": "Shto Rresht",
     "activityAndReports": "Aktiviteti & Raportet",
     "tabTransactions": "Transaksionet",
     "tabReports": "Raportet",
@@ -274,6 +276,9 @@
     "invoicePrefix": "Fatura #",
     "archiveInvoice": "Arkivo Faturën",
     "archiveExpenseTitle": "Arkivo Shpenzimin",
+    "applyVat": "Apliko TVSH (18%)",
+    "services": "SHËRBIMET / PRODUKTET",
+    "addLine": "Shto Rresht",
     "import": {
       "title": "Importo Transaksione",
       "uploadTitle": "Ngarko CSV/Excel",
@@ -302,6 +307,48 @@
     },
     "reports": {
       "noData": "Nuk ka të dhëna analitike për këtë periudhë."
+    },
+    "wizard": {
+      "back": "Kthehu te Financat",
+      "stepAudit": "Auditimi",
+      "stepTax": "Llogaritja e Taksave",
+      "stepFinalize": "Finalizimi",
+      "cleanRecordTitle": "Të Dhëna të Pastra",
+      "cleanRecordDesc": "Nuk u gjetën probleme për këtë muaj. Jeni gati për llogaritje.",
+      "criticalIssues": "Probleme Kritike",
+      "warnings": "Paralajmërime",
+      "mustFix": "Duhet Rregulluar",
+      "recommended": "E Rekomanduar",
+      "totalSales": "Shitjet Totale",
+      "totalPurchases": "Blerjet Totale",
+      "vatCollected": "TVSH e Mbledhur",
+      "vatDeductible": "TVSH e Zbritshme",
+      "netPayable": "Tatimi Neto për Pagesë",
+      "netCredit": "Kredia Tatimore (Rimbursim)",
+      "payableHint": "Kjo shumë duhet të paguhet në ATK deri më datën 20.",
+      "creditHint": "Kjo shumë bartet për muajin tjetër.",
+      "readyToFile": "Gati për Deklarim",
+      "readyDesc": "Raporti mujor është gjeneruar. Tani mund të shkarkoni PDF-në ose ta arkivoni.",
+      "downloadReport": "Shkarko Raportin Mujor",
+      "fixIssues": "Rregullo Problemet",
+      "next": "Vazhdo",
+      "regimeSmall": "Regjimi: Biznes i Vogël",
+      "regimeVat": "Regjimi: TVSH",
+      "operationalExpenses": "Shpenzimet Operacionale",
+      "noTaxEffect": "Pa efekt tatimor",
+      "rate9": "9% (Biznes i Vogël / Shërbime)",
+      "rate18": "18% (TVSH Standarde)",
+      "atk": {
+        "openEdi": "Hap EDI (ATK)",
+        "copyInstruction": "Kopjoni vlerat e mëposhtme dhe vendosini në formularin përkatës në EDI:",
+        "box9": "Të ardhura bruto",
+        "box11": "Tatimi (9%)",
+        "box10": "Shitjet",
+        "box23": "Blerjet",
+        "box48": "TVSH për pagesë",
+        "copy": "Kopjo",
+        "copied": "U Kopjuar"
+      }
     }
   },
   "inventory": {
