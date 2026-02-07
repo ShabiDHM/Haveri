@@ -1,7 +1,7 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - RHYTHM CARD V4.3 (LOCALIZATION FIX)
-// 1. FIX: Localized "Target Achieved" string.
-// 2. UI: Preserved existing chart configuration.
+// PHOENIX PROTOCOL - RHYTHM CARD V4.4 (DIMENSION FIX)
+// 1. FIXED: Added min-height and conditional rendering to prevent '-1 width/height' chart error.
+// 2. STATUS: Mobile rendering issue resolved.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -45,7 +45,6 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
     const { t } = useTranslation();
     
     const progress = Math.min((currentSales / dailyTarget) * 100, 100);
-
     const isLateInMonth = salesHistory.labels.length > 15;
 
     const chartData = {
@@ -120,17 +119,18 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
                         <CalendarDays className="w-4 h-4 text-emerald-400" /> {t('dashboard.monthlyTrend', 'Trendi Mujor')}
                     </h3>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <span className="text-3xl font-bold text-white">€{currentSales.toFixed(2)}</span>
-                        <span className="text-sm text-emerald-400 font-medium">{t('common.today', 'Sot')}</span>
+                        <span className="text-2xl sm:text-3xl font-bold text-white">€{currentSales.toFixed(2)}</span>
+                        <span className="text-xs sm:text-sm text-emerald-400 font-medium">{t('common.today', 'Sot')}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="h-48 w-full relative z-10">
-                <Bar options={chartOptions} data={chartData} />
+            {/* PHOENIX: Fixed container height for mobile rendering calculation */}
+            <div className="h-40 sm:h-48 w-full relative z-10 min-h-[160px]">
+                {salesHistory.labels.length > 0 && <Bar options={chartOptions} data={chartData} />}
             </div>
 
-            <div className="flex items-center justify-between text-xs text-gray-500 mt-2 relative z-10">
+            <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-500 mt-4 relative z-10">
                 <span>{t('dashboard.monthToDate', 'Muaji deri më sot')}</span>
                 <span className={progress >= 100 ? "text-emerald-400 font-bold" : "text-gray-400"}>
                     {progress >= 100 

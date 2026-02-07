@@ -1,13 +1,14 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V5.2 (FINAL ALIGNMENT)
-// 1. FIXED: Renamed 'isInsideCase' to 'isInsideWorkspace' to match hook output.
-// 2. STATUS: Fully synchronized with useArchiveData V5.3.
+// PHOENIX PROTOCOL - ARCHIVE TAB V5.3 (MOBILE OPTIMIZATION)
+// 1. UI: Implemented responsive grid for action buttons (Mobile: 2-col, Desktop: flex).
+// 2. STYLING: Refined padding and button sizing for professional mobile look.
+// 3. STATUS: Fully synchronized.
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     FolderOpen, ChevronRight, FolderPlus, Loader2,
-    Calendar, Eye, Download, Trash2, Pencil, Save,
+    Calendar, Eye, Download, Trash2, Pencil,
     FileUp, Search, Share2, Link as LinkIcon, Archive, Zap, CheckCircle, MessageSquare, Send, X, Bot
 } from 'lucide-react';
 import { apiService } from '../../services/api';
@@ -140,12 +141,10 @@ const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelet
 
 export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
     const { t } = useTranslation();
-    
-    // PHOENIX: Destructuring 'isInsideWorkspace' correctly to match hook output
     const { 
         loading, breadcrumbs, filteredItems, isUploading, 
         searchTerm, setSearchTerm, navigateTo, enterFolder, 
-        createFolder, uploadFile, deleteItem, renameItem, 
+        createFolder, uploadFile, deleteItem, 
         fetchArchiveContent, isInsideWorkspace, currentView 
     } = useArchiveData(workspaceId);
 
@@ -156,6 +155,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
     const [openingDocId, setOpeningDocId] = useState<string | null>(null);
     const [itemToRename, setItemToRename] = useState<ArchiveItemOut | null>(null);
     const [renameValue, setRenameValue] = useState("");
+    const [showRenameModal, setShowRenameModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [showForensicModal, setShowForensicModal] = useState(false);
     const [chatDoc, setChatDoc] = useState<{id: string, title: string} | null>(null);
@@ -168,6 +168,20 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
         await createFolder(newFolderName, "GENERAL"); 
         setShowFolderModal(false); 
         setNewFolderName(""); 
+    };
+
+    const handleRenameItem = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!renameValue.trim() || !itemToRename) return;
+        try {
+            await apiService.renameArchiveItem(itemToRename.id, renameValue);
+            fetchArchiveContent();
+            setShowRenameModal(false);
+            setItemToRename(null);
+            setRenameValue("");
+        } catch (err) {
+            alert(t('error.generic'));
+        }
     };
 
     const shareItem = async (item: ArchiveItemOut) => {
@@ -203,31 +217,45 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
     if (loading && filteredItems.length === 0) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-8 h-full flex flex-col pb-20">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-8 h-full flex flex-col pb-20 px-2 sm:px-0">
             <div className="bg-gray-900/40 p-4 sm:p-6 rounded-3xl border border-white/5 backdrop-blur-md flex-shrink-0">
                  <div className="flex flex-col xl:flex-row gap-4">
-                    <div className="flex-1 relative group"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" /><input type="text" placeholder={t('header.searchPlaceholder')} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 sm:py-4 bg-black/40 border border-white/10 rounded-2xl text-white outline-none" /></div>
-                    <div className="flex flex-wrap gap-2">
-                        {/* PHOENIX: Using correct alignment 'isInsideWorkspace' */}
+                    <div className="flex-1 relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                        <input 
+                            type="text" 
+                            placeholder={t('header.searchPlaceholder')} 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                            className="w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-2xl text-white outline-none focus:border-indigo-500/50 transition-colors" 
+                        />
+                    </div>
+                    
+                    {/* PHOENIX: Responsive Actions Grid */}
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                         {(isInsideWorkspace || !!workspaceId) && (
-                            <button onClick={() => setShowShareModal(true)} className="px-4 py-3 bg-gray-800 text-gray-300 rounded-xl font-bold flex items-center gap-2 border border-white/10 hover:bg-gray-700 transition-colors">
-                                <LinkIcon size={18} /><span>{t('archive.portal_access')}</span>
+                            <button onClick={() => setShowShareModal(true)} className="px-3 py-3 bg-gray-800 text-gray-300 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border border-white/10 hover:bg-gray-700 transition-colors">
+                                <LinkIcon size={16} className="shrink-0" /><span>{t('archive.portal_access')}</span>
                             </button>
                         )}
-                        <button onClick={() => setShowFolderModal(true)} className="px-4 py-3 bg-gray-800 text-gray-300 rounded-xl font-bold flex items-center gap-2 border border-white/10 hover:bg-gray-700 transition-colors"><FolderPlus size={18}/> {t('archive.createFolder')}</button>
+                        <button onClick={() => setShowFolderModal(true)} className="px-3 py-3 bg-gray-800 text-gray-300 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border border-white/10 hover:bg-gray-700 transition-colors">
+                            <FolderPlus size={16} className="shrink-0" /> <span>{t('archive.createFolder')}</span>
+                        </button>
                         <input type="file" ref={archiveInputRef} className="hidden" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])} />
-                        <button onClick={() => archiveInputRef.current?.click()} disabled={isUploading} className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg flex items-center gap-2 hover:bg-indigo-500 transition-colors">{isUploading ? <Loader2 className="animate-spin" size={18}/> : <FileUp size={18}/>} {t('archive.upload')}</button>
+                        <button onClick={() => archiveInputRef.current?.click()} disabled={isUploading} className="col-span-2 sm:col-auto px-6 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-indigo-500 transition-colors">
+                            {isUploading ? <Loader2 className="animate-spin" size={18}/> : <FileUp size={18}/>} {t('archive.upload')}
+                        </button>
                     </div>
                  </div>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto text-sm no-scrollbar pb-2 flex-shrink-0">
+            <div className="flex items-center gap-2 overflow-x-auto text-xs sm:text-sm no-scrollbar pb-2 flex-shrink-0">
                 {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={crumb.id || index}>
-                        <button onClick={() => navigateTo(index)} className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl border ${index === breadcrumbs.length - 1 ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'text-gray-500 border-transparent hover:bg-white/5'}`}>
-                            <Archive size={16} />{crumb.name === "My Workspace" ? t('archive.myWorkspace') : crumb.name}
+                        <button onClick={() => navigateTo(index)} className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg border ${index === breadcrumbs.length - 1 ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'text-gray-500 border-transparent hover:bg-white/5'}`}>
+                            <Archive size={14} />{crumb.name === "My Workspace" ? t('archive.myWorkspace') : crumb.name}
                         </button>
-                        {index < breadcrumbs.length - 1 && <ChevronRight size={16} className="text-gray-700" />}
+                        {index < breadcrumbs.length - 1 && <ChevronRight size={14} className="text-gray-700" />}
                     </React.Fragment>
                 ))}
             </div>
@@ -238,7 +266,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                         <ArchiveCard 
                             key={item.id}
                             title={item.title} 
-                            subtitle={item.item_type === 'FOLDER' ? t('archive.myWorkspace') : `${item.file_type} ${t('general.document')}`} 
+                            subtitle={item.item_type === 'FOLDER' ? t('archive.caseFolders') : `${item.file_type} ${t('general.document')}`} 
                             type={item.item_type === 'FOLDER' ? 'Folder' : item.file_type} 
                             date={new Date(item.created_at).toLocaleDateString()} 
                             indexingStatus={item.indexing_status}
@@ -257,13 +285,63 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                 </AnimatePresence>
             </div>
             
-            {showFolderModal && ( <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[120] p-4"><div className="bg-[#0f172a] border border-white/10 rounded-3xl w-full max-w-sm p-6 shadow-2xl"><h3 className="text-xl font-bold text-white mb-6">{t('archive.create_folder_title')}</h3><form onSubmit={handleCreateFolder}><input autoFocus type="text" value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} placeholder={t('archive.folder_name_placeholder')} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white mb-6 outline-none focus:ring-1 focus:ring-indigo-500" /><div className="flex justify-end gap-3"><button type="button" onClick={() => setShowFolderModal(false)} className="px-6 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors">{t('general.cancel')}</button><button type="submit" className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-colors">{t('general.create')}</button></div></form></div></div> )}
-            {itemToRename && ( <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[120] p-4"><div className="bg-[#0f172a] border border-white/10 rounded-3xl w-full max-w-sm p-6 shadow-2xl"><h3 className="text-xl font-bold text-white mb-6">{t('archive.rename_title')}</h3><form onSubmit={async (e) => { e.preventDefault(); if (renameValue.trim()) { await renameItem(itemToRename.id, renameValue); setItemToRename(null); } }}><input autoFocus type="text" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white mb-6 outline-none focus:ring-1 focus:ring-indigo-500" /><div className="flex justify-end gap-3"><button type="button" onClick={() => setItemToRename(null)} className="px-6 py-3 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors">{t('general.cancel')}</button><button type="submit" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 transition-colors flex items-center gap-2"><Save size={16}/> {t('general.save')}</button></div></form></div></div> )}
-            
             <ForensicAccountantModal isOpen={showForensicModal} onClose={() => setShowForensicModal(false)} />
             <AnimatePresence>{chatDoc && <DocumentChatModal documentId={chatDoc.id} documentTitle={chatDoc.title} onClose={() => setChatDoc(null)} />}</AnimatePresence>
+            <AnimatePresence>
+                {showFolderModal && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                        <motion.div onClick={() => setShowFolderModal(false)} className="absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" />
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="relative bg-gray-900 border border-white/10 rounded-3xl p-6 sm:p-8 pointer-events-auto max-w-md w-full mx-4 space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xl font-bold text-white">{t('archive.createFolder')}</h3>
+                                <button onClick={() => setShowFolderModal(false)} className="p-2 hover:bg-white/10 rounded-full text-white/80"><X size={20} /></button>
+                            </div>
+                            <form onSubmit={handleCreateFolder} className="space-y-4">
+                                <input 
+                                    autoFocus
+                                    type="text" 
+                                    value={newFolderName} 
+                                    onChange={(e) => setNewFolderName(e.target.value)} 
+                                    placeholder={t('archive.folderNamePlaceholder')} 
+                                    className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-2xl text-white outline-none focus:border-indigo-500/50 transition-colors" 
+                                />
+                                <div className="flex gap-3 justify-end">
+                                    <button type="button" onClick={() => setShowFolderModal(false)} className="px-4 py-2 rounded-lg text-gray-300 hover:bg-white/5 transition-colors">{t('general.cancel')}</button>
+                                    <button type="submit" className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors font-bold">{t('general.create')}</button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showRenameModal && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                        <motion.div onClick={() => setShowRenameModal(false)} className="absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" />
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="relative bg-gray-900 border border-white/10 rounded-3xl p-6 sm:p-8 pointer-events-auto max-w-md w-full mx-4 space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-xl font-bold text-white">{t('general.edit')}</h3>
+                                <button onClick={() => setShowRenameModal(false)} className="p-2 hover:bg-white/10 rounded-full text-white/80"><X size={20} /></button>
+                            </div>
+                            <form onSubmit={handleRenameItem} className="space-y-4">
+                                <input 
+                                    autoFocus
+                                    type="text" 
+                                    value={renameValue} 
+                                    onChange={(e) => setRenameValue(e.target.value)} 
+                                    placeholder={t('general.name')} 
+                                    className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-2xl text-white outline-none focus:border-indigo-500/50 transition-colors" 
+                                />
+                                <div className="flex gap-3 justify-end">
+                                    <button type="button" onClick={() => setShowRenameModal(false)} className="px-4 py-2 rounded-lg text-gray-300 hover:bg-white/5 transition-colors">{t('general.cancel')}</button>
+                                    <button type="submit" className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-colors font-bold">{t('general.save')}</button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={() => setViewingDoc(null)} t={t} directUrl={viewingUrl || ""} />}
-            {/* PHOENIX: Using 'isInsideWorkspace' to correctly compute caseId for ShareModal */}
             {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={(isInsideWorkspace ? currentView.id : workspaceId) || ""} caseTitle={currentView.name} />}
         </motion.div>
     );
