@@ -268,6 +268,15 @@
     "cogs": "Kosto e Mallrave",
     "createInvoice": "Krijo Faturë",
     "addExpense": "Shto Shpenzim",
+    "clientName": "Emri i Klientit",
+    "expenseCategory": "Kategoria",
+    "amount": "Shuma",
+    "date": "Data",
+    "description": "Përshkrimi",
+    "applyVat": "Apliko TVSH (18%)",
+    "services": "SHËRBIMET / PRODUKTET",
+    "SERVICES": "SHËRBIMET / PRODUKTET",
+    "addLine": "Shto Rresht",
     "activityAndReports": "Aktiviteti & Raportet",
     "tabTransactions": "Transaksionet",
     "tabReports": "Raportet",
@@ -276,9 +285,6 @@
     "invoicePrefix": "Fatura #",
     "archiveInvoice": "Arkivo Faturën",
     "archiveExpenseTitle": "Arkivo Shpenzimin",
-    "applyVat": "Apliko TVSH (18%)",
-    "services": "SHËRBIMET / PRODUKTET",
-    "addLine": "Shto Rresht",
     "import": {
       "title": "Importo Transaksione",
       "uploadTitle": "Ngarko CSV/Excel",
@@ -347,7 +353,7 @@
         "box23": "Blerjet",
         "box48": "TVSH për pagesë",
         "copy": "Kopjo",
-        "copied": "U Kopjuar"
+        "copied": "U Kopjua"
       }
     }
   },
