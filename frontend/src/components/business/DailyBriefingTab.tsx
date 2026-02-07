@@ -1,7 +1,8 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V5.3 (DATE LOCALIZATION FIX)
-// 1. FIXED: Forced correct locale string ('sq-AL') for chart labels when language is Albanian.
-// 2. STATUS: Fully synchronized.
+// PHOENIX PROTOCOL - DASHBOARD V5.4 (DETERMINISTIC LOCALIZATION)
+// 1. FIXED: Implemented manual short month mapping to ensure Albanian dates on Desktop.
+// 2. REASON: Bypasses non-deterministic browser behavior for toLocaleDateString.
+// 3. STATUS: Fully synchronized.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,14 +43,15 @@ export const DailyBriefingTab: React.FC = () => {
     const [peakTime, setPeakTime] = useState<string | null>(null); 
     const [historyLoading, setHistoryLoading] = useState(true);
 
-    // PHOENIX: Localized Month Names for Header
+    // PHOENIX: Deterministic month name arrays
     const monthsSQ = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
+    const shortMonthsSQ = ['Jan', 'Shk', 'Mar', 'Pri', 'Maj', 'Qer', 'Kor', 'Gush', 'Sht', 'Tet', 'Nën', 'Dhj'];
     const monthsEN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     
-    const isAlbanian = i18n.language === 'sq' || i18n.language === 'sq-AL';
-    const currentMonths = isAlbanian ? monthsSQ : monthsEN;
+    const isAlbanian = i18n.language.startsWith('sq') || i18n.language === 'al';
     
     const today = new Date();
+    const currentMonths = isAlbanian ? monthsSQ : monthsEN;
     const finalDate = `${today.getDate()} ${currentMonths[today.getMonth()]} ${today.getFullYear()}`;
     
     useEffect(() => {
@@ -81,11 +83,15 @@ export const DailyBriefingTab: React.FC = () => {
             dates.push(new Date(now.getFullYear(), now.getMonth(), d));
         }
 
-        // PHOENIX: Explicit locale handling for chart labels
-        // Force 'sq-AL' if the language is Albanian to ensure correct month abbreviations
-        const localeString = (i18n.language === 'sq' || i18n.language === 'al') ? 'sq-AL' : 'en-US';
-        
-        const labels = dates.map(date => date.toLocaleDateString(localeString, { day: 'numeric', month: 'short' }));
+        // PHOENIX: Forced deterministic Albanian formatting for chart labels
+        const labels = dates.map(date => {
+            if (isAlbanian) {
+                // Manually constructs "1 Shk", "2 Shk", etc.
+                return `${date.getDate()} ${shortMonthsSQ[date.getMonth()]}`;
+            }
+            return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        });
+
         const data = dates.map(targetDate => {
             const targetStr = targetDate.toLocaleDateString('en-CA');
             return transactions.reduce((sum, tx) => {
@@ -196,3 +202,5 @@ export const DailyBriefingTab: React.FC = () => {
         </motion.div>
     );
 };
+
+export default DailyBriefingTab;
