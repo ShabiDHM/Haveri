@@ -278,22 +278,67 @@
     }
   },
   "inventory": {
-    "title": "Menaxhimi i Stokut",
+     "title": "Menaxhimi i Stokut",
     "tabItems_short": "Stoku",
     "tabRecipes": "Recetat",
-    "lowStock": "Stoku Kritik",
     "items": {
       "add": "Shto Artikull",
+      "edit": "Ndrysho Artikull",
+      "import": "Importo CSV",
       "name": "Emri i Artikullit",
       "cost": "Kosto / Njësi",
-      "stock": "Stoku Aktual"
+      "stock": "Stoku Aktual",
+      "unit": "Njësia",
+      "lowStock": "Pragu Kritik"
+    },
+    "recipes": {
+      "add": "Krijo Recetë",
+      "edit": "Ndrysho Recetën",
+      "import": "Importo Receta",
+      "productName": "Emri i Produktit",
+      "ingredients": "Përbërësit",
+      "cost": "Kosto e Vlerësuar",
+      "noRecipes": "Nuk u gjet asnjë recetë."
     }
   },
   "calendar": {
-    "pageTitle": "Kalendari",
-    "pageSubtitle": "Menaxho detyrat dhe takimet e tua.",
+     "pageTitle": "Kalendari",
+    "pageSubtitle": "Menaxho detyrat dhe takimet.",
     "newEvent": "Krijo Ngjarje",
-    "today": "Sot"
+    "today": "Sot",
+    "month": "Muaj",
+    "list": "Listë",
+    "searchPlaceholder": "Kërko ngjarje...",
+    "allTypes": "Të gjitha",
+    "allPriorities": "Prioritetet",
+    "upcomingAlerts": "Alarmet e Ardhshme",
+    "noUpcomingEvents": "S'ka alarme të ardhshme.",
+    "noEventsFound": "Nuk u gjetën ngjarje.",
+    "eventTypes": "Legjenda",
+    "conflictWarning": "Kujdes: Konflikt orari!",
+    "noCaseRelated": "Pa Hapësirë (Personal)",
+    "visibilityPublic": "Publike",
+    "visibilityPrivate": "Private",
+    "visibilityPublicDesc": "E dukshme për ekipin",
+    "visibilityPrivateDesc": "Vetëm për sytë tuaj",
+    "moreEvents": "të tjera",
+    "loadFailure": "Dështoi ngarkimi i kalendarit.",
+    "createModal": {
+      "title": "Ngjarje e Re",
+      "eventTitle": "Titulli",
+      "eventType": "Lloji",
+      "priority": "Prioriteti",
+      "eventDate": "Data",
+      "dateTimePlaceholder": "Zgjidh datën...",
+      "relatedWorkspace": "Hapësira e Punës",
+      "addDetails": "Shto Detaje",
+      "description": "Përshkrimi",
+      "location": "Vendndodhja",
+      "attendees": "Pjesëmarrësit",
+      "cancel": "Anulo",
+      "create": "Krijo",
+      "creating": "Duke krijuar..."
+    }
   },
   "archive": {
        "myWorkspace": "Hapësira e Punës",
