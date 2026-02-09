@@ -1,15 +1,14 @@
 // FILE: src/components/business/modals/ExpenseModal.tsx
-// PHOENIX PROTOCOL - V3.0 (QR CODE HANDOFF)
-// 1. FEATURE: Integrated the "Scan to Upload" (QR Code Handoff) functionality for expense receipts.
-// 2. UI: Added a 'Smartphone' button next to the standard upload button.
-// 3. LOGIC: Reused the handoff state, polling effects, and QR modal from the Analyst panel.
+// PHOENIX PROTOCOL - V3.2 (CLEANUP)
+// 1. CLEANUP: Removed unused imports to resolve TS6133 warnings.
+// 2. STATUS: Fully synchronized with Partner database.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import QRCode from 'qrcode.react';
-import { X, MinusCircle, CheckCircle, Paperclip, Loader2, Smartphone } from 'lucide-react';
+import { X, MinusCircle, CheckCircle, Paperclip, Loader2, Smartphone, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Expense, ExpenseCreateRequest, ExpenseUpdate } from '../../../data/types';
+import { Expense, Partner } from '../../../data/types';
 import { apiService, API_V1_URL } from '../../../services/api';
 import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -32,17 +31,24 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
     const currentLocale = localeMap[i18n.language] || enUS;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const [partners, setPartners] = useState<Partner[]>([]);
     const [formData, setFormData] = useState({ category: '', amount: 0, description: '' });
     const [expenseDate, setExpenseDate] = useState<Date | null>(new Date());
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [extractionStatus, setExtractionStatus] = useState<ExtractionStatus>('IDLE');
     const [extractionError, setExtractionError] = useState<string | null>(null);
     const [sourceArchiveId, setSourceArchiveId] = useState<string | null>(null);
-    
-    // PHOENIX: State for QR Modal
     const [isQrModalOpen, setIsQrModalOpen] = useState(false);
     const [handoffToken, setHandoffToken] = useState<string | null>(null);
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            apiService.getPartners().then(data => {
+                setPartners(data.filter(p => p.type === 'SUPPLIER'));
+            });
+        }
+    }, [isOpen]);
 
     const resetForm = (expense: Expense | null = null) => {
         if (expense) {
@@ -62,7 +68,6 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
 
     useEffect(() => { if (isOpen) { resetForm(expenseToEdit); } }, [isOpen, expenseToEdit]);
 
-    // PHOENIX: Polling effect for QR code handoff
     useEffect(() => {
         if (isQrModalOpen && handoffToken) {
             pollingIntervalRef.current = setInterval(async () => {
@@ -73,23 +78,17 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                         triggerExtraction(fileData);
                         closeQrModal();
                     }
-                } catch (error) {
-                    console.error("Handoff polling error:", error);
-                }
+                } catch (error) { console.error("Handoff polling error:", error); }
             }, 3000);
         }
-        return () => {
-            if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-        };
+        return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); };
     }, [isQrModalOpen, handoffToken]);
     
-    // SSE Listener for AI Extraction
     useEffect(() => {
         if (!isOpen || !sourceArchiveId) return;
         const abortController = new AbortController();
         const token = apiService.getToken();
         if (!token) return;
-
         const setupStream = async () => {
             try {
                 const response = await fetch(`${API_V1_URL}/archive/events`, { headers: { 'Authorization': `Bearer ${token}` }, signal: abortController.signal });
@@ -114,7 +113,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                                     setExtractionStatus('FAILED');
                                     setExtractionError(eventData.error || t('error.generic'));
                                 }
-                            } catch (e) { /* ignore */ }
+                            } catch (e) { }
                         }
                     }
                 }
@@ -145,28 +144,21 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
 
     const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            triggerExtraction(file);
-        }
+        if (file) triggerExtraction(file);
     };
     
-    // PHOENIX: QR Modal Handlers
     const startHandoff = async () => {
         try {
             const { token } = await apiService.createHandoffSession();
             setHandoffToken(token);
             setIsQrModalOpen(true);
-        } catch (error) {
-            alert("Dështoi krijimi i sesionit për celular.");
-        }
+        } catch (error) { alert("Dështoi krijimi i sesionit për celular."); }
     };
 
     const closeQrModal = () => {
         setIsQrModalOpen(false);
         setHandoffToken(null);
-        if (pollingIntervalRef.current) {
-            clearInterval(pollingIntervalRef.current);
-        }
+        if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -175,18 +167,13 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
             const dateStr = expenseDate ? expenseDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
             const source_id = sourceArchiveId || undefined;
             if (expenseToEdit) {
-                const payload: ExpenseUpdate = { ...formData, date: dateStr, source_archive_id: source_id || expenseToEdit.source_archive_id };
-                await apiService.updateExpense(expenseToEdit.id, payload);
+                await apiService.updateExpense(expenseToEdit.id, { ...formData, date: dateStr, source_archive_id: source_id || expenseToEdit.source_archive_id });
             } else {
-                const payload: ExpenseCreateRequest = { ...formData, date: dateStr, source_archive_id: source_id };
-                await apiService.createExpense(payload);
+                await apiService.createExpense({ ...formData, date: dateStr, source_archive_id: source_id });
             }
             onSuccess();
             onClose();
-        } catch (error) {
-            console.error("Expense operation failed", error);
-            alert(t('error.generic'));
-        }
+        } catch (error) { alert(t('error.generic')); }
     };
 
     const getButtonContent = () => {
@@ -209,7 +196,6 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                         <h2 className="text-xl font-bold text-white flex items-center gap-2"><MinusCircle size={20} className="text-rose-500" />{expenseToEdit ? t('finance.editExpense') : t('finance.addExpense')}</h2>
                         <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
                     </div>
-                    {/* PHOENIX: Upload buttons container */}
                     <div className="mb-6 flex items-center gap-2">
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileSelected} />
                         <button type="button" onClick={() => fileInputRef.current?.click()} disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'} className={`flex-1 py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${extractionStatus === 'COMPLETED' ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'} disabled:opacity-50`}>
@@ -236,7 +222,19 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                         </div>
                         <div>
                             <label className="block text-sm text-gray-300 mb-1">{t('finance.description')}</label>
-                            <textarea rows={2} className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                                <input 
+                                    list="suppliers-list"
+                                    type="text" 
+                                    className="w-full bg-background-light border-glass-edge rounded-lg pl-9 pr-3 py-2 text-base sm:text-sm text-white focus:border-rose-500 transition-all" 
+                                    value={formData.description} 
+                                    onChange={e => setFormData({...formData, description: e.target.value})} 
+                                />
+                                <datalist id="suppliers-list">
+                                    {partners.map(p => <option key={p.id} value={p.name} />)}
+                                </datalist>
+                            </div>
                         </div>
                         <div className="flex justify-end gap-3 pt-4">
                             <button type="button" onClick={onClose} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button>
@@ -245,20 +243,14 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                     </form>
                 </div>
             </div>
-
-            {/* PHOENIX: QR Modal */}
             {isQrModalOpen && handoffToken && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#1f2937] border border-white/10 p-8 rounded-2xl w-full max-w-sm shadow-2xl text-center relative">
                         <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-full"><X size={18} /></button>
                         <h3 className="text-xl font-bold text-white mb-2">Skano për të Ngarkuar</h3>
                         <p className="text-gray-400 mb-6">Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.</p>
-                        <div className="bg-white p-4 rounded-lg inline-block">
-                            <QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={200} />
-                        </div>
-                        <div className="mt-6 flex items-center justify-center gap-2 text-gray-500 animate-pulse">
-                           <Loader2 className="w-4 h-4 animate-spin"/> Duke pritur për skedarin...
-                        </div>
+                        <div className="bg-white p-4 rounded-lg inline-block"><QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={200} /></div>
+                        <div className="mt-6 flex items-center justify-center gap-2 text-gray-500 animate-pulse"><Loader2 className="w-4 h-4 animate-spin"/> Duke pritur për skedarin...</div>
                     </motion.div>
                 </div>
             )}

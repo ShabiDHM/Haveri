@@ -1,13 +1,8 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V4.0 (WORKSPACE REBRAND & AI CLEANUP)
-// 1. REBRAND: Renamed 'Case' to 'Workspace' across all interfaces.
-// 2. PURGED: Removed all Chat and Drafting related types.
-// 3. CLEANUP: Removed litigation-specific fields (court, judge, etc.).
-// 4. STATUS: Fully synchronized with Workspace backend.
+// PHOENIX PROTOCOL - TYPES V4.1 (PARTNER INTEGRATION)
+// 1. ADDED: Partner interface to support searchable clients/suppliers in modals.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
-
-// PHOENIX: Unified Priority Type
 export type EventPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 
 export interface User { 
@@ -29,6 +24,17 @@ export interface User {
 }
 
 export type AdminUser = User;
+
+export interface Partner {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    tax_id?: string;
+    type: 'CLIENT' | 'SUPPLIER';
+    created_at: string;
+}
 
 export interface Workspace { 
     id: string; 

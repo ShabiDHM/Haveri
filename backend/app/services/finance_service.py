@@ -1,10 +1,10 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V6.4 (UNIFIED BULK DELETE)
-# 1. FEATURE: Replaced 'bulk_delete_pos_transactions' with a generic 'bulk_delete_transactions'.
-# 2. LOGIC: The new method accepts separate lists for invoices, expenses, and POS transactions.
-# 3. INTEGRITY: Performs delete_many across multiple collections and returns the total count.
+# PHOENIX PROTOCOL - FINANCE SERVICE V6.6 (PARTNER RETRIEVAL)
+# 1. ADDED: get_partners method to allow UI components to fetch Client/Supplier lists.
 
 import logging
+import csv
+import io
 from datetime import datetime, timezone
 from bson import ObjectId, errors as bson_errors
 from pymongo.database import Database
@@ -13,7 +13,7 @@ from typing import Any, List, Dict
 
 from app.models.finance import (
     InvoiceCreate, InvoiceInDB, InvoiceUpdate, InvoiceItem, 
-    ExpenseCreate, ExpenseInDB, ExpenseUpdate
+    ExpenseCreate, ExpenseInDB, ExpenseUpdate, PartnerInDB
 )
 
 logger = logging.getLogger(__name__)
@@ -22,15 +22,45 @@ class FinanceService:
     def __init__(self, db: Database):
         self.db = db
 
+    # --- PHOENIX: PARTNER / CLIENT LOGIC ---
+    def get_partners(self, user_id: str) -> List[PartnerInDB]:
+        cursor = self.db.partners.find({"user_id": ObjectId(user_id)}).sort("name", 1)
+        return [PartnerInDB(**doc) for doc in cursor]
+
+    async def import_partners(self, user_id: str, file: UploadFile) -> Dict[str, Any]:
+        content = await file.read()
+        stream = io.StringIO(content.decode("utf-8"))
+        reader = csv.DictReader(stream)
+        imported_count = 0
+        partners_to_insert = []
+        for row in reader:
+            try:
+                name = row.get("Emri") or row.get("Name")
+                if not name: continue
+                partner_doc = {
+                    "user_id": ObjectId(user_id),
+                    "name": name,
+                    "email": row.get("Email"),
+                    "phone": row.get("Telefon") or row.get("Phone"),
+                    "address": row.get("Adresa") or row.get("Address"),
+                    "tax_id": row.get("NIPT") or row.get("TaxID"),
+                    "type": str(row.get("Tipi") or row.get("Type", "CLIENT")).upper(),
+                    "created_at": datetime.now(timezone.utc)
+                }
+                partners_to_insert.append(partner_doc)
+                imported_count += 1
+            except Exception as e:
+                logger.error(f"Error parsing partner row: {e}")
+                continue
+        if partners_to_insert:
+            self.db.partners.insert_many(partners_to_insert)
+        return {"status": "success", "imported_count": imported_count, "message": f"Successfully imported {imported_count} partners."}
+
     # --- POS / INTEGRATION HUB LOGIC ---
     async def get_monthly_pos_revenue(self, async_db: Any, user_id: str, month: int, year: int) -> float:
         try:
             start_date = datetime(year, month, 1)
-            if month == 12:
-                end_date = datetime(year + 1, 1, 1)
-            else:
-                end_date = datetime(year, month + 1, 1)
-
+            end_date = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
             pipeline = [
                 {"$match": {"user_id": ObjectId(user_id), "date_time": {"$gte": start_date, "$lt": end_date}}},
                 {"$group": {"_id": None, "total_revenue": {"$sum": "$total_amount"}}}
@@ -42,61 +72,29 @@ class FinanceService:
             return 0.0
 
     def delete_pos_transaction(self, user_id: str, transaction_id: str) -> None:
-        try:
-            oid = ObjectId(transaction_id)
-        except bson_errors.InvalidId:
-            raise HTTPException(status_code=400, detail="Invalid Transaction ID")
-        
+        try: oid = ObjectId(transaction_id)
+        except bson_errors.InvalidId: raise HTTPException(status_code=400, detail="Invalid Transaction ID")
         result = self.db.transactions.delete_one({"_id": oid, "user_id": str(user_id)})
-        
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Transaction not found")
+        if result.deleted_count == 0: raise HTTPException(status_code=404, detail="Transaction not found")
 
-    # PHOENIX: UNIFIED BULK DELETE METHOD
-    def bulk_delete_transactions(
-        self, 
-        user_id: str, 
-        invoice_ids: List[str] = [], 
-        expense_ids: List[str] = [], 
-        pos_ids: List[str] = []
-    ) -> int:
+    def bulk_delete_transactions(self, user_id: str, invoice_ids: List[str] = [], expense_ids: List[str] = [], pos_ids: List[str] = []) -> int:
         total_deleted = 0
-        user_oid = ObjectId(user_id) # For invoices and expenses that use ObjectId
-
+        user_oid = ObjectId(user_id)
         try:
-            # Delete Invoices
             if invoice_ids:
                 invoice_oids = [ObjectId(tid) for tid in invoice_ids]
-                result = self.db.invoices.delete_many({
-                    "_id": {"$in": invoice_oids},
-                    "user_id": user_oid,
-                    "is_locked": {"$ne": True} # Safety check
-                })
+                result = self.db.invoices.delete_many({"_id": {"$in": invoice_oids}, "user_id": user_oid, "is_locked": {"$ne": True}})
                 total_deleted += result.deleted_count
-
-            # Delete Expenses
             if expense_ids:
                 expense_oids = [ObjectId(tid) for tid in expense_ids]
-                result = self.db.expenses.delete_many({
-                    "_id": {"$in": expense_oids},
-                    "user_id": user_oid,
-                    "is_locked": {"$ne": True} # Safety check
-                })
+                result = self.db.expenses.delete_many({"_id": {"$in": expense_oids}, "user_id": user_oid, "is_locked": {"$ne": True}})
                 total_deleted += result.deleted_count
-            
-            # Delete POS Transactions
             if pos_ids:
                 pos_oids = [ObjectId(tid) for tid in pos_ids]
-                # POS transactions collection uses string user_id
-                result = self.db.transactions.delete_many({
-                    "_id": {"$in": pos_oids},
-                    "user_id": user_id 
-                })
+                result = self.db.transactions.delete_many({"_id": {"$in": pos_oids}, "user_id": user_id})
                 total_deleted += result.deleted_count
-
         except bson_errors.InvalidId:
             raise HTTPException(status_code=400, detail="One or more provided IDs are invalid.")
-        
         return total_deleted
 
     # --- INVOICE LOGIC ---
@@ -107,13 +105,10 @@ class FinanceService:
 
     def create_invoice(self, user_id: str, data: InvoiceCreate) -> InvoiceInDB:
         subtotal = sum(item.quantity * item.unit_price for item in data.items)
-        for item in data.items:
-            item.total = item.quantity * item.unit_price
+        for item in data.items: item.total = item.quantity * item.unit_price
         tax_amount = (subtotal * data.tax_rate) / 100
         total_amount = subtotal + tax_amount
-        
         issue_date = data.issue_date or datetime.now(timezone.utc)
-        
         invoice_doc = data.model_dump()
         invoice_doc.update({
             "user_id": ObjectId(user_id),
@@ -127,7 +122,6 @@ class FinanceService:
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
         })
-        
         result = self.db.invoices.insert_one(invoice_doc)
         invoice_doc["_id"] = result.inserted_id
         return InvoiceInDB(**invoice_doc)
@@ -146,13 +140,10 @@ class FinanceService:
     def update_invoice(self, user_id: str, invoice_id: str, update_data: InvoiceUpdate) -> InvoiceInDB:
         try: oid = ObjectId(invoice_id)
         except: raise HTTPException(status_code=400, detail="Invalid Invoice ID")
-        
         existing = self.db.invoices.find_one({"_id": oid, "user_id": ObjectId(user_id)})
         if not existing: raise HTTPException(status_code=404, detail="Invoice not found")
         if existing.get("is_locked"): raise HTTPException(status_code=403, detail="Cannot edit a locked/closed invoice.")
-
         update_dict = update_data.model_dump(exclude_unset=True)
-        
         if "items" in update_dict or "tax_rate" in update_dict:
             items_data = update_dict.get("items", existing["items"])
             tax_rate = update_dict.get("tax_rate", existing["tax_rate"])
@@ -166,11 +157,9 @@ class FinanceService:
                 item_dict = item if isinstance(item, dict) else item.model_dump()
                 item_dict["total"] = row_total
                 new_items.append(item_dict)
-            
             tax_amount = (subtotal * tax_rate) / 100
             total_amount = subtotal + tax_amount
             update_dict.update({"items": new_items, "subtotal": subtotal, "tax_amount": tax_amount, "total_amount": total_amount})
-
         update_dict["updated_at"] = datetime.now(timezone.utc)
         result = self.db.invoices.find_one_and_update({"_id": oid}, {"$set": update_dict}, return_document=True)
         return InvoiceInDB(**result)
@@ -178,11 +167,7 @@ class FinanceService:
     def update_invoice_status(self, user_id: str, invoice_id: str, status: str) -> InvoiceInDB:
         try: oid = ObjectId(invoice_id)
         except: raise HTTPException(status_code=400, detail="Invalid Invoice ID")
-        result = self.db.invoices.find_one_and_update(
-            {"_id": oid, "user_id": ObjectId(user_id)},
-            {"$set": {"status": status, "updated_at": datetime.now(timezone.utc)}},
-            return_document=True
-        )
+        result = self.db.invoices.find_one_and_update({"_id": oid, "user_id": ObjectId(user_id)}, {"$set": {"status": status, "updated_at": datetime.now(timezone.utc)}}, return_document=True)
         if not result: raise HTTPException(status_code=404, detail="Invoice not found")
         return InvoiceInDB(**result)
 
@@ -197,11 +182,7 @@ class FinanceService:
     # --- EXPENSE LOGIC ---
     def create_expense(self, user_id: str, data: ExpenseCreate) -> ExpenseInDB:
         expense_doc = data.model_dump()
-        expense_doc.update({
-            "user_id": ObjectId(user_id),
-            "created_at": datetime.now(timezone.utc),
-            "receipt_url": None
-        })
+        expense_doc.update({"user_id": ObjectId(user_id), "created_at": datetime.now(timezone.utc), "receipt_url": None})
         result = self.db.expenses.insert_one(expense_doc)
         expense_doc["_id"] = result.inserted_id
         return ExpenseInDB(**expense_doc)
@@ -216,7 +197,6 @@ class FinanceService:
         existing = self.db.expenses.find_one({"_id": oid, "user_id": ObjectId(user_id)})
         if not existing: raise HTTPException(status_code=404, detail="Expense not found")
         if existing.get("is_locked"): raise HTTPException(status_code=403, detail="Cannot edit a locked expense.")
-
         update_dict = update_data.model_dump(exclude_unset=True)
         result = self.db.expenses.find_one_and_update({"_id": oid}, {"$set": update_dict}, return_document=True)
         return ExpenseInDB(**result)
@@ -234,9 +214,7 @@ class FinanceService:
         except: raise HTTPException(status_code=400, detail="Invalid Expense ID")
         expense = self.db.expenses.find_one({"_id": oid, "user_id": ObjectId(user_id)})
         if not expense: raise HTTPException(status_code=404, detail="Expense not found")
-        
         from app.services.storage_service import upload_file_raw
-        
         folder = f"expenses/{user_id}"
         storage_key = upload_file_raw(file, folder)
         self.db.expenses.update_one({"_id": oid}, {"$set": {"receipt_url": storage_key}})
@@ -245,19 +223,16 @@ class FinanceService:
     # --- PHOENIX: UNIFIED IMPORT ROUTER ---
     def import_unified_transactions(self, user_id: str, transactions: List[Dict[str, Any]]) -> Dict[str, int]:
         counts = {"INVOICE": 0, "EXPENSE": 0, "POS": 0, "UNKNOWN": 0}
-        
         for row in transactions:
             try:
                 row_type = str(row.get("Tipi", "POS")).upper().strip()
                 date_str = str(row.get("Data", datetime.now().strftime("%Y-%m-%d")))
                 try: dt = datetime.strptime(date_str, "%Y-%m-%d")
                 except: dt = datetime.now()
-                
                 description = str(row.get("Përshkrimi", "Imported Item"))
                 category = str(row.get("Kategoria", "General"))
                 amount = float(row.get("Shuma", 0.0))
                 status = str(row.get("Statusi", "PAID")).upper()
-                
                 if row_type == "INVOICE":
                     inv_in = InvoiceCreate(client_name=description, issue_date=dt, status=status, items=[InvoiceItem(description=category, quantity=1, unit_price=amount)], tax_rate=18.0)
                     self.create_invoice(user_id, inv_in)
@@ -270,8 +245,7 @@ class FinanceService:
                     pos_doc = {"user_id": str(user_id), "description": description, "category": category, "amount": amount, "total_amount": amount, "date_time": dt, "payment_method": "CASH", "status": status, "source": "IMPORT"}
                     self.db.transactions.insert_one(pos_doc)
                     counts["POS"] += 1
-                else:
-                    counts["UNKNOWN"] += 1
+                else: counts["UNKNOWN"] += 1
             except Exception as e:
                 logger.error(f"Import Error on row {row}: {e}")
                 counts["UNKNOWN"] += 1

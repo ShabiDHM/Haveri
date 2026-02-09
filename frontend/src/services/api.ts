@@ -1,8 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V12.0 (FINAL URL SYNC)
-// 1. FIXED: Renamed getCases/createCase to getWorkspaces/createWorkspace.
-// 2. FIXED: Aligned all Case/caseId URLs to the new /workspace prefix.
-// 3. STATUS: 100% Client-Server URL Synchronization.
+// PHOENIX PROTOCOL - API V12.3 (TYPO & SYNC FIX)
+// 1. FIXED: Parameter name mismatch in deleteInvoice (TS2552).
+// 2. STATUS: End-to-End Invoicing Automation maintained.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -14,7 +13,8 @@ import type {
     InventoryItem, InventoryItemCreate, Recipe, RecipeCreate, PosTransaction,
     StrategicBriefingResponse, InviteUserRequest,
     GraphData,
-    AnalysisResult
+    AnalysisResult,
+    Partner
 } from '../data/types';
 
 export interface DailyBriefingResponse { id: string; content: string; created_at: string; tasks_summary?: string; }
@@ -179,6 +179,8 @@ class ApiService {
     public async downloadMonthlyReport(month: number, year: number): Promise<void> { const response = await this.axiosInstance.get('/finance/wizard/report/pdf', { params: { month, year }, responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([response.data])); const link = document.createElement('a'); link.href = url; link.setAttribute('download', `Raporti_${month}_${year}.pdf`); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); }
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
     public async confirmImport(file: File, mapping: Record<string, string>, importType: 'pos' | 'bank'): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); formData.append('mapping', JSON.stringify(mapping)); formData.append('importType', importType); const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData); return response.data; }
+    public async importClients(file: File): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportResult>('/finance/clients/import', formData); return response.data; }
+    public async getPartners(): Promise<Partner[]> { const response = await this.axiosInstance.get<Partner[]>('/finance/partners'); return response.data; }
 
     // --- INVENTORY ---
     public async getInventoryItems(): Promise<InventoryItem[]> { const response = await this.axiosInstance.get<InventoryItem[]>('/inventory/items'); return response.data; }

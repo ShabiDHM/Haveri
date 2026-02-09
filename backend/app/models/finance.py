@@ -1,8 +1,7 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V11.1 (SOURCE LINK - COMPLETE)
-# 1. SCHEMA CHANGE: Added 'source_archive_id' to Expense models.
-# 2. PURPOSE: Creates the database field to permanently link an Expense to its original scanned document.
-# 3. INTEGRITY: Ensures a full, auditable trail from financial record to source of truth.
+# PHOENIX PROTOCOL - FINANCE MODELS V11.2 (PARTNER INTEGRATION)
+# 1. ADDED: Partner models to support Client/Supplier management and bulk imports.
+# 2. SYNC: Maintained PyObjectId integrity and ConfigDict patterns.
 
 from pydantic import BaseModel, Field, ConfigDict, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -47,6 +46,24 @@ class _ObjectIdPydanticAnnotation:
         return handler(core_schema.str_schema())
 
 PyObjectId = Annotated[ObjectId, _ObjectIdPydanticAnnotation]
+
+# --- PARTNER MODELS (CLIENTS & SUPPLIERS) ---
+class PartnerBase(BaseModel):
+    name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    tax_id: Optional[str] = None # NIPT
+    type: str = "CLIENT" # CLIENT or SUPPLIER
+
+class PartnerInDB(PartnerBase):
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    user_id: PyObjectId
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
+
+class PartnerOut(PartnerInDB):
+    id: Optional[PyObjectId] = Field(alias="_id", serialization_alias="id", default=None)
 
 # --- IMPORT BATCH (AUDIT TRAIL) ---
 class ImportBatch(BaseModel):
@@ -177,10 +194,10 @@ class ExpenseBase(BaseModel):
     receipt_url: Optional[str] = None
     related_case_id: Optional[str] = None
     is_locked: bool = False
-    source_archive_id: Optional[str] = None  # PHOENIX: Link to the original scanned document
+    source_archive_id: Optional[str] = None 
 
 class ExpenseCreate(ExpenseBase):
-    pass # Inherits all fields, including the new one
+    pass 
 
 class ExpenseUpdate(BaseModel):
     category: Optional[str] = None
@@ -189,7 +206,7 @@ class ExpenseUpdate(BaseModel):
     date: Optional[datetime] = None
     related_case_id: Optional[str] = None
     is_locked: Optional[bool] = None
-    source_archive_id: Optional[str] = None  # Allow updating the link
+    source_archive_id: Optional[str] = None 
 
 class ExpenseInDB(ExpenseBase):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)

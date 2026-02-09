@@ -36,6 +36,12 @@
     "email_placeholder": "kolegu@zyra.com",
     "button_close": "Mbyll",
     "document": "Dokument"
+     },
+  "clients": {
+    "importTitle": "Importo Klientët & Furnitorët",
+    "importDesc": "Ngarkoni bazën e të dhënave të kontakteve tuaja për faturim të shpejtë.",
+    "importSuccess": "Klientët u importuan me sukses!",
+    "importButton": "Importo Klientët"
   },
   "navigation": {
     "integrations": "Integrimet"

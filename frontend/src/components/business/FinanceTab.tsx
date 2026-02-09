@@ -1,15 +1,15 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V3.1 (FINAL ALIGNMENT FIX)
-// 1. FIXED: Corrected hook import path to resolve TS2307.
-// 2. FIXED: Renamed all remaining 'Case' references to 'Workspace'.
-// 3. FIXED: Aligned map function variable types (w: Workspace).
+// PHOENIX PROTOCOL - FINANCE TAB V3.3 (BUGFIX & CLIENT IMPORT)
+// 1. FIXED: Corrected 'ex' reference to 'expense' in handleDownloadExpense (TS2304).
+// 2. ADDED: ClientImportModal integration.
+// 3. UI: Added 'Importo Klientët' action button.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
-    Sparkles, ArrowRight, X, Lightbulb
+    Sparkles, ArrowRight, X, Lightbulb, Users
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { Invoice, Expense, Document } from '../../data/types';
@@ -20,9 +20,10 @@ import {
     BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 
-import { useFinanceData } from '../../hooks/useFinanceData'; // PHOENIX: Corrected Path
+import { useFinanceData } from '../../hooks/useFinanceData';
 import { InvoiceModal } from './modals/InvoiceModal';
 import { ExpenseModal } from './modals/ExpenseModal';
+import { ClientImportModal } from './modals/ClientImportModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 
 // --- COMPONENT: KPI CARD (Interactive) ---
@@ -163,7 +164,7 @@ export const FinanceTab: React.FC = () => {
     const { t, i18n } = useTranslation();
 
     const {
-        loading, invoices, expenses, workspaces, posTransactions, analyticsData, // PHOENIX: Fixed destructure
+        loading, invoices, expenses, workspaces, posTransactions, analyticsData,
         totalExpenses, displayIncome, displayProfit, costOfGoodsSold,
         refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos
     } = useFinanceData();
@@ -175,6 +176,7 @@ export const FinanceTab: React.FC = () => {
     const [showInvoiceModal, setShowInvoiceModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false); 
+    const [showClientImportModal, setShowClientImportModal] = useState(false);
     const [showArchiveInvoiceModal, setShowArchiveInvoiceModal] = useState(false);
     const [showArchiveExpenseModal, setShowArchiveExpenseModal] = useState(false);
     
@@ -182,7 +184,7 @@ export const FinanceTab: React.FC = () => {
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
     const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
-    const [selectedWorkspaceForInvoice, setSelectedWorkspaceForInvoice] = useState<string>(""); // PHOENIX: Renamed
+    const [selectedWorkspaceForInvoice, setSelectedWorkspaceForInvoice] = useState<string>(""); 
     
     const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
     const [viewingUrl, setViewingUrl] = useState<string | null>(null);
@@ -273,7 +275,12 @@ export const FinanceTab: React.FC = () => {
             <style>{`.custom-finance-scroll::-webkit-scrollbar { width: 6px; } .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.5); } select option { background-color: #0f172a; color: #f9fafb; }`}</style>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"><HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} /><HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} /><HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={24} />} type="neutral" trend="+12%" onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} /><HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} /></div>
             <ProactiveInsightBanner />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md"><ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} /><ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} /><ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
+                <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
+                <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
+                <ActionButton icon={<Users size={20} />} label={t('clients.importButton', 'Importo Klientët')} onClick={() => setShowClientImportModal(true)} />
+                <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
+            </div>
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md h-[70vh] min-h-[600px] flex flex-col shadow-2xl">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6"><h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3"><Activity className="text-blue-500" />{t('finance.activityAndReports')}</h2><div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md gap-1"><TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} /><TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} /></div></div>
                 <div className="flex-1 overflow-hidden relative">
@@ -303,6 +310,7 @@ export const FinanceTab: React.FC = () => {
             <AnimatePresence>{kpiModalOpen && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"><motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative"><div className="p-6 border-b border-white/10 bg-blue-900/20 flex justify-between items-center"><h3 className="text-xl font-bold text-white flex items-center gap-2"><Sparkles size={20} className="text-yellow-400" />{t('finance.smartAnalyst.modalTitle', 'Smart Analyst')}: {kpiAnalysis?.type}</h3><button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"><X size={20}/></button></div><div className="p-6 space-y-6">{kpiLoading ? (<div className="flex flex-col items-center py-10 gap-4"><Loader2 size={40} className="animate-spin text-blue-500" /><p className="text-gray-400 animate-pulse">{t('finance.smartAnalyst.analyzing', 'Analyzing financial data...')}</p></div>) : (<>{kpiAnalysis?.summary && <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4"><h4 className="text-sm font-bold text-blue-300 uppercase mb-2">{t('finance.smartAnalyst.executiveSummary', 'Executive Summary')}</h4><p className="text-white leading-relaxed">{kpiAnalysis?.summary}</p></div>}{kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (<div><h4 className="text-sm font-bold text-gray-400 uppercase mb-3">{t('finance.smartAnalyst.keyContributors', 'Key Contributors')}</h4><div className="space-y-2">{kpiAnalysis.contributors.map((c, i) => (<div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-sm text-gray-200">{c}</span></div>))}</div></div>)}</>)}</div></motion.div></motion.div>)}</AnimatePresence>
             <InvoiceModal isOpen={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
             <ExpenseModal isOpen={showExpenseModal} onClose={() => setShowExpenseModal(false)} expenseToEdit={selectedExpense} onSuccess={refreshData} />
+            <ClientImportModal isOpen={showClientImportModal} onClose={() => setShowClientImportModal(false)} onSuccess={refreshData} />
             {showArchiveInvoiceModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-500 transition-colors font-bold">{t('general.save')}</button></div></div></div>)}
             {showArchiveExpenseModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border border-blue-500/20 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2><div className="mb-6"><label className="block text-sm text-gray-400 mb-1">{t('drafting.selectCaseLabel')}</label><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}</select></div><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-colors">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white shadow-lg hover:bg-indigo-500 transition-colors font-bold">{t('general.save')}</button></div></div></div>)}
             {showImportModal && (<TransactionImporter onClose={() => setShowImportModal(false)} onSuccess={() => { refreshData(); setShowImportModal(false); }} t={t} />)}
