@@ -249,19 +249,8 @@
     "systemActive": "Sistemi Aktiv",
     "liveMetrics": "Metrikat Live"
   },
-  "graph": {
-    "title": "Lidhjet",
-    "desc": "Vizualizoni lidhjet midis klientëve, faturave dhe rrjedhës e kapitalit.",
-    "launch": "Vizualizo",
-    "client": "Klient",
-    "invoice": "Faturë",
-    "expense": "Shpenzim",
-    "workspace": "Hapësira",
-    "inventory": "Stoku",
-    "product": "Produkt"
-  },
   "finance": {
-    "income": "Të Hyrat",
+   "income": "Të Hyrat",
     "expense": "Shpenzimet",
     "balance": "Bilanci",
     "balanceSub": "Fitimi Neto",
@@ -291,7 +280,11 @@
       "confirm": "Konfirmo Importin",
       "selectTypeTitle": "Zgjidhni llojin e importit",
       "typePos": "Shitje nga POS",
-      "typeBank": "Pasqyrë Bankare"
+      "typeBank": "Pasqyrë Bankare",
+      "uploadTitlePos": "Ngarko Raportin POS",
+      "uploadDesc": "Tërhiqni skedarin këtu ose klikoni për të zgjedhur (CSV/XLSX)",
+      "selectFile": "Zgjidhni Skedarin"
+
     },
     "smartAnalyst": {
       "bannerTitle": "Analisti AI",
