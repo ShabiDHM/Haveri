@@ -1,8 +1,7 @@
 # FILE: backend/app/services/inventory_service.py
-# PHOENIX PROTOCOL - INVENTORY SERVICE V5.7 (ROBUST IMPORT)
-# 1. FIX: Added try/except block around quantity conversion in 'import_recipes_bulk'.
-# 2. LOGIC: Skips rows where quantity is non-numeric (e.g., header rows included as data).
-# 3. RESULT: Prevents 500 Internal Server Error during CSV import.
+# PHOENIX PROTOCOL - INVENTORY SERVICE V5.8 (SMART HEADER MATCHING)
+# 1. FIX: Updated header matching to handle spaces (e.g., "Product Name") and case-insensitivity.
+# 2. LOGIC: Re-mapped common CSV variations for Ingredient and Quantity.
 
 from typing import List, Optional, Dict, Any
 from bson import ObjectId
@@ -52,7 +51,6 @@ class InventoryService:
         clean_items = []
         for row in items_data:
             try:
-                # Safe conversion for stock and cost
                 stock_val = row.get("current_stock", row.get("Stock", 0.0))
                 cost_val = row.get("cost_per_unit", row.get("Cost", 0.0))
                 
@@ -89,17 +87,24 @@ class InventoryService:
         missing_ingredients = set()
         
         for row in recipes_data:
-            product_name = str(row.get("product_name", row.get("Product", ""))).strip()
-            ingredient_name = str(row.get("ingredient_name", row.get("Ingredient", ""))).strip()
+            # PHOENIX FIX: Robust Header Normalization
+            # Check for keys regardless of spaces or casing
+            p_name = next((v for k, v in row.items() if k.lower().replace(" ", "") == "productname"), None)
+            if not p_name:
+                p_name = row.get("Product", row.get("product_name", ""))
             
-            # PHOENIX FIX: Safe Float Conversion
-            # If the header row is passed as data, 'quantity' will be a string (e.g., "Quantity").
-            # We must catch this to prevent a crash.
-            qty_raw = row.get("quantity_required", row.get("Quantity", 0.0))
+            i_name = next((v for k, v in row.items() if k.lower().replace(" ", "") == "ingredientname"), None)
+            if not i_name:
+                i_name = row.get("Ingredient", row.get("ingredient_name", ""))
+            
+            qty_raw = next((v for k, v in row.items() if k.lower().replace(" ", "") == "quantity"), row.get("quantity_required", 0.0))
+
+            product_name = str(p_name).strip()
+            ingredient_name = str(i_name).strip()
+            
             try:
                 quantity = float(qty_raw)
             except (ValueError, TypeError):
-                # Skip this row if quantity is not a valid number (likely a header row)
                 continue
             
             if not product_name or not ingredient_name:
@@ -146,16 +151,11 @@ class InventoryService:
             "missing_ingredients": list(missing_ingredients)
         }
 
-    # --- RECIPES ---
     def create_recipe(self, user_id: str, recipe_in: dict) -> Recipe:
         recipe = Recipe(user_id=user_id, **recipe_in)
         recipe_dict = recipe.model_dump(by_alias=True, exclude_none=True)
-        
-        if "id" in recipe_dict:
-             del recipe_dict["id"]
-
+        if "id" in recipe_dict: del recipe_dict["id"]
         result = self.db["recipes"].insert_one(recipe_dict)
-        
         created_doc = self.db["recipes"].find_one({"_id": result.inserted_id})
         if not created_doc:
             raise Exception("Failed to retrieve created recipe from database.")
@@ -174,10 +174,8 @@ class InventoryService:
         cursor = self.db["recipes"].find({"user_id": user_id})
         recipes = []
         for item in list(cursor):
-            try:
-                recipes.append(Recipe(**item))
-            except Exception as e:
-                print(f"Skipping recipe due to validation error: {item.get('_id')}, Error: {e}")
+            try: recipes.append(Recipe(**item))
+            except: continue
         return recipes
         
     def delete_recipe(self, user_id: str, recipe_id: str):
@@ -188,16 +186,14 @@ class InventoryService:
             "user_id": user_id, 
             "product_name": {"$regex": f"^{product_name}$", "$options": "i"}
         })
-        if not recipe_doc:
-            return 0.0
+        if not recipe_doc: return 0.0
         recipe = Recipe(**recipe_doc)
         total_cost = 0.0
         for ingredient in recipe.ingredients:
             item_doc = self.db["inventory"].find_one({"_id": ObjectId(ingredient.inventory_item_id)})
             if item_doc:
                 item = InventoryItem(**item_doc)
-                cost_of_ingredient = item.cost_per_unit * ingredient.quantity_required
-                total_cost += cost_of_ingredient
+                total_cost += item.cost_per_unit * ingredient.quantity_required
         return total_cost
 
     def process_transaction_batch(self, batch_id: str, user_id: str):
@@ -210,8 +206,7 @@ class InventoryService:
                 "user_id": user_id, 
                 "product_name": {"$regex": f"^{product_name}$", "$options": "i"}
             })
-            total_cost = 0.0
-            stock_deducted = False
+            total_cost, stock_deducted = 0.0, False
             if recipe_doc:
                 recipe = Recipe(**recipe_doc)
                 for ingredient in recipe.ingredients:
@@ -222,19 +217,11 @@ class InventoryService:
                     )
                     item_doc = self.db["inventory"].find_one({"_id": ObjectId(ingredient.inventory_item_id)})
                     if item_doc:
-                        cost_per_unit = item_doc.get("cost_per_unit", 0.0)
-                        total_cost += (cost_per_unit * amount_to_deduct)
+                        total_cost += (item_doc.get("cost_per_unit", 0.0) * amount_to_deduct)
                 stock_deducted = True
-            revenue = tx.get("amount", 0.0)
-            net_profit = revenue - total_cost
             self.db["transactions"].update_one(
                 {"_id": tx["_id"]},
-                {"$set": {
-                    "cost": total_cost,
-                    "net_profit": net_profit,
-                    "is_inventory_processed": True,
-                    "has_recipe_match": stock_deducted
-                }}
+                {"$set": {"cost": total_cost, "net_profit": tx.get("amount", 0.0) - total_cost, "is_inventory_processed": True, "has_recipe_match": stock_deducted}}
             )
             updated_count += 1
         return updated_count

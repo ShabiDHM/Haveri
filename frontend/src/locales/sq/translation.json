@@ -35,13 +35,8 @@
     "email_label": "Email",
     "email_placeholder": "kolegu@zyra.com",
     "button_close": "Mbyll",
-    "document": "Dokument"
-     },
-  "clients": {
-    "importTitle": "Importo Klientët & Furnitorët",
-    "importDesc": "Ngarkoni bazën e të dhënave të kontakteve tuaja për faturim të shpejtë.",
-    "importSuccess": "Klientët u importuan me sukses!",
-    "importButton": "Importo Klientët"
+    "document": "Dokument",
+    "import": "Importo"
   },
   "navigation": {
     "integrations": "Integrimet"
@@ -189,7 +184,7 @@
     "slide1_title": "Dhoma e Strategjisë",
     "slide1_desc": "Gjeni mospërputhjet automatikisht. AI kryqëzon të dhënat dhe zbulon çdo kontradiktë.",
     "slide2_title": "Skanim I Thellë OCR",
-    "slide2_desc": "Teknologjia jonë 'Hawk-Eye' lexon edhe skanimet më të dobëta të faturave.",
+    "slide2_desc": "Teknologjia jonë 'Hawk-Eye' lexon even skanimet më të dobëta të faturave.",
     "slide4_title": "Arkiva e Gjallë",
     "slide4_desc": "Mos kërkoni kurrë më nëpër dosje fizike. Çdo dokument indeksohet dhe ruhet.",
     "slide5_title": "Menaxhimi Financiar",
@@ -256,7 +251,7 @@
     "liveMetrics": "Metrikat Live"
   },
   "finance": {
-   "income": "Të Hyrat",
+    "income": "Të Hyrat",
     "expense": "Shpenzimet",
     "balance": "Bilanci",
     "balanceSub": "Fitimi Neto",
@@ -289,8 +284,19 @@
       "typeBank": "Pasqyrë Bankare",
       "uploadTitlePos": "Ngarko Raportin POS",
       "uploadDesc": "Tërhiqni skedarin këtu ose klikoni për të zgjedhur (CSV/XLSX)",
-      "selectFile": "Zgjidhni Skedarin"
-
+      "selectFile": "Zgjidhni Skedarin",
+      "analyzing": "Duke analizuar...",
+      "mappingTitle": "Harta e fushave",
+      "autoMapInfo": "Sistemi ka gjetur automatikisht fushat.",
+      "columnSelect": "Zgjidhni kolonën",
+      "processingTitle": "Duke u përpunuar",
+      "processingDesc": "Transaksionet tuaja po shtohen në bazën e të dhënave.",
+      "back": "Kthehu",
+      "productName": "Emri i Produktit",
+      "typeLabel": "Lloji",
+      "statusLabel": "Statusi",
+      "debit": "Dalje",
+      "credit": "Hyrje"
     },
     "smartAnalyst": {
       "bannerTitle": "Analisti AI",
@@ -377,8 +383,15 @@
       "productName": "Emri i Produktit",
       "ingredients": "Përbërësit",
       "cost": "Kosto e Vlerësuar",
-      "noRecipes": "Nuk u gjet asnjë recetë."
+      "noRecipes": "Nuk u gjet asnjë recetë.",
+      "importedCount": "Recetat e importuara"
     }
+  },
+  "clients": {
+    "importTitle": "Importo Klientët & Furnitorët",
+    "importDesc": "Ngarkoni bazën e të dhënave të kontakteve tuaja për faturim të shpejtë.",
+    "importSuccess": "Klientët u importuan me sukses!",
+    "importButton": "Importo Klientët"
   },
   "calendar": {
     "pageTitle": "Kalendari",
