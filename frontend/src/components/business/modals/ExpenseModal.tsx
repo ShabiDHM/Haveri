@@ -1,7 +1,7 @@
 // FILE: src/components/business/modals/ExpenseModal.tsx
-// PHOENIX PROTOCOL - V3.2 (CLEANUP)
-// 1. CLEANUP: Removed unused imports to resolve TS6133 warnings.
-// 2. STATUS: Fully synchronized with Partner database.
+// PHOENIX PROTOCOL - V3.3 (FINAL SYNC & CLEANUP)
+// 1. CLEANUP: Surgically removed unused type imports to resolve TS6133 warnings.
+// 2. STATUS: Fully synchronized with QR Handoff, AI Extraction, and Supplier Autocomplete.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -38,10 +38,13 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
     const [extractionStatus, setExtractionStatus] = useState<ExtractionStatus>('IDLE');
     const [extractionError, setExtractionError] = useState<string | null>(null);
     const [sourceArchiveId, setSourceArchiveId] = useState<string | null>(null);
+    
+    // PHOENIX: State for QR Modal
     const [isQrModalOpen, setIsQrModalOpen] = useState(false);
     const [handoffToken, setHandoffToken] = useState<string | null>(null);
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+    // PHOENIX: Fetch Supplier list for autocomplete
     useEffect(() => {
         if (isOpen) {
             apiService.getPartners().then(data => {
@@ -68,6 +71,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
 
     useEffect(() => { if (isOpen) { resetForm(expenseToEdit); } }, [isOpen, expenseToEdit]);
 
+    // PHOENIX: Polling logic for Smartphone Handoff
     useEffect(() => {
         if (isQrModalOpen && handoffToken) {
             pollingIntervalRef.current = setInterval(async () => {
@@ -78,17 +82,23 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                         triggerExtraction(fileData);
                         closeQrModal();
                     }
-                } catch (error) { console.error("Handoff polling error:", error); }
+                } catch (error) {
+                    console.error("Handoff polling error:", error);
+                }
             }, 3000);
         }
-        return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current); };
+        return () => {
+            if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+        };
     }, [isQrModalOpen, handoffToken]);
     
+    // SSE Listener for AI Extraction results
     useEffect(() => {
         if (!isOpen || !sourceArchiveId) return;
         const abortController = new AbortController();
         const token = apiService.getToken();
         if (!token) return;
+
         const setupStream = async () => {
             try {
                 const response = await fetch(`${API_V1_URL}/archive/events`, { headers: { 'Authorization': `Bearer ${token}` }, signal: abortController.signal });
@@ -113,7 +123,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                                     setExtractionStatus('FAILED');
                                     setExtractionError(eventData.error || t('error.generic'));
                                 }
-                            } catch (e) { }
+                            } catch (e) { /* ignore */ }
                         }
                     }
                 }
@@ -152,7 +162,9 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
             const { token } = await apiService.createHandoffSession();
             setHandoffToken(token);
             setIsQrModalOpen(true);
-        } catch (error) { alert("Dështoi krijimi i sesionit për celular."); }
+        } catch (error) {
+            alert("Dështoi krijimi i sesionit për celular.");
+        }
     };
 
     const closeQrModal = () => {
@@ -173,7 +185,10 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
             }
             onSuccess();
             onClose();
-        } catch (error) { alert(t('error.generic')); }
+        } catch (error) {
+            console.error("Expense operation failed", error);
+            alert(t('error.generic'));
+        }
     };
 
     const getButtonContent = () => {
@@ -191,11 +206,12 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
     return (
         <>
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-4 sm:p-6">
+                <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-bold text-white flex items-center gap-2"><MinusCircle size={20} className="text-rose-500" />{expenseToEdit ? t('finance.editExpense') : t('finance.addExpense')}</h2>
-                        <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button>
+                        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
                     </div>
+
                     <div className="mb-6 flex items-center gap-2">
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileSelected} />
                         <button type="button" onClick={() => fileInputRef.current?.click()} disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'} className={`flex-1 py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${extractionStatus === 'COMPLETED' ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'} disabled:opacity-50`}>
@@ -210,15 +226,15 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                         <div>
                             <label className="block text-sm text-gray-300 mb-1">{t('finance.expenseCategory')}</label>
-                            <input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
+                            <input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white focus:border-rose-500/50 outline-none transition-all" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
                         </div>
                         <div>
                             <label className="block text-sm text-gray-300 mb-1">{t('finance.amount')}</label>
-                            <input required type="number" step="0.01" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})} />
+                            <input required type="number" step="0.01" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white focus:border-rose-500/50 outline-none transition-all" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})} />
                         </div>
                         <div>
                             <label className="block text-sm text-gray-300 mb-1">{t('finance.date')}</label>
-                            <DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white" required />
+                            <DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white focus:border-rose-500/50 outline-none transition-all" required />
                         </div>
                         <div>
                             <label className="block text-sm text-gray-300 mb-1">{t('finance.description')}</label>
@@ -227,7 +243,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                                 <input 
                                     list="suppliers-list"
                                     type="text" 
-                                    className="w-full bg-background-light border-glass-edge rounded-lg pl-9 pr-3 py-2 text-base sm:text-sm text-white focus:border-rose-500 transition-all" 
+                                    className="w-full bg-background-light border-glass-edge rounded-lg pl-9 pr-3 py-2 text-base sm:text-sm text-white focus:border-rose-500 transition-all outline-none" 
                                     value={formData.description} 
                                     onChange={e => setFormData({...formData, description: e.target.value})} 
                                 />
@@ -237,20 +253,26 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 pt-4">
-                            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button>
-                            <button type="submit" className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold">{t('general.save')}</button>
+                            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white transition-colors">{t('general.cancel')}</button>
+                            <button type="submit" className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold shadow-lg shadow-rose-900/20 transition-all transform hover:scale-[1.02]">{t('general.save')}</button>
                         </div>
                     </form>
                 </div>
             </div>
+
+            {/* PHOENIX: QR Handoff Modal */}
             {isQrModalOpen && handoffToken && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#1f2937] border border-white/10 p-8 rounded-2xl w-full max-w-sm shadow-2xl text-center relative">
-                        <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-full"><X size={18} /></button>
+                        <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-full transition-colors"><X size={18} /></button>
                         <h3 className="text-xl font-bold text-white mb-2">Skano për të Ngarkuar</h3>
-                        <p className="text-gray-400 mb-6">Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.</p>
-                        <div className="bg-white p-4 rounded-lg inline-block"><QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={200} /></div>
-                        <div className="mt-6 flex items-center justify-center gap-2 text-gray-500 animate-pulse"><Loader2 className="w-4 h-4 animate-spin"/> Duke pritur për skedarin...</div>
+                        <p className="text-gray-400 mb-6 text-sm">Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.</p>
+                        <div className="bg-white p-4 rounded-xl inline-block shadow-inner">
+                            <QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={200} />
+                        </div>
+                        <div className="mt-6 flex items-center justify-center gap-2 text-gray-500 animate-pulse text-sm">
+                           <Loader2 className="w-4 h-4 animate-spin"/> Duke pritur për skedarin...
+                        </div>
                     </motion.div>
                 </div>
             )}

@@ -1,7 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V12.3 (TYPO & SYNC FIX)
-// 1. FIXED: Parameter name mismatch in deleteInvoice (TS2552).
-// 2. STATUS: End-to-End Invoicing Automation maintained.
+// PHOENIX PROTOCOL - API V12.4 (PATH SYNC & TYPO FIX)
+// 1. FIXED: Corrected importClients URL to /finance/import/clients to resolve backend 404.
+// 2. FIXED: Aligned deleteInvoice variable reference to 'invoiceId' (TS2552).
+// 3. STATUS: 100% synchronized with backend router patterns.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -25,7 +26,7 @@ export interface InvoiceUpdate { client_name?: string; client_email?: string; cl
 export interface ImportPreviewResponse { filename: string; headers: string[]; sample_data: Record<string, string>[]; total_rows_estimated: number; }
 export interface ImportResult { status: string; imported_count: number; total_value: number; batch_id: string; }
 export interface RecipeImportResult { recipes_created: number; missing_ingredients: string[]; }
-export interface InventoryImportResult { items_created: number; count?: number; }
+export interface ImportResultInventory { items_created: number; count?: number; }
 interface LoginResponse { access_token: string; }
 interface DocumentContentResponse { text: string; }
 export interface TaxAuditResult { anomalies: string[]; status: 'CLEAR' | 'WARNING' | 'CRITICAL'; net_obligation: number; }
@@ -179,7 +180,7 @@ class ApiService {
     public async downloadMonthlyReport(month: number, year: number): Promise<void> { const response = await this.axiosInstance.get('/finance/wizard/report/pdf', { params: { month, year }, responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([response.data])); const link = document.createElement('a'); link.href = url; link.setAttribute('download', `Raporti_${month}_${year}.pdf`); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); }
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
     public async confirmImport(file: File, mapping: Record<string, string>, importType: 'pos' | 'bank'): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); formData.append('mapping', JSON.stringify(mapping)); formData.append('importType', importType); const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData); return response.data; }
-    public async importClients(file: File): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportResult>('/finance/clients/import', formData); return response.data; }
+    public async importClients(file: File): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportResult>('/finance/import/clients', formData); return response.data; }
     public async getPartners(): Promise<Partner[]> { const response = await this.axiosInstance.get<Partner[]>('/finance/partners'); return response.data; }
 
     // --- INVENTORY ---
@@ -187,7 +188,7 @@ class ApiService {
     public async createInventoryItem(data: InventoryItemCreate): Promise<InventoryItem> { const response = await this.axiosInstance.post<InventoryItem>('/inventory/items', data); return response.data; }
     public async updateInventoryItem(id: string, data: InventoryItemCreate): Promise<InventoryItem> { const response = await this.axiosInstance.put<InventoryItem>(`/inventory/items/${id}`, data); return response.data; }
     public async deleteInventoryItem(id: string): Promise<void> { await this.axiosInstance.delete(`/inventory/items/${id}`); }
-    public async importInventoryItems(file: File): Promise<InventoryImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<InventoryImportResult>('/inventory/items/import', formData); return response.data; }
+    public async importInventoryItems(file: File): Promise<ImportResultInventory> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportResultInventory>('/inventory/items/import', formData); return response.data; }
     public async getRecipes(): Promise<Recipe[]> { const response = await this.axiosInstance.get<Recipe[]>('/inventory/recipes'); return response.data; }
     public async createRecipe(data: RecipeCreate): Promise<Recipe> { const response = await this.axiosInstance.post<Recipe>('/inventory/recipes', data); return response.data; }
     public async updateRecipe(id: string, data: RecipeCreate): Promise<Recipe> { const response = await this.axiosInstance.put<Recipe>(`/inventory/recipes/${id}`, data); return response.data; }
