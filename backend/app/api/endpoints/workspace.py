@@ -1,7 +1,8 @@
 # FILE: backend/app/api/endpoints/workspace.py
-# PHOENIX PROTOCOL - WORKSPACE ROUTER V1.4 (CONSTRUCTOR ALIGNMENT)
-# 1. FIXED: Initializing WorkspaceCreate using alias names to satisfy strict Pylance checks.
-# 2. STATUS: Error-free.
+# PHOENIX PROTOCOL - WORKSPACE ROUTER V1.5 (PUBLIC PORTAL RESTORATION)
+# 1. ADDED: Missing public endpoints (/timeline, /documents, /message) to fix 404s.
+# 2. FEATURE: Enables full functionality for the Client Portal (timeline, docs, contact form).
+# 3. STATUS: Synchronized with Frontend ClientPortalPage.tsx.
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body, Query
 from typing import List, Annotated, Dict, Optional, Any
@@ -48,11 +49,17 @@ class ArchiveImportRequest(BaseModel):
 
 class PublicDocumentItem(BaseModel):
     id: str
-    title: str
+    file_name: str
     created_at: datetime
-    file_size: Optional[int] = 0
     file_type: str
     source: str 
+
+class ClientMessageRequest(BaseModel):
+    firstName: str
+    lastName: str
+    email: str
+    phone: str
+    message: str
 
 def validate_object_id(id_str: str) -> ObjectId:
     try: return ObjectId(id_str)
@@ -66,7 +73,6 @@ async def get_primary_workspace(current_user: Annotated[UserInDB, Depends(get_cu
     if not workspace:
         try:
             ws_name = f"Hapësira e {current_user.full_name or current_user.username}"
-            # PHOENIX: Using primary alias names to satisfy constructor check
             default_ws = WorkspaceCreate(
                 title=ws_name, 
                 case_name=ws_name, 
@@ -117,12 +123,77 @@ async def get_workspace_doc_preview(id: str, doc_id: str, current_user: Annotate
     if str(doc.case_id) != id: raise HTTPException(status_code=403)
     return StreamingResponse(file_stream, media_type="application/pdf")
 
+# --- PUBLIC PORTAL ENDPOINTS (PHOENIX RESTORATION) ---
+
+@router.get("/public/{id}/timeline", tags=["Public Portal"])
+async def get_public_workspace_timeline(id: str, db: Database = Depends(get_db)):
+    """Fetches public workspace details and shared documents for the Client Portal."""
+    case_oid = validate_object_id(id)
+    workspace = await asyncio.to_thread(db.cases.find_one, {"_id": case_oid})
+    if not workspace: raise HTTPException(404, "Workspace not found.")
+    
+    # Get Owner Profile for branding
+    owner_id = workspace.get("owner_id") or workspace.get("user_id")
+    profile = await asyncio.to_thread(db.business_profiles.find_one, {"user_id": ObjectId(owner_id)})
+    
+    # Get Shared Documents (Active & Archived)
+    active_docs = list(db.documents.find({"case_id": case_oid, "is_shared": True}))
+    archived_docs = list(db.archives.find({"case_id": id, "is_shared": True}))
+    
+    shared_docs = []
+    for d in active_docs:
+        shared_docs.append(PublicDocumentItem(id=str(d["_id"]), file_name=d.get("file_name"), created_at=d.get("created_at"), file_type="PDF", source="ACTIVE"))
+    for d in archived_docs:
+        shared_docs.append(PublicDocumentItem(id=str(d["_id"]), file_name=d.get("title"), created_at=d.get("created_at"), file_type=d.get("file_type", "FILE"), source="ARCHIVE"))
+    
+    return {
+        "workspace_number": workspace.get("case_number", "N/A"),
+        "title": workspace.get("title", "Portal"),
+        "client_name": workspace.get("client_name", "Klient"),
+        "status": workspace.get("status", "ACTIVE"),
+        "description": workspace.get("description", ""),
+        "organization_name": profile.get("firm_name") if profile else "Haveri Portal",
+        "logo": f"/api/v1/workspace/public/{id}/logo" if profile and profile.get("logo_storage_key") else None,
+        "owner_email": profile.get("email_public") if profile else None,
+        "owner_phone": profile.get("phone") if profile else None,
+        "owner_address": profile.get("address") if profile else None,
+        "owner_city": profile.get("city") if profile else None,
+        "owner_website": profile.get("website") if profile else None,
+        "documents": shared_docs
+    }
+
+@router.post("/public/{id}/message", tags=["Public Portal"])
+async def send_public_message(id: str, msg: ClientMessageRequest, db: Database = Depends(get_db)):
+    """Allows clients to send messages from the portal."""
+    case_oid = validate_object_id(id)
+    workspace = await asyncio.to_thread(db.cases.find_one, {"_id": case_oid})
+    if not workspace: raise HTTPException(404, "Workspace not found.")
+    
+    message_doc = {
+        "workspace_id": id,
+        "owner_id": workspace.get("owner_id"),
+        "sender_name": f"{msg.firstName} {msg.lastName}",
+        "sender_email": msg.email,
+        "sender_phone": msg.phone,
+        "content": msg.message,
+        "created_at": datetime.now(timezone.utc),
+        "status": "INBOX"
+    }
+    await asyncio.to_thread(db.inbound_messages.insert_one, message_doc)
+    return {"status": "sent"}
+
 @router.get("/public/{id}/documents/{doc_id}/download", tags=["Public Portal"])
 async def download_public_workspace_doc(id: str, doc_id: str, source: str = Query("ACTIVE", enum=["ACTIVE", "ARCHIVE"]), db: Database = Depends(get_db)):
     case_oid, doc_oid = validate_object_id(id), validate_object_id(doc_id)
     coll = db.documents if source == "ACTIVE" else db.archives
-    doc_data = await asyncio.to_thread(coll.find_one, {"_id": doc_oid, "$or": [{"case_id": id}, {"case_id": case_oid}]})
-    if not doc_data or not doc_data.get("is_shared"): raise HTTPException(403)
+    doc_data = await asyncio.to_thread(coll.find_one, {"_id": doc_oid})
+    
+    # Security Check: Must be shared and belong to this workspace
+    if not doc_data or not doc_data.get("is_shared"): raise HTTPException(403, "Access Denied.")
+    # Archive items store case_id as string usually, Documents as ObjectId. We check both.
+    doc_case_id = doc_data.get("case_id")
+    if str(doc_case_id) != id and doc_case_id != case_oid: raise HTTPException(403, "Access Denied.")
+
     s_key = doc_data.get("storage_key")
     if not s_key: raise HTTPException(404, "File not found.")
     file_stream = await asyncio.to_thread(storage_service.download_original_document_stream, s_key)
