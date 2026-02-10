@@ -1,15 +1,16 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V4.1 (YEAR-AWARE INTELLIGENCE)
-// 1. FIXED: Pass 'selectedYear' to KPI API calls to support multi-year auditing.
-// 2. FIXED: Aligned Digital Receipt generator with flat JSON translation keys.
-// 3. STATUS: Robust, multi-year, and fully translated.
+// PHOENIX PROTOCOL - FINANCE TAB V4.2 (MULTI-YEAR UI CONTROLS)
+// 1. FEATURE: Added a visual Year Selector to allow switching between 2024, 2025, 2026.
+// 2. SYNC: Connected UI selector to 'setSelectedYear' in useFinanceData hook.
+// 3. UI: Implemented a professional glassmorphism dropdown for year selection.
+// 4. STATUS: 100% Functional for multi-year Kosovar market auditing.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
-    Sparkles, ArrowRight, X, Lightbulb, Users
+    Sparkles, ArrowRight, X, Lightbulb, Users, Calendar
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { Invoice, Expense, Document } from '../../data/types';
@@ -58,7 +59,15 @@ const TabButton = ({ label, icon, isActive, onClick }: any) => (
 
 export const FinanceTab: React.FC = () => {
     const { t, i18n } = useTranslation();
-    const { loading, invoices, expenses, workspaces, posTransactions, analyticsData, totalExpenses, displayIncome, displayProfit, costOfGoodsSold, refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos, selectedYear } = useFinanceData();
+    
+    // PHOENIX: Now using year controls from hook
+    const { 
+        loading, invoices, expenses, workspaces, posTransactions, analyticsData, 
+        totalExpenses, displayIncome, displayProfit, costOfGoodsSold, 
+        refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, 
+        deletePosTransaction: hookDeletePos,
+        selectedYear, setSelectedYear, availableYears 
+    } = useFinanceData();
 
     const [activeTab, setActiveTab] = useState<'transactions' | 'reports'>('transactions');
     const [openingDocId, setOpeningDocId] = useState<string | null>(null);
@@ -83,7 +92,7 @@ export const FinanceTab: React.FC = () => {
     const handleKpiClick = async (type: string, title: string) => {
         setKpiModalOpen(true); setKpiAnalysis({ type: title, summary: '', contributors: [] }); setKpiLoading(true);
         try { 
-            // PHOENIX: Pass the selectedYear to ensure the AI analyzes exactly what the user sees.
+            // PHOENIX: Sends selectedYear to backend for filtered AI analysis
             const data = await (apiService as any).generateKpiInsight({ kpi_type: type, year: selectedYear }); 
             setKpiAnalysis({ type: title, summary: data.summary, contributors: data.key_contributors }); 
         } 
@@ -141,7 +150,6 @@ export const FinanceTab: React.FC = () => {
     };
 
     const generateDigitalReceipt = (expense: Expense): File => { 
-        // PHOENIX: Mapping to flat JSON keys for absolute robustness
         const label_title = t('receiptTitle', 'DËFTESË DIGJITALE');
         const label_cat = t('receiptCategory', 'Kategoria:');
         const label_amt = t('receiptAmount', 'Shuma:');
@@ -176,10 +184,45 @@ export const FinanceTab: React.FC = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-            <style>{`.custom-finance-scroll::-webkit-scrollbar { width: 6px; } .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; }`}</style>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"><HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} /><HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} /><HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={24} />} type="neutral" trend="+12%" onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} /><HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} /></div>
+            <style>{`.custom-finance-scroll::-webkit-scrollbar { width: 6px; } .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } select option { background-color: #0f172a; color: #f9fafb; }`}</style>
+            
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
+                <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
+                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={24} />} type="neutral" trend="+12%" onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} />
+                <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
+            </div>
+
             <ProactiveInsightBanner />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md"><ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} /><ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} /><ActionButton icon={<Users size={20} />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} /><ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} /></div>
+
+            {/* Actions & Year Selector Bar */}
+            <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
+                    <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
+                    <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
+                    <ActionButton icon={<Users size={20} />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} />
+                    <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
+                </div>
+                
+                {/* PHOENIX: Professional Year Selector Dropdown */}
+                <div className="flex items-center gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
+                    <Calendar size={20} className="text-blue-400 ml-2" />
+                    <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">{t('general.year', 'Viti Fiskal')}</span>
+                        <select 
+                            value={selectedYear} 
+                            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                            className="bg-transparent text-white font-black text-lg outline-none cursor-pointer hover:text-blue-400 transition-colors appearance-none pr-6"
+                        >
+                            {availableYears.map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md h-[70vh] min-h-[600px] flex flex-col shadow-2xl">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6"><h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3"><Activity className="text-blue-500" />{t('finance.activityAndReports')}</h2><div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 gap-1"><TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} /><TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} /></div></div>
                 <div className="flex-1 overflow-hidden relative">

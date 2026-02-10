@@ -1,24 +1,24 @@
 // FILE: src/hooks/useFinanceData.ts
-// PHOENIX PROTOCOL - HOOK V3.2 (MULTI-YEAR SUPPORT)
-// 1. FEATURE: Added 'selectedYear' state to support historical business auditing.
-// 2. LOGIC: Automatically extracts all unique years from invoices/expenses/pos.
-// 3. SYNC: Metrics and analytics now filter based on the active UI year.
+// PHOENIX PROTOCOL - HOOK V3.3 (GLOBAL YEAR INTEGRATION)
+// 1. SYNC: Consumes 'selectedYear' from useAuth context instead of local state.
+// 2. LOGIC: All computations automatically react to the global fiscal year switch.
+// 3. STATUS: Robust multi-year support enabled.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { Invoice, Expense, Workspace, AnalyticsDashboardData, PosTransaction, TopProductItem } from '../data/types';
 
 export const useFinanceData = () => {
+    const { selectedYear, setSelectedYear } = useAuth(); // PHOENIX: Consume global year
     const [loading, setLoading] = useState(true);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [posTransactions, setPosTransactions] = useState<PosTransaction[]>([]);
-    
-    // PHOENIX: Multi-Year State
-    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [analyticsData, setAnalyticsData] = useState<AnalyticsDashboardData | null>(null);
 
-    // PHOENIX: Extract all years present in the database
+    // PHOENIX: Discovers which years have data
     const availableYears = useMemo(() => {
         const years = new Set<number>([new Date().getFullYear()]);
         invoices.forEach(i => { if (i.issue_date) years.add(new Date(i.issue_date).getFullYear()); });
@@ -36,8 +36,6 @@ export const useFinanceData = () => {
         currentExpenses: Expense[], 
         currentPos: PosTransaction[]
     ): AnalyticsDashboardData => {
-        
-        // Filter data for the selected year
         const yearInvoices = currentInvoices.filter(i => new Date(i.issue_date).getFullYear() === year);
         const yearExpenses = currentExpenses.filter(e => new Date(e.date).getFullYear() === year);
         const yearPos = currentPos.filter(p => {
@@ -84,12 +82,10 @@ export const useFinanceData = () => {
             total_revenue_period,
             total_transactions_period: yearInvoices.length + yearPos.length,
             total_profit_period: total_revenue_period - total_expenses_period,
-            sales_trend: [], // Trends usually handled by specific charts
+            sales_trend: [], 
             top_products
         };
     }, []);
-
-    const [analyticsData, setAnalyticsData] = useState<AnalyticsDashboardData | null>(null);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -125,7 +121,7 @@ export const useFinanceData = () => {
 
     return {
         loading, invoices, expenses, workspaces, posTransactions, analyticsData,
-        selectedYear, setSelectedYear, availableYears, // PHOENIX: Exposed year control
+        selectedYear, setSelectedYear, availableYears,
         totalExpenses, displayIncome, displayProfit, costOfGoodsSold,
         refreshData, 
         deleteInvoice: async (id: string) => { await apiService.deleteInvoice(id); refreshData(); },

@@ -1,7 +1,7 @@
 // FILE: src/context/AuthContext.tsx
-// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V5.0 (SINGLETON WORKSPACE)
-// 1. FEATURE: Added 'workspace' singleton to handle the primary business context globally.
-// 2. REBRAND: Synchronized terminology from Case to Workspace.
+// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V5.1 (GLOBAL YEAR SYNC)
+// 1. FEATURE: Added 'selectedYear' to global state to drive multi-year intelligence.
+// 2. SYNC: All hooks and components now share a unified Fiscal Year context.
 // 3. STATUS: Fully synchronized.
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
@@ -11,8 +11,10 @@ import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
   user: User | null;
-  workspace: Workspace | null; // PHOENIX: Primary workspace singleton
+  workspace: Workspace | null;
   businessProfile: BusinessProfile | null;
+  selectedYear: number; // PHOENIX: Global Year State
+  setSelectedYear: (year: number) => void;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
@@ -29,6 +31,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // PHOENIX: Defaults to current year, used by AI and Finance engines
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+
   const logout = useCallback(() => {
     apiService.logout();
     setUser(null);
@@ -38,7 +43,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const loadInitialData = useCallback(async (): Promise<boolean> => {
     try {
-      // PHOENIX: Simultaneously load User, Profile, and the Singleton Workspace
       const [fullUser, profile, primaryWorkspace] = await Promise.all([
         apiService.fetchUserProfile(),
         apiService.getBusinessProfile(),
@@ -67,26 +71,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     apiService.setLogoutHandler(logout);
-
     const initializeApp = async () => {
       const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
       if (!storedToken) {
         setIsLoading(false);
         return;
       }
-      
       apiService.setToken(storedToken);
-
       try {
         await loadInitialData();
       } catch (error) {
-        console.error("Critical error during app initialization:", error);
         logout();
       } finally {
         setIsLoading(false);
       }
     };
-
     initializeApp();
   }, [logout, loadInitialData]); 
 
@@ -122,6 +121,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user, 
         workspace, 
         businessProfile, 
+        selectedYear,
+        setSelectedYear,
         isAuthenticated: !!user, 
         login, 
         register, 
