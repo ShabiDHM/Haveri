@@ -1,7 +1,7 @@
 # FILE: backend/app/services/archive_service.py
-# PHOENIX PROTOCOL - ARCHIVE SERVICE V5.7 (PDF STREAM SUPPORT)
-# 1. ADDED: save_generated_file to handle raw byte streams for system PDFs.
-# 2. STATUS: Fully synchronized with Finance and Case modules.
+# PHOENIX PROTOCOL - ARCHIVE SERVICE V5.8 (STREAMING RECOVERY)
+# 1. FIXED: Restored missing 'get_file_stream' method to resolve AttributeError.
+# 2. STATUS: Fully synchronized with API endpoints for both viewing and saving.
 
 import os
 import logging
@@ -99,6 +99,15 @@ class ArchiveService:
         if category and category != "ALL": query["category"] = category
         cursor = self.db.archives.find(query).sort([("item_type", -1), ("created_at", -1)])
         return [ArchiveItemInDB(**doc) for doc in cursor]
+    
+    # PHOENIX: Restored missing method
+    def get_file_stream(self, user_id: str, item_id: str) -> Tuple[Any, str]:
+        item = self.db.archives.find_one({"_id": self._to_oid(item_id), "user_id": self._to_oid(user_id)})
+        if not item: raise HTTPException(status_code=404, detail="Item not found")
+        try:
+            response = get_s3_client().get_object(Bucket=B2_BUCKET_NAME, Key=item["storage_key"])
+            return response['Body'], item["title"]
+        except: raise HTTPException(500, "Stream failed")
 
     def delete_archive_item(self, user_id: str, item_id: str):
         oid_user, oid_item = self._to_oid(user_id), self._to_oid(item_id)
