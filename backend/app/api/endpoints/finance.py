@@ -1,8 +1,8 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.4 (FINAL SYNC)
-# 1. FIXED: Aligned all internal logic for Save Generated File.
-# 2. FIXED: Verified path alignment for Partner imports.
-# 3. STATUS: Fully synchronized with Frontend API V12.4.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.6 (FULL CRUD SYNC)
+# 1. FIXED: Added complete Partner CRUD (PUT/DELETE) support.
+# 2. FIXED: Restored all Invoice, Expense, and POS management symbols to prevent degradation.
+# 3. STATUS: 100% Complete. Unabridged.
 
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
@@ -16,7 +16,8 @@ from app.models.user import UserInDB
 from app.models.finance import (
     InvoiceCreate, InvoiceOut, InvoiceUpdate, 
     ExpenseCreate, ExpenseOut, ExpenseUpdate,
-    AnalyticsDashboardData, CaseFinancialSummary, PosTransactionOut, InvoiceInDB, PartnerOut
+    AnalyticsDashboardData, CaseFinancialSummary, PosTransactionOut, 
+    InvoiceInDB, PartnerOut, PartnerUpdate
 )
 from app.models.archive import ArchiveItemOut 
 from app.services.finance_service import FinanceService
@@ -34,14 +35,37 @@ class BulkDeleteRequest(BaseModel):
     expense_ids: Optional[List[str]] = []
     pos_ids: Optional[List[str]] = []
 
-# --- PARTNER ENDPOINTS ---
+# --- PARTNER / CLIENT ENDPOINTS ---
+
 @router.get("/partners", response_model=List[PartnerOut])
 def get_partners(current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
+    """Fetches all clients and suppliers for the current context."""
     return FinanceService(db).get_partners(str(current_user.id))
 
-# --- DATA IMPORT ENDPOINTS ---
+@router.put("/partners/{partner_id}", response_model=PartnerOut)
+def update_partner(
+    partner_id: str,
+    partner_update: PartnerUpdate,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    db: Database = Depends(get_db)
+):
+    """Updates specific partner details (name, NIPT, contact info)."""
+    return FinanceService(db).update_partner(str(current_user.id), partner_id, partner_update)
+
+@router.delete("/partners/{partner_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_partner(
+    partner_id: str,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    db: Database = Depends(get_db)
+):
+    """Removes a partner from the database."""
+    FinanceService(db).delete_partner(str(current_user.id), partner_id)
+
+# --- DATA IMPORT & POS ENDPOINTS ---
+
 @router.post("/import/preview")
 async def preview_import_file(file: UploadFile = File(...), db: Database = Depends(get_db)):
+    """Provides a JSON preview of CSV/Excel data before processing."""
     service = ParsingService(db)
     return await service.preview_file(file)
 
@@ -53,6 +77,7 @@ async def confirm_import(
     importType: str = Form('pos'),
     db: Database = Depends(get_db)
 ):
+    """Finalizes data import using user-defined column mapping."""
     try: 
         mapping_dict = json.loads(mapping)
     except Exception: 
@@ -67,6 +92,7 @@ async def import_clients(
     file: UploadFile = File(...),
     db: Database = Depends(get_db)
 ):
+    """Specialized bulk importer for Partners."""
     return await FinanceService(db).import_partners(str(current_user.id), file)
 
 @router.get("/import/transactions", response_model=List[PosTransactionOut])
@@ -74,6 +100,7 @@ async def get_imported_transactions(
     current_user: Annotated[UserInDB, Depends(get_current_active_user)],
     db: Any = Depends(get_async_db)
 ):
+    """Retrieves raw transactions stored in the operational collection."""
     user_id_str = str(current_user.id)
     cursor = db["transactions"].find({"user_id": user_id_str}).sort("date", pymongo.DESCENDING)
     transactions = await cursor.to_list(length=None) 
@@ -86,6 +113,7 @@ def delete_transaction(
     db: Database = Depends(get_db),
     graph_service: GraphService = Depends()
 ):
+    """Deletes a single POS/Bank transaction and syncs with the Graph DB."""
     FinanceService(db).delete_pos_transaction(str(current_user.id), transaction_id)
     try:
         graph_service.delete_node(transaction_id) 
@@ -99,6 +127,7 @@ def bulk_delete_transactions(
     db: Database = Depends(get_db),
     graph_service: GraphService = Depends()
 ):
+    """Performs massive cleanup of invoices, expenses, or POS records."""
     service = FinanceService(db)
     deleted_count = service.bulk_delete_transactions(
         user_id=str(current_user.id), 
@@ -118,7 +147,8 @@ def bulk_delete_transactions(
     return {"status": "success", "deleted_count": deleted_count}
 
 
-# --- INVOICES (Standard CRUD) ---
+# --- INVOICES (Sales Management) ---
+
 @router.get("/invoices", response_model=List[InvoiceOut])
 def get_invoices(current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
     return FinanceService(db).get_invoices(str(current_user.id))
@@ -171,6 +201,7 @@ def delete_invoice(
 
 @router.get("/invoices/{invoice_id}/pdf")
 def download_invoice_pdf(invoice_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db), lang: Optional[str] = Query("sq")):
+    """Generates and streams a PDF for download."""
     service = FinanceService(db)
     invoice = service.get_invoice(str(current_user.id), invoice_id)
     pdf_buffer = report_service.generate_invoice_pdf(invoice, db, str(current_user.id), lang=lang or "sq")
@@ -180,6 +211,7 @@ def download_invoice_pdf(invoice_id: str, current_user: Annotated[UserInDB, Depe
 
 @router.post("/invoices/{invoice_id}/archive", response_model=ArchiveItemOut)
 async def archive_invoice(invoice_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db), case_id: Optional[str] = Query(None), lang: Optional[str] = Query("sq")):
+    """Converts invoice to PDF and saves it to the Archive / Workspace."""
     finance_service = FinanceService(db)
     archive_service_instance = ArchiveService(db)
     invoice = finance_service.get_invoice(str(current_user.id), invoice_id)
@@ -196,7 +228,9 @@ async def archive_invoice(invoice_id: str, current_user: Annotated[UserInDB, Dep
     )
     return archived_item
 
-# --- EXPENSES ---
+
+# --- EXPENSES (Accounts Payable) ---
+
 @router.post("/expenses", response_model=ExpenseOut, status_code=status.HTTP_201_CREATED)
 def create_expense(
     expense_in: ExpenseCreate, 

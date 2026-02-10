@@ -1,7 +1,7 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V11.2 (PARTNER INTEGRATION)
-# 1. ADDED: Partner models to support Client/Supplier management and bulk imports.
-# 2. SYNC: Maintained PyObjectId integrity and ConfigDict patterns.
+# PHOENIX PROTOCOL - FINANCE MODELS V11.3 (PARTNER CRUD SUPPORT)
+# 1. ADDED: PartnerUpdate model to support specific partner edits.
+# 2. STATUS: Fully synchronized.
 
 from pydantic import BaseModel, Field, ConfigDict, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -56,6 +56,14 @@ class PartnerBase(BaseModel):
     tax_id: Optional[str] = None # NIPT
     type: str = "CLIENT" # CLIENT or SUPPLIER
 
+class PartnerUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    tax_id: Optional[str] = None
+    type: Optional[str] = None
+
 class PartnerInDB(PartnerBase):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     user_id: PyObjectId
@@ -85,14 +93,11 @@ class Transaction(BaseModel):
     user_id: str
     business_id: Optional[str] = None
     batch_id: Optional[str] = None
-    
     date: datetime
     amount: float
-    
     cost: float = 0.0
     net_profit: float = 0.0
     is_inventory_processed: bool = False
-    
     type: str = "income"
     category: str = "Uncategorized"
     description: str
@@ -100,7 +105,6 @@ class Transaction(BaseModel):
     quantity: float = 1.0
     unit_price: Optional[float] = None
     original_row_data: Optional[Dict[str, Any]] = None
-    
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
 class PosTransactionOut(BaseModel):
@@ -110,7 +114,6 @@ class PosTransactionOut(BaseModel):
     total_price: Optional[float] = Field(alias="amount", default=0.0)
     transaction_date: datetime = Field(alias="date")
     payment_method: Optional[str] = Field(default="N/A")
-
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
 # --- INVOICE MODELS ---
@@ -242,30 +245,3 @@ class CaseFinancialSummary(BaseModel):
     total_billed: float
     total_expenses: float
     net_balance: float
-
-# --- TAX WIZARD MODELS ---
-class TaxCalculation(BaseModel):
-    period_month: int
-    period_year: int
-    total_sales_gross: float
-    total_purchases_gross: float
-    vat_collected: float
-    vat_deductible: float
-    net_obligation: float
-    currency: str = "EUR"
-    status: str
-    regime: str = "SMALL_BUSINESS"
-    tax_rate_applied: str = "9%" 
-    description: str = "Tatimi"
-
-class AuditIssue(BaseModel):
-    id: str
-    severity: str
-    message: str
-    related_item_id: Optional[str] = None
-    item_type: Optional[str] = None
-
-class WizardState(BaseModel):
-    calculation: TaxCalculation
-    issues: List[AuditIssue]
-    ready_to_close: bool

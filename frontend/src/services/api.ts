@@ -1,9 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V13.1 (FULL RESTORATION & SYNC)
-// 1. FIXED: Restored ALL missing methods (getPartners, createHandoffSession, etc.) to resolve TS2339.
-// 2. FIXED: Aligned getKpiInsight to accept the 'year' parameter.
-// 3. FIXED: Corrected importClients path to /finance/import/clients.
-// 4. STATUS: 100% Logic Integrity Restored. No Truncation.
+// PHOENIX PROTOCOL - API V13.2 (PARTNER CRUD SURGERY)
+// 1. FIXED: Added missing updatePartner and deletePartner methods to resolve TS2339.
+// 2. INTEGRITY: Preserved 100% of existing interceptors, methods, and configurations.
+// 3. STATUS: Fully synchronized with Finance Endpoint V16.6.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -162,7 +161,6 @@ class ApiService {
     public async predictRestock(itemId: string): Promise<RestockPrediction> { try { const response = await this.axiosInstance.post<RestockPrediction>('/analysis/inventory/predict', { item_id: itemId }); return response.data; } catch (e) { return { suggested_quantity: 0, reason: "Analiza e padisponueshme për momentin.", estimated_cost: 0 }; } }
     public async analyzeSalesTrend(itemId: string): Promise<SalesTrendAnalysis> { try { const response = await this.axiosInstance.post<SalesTrendAnalysis>('/analysis/inventory/trend', { item_id: itemId }); return response.data; } catch (e) { return { trend_analysis: "E padisponueshme", cross_sell_opportunities: "E padisponueshme" }; } }
     
-    // PHOENIX: Added proper support for 'year' parameter
     public async getKpiInsight(kpiType: string, year?: number): Promise<KpiInsightResponse> { 
         try { 
             const response = await this.axiosInstance.post<KpiInsightResponse>('/analysis/finance/kpi-insight', { kpi_type: kpiType, year }); 
@@ -187,6 +185,13 @@ class ApiService {
     public async getInvoicePdfBlob(invoiceId: string, lang: string = 'sq'): Promise<Blob> { const response = await this.axiosInstance.get(`/finance/invoices/${invoiceId}/pdf`, { params: { lang }, responseType: 'blob' }); return response.data; }
     public async downloadInvoicePdf(invoiceId: string, lang: string = 'sq'): Promise<void> { const blob = await this.getInvoicePdfBlob(invoiceId, lang); const url = window.URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.setAttribute('download', `Invoice_${invoiceId}.pdf`); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); }
     public async archiveInvoice(invoiceId: string, workspaceId?: string): Promise<ArchiveItemOut> { const params = workspaceId ? { case_id: workspaceId } : {}; const response = await this.axiosInstance.post<ArchiveItemOut>(`/finance/invoices/${invoiceId}/archive`, null, { params }); return response.data; }
+    
+    // --- PARTNER MANAGEMENT ---
+    public async getPartners(): Promise<Partner[]> { const response = await this.axiosInstance.get<Partner[]>('/finance/partners'); return response.data; }
+    public async deletePartner(partnerId: string): Promise<void> { await this.axiosInstance.delete(`/finance/partners/${partnerId}`); }
+    public async updatePartner(partnerId: string, data: Partial<Partner>): Promise<Partner> { const response = await this.axiosInstance.put<Partner>(`/finance/partners/${partnerId}`, data); return response.data; }
+    public async importClients(file: File): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportResult>('/finance/import/clients', formData); return response.data; }
+
     public async getExpenses(): Promise<Expense[]> { const response = await this.axiosInstance.get<any>('/finance/expenses'); return Array.isArray(response.data) ? response.data : (response.data?.expenses || []); }
     public async createExpense(data: ExpenseCreateRequest): Promise<Expense> { const response = await this.axiosInstance.post<Expense>('/finance/expenses', data); return response.data; }
     public async updateExpense(expenseId: string, data: ExpenseUpdate): Promise<Expense> { const response = await this.axiosInstance.put<Expense>(`/finance/expenses/${expenseId}`, data); return response.data; }
@@ -202,8 +207,6 @@ class ApiService {
     // --- IMPORTS ---
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
     public async confirmImport(file: File, mapping: Record<string, string>, importType: 'pos' | 'bank'): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); formData.append('mapping', JSON.stringify(mapping)); formData.append('importType', importType); const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData); return response.data; }
-    public async importClients(file: File): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportResult>('/finance/import/clients', formData); return response.data; }
-    public async getPartners(): Promise<Partner[]> { const response = await this.axiosInstance.get<Partner[]>('/finance/partners'); return response.data; }
 
     // --- INVENTORY ---
     public async getInventoryItems(): Promise<InventoryItem[]> { const response = await this.axiosInstance.get<InventoryItem[]>('/inventory/items'); return response.data; }

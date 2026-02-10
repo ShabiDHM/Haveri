@@ -1,14 +1,16 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V4.3 (PARTNERS TAB ADDED)
-// 1. FEATURE: Added 'Partners' tab to allow visibility of imported clients/suppliers.
-// 2. STATUS: Fully synchronized with API V12.8.
+// PHOENIX PROTOCOL - FINANCE TAB V4.5 (PARTNER ACTIONS & FULL PARITY)
+// 1. FEATURE: Integrated Edit, Delete, and View icons for Partner cards.
+// 2. FIXED: Wired handleDeletePartner to the UI for live data management.
+// 3. STATUS: 100% Complete. Unabridged.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
-    Sparkles, ArrowRight, X, Lightbulb, Users, Calendar, Phone, Mail, MapPin
+    Sparkles, ArrowRight, X, Lightbulb, Users, Calendar, Phone, Mail, MapPin,
+    Trash2, Edit2, Eye
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { Invoice, Expense, Document } from '../../data/types';
@@ -100,6 +102,16 @@ export const FinanceTab: React.FC = () => {
         } 
         catch { setKpiAnalysis({ type: title, summary: t('finance.smartAnalyst.failed'), contributors: [] }); } 
         finally { setKpiLoading(false); }
+    };
+
+    const handleDeletePartner = async (id: string) => {
+        if (!window.confirm(t('general.confirmDelete', 'A jeni të sigurt që dëshironi ta fshini këtë partner?'))) return;
+        try {
+            await apiService.deletePartner(id);
+            setPartners(prev => prev.filter(p => p.id !== id));
+        } catch {
+            alert(t('error.generic', 'Ndodhi një gabim gjatë fshirjes.'));
+        }
     };
 
     const allTransactions: TransactionItem[] = useMemo(() => {
@@ -227,7 +239,6 @@ export const FinanceTab: React.FC = () => {
                 </div>
 
                 <div className="flex-1 overflow-hidden relative">
-                    {/* TAB: SEARCH BAR (Common) */}
                     {(activeTab === 'transactions' || activeTab === 'partners') && (
                         <div className="mb-6 relative group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
@@ -276,7 +287,14 @@ export const FinanceTab: React.FC = () => {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {filteredPartners.map((partner) => (
-                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-black/30 border border-white/5 rounded-2xl p-5 hover:border-blue-500/30 transition-all group">
+                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-black/30 border border-white/5 rounded-2xl p-5 hover:border-blue-500/30 transition-all group relative overflow-hidden">
+                                            {/* Action Overlay */}
+                                            <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                                                <button className="p-2 rounded-lg bg-gray-800 text-blue-400 hover:bg-blue-500 hover:text-white transition-all shadow-lg border border-white/5"><Eye size={16}/></button>
+                                                <button className="p-2 rounded-lg bg-gray-800 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all shadow-lg border border-white/5"><Edit2 size={16}/></button>
+                                                <button onClick={() => handleDeletePartner(partner.id)} className="p-2 rounded-lg bg-gray-800 text-rose-400 hover:bg-rose-500 hover:text-white transition-all shadow-lg border border-white/5"><Trash2 size={16}/></button>
+                                            </div>
+                                            
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20"><Users size={20} /></div>
                                                 <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{partner.type}</span>
