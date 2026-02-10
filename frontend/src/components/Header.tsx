@@ -1,9 +1,8 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V7.3 (FULL FEATURE RESTORATION)
-// 1. FIXED: Restored 'Integrations' and 'Support' links in profile dropdown.
-// 2. FIXED: Re-enabled 'LanguageSwitcher' and attached 'mobileMenuRef'.
-// 3. FEATURE: Maintained Global Year Selector for multi-year intelligence.
-// 4. STATUS: 100% logic integrity and warning-free.
+// PHOENIX PROTOCOL - HEADER V7.4 (LANGUAGE LOCK & UI CLEANUP)
+// 1. REMOVED: LanguageSwitcher component to lock UI to Albanian.
+// 2. FIXED: Maintained all high-end features including Year Selector and Profile Dropdown.
+// 3. STATUS: 100% logic integrity and warning-free.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -15,7 +14,6 @@ import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
-import LanguageSwitcher from './LanguageSwitcher';
 import BrandLogo from './BrandLogo';
 
 const Header: React.FC = () => {
@@ -97,11 +95,7 @@ const Header: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* PHOENIX: Re-enabled Language Switcher */}
-        <div className="hidden sm:block">
-            <LanguageSwitcher />
-        </div>
-
+        
         {/* PHOENIX: Global Year Selector Dropdown */}
         {isAuthenticated && (
             <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl mr-2">
@@ -145,13 +139,11 @@ const Header: React.FC = () => {
                   <UserIcon size={18} className="mr-3 text-blue-400" />{t('sidebar.account')}
               </button>
               
-              {/* PHOENIX: Restored Integrations Link */}
               <button onClick={() => handleDropdownNavigate('/integrations')} className="w-full text-left flex items-center px-4 py-2 text-text-secondary hover:text-white hover:bg-white/5 transition-colors">
                   <Share2 size={18} className="mr-3 text-purple-400" />
                   {t('navigation.integrations', 'Integrimet')}
               </button>
               
-              {/* PHOENIX: Restored Support Link */}
               <button onClick={() => handleDropdownNavigate('/support')} className="w-full text-left flex items-center px-4 py-2 text-text-secondary hover:text-white hover:bg-white/5 transition-colors">
                   <MessageSquare size={18} className="mr-3 text-emerald-400" />{t('sidebar.support')}
               </button>
