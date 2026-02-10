@@ -1,9 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V12.6 (FULL RESTORATION & AUTH FIX)
-// 1. FIXED: Restored all missing modules (Workspaces, AI, Documents, Archive).
+// PHOENIX PROTOCOL - API V12.7 (FINAL TYPE & PATH SYNC)
+// 1. FIXED: Removed duplicate type definitions to resolve type mismatch errors (TS2345).
 // 2. FIXED: Corrected importClients URL to /finance/import/clients (Fixes 404).
-// 3. FIXED: Fortified Authorization headers to resolve 401 on alerts.
-// 4. STATUS: 100% Logic Integrity.
+// 3. FIXED: Aligned deleteInvoice variable reference to 'invoiceId' (Fixes TS2552).
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -16,7 +15,9 @@ import type {
     StrategicBriefingResponse, InviteUserRequest,
     GraphData,
     AnalysisResult,
-    Partner
+    Partner,
+    RestockPrediction,
+    SalesTrendAnalysis
 } from '../data/types';
 
 export interface DailyBriefingResponse { id: string; content: string; created_at: string; tasks_summary?: string; }
@@ -31,8 +32,6 @@ export interface InventoryImportResult { items_created: number; count?: number; 
 interface LoginResponse { access_token: string; }
 interface DocumentContentResponse { text: string; }
 export interface TaxAuditResult { anomalies: string[]; status: 'CLEAR' | 'WARNING' | 'CRITICAL'; net_obligation: number; }
-export interface RestockPrediction { suggested_quantity: number; reason: string; supplier_name?: string; estimated_cost?: number; }
-export interface SalesTrendAnalysis { trend_analysis: string; cross_sell_opportunities: string; }
 export interface KpiInsightResponse { summary: string; key_contributors: string[]; }
 export interface GeneralInsightResponse { insight: string; sentiment: 'positive' | 'negative' | 'neutral'; }
 

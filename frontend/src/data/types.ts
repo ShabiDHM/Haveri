@@ -1,6 +1,7 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V4.1 (PARTNER INTEGRATION)
-// 1. ADDED: Partner interface to support searchable clients/suppliers in modals.
+// PHOENIX PROTOCOL - TYPES V4.2 (AI INSIGHTS INTEGRATION)
+// 1. ADDED: RestockPrediction and SalesTrendAnalysis interfaces for inventory intelligence.
+// 2. STATUS: Fully synchronized with Backend V4.4 and Modals V3.0.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 export type EventPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -136,6 +137,18 @@ export interface StrategicBriefingResponse {
     agenda: UIAgendaItem[]; 
 }
 
+// PHOENIX: ADDED AI INTERFACES
+export interface RestockPrediction {
+    suggested_quantity: number;
+    reason: string;
+    supplier_name?: string;
+    estimated_cost: number;
+}
+export interface SalesTrendAnalysis {
+    trend_analysis: string;
+    cross_sell_opportunities: string;
+}
+
 export interface InvoiceItem { description: string; quantity: number; unit_price: number; total: number; }
 export interface Invoice { id: string; invoice_number: string; client_name: string; client_email?: string; client_address?: string; issue_date: string; due_date: string; items: InvoiceItem[]; subtotal: number; tax_rate: number; tax_amount: number; total_amount: number; currency: string; status: 'DRAFT' | 'SENT' | 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED'; notes?: string; related_workspace_id?: string; }
 export interface InvoiceCreateRequest { client_name: string; client_email?: string; client_address?: string; items: InvoiceItem[]; tax_rate: number; due_date?: string; notes?: string; related_workspace_id?: string; status?: string; }
@@ -146,7 +159,7 @@ export interface ExpenseUpdate { category?: string; amount?: number; description
 
 export interface WorkspaceFinancialSummary { workspace_id: string; workspace_title: string; workspace_number: string; total_billed: number; total_expenses: number; net_balance: number; }
 
-export interface SalesTrendPoint { date: string; amount: number; }
+export interface SalesTrendPoint { date: string; amount: number; count: number; }
 export interface TopProductItem { product_name: string; total_quantity: number; total_revenue: number; }
 export interface AnalyticsDashboardData { total_revenue_period: number; total_transactions_period: number; sales_trend: SalesTrendPoint[]; top_products: TopProductItem[]; total_profit_period?: number; }
 
