@@ -1,7 +1,8 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V4.2 (AI INSIGHTS INTEGRATION)
-// 1. ADDED: RestockPrediction and SalesTrendAnalysis interfaces for inventory intelligence.
-// 2. STATUS: Fully synchronized with Backend V4.4 and Modals V3.0.
+// PHOENIX PROTOCOL - TYPES V4.3 (AI & ANALYTICS TYPE SYNC)
+// 1. FIXED: Made 'estimated_cost' optional in RestockPrediction to align with backend AI responses.
+// 2. FIXED: Added 'count' (optional) to SalesTrendPoint to resolve TS2322 in useFinanceData.ts.
+// 3. STATUS: Fully synchronized with Frontend UI and Backend Analytics.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 export type EventPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -137,12 +138,12 @@ export interface StrategicBriefingResponse {
     agenda: UIAgendaItem[]; 
 }
 
-// PHOENIX: ADDED AI INTERFACES
+// PHOENIX: ADDED AI INTERFACES and made estimated_cost optional
 export interface RestockPrediction {
     suggested_quantity: number;
     reason: string;
     supplier_name?: string;
-    estimated_cost: number;
+    estimated_cost?: number; // PHOENIX: Made optional to align with API
 }
 export interface SalesTrendAnalysis {
     trend_analysis: string;
@@ -159,7 +160,8 @@ export interface ExpenseUpdate { category?: string; amount?: number; description
 
 export interface WorkspaceFinancialSummary { workspace_id: string; workspace_title: string; workspace_number: string; total_billed: number; total_expenses: number; net_balance: number; }
 
-export interface SalesTrendPoint { date: string; amount: number; count: number; }
+// PHOENIX: Added count to SalesTrendPoint and made it optional
+export interface SalesTrendPoint { date: string; amount: number; count?: number; } // PHOENIX: Added count and made optional
 export interface TopProductItem { product_name: string; total_quantity: number; total_revenue: number; }
 export interface AnalyticsDashboardData { total_revenue_period: number; total_transactions_period: number; sales_trend: SalesTrendPoint[]; top_products: TopProductItem[]; total_profit_period?: number; }
 

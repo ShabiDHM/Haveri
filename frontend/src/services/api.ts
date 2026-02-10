@@ -1,8 +1,7 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V12.7 (FINAL TYPE & PATH SYNC)
-// 1. FIXED: Removed duplicate type definitions to resolve type mismatch errors (TS2345).
-// 2. FIXED: Corrected importClients URL to /finance/import/clients (Fixes 404).
-// 3. FIXED: Aligned deleteInvoice variable reference to 'invoiceId' (Fixes TS2552).
+// PHOENIX PROTOCOL - API V12.8 (TYPE DECLARATION DEDUP & SYNC)
+// 1. FIXED: Removed duplicate local type declarations for SalesTrendPoint and TopProductItem.
+// 2. STATUS: Now solely relies on 'src/data/types' for these definitions, resolving TS2322.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -17,7 +16,10 @@ import type {
     AnalysisResult,
     Partner,
     RestockPrediction,
-    SalesTrendAnalysis
+    SalesTrendAnalysis,
+    // PHOENIX: Removed local declarations, these are now imported from data/types.ts
+    // SalesTrendPoint,
+    // TopProductItem
 } from '../data/types';
 
 export interface DailyBriefingResponse { id: string; content: string; created_at: string; tasks_summary?: string; }
