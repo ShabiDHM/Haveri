@@ -1,9 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V3.9 (TYPE & LOGIC SYNC)
-// 1. FIXED: Corrected onDownloadExpense mapping to handleDownloadExpense (TS2322).
-// 2. FIXED: Restored Reports tab to utilize analyticsData and Recharts (TS6133, TS6192).
-// 3. CLEANUP: Resolved all duplicate props and variable scope errors.
-// 4. STATUS: 100% Type-Safe and Functional.
+// PHOENIX PROTOCOL - FINANCE TAB V4.0 (RECEIPT I18N FIX)
+// 1. FIXED: Corrected generateDigitalReceipt to use standard flat translation keys.
+// 2. STATUS: Resolves raw key display in digital receipt previews.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -138,14 +136,16 @@ export const FinanceTab: React.FC = () => {
     };
 
     const generateDigitalReceipt = (expense: Expense): File => { 
-        const label_title = t('finance.digitalReceipt.title', 'DËFTESË DIGJITALE');
-        const label_cat = t('finance.digitalReceipt.category', 'Kategoria:');
-        const label_amt = t('finance.digitalReceipt.amount', 'Shuma:');
-        const label_date = t('finance.digitalReceipt.date', 'Data:');
-        const label_desc = t('finance.digitalReceipt.description', 'Përshkrimi:');
-        const label_no_desc = t('finance.digitalReceipt.noDescription', 'Pa përshkrim');
-        const label_gen = t('finance.digitalReceipt.generated', 'Gjeneruar nga Haveri AI');
-        const label_prefix = t('finance.digitalReceipt.fileNamePrefix', 'Deftese');
+        // PHOENIX: Mapping to flat JSON keys for robust translation
+        const label_title = t('receiptTitle', 'DËFTESË DIGJITALE');
+        const label_cat = t('receiptCategory', 'Kategoria:');
+        const label_amt = t('receiptAmount', 'Shuma:');
+        const label_date = t('receiptDate', 'Data:');
+        const label_desc = t('receiptDescription', 'Përshkrimi:');
+        const label_no_desc = t('receiptNoDescription', 'Pa përshkrim');
+        const label_gen = t('receiptGeneratedBy', 'Gjeneruar nga Haveri AI');
+        const label_prefix = t('receiptFileNamePrefix', 'Deftese');
+        
         const content = `${label_title}\n------------------------------------------------\n${label_cat}   ${expense.category}\n${label_amt}       €${expense.amount.toFixed(2)}\n${label_date}        ${new Date(expense.date).toLocaleDateString('sq-AL')}\n${label_desc}  ${expense.description || label_no_desc}\n------------------------------------------------\n${label_gen}`; 
         const blob = new Blob([content], { type: 'text/plain' }); 
         const fileName = `${label_prefix}_${expense.category.replace(/\s+/g, '_')}_${expense.date}.txt`; 
