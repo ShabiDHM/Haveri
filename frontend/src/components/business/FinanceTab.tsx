@@ -1,9 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V4.2 (MULTI-YEAR UI CONTROLS)
-// 1. FEATURE: Added a visual Year Selector to allow switching between 2024, 2025, 2026.
-// 2. SYNC: Connected UI selector to 'setSelectedYear' in useFinanceData hook.
-// 3. UI: Implemented a professional glassmorphism dropdown for year selection.
-// 4. STATUS: 100% Functional for multi-year Kosovar market auditing.
+// PHOENIX PROTOCOL - FINANCE TAB V4.2 (API SYNC)
+// 1. FIXED: Corrected handleKpiClick to use existing 'getKpiInsight' method.
+// 2. STATUS: Fully synchronized with API V12.8.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -59,15 +57,7 @@ const TabButton = ({ label, icon, isActive, onClick }: any) => (
 
 export const FinanceTab: React.FC = () => {
     const { t, i18n } = useTranslation();
-    
-    // PHOENIX: Now using year controls from hook
-    const { 
-        loading, invoices, expenses, workspaces, posTransactions, analyticsData, 
-        totalExpenses, displayIncome, displayProfit, costOfGoodsSold, 
-        refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, 
-        deletePosTransaction: hookDeletePos,
-        selectedYear, setSelectedYear, availableYears 
-    } = useFinanceData();
+    const { loading, invoices, expenses, workspaces, posTransactions, analyticsData, totalExpenses, displayIncome, displayProfit, costOfGoodsSold, refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos, selectedYear, setSelectedYear, availableYears } = useFinanceData();
 
     const [activeTab, setActiveTab] = useState<'transactions' | 'reports'>('transactions');
     const [openingDocId, setOpeningDocId] = useState<string | null>(null);
@@ -92,8 +82,8 @@ export const FinanceTab: React.FC = () => {
     const handleKpiClick = async (type: string, title: string) => {
         setKpiModalOpen(true); setKpiAnalysis({ type: title, summary: '', contributors: [] }); setKpiLoading(true);
         try { 
-            // PHOENIX: Sends selectedYear to backend for filtered AI analysis
-            const data = await (apiService as any).generateKpiInsight({ kpi_type: type, year: selectedYear }); 
+            // PHOENIX: Calling corrected method name with year support
+            const data = await apiService.getKpiInsight(type, selectedYear); 
             setKpiAnalysis({ type: title, summary: data.summary, contributors: data.key_contributors }); 
         } 
         catch { setKpiAnalysis({ type: title, summary: t('finance.smartAnalyst.failed'), contributors: [] }); } 
@@ -186,7 +176,6 @@ export const FinanceTab: React.FC = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
             <style>{`.custom-finance-scroll::-webkit-scrollbar { width: 6px; } .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } select option { background-color: #0f172a; color: #f9fafb; }`}</style>
             
-            {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
                 <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
@@ -196,7 +185,6 @@ export const FinanceTab: React.FC = () => {
 
             <ProactiveInsightBanner />
 
-            {/* Actions & Year Selector Bar */}
             <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
                     <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
@@ -205,7 +193,6 @@ export const FinanceTab: React.FC = () => {
                     <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
                 </div>
                 
-                {/* PHOENIX: Professional Year Selector Dropdown */}
                 <div className="flex items-center gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
                     <Calendar size={20} className="text-blue-400 ml-2" />
                     <div className="flex flex-col">
@@ -227,43 +214,20 @@ export const FinanceTab: React.FC = () => {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6"><h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3"><Activity className="text-blue-500" />{t('finance.activityAndReports')}</h2><div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 gap-1"><TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} /><TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} /></div></div>
                 <div className="flex-1 overflow-hidden relative">
                     {activeTab === 'transactions' && (<div className="flex flex-col h-full space-y-6"><div className="relative group"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-blue-500/50 transition-all shadow-inner" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div><div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-3">{loading ? (<div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>) : (<TransactionList allTransactions={allTransactions} openingDocId={openingDocId} onEditInvoice={(i:any) => {setSelectedInvoice(i); setShowInvoiceModal(true);}} onEditExpense={(e:any) => {setSelectedExpense(e); setShowExpenseModal(true);}} onViewInvoice={handleViewInvoice} onViewExpense={handleViewExpense} onDownloadInvoice={handleDownloadInvoice} onDownloadExpense={handleDownloadExpense} onArchiveInvoice={handleArchiveInvoice} onArchiveExpense={handleArchiveExpense} onDeleteInvoice={(id:any) => hookDeleteInvoice(id)} onDeleteExpense={(id:any) => hookDeleteExpense(id)} onDeletePos={(id:any) => hookDeletePos(id)} onViewSourceDocument={() => {}} onBulkDelete={handleUnifiedBulkDelete} />)}</div></div>)}
-                    
                     {activeTab === 'reports' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
-                            {!analyticsData ? (
-                                <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div>
-                            ) : (
+                            {!analyticsData ? ( <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
                                         <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-blue-400" /> {t('finance.analytics.salesTrend')}</h4>
                                         <div className="h-[300px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <AreaChart data={analyticsData.sales_trend}>
-                                                    <defs><linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
-                                                    <XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} />
-                                                    <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} />
-                                                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} />
-                                                    <Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
+                                            <ResponsiveContainer width="100%" height="100%"><AreaChart data={analyticsData.sales_trend}><defs><linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} /><YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} /><Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" /></AreaChart></ResponsiveContainer>
                                         </div>
                                     </div>
                                     <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
                                         <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
                                         <div className="h-[300px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 10 }}>
-                                                    <XAxis type="number" hide />
-                                                    <YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                                                    <Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} />
-                                                    <Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>
-                                                        {analyticsData.top_products.map((_: any, index: number) => (
-                                                            <Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />
-                                                        ))}
-                                                    </Bar>
-                                                </BarChart>
-                                            </ResponsiveContainer>
+                                            <ResponsiveContainer width="100%" height="100%"><BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 10 }}><XAxis type="number" hide /><YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} /><Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>{analyticsData.top_products.map((_: any, index: number) => (<Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />))}</Bar></BarChart></ResponsiveContainer>
                                         </div>
                                     </div>
                                 </div>
