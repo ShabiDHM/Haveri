@@ -1,8 +1,7 @@
 // FILE: frontend/src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V1.1 (ADMIN ACCESS CONTROL)
-// 1. IMPORT: Added 'useAuth' hook to access the current user's session data.
-// 2. ACCESS CONTROL: The "Nexus Topology" card is now conditionally rendered ONLY if the user's role is 'ADMIN'.
-// 3. RESPONSIVE UI: The grid layout dynamically adjusts from 2 columns to 1 for non-admin users to prevent empty space.
+// PHOENIX PROTOCOL - INSIGHTS UI V1.2 (ADMIN VIEW REMOVAL)
+// 1. FEATURE: Removed the "ADMIN VIEW" badge from the ViewHeader component.
+// 2. STATUS: UI synchronized with explicit removal request.
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,11 +11,11 @@ import {
     FileSpreadsheet, 
     ArrowLeft, 
     Cpu, 
-    Network,
-    Lock
+    Network
+    // PHOENIX: Removed Lock as it's no longer needed for the removed badge
 } from 'lucide-react';
 import { useBusinessIntelligence } from '../../hooks/useBusinessIntelligence';
-import { useAuth } from '../../context/AuthContext'; // PHOENIX: Imported auth hook
+import { useAuth } from '../../context/AuthContext';
 
 // Modules
 import { DebtModule } from './insights/DebtModule';
@@ -29,12 +28,11 @@ import GraphVisualization from '../GraphVisualization';
 
 export const InsightsTab: React.FC = () => {
     const { t } = useTranslation();
-    const { user } = useAuth(); // PHOENIX: Get user data from context
+    const { user } = useAuth();
     const { loading, debtAnalytics, profitAnalytics, taxAnalytics } = useBusinessIntelligence();
     
     const [viewMode, setViewMode] = useState<'dashboard' | 'analyst' | 'graph'>('dashboard');
 
-    // PHOENIX: Check for admin role
     const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
     if (loading) {
@@ -64,12 +62,7 @@ export const InsightsTab: React.FC = () => {
                     <span>{title}</span>
                 </div>
             </div>
-            {isAdmin && (
-                 <div className="text-xs font-mono text-amber-400 uppercase tracking-widest hidden sm:flex items-center gap-2">
-                    <Lock size={12} />
-                    {t('insights.adminView', 'Admin View')}
-                </div>
-            )}
+            {/* PHOENIX: Removed isAdmin check and the Admin View div entirely */}
         </div>
     );
 
@@ -86,7 +79,7 @@ export const InsightsTab: React.FC = () => {
                         exit={{ opacity: 0, scale: 0.98 }} 
                         transition={{ duration: 0.3 }}
                     >
-                        <ViewHeader title={t('analyst.title', 'Smart Data Analyst')} icon={FileSpreadsheet} />
+                        <ViewHeader title={t('analyst.smartDataAnalystTitle', 'Smart Data Analyst')} icon={FileSpreadsheet} />
                         <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative">
                              <SpreadsheetAnalysisPanel />
                         </div>
@@ -94,7 +87,7 @@ export const InsightsTab: React.FC = () => {
                 )}
 
                 {/* --- MODE: GRAPH (NEXUS) --- */}
-                {viewMode === 'graph' && isAdmin && ( // PHOENIX: Also protected here
+                {viewMode === 'graph' && isAdmin && (
                     <motion.div 
                         key="graph" 
                         initial={{ opacity: 0, scale: 0.98 }} 

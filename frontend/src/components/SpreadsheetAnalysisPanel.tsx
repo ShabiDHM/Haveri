@@ -1,7 +1,7 @@
 // FILE: frontend/src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - REVISION V10.1 (TYPE SAFETY)
-// 1. FIX: Added a type guard `&& filename` to ensure the filename exists before retrieving the handoff file.
-// 2. STATUS: Resolves the TypeScript error ts(2345) and prevents a potential runtime crash.
+// PHOENIX PROTOCOL - REVISION V10.2 (I18N SYNC)
+// 1. FEATURE: Translated "Smart Data Analyst" to Albanian using i18next.
+// 2. STATUS: Fully localized for this title.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -142,7 +142,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     <p className="text-gray-400 mb-6 max-w-md mx-auto">{t('analyst.dropDesc', 'Tërhiqni një skedar Excel, CSV, ose imazh.')}</p>
                     <div className="flex items-center gap-4">
                         <button onClick={() => fileInputRef.current?.click()} className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20">{t('analyst.selectButton', 'Zgjidh Skedarin')}</button>
-                        <button onClick={startHandoff} className="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2"><Smartphone size={18} /> Skano nga Telefoni</button>
+                        <button onClick={startHandoff} className="px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2"><Smartphone size={18} /> {t('analyst.scanFromPhone', 'Skano nga Telefoni')}</button>
                     </div>
                 </div>
                 {/* Mobile View */}
@@ -163,13 +163,14 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#1f2937] border border-white/10 p-8 rounded-2xl w-full max-w-sm shadow-2xl text-center relative">
                         <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-full"><X size={18} /></button>
-                        <h3 className="text-xl font-bold text-white mb-2">Skano për të Ngarkuar</h3>
-                        <p className="text-gray-400 mb-6">Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.</p>
+                        <h3 className="text-xl font-bold text-white mb-2">{t('analyst.qrModalTitle', 'Skano për të Ngarkuar')}</h3>
+                        <p className="text-gray-400 mb-6">{t('analyst.qrModalDesc', 'Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.')}</p>
                         <div className="bg-white p-4 rounded-lg inline-block">
                             <QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={200} />
                         </div>
                         <div className="mt-6 flex items-center justify-center gap-2 text-gray-500 animate-pulse">
-                           <Loader2 className="w-4 h-4 animate-spin"/> Duke pritur për skedarin...
+                           <Loader2 className="w-4 h-4 animate-spin"/> {t('analyst.qrModalWaiting', 'Duke pritur për skedarin...')
+                           }
                         </div>
                     </motion.div>
                 </div>
@@ -196,9 +197,9 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         return (
             <div className="min-h-[500px] flex flex-col items-center justify-center bg-red-500/5 border border-red-500/20 rounded-3xl text-center p-8">
                 <AlertTriangle className="w-16 h-16 text-red-400 mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Gabim në Analizë</h3>
+                <h3 className="text-xl font-bold text-white mb-2">{t('analyst.analysisErrorTitle', 'Gabim në Analizë')}</h3>
                 <p className="text-red-300 mb-6 max-w-lg">{errorMsg}</p>
-                <button onClick={reset} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors">Provo Përsëri</button>
+                <button onClick={reset} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors">{t('analyst.tryAgainButton', 'Provo Përsëri')}</button>
             </div>
         );
     }
@@ -210,24 +211,24 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
             <div className="bg-gray-900 p-4 sm:p-6 md:p-8 min-h-[600px] h-full text-white">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                     <div>
-                        <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2"><FileSpreadsheet className="text-blue-400" />Raporti i Analizës</h2>
+                        <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2"><FileSpreadsheet className="text-blue-400" />{t('analyst.reportTitle', 'Raporti i Analizës')}</h2>
                         <p className="text-gray-400 text-xs sm:text-sm mt-1 break-all">{file?.name} • {new Date().toLocaleDateString()}</p>
                     </div>
                     <button onClick={reset} className="self-end sm:self-auto p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                     <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                        <div className="flex items-center gap-3 mb-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider"><DollarSign size={16} /> Total Volum</div>
+                        <div className="flex items-center gap-3 mb-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider"><DollarSign size={16} /> {t('analyst.totalVolume', 'Total Volum')}</div>
                         <div className={clsx("text-xl sm:text-2xl font-bold", { 'text-emerald-400': result.stats.total_sum >= 0, 'text-red-400': result.stats.total_sum < 0 })}>
                             €{result.stats.total_sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </div>
                     <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                        <div className="flex items-center gap-3 mb-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider"><Activity size={16} /> Transaksione</div>
+                        <div className="flex items-center gap-3 mb-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider"><Activity size={16} /> {t('analyst.transactions', 'Transaksione')}</div>
                         <div className="text-xl sm:text-2xl font-bold text-white">{result.stats.transaction_count}</div>
                     </div>
                     <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                        <div className="flex items-center gap-3 mb-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider"><TrendingUp size={16} /> Mesatarja</div>
+                        <div className="flex items-center gap-3 mb-2 text-gray-400 text-xs sm:text-sm font-medium uppercase tracking-wider"><TrendingUp size={16} /> {t('analyst.average', 'Mesatarja')}</div>
                         <div className={clsx("text-xl sm:text-2xl font-bold", { 'text-blue-400': result.stats.average >= 0, 'text-orange-400': result.stats.average < 0 })}>
                             €{result.stats.average.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
@@ -235,26 +236,26 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                 </div>
                 <div className="space-y-6">
                     <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 p-4 sm:p-6 rounded-2xl border border-blue-500/20">
-                        <h3 className="text-base sm:text-lg font-bold text-blue-300 mb-3 flex items-center gap-2"><CheckCircle2 size={18} /> Përmbledhja Ekzekutive</h3>
+                        <h3 className="text-base sm:text-lg font-bold text-blue-300 mb-3 flex items-center gap-2"><CheckCircle2 size={18} /> {t('analyst.executiveSummaryTitle', 'Përmbledhja Ekzekutive')}</h3>
                         <p className="text-sm sm:text-base text-gray-200 leading-relaxed whitespace-pre-line">{result.ai_summary.summary}</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="bg-red-900/20 p-4 sm:p-5 rounded-2xl border border-red-500/20">
-                            <h3 className="text-base font-bold text-red-300 mb-3 flex items-center gap-2"><ShieldAlert size={18} /> Rreziku Primar</h3>
+                            <h3 className="text-base font-bold text-red-300 mb-3 flex items-center gap-2"><ShieldAlert size={18} /> {t('analyst.primaryRiskTitle', 'Rreziku Primar')}</h3>
                             <p className="text-sm text-gray-300 leading-relaxed">{result.ai_summary.primary_risk}</p>
                         </div>
                         <div className="bg-emerald-900/20 p-4 sm:p-5 rounded-2xl border border-emerald-500/20">
-                             <h3 className="text-base font-bold text-emerald-300 mb-3 flex items-center gap-2"><Sparkles size={18} /> Rekomandimi Kryesor</h3>
+                             <h3 className="text-base font-bold text-emerald-300 mb-3 flex items-center gap-2"><Sparkles size={18} /> {t('analyst.keyRecommendationTitle', 'Rekomandimi Kryesor')}</h3>
                              <p className="text-sm text-gray-300 leading-relaxed">{result.ai_summary.key_recommendation}</p>
                         </div>
                     </div>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
                     <div className="bg-white/5 p-4 sm:p-6 rounded-2xl border border-white/10 flex flex-col h-full min-h-[350px]">
-                        <h3 className="font-bold text-gray-200 mb-6 flex items-center gap-2"><BarChart3 size={18} className="text-emerald-400"/> Trendi i Shpenzimeve</h3>
+                        <h3 className="font-bold text-gray-200 mb-6 flex items-center gap-2"><BarChart3 size={18} className="text-emerald-400"/> {t('analyst.expenseTrendTitle', 'Trendi i Shpenzimeve')}</h3>
                         <div className="flex-1 w-full overflow-x-auto pb-4">
                             <div className="flex items-end gap-2 h-48 sm:h-64 min-w-[300px]">
-                                {result.chart_data.length === 0 ? ( <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">Nuk ka të dhëna grafike</div> ) : (
+                                {result.chart_data.length === 0 ? ( <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">{t('analyst.noChartData', 'Nuk ka të dhëna grafike')}</div> ) : (
                                     result.chart_data.map((item, idx) => (
                                         <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-2 group relative min-w-[30px]">
                                             <div className="hidden sm:block absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10 pointer-events-none border border-white/10">€{item.value.toLocaleString()}</div>
@@ -268,12 +269,12 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     </div>
                     <div className="bg-white/5 p-4 sm:p-6 rounded-2xl border border-white/10 flex flex-col h-full min-h-[300px]">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-gray-200">Anomali & Të Dyshimta</h3>
-                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full font-bold">{result.anomalies.length} Gjetje</span>
+                            <h3 className="font-bold text-gray-200">{t('analyst.anomaliesTitle', 'Anomali & Të Dyshimta')}</h3>
+                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full font-bold">{result.anomalies.length} {t('analyst.findingsCount', 'Gjetje')}</span>
                         </div>
                         <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1 max-h-[400px]">
                             {result.anomalies.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-gray-500 italic"><CheckCircle2 size={32} className="mb-2 opacity-50 text-emerald-500" /><p>Asnjë anomali e zbuluar.</p></div>
+                                <div className="h-full flex flex-col items-center justify-center text-gray-500 italic"><CheckCircle2 size={32} className="mb-2 opacity-50 text-emerald-500" /><p>{t('analyst.noAnomalies', 'Asnjë anomali e zbuluar.')}</p></div>
                             ) : (
                                 result.anomalies.map((ano, i) => (
                                     <div key={i} className="flex gap-3 p-4 bg-red-500/5 border border-red-500/10 rounded-xl hover:bg-red-500/10 transition-colors">

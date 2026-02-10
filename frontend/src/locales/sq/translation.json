@@ -504,5 +504,8 @@
     "dashboard_title": "Administrimi i Havery",
     "dashboard_subtitle": "Menaxhimi i Funksioneve",
     "user_base_title": "Përdoruesit"
+     },
+  "analyst": { 
+    "smartDataAnalystTitle": "Analisti i të Dhënave"
   }
 }
