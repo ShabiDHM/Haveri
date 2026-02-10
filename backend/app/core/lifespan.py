@@ -1,7 +1,8 @@
 # FILE: backend/app/core/lifespan.py
-# PHOENIX PROTOCOL - LIFESPAN MANAGER V4.0 (GRAPH DB INTEGRATION)
-# 1. FEATURE: Integrated Neo4j connection and disconnection into the app lifecycle.
-# 2. STATUS: All databases are now managed by the lifespan context.
+# PHOENIX PROTOCOL - LIFESPAN MANAGER V5.0 (STALE REFERENCE FIX)
+# 1. REFACTOR: Removed direct imports of db instances to prevent stale NoneType references.
+# 2. ARCHITECTURE: Now captures returned DB instances directly from connection functions.
+# 3. STATUS: Production Ready.
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -13,12 +14,10 @@ from .db import (
     connect_to_mongo,
     connect_to_redis,
     connect_to_motor,
-    connect_to_neo4j, # <-- IMPORT NEO4J CONNECT
+    connect_to_neo4j,
     close_mongo_connections,
     close_redis_connection,
-    close_neo4j_connection, # <-- IMPORT NEO4J CLOSE
-    db_instance, 
-    async_db_instance 
+    close_neo4j_connection,
 )
 from .config import settings
 from .embeddings import HaveriEmbeddingFunction
@@ -44,6 +43,7 @@ def initialize_chromadb():
 async def create_mongo_indexes(app: FastAPI):
     """Creates MongoDB indexes for performance."""
     try:
+        # Check if the DB is actually attached to the state
         if not hasattr(app.state, "async_mongo_db") or app.state.async_mongo_db is None:
             logger.warning("--- [Indexes] ⚠️ MongoDB not found in app.state. Skipping indexing. ---")
             return
@@ -51,11 +51,18 @@ async def create_mongo_indexes(app: FastAPI):
         db = app.state.async_mongo_db
         logger.info("--- [Lifespan] 🚀 Optimizing Database Indexes... ---")
 
+        # Define indexes
         await db.users.create_index([("email", ASCENDING)], unique=True)
+        
+        # Cases indexes
         await db.cases.create_index([("owner_id", ASCENDING), ("updated_at", DESCENDING)])
         await db.cases.create_index([("case_number", ASCENDING)])
+        
+        # Documents indexes
         await db.documents.create_index([("case_id", ASCENDING), ("created_at", DESCENDING)])
         await db.documents.create_index([("owner_id", ASCENDING)])
+        
+        # Calendar indexes
         await db.calendar_events.create_index([("case_id", ASCENDING)])
         await db.calendar_events.create_index([("start_date", ASCENDING)])
         await db.calendar_events.create_index([("owner_id", ASCENDING)])
@@ -69,17 +76,17 @@ async def lifespan(app: FastAPI):
     """Handles application startup and shutdown events."""
     logger.info("--- [Lifespan] Application startup sequence initiated. ---")
     
-    # --- Connect to all databases ---
-    connect_to_mongo()
-    connect_to_redis()
-    await connect_to_motor()
-    connect_to_neo4j() # <-- CONNECT TO NEO4J
-    
-    app.state.mongo_db = db_instance
-    app.state.async_mongo_db = async_db_instance
+    # --- Connect to all databases & Attach to App State ---
+    # We now capture the return values to ensure we have the live objects
+    app.state.mongo_db = connect_to_mongo()
+    app.state.redis = connect_to_redis()
+    app.state.async_mongo_db = await connect_to_motor()
+    app.state.neo4j_driver = connect_to_neo4j()
     
     # --- Initialize services and indexes ---
     initialize_chromadb()
+    
+    # Pass 'app' so the function can access app.state.async_mongo_db
     await create_mongo_indexes(app)
     
     logger.info("--- [Lifespan] All resources initialized. Application is ready. ---")
@@ -90,5 +97,5 @@ async def lifespan(app: FastAPI):
     logger.info("--- [Lifespan] Application shutdown sequence initiated. ---")
     close_mongo_connections()
     close_redis_connection()
-    close_neo4j_connection() # <-- DISCONNECT FROM NEO4J
+    close_neo4j_connection()
     logger.info("--- [Lifespan] All connections closed gracefully. Shutdown complete. ---")

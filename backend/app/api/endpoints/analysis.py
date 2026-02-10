@@ -1,8 +1,7 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V5.5 (STRICT PYLANCE SAFETY)
-# 1. FIXED: Implemented local variable extraction to resolve "reportOptionalMemberAccess".
-# 2. FIXED: Refactored year discovery to handle ObjectId/String user_id variations.
-# 3. STATUS: 100% Pylance clean.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V5.6 (IMPORT FIX)
+# 1. FIXED: Updated import path for 'get_db' to point to 'app.core.db'.
+# 2. STATUS: 100% Pylance clean.
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List, Dict, Any, Optional
@@ -15,7 +14,9 @@ import logging
 import asyncio
 import mimetypes
 
-from app.api.endpoints.dependencies import get_current_user, get_db
+# --- IMPORT FIX: Get DB directly from core ---
+from app.core.db import get_db
+from app.api.endpoints.dependencies import get_current_user
 from app.models.user import UserInDB
 from app.services.finance_service import FinanceService
 from app.services import llm_service
