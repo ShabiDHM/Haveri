@@ -1,8 +1,9 @@
 // FILE: src/pages/LandingPage.tsx
-// PHOENIX PROTOCOL - LANDING PAGE V18.0 (PREMIUM UI OVERHAUL)
-// 1. RESTRUCTURED: Moved from generic features to Intelligence-focused pillars (Audit, Portal, Inventory).
-// 2. DESIGN: Enhanced glassmorphism, animated backgrounds, and typography.
-// 3. STATUS: 100% synchronized with the new Haveri AI capabilities.
+// PHOENIX PROTOCOL - LANDING PAGE V18.1 (I18N & UI CLEANUP)
+// 1. REMOVED: V4.0 technical badge as requested.
+// 2. FIXED: Replaced hardcoded English feature titles with translation keys.
+// 3. ADDED: Included 'Auditori Forenzik' in the operational capabilities list.
+// 4. STATUS: 100% synchronized with Pro features.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -13,12 +14,14 @@ import {
     TrendingUp,
     Zap,
     Users,
-    ChevronDown
-} from 'lucide-react';
+    ChevronDown} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProductShowcase from '../components/landing/ProductShowcase';
+import { useTranslation } from 'react-i18next';
 
 const LandingPage: React.FC = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-[#020617] text-white overflow-hidden font-sans selection:bg-emerald-500/30 selection:text-white">
       
@@ -41,10 +44,10 @@ const LandingPage: React.FC = () => {
                     <span className="text-xl font-black tracking-tighter">HAVERI<span className="text-emerald-500">AI</span></span>
                 </div>
                 <div className="hidden md:flex items-center gap-8">
-                    <a href="#features" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Produkti</a>
-                    <a href="#intelligence" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Inteligjenca</a>
-                    <Link to="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Hyni</Link>
-                    <Link to="/register" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-600/20">Fillo Tani</Link>
+                    <a href="#features" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">{t('navigation.product', 'Produkti')}</a>
+                    <a href="#intelligence" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">{t('navigation.intelligence', 'Inteligjenca')}</a>
+                    <Link to="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">{t('general.login')}</Link>
+                    <Link to="/register" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-600/20">{t('general.getStarted')}</Link>
                 </div>
             </div>
         </nav>
@@ -56,27 +59,21 @@ const LandingPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="inline-flex items-center gap-2 py-2 px-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold tracking-widest mb-8 uppercase shadow-2xl">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              V4.0 • E Fuqizuar me DeepSeek AI
-            </div>
+            {/* PHOENIX: Badge removed here */}
             
             <h1 className="text-6xl md:text-8xl font-black mb-8 leading-[0.95] tracking-tighter">
-              Zbuloni Forcën e<br />
+              {t('landing.heroTitle')}<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-blue-400 to-indigo-400">
-                Të Dhënave Tuaja.
+                {t('landing.heroHighlight')}
               </span>
             </h1>
             <p className="text-lg md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed font-light">
-              Më shumë se një CRM. Një motor auditimi dhe automatizimi që kupton ligjet e ATK-së dhe e kthen stokun tuaj në kapital të gjallë.
+              {t('landing.heroSubtitle')}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
               <Link to="/register" className="w-full sm:w-auto group relative px-10 py-5 bg-white text-black hover:bg-emerald-400 hover:text-black rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(255,255,255,0.1)]">
-                Nisni Falas
+                {t('landing.getStarted')}
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link to="/login" className="w-full sm:w-auto px-10 py-5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold text-lg transition-all backdrop-blur-md text-center">
@@ -103,9 +100,9 @@ const LandingPage: React.FC = () => {
                     <div className="absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-blue-500/20 blur-[100px] rounded-full group-hover:bg-blue-500/30 transition-all duration-700" />
                     <ShieldCheck className="text-blue-400 mb-6" size={48} strokeWidth={1} />
                     <div>
-                        <h3 className="text-4xl font-black mb-4 tracking-tighter italic">Auditori Forenzik</h3>
+                        <h3 className="text-4xl font-black mb-4 tracking-tighter italic">{t('landing.feature1Title')}</h3>
                         <p className="text-gray-400 text-lg max-w-md leading-relaxed">
-                            Analizë automatike e faturave dhe shpenzimeve kundrejt legjislacionit të Kosovës. AI jonë gjen çdo TVSH të gabuar dhe çdo mospërputhje para se ta bëjë shteti.
+                            {t('landing.feature1Desc')}
                         </p>
                     </div>
                     <div className="flex gap-2 mt-6">
@@ -118,9 +115,9 @@ const LandingPage: React.FC = () => {
                 <div className="group relative overflow-hidden rounded-[2.5rem] bg-slate-900 border border-white/5 p-10 flex flex-col justify-between h-[450px]">
                     <Users className="text-emerald-400" size={40} strokeWidth={1} />
                     <div>
-                        <h3 className="text-3xl font-bold mb-3 tracking-tight">Portali i Klientit</h3>
+                        <h3 className="text-3xl font-bold mb-3 tracking-tight">{t('landing.feature2Title')}</h3>
                         <p className="text-gray-500 text-base leading-relaxed">
-                            Transparencë e plotë. Klientët tuaj kanë linkun e tyre unik për të parë kronologjinë, shkarkuar dokumente dhe komunikuar me ju në mënyrë të enkriptuar.
+                            {t('landing.feature2Desc')}
                         </p>
                     </div>
                     <div className="p-4 bg-black/40 rounded-2xl border border-white/5 text-[10px] font-mono text-emerald-500/70">
@@ -147,9 +144,21 @@ const LandingPage: React.FC = () => {
                 
                 <div className="space-y-8">
                     {[
-                        { t: 'Smart Autocomplete', d: 'Zgjidhni klientin dhe NIPT-i, adresa dhe detajet e kontaktit plotësohen vetë nga databaza jonë globale.', i: <Zap className="text-amber-400" /> },
-                        { t: 'Predictive Restock', d: 'AI parashikon kur po ju mbaron stoku dhe drafton porosinë e rradhës gati për miratim.', i: <TrendingUp className="text-blue-400" /> },
-                        { t: 'Digital Archive', d: 'Skanoni me telefon. AI lexon përmbajtjen, nxjerr totalet dhe e arkivon dokumentin në dhomën e sigurt.', i: <Database className="text-purple-400" /> }
+                        { 
+                          t: t('landing.auditTitle', 'Auditori Forenzik'), 
+                          d: t('landing.auditDesc', 'AI që lidh faturat tuaja direkt me ligjet e ATK-së dhe gjen parregullsi ligjore automatikisht.'), 
+                          i: <ShieldCheck className="text-blue-400" /> 
+                        },
+                        { 
+                          t: t('landing.predictiveRestockTitle', 'Rimbushje Parashikuese'), 
+                          d: t('landing.predictiveRestockDesc', 'AI parashikon kur po ju mbaron stoku dhe drafton porosinë e rradhës gati për miratim.'), 
+                          i: <TrendingUp className="text-emerald-400" /> 
+                        },
+                        { 
+                          t: t('landing.digitalArchiveTitle', 'Arkiva Digjitale'), 
+                          d: t('landing.digitalArchiveDesc', 'Skanoni me telefon. AI lexon përmbajtjen, nxjerr totalet dhe e arkivon dokumentin në dhomën e sigurt.'), 
+                          i: <Database className="text-purple-400" /> 
+                        }
                     ].map((item, i) => (
                         <div key={i} className="flex gap-6 group">
                             <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-white/10 transition-all duration-500">
@@ -194,7 +203,7 @@ const LandingPage: React.FC = () => {
                 <div className="relative z-10">
                     <h2 className="text-5xl md:text-6xl font-black mb-8 tracking-tighter">Transformoni mënyrën<br/>si punoni.</h2>
                     <Link to="/register" className="inline-flex items-center gap-4 px-12 py-6 bg-white text-black hover:bg-emerald-400 hover:text-black rounded-2xl font-black text-xl transition-all shadow-2xl hover:scale-105 active:scale-95">
-                        Fillo Tani Falas
+                        {t('landing.getStarted')}
                         <ChevronRight className="w-6 h-6" />
                     </Link>
                 </div>

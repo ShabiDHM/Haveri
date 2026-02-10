@@ -167,7 +167,7 @@
     "date": "sq-AL"
   },
   "landing": {
-   "heroTitle": "Zbuloni Forcën e",
+    "heroTitle": "Zbuloni Forcën e",
     "heroHighlight": "Të Dhënave Tuaja.",
     "heroSubtitle": "Sistemi operativ për biznesin Kosovar. Auditoni financat, automatizoni faturimin dhe monitoroni stokun me inteligjencë artificiale që njeh ligjet e ATK-së.",
     "getStarted": "Fillo Falas Tani",
@@ -176,7 +176,15 @@
     "feature2Title": "Portali i Klientit",
     "feature2Desc": "Hapësirë e sigurt për klientët tuaj për të parë dokumentet dhe kronologjinë.",
     "feature3Title": "Inteligjenca e Stokut",
-    "feature3Desc": "Parashikoni rimbushjen e artikujve dhe llogaritni koston e saktë të recetave."
+    "feature3Desc": "Parashikoni rimbushjen e artikujve dhe llogaritni koston e saktë të recetave.",
+    "auditTitle": "Auditori Forenzik",
+    "auditDesc": "AI që lidh faturat tuaja direkt me ligjet e ATK-së dhe gjen parregullsi ligjore automatikisht.",
+    "predictiveRestockTitle": "Rimbushje Parashikuese",
+    "predictiveRestockDesc": "AI parashikon kur po ju mbaron stoku dhe drafton porosinë e rradhës gati për miratim.",
+    "digitalArchiveTitle": "Arkiva Digjitale",
+    "digitalArchiveDesc": "Skanoni me telefon. AI lexon përmbajtjen, nxjerr totalet dhe e arkivon dokumentin në dhomën e sigurt.",
+    "smartAutocompleteTitle": "Plotësimi Inteligjent",
+    "smartAutocompleteDesc": "Zgjidhni klientin dhe NIPT-i, adresa dhe detajet e kontaktit plotësohen vetë."
   },
   "showcase": {
     "title": "Sistemi Operativ për Biznesin Tuaj",
