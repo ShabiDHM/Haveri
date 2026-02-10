@@ -283,6 +283,7 @@
       "typePos": "Shitje nga POS",
       "typeBank": "Pasqyrë Bankare",
       "uploadTitlePos": "Ngarko Raportin POS",
+      "uploadTitleBank": "Ngarko Pasqyrën Bankare",
       "uploadDesc": "Tërhiqni skedarin këtu ose klikoni për të zgjedhur (CSV/XLSX)",
       "selectFile": "Zgjidhni Skedarin",
       "analyzing": "Duke analizuar...",
@@ -351,7 +352,7 @@
       "rate18": "18% (TVSH Standarde)",
       "atk": {
         "openEdi": "Hap EDI (ATK)",
-        "copyInstruction": "Kopjoni vlerat e mëposhtme dhe vendosini në formularin përkatës në EDI:",
+        "copyInstruction": "Kopjoni vlerat e mëposhtme dhe vendosini në formularin përkatës in EDI:",
         "box9": "Të ardhura bruto",
         "box11": "Tatimi (9%)",
         "box10": "Shitjet",
@@ -366,10 +367,18 @@
     "title": "Menaxhimi i Stokut",
     "tabItems_short": "Stoku",
     "tabRecipes": "Recetat",
+    "import": {
+      "clickToSelect": "Klikoni për të zgjedhur skedarin",
+      "instruction": "Ngarkoni një skedar CSV ose Excel për të importuar të dhënat.",
+      "requiredStructure": "Struktura e Kërkuar (CSV/Excel)",
+      "button": "Importo Tani"
+    },
     "items": {
       "add": "Shto Artikull",
       "edit": "Ndrysho Artikull",
       "import": "Importo CSV",
+      "importTitle": "Importo Artikujt e Inventarit",
+      "importedCount": "Artikujt e importuar",
       "name": "Emri i Artikullit",
       "cost": "Kosto / Njësi",
       "stock": "Stoku Aktual",
@@ -380,12 +389,14 @@
       "add": "Krijo Recetë",
       "edit": "Ndrysho Recetën",
       "import": "Importo Receta",
+      "importTitle": "Importo Recetat",
       "productName": "Emri i Produktit",
       "ingredients": "Përbërësit",
       "cost": "Kosto e Vlerësuar",
       "noRecipes": "Nuk u gjet asnjë recetë.",
       "importedCount": "Recetat e importuara"
-    }
+    },
+    "lowStock": "Stoku Kritik"
   },
   "clients": {
     "importTitle": "Importo Klientët & Furnitorët",
