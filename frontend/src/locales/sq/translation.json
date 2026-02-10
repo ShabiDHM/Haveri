@@ -506,6 +506,37 @@
     "user_base_title": "Përdoruesit"
      },
   "analyst": { 
-    "smartDataAnalystTitle": "Analisti i të Dhënave"
+     "smartDataAnalystTitle": "Analisti i të Dhënave",
+    "title": "Analist i Dhënave",
+    "description": "Merrni analiza të thelluara të të dhënave Excel me zbulim anomalish të fuqizuar nga AI.",
+    "initialize": "Nis Analizën",
+    "dropTitle": "Ngarko ose ngarko Skedarin",
+    "dropDesc": "Ngarko një skedar Excel, CSV, ose imazh.",
+    "selectButton": "Zgjidh Skedarin",
+    "scanFromPhone": "Skano nga Telefoni",
+    "mobileTitle": "Analizo një Dokument",
+    "mobileDesc": "Skanoni një dokument me kamerë ose ngarkoni një skedar nga telefoni juaj.",
+    "scanButton": "Skano me Kamerë",
+    "uploadButton": "Ngarko Skedar",
+    "qrModalTitle": "Skano për të Ngarkuar",
+    "qrModalDesc": "Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.",
+    "qrModalWaiting": "Duke pritur për skedarin...",
+    "statusScanning": "Duke skanuar dhe strukturuar të dhënat...",
+    "statusAnalyzing": "Duke kërkuar për anomali financiare...",
+    "analysisErrorTitle": "Gabim në Analizë",
+    "tryAgainButton": "Provo Përsëri",
+    "reportTitle": "Raporti i Analizës",
+    "totalVolume": "Total Volum",
+    "transactions": "Transaksione",
+    "average": "Mesatarja",
+    "executiveSummaryTitle": "Përmbledhja Ekzekutive",
+    "primaryRiskTitle": "Rreziku Primar",
+    "keyRecommendationTitle": "Rekomandimi Kryesor",
+    "expenseTrendTitle": "Trendi i Shpenzimeve",
+    "noChartData": "Nuk ka të dhëna grafike",
+    "anomaliesTitle": "Anomali & Të Dyshimta",
+    "findingsCount": "Gjetje",
+    "noAnomalies": "Asnjë anomali e zbuluar.",
+    "errorFileType": "Ky lloj i skedarit nuk mbështetet."
   }
 }

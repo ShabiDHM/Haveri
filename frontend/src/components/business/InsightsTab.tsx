@@ -1,7 +1,7 @@
 // FILE: frontend/src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V1.2 (ADMIN VIEW REMOVAL)
-// 1. FEATURE: Removed the "ADMIN VIEW" badge from the ViewHeader component.
-// 2. STATUS: UI synchronized with explicit removal request.
+// PHOENIX PROTOCOL - INSIGHTS UI V1.3 (ANALYST CARD I18N)
+// 1. FEATURE: Translated "Smart Analyst" title and description.
+// 2. STATUS: Fully localized for this section.
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +12,6 @@ import {
     ArrowLeft, 
     Cpu, 
     Network
-    // PHOENIX: Removed Lock as it's no longer needed for the removed badge
 } from 'lucide-react';
 import { useBusinessIntelligence } from '../../hooks/useBusinessIntelligence';
 import { useAuth } from '../../context/AuthContext';
@@ -62,7 +61,6 @@ export const InsightsTab: React.FC = () => {
                     <span>{title}</span>
                 </div>
             </div>
-            {/* PHOENIX: Removed isAdmin check and the Admin View div entirely */}
         </div>
     );
 
@@ -131,15 +129,15 @@ export const InsightsTab: React.FC = () => {
                                         </div>
                                         <div>
                                             <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
-                                                {t('analyst.title', 'Smart Analyst')}
+                                                {t('analyst.smartDataAnalystTitle', 'Smart Analyst')}
                                             </h3>
                                             <p className="text-slate-400 text-sm mt-1 leading-relaxed">
-                                                {t('analyst.desc', 'Deep dive into excel data with AI-powered anomaly detection.')}
+                                                {t('analyst.description', 'Deep dive into excel data with AI-powered anomaly detection.')}
                                             </p>
                                         </div>
                                     </div>
                                     <div className="mt-6 flex items-center text-xs font-mono text-blue-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-                                        {t('analyst.initialize')} <span className="ml-2">→</span>
+                                        {t('analyst.initialize', 'Initialize Analysis')} <span className="ml-2">→</span>
                                     </div>
                                 </div>
                             </motion.button>
@@ -170,7 +168,7 @@ export const InsightsTab: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="mt-6 flex items-center text-xs font-mono text-emerald-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {t('graph.launch')} <span className="ml-2">→</span>
+                                            {t('graph.launch', 'Launch Visualization')} <span className="ml-2">→</span>
                                         </div>
                                     </div>
                                 </motion.button>
