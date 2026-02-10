@@ -1,8 +1,8 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V6.3 (FINAL WORD INTERSECTOR)
-# 1. FEATURE: Word-set intersection for COGS matching (solves 'Espresso & Macchiato' issue).
-# 2. FIXED: Capped Year Discovery at current UTC year.
-# 3. STATUS: 100% Pylance Clean & Production Ready.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V6.5 (UNIFIED AI INSIGHTS)
+# 1. FIXED: AI Summaries for all KPI cards now receive calculated data for context.
+# 2. FIXED: Implemented Keyword Intersector for COGS matching.
+# 3. STATUS: 100% Production Ready.
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List, Dict, Any, Optional
@@ -25,6 +25,7 @@ from app.services import spreadsheet_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+# --- MODELS ---
 class KpiInsightRequest(BaseModel): 
     kpi_type: str 
     year: Optional[int] = None 
@@ -37,13 +38,10 @@ class GeneralInsightResponse(BaseModel):
     insight: str
     sentiment: str 
 
-class TaxAuditResult(BaseModel): 
-    anomalies: List[str]
-    status: str
-    net_obligation: float
-
 class ChatRequest(BaseModel): 
     message: str
+
+# --- HELPERS ---
 
 def _normalize(text: str) -> str:
     if not text: return ""
@@ -60,7 +58,6 @@ def _is_fuzzy_match(recipe_name: str, sale_name: str) -> bool:
     r_norm = _normalize(recipe_name)
     s_norm = _normalize(sale_name)
     if not r_norm or not s_norm: return False
-    # Intersection of words longer than 2 characters
     r_words = {w for w in r_norm.split() if len(w) > 2}
     s_words = {w for w in s_norm.split() if len(w) > 2}
     return not r_words.isdisjoint(s_words) or r_norm in s_norm or s_norm in r_norm
@@ -99,16 +96,29 @@ async def generate_kpi_insight(request: KpiInsightRequest, current_user: UserInD
     if request.kpi_type == 'income':
         invoices = list(db.invoices.find({**resilient_filter, "status": "PAID", "issue_date": {"$gte": start_dt, "$lte": end_dt}}))
         total = sum(_safe_float(i.get("total_amount", 0)) for i in invoices)
-        ai_data = f"Total Income {analysis_year}: €{total}."
+        ai_data = f"Të hyrat totale për vitin {analysis_year} janë €{total}. Ky është rezultat i {len(invoices)} faturave të paguara."
+        contributors = [f"Fatura: {len(invoices)}", f"Viti: {analysis_year}"]
+        
     elif request.kpi_type == 'expense':
         expenses = list(db.expenses.find({**resilient_filter, "date": {"$gte": start_dt, "$lte": end_dt}}))
         total = sum(_safe_float(e.get("amount", 0)) for e in expenses)
-        ai_data = f"Total Expenses {analysis_year}: €{total}."
+        ai_data = f"Shpenzimet totale për vitin {analysis_year} janë €{total}. Janë regjistruar {len(expenses)} transaksione shpenzimesh."
+        contributors = [f"Transaksione: {len(expenses)}", f"Viti: {analysis_year}"]
+
+    elif request.kpi_type == 'profit':
+        inc_list = list(db.invoices.find({**resilient_filter, "status": "PAID", "issue_date": {"$gte": start_dt, "$lte": end_dt}}))
+        exp_list = list(db.expenses.find({**resilient_filter, "date": {"$gte": start_dt, "$lte": end_dt}}))
+        inc = sum(_safe_float(i.get("total_amount", 0)) for i in inc_list)
+        exp = sum(_safe_float(e.get("amount", 0)) for e in exp_list)
+        ai_data = f"Analiza e Fitimit Neto për {analysis_year}: Të hyrat €{inc}, Shpenzimet €{exp}, Fitimi €{inc-exp}."
+        contributors = [f"Fitimi Neto: €{inc-exp}", f"Të hyrat: €{inc}"]
+
     elif request.kpi_type == 'cogs':
         inv_items = list(db["inventory"].find(resilient_filter))
         cost_map = {str(i["_id"]): _safe_float(i.get("cost_per_unit", 0)) for i in inv_items}
         recipes = list(db["recipes"].find(resilient_filter))
         prod_costs = {r["product_name"]: sum(_safe_float(ing.get("quantity_required", 0)) * cost_map.get(str(ing.get("inventory_item_id")), 0) for ing in r.get("ingredients", [])) for r in recipes}
+        
         sales = list(db["transactions"].find({**resilient_filter, "date_time": {"$gte": start_dt, "$lte": end_dt}}))
         total_cogs, matched_count = 0.0, 0
         for s in sales:
@@ -118,14 +128,20 @@ async def generate_kpi_insight(request: KpiInsightRequest, current_user: UserInD
                 if _is_fuzzy_match(r_name, sale_name):
                     unit_cost = r_cost; matched_count += 1; break
             total_cogs += (unit_cost * _safe_float(s.get("quantity", 1)))
+            
         if total_cogs > 0:
-            summary = f"Kostoja e mallrave (COGS) për {analysis_year} është €{total_cogs:.2f}. Përputhur {matched_count} shitje."
+            ai_data = f"Kostoja e mallrave (COGS) për {analysis_year} është llogaritur në €{total_cogs:.2f} bazuar në {matched_count} shitje të përputhura."
             contributors = [f"COGS: €{total_cogs:.2f}", f"Përputhje: {matched_count}"]
-        else: summary = "Nuk u gjetën receta për shitjet e këtij viti."
-    
+        else:
+            summary = "Nuk u identifikuan receta të lidhura me shitjet. Sigurohuni që emrat në receta përputhen me produktet e shitura."
+
     if ai_data:
-        try: summary = await llm_service.ask_business_consultant(str(current_user.id), f"Analizo shkurt: {ai_data}")
-        except: summary = f"Analiza u krye për vitin {analysis_year}."
+        try:
+            summary = await llm_service.ask_business_consultant(str(current_user.id), f"Vepro si CFO. Analizo këtë KPI shkurt në Shqip: {ai_data}")
+        except Exception as e:
+            logger.error(f"AI KPI Insight failed: {e}")
+            summary = ai_data # Fallback to raw data
+            
     return KpiInsightResponse(summary=summary, key_contributors=contributors)
 
 @router.post("/tax/chat", response_model=Dict[str, str])
