@@ -263,6 +263,16 @@
     "liveMetrics": "Metrikat Live"
   },
   "finance": {
+     "digitalReceipt": {
+      "title": "DËFTESË DIGJITALE",
+      "category": "Kategoria:",
+      "amount": "Shuma:",
+      "date": "Data:",
+      "description": "Përshkrimi:",
+      "noDescription": "Pa përshkrim",
+      "generated": "Gjeneruar automatikisht nga Haveri AI",
+      "fileNamePrefix": "Deftese"
+    },
     "income": "Të Hyrat",
     "expense": "Shpenzimet",
     "balance": "Bilanci",
