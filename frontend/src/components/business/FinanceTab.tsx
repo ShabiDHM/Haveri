@@ -1,7 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V4.0 (RECEIPT I18N FIX)
-// 1. FIXED: Corrected generateDigitalReceipt to use standard flat translation keys.
-// 2. STATUS: Resolves raw key display in digital receipt previews.
+// PHOENIX PROTOCOL - FINANCE TAB V4.1 (YEAR-AWARE INTELLIGENCE)
+// 1. FIXED: Pass 'selectedYear' to KPI API calls to support multi-year auditing.
+// 2. FIXED: Aligned Digital Receipt generator with flat JSON translation keys.
+// 3. STATUS: Robust, multi-year, and fully translated.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,7 +58,7 @@ const TabButton = ({ label, icon, isActive, onClick }: any) => (
 
 export const FinanceTab: React.FC = () => {
     const { t, i18n } = useTranslation();
-    const { loading, invoices, expenses, workspaces, posTransactions, analyticsData, totalExpenses, displayIncome, displayProfit, costOfGoodsSold, refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos } = useFinanceData();
+    const { loading, invoices, expenses, workspaces, posTransactions, analyticsData, totalExpenses, displayIncome, displayProfit, costOfGoodsSold, refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos, selectedYear } = useFinanceData();
 
     const [activeTab, setActiveTab] = useState<'transactions' | 'reports'>('transactions');
     const [openingDocId, setOpeningDocId] = useState<string | null>(null);
@@ -81,7 +82,11 @@ export const FinanceTab: React.FC = () => {
 
     const handleKpiClick = async (type: string, title: string) => {
         setKpiModalOpen(true); setKpiAnalysis({ type: title, summary: '', contributors: [] }); setKpiLoading(true);
-        try { const data = await apiService.getKpiInsight(type); setKpiAnalysis({ type: title, summary: data.summary, contributors: data.key_contributors }); } 
+        try { 
+            // PHOENIX: Pass the selectedYear to ensure the AI analyzes exactly what the user sees.
+            const data = await (apiService as any).generateKpiInsight({ kpi_type: type, year: selectedYear }); 
+            setKpiAnalysis({ type: title, summary: data.summary, contributors: data.key_contributors }); 
+        } 
         catch { setKpiAnalysis({ type: title, summary: t('finance.smartAnalyst.failed'), contributors: [] }); } 
         finally { setKpiLoading(false); }
     };
@@ -136,7 +141,7 @@ export const FinanceTab: React.FC = () => {
     };
 
     const generateDigitalReceipt = (expense: Expense): File => { 
-        // PHOENIX: Mapping to flat JSON keys for robust translation
+        // PHOENIX: Mapping to flat JSON keys for absolute robustness
         const label_title = t('receiptTitle', 'DËFTESË DIGJITALE');
         const label_cat = t('receiptCategory', 'Kategoria:');
         const label_amt = t('receiptAmount', 'Shuma:');
