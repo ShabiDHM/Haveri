@@ -1,6 +1,6 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V4.2 (API SYNC)
-// 1. FIXED: Corrected handleKpiClick to use existing 'getKpiInsight' method.
+// PHOENIX PROTOCOL - FINANCE TAB V4.3 (PARTNERS TAB ADDED)
+// 1. FEATURE: Added 'Partners' tab to allow visibility of imported clients/suppliers.
 // 2. STATUS: Fully synchronized with API V12.8.
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
-    Sparkles, ArrowRight, X, Lightbulb, Users, Calendar
+    Sparkles, ArrowRight, X, Lightbulb, Users, Calendar, Phone, Mail, MapPin
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { Invoice, Expense, Document } from '../../data/types';
@@ -59,7 +59,9 @@ export const FinanceTab: React.FC = () => {
     const { t, i18n } = useTranslation();
     const { loading, invoices, expenses, workspaces, posTransactions, analyticsData, totalExpenses, displayIncome, displayProfit, costOfGoodsSold, refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos, selectedYear, setSelectedYear, availableYears } = useFinanceData();
 
-    const [activeTab, setActiveTab] = useState<'transactions' | 'reports'>('transactions');
+    const [activeTab, setActiveTab] = useState<'transactions' | 'reports' | 'partners'>('transactions');
+    const [partners, setPartners] = useState<any[]>([]);
+    const [partnersLoading, setPartnersLoading] = useState(false);
     const [openingDocId, setOpeningDocId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -79,10 +81,20 @@ export const FinanceTab: React.FC = () => {
     const [kpiAnalysis, setKpiAnalysis] = useState<any>(null);
     const [kpiLoading, setKpiLoading] = useState(false);
 
+    // Fetch partners when tab becomes active
+    useEffect(() => {
+        if (activeTab === 'partners') {
+            setPartnersLoading(true);
+            apiService.getPartners().then(data => {
+                setPartners(data);
+                setPartnersLoading(false);
+            }).catch(() => setPartnersLoading(false));
+        }
+    }, [activeTab]);
+
     const handleKpiClick = async (type: string, title: string) => {
         setKpiModalOpen(true); setKpiAnalysis({ type: title, summary: '', contributors: [] }); setKpiLoading(true);
         try { 
-            // PHOENIX: Calling corrected method name with year support
             const data = await apiService.getKpiInsight(type, selectedYear); 
             setKpiAnalysis({ type: title, summary: data.summary, contributors: data.key_contributors }); 
         } 
@@ -98,6 +110,10 @@ export const FinanceTab: React.FC = () => {
         ];
         return combined.filter(tx => !searchTerm || tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || tx.amount.toString().includes(searchTerm)).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [invoices, expenses, posTransactions, searchTerm, t]);
+
+    const filteredPartners = useMemo(() => {
+        return partners.filter(p => !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.email?.toLowerCase().includes(searchTerm.toLowerCase()));
+    }, [partners, searchTerm]);
 
     const closePreview = () => { if (viewingUrl) window.URL.revokeObjectURL(viewingUrl); setViewingUrl(null); setViewingDoc(null); };
 
@@ -140,19 +156,9 @@ export const FinanceTab: React.FC = () => {
     };
 
     const generateDigitalReceipt = (expense: Expense): File => { 
-        const label_title = t('receiptTitle', 'DËFTESË DIGJITALE');
-        const label_cat = t('receiptCategory', 'Kategoria:');
-        const label_amt = t('receiptAmount', 'Shuma:');
-        const label_date = t('receiptDate', 'Data:');
-        const label_desc = t('receiptDescription', 'Përshkrimi:');
-        const label_no_desc = t('receiptNoDescription', 'Pa përshkrim');
-        const label_gen = t('receiptGeneratedBy', 'Gjeneruar nga Haveri AI');
-        const label_prefix = t('receiptFileNamePrefix', 'Deftese');
-        
-        const content = `${label_title}\n------------------------------------------------\n${label_cat}   ${expense.category}\n${label_amt}       €${expense.amount.toFixed(2)}\n${label_date}        ${new Date(expense.date).toLocaleDateString('sq-AL')}\n${label_desc}  ${expense.description || label_no_desc}\n------------------------------------------------\n${label_gen}`; 
+        const content = `${t('receiptTitle', 'DËFTESË DIGJITALE')}\n------------------------------------------------\n${t('receiptCategory', 'Kategoria:')}   ${expense.category}\n${t('receiptAmount', 'Shuma:')}       €${expense.amount.toFixed(2)}\n${t('receiptDate', 'Data:')}        ${new Date(expense.date).toLocaleDateString('sq-AL')}\n${t('receiptDescription', 'Përshkrimi:')}  ${expense.description || t('receiptNoDescription', 'Pa përshkrim')}\n------------------------------------------------\n${t('receiptGeneratedBy', 'Gjeneruar nga Haveri AI')}`; 
         const blob = new Blob([content], { type: 'text/plain' }); 
-        const fileName = `${label_prefix}_${expense.category.replace(/\s+/g, '_')}_${expense.date}.txt`; 
-        return new File([blob], fileName, { type: 'text/plain' }); 
+        return new File([blob], `${t('receiptFileNamePrefix', 'Deftese')}_${expense.category.replace(/\s+/g, '_')}_${expense.date}.txt`, { type: 'text/plain' }); 
     };
 
     const submitArchiveInvoice = async () => { if (!selectedInvoiceId) return; try { await apiService.archiveInvoice(selectedInvoiceId, selectedWorkspaceForInvoice || undefined); alert(t('general.saveSuccess')); setShowArchiveInvoiceModal(false); } catch { alert(t('error.generic')); } };
@@ -211,9 +217,84 @@ export const FinanceTab: React.FC = () => {
             </div>
 
             <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md h-[70vh] min-h-[600px] flex flex-col shadow-2xl">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6"><h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3"><Activity className="text-blue-500" />{t('finance.activityAndReports')}</h2><div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 gap-1"><TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} /><TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} /></div></div>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3"><Activity className="text-blue-500" />{t('finance.activityAndReports')}</h2>
+                    <div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 gap-1">
+                        <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
+                        <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
+                        <TabButton label={t('clients.title', 'Partnerët')} icon={<Users size={16} />} isActive={activeTab === 'partners'} onClick={() => setActiveTab('partners')} />
+                    </div>
+                </div>
+
                 <div className="flex-1 overflow-hidden relative">
-                    {activeTab === 'transactions' && (<div className="flex flex-col h-full space-y-6"><div className="relative group"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" /><input type="text" placeholder={t('header.searchPlaceholder')} className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-blue-500/50 transition-all shadow-inner" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div><div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 space-y-3">{loading ? (<div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>) : (<TransactionList allTransactions={allTransactions} openingDocId={openingDocId} onEditInvoice={(i:any) => {setSelectedInvoice(i); setShowInvoiceModal(true);}} onEditExpense={(e:any) => {setSelectedExpense(e); setShowExpenseModal(true);}} onViewInvoice={handleViewInvoice} onViewExpense={handleViewExpense} onDownloadInvoice={handleDownloadInvoice} onDownloadExpense={handleDownloadExpense} onArchiveInvoice={handleArchiveInvoice} onArchiveExpense={handleArchiveExpense} onDeleteInvoice={(id:any) => hookDeleteInvoice(id)} onDeleteExpense={(id:any) => hookDeleteExpense(id)} onDeletePos={(id:any) => hookDeletePos(id)} onViewSourceDocument={() => {}} onBulkDelete={handleUnifiedBulkDelete} />)}</div></div>)}
+                    {/* TAB: SEARCH BAR (Common) */}
+                    {(activeTab === 'transactions' || activeTab === 'partners') && (
+                        <div className="mb-6 relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
+                            <input 
+                                type="text" 
+                                placeholder={activeTab === 'partners' ? t('general.searchPartners', 'Kërko partnerë...') : t('header.searchPlaceholder')} 
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-blue-500/50 transition-all shadow-inner" 
+                                value={searchTerm} 
+                                onChange={(e) => setSearchTerm(e.target.value)} 
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'transactions' && (
+                        <div className="h-full overflow-y-auto custom-finance-scroll pr-2 space-y-3 pb-20">
+                            {loading ? (
+                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>
+                            ) : (
+                                <TransactionList 
+                                    allTransactions={allTransactions} 
+                                    openingDocId={openingDocId} 
+                                    onEditInvoice={(i:any) => {setSelectedInvoice(i); setShowInvoiceModal(true);}} 
+                                    onEditExpense={(e:any) => {setSelectedExpense(e); setShowExpenseModal(true);}} 
+                                    onViewInvoice={handleViewInvoice} 
+                                    onViewExpense={handleViewExpense} 
+                                    onDownloadInvoice={handleDownloadInvoice} 
+                                    onDownloadExpense={handleDownloadExpense} 
+                                    onArchiveInvoice={handleArchiveInvoice} 
+                                    onArchiveExpense={handleArchiveExpense} 
+                                    onDeleteInvoice={(id:any) => hookDeleteInvoice(id)} 
+                                    onDeleteExpense={(id:any) => hookDeleteExpense(id)} 
+                                    onDeletePos={(id:any) => hookDeletePos(id)} 
+                                    onViewSourceDocument={() => {}} 
+                                    onBulkDelete={handleUnifiedBulkDelete} 
+                                />
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'partners' && (
+                        <div className="h-full overflow-y-auto custom-finance-scroll pr-2 space-y-3 pb-20">
+                            {partnersLoading ? (
+                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>
+                            ) : filteredPartners.length === 0 ? (
+                                <div className="text-center text-gray-500 py-10">{t('general.noPartnersFound', 'Nuk u gjet asnjë partner.')}</div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                    {filteredPartners.map((partner) => (
+                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-black/30 border border-white/5 rounded-2xl p-5 hover:border-blue-500/30 transition-all group">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20"><Users size={20} /></div>
+                                                <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{partner.type}</span>
+                                            </div>
+                                            <h4 className="text-lg font-bold text-white mb-3 group-hover:text-blue-400 transition-colors">{partner.name}</h4>
+                                            <div className="space-y-2">
+                                                {partner.email && <div className="flex items-center gap-2 text-xs text-gray-400"><Mail size={14} className="text-blue-500/50" /> {partner.email}</div>}
+                                                {partner.phone && <div className="flex items-center gap-2 text-xs text-gray-400"><Phone size={14} className="text-blue-500/50" /> {partner.phone}</div>}
+                                                {partner.address && <div className="flex items-center gap-2 text-xs text-gray-400"><MapPin size={14} className="text-blue-500/50" /> {partner.address}</div>}
+                                            </div>
+                                            {partner.tax_id && <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center"><span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">NIPT / TAX ID</span><span className="text-xs font-mono text-gray-300">{partner.tax_id}</span></div>}
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {activeTab === 'reports' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
                             {!analyticsData ? ( <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> ) : (
@@ -239,7 +320,7 @@ export const FinanceTab: React.FC = () => {
             <AnimatePresence>{kpiModalOpen && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"><motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative"><div className="p-6 border-b border-white/10 bg-blue-900/20 flex justify-between items-center"><h3 className="text-xl font-bold text-white flex items-center gap-2"><Sparkles size={20} className="text-yellow-400" />{kpiAnalysis?.type}</h3><button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"><X size={20}/></button></div><div className="p-6 space-y-6">{kpiLoading ? (<div className="flex flex-col items-center py-10 gap-4"><Loader2 size={40} className="animate-spin text-blue-500" /><p className="text-gray-400 animate-pulse">{t('finance.smartAnalyst.analyzing')}</p></div>) : (<>{kpiAnalysis?.summary && <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4"><h4 className="text-sm font-bold text-blue-300 uppercase mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4><p className="text-white leading-relaxed">{kpiAnalysis?.summary}</p></div>}{kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (<div><h4 className="text-sm font-bold text-gray-400 uppercase mb-3">{t('finance.smartAnalyst.keyContributors')}</h4><div className="space-y-2">{kpiAnalysis.contributors.map((c:any, i:any) => (<div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-sm text-gray-200">{c}</span></div>))}</div></div>)}</>)}</div></motion.div></motion.div>)}</AnimatePresence>
             <InvoiceModal isOpen={showInvoiceModal} onClose={() => { setShowInvoiceModal(false); setSelectedInvoice(null); }} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
             <ExpenseModal isOpen={showExpenseModal} onClose={() => { setShowExpenseModal(false); setSelectedExpense(null); }} expenseToEdit={selectedExpense} onSuccess={refreshData} />
-            <ClientImportModal isOpen={showClientImportModal} onClose={() => setShowClientImportModal(false)} onSuccess={refreshData} />
+            <ClientImportModal isOpen={showClientImportModal} onClose={() => setShowClientImportModal(false)} onSuccess={() => { refreshData(); if (activeTab === 'partners') { apiService.getPartners().then(setPartners); } }} />
             {showArchiveInvoiceModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white mb-6" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}</select><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveInvoiceModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 font-medium">{t('general.cancel')}</button><button onClick={submitArchiveInvoice} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-900/20">{t('general.save')}</button></div></div></div>)}
             {showArchiveExpenseModal && (<div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"><div className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20"><h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2><select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white mb-6" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}><option value="">{t('archive.generalNoCase')}</option>{workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}</select><div className="flex justify-end gap-3"><button onClick={() => setShowArchiveExpenseModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 font-medium">{t('general.cancel')}</button><button onClick={submitArchiveExpense} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-900/20">{t('general.save')}</button></div></div></div>)}
             {showImportModal && (<TransactionImporter onClose={() => setShowImportModal(false)} onSuccess={() => { refreshData(); setShowImportModal(false); }} t={t} />)}
