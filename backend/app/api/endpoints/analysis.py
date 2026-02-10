@@ -1,6 +1,6 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V6.1 (FINAL UNIFIED VERSION)
-# 1. FEATURE: Fuzzy Keyword Intersection for COGS to match naming variations.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V6.2 (ULTIMATE SYNC)
+# 1. FEATURE: Fuzzy Keyword Intersection for COGS (Matches 'Espresso & Macchiato' to 'Macchiato').
 # 2. FIXED: Applied Resilient Filter across all endpoints for User/Org context logic.
 # 3. FIXED: Capped Year Discovery to current UTC year to prevent future-dated test leaks.
 # 4. STATUS: 100% Pylance Clean & Production Ready.
@@ -28,34 +28,9 @@ logger = logging.getLogger(__name__)
 
 # --- MODELS ---
 
-class TaxAuditRequest(BaseModel): 
-    month: int
-    year: int
-
-class ChatRequest(BaseModel): 
-    message: str
-
-class PredictionRequest(BaseModel): 
-    item_id: str
-
 class KpiInsightRequest(BaseModel): 
     kpi_type: str 
     year: Optional[int] = None 
-
-class TaxAuditResult(BaseModel): 
-    anomalies: List[str]
-    status: str
-    net_obligation: float
-
-class RestockPrediction(BaseModel): 
-    suggested_quantity: float
-    reason: str
-    supplier_name: Optional[str] = None
-    estimated_cost: float
-
-class SalesTrendAnalysis(BaseModel): 
-    trend_analysis: str
-    cross_sell_opportunities: str
 
 class KpiInsightResponse(BaseModel): 
     summary: str
@@ -64,6 +39,14 @@ class KpiInsightResponse(BaseModel):
 class GeneralInsightResponse(BaseModel): 
     insight: str
     sentiment: str 
+
+class TaxAuditResult(BaseModel): 
+    anomalies: List[str]
+    status: str
+    net_obligation: float
+
+class ChatRequest(BaseModel): 
+    message: str
 
 # --- HELPERS ---
 
@@ -110,7 +93,6 @@ def _is_fuzzy_match(recipe_name: str, sale_name: str) -> bool:
     return not r_words.isdisjoint(s_words)
 
 def _get_latest_activity_year(db: Database, context_id: str) -> int:
-    """Finds the most recent year with actual data, capped at current year."""
     found_years = []
     f = _get_resilient_filter(context_id)
     current_year = datetime.utcnow().year
@@ -134,32 +116,11 @@ def _safe_float(val: Any) -> float:
         except: return 0.0
     return 0.0
 
-# --- ENDPOINTS ---
-
-@router.post("/analyze-spreadsheet")
-async def analyze_spreadsheet_endpoint(file: UploadFile = File(...), db: Database = Depends(get_db)):
-    try:
-        content = await file.read()
-        filename = file.filename or "unknown"
-        mime_type, _ = mimetypes.guess_type(filename)
-        is_image = mime_type and mime_type.startswith('image/')
-        
-        def process_file():
-            if is_image: return spreadsheet_service.analyze_scanned_image(content)
-            else: return spreadsheet_service.analyze_financial_spreadsheet(content, filename)
-            
-        result = await asyncio.to_thread(process_file)
-        if result is not None and isinstance(result, dict) and result.get("error"):
-             raise HTTPException(status_code=400, detail=str(result.get("error")))
-        return result
-    except Exception as e:
-        logger.error(f"Spreadsheet Analysis Error: {e}")
-        raise HTTPException(status_code=500, detail="Analysis failed.")
+# --- KPI ENDPOINT ---
 
 @router.post("/finance/kpi-insight", response_model=KpiInsightResponse)
 async def generate_kpi_insight(request: KpiInsightRequest, current_user: UserInDB = Depends(get_current_user), db: Database = Depends(get_db)):
     context_id = str(current_user.organization_id) if current_user.organization_id else str(current_user.id)
-    finance_service = FinanceService(db)
     resilient_filter = _get_resilient_filter(context_id)
     analysis_year = request.year or _get_latest_activity_year(db, context_id)
     
@@ -171,30 +132,31 @@ async def generate_kpi_insight(request: KpiInsightRequest, current_user: UserInD
     ai_context_data = ""
 
     if request.kpi_type == 'income':
-        invoices = finance_service.get_invoices(context_id)
-        period_data = [i for i in invoices if i.status == 'PAID' and start_dt <= i.issue_date <= end_dt]
-        total = sum(i.total_amount for i in period_data)
-        ai_context_data = f"Total Income: €{total}. Year: {analysis_year}."
-        contributors = [f"Fatura të paguara: {len(period_data)}", f"Viti: {analysis_year}"]
+        invoices = list(db.invoices.find({**resilient_filter, "status": "PAID", "issue_date": {"$gte": start_dt, "$lte": end_dt}}))
+        total = sum(_safe_float(i.get("total_amount", 0)) for i in invoices)
+        ai_context_data = f"Total Income for {analysis_year}: €{total}."
+        contributors = [f"Fatura të paguara: {len(invoices)}", f"Viti: {analysis_year}"]
         
     elif request.kpi_type == 'expense':
-        expenses = finance_service.get_expenses(context_id)
-        period_data = [e for e in expenses if start_dt <= e.date <= end_dt]
-        total = sum(e.amount for e in period_data)
-        ai_context_data = f"Total Expenses: €{total}. Year: {analysis_year}."
-        contributors = [f"Shpenzime të regjistruara: {len(period_data)}", f"Viti: {analysis_year}"]
+        expenses = list(db.expenses.find({**resilient_filter, "date": {"$gte": start_dt, "$lte": end_dt}}))
+        total = sum(_safe_float(e.get("amount", 0)) for e in expenses)
+        ai_context_data = f"Total Expenses for {analysis_year}: €{total}."
+        contributors = [f"Transaksione: {len(expenses)}", f"Viti: {analysis_year}"]
 
     elif request.kpi_type == 'profit':
-        invoices, expenses = finance_service.get_invoices(context_id), finance_service.get_expenses(context_id)
-        inc = sum(i.total_amount for i in invoices if i.status == 'PAID' and start_dt <= i.issue_date <= end_dt)
-        exp = sum(e.amount for e in expenses if start_dt <= e.date <= end_dt)
-        ai_context_data = f"Net Profit: €{inc-exp}. Revenue: €{inc}. Expenses: €{exp}. Year: {analysis_year}."
+        inc_list = list(db.invoices.find({**resilient_filter, "status": "PAID", "issue_date": {"$gte": start_dt, "$lte": end_dt}}))
+        exp_list = list(db.expenses.find({**resilient_filter, "date": {"$gte": start_dt, "$lte": end_dt}}))
+        inc = sum(_safe_float(i.get("total_amount", 0)) for i in inc_list)
+        exp = sum(_safe_float(e.get("amount", 0)) for e in exp_list)
+        ai_context_data = f"Profit Analysis for {analysis_year}: Revenue €{inc}, Expenses €{exp}, Net €{inc-exp}."
         contributors = [f"Fitimi Neto: €{inc-exp}", f"Viti: {analysis_year}"]
 
     elif request.kpi_type == 'cogs':
+        # 1. Load Inventory Costs
         inv_items = list(db["inventory"].find(resilient_filter))
         cost_map = {str(i["_id"]): _safe_float(i.get("cost_per_unit", i.get("cost", 0))) for i in inv_items}
         
+        # 2. Build Recipe Cost Map
         recipes = list(db["recipes"].find(resilient_filter))
         prod_costs = {}
         for r in recipes:
@@ -203,6 +165,7 @@ async def generate_kpi_insight(request: KpiInsightRequest, current_user: UserInD
             r_cost = sum(_safe_float(ing.get("quantity_required", 0)) * cost_map.get(str(ing.get("inventory_item_id")), 0) for ing in ingredients)
             prod_costs[p_name] = r_cost
         
+        # 3. Match against Sales with Fuzzy Logic
         sales = list(db["transactions"].find({**resilient_filter, "date_time": {"$gte": start_dt, "$lte": end_dt}}))
         total_cogs, matched_count = 0.0, 0
         
@@ -222,75 +185,36 @@ async def generate_kpi_insight(request: KpiInsightRequest, current_user: UserInD
             summary = f"Për vitin {analysis_year}, kostoja e mallrave (COGS) është llogaritur në €{total_cogs:.2f}. Janë identifikuar {matched_count} shitje të lidhura me receta."
             contributors = [f"Kosto Totale: €{total_cogs:.2f}", f"Produkte të përputhura: {matched_count}"]
         else:
-            summary = f"Nuk u identifikuan receta të lidhura me shitjet e vitit {analysis_year}. Ju lutem kontrolloni emërtimet."
+            summary = f"Nuk u identifikuan receta të lidhura me shitjet e vitit {analysis_year}. Sigurohuni që emrat e produkteve në shitje përputhen me recetat (p.sh. 'Macchiato')."
 
     if ai_context_data:
         try: summary = await llm_service.ask_business_consultant(user_id=str(current_user.id), query=f"Act as CFO. Analyze briefly in Albanian: {ai_context_data}")
         except: summary = f"Analiza përfundoi për vitin {analysis_year}."
     return KpiInsightResponse(summary=summary, key_contributors=contributors)
 
-@router.post("/inventory/predict", response_model=RestockPrediction)
-async def predict_restock(request: PredictionRequest, current_user: UserInDB = Depends(get_current_user), db: Database = Depends(get_db)):
-    try:
-        item = db["inventory"].find_one({"_id": ObjectId(request.item_id)})
-        if not item: return RestockPrediction(suggested_quantity=0, reason="Artikulli nuk u gjet.", estimated_cost=0)
-        
-        context_id = str(current_user.organization_id) if current_user.organization_id else str(current_user.id)
-        safe_name = re.escape(item.get("name", ""))
-        
-        sales = list(db["transactions"].find({
-            **_get_resilient_filter(context_id), 
-            "$or": [
-                {"description": {"$regex": safe_name, "$options": "i"}}, 
-                {"product_name": {"$regex": safe_name, "$options": "i"}}
-            ]
-        }).sort("date_time", -1).limit(30))
-        
-        history = "\n".join([f"{s.get('date_time')}: {s.get('quantity', 1)} sold" for s in sales])
-        result = await llm_service.analyze_structured_prediction(f"ITEM: {item.get('name')}\nSTOCK: {item.get('current_stock')}\nSALES:\n{history}", "RESTOCK")
-        
-        if result and isinstance(result, dict):
-            return RestockPrediction(
-                suggested_quantity=_safe_float(result.get("suggested_quantity", 0)), 
-                reason=str(result.get("reason", "Nuk ka të dhëna mjaftueshëm.")), 
-                estimated_cost=_safe_float(result.get("estimated_cost", 0))
-            )
-        return RestockPrediction(suggested_quantity=0, reason="Gabim në llogaritje.", estimated_cost=0)
-    except: return RestockPrediction(suggested_quantity=0, reason="Gabim teknik.", estimated_cost=0)
-
-@router.post("/inventory/trend", response_model=SalesTrendAnalysis)
-async def analyze_sales_trend(request: PredictionRequest, current_user: UserInDB = Depends(get_current_user), db: Database = Depends(get_db)):
-    try:
-        item = db["inventory"].find_one({"_id": ObjectId(request.item_id)})
-        if not item: return SalesTrendAnalysis(trend_analysis="Mungon.", cross_sell_opportunities="N/A")
-        
-        context_id = str(current_user.organization_id) if current_user.organization_id else str(current_user.id)
-        count = db.transactions.count_documents({
-            **_get_resilient_filter(context_id), 
-            "$or": [
-                {"description": {"$regex": re.escape(item.get("name", "")), "$options": "i"}}, 
-                {"product_name": {"$regex": re.escape(item.get("name", "")), "$options": "i"}}
-            ]
-        })
-        
-        result = await llm_service.analyze_structured_prediction(f"Item: {item.get('name')}. Sales: {count}.", "TREND")
-        if result and isinstance(result, dict):
-            return SalesTrendAnalysis(
-                trend_analysis=str(result.get("trend_analysis", "S'ka trend të dallueshëm.")), 
-                cross_sell_opportunities=str(result.get("cross_sell_opportunities", "N/A"))
-            )
-        return SalesTrendAnalysis(trend_analysis="Analiza dështoi.", cross_sell_opportunities="N/A")
-    except: return SalesTrendAnalysis(trend_analysis="Gabim teknik.", cross_sell_opportunities="N/A")
-
 @router.get("/finance/proactive-insight", response_model=GeneralInsightResponse)
 async def get_proactive_insight(): 
     return GeneralInsightResponse(insight="Sistemi aktiv dhe i monitoruar në kohë reale.", sentiment="neutral")
-
-@router.post("/tax/audit", response_model=TaxAuditResult)
-async def analyze_tax_anomalies(): 
-    return TaxAuditResult(anomalies=[], status="CLEAR", net_obligation=0.0)
 
 @router.post("/tax/chat", response_model=Dict[str, str])
 async def chat_with_tax_bot(request: ChatRequest, current_user: UserInDB = Depends(get_current_user)):
     response = await llm_service.ask_business_consultant(str(current_user.id), request.message)
     return {"response": response}
+
+@router.post("/analyze-spreadsheet")
+async def analyze_spreadsheet_endpoint(file: UploadFile = File(...), db: Database = Depends(get_db)):
+    try:
+        content = await file.read()
+        filename = file.filename or "unknown"
+        mime_type, _ = mimetypes.guess_type(filename)
+        is_image = mime_type and mime_type.startswith('image/')
+        def process_file():
+            if is_image: return spreadsheet_service.analyze_scanned_image(content)
+            else: return spreadsheet_service.analyze_financial_spreadsheet(content, filename)
+        result = await asyncio.to_thread(process_file)
+        if result is not None and isinstance(result, dict) and result.get("error"):
+             raise HTTPException(status_code=400, detail=str(result.get("error")))
+        return result
+    except Exception as e:
+        logger.error(f"Analysis Error: {e}")
+        raise HTTPException(status_code=500, detail="Analysis failed.")
