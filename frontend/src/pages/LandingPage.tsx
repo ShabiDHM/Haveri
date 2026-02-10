@@ -211,7 +211,7 @@ const LandingPage: React.FC = () => {
                 <span className="font-bold tracking-tighter uppercase text-sm">Haveri AI</span>
             </div>
             <p className="text-gray-600 text-xs uppercase tracking-widest font-bold">
-                &copy; {new Date().getFullYear()} Haveri Intelligence. Të gjitha të drejtat e rezervuara.
+                &copy; {new Date().getFullYear()} Data And Human Management. Të gjitha të drejtat e rezervuara.
             </p>
         </footer>
 
