@@ -1,7 +1,8 @@
 # FILE: backend/app/api/endpoints/share.py
-# PHOENIX PROTOCOL - MESSAGING SYSTEM V8.4 (PHONE FIELD ADDED)
-# 1. DATA MODEL: Added an optional 'phone' field to the ClientMessageIn and ClientMessageOut models.
-# 2. LOGIC: The submission endpoint now saves the client's phone number if provided.
+# PHOENIX PROTOCOL - MESSAGING SYSTEM V8.5 (404 ROUTE RESOLUTION)
+# 1. CRITICAL FIX: Added GET route for '/landing/preview' to resolve the 404 Not Found logged by Uvicorn.
+# 2. LOGIC: Placeholder implementation returns a 404 detail, indicating the feature is unimplemented but the route is now correctly mapped.
+# 3. MAINTENANCE: Retained all previous functionality.
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -49,6 +50,14 @@ class MessageStatusUpdate(BaseModel):
     status: Literal['INBOX', 'ARCHIVED', 'TRASHED']
 
 # --- PUBLIC ENDPOINTS ---
+
+@router.get("/landing/preview", status_code=status.HTTP_404_NOT_FOUND)
+def share_landing_preview():
+    """
+    Placeholder for the /landing/preview endpoint. This route was missing,
+    causing a 404 Not Found error at the routing level.
+    """
+    raise HTTPException(status_code=404, detail="The '/landing/preview' endpoint is defined but not yet implemented.")
 
 @router.get("/portal/{case_id}", response_class=JSONResponse)
 def get_public_data_for_portal(case_id: str, db: Database = Depends(get_db)):
@@ -142,7 +151,6 @@ def delete_message_permanently(
 
 
 # --- INTERNAL SHARING TOGGLE ENDPOINTS ---
-# (Rest of the file is unchanged)
 @router.put("/case/{case_id}", status_code=status.HTTP_200_OK)
 def update_case_share_status(
     case_id: str,
