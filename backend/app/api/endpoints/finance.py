@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.11 (FINAL SYNTAX STABILIZATION)
-# 1. CRITICAL FIX: Corrected the syntax for the 'days' parameter in get_dashboard_data to adhere to Python's required/default argument order (Non-default argument follows default argument error resolved).
-# 2. STATUS: All known issues (COGS logic, Invoice Schema, Share 404, Finance 404, Server Crash) are addressed.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.12 (ASYNC INJECTION FIX)
+# 1. CRITICAL FIX: Switched 'get_dashboard_data' dependency from 'get_db' (Sync) to 'get_async_db' (Async) to prevent TypeError in AnalyticsService.
+# 2. STATUS: Analytics Dashboard 500 Error Resolved.
 
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
@@ -260,8 +260,8 @@ def delete_expense(
 @router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
 async def get_dashboard_data(
     current_user: Annotated[UserInDB, Depends(get_current_user)], 
-    db: Database = Depends(get_db),
-    days: int = 365 # CORRECTED SYNTAX: Default set directly on the argument
+    db: Any = Depends(get_async_db), # FIXED: Changed from get_db to get_async_db for Motor/Async Support
+    days: int = 365 
 ):
     """Handles the main dashboard data call: /api/v1/finance/analytics/dashboard"""
     # This calls the AnalyticsService which has the COGS fix implemented
