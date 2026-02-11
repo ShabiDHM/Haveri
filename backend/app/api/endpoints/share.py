@@ -59,6 +59,7 @@ def share_landing_preview():
     """
     raise HTTPException(status_code=404, detail="The '/landing/preview' endpoint is defined but not yet implemented.")
 
+
 @router.get("/portal/{case_id}", response_class=JSONResponse)
 def get_public_data_for_portal(case_id: str, db: Database = Depends(get_db)):
     service = ShareService(db)

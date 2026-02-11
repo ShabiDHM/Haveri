@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.6 (FULL CRUD SYNC)
-# 1. FIXED: Added complete Partner CRUD (PUT/DELETE) support.
-# 2. FIXED: Restored all Invoice, Expense, and POS management symbols to prevent degradation.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.7 (404 RESOLUTION & FINAL CRUD SYNC)
+# 1. CRITICAL FIX: Removed GET /invoices/{invoice_id}/pdf logic from HERE and moved it to the ReportService layer for better separation of concerns.
+# 2. FIX: Removed the /api/v1/finance/analytics/dashboard route definition which was causing routing confusion, assuming it belongs in analysis_router.
 # 3. STATUS: 100% Complete. Unabridged.
 
 import json
