@@ -1,7 +1,7 @@
 // FILE: frontend/src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V1.3 (ANALYST CARD I18N)
-// 1. FEATURE: Translated "Smart Analyst" title and description.
-// 2. STATUS: Fully localized for this section.
+// PHOENIX PROTOCOL - INSIGHTS UI V1.4 (STATIC FOOTER REMOVAL)
+// 1. FIXED: Removed redundant static footer "Sistemi Aktiv • V4.0.1".
+// 2. STATUS: UI Cleaned.
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -187,14 +187,6 @@ export const InsightsTab: React.FC = () => {
                                 <TaxModule data={taxAnalytics} />
                                 <ProfitModule data={profitAnalytics} />
                             </div>
-                        </div>
-
-                        {/* Footer Tip */}
-                        <div className="flex items-center justify-center p-4 border-t border-slate-800/50">
-                            <span className="text-slate-500 text-xs flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                                {t('insights.systemActive')} • V4.0.1
-                            </span>
                         </div>
                     </motion.div>
                 )}

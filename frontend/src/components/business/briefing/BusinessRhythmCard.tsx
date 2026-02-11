@@ -1,7 +1,7 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - RHYTHM CARD V4.4 (DIMENSION FIX)
-// 1. FIXED: Added min-height and conditional rendering to prevent '-1 width/height' chart error.
-// 2. STATUS: Mobile rendering issue resolved.
+// PHOENIX PROTOCOL - RHYTHM CARD V4.5 (STATIC 'SOT' REMOVAL)
+// 1. FIXED: Removed static "SOT" text as trend data is now year-aware.
+// 2. STATUS: UI Label Consistency Achieved.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -120,7 +120,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
                     </h3>
                     <div className="flex items-baseline gap-2 mt-1">
                         <span className="text-2xl sm:text-3xl font-bold text-white">€{currentSales.toFixed(2)}</span>
-                        <span className="text-xs sm:text-sm text-emerald-400 font-medium">{t('common.today', 'Sot')}</span>
+                        {/* PHOENIX: Removed static 'Sot' text */}
                     </div>
                 </div>
             </div>

@@ -1,14 +1,14 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V3.2 (ROBUST WEEKEND LOGIC)
-// 1. FIX: Re-integrated 'isWeekend' to handle both Saturdays and Sundays.
-// 2. FIX: Maintained 'motion' import and resolved all TS6133 warnings.
-// 3. STATUS: Pure implementation with full weekend/holiday awareness.
+// PHOENIX PROTOCOL - PULSE CARD V3.3 (AI INSIGHT FILTERING)
+// 1. FIXED: Filtered out static "Sistemi aktiv..." message from AI Insight.
+// 2. FIXED: Made AI Insight rendering conditional on meaningful content.
+// 3. STATUS: UI Insight Redundancy Resolved.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Activity, TrendingUp, Zap, Clock, Info, Coffee } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { isWeekend } from 'date-fns'; // PHOENIX: Restored and now utilized
+import { isWeekend } from 'date-fns';
 import { apiService } from '../../../services/api';
 
 interface Signal {
@@ -33,10 +33,8 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
     const [insight, setInsight] = useState<string>("");
     
     const now = new Date();
-    // PHOENIX: Using library function for robustness (detects Sat & Sun)
     const isRestDay = isWeekend(now);
 
-    // 1. Weighted Projection Logic (Morning Volatility Protection)
     const projection = useMemo(() => {
         const startHour = 8, endHour = 22, totalHours = endHour - startHour;
         const currentHour = now.getHours() + (now.getMinutes() / 60);
@@ -47,7 +45,6 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
         const hoursPassed = currentHour - startHour;
         const velocity = currentSales / hoursPassed;
         
-        // Confidence weight increases as the day progresses
         const confidenceWeight = Math.min(hoursPassed / (totalHours * 0.5), 1);
         const projectedRemaining = velocity * (endHour - currentHour);
         
@@ -58,9 +55,13 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
         const fetchInsight = async () => {
             try {
                 const data = await apiService.getProactiveInsight();
-                setInsight(data.insight);
+                // PHOENIX: Filter out the specific generic system status message
+                if (data.insight === "Sistemi aktiv dhe i monitoruar në kohë reale.") {
+                    setInsight(""); // Set to empty to hide it
+                } else {
+                    setInsight(data.insight);
+                }
             } catch (e) {
-                // Contextual Fallback for Weekend in Kosovo
                 if (isRestDay) {
                     setInsight("Është fundjavë. Shfrytëzoni kohën për mbyllje të suksesshme të javës dhe planifikim.");
                 } else {
@@ -144,17 +145,20 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                     )}
                 </div>
 
-                <div className="pt-4 border-t border-white/5">
-                    <div className="flex items-start gap-2">
-                        <div className="mt-0.5 p-1 bg-indigo-500/20 rounded text-indigo-400">
-                            <Info size={10} />
+                {/* PHOENIX: Only render AI Insight section if 'insight' has content */}
+                {insight && (
+                    <div className="pt-4 border-t border-white/5">
+                        <div className="flex items-start gap-2">
+                            <div className="mt-0.5 p-1 bg-indigo-500/20 rounded text-indigo-400">
+                                <Info size={10} />
+                            </div>
+                            <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
+                                <span className="text-indigo-400 font-bold mr-1">AI INSIGHT:</span> 
+                                {insight}
+                            </p>
                         </div>
-                        <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
-                            <span className="text-indigo-400 font-bold mr-1">AI INSIGHT:</span> 
-                            {insight || "Duke monitoruar performancën tuaj..."}
-                        </p>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
