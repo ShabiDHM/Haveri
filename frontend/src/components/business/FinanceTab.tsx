@@ -1,15 +1,15 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V4.8 (UI STREAMLINING)
-// 1. CLEANUP: Removed non-functional 'Edit' and 'View' buttons from the Partners tab.
-// 2. CLEANUP: Removed unused Eye and Edit2 icon imports to resolve linting warnings.
-// 3. STATUS: 100% Complete. Unabridged.
+// PHOENIX PROTOCOL - FINANCE TAB V4.10 (STATIC AI BANNER REMOVAL - ERROR FIX)
+// 1. FIXED: Removed usage of ProactiveInsightBanner to resolve "Cannot find name" TypeScript error.
+// 2. CLEANUP: Removed unused imports related to the banner.
+// 3. STATUS: UI Cleaned and Type-Error Resolved.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
-    Sparkles, ArrowRight, X, Lightbulb, Users, Calendar, Phone, Mail, MapPin,
+    Sparkles, X, Users, Calendar, Phone, Mail, MapPin, // PHOENIX: Removed Lightbulb, ArrowRight
     Trash2
 } from 'lucide-react';
 import { apiService } from '../../services/api';
@@ -40,14 +40,8 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     );
 };
 
-const ProactiveInsightBanner = () => {
-    const { t } = useTranslation(); 
-    const [insight, setInsight] = useState<any>(null);
-    useEffect(() => { apiService.getProactiveInsight().then(data => setInsight({ text: data.insight, sentiment: data.sentiment })); }, []);
-    if (!insight) return null;
-    const bg = insight.sentiment === 'positive' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' : insight.sentiment === 'negative' ? 'bg-rose-500/10 border-rose-500/20 text-rose-300' : 'bg-blue-500/10 border-blue-500/20 text-blue-300';
-    return (<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`rounded-2xl border p-4 flex items-start gap-4 ${bg} backdrop-blur-md`}><div className="p-2 rounded-lg bg-black/20 shrink-0"><Lightbulb size={20} /></div><div className="flex-1"><p className="text-sm font-medium leading-relaxed"><span className="font-bold opacity-70 uppercase tracking-wider text-[10px] block mb-1">{t('finance.smartAnalyst.bannerTitle')}</span>{insight.text}</p></div><div className="self-center opacity-50"><ArrowRight size={18} /></div></motion.div>);
-};
+// PHOENIX: ProactiveInsightBanner definition removed in previous step, no longer needed.
+// const ProactiveInsightBanner = () => { /* ... existing code ... */ };
 
 const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
     <button onClick={onClick} className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group ${primary ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg border border-blue-400/50' : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10'}`}><span className={`${primary ? 'text-white' : 'text-blue-400'}`}>{icon}</span><span>{label}</span></button>
@@ -200,7 +194,8 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            <ProactiveInsightBanner />
+            {/* PHOENIX: Removed ProactiveInsightBanner component from here */}
+            {/* <ProactiveInsightBanner /> */}
 
             <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">

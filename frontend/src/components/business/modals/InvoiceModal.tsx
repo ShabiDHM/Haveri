@@ -1,7 +1,8 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V18.3 (CLEANUP)
-// 1. CLEANUP: Removed unused hooks/types to resolve TS6133.
-// 2. STATUS: End-to-End Invoicing Automation maintained.
+// PHOENIX PROTOCOL - INVOICE MODAL V18.4 (VAT CHECKBOX INTEGRATION)
+// 1. FEATURE: Added "Apliko TVSH" checkbox for optional VAT application.
+// 2. LOGIC: Dynamically sets tax_rate to 0 if VAT is not included.
+// 3. STATUS: Essential invoicing control restored.
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2, Search } from 'lucide-react';
@@ -52,7 +53,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                 setLineItems(invoiceToEdit.items || [{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
             } else {
                 setFormData({ client_name: '', client_email: '', client_phone: '', client_address: '', client_city: '', client_tax_id: '', client_website: '', tax_rate: 18, notes: '', status: 'PAID' });
-                setIncludeVat(true);
+                setIncludeVat(true); // Default to include VAT for new invoices
                 setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
             }
         }
@@ -73,6 +74,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            // PHOENIX: Adjust tax_rate based on includeVat checkbox
             const payload = { ...formData, items: lineItems, tax_rate: includeVat ? formData.tax_rate : 0 };
             if (invoiceToEdit) await apiService.updateInvoice(invoiceToEdit.id, payload);
             else await apiService.createInvoice(payload);
@@ -113,6 +115,20 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                             </div>
                         ))}
                         <button type="button" onClick={() => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0 }])} className="text-sm text-primary-start flex items-center gap-1"><Plus size={14} /> {t('finance.addLine')}</button>
+                        
+                        {/* PHOENIX: Add the "Apliko TVSH" checkbox here */}
+                        <div className="flex items-center gap-2 pt-2">
+                            <input
+                                id="includeVat"
+                                type="checkbox"
+                                className="form-checkbox h-4 w-4 text-blue-600 bg-background-light border-glass-edge rounded focus:ring-blue-500"
+                                checked={includeVat}
+                                onChange={(e) => setIncludeVat(e.target.checked)}
+                            />
+                            <label htmlFor="includeVat" className="text-sm text-gray-300 cursor-pointer">
+                                {t('finance.applyVat', 'Apliko TVSH (18%)')}
+                            </label>
+                        </div>
                     </div>
                     <div className="flex justify-end gap-3 pt-4"><button type="button" onClick={onClose} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold">{t('general.save')}</button></div>
                 </form>
