@@ -1,7 +1,8 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.12 (ASYNC INJECTION FIX)
-# 1. CRITICAL FIX: Switched 'get_dashboard_data' dependency from 'get_db' (Sync) to 'get_async_db' (Async) to prevent TypeError in AnalyticsService.
-# 2. STATUS: Analytics Dashboard 500 Error Resolved.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.13 (TEMPORAL SYNC)
+# 1. FIXED: Added 'year' parameter to get_dashboard_data to support Fiscal Year filtering.
+# 2. INTEGRITY: Preserved all Partner, Invoice, Expense, and Transaction logic.
+# 3. STATUS: API Contract Updated.
 
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
@@ -256,14 +257,15 @@ def delete_expense(
     except:
         pass
 
-# --- ANALYTICS ENDPOINT (Re-integrated to fix 404) ---
+# --- ANALYTICS ENDPOINT (TEMPORAL SYNC FIX) ---
 @router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
 async def get_dashboard_data(
     current_user: Annotated[UserInDB, Depends(get_current_user)], 
-    db: Any = Depends(get_async_db), # FIXED: Changed from get_db to get_async_db for Motor/Async Support
-    days: int = 365 
+    db: Any = Depends(get_async_db), 
+    days: int = 365,
+    year: Optional[int] = Query(None) # PHOENIX: Support for Fiscal Year Context
 ):
-    """Handles the main dashboard data call: /api/v1/finance/analytics/dashboard"""
-    # This calls the AnalyticsService which has the COGS fix implemented
+    """Handles the main dashboard data call with year-awareness."""
     analytics_service = AnalyticsService(db)
-    return await analytics_service.get_dashboard_data(user_id=str(current_user.id), days=days)
+    # PHOENIX: Passing year to the service to resolve the 2026 data void
+    return await analytics_service.get_dashboard_data(user_id=str(current_user.id), days=days, year=year)

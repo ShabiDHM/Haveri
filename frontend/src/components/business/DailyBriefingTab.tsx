@@ -1,8 +1,8 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V5.4 (DETERMINISTIC LOCALIZATION)
-// 1. FIXED: Implemented manual short month mapping to ensure Albanian dates on Desktop.
-// 2. REASON: Bypasses non-deterministic browser behavior for toLocaleDateString.
-// 3. STATUS: Fully synchronized.
+// PHOENIX PROTOCOL - DASHBOARD V5.5 (TEMPORAL ALIGNMENT)
+// 1. FIXED: Charts now pivot based on 'selectedYear' using server-side analytics.
+// 2. FIXED: Removed redundant/blind API calls to unify data state.
+// 3. STATUS: Dashboard fully synchronized with Fiscal Year 2026.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,26 +14,31 @@ import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { EventDetailModal } from '../modals/EventDetailModal';
 import { apiService } from '../../services/api';
-import { Workspace, UIAgendaItem } from '../../data/types'; 
+import { Workspace, UIAgendaItem, SalesTrendPoint } from '../../data/types'; 
 
 import { BusinessRhythmCard, DailySalesData } from './briefing/BusinessRhythmCard';
 import { BusinessPulseCard } from './briefing/BusinessPulseCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
 
-interface RawTransaction {
-    date?: string;
-    transaction_date?: string;
-    amount?: number;
-    total_price?: number;
-    [key: string]: any;
-}
-
 export const DailyBriefingTab: React.FC = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     
-    const { data: briefingData, loading: briefingLoading, error: briefingError, refreshData } = useStrategicBriefing();
-    const { displayIncome, loading: financeLoading } = useFinanceData();
+    // PHOENIX: Consuming unified context-aware finance data
+    const { 
+        displayIncome, 
+        analyticsData, 
+        posTransactions, 
+        selectedYear, 
+        loading: financeLoading 
+    } = useFinanceData();
+    
+    const { 
+        data: briefingData, 
+        loading: briefingLoading, 
+        error: briefingError, 
+        refreshData 
+    } = useStrategicBriefing();
 
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -41,86 +46,79 @@ export const DailyBriefingTab: React.FC = () => {
     
     const [salesHistory, setSalesHistory] = useState<DailySalesData>({ labels: [], data: [] });
     const [peakTime, setPeakTime] = useState<string | null>(null); 
-    const [historyLoading, setHistoryLoading] = useState(true);
+    const [localLoading, setLocalLoading] = useState(true);
 
-    // PHOENIX: Deterministic month name arrays
-    const monthsSQ = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
-    const shortMonthsSQ = ['Jan', 'Shk', 'Mar', 'Pri', 'Maj', 'Qer', 'Kor', 'Gush', 'Sht', 'Tet', 'Nën', 'Dhj'];
-    const monthsEN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    
     const isAlbanian = i18n.language.startsWith('sq') || i18n.language === 'al';
-    
+    const shortMonthsSQ = ['Jan', 'Shk', 'Mar', 'Pri', 'Maj', 'Qer', 'Kor', 'Gush', 'Sht', 'Tet', 'Nën', 'Dhj'];
+
+    // PHOENIX: Synchronize local display date
     const today = new Date();
+    const monthsSQ = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
+    const monthsEN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const currentMonths = isAlbanian ? monthsSQ : monthsEN;
     const finalDate = `${today.getDate()} ${currentMonths[today.getMonth()]} ${today.getFullYear()}`;
-    
+
     useEffect(() => {
-        const loadData = async () => {
+        const loadAmbientData = async () => {
             try {
-                const [workspacesData, msgs, transactions] = await Promise.all([
+                const [workspacesData, msgs] = await Promise.all([
                     apiService.getWorkspaces(),
-                    apiService.getInboundMessages('INBOX'),
-                    apiService.getPosTransactions()
+                    apiService.getInboundMessages('INBOX')
                 ]);
-                
                 setWorkspaces(workspacesData);
                 setMessageCount(msgs.length);
-                processSalesHistory(transactions as RawTransaction[]);
-                analyzePeakTraffic(transactions as RawTransaction[]);
             } catch (err) {
-                console.error("Failed to load dashboard data", err);
+                console.error("Dashboard background load failure", err);
             } finally {
-                setHistoryLoading(false);
+                setLocalLoading(false);
             }
         };
-        loadData();
-    }, [i18n.language]);
+        loadAmbientData();
+    }, []);
 
-    const processSalesHistory = (transactions: RawTransaction[]) => {
-        const now = new Date();
-        const dates: Date[] = [];
-        for (let d = 1; d <= now.getDate(); d++) {
-            dates.push(new Date(now.getFullYear(), now.getMonth(), d));
+    // PHOENIX: Re-process history whenever analyticsData (which is year-aware) changes
+    useEffect(() => {
+        if (analyticsData?.sales_trend) {
+            processSalesHistory(analyticsData.sales_trend);
+        }
+        if (posTransactions.length > 0) {
+            analyzePeakTraffic(posTransactions);
+        }
+    }, [analyticsData, posTransactions, i18n.language, selectedYear]);
+
+    const processSalesHistory = (trend: SalesTrendPoint[]) => {
+        if (!trend || trend.length === 0) {
+            setSalesHistory({ labels: [], data: [] });
+            return;
         }
 
-        // PHOENIX: Forced deterministic Albanian formatting for chart labels
-        const labels = dates.map(date => {
+        // Map server-side trend points to chart format
+        const labels = trend.map(point => {
+            const date = new Date(point.date);
             if (isAlbanian) {
-                // Manually constructs "1 Shk", "2 Shk", etc.
                 return `${date.getDate()} ${shortMonthsSQ[date.getMonth()]}`;
             }
             return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
         });
 
-        const data = dates.map(targetDate => {
-            const targetStr = targetDate.toLocaleDateString('en-CA');
-            return transactions.reduce((sum, tx) => {
-                const dateVal = tx.transaction_date || tx.date;
-                if (!dateVal) return sum;
-                const txDate = new Date(dateVal);
-                if (isNaN(txDate.getTime())) return sum;
-                const txStr = txDate.toLocaleDateString('en-CA');
-                return txStr === targetStr ? sum + (tx.total_price || tx.amount || 0) : sum;
-            }, 0);
-        });
+        const data = trend.map(point => point.amount);
         setSalesHistory({ labels, data });
     };
 
-    const analyzePeakTraffic = (transactions: RawTransaction[]) => {
+    const analyzePeakTraffic = (transactions: any[]) => {
         if (!transactions || transactions.length === 0) {
             setPeakTime(null);
             return;
         }
 
         const hourCounts: Record<number, number> = {};
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
+        
+        // PHOENIX: Filter peak analysis by the selected year context
         transactions.forEach(tx => {
-            const dateVal = tx.transaction_date || tx.date;
+            const dateVal = tx.transaction_date || tx.date_time || tx.date;
             if (!dateVal) return;
             const txDate = new Date(dateVal);
-            if (txDate >= thirtyDaysAgo && !isNaN(txDate.getTime())) {
+            if (!isNaN(txDate.getTime()) && txDate.getFullYear() === selectedYear) {
                 const hour = txDate.getHours();
                 hourCounts[hour] = (hourCounts[hour] || 0) + 1;
             }
@@ -147,7 +145,7 @@ export const DailyBriefingTab: React.FC = () => {
         if(refreshData) refreshData();
     };
 
-    const isLoading = briefingLoading || financeLoading || historyLoading;
+    const isLoading = briefingLoading || financeLoading || localLoading;
 
     if (isLoading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
     if (briefingError) return <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-center"><AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" /><h3 className="text-white font-bold">{t('error.generic')}</h3><p>{t('error.failedToLoad')}</p></div>;
@@ -162,8 +160,13 @@ export const DailyBriefingTab: React.FC = () => {
                 <div className="absolute top-0 right-0 p-40 bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
                 <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
-                        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight flex items-center justify-center sm:justify-start gap-3"><Target className="text-indigo-400" />{t('dashboard.dailyOverviewTitle')}</h2>
-                        <p className="text-gray-400 text-lg max-w-xl">{t('dashboard.dailyOverviewSubtitle')}</p>
+                        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight flex items-center justify-center sm:justify-start gap-3">
+                            <Target className="text-indigo-400" />
+                            {t('dashboard.dailyOverviewTitle')}
+                        </h2>
+                        <p className="text-gray-400 text-lg max-w-xl">
+                            {t('dashboard.dailyOverviewSubtitle')} ({selectedYear})
+                        </p>
                     </div>
                     <div className="hidden sm:block text-right">
                         <div className="text-sm text-gray-500 uppercase tracking-widest font-semibold">{t('common.today')}</div>
@@ -174,15 +177,27 @@ export const DailyBriefingTab: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-                    <BusinessRhythmCard currentSales={displayIncome} salesHistory={salesHistory} /> 
+                    <BusinessRhythmCard 
+                        currentSales={displayIncome} 
+                        salesHistory={salesHistory} 
+                    /> 
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                    <BusinessPulseCard signals={briefingData?.market.signals} currentSales={displayIncome} peakTime={peakTime} />
+                    <BusinessPulseCard 
+                        signals={briefingData?.market.signals} 
+                        currentSales={displayIncome} 
+                        peakTime={peakTime} 
+                    />
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-6">
-                    <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} onClick={() => navigate('/business/inbox')} className="group relative bg-gray-900/60 hover:bg-gray-900/80 border border-white/10 rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md">
+                    <motion.div 
+                        whileHover={{ scale: 1.02, y: -2 }} 
+                        whileTap={{ scale: 0.98 }} 
+                        onClick={() => navigate('/business/inbox')} 
+                        className="group relative bg-gray-900/60 hover:bg-gray-900/80 border border-white/10 rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md"
+                    >
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
                                 <div className="p-3 rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/20"><Mail size={20} /></div>

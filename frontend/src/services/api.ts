@@ -1,8 +1,8 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V13.2 (PARTNER CRUD SURGERY)
-// 1. FIXED: Added missing updatePartner and deletePartner methods to resolve TS2339.
+// PHOENIX PROTOCOL - API V13.3 (TEMPORAL SYNC & FISCAL AWARENESS)
+// 1. FIXED: getAnalyticsDashboard now accepts 'year' to align with the selected Fiscal Year.
 // 2. INTEGRITY: Preserved 100% of existing interceptors, methods, and configurations.
-// 3. STATUS: Fully synchronized with Finance Endpoint V16.6.
+// 3. STATUS: API Service Synchronized.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -175,8 +175,15 @@ class ApiService {
 
     public async createPurchaseOrder(data: { item_id: string; item_name: string; unit: string; quantity: number; estimated_cost: number; supplier_name: string; }): Promise<any> { const response = await this.axiosInstance.post('/drafting/purchase-order', data); return response.data; }
 
-    // --- FINANCE & ANALYTICS ---
-    public async getAnalyticsDashboard(days: number = 30): Promise<AnalyticsDashboardData> { const response = await this.axiosInstance.get<AnalyticsDashboardData>(`/finance/analytics/dashboard`, { params: { days } }); return response.data; }
+    // --- FINANCE & ANALYTICS (FISCAL YEAR SYNC) ---
+    public async getAnalyticsDashboard(days?: number, year?: number): Promise<AnalyticsDashboardData> { 
+        const params: any = {};
+        if (days !== undefined) params.days = days;
+        if (year !== undefined) params.year = year;
+        const response = await this.axiosInstance.get<AnalyticsDashboardData>(`/finance/analytics/dashboard`, { params }); 
+        return response.data; 
+    }
+
     public async getWorkspaceSummaries(): Promise<WorkspaceFinancialSummary[]> { const response = await this.axiosInstance.get<WorkspaceFinancialSummary[]>('/finance/case-summary'); return response.data; }
     public async getInvoices(): Promise<Invoice[]> { const response = await this.axiosInstance.get<any>('/finance/invoices'); return Array.isArray(response.data) ? response.data : (response.data?.invoices || []); }
     public async createInvoice(data: InvoiceCreateRequest): Promise<Invoice> { const response = await this.axiosInstance.post<Invoice>('/finance/invoices', data); return response.data; }
