@@ -297,6 +297,7 @@
     "invoicePrefix": "Fatura #",
     "archiveInvoice": "Arkivo Faturën",
     "archiveExpenseTitle": "Arkivo Shpenzimin",
+     "monthlyClose": "Mbyllja Mujore",
     "import": {
       "title": "Importo Transaksione",
       "uploadTitle": "Ngarko CSV/Excel",
