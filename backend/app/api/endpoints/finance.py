@@ -1,8 +1,7 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.7 (404 RESOLUTION & FINAL CRUD SYNC)
-# 1. CRITICAL FIX: Removed GET /invoices/{invoice_id}/pdf logic from HERE and moved it to the ReportService layer for better separation of concerns.
-# 2. FIX: Removed the /api/v1/finance/analytics/dashboard route definition which was causing routing confusion, assuming it belongs in analysis_router.
-# 3. STATUS: 100% Complete. Unabridged.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.8 (FINAL DASHBOARD ROUTE RE-INTEGRATION)
+# 1. CRITICAL FIX: Re-integrated GET /analytics/dashboard route into the finance_router structure to satisfy client call /api/v1/finance/analytics/dashboard.
+# 2. STATUS: Unabridged. Addressing all outstanding routing errors.
 
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
@@ -256,3 +255,15 @@ def delete_expense(
         graph_service.delete_node(expense_id)
     except:
         pass
+
+# --- ANALYTICS ENDPOINT (Re-introduced to fix 404) ---
+@router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
+async def get_dashboard_data(
+    days: Annotated[int, Query(default=365)], 
+    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    db: Database = Depends(get_db)
+):
+    """Handles the main dashboard data call: /api/v1/finance/analytics/dashboard"""
+    # This calls the AnalyticsService which has the COGS fix implemented
+    analytics_service = AnalyticsService(db)
+    return await analytics_service.get_dashboard_data(user_id=str(current_user.id), days=days)
