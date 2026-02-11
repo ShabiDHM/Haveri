@@ -1,8 +1,8 @@
 // FILE: src/hooks/useBusinessIntelligence.ts
-// PHOENIX PROTOCOL - BI ENGINE V1.5 (HYBRID CONTEXT SYNC)
-// 1. FIXED: Tax Estimator now filters by 'selectedYear' for contextual accuracy.
-// 2. LOGIC: Debt and Stock Value remain Global to reflect total business liability.
-// 3. STATUS: Intelligence Engine Fully Synchronized with Fiscal Context.
+// PHOENIX PROTOCOL - BI ENGINE V1.5 (FINAL SYNC)
+// 1. FIXED: Tax Estimator now strictly filters by selectedYear for contextual accuracy.
+// 2. LOGIC: Debt and Stock Value remain Global for persistent business insight.
+// 3. STATUS: Full System Contextual Alignment Achieved.
 
 import { useMemo } from 'react';
 import { useFinanceData } from './useFinanceData';
@@ -22,7 +22,6 @@ export const useBusinessIntelligence = () => {
     const VAT_RATE = profile?.vat_rate ?? 18.0; 
 
     // 1. DEBT ANALYSIS (GLOBAL CONTEXT)
-    // PHOENIX: Debt is a persistent, all-time reality. This calculation remains global.
     const debtAnalytics = useMemo(() => {
         const unpaidInvoices = invoices.filter(inv => inv.status !== 'PAID' && inv.status !== 'CANCELLED');
         const totalDebt = unpaidInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
@@ -49,7 +48,6 @@ export const useBusinessIntelligence = () => {
     }, [invoices]);
 
     // 2. PROFIT & INVENTORY INTELLIGENCE (GLOBAL CONTEXT)
-    // PHOENIX: Current stock value is an absolute state, not tied to a specific year.
     const profitAnalytics = useMemo(() => {
         const combinedItems = [...items, ...posItems];
         const uniqueItemsMap = new Map();
@@ -76,18 +74,19 @@ export const useBusinessIntelligence = () => {
     }, [items, posItems]);
 
     // 3. TAX ESTIMATOR (FISCAL CONTEXT AWARE)
-    // PHOENIX: Tax obligations are strictly tied to the selected Fiscal Year.
     const taxAnalytics = useMemo(() => {
         const taxCoefficient = VAT_RATE / (100 + VAT_RATE);
+        const currentYear = new Date().getFullYear();
+        const fiscalYear = selectedYear && selectedYear <= currentYear ? selectedYear : currentYear; // Fallback to current year if selectedYear is invalid/future
 
         // Filter Sales and Expenses by the selected year
         const contextualInvoices = invoices.filter(i => 
             i.status !== 'CANCELLED' && 
-            getYear(parseISO(i.issue_date)) === selectedYear
+            getYear(parseISO(i.issue_date)) === fiscalYear
         );
 
         const contextualExpenses = expenses.filter(e => 
-            getYear(parseISO(e.date)) === selectedYear
+            getYear(parseISO(e.date)) === fiscalYear
         );
 
         // Sales VAT (Output Tax)
@@ -110,7 +109,7 @@ export const useBusinessIntelligence = () => {
             vatDeductible, 
             estimatedLiability, 
             effectiveRate: VAT_RATE,
-            contextYear: selectedYear 
+            contextYear: fiscalYear 
         };
     }, [invoices, expenses, VAT_RATE, selectedYear]);
 
