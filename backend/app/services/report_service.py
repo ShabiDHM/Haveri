@@ -1,9 +1,8 @@
 # FILE: backend/app/services/report_service.py
-# PHOENIX PROTOCOL - REPORT SERVICE V7.2 (PROFESSIONAL AUDIT UI)
-# 1. IMPROVED: generate_forensic_audit_pdf now includes full firm branding (logo/meta).
-# 2. FIXED: Implemented robust Markdown parsing for headers (#, ##, ###) and bold text (**).
-# 3. UI: Added color accents and professional typography for a high-end "Certified Audit" look.
-# 4. STATUS: 100% Complete, unabridged replacement.
+# PHOENIX PROTOCOL - REPORT SERVICE V7.3 (DEFENSIVE HARDENING)
+# 1. CRITICAL FIX: Implemented defensive 'getattr' access for invoice.notes to prevent 500 AttributeError.
+# 2. STABILITY: Ensures PDF generation continues even if Model Schema is out of sync.
+# 3. STATUS: 100% Complete, unabridged replacement.
 
 import io
 import os
@@ -20,7 +19,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.colors import HexColor, white
 from reportlab.lib.enums import TA_RIGHT, TA_LEFT, TA_CENTER, TA_JUSTIFY
 from pymongo.database import Database
-from typing import List, Optional
+from typing import List, Optional, Any
 from bson import ObjectId
 from xml.sax.saxutils import escape
 from PIL import Image as PILImage
@@ -282,12 +281,21 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
     Story.append(Spacer(1, 15*mm))
 
     client_content: List[Flowable] = [Paragraph(f"<b>{invoice.client_name}</b>", STYLES['AddressText'])]
-    c_address = getattr(invoice, 'client_address', ''); c_city = getattr(invoice, 'client_city', '')
-    full_address = f"{c_address}, {c_city}" if c_address and c_city else c_address or c_city
+    # Defensive programming: Use getattr for fields that might be missing in older schemas
+    c_address = getattr(invoice, 'client_address', None)
+    c_city = getattr(invoice, 'client_city', None)
+    
+    full_address = ""
+    if c_address and c_city: full_address = f"{c_address}, {c_city}"
+    elif c_address: full_address = c_address
+    elif c_city: full_address = c_city
+
     if full_address: client_content.append(Paragraph(f"<b>{_get_text('lbl_address', lang)}</b> {full_address}", STYLES['AddressText']))
     if getattr(invoice, 'client_tax_id', ''): client_content.append(Paragraph(f"<b>{_get_text('lbl_nui', lang)}</b> {invoice.client_tax_id}", STYLES['AddressText']))
     if getattr(invoice, 'client_email', ''): client_content.append(Paragraph(f"<b>{_get_text('lbl_email', lang)}</b> {invoice.client_email}", STYLES['AddressText']))
-    if getattr(invoice, 'client_phone', ''): client_content.append(Paragraph(f"<b>{_get_text('lbl_tel', lang)}</b> {invoice.client_phone}", STYLES['AddressText']))
+    
+    c_phone = getattr(invoice, 'client_phone', None)
+    if c_phone: client_content.append(Paragraph(f"<b>{_get_text('lbl_tel', lang)}</b> {c_phone}", STYLES['AddressText']))
     
     t_addr = Table([[Paragraph(_get_text('to', lang), STYLES['AddressLabel']), client_content]], colWidths=[20*mm, 160*mm], style=[('VALIGN', (0,0), (-1,-1), 'TOP')])
     Story.append(t_addr)
@@ -306,10 +314,12 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
     t_totals = Table(totals_data, colWidths=[40*mm, 35*mm], style=[('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LINEABOVE', (0, 2), (1, 2), 1.5, COLOR_PRIMARY_TEXT), ('TOPPADDING', (0, 2), (1, 2), 6)])
     Story.append(Table([["", t_totals]], colWidths=[110*mm, 75*mm], style=[('ALIGN', (1,0), (1,0), 'RIGHT')]))
 
-    if invoice.notes:
+    # CRITICAL FIX: Use getattr to prevent AttributeError if schema is out of sync
+    invoice_notes = getattr(invoice, "notes", None)
+    if invoice_notes:
         Story.append(Spacer(1, 10*mm))
         Story.append(Paragraph(_get_text('notes', lang), STYLES['NotesLabel']))
-        Story.append(Paragraph(escape(invoice.notes).replace('\n', '<br/>'), STYLES['AddressText']))
+        Story.append(Paragraph(escape(invoice_notes).replace('\n', '<br/>'), STYLES['AddressText']))
 
     doc.build(Story)
     buffer.seek(0)

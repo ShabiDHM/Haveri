@@ -1,7 +1,8 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V11.5 (ANALYTICS SYNC)
-# 1. ADDED: total_cogs_period to AnalyticsDashboardData for real dashboard reporting.
-# 2. STATUS: 100% Complete.
+# PHOENIX PROTOCOL - FINANCE MODELS V11.6 (SCHEMA REPAIR)
+# 1. FIXED: Added 'notes', 'client_city', 'client_phone' to InvoiceBase to prevent AttributeError in ReportService.
+# 2. UPDATE: Synced InvoiceUpdate to allow modifying these new fields.
+# 3. STATUS: 100% Complete.
 
 from pydantic import BaseModel, Field, ConfigDict, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -83,8 +84,11 @@ class InvoiceBase(BaseModel):
     invoice_number: Optional[str] = None
     client_name: str
     client_email: Optional[str] = None
+    client_phone: Optional[str] = None # Added for PDF Report
     client_address: Optional[str] = None
+    client_city: Optional[str] = None # Added for PDF Report
     client_tax_id: Optional[str] = None
+    notes: Optional[str] = None # Added for PDF Report (Fixes AttributeError)
     issue_date: datetime = Field(default_factory=datetime.utcnow)
     due_date: datetime = Field(default_factory=datetime.utcnow)
     items: List[InvoiceItem] = []
@@ -96,10 +100,20 @@ class InvoiceBase(BaseModel):
     is_locked: bool = False
 
 class InvoiceCreate(InvoiceBase): pass
+
 class InvoiceUpdate(BaseModel):
     client_name: Optional[str] = None
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    client_address: Optional[str] = None
+    client_city: Optional[str] = None
+    client_tax_id: Optional[str] = None
+    notes: Optional[str] = None
     status: Optional[str] = None
     is_locked: Optional[bool] = None
+    due_date: Optional[datetime] = None
+    issue_date: Optional[datetime] = None
+    items: Optional[List[InvoiceItem]] = None
 
 class InvoiceInDB(InvoiceBase):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
@@ -151,7 +165,7 @@ class TopProductItem(BaseModel):
 class AnalyticsDashboardData(BaseModel):
     total_revenue_period: float
     total_transactions_period: int
-    total_cogs_period: float = 0.0 # PHOENIX: Added for real calculation
+    total_cogs_period: float = 0.0 
     sales_trend: List[SalesTrendPoint]
     top_products: List[TopProductItem]
 
