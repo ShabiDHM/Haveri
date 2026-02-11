@@ -1,8 +1,7 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V11.4 (FINAL TOTAL SYNC)
-# 1. FIXED: Restored WizardState, AuditIssue, and TaxCalculation to resolve ImportError.
-# 2. FEATURE: Maintained Partner CRUD and Analytics models.
-# 3. STATUS: 100% Complete. Resolves server boot failure.
+# PHOENIX PROTOCOL - FINANCE MODELS V11.5 (ANALYTICS SYNC)
+# 1. ADDED: total_cogs_period to AnalyticsDashboardData for real dashboard reporting.
+# 2. STATUS: 100% Complete.
 
 from pydantic import BaseModel, Field, ConfigDict, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -11,51 +10,27 @@ from typing import List, Optional, Dict, Any, Annotated
 from datetime import datetime
 from bson import ObjectId
 
-# --- ROBUST PYOBJECTID (PHOENIX Standard) ---
+# --- PYOBJECTID ---
 class _ObjectIdPydanticAnnotation:
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, _source_type: Any, _handler: GetJsonSchemaHandler
-    ) -> core_schema.CoreSchema:
-        def validate_from_str(value: str) -> ObjectId:
-            return ObjectId(value)
-
-        from_str_schema = core_schema.chain_schema(
-            [
-                core_schema.str_schema(),
-                core_schema.no_info_plain_validator_function(validate_from_str),
-            ]
-        )
-
-        return core_schema.json_or_python_schema(
-            json_schema=from_str_schema,
-            python_schema=core_schema.union_schema(
-                [
-                    core_schema.is_instance_schema(ObjectId),
-                    from_str_schema,
-                ]
-            ),
-            serialization=core_schema.plain_serializer_function_ser_schema(
-                lambda instance: str(instance)
-            ),
-        )
-
+    def __get_pydantic_core_schema__(cls, _source_type: Any, _handler: GetJsonSchemaHandler) -> core_schema.CoreSchema:
+        def validate_from_str(value: str) -> ObjectId: return ObjectId(value)
+        from_str_schema = core_schema.chain_schema([core_schema.str_schema(), core_schema.no_info_plain_validator_function(validate_from_str)])
+        return core_schema.json_or_python_schema(json_schema=from_str_schema, python_schema=core_schema.union_schema([core_schema.is_instance_schema(ObjectId), from_str_schema]), serialization=core_schema.plain_serializer_function_ser_schema(lambda instance: str(instance)))
     @classmethod
-    def __get_pydantic_json_schema__(
-        cls, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
+    def __get_pydantic_json_schema__(cls, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
         return handler(core_schema.str_schema())
 
 PyObjectId = Annotated[ObjectId, _ObjectIdPydanticAnnotation]
 
-# --- PARTNER MODELS (CLIENTS & SUPPLIERS) ---
+# --- PARTNER MODELS ---
 class PartnerBase(BaseModel):
     name: str
     email: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
-    tax_id: Optional[str] = None # NIPT
-    type: str = "CLIENT" # CLIENT or SUPPLIER
+    tax_id: Optional[str] = None
+    type: str = "CLIENT"
 
 class PartnerUpdate(BaseModel):
     name: Optional[str] = None
@@ -75,7 +50,7 @@ class PartnerInDB(PartnerBase):
 class PartnerOut(PartnerInDB):
     id: Optional[PyObjectId] = Field(alias="_id", serialization_alias="id", default=None)
 
-# --- IMPORT & POS TRANSACTION MODELS ---
+# --- TRANSACTION MODELS ---
 class Transaction(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     user_id: str
@@ -120,9 +95,7 @@ class InvoiceBase(BaseModel):
     status: str = "DRAFT"
     is_locked: bool = False
 
-class InvoiceCreate(InvoiceBase):
-    pass
-
+class InvoiceCreate(InvoiceBase): pass
 class InvoiceUpdate(BaseModel):
     client_name: Optional[str] = None
     status: Optional[str] = None
@@ -148,9 +121,7 @@ class ExpenseBase(BaseModel):
     receipt_url: Optional[str] = None
     is_locked: bool = False
 
-class ExpenseCreate(ExpenseBase):
-    pass
-
+class ExpenseCreate(ExpenseBase): pass
 class ExpenseUpdate(BaseModel):
     category: Optional[str] = None
     amount: Optional[float] = None
@@ -180,6 +151,7 @@ class TopProductItem(BaseModel):
 class AnalyticsDashboardData(BaseModel):
     total_revenue_period: float
     total_transactions_period: int
+    total_cogs_period: float = 0.0 # PHOENIX: Added for real calculation
     sales_trend: List[SalesTrendPoint]
     top_products: List[TopProductItem]
 
@@ -189,7 +161,7 @@ class CaseFinancialSummary(BaseModel):
     total_expenses: float
     net_balance: float
 
-# --- TAX WIZARD MODELS (RESTORED) ---
+# --- TAX WIZARD MODELS ---
 class TaxCalculation(BaseModel):
     period_month: int
     period_year: int
@@ -206,10 +178,10 @@ class TaxCalculation(BaseModel):
 
 class AuditIssue(BaseModel):
     id: str
-    severity: str # CRITICAL | WARNING
+    severity: str
     message: str
     related_item_id: Optional[str] = None
-    item_type: Optional[str] = None # INVOICE | EXPENSE
+    item_type: Optional[str] = None
 
 class WizardState(BaseModel):
     calculation: TaxCalculation
