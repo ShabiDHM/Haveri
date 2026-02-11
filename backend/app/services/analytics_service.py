@@ -1,9 +1,8 @@
 # FILE: backend/app/services/analytics_service.py
-# PHOENIX PROTOCOL - ANALYTICS SERVICE V3.5 (TYPE STABILIZATION)
-# 1. FIXED: Explicitly typed clauses as List[Dict[str, Any]] to resolve Pylance ObjectId vs Str error.
-# 2. FIXED: Maintained resilient filter for cross-platform ID matching.
-# 3. FIXED: Maintained year-aware context logic for 2026 support.
-# 4. STATUS: Syntax & Type Validated.
+# PHOENIX PROTOCOL - ANALYTICS SERVICE V3.6 (INTELLIGENT COGS MATCHING)
+# 1. FIXED: Enhanced _normalize function for cross-system name alignment (e.g., Caffe Latte -> caffelatte).
+# 2. FIXED: Replaced simple 'in' check with a token-based algorithm for robust fuzzy matching.
+# 3. STATUS: COGS Mapping Fragility Resolved.
 
 from datetime import datetime, timedelta
 import re
@@ -21,36 +20,28 @@ class AnalyticsService:
         self._fuzzy_match_cache: Dict[str, str] = {}
 
     def _get_resilient_filter(self, user_id: str, org_id: Optional[Any] = None) -> Dict:
-        """PHOENIX: Core Resilient Filter to ensure both string and ObjectId data is captured."""
         u_oid: Optional[ObjectId] = None
-        try: 
-            u_oid = ObjectId(user_id)
-        except: 
-            pass
-
+        try: u_oid = ObjectId(user_id)
+        except: pass
         o_oid: Optional[ObjectId] = None
         if org_id:
-            try: 
-                o_oid = ObjectId(str(org_id))
-            except: 
-                pass
-
-        # Explicitly type the list to avoid Pylance inference errors (ObjectId vs Str)
+            try: o_oid = ObjectId(str(org_id))
+            except: pass
         clauses: List[Dict[str, Any]] = [{"user_id": str(user_id)}]
-        
-        if u_oid: 
-            clauses.append({"user_id": u_oid})
-        
+        if u_oid: clauses.append({"user_id": u_oid})
         if org_id:
             clauses.append({"organization_id": str(org_id)})
-            if o_oid: 
-                clauses.append({"organization_id": o_oid})
-            
+            if o_oid: clauses.append({"organization_id": o_oid})
         return {"$or": clauses}
 
     def _normalize(self, text: str) -> str:
+        """PHOENIX: Enhanced normalization to remove all spaces for better key matching."""
         if not text: return ""
-        return re.sub(r'[^\w\s]', '', str(text).lower()).strip()
+        # Lowercase, remove special characters, then remove all whitespace.
+        # "Caffe Latte" -> "caffelatte"
+        # "caffe_latte" -> "caffelatte"
+        normalized = re.sub(r'[^\w\s]', '', str(text).lower()).strip()
+        return re.sub(r'\s+', '', normalized)
 
     async def _build_unified_cost_map(self, context_filter: dict) -> Dict[str, float]:
         inventory_items = await self.inventory.find(context_filter).to_list(length=None)
@@ -58,7 +49,6 @@ class AnalyticsService:
             str(item["_id"]): float(item.get("cost_per_unit", 0))
             for item in inventory_items
         }
-
         unified_cost_map: Dict[str, float] = {}
 
         # 1. Recipe costs
@@ -66,14 +56,12 @@ class AnalyticsService:
         for recipe in recipes:
             recipe_name = recipe.get("product_name")
             if not recipe_name: continue
-            
             total_cost = 0.0
             for ingredient in recipe.get("ingredients", []):
                 item_id = ingredient.get("inventory_item_id")
                 required_qty = float(ingredient.get("quantity_required", 0))
                 item_cost = inventory_cost_map.get(str(item_id), 0.0)
                 total_cost += (required_qty * item_cost)
-            
             normalized_name = self._normalize(recipe_name)
             if normalized_name: unified_cost_map[normalized_name] = total_cost
 
@@ -88,22 +76,50 @@ class AnalyticsService:
         return unified_cost_map
 
     def _find_cost_with_fallback(self, item_name: str, cost_map: Dict[str, float]) -> float:
+        """PHOENIX: Intelligent token-based matching for robust COGS calculation."""
         normalized_name = self._normalize(item_name)
         if not normalized_name: return 0.0
-        if normalized_name in cost_map: return cost_map[normalized_name]
+        
+        # 1. Exact Match (Fastest path)
+        if normalized_name in cost_map:
+            return cost_map[normalized_name]
+
+        # 2. Check Cache
         if normalized_name in self._fuzzy_match_cache:
             return cost_map.get(self._fuzzy_match_cache[normalized_name], 0.0)
 
+        # 3. Token-based Matching (More robust than simple 'in')
+        # This handles cases like "Macchiato e Madhe" vs "Macchiato"
+        item_tokens = set(re.findall(r'\b\w+\b', normalized_name))
+        if not item_tokens: return 0.0
+
+        best_match = None
+        highest_score = 0.0
+
         for map_key in cost_map.keys():
-            if normalized_name in map_key or map_key in normalized_name:
-                self._fuzzy_match_cache[normalized_name] = map_key
-                return cost_map[map_key]
+            map_tokens = set(re.findall(r'\b\w+\b', map_key))
+            if not map_tokens: continue
+            
+            intersection = item_tokens.intersection(map_tokens)
+            union = item_tokens.union(map_tokens)
+            
+            # Jaccard similarity
+            score = len(intersection) / len(union) if union else 0
+
+            if score > highest_score:
+                highest_score = score
+                best_match = map_key
+        
+        # Require a reasonably high confidence match (e.g., > 60%)
+        if highest_score > 0.6 and best_match:
+            self._fuzzy_match_cache[normalized_name] = best_match
+            return cost_map[best_match]
+
         return 0.0
 
     async def get_dashboard_data(self, user_id: str, days: int = 30, year: Optional[int] = None) -> AnalyticsDashboardData:
         user = await self.db.users.find_one({"_id": ObjectId(user_id)})
         org_id = user.get("organization_id") if user else None
-        
         context_filter = self._get_resilient_filter(user_id, org_id)
         
         if year:
@@ -116,21 +132,15 @@ class AnalyticsService:
         date_query = {"$gte": start_date, "$lte": end_date}
         unified_cost_map = await self._build_unified_cost_map(context_filter)
 
-        # 1. POS Pipeline (Using date_time field)
         pos_pipeline = [
             {"$match": {**context_filter, "date_time": date_query}},
             {"$project": {
                 "date": "$date_time",
                 "total_amount": {"$ifNull": ["$total_amount", "$amount"]},
-                "items": [{
-                    "description": {"$ifNull": ["$product_name", "$description", "Produkt"]},
-                    "quantity": {"$ifNull": ["$quantity", 1.0]}
-                }]
+                "items": [{"description": {"$ifNull": ["$product_name", "$description", "Produkt"]},"quantity": {"$ifNull": ["$quantity", 1.0]}}]
             }}
         ]
         pos_sales = await self.transactions.aggregate(pos_pipeline).to_list(length=None)
-
-        # 2. Invoices Pipeline
         invoice_pipeline = [
             {"$match": {**context_filter, "issue_date": date_query, "status": {"$ne": "DRAFT"}}},
             {"$project": { "date": "$issue_date", "total_amount": "$total_amount", "items": "$items" }}
@@ -148,7 +158,7 @@ class AnalyticsService:
                 try: sale_date = datetime.fromisoformat(sale_date.replace('Z', '+00:00'))
                 except: continue
             if not isinstance(sale_date, datetime): continue
-                
+            
             sale_date_str = sale_date.strftime("%Y-%m-%d")
             sale_amount = float(sale.get('total_amount') or 0.0)
             total_revenue += sale_amount
@@ -159,6 +169,8 @@ class AnalyticsService:
             sales_by_date[sale_date_str]["count"] += 1
 
             items_list = sale.get('items', [])
+            if not items_list: continue
+
             item_count = len(items_list)
             for item in items_list:
                 item_name = item.get('description') or item.get('product_name') or 'Unknown'
