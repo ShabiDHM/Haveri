@@ -1,9 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V4.7 (FULL FEATURE RESTORATION)
-// 1. FIXED: Restored TransactionImporter, showImportModal, and Archive logic to resolve TS6133.
-// 2. FIXED: Re-integrated Workspace/Case selection for Invoice and Expense archiving.
-// 3. FEATURE: Maintained permanently visible action icons for the Partners tab.
-// 4. STATUS: 100% Complete. Unabridged.
+// PHOENIX PROTOCOL - FINANCE TAB V4.8 (UI STREAMLINING)
+// 1. CLEANUP: Removed non-functional 'Edit' and 'View' buttons from the Partners tab.
+// 2. CLEANUP: Removed unused Eye and Edit2 icon imports to resolve linting warnings.
+// 3. STATUS: 100% Complete. Unabridged.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,7 +10,7 @@ import {
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
     Sparkles, ArrowRight, X, Lightbulb, Users, Calendar, Phone, Mail, MapPin,
-    Trash2, Edit2, Eye
+    Trash2
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { Invoice, Expense, Document } from '../../data/types';
@@ -293,8 +292,6 @@ export const FinanceTab: React.FC = () => {
                                                 <div className="flex flex-col items-end gap-2">
                                                     <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{partner.type}</span>
                                                     <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                        <button className="p-1.5 rounded-md bg-gray-800/50 text-blue-400 hover:bg-blue-500 hover:text-white transition-all border border-white/5" title={t('general.view')}><Eye size={14}/></button>
-                                                        <button className="p-1.5 rounded-md bg-gray-800/50 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all border border-white/5" title={t('general.edit')}><Edit2 size={14}/></button>
                                                         <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-gray-800/50 text-rose-400 hover:bg-rose-500 hover:text-white transition-all border border-white/5" title={t('general.delete')}><Trash2 size={14}/></button>
                                                     </div>
                                                 </div>

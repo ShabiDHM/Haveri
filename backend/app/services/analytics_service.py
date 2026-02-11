@@ -1,9 +1,8 @@
 # FILE: backend/app/services/analytics_service.py
-# PHOENIX PROTOCOL - ANALYTICS SERVICE V3.0 (UNIFIED COGS ENGINE)
-# 1. CRITICAL FIX: Re-engineered COGS calculation to handle both Recipe-based products and Direct-from-Inventory sales.
-# 2. NEW: Implemented a unified cost map, eliminating the system's previous blind spot for retail-style items.
-# 3. PERFORMANCE: Replaced inefficient, per-transaction fuzzy matching with a single, upfront cost map lookup.
-# 4. STATUS: 100% Complete. Resolves the "Zero-COGS" anomaly.
+# PHOENIX PROTOCOL - ANALYTICS SERVICE V3.2 (SYNTAX STABILIZATION)
+# 1. FIXED: Indentation structure to resolve Pylance import error.
+# 2. FEATURE: Smart Fuzzy Matching (Containment) for COGS calculation.
+# 3. STATUS: Validated Class Structure.
 
 from datetime import datetime, timedelta
 import re
@@ -18,10 +17,13 @@ class AnalyticsService:
         self.inventory = db["inventory"]
         self.recipes = db["recipes"]
         self.invoices = db["invoices"]
+        # Cache for fuzzy matches to speed up loop execution
+        self._fuzzy_match_cache: Dict[str, str] = {}
 
     def _normalize(self, text: str) -> str:
-        if not text: return ""
-        return re.sub(r'[^\w\s]', '', str(text).lower()).strip()
+        if not text: 
+            return ""
+        return re.sub(r'[^\w\s]', '', str(text).lower()).strip().replace(" ", "")
 
     async def _build_unified_cost_map(self, context_filter: dict) -> Dict[str, float]:
         """
@@ -67,6 +69,33 @@ class AnalyticsService:
         
         return unified_cost_map
 
+    def _find_cost_with_fallback(self, item_name: str, cost_map: Dict[str, float]) -> float:
+        """
+        Attempts to find cost using:
+        1. Exact Match
+        2. Cached Fuzzy Match
+        3. Containment Match (e.g. 'Macchiato' matches 'Macchiato e Madhe')
+        """
+        normalized_name = self._normalize(item_name)
+        
+        # 1. Exact Match
+        if normalized_name in cost_map:
+            return cost_map[normalized_name]
+
+        # 2. Check Cache
+        if normalized_name in self._fuzzy_match_cache:
+            matched_key = self._fuzzy_match_cache[normalized_name]
+            return cost_map.get(matched_key, 0.0)
+
+        # 3. Fuzzy / Containment Match
+        for map_key in cost_map.keys():
+            if normalized_name in map_key or map_key in normalized_name:
+                self._fuzzy_match_cache[normalized_name] = map_key
+                return cost_map[map_key]
+        
+        # No match found
+        return 0.0
+
     async def get_dashboard_data(self, user_id: str, days: int = 30) -> AnalyticsDashboardData:
         user = await self.db.users.find_one({"_id": ObjectId(user_id)})
         org_id = user.get("organization_id") if user else None
@@ -80,12 +109,13 @@ class AnalyticsService:
         unified_cost_map = await self._build_unified_cost_map(context_filter)
 
         # --- AGGREGATE SALES DATA ---
+        
         # 1. From POS Transactions
         pos_pipeline = [
             {"$match": {**context_filter, "date": {"$gte": start_date}}},
             {"$project": {
                 "date": "$date",
-                "total_amount": "$amount",
+                "total_amount": "$total_amount",
                 "items": [{
                     "description": {"$ifNull": ["$product_name", "$description"]},
                     "quantity": {"$ifNull": ["$quantity", 1.0]}
@@ -115,30 +145,47 @@ class AnalyticsService:
         top_products_agg: Dict[str, Dict[str, float]] = {}
 
         for sale in all_sales:
-            sale_date_str = sale['date'].strftime("%Y-%m-%d")
-            total_revenue += sale.get('total_amount', 0.0)
+            sale_date = sale.get('date')
+            # Handle date parsing safely
+            if isinstance(sale_date, str):
+                try:
+                    sale_date = datetime.strptime(sale_date, "%Y-%m-%d")
+                except ValueError:
+                    sale_date = datetime.now()
+            elif not isinstance(sale_date, datetime):
+                sale_date = datetime.now()
+            
+            sale_date_str = sale_date.strftime("%Y-%m-%d")
+            
+            # Ensure revenue is a float
+            sale_amount = float(sale.get('total_amount') or 0.0)
+            total_revenue += sale_amount
 
             if sale_date_str not in sales_by_date:
                 sales_by_date[sale_date_str] = {"amount": 0.0, "count": 0}
             
-            sales_by_date[sale_date_str]["amount"] += sale.get('total_amount', 0.0)
+            sales_by_date[sale_date_str]["amount"] += sale_amount
             sales_by_date[sale_date_str]["count"] += 1
 
-            for item in sale.get('items', []):
+            items_list = sale.get('items', [])
+            item_count = len(items_list)
+
+            for item in items_list:
                 item_name = item.get('description', 'Unknown Product')
                 item_qty = float(item.get('quantity', 1.0))
                 
-                # Calculate COGS using the unified map
-                normalized_name = self._normalize(item_name)
-                cost = unified_cost_map.get(normalized_name, 0.0)
+                # Calculate COGS using the unified map with Fuzzy Fallback
+                cost = self._find_cost_with_fallback(item_name, unified_cost_map)
                 total_cogs += (cost * item_qty)
 
                 # Aggregate for top products report
                 if item_name not in top_products_agg:
                     top_products_agg[item_name] = {"revenue": 0.0, "quantity": 0.0}
-                # Note: This revenue is an approximation as we don't have per-item revenue from POS.
-                # For now, we'll credit the whole transaction value to the first item for simplicity in ranking.
-                top_products_agg[item_name]["revenue"] += sale.get('total_amount', 0.0)
+                
+                # Distribute revenue among items (simple approximation)
+                item_revenue = sale_amount / item_count if item_count > 0 else 0.0
+
+                top_products_agg[item_name]["revenue"] += item_revenue
                 top_products_agg[item_name]["quantity"] += item_qty
 
         # Format final outputs
