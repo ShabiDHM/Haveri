@@ -1,8 +1,7 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.13 (TEMPORAL SYNC)
-# 1. FIXED: Added 'year' parameter to get_dashboard_data to support Fiscal Year filtering.
-# 2. INTEGRITY: Preserved all Partner, Invoice, Expense, and Transaction logic.
-# 3. STATUS: API Contract Updated.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.13 (FISCAL CONTEXT ENABLED)
+# 1. FIXED: get_dashboard_data now accepts 'year' to support 2026 filtering.
+# 2. STATUS: API Route Context-Aware.
 
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
@@ -257,15 +256,14 @@ def delete_expense(
     except:
         pass
 
-# --- ANALYTICS ENDPOINT (TEMPORAL SYNC FIX) ---
+# --- ANALYTICS ENDPOINT (PHOENIX: FISCAL YEAR SUPPORTED) ---
 @router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
 async def get_dashboard_data(
     current_user: Annotated[UserInDB, Depends(get_current_user)], 
     db: Any = Depends(get_async_db), 
     days: int = 365,
-    year: Optional[int] = Query(None) # PHOENIX: Support for Fiscal Year Context
+    year: Optional[int] = Query(None) # PHOENIX: Support for explicit fiscal year
 ):
-    """Handles the main dashboard data call with year-awareness."""
+    """Handles context-aware dashboard data."""
     analytics_service = AnalyticsService(db)
-    # PHOENIX: Passing year to the service to resolve the 2026 data void
     return await analytics_service.get_dashboard_data(user_id=str(current_user.id), days=days, year=year)

@@ -1,6 +1,6 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V13.3 (TEMPORAL SYNC & FISCAL AWARENESS)
-// 1. FIXED: getAnalyticsDashboard now accepts 'year' to align with the selected Fiscal Year.
+// PHOENIX PROTOCOL - API V13.4 (FISCAL CONTEXT ALIGNMENT)
+// 1. FIXED: getAnalyticsDashboard now supports 'year' param to resolve 2026 data blindness.
 // 2. INTEGRITY: Preserved 100% of existing interceptors, methods, and configurations.
 // 3. STATUS: API Service Synchronized.
 
@@ -175,7 +175,7 @@ class ApiService {
 
     public async createPurchaseOrder(data: { item_id: string; item_name: string; unit: string; quantity: number; estimated_cost: number; supplier_name: string; }): Promise<any> { const response = await this.axiosInstance.post('/drafting/purchase-order', data); return response.data; }
 
-    // --- FINANCE & ANALYTICS (FISCAL YEAR SYNC) ---
+    // --- FINANCE & ANALYTICS (FISCAL YEAR SUPPORTED) ---
     public async getAnalyticsDashboard(days?: number, year?: number): Promise<AnalyticsDashboardData> { 
         const params: any = {};
         if (days !== undefined) params.days = days;

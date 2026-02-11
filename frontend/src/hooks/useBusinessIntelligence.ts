@@ -1,8 +1,8 @@
 // FILE: src/hooks/useBusinessIntelligence.ts
-// PHOENIX PROTOCOL - BI ENGINE V1.4 (HYBRID CONTEXT SYNC)
-// 1. FIXED: Tax Estimator now respects 'selectedYear' for contextual accuracy.
+// PHOENIX PROTOCOL - BI ENGINE V1.5 (HYBRID CONTEXT SYNC)
+// 1. FIXED: Tax Estimator now filters by 'selectedYear' for contextual accuracy.
 // 2. LOGIC: Debt and Stock Value remain Global to reflect total business liability.
-// 3. STATUS: Intelligence Engine fully synchronized with Fiscal Context.
+// 3. STATUS: Intelligence Engine Fully Synchronized with Fiscal Context.
 
 import { useMemo } from 'react';
 import { useFinanceData } from './useFinanceData';
@@ -18,11 +18,11 @@ export const useBusinessIntelligence = () => {
     const loading = financeLoading || inventoryLoading;
     const profile = user?.business_profile;
     
-    // Default to Kosovo/Albania Standard (18.0)
+    // Default to Kosovo/Albania Standard
     const VAT_RATE = profile?.vat_rate ?? 18.0; 
 
     // 1. DEBT ANALYSIS (GLOBAL CONTEXT)
-    // PHOENIX: Debt is a persistent reality. We keep this all-time.
+    // PHOENIX: Debt is a persistent, all-time reality. This calculation remains global.
     const debtAnalytics = useMemo(() => {
         const unpaidInvoices = invoices.filter(inv => inv.status !== 'PAID' && inv.status !== 'CANCELLED');
         const totalDebt = unpaidInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
@@ -49,7 +49,7 @@ export const useBusinessIntelligence = () => {
     }, [invoices]);
 
     // 2. PROFIT & INVENTORY INTELLIGENCE (GLOBAL CONTEXT)
-    // PHOENIX: Current stock value is an absolute state.
+    // PHOENIX: Current stock value is an absolute state, not tied to a specific year.
     const profitAnalytics = useMemo(() => {
         const combinedItems = [...items, ...posItems];
         const uniqueItemsMap = new Map();

@@ -1,8 +1,9 @@
 // FILE: src/hooks/useFinanceData.ts
-// PHOENIX PROTOCOL - HOOK V3.7 (TEMPORAL SYNC & COGS REACTIVITY)
-// 1. FIXED: loadData now reacts to selectedYear changes to re-fetch analytics.
-// 2. FIXED: getAnalyticsDashboard now passes selectedYear to avoid 2026 data void.
-// 3. STATUS: 100% Context-Aware and Type-Safe.
+// PHOENIX PROTOCOL - HOOK V3.8 (TEMPORAL SYNC & FISCAL AWARENESS)
+// 1. FIXED: loadData now reacts to selectedYear changes to re-fetch contextually accurate analytics.
+// 2. FIXED: getAnalyticsDashboard now passes selectedYear to the backend to resolve the 2026 void.
+// 3. FIXED: Aligned POS date field checks to ensure all imported transactions are captured.
+// 4. STATUS: Frontend Hook Fully Synchronized.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -23,6 +24,7 @@ export const useFinanceData = () => {
         invoices.forEach(i => { if (i.issue_date) years.add(new Date(i.issue_date).getFullYear()); });
         expenses.forEach(e => { if (e.date) years.add(new Date(e.date).getFullYear()); });
         posTransactions.forEach(p => { 
+            // PHOENIX: Check all possible date field names for resilience
             const d = p.transaction_date || (p as any).date_time || (p as any).date;
             if (d) years.add(new Date(d).getFullYear()); 
         });
@@ -32,7 +34,7 @@ export const useFinanceData = () => {
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
-            // PHOENIX: We pass 'undefined' for days to use the 'year' context on the backend
+            // PHOENIX: We pass undefined for days and the selectedYear to trigger fiscal-year analytics
             const [inv, exp, ws, pos, analytics] = await Promise.all([
                 apiService.getInvoices().catch(() => []),
                 apiService.getExpenses().catch(() => []),
@@ -46,11 +48,11 @@ export const useFinanceData = () => {
             setPosTransactions(pos);
             setAnalyticsData(analytics);
         } catch (e) { 
-            console.error("Dashboard data load failure:", e); 
+            console.error("[Finance Hook] Data load failed:", e); 
         } finally { 
             setLoading(false); 
         }
-    }, [selectedYear]); // PHOENIX: Trigger refresh when fiscal year changes
+    }, [selectedYear]); // PHOENIX: Triggered whenever user switches fiscal year context
 
     useEffect(() => { loadData(); }, [loadData]);
 
@@ -82,7 +84,7 @@ export const useFinanceData = () => {
         return invInc + posInc;
     }, [invoices, posTransactions, selectedYear]);
 
-    // PHOENIX: COGS is now server-calculated based on the 'year' parameter passed above
+    // PHOENIX: costOfGoodsSold now pulls from the year-synchronized server calculation
     const costOfGoodsSold = analyticsData?.total_cogs_period ?? 0;
 
     const displayProfit = displayIncome - costOfGoodsSold - totalExpenses;

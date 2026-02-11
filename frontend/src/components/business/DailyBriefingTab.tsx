@@ -1,8 +1,9 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V5.5 (TEMPORAL ALIGNMENT)
+// PHOENIX PROTOCOL - DASHBOARD V5.6 (TEMPORAL ALIGNMENT)
 // 1. FIXED: Charts now pivot based on 'selectedYear' using server-side analytics.
-// 2. FIXED: Removed redundant/blind API calls to unify data state.
-// 3. STATUS: Dashboard fully synchronized with Fiscal Year 2026.
+// 2. FIXED: Removed redundant/blind API calls to unify data state across tabs.
+// 3. FIXED: Aligned Peak Traffic analysis with the selected Fiscal Year.
+// 4. STATUS: Dashboard UI Fully Synchronized.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +25,7 @@ export const DailyBriefingTab: React.FC = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     
-    // PHOENIX: Consuming unified context-aware finance data
+    // PHOENIX: Consuming unified, context-aware finance data from the hook
     const { 
         displayIncome, 
         analyticsData, 
@@ -51,7 +52,7 @@ export const DailyBriefingTab: React.FC = () => {
     const isAlbanian = i18n.language.startsWith('sq') || i18n.language === 'al';
     const shortMonthsSQ = ['Jan', 'Shk', 'Mar', 'Pri', 'Maj', 'Qer', 'Kor', 'Gush', 'Sht', 'Tet', 'Nën', 'Dhj'];
 
-    // PHOENIX: Synchronize local display date
+    // Local display date logic
     const today = new Date();
     const monthsSQ = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
     const monthsEN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -61,6 +62,7 @@ export const DailyBriefingTab: React.FC = () => {
     useEffect(() => {
         const loadAmbientData = async () => {
             try {
+                // Fetch non-temporal data
                 const [workspacesData, msgs] = await Promise.all([
                     apiService.getWorkspaces(),
                     apiService.getInboundMessages('INBOX')
@@ -68,7 +70,7 @@ export const DailyBriefingTab: React.FC = () => {
                 setWorkspaces(workspacesData);
                 setMessageCount(msgs.length);
             } catch (err) {
-                console.error("Dashboard background load failure", err);
+                console.error("[Dashboard] Background load failure:", err);
             } finally {
                 setLocalLoading(false);
             }
@@ -76,13 +78,18 @@ export const DailyBriefingTab: React.FC = () => {
         loadAmbientData();
     }, []);
 
-    // PHOENIX: Re-process history whenever analyticsData (which is year-aware) changes
+    // PHOENIX: Re-process history whenever analyticsData (which is now year-aware) changes
     useEffect(() => {
         if (analyticsData?.sales_trend) {
             processSalesHistory(analyticsData.sales_trend);
+        } else {
+            setSalesHistory({ labels: [], data: [] });
         }
-        if (posTransactions.length > 0) {
+
+        if (posTransactions && posTransactions.length > 0) {
             analyzePeakTraffic(posTransactions);
+        } else {
+            setPeakTime(null);
         }
     }, [analyticsData, posTransactions, i18n.language, selectedYear]);
 
@@ -92,9 +99,11 @@ export const DailyBriefingTab: React.FC = () => {
             return;
         }
 
-        // Map server-side trend points to chart format
+        // PHOENIX: Map server-side trend points (filtered for 2026) to chart labels
         const labels = trend.map(point => {
             const date = new Date(point.date);
+            if (isNaN(date.getTime())) return point.date;
+            
             if (isAlbanian) {
                 return `${date.getDate()} ${shortMonthsSQ[date.getMonth()]}`;
             }
@@ -113,7 +122,7 @@ export const DailyBriefingTab: React.FC = () => {
 
         const hourCounts: Record<number, number> = {};
         
-        // PHOENIX: Filter peak analysis by the selected year context
+        // PHOENIX: Filter peak analysis by the selected year context to ensure accuracy
         transactions.forEach(tx => {
             const dateVal = tx.transaction_date || tx.date_time || tx.date;
             if (!dateVal) return;
