@@ -1,8 +1,7 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V8.0 (TOTAL STREAMING SYNC)
-# 1. FIX (HAVERY): Added 'read_timeout' of 10 minutes to Havery API to support Forensic Agent streaming.
-# 2. SYNC: Both Juristi and Havery now have identical stability settings for AI chats.
-# 3. STATUS: 100% End-to-End Infrastructure Ready.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V8.1 (JURISTI REFRESH FIX)
+# 1. FIX: Added header_up directives to ensure backend recognizes HTTPS and correct Host.
+# 2. STATUS: End-to-End Infrastructure Ready.
 
 {
     email shabanbala@gmail.com
@@ -11,20 +10,19 @@
 # ----------------------------------------
 # PROJECT 1: HAVERI
 # ----------------------------------------
-# Frontend/Main Domain Proxy
 www.haveri.tech {
     reverse_proxy backend:8000 {
-        # PHOENIX: Support long-running AI analysis
         transport http {
             read_timeout 10m
         }
     }
 }
 
-# API Subdomain
 api.haveri.tech {
     reverse_proxy backend:8000 {
-        # PHOENIX: Ensure Forensic Accountant streams do not time out
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Port {server_port}
         transport http {
             read_timeout 10m
         }
@@ -34,10 +32,14 @@ api.haveri.tech {
 # ----------------------------------------
 # PROJECT 2: JURISTI
 # ----------------------------------------
-# API Subdomain
 api.juristi.tech {
     reverse_proxy juristi-backend:8000 {
-        # PHOENIX: Keep SSE connections alive
+        # PHOENIX FIX: Inform Backend of the secure transport layer
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Port {server_port}
+        header_up X-Forwarded-Proto {scheme}
+
         transport http {
             read_timeout 10m
         }
