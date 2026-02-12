@@ -1,45 +1,32 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V8.1 (JURISTI REFRESH FIX)
-# 1. FIX: Added header_up directives to ensure backend recognizes HTTPS and correct Host.
-# 2. STATUS: End-to-End Infrastructure Ready.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V8.3 (SECURITY HEADER SYNC)
+# 1. FIX: Explicitly passing Host and Origin for CORS bypass.
 
 {
     email shabanbala@gmail.com
 }
 
-# ----------------------------------------
-# PROJECT 1: HAVERI
-# ----------------------------------------
-www.haveri.tech {
-    reverse_proxy backend:8000 {
+# JURISTI API GATEWAY
+api.juristi.tech {
+    reverse_proxy juristi-backend:8000 {
+        header_up Host {host}
+        header_up Origin {header.Origin}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Port {server_port}
+        header_up X-Forwarded-Proto {scheme}
+
         transport http {
             read_timeout 10m
         }
     }
 }
 
+# HAVERI API GATEWAY
 api.haveri.tech {
     reverse_proxy backend:8000 {
         header_up Host {host}
         header_up X-Real-IP {remote_host}
         header_up X-Forwarded-Port {server_port}
-        transport http {
-            read_timeout 10m
-        }
-    }
-}
-
-# ----------------------------------------
-# PROJECT 2: JURISTI
-# ----------------------------------------
-api.juristi.tech {
-    reverse_proxy juristi-backend:8000 {
-        # PHOENIX FIX: Inform Backend of the secure transport layer
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-Port {server_port}
-        header_up X-Forwarded-Proto {scheme}
-
         transport http {
             read_timeout 10m
         }
