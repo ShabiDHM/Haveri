@@ -1,7 +1,8 @@
-# FILE: docker-compose.yml (HAVERY)
-# PHOENIX PROTOCOL - DOCKER CONFIG V12.1 (NAMING ALIGNMENT)
-# 1. FIXED: Build context now correctly points to './accountant-core-service'.
-# 2. STATUS: Verified against user folder structure.
+# FILE: docker-compose.yml (HAVERI)
+# PHOENIX PROTOCOL - DOCKER CONFIG V12.2 (STABILITY & HEALTH ALIGNMENT)
+# 1. FIXED: Added Neo4j healthcheck to prevent backend connection crashes.
+# 2. FIXED: Backend now waits for Neo4j service_healthy status.
+# 3. STATUS: Architecture integrity verified.
 
 version: '3.8'
 
@@ -29,7 +30,7 @@ services:
   # AGENT 2: New Forensic Accountant (Juristi Engine)
   accountant-core-service:
     build: 
-      context: ./accountant-core-service # PHOENIX FIX: Matched your folder name
+      context: ./accountant-core-service
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
@@ -81,6 +82,7 @@ services:
     depends_on: 
       mongo: { condition: service_healthy }
       redis: { condition: service_healthy }
+      neo4j: { condition: service_healthy }
       ai-core-service: { condition: service_healthy }
       accountant-core-service: { condition: service_healthy } 
       local-llm: { condition: service_started }
@@ -89,7 +91,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 60s
 
   celery:
     build: { context: ./backend }
@@ -142,6 +144,11 @@ services:
       - neo4j_data:/data
     networks:
       - phoenix_net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7474"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
 
 volumes:
   mongo_data: {}
@@ -150,7 +157,6 @@ volumes:
   caddy_data: {}
   ollama_data: {}
   neo4j_data: {}
-  neo4j_logs: {}
   huggingface_cache: {}
 
 networks:
