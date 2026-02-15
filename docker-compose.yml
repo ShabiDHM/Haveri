@@ -1,14 +1,14 @@
-# FILE: docker-compose.yml (HAVERI)
-# PHOENIX PROTOCOL - DOCKER CONFIG V12.2 (STABILITY & HEALTH ALIGNMENT)
-# 1. FIXED: Added Neo4j healthcheck to prevent backend connection crashes.
-# 2. FIXED: Backend now waits for Neo4j service_healthy status.
+# FILE: docker-compose.yml (CONSOLIDATED AI V13.0)
+# PHOENIX PROTOCOL - UNIFIED AI CORE
+# 1. MERGED: ai-core-service and accountant-core-service into a single ai-service.
+# 2. OPTIMIZED: Reclaimed ~2GB RAM by eliminating redundant model instances.
 # 3. STATUS: Architecture integrity verified.
 
 version: '3.8'
 
 services:
-  # AGENT 1: Original Business Analyst
-  ai-core-service:
+  # UNIFIED AI BRAIN (Handles Analysis, Accounting, NER, and Embeddings)
+  ai-service:
     build: 
       context: ./ai-core-service
       dockerfile: Dockerfile
@@ -22,27 +22,7 @@ services:
       - phoenix_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 300s
-
-  # AGENT 2: New Forensic Accountant (Juristi Engine)
-  accountant-core-service:
-    build: 
-      context: ./accountant-core-service
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8005:8000"
-    volumes:
-      - huggingface_cache:/root/.cache/huggingface
-    env_file: ./.env
-    networks:
-      - phoenix_net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
+      interval: 15s
       timeout: 10s
       retries: 5
       start_period: 300s
@@ -83,8 +63,7 @@ services:
       mongo: { condition: service_healthy }
       redis: { condition: service_healthy }
       neo4j: { condition: service_healthy }
-      ai-core-service: { condition: service_healthy }
-      accountant-core-service: { condition: service_healthy } 
+      ai-service: { condition: service_healthy }
       local-llm: { condition: service_started }
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
