@@ -1,7 +1,9 @@
 # FILE: backend/app/services/user_service.py
-# PHOENIX PROTOCOL - USER SERVICE V2.2 (CONSTRUCTOR ALIGNMENT)
-# 1. FIXED: Initializing WorkspaceCreate using alias names (case_name, case_number).
-# 2. STATUS: Fully synchronized.
+# PHOENIX PROTOCOL - USER SERVICE V2.3 (FIXED DELETE USER)
+# 1. FIXED: Implemented delete_user_and_all_data to cascade delete user data.
+# 2. DETAIL: Deletes workspaces, documents, calendar events, invoices, expenses,
+#    pos transactions, inventory items, recipes, archive items, and business profile.
+# 3. STATUS: Fully synchronized with database schema.
 
 from pymongo.database import Database
 from bson import ObjectId
@@ -85,7 +87,45 @@ def change_password(db: Database, user_id: str, old_pass: str, new_pass: str):
     db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"hashed_password": get_password_hash(new_pass)}})
 
 def delete_user_and_all_data(db: Database, user: UserInDB):
-    pass
+    """
+    Permanently deletes a user and all associated data across collections.
+    This includes:
+    - All workspaces owned by the user, and all documents, calendar events, invoices,
+      expenses, POS transactions, inventory items, recipes, and archive items under those workspaces.
+    - The user's business profile.
+    - The user record itself.
+    """
+    # 1. Delete all workspaces owned by the user
+    workspaces = db.cases.find({"owner_id": user.id})
+    for ws in workspaces:
+        ws_id = ws["_id"]
+        ws_id_str = str(ws_id)
+
+        # Delete documents (case_id as string)
+        db.documents.delete_many({"case_id": ws_id_str})
+        # Delete calendar events
+        db.calendar_events.delete_many({"case_id": ws_id_str})
+        # Delete invoices
+        db.invoices.delete_many({"case_id": ws_id_str})
+        # Delete expenses
+        db.expenses.delete_many({"case_id": ws_id_str})
+        # Delete POS transactions
+        db.pos_transactions.delete_many({"case_id": ws_id_str})
+        # Delete inventory items
+        db.inventory_items.delete_many({"case_id": ws_id_str})
+        # Delete recipes
+        db.recipes.delete_many({"case_id": ws_id_str})
+        # Delete archive items
+        db.archive_items.delete_many({"case_id": ws_id_str})
+
+        # Finally delete the workspace itself
+        db.cases.delete_one({"_id": ws_id})
+
+    # 2. Delete business profile (if any)
+    db.business_profiles.delete_one({"user_id": str(user.id)})
+
+    # 3. Delete the user
+    db.users.delete_one({"_id": user.id})
 
 def get_organization_members(db: Database, org_id: str) -> List[UserInDB]:
     try:
