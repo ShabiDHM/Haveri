@@ -1,7 +1,7 @@
 // FILE: frontend/src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V1.4 (STATIC FOOTER REMOVAL)
-// 1. FIXED: Removed redundant static footer "Sistemi Aktiv • V4.0.1".
-// 2. STATUS: UI Cleaned.
+// PHOENIX PROTOCOL - INSIGHTS UI V1.5 (NEXUS REMOVAL)
+// 1. REMOVED: Nexus Topology button and conditional rendering for graph mode.
+// 2. STATUS: Cleaned of all graph references.
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,8 +10,7 @@ import {
     Loader2, 
     FileSpreadsheet, 
     ArrowLeft, 
-    Cpu, 
-    Network
+    Cpu
 } from 'lucide-react';
 import { useBusinessIntelligence } from '../../hooks/useBusinessIntelligence';
 import { useAuth } from '../../context/AuthContext';
@@ -22,17 +21,15 @@ import { TaxModule } from './insights/TaxModule';
 import { ProfitModule } from './insights/ProfitModule';
 
 // Component Imports
-import SpreadsheetAnalysisPanel from '../SpreadsheetAnalysisPanel'; 
-import GraphVisualization from '../GraphVisualization';
+import SpreadsheetAnalysisPanel from '../SpreadsheetAnalysisPanel';
 
 export const InsightsTab: React.FC = () => {
     const { t } = useTranslation();
-    const { user } = useAuth();
+    useAuth();
     const { loading, debtAnalytics, profitAnalytics, taxAnalytics } = useBusinessIntelligence();
     
-    const [viewMode, setViewMode] = useState<'dashboard' | 'analyst' | 'graph'>('dashboard');
+    const [viewMode, setViewMode] = useState<'dashboard' | 'analyst'>('dashboard');
 
-    const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
     if (loading) {
         return (
@@ -84,22 +81,6 @@ export const InsightsTab: React.FC = () => {
                     </motion.div>
                 )}
 
-                {/* --- MODE: GRAPH (NEXUS) --- */}
-                {viewMode === 'graph' && isAdmin && (
-                    <motion.div 
-                        key="graph" 
-                        initial={{ opacity: 0, scale: 0.98 }} 
-                        animate={{ opacity: 1, scale: 1 }} 
-                        exit={{ opacity: 0, scale: 0.98 }} 
-                        transition={{ duration: 0.3 }}
-                    >
-                        <ViewHeader title={t('graph.title', 'Nexus Topology')} icon={Network} />
-                        <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative h-[700px]">
-                             <GraphVisualization />
-                        </div>
-                    </motion.div>
-                )}
-
                 {/* --- MODE: DASHBOARD (MAIN HUB) --- */}
                 {viewMode === 'dashboard' && (
                     <motion.div 
@@ -109,10 +90,10 @@ export const InsightsTab: React.FC = () => {
                         exit={{ opacity: 0, y: -20 }} 
                         className="space-y-8"
                     >
-                        {/* Section 1: Advanced Tools Selection */}
-                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
+                        {/* Section 1: Advanced Tools Selection (only Analyst) */}
+                        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                             
-                            {/* Card 1: Analyst Button */}
+                            {/* Card: Analyst Button */}
                             <motion.button 
                                 whileHover={{ scale: 1.02, boxShadow: '0 0 30px rgba(59, 130, 246, 0.15)' }} 
                                 whileTap={{ scale: 0.98 }} 
@@ -142,37 +123,8 @@ export const InsightsTab: React.FC = () => {
                                 </div>
                             </motion.button>
                             
-                            {/* PHOENIX: Card 2 is now conditionally rendered */}
-                            {isAdmin && (
-                                <motion.button 
-                                    whileHover={{ scale: 1.02, boxShadow: '0 0 30px rgba(16, 185, 129, 0.15)' }} 
-                                    whileTap={{ scale: 0.98 }} 
-                                    onClick={() => setViewMode('graph')} 
-                                    className="relative overflow-hidden group rounded-2xl p-px bg-gradient-to-b from-emerald-500/20 to-slate-800/20 text-left h-full"
-                                >
-                                    <div className="absolute inset-0 bg-slate-900/95 rounded-2xl z-0" />
-                                    <div className="absolute inset-0 bg-grid-slate-800/[0.2] z-0" style={{ backgroundImage: 'radial-gradient(#10b981 1px, transparent 1px)', backgroundSize: '20px 20px', opacity: 0.1 }} />
-
-                                    <div className="relative z-10 p-6 flex flex-col h-full justify-between">
-                                        <div className="space-y-3">
-                                            <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20 group-hover:border-emerald-500/50 transition-colors">
-                                                <Network className="text-emerald-400" size={24} />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">
-                                                    {t('graph.title', 'Nexus Topology')}
-                                                </h3>
-                                                <p className="text-slate-400 text-sm mt-1 leading-relaxed">
-                                                    {t('graph.desc', 'Visualize hidden connections between clients and capital flow.')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="mt-6 flex items-center text-xs font-mono text-emerald-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {t('graph.launch', 'Launch Visualization')} <span className="ml-2">→</span>
-                                        </div>
-                                    </div>
-                                </motion.button>
-                            )}
+                            {/* Nexus button completely removed */}
+                            
                         </div>
                         
                         {/* Section 2: Real-time Metrics (Modules) */}

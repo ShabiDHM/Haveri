@@ -1,7 +1,7 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V12.5 (TYPE ALIGNMENT)
-# 1. FIXED: Silenced strict type-checking on ProxyHeadersMiddleware.
-# 2. STATUS: Clean registry.
+# PHOENIX PROTOCOL - MAIN APPLICATION V12.6 (NEXUS REMOVAL)
+# 1. REMOVED: graph_router import and its inclusion under /graph.
+# 2. STATUS: Graph API endpoints are no longer registered.
 
 from fastapi import FastAPI, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,7 +26,7 @@ from app.api.endpoints.daily_briefing import router as daily_briefing_router
 from app.api.endpoints.briefing import router as strategic_briefing_router
 from app.api.endpoints.analysis import router as analysis_router 
 from app.api.endpoints.inbound import router as inbound_router
-from app.api.endpoints.graph import router as graph_router
+# graph_router REMOVED
 from app.api.endpoints.mobile_handoff import router as mobile_handoff_router
 from app.api.endpoints.accountant import router as accountant_router
 
@@ -55,7 +55,7 @@ api_v1_router.include_router(inventory_router, prefix="/inventory", tags=["Inven
 api_v1_router.include_router(archive_router, prefix="/archive", tags=["Archive"])
 api_v1_router.include_router(daily_briefing_router, prefix="/daily-briefing", tags=["Daily Briefing (Legacy)"])
 api_v1_router.include_router(strategic_briefing_router, prefix="/briefing", tags=["Briefing"])
-api_v1_router.include_router(graph_router, prefix="/graph", tags=["Graph"]) 
+# graph_router inclusion REMOVED
 api_v1_router.include_router(share_router, prefix="/share", tags=["Share"])
 api_v1_router.include_router(support_router, prefix="/support", tags=["Support"])
 api_v1_router.include_router(finance_wizard.router, prefix="/finance/wizard", tags=["Finance Wizard"])
