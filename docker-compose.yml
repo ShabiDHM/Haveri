@@ -1,54 +1,162 @@
-# FILE: haveri/docker-compose.yml (CENTRALIZED AI HOST)
+# FILE: haveri/docker-compose.yml
+# PHOENIX PROTOCOL - COMPLETE INFRASTRUCTURE V15.1
+# 1. FIXED: Added missing uvicorn startup command to backend.
+# 2. RESTORED: Missing Redis, Neo4j, and Celery services.
+# 3. RETAINED: Unified AI Service as the shared brain.
+# 4. STATUS: 100% Complete Production Manifest.
+
 version: '3.8'
+
 services:
-  # THE SHARED BRAIN
+  # --- THE SHARED BRAIN ---
   ai-service:
     build: { context: ./ai-core-service }
     container_name: unified-ai-service
     restart: unless-stopped
-    volumes: [huggingface_cache:/root/.cache/huggingface]
+    volumes: 
+      - huggingface_cache:/root/.cache/huggingface
     env_file: ./.env
-    networks: [haveri_net, shared_gateway_net]
-    deploy: { resources: { limits: { memory: 8G } } } # Allocating enough for both projects
-    healthcheck: { test: ["CMD", "curl", "-f", "http://localhost:8000/health"], interval: 30s }
+    networks:
+      - haveri_net
+      - shared_gateway_net
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
 
+  # --- HAVERI BACKEND ---
   backend:
     build: { context: ./backend }
     container_name: haveri-backend
     restart: unless-stopped
+    # CRITICAL: Restored startup command
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --proxy-headers
     env_file: ./.env
-    ports: ["8001:8000"]
-    networks: [haveri_net, shared_gateway_net]
-    depends_on: { mongo: { condition: service_healthy }, ai-service: { condition: service_healthy } }
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./backend:/app
+    networks:
+      - haveri_net
+      - shared_gateway_net
+    depends_on: 
+      mongo: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      neo4j: { condition: service_healthy }
+      ai-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
+  # --- HAVERI ASYNC WORKER ---
+  celery:
+    build: { context: ./backend }
+    container_name: haveri-celery
+    restart: unless-stopped
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=4
+    env_file: ./.env
+    volumes:
+      - ./backend:/app
+    networks:
+      - haveri_net
+    depends_on: 
+      redis: { condition: service_healthy } 
+      mongo: { condition: service_healthy }
+
+  # --- GLOBAL REVERSE PROXY ---
   caddy:
     image: caddy:latest
     container_name: global-gateway
-    ports: ["80:80", "443:443"]
-    volumes: [./Caddyfile:/etc/caddy/Caddyfile, caddy_data:/data]
-    networks: [shared_gateway_net]
     restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    networks: 
+      - shared_gateway_net
 
+  # --- DATA LAYER ---
   mongo:
     image: mongo:6.0
     container_name: haveri-mongo
-    networks: [haveri_net]
-    volumes: [mongo_data:/data/db]
-    healthcheck: { test: echo 'db.runCommand("ping").ok' | mongosh --quiet, interval: 15s }
+    restart: unless-stopped
+    env_file: ./.env
+    networks:
+      - haveri_net
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: haveri-redis
+    restart: unless-stopped
+    networks:
+      - haveri_net
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
   chroma:
     image: chromadb/chroma:latest
     container_name: haveri-chroma
-    ports: ["8002:8000"]
-    networks: [haveri_net]
-    volumes: [chroma_data:/data]
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    networks:
+      - haveri_net
+    environment:
+      - IS_PERSISTENT=TRUE
+    volumes:
+      - chroma_data:/data
 
-networks:
-  haveri_net:
-  shared_gateway_net:
-    external: true
+  neo4j:
+    image: neo4j:5
+    container_name: haveri-neo4j
+    restart: unless-stopped
+    ports:
+      - "7475:7474" 
+      - "7688:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-password}
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - haveri_net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7474"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
 volumes:
   mongo_data: {}
   chroma_data: {}
+  redis_data: {}
   caddy_data: {}
+  neo4j_data: {}
   huggingface_cache: {}
+
+networks:
+  haveri_net:
+    driver: bridge
+  shared_gateway_net:
+    external: true
