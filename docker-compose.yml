@@ -3,9 +3,7 @@
 # - Removed ai-service (shared, already running)
 # - Removed caddy (global-gateway already running)
 # - Isolated volumes with "haveri_" prefix to avoid juristi conflict
-# - Removed huggingface_cache volume (managed by ai-service)
-
-version: '3.8'
+# - Removed obsolete 'version' line
 
 services:
   # --- HAVERI BACKEND ---
