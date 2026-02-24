@@ -1,9 +1,7 @@
 # FILE: haveri/docker-compose.yml
-# PHOENIX PROTOCOL - HAVERI CLEAN INSTANCE V1.0
-# - Removed ai-service (shared, already running)
-# - Removed caddy (global-gateway already running)
-# - Isolated volumes with "haveri_" prefix to avoid juristi conflict
+# PHOENIX PROTOCOL - HAVERI CLEAN INSTANCE V1.1
 # - Removed obsolete 'version' line
+# - Removed ai-service and caddy (shared services)
 
 services:
   # --- HAVERI BACKEND ---
@@ -22,7 +20,6 @@ services:
       mongo: { condition: service_healthy }
       redis: { condition: service_healthy }
       neo4j: { condition: service_healthy }
-      # ai-service dependency removed (already running externally)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s
@@ -40,7 +37,7 @@ services:
       - ./backend:/app
     networks:
       - haveri_net
-      - shared_gateway_net   # Added to allow AI service access
+      - shared_gateway_net
     depends_on:
       redis: { condition: service_healthy }
       mongo: { condition: service_healthy }
