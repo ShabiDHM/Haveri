@@ -1,7 +1,6 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V9.0 (FINAL ROUTING SYNC)
-# 1. FIXED: Pointed api.haveri.tech to the correct container name 'haveri-backend'.
-# 2. FIXED: Explicitly passing Host and Origin for CORS bypass.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V10.0 (HAVERI REPLACEMENT)
+# 1. UPDATED: api.haveri.tech now points to new haveri-backend container.
 
 {
     email shabanbala@gmail.com
