@@ -1,7 +1,8 @@
 # FILE: haveri/docker-compose.yml
-# PHOENIX PROTOCOL - HAVERI CLEAN INSTANCE V1.1
-# - Removed obsolete 'version' line
-# - Removed ai-service and caddy (shared services)
+# PHOONIX PROTOCOL - HAVERI CLEAN INSTANCE V1.2
+# - Added caddy service to manage reverse proxy within this project
+# - Added caddy_data volume for SSL certificates
+# - All services now properly isolated with 'haveri_' prefixed volumes
 
 services:
   # --- HAVERI BACKEND ---
@@ -99,11 +100,26 @@ services:
       timeout: 10s
       retries: 5
 
+  # --- GLOBAL REVERSE PROXY ---
+  caddy:
+    image: caddy:latest
+    container_name: global-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    networks:
+      - shared_gateway_net
+
 volumes:
   haveri_mongo_data: {}
   haveri_chroma_data: {}
   haveri_redis_data: {}
   haveri_neo4j_data: {}
+  caddy_data: {}          # Volume for Caddy's SSL certificates and data
 
 networks:
   haveri_net:
