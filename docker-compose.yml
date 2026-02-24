@@ -1,35 +1,13 @@
 # FILE: haveri/docker-compose.yml
-# PHOENIX PROTOCOL - INFRASTRUCTURE HARDENING V16.0
-# 1. SECURITY: Removed host port bindings (8001, 8002, 7475, 7688).
-#    - Traffic restricted to Caddy (Ports 80/443).
-#    - Database and Backend ports isolated to internal Docker networks.
-# 2. STATUS: Production Ready & Secured.
+# PHOENIX PROTOCOL - HAVERI CLEAN INSTANCE V1.0
+# - Removed ai-service (shared, already running)
+# - Removed caddy (global-gateway already running)
+# - Isolated volumes with "haveri_" prefix to avoid juristi conflict
+# - Removed huggingface_cache volume (managed by ai-service)
 
 version: '3.8'
 
 services:
-  # --- THE SHARED BRAIN ---
-  ai-service:
-    build: { context: ./ai-core-service }
-    container_name: unified-ai-service
-    restart: unless-stopped
-    volumes: 
-      - huggingface_cache:/root/.cache/huggingface
-    env_file: ./.env
-    networks:
-      - haveri_net
-      - shared_gateway_net
-    deploy:
-      resources:
-        limits:
-          memory: 8G
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 300s
-
   # --- HAVERI BACKEND ---
   backend:
     build: { context: ./backend }
@@ -37,17 +15,16 @@ services:
     restart: unless-stopped
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --proxy-headers
     env_file: ./.env
-    # SECURITY: Port 8001 removed. Access only via Caddy.
     volumes:
       - ./backend:/app
     networks:
       - haveri_net
       - shared_gateway_net
-    depends_on: 
+    depends_on:
       mongo: { condition: service_healthy }
       redis: { condition: service_healthy }
       neo4j: { condition: service_healthy }
-      ai-service: { condition: service_healthy }
+      # ai-service dependency removed (already running externally)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s
@@ -65,24 +42,10 @@ services:
       - ./backend:/app
     networks:
       - haveri_net
-    depends_on: 
-      redis: { condition: service_healthy } 
+      - shared_gateway_net   # Added to allow AI service access
+    depends_on:
+      redis: { condition: service_healthy }
       mongo: { condition: service_healthy }
-
-  # --- GLOBAL REVERSE PROXY ---
-  caddy:
-    image: caddy:latest
-    container_name: global-gateway
-    restart: unless-stopped
-    # SECURITY: Only ports 80 and 443 are allowed to face the internet.
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-    networks: 
-      - shared_gateway_net
 
   # --- DATA LAYER ---
   mongo:
@@ -93,7 +56,7 @@ services:
     networks:
       - haveri_net
     volumes:
-      - mongo_data:/data/db
+      - haveri_mongo_data:/data/db
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh --quiet
       interval: 15s
@@ -107,7 +70,7 @@ services:
     networks:
       - haveri_net
     volumes:
-      - redis_data:/data
+      - haveri_redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 15s
@@ -118,38 +81,34 @@ services:
     image: chromadb/chroma:latest
     container_name: haveri-chroma
     restart: unless-stopped
-    # SECURITY: Port 8002 removed.
     networks:
       - haveri_net
     environment:
       - IS_PERSISTENT=TRUE
     volumes:
-      - chroma_data:/data
+      - haveri_chroma_data:/data
 
   neo4j:
     image: neo4j:5
     container_name: haveri-neo4j
     restart: unless-stopped
-    # SECURITY: Ports 7475/7688 removed.
     environment:
       - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-password}
     volumes:
-      - neo4j_data:/data
+      - haveri_neo4j_data:/data
     networks:
       - haveri_net
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7474"]
       interval: 15s
       timeout: 10s
-      retries: 10
+      retries: 5
 
 volumes:
-  mongo_data: {}
-  chroma_data: {}
-  redis_data: {}
-  caddy_data: {}
-  neo4j_data: {}
-  huggingface_cache: {}
+  haveri_mongo_data: {}
+  haveri_chroma_data: {}
+  haveri_redis_data: {}
+  haveri_neo4j_data: {}
 
 networks:
   haveri_net:
