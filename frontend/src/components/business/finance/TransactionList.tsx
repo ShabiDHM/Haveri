@@ -1,9 +1,8 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// PHOENIX PROTOCOL - UNIFIED BULK DELETE V8.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. CRITICAL FIX: The bulk delete handler now correctly categorizes ALL transaction types (invoices, expenses, POS).
-// 2. LOGIC: Replaced the POS-only filter, ensuring that all items in a period are deleted as intended.
-// 3. PROPS: Renamed 'onBulkDeletePos' to 'onBulkDelete' and updated its signature for the unified payload.
-// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - UNIFIED BULK DELETE V9.0 (COLORFUL ACCENT BORDERS)
+// 1. CRITICAL FIX: The bulk delete handler now correctly categorizes ALL transaction types
+// 2. ENHANCED: Colorful left border accents for positive/negative cards
+// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,15 +52,26 @@ const getCategoryIcon = (category: string) => {
 
 const TransactionCard: React.FC<{ tx: TransactionItem, props: TransactionListProps }> = ({ tx, props }) => {
     const hasSourceDocument = tx.type === 'expense' && (tx.raw as Expense).source_archive_id;
+    const isIncome = tx.type === 'invoice';
+    const isExpense = tx.type === 'expense';
+    
     return (
-        <motion.div layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="group flex items-center justify-between p-3 rounded-xl bg-surface hover:bg-hover transition-colors border border-border-main">
+        <motion.div 
+            layout 
+            initial={{ opacity: 0, x: 20 }} 
+            animate={{ opacity: 1, x: 0 }} 
+            exit={{ opacity: 0, x: -20 }} 
+            transition={{ duration: 0.2 }} 
+            className={`group flex items-center justify-between p-3 rounded-xl bg-surface hover:bg-hover transition-all duration-300 border border-border-main hover:border-l-4 
+                ${isIncome ? 'hover:border-l-success-start' : isExpense ? 'hover:border-l-danger' : 'hover:border-l-primary'}`}
+        >
             <div className="flex items-center gap-3 min-w-0">
                 <div className={`p-2 rounded-lg shrink-0 ${ tx.type === 'invoice' ? 'bg-success-start/10 text-success-start' : tx.type === 'expense' ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary' }`}>
                     {tx.type === 'invoice' ? <ArrowDownRight size={16} /> : tx.type === 'pos' ? <ShoppingCart size={16} /> : getCategoryIcon(tx.label)}
                 </div>
                 <div className="min-w-0">
                     <p className="text-sm font-medium text-text-primary truncate">{tx.label}</p>
-                    <p className="text-[10px] text-text-muted uppercase tracking-wider">{tx.type}</p>
+                    <p className="text-xs text-text-muted uppercase tracking-wider">{tx.type}</p>
                 </div>
             </div>
             <div className="flex items-center gap-4">
@@ -89,19 +99,32 @@ const TransactionCard: React.FC<{ tx: TransactionItem, props: TransactionListPro
 
 const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: number, onDrillDown: () => void, onDelete: () => void }> = ({ title, total, count, onDrillDown, onDelete }) => {
     const { t } = useTranslation();
+    const isPositive = total >= 0;
+    
     return (
-        <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="group relative bg-surface/60 hover:bg-surface/80 border border-border-main hover:border-primary/30 p-5 rounded-3xl transition-all duration-300 flex flex-col gap-4 shadow-sm">
-            <div onClick={onDrillDown} className="cursor-pointer flex-1 flex flex-col">
-                <div className="flex items-start justify-between">
-                    <h3 className="text-2xl font-bold text-text-primary">{title}</h3>
-                    <div className={`p-3 rounded-xl ${total >= 0 ? 'bg-success-start/10 text-success-start' : 'bg-danger/10 text-danger'}`}>
-                        {total >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
-                    </div>
+        <motion.div 
+            layout 
+            initial={{ opacity: 0, scale: 0.95 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            exit={{ opacity: 0, scale: 0.95 }} 
+            className={`group relative bg-surface/60 hover:bg-surface/80 border-l-4 rounded-3xl p-5 transition-all duration-300 flex flex-col gap-4 shadow-sm cursor-pointer
+                ${isPositive 
+                    ? 'border-l-success-accent hover:border-l-success-start' 
+                    : 'border-l-danger-accent hover:border-l-danger'
+                }`}
+            onClick={onDrillDown}
+        >
+            <div className="flex items-start justify-between">
+                <h3 className="text-2xl font-bold text-text-primary">{title}</h3>
+                <div className={`p-3 rounded-xl ${isPositive ? 'bg-success-start/10 text-success-start' : 'bg-danger/10 text-danger'}`}>
+                    {isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
                 </div>
-                <div className="flex-1 mt-2">
-                    <span className={`text-3xl font-mono font-bold ${total >= 0 ? 'text-success-start' : 'text-danger'}`}>{total >= 0 ? '+' : ''}€{total.toFixed(2)}</span>
-                    <p className="text-xs text-text-muted font-bold uppercase tracking-wider">{t('finance.netBalance', 'Balansi Neto')}</p>
-                </div>
+            </div>
+            <div className="flex-1 mt-2">
+                <span className={`text-3xl font-mono font-bold ${isPositive ? 'text-success-start' : 'text-danger'}`}>
+                    {isPositive ? '+' : ''}€{total.toFixed(2)}
+                </span>
+                <p className="text-xs text-text-muted font-bold uppercase tracking-wider">{t('finance.netBalance', 'Balansi Neto')}</p>
             </div>
             <hr className="border-border-main" />
             <div className="flex justify-between items-center">
@@ -109,7 +132,10 @@ const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: n
                     <Hash size={14}/>
                     <span className="font-bold">{count}</span> {t('finance.transactions', 'transaksione')}
                 </div>
-                <button onClick={onDelete} className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-danger/10 hover:text-danger transition-colors">
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }} 
+                    className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-danger/10 hover:text-danger transition-colors"
+                >
                     <Trash2 size={16} />
                 </button>
             </div>
