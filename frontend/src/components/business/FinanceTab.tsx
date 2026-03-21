@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V9.0 (RESTORED KPI COLORS)
+// PHOENIX PROTOCOL - FINANCE TAB V10.0 (FIXED SEARCH BAR THEME)
 // STATUS: CLEAN - VERIFIED - FULL FILE REPLACEMENT
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -281,7 +281,7 @@ export const FinanceTab: React.FC = () => {
                             <input 
                                 type="text" 
                                 placeholder={activeTab === 'partners' ? t('general.searchPartners', 'Kërko partnerë...') : t('header.searchPlaceholder')} 
-                                className="glass-input w-full pl-12 py-4" 
+                                className="glass-input w-full pl-12 py-4 bg-input focus:bg-card transition-all" 
                                 value={searchTerm} 
                                 onChange={(e) => setSearchTerm(e.target.value)} 
                             />

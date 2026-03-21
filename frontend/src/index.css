@@ -1,5 +1,5 @@
 /* FILE: src/index.css */
-/* PHOENIX PROTOCOL - V11.0 (RESTORED TEXT COLOR SPECIFICITY) */
+/* PHOENIX PROTOCOL - V12.0 (FIXED INPUT THEMING) */
 /* STATUS: CLEAN - FULL FILE REPLACEMENT */
 
 @tailwind base;
@@ -13,8 +13,9 @@
     --bg-surface: #ECEEF3;
     --bg-surface-rgb: 236, 238, 243; 
     --bg-card: #FFFFFF;
-    --bg-glass: rgba(255, 255, 255, 0.85);
     --bg-input: #EDF0F5;
+    --bg-input-rgb: 237, 240, 245;
+    --bg-glass: rgba(255, 255, 255, 0.85);
     --bg-hover: rgba(99, 115, 255, 0.08);
 
     --text-primary: #0F1623;
@@ -25,8 +26,6 @@
 
     --accent-primary: #6366F1;
     --accent-hover: #4F52D9;
-    --accent-subtle: rgba(99, 102, 241, 0.12);
-    --accent-text: #4345B5;
     --accent-primary-rgb: 99, 102, 241;
 
     /* Status Colors */
@@ -48,8 +47,9 @@
     --bg-surface: #0F172A;
     --bg-surface-rgb: 15, 23, 42;
     --bg-card: #1E293B;
-    --bg-glass: rgba(15, 23, 42, 0.85);
     --bg-input: #1E293B;
+    --bg-input-rgb: 30, 41, 59;
+    --bg-glass: rgba(15, 23, 42, 0.85);
     --bg-hover: rgba(99, 115, 255, 0.15);
 
     --text-primary: #F8FAFC;
@@ -57,7 +57,7 @@
     --text-muted: #94A3B8;
 
     --accent-primary: #818CF8;
-    --accent-hover: #A5B4FC;
+    --accent-primary-rgb: 129, 140, 248;
 
     --status-success: #10B981;
     --status-success-rgb: 16, 185, 129;
@@ -74,7 +74,6 @@
     background-color: var(--bg-base);
     color: var(--text-secondary);
     transition: background-color 0.4s ease;
-    min-height: 100vh;
   }
 }
 
@@ -84,24 +83,42 @@
     border-radius: 1rem;
     border: 1px solid var(--border-main);
   }
+
+  /* FORCED THEME INPUTS */
+  .glass-input {
+    background-color: var(--bg-input) !important;
+    border: 1.5px solid var(--border-main) !important;
+    color: var(--text-primary) !important;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1rem;
+    outline: none;
+    transition: all 200ms;
+  }
+  
+  .glass-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+  }
+
+  .glass-input:focus {
+    background-color: var(--bg-card) !important;
+    border-color: var(--accent-primary) !important;
+    box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.2);
+  }
+
   .btn-primary {
     background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%);
     color: var(--text-inverse);
     font-weight: 700;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.75rem;
   }
 }
 
 /* ============================================ */
-/* GLOBAL UI UNIFICATION - OVERRIDE PROTECTION */
+/* GLOBAL UI UNIFICATION - THEME COMPLIANT */
 /* ============================================ */
 
-.panel, 
-.card-panel, 
-.card,
-div[class*="rounded-2xl"],
-div[class*="rounded-3xl"] {
+.panel, .card-panel, .card,
+div[class*="rounded-2xl"], div[class*="rounded-3xl"] {
   border-style: solid;
   border-width: 1px;
   border-color: var(--border-main);
@@ -114,26 +131,19 @@ div[class*="rounded-3xl"] {
   border-color: var(--border-strong);
 }
 
-/* --- SPECIFICITY OVERRIDES --- */
-
-/* Border Overrides */
+/* Specificity Overrides */
 .border-l-4 { border-left-width: 4px !important; }
 .border-l-success-start { border-left-color: var(--status-success) !important; }
 .border-l-danger-start { border-left-color: var(--status-danger) !important; }
 .border-l-warning-start { border-left-color: var(--status-warning) !important; }
 .border-l-primary { border-left-color: var(--accent-primary) !important; }
 
-/* Text Overrides - RESTORES THE COLORS OF NUMBERS */
 .text-success-start { color: var(--status-success) !important; }
 .text-danger-start { color: var(--status-danger) !important; }
 .text-warning-start { color: var(--status-warning) !important; }
 .text-primary { color: var(--accent-primary) !important; }
 
-/* Background Overrides - RESTORES ICON CIRCLES */
 .bg-success-start\/10 { background-color: rgba(var(--status-success-rgb), 0.1) !important; }
 .bg-danger-start\/10 { background-color: rgba(var(--status-danger-rgb), 0.1) !important; }
 .bg-warning-start\/10 { background-color: rgba(var(--status-warning-rgb), 0.1) !important; }
 .bg-primary\/10 { background-color: rgba(var(--accent-primary-rgb), 0.1) !important; }
-
-/* Cleanup */
-.absolute.top-0.left-0.right-0.h-1 { border: none !important; }
