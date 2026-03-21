@@ -1,5 +1,5 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.3 (YEAR SELECTOR MOVED TO PROFILE DROPDOWN)
+// PHOENIX PROTOCOL - HEADER V6.4 (NAVIGATION REORDERED & RENAMED)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -58,12 +58,12 @@ const Header: React.FC = () => {
   }, [isProfileOpen]);
   
   const navItems = [
-      { label: t('sidebar.business', 'Zyra Ime'), path: '/business', icon: LayoutDashboard, exact: true },
       { label: t('business.finance', 'Financat'), path: '/business/finance', icon: FileText },
       { label: t('inventory.tabItems_short', 'Stoku'), path: '/business/inventory', icon: Package },
       { label: t('business.archive', 'Arkiva'), path: '/business/archive', icon: FolderOpen },
       { label: t('business.insights', 'Inteligjenca'), path: '/business/insights', icon: Sparkles },
       { label: t('business.profile', 'Profili'), path: '/business/profile', icon: Building2 },
+      { label: t('sidebar.legal', 'Zyra Ligjore'), path: '/business', icon: LayoutDashboard, exact: true },
   ];
 
   if (user?.role?.toUpperCase() === 'ADMIN') {
@@ -125,7 +125,6 @@ const Header: React.FC = () => {
                   <p className="text-xs text-primary font-bold">{user?.username}</p>
               </div>
 
-              {/* Year Selector Moved Inside Dropdown */}
               {isAuthenticated && (
                 <div className="px-4 py-2 flex items-center justify-between hover:bg-hover">
                     <span className="text-xs font-bold text-text-muted">{t('navigation.year', 'Viti Fiskal')}</span>
