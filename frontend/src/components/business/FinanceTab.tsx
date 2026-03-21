@@ -1,6 +1,6 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V7.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses Panel component, unified card styling, preserved colored left borders
+// PHOENIX PROTOCOL - FINANCE TAB V8.0 (THEME-SYNCED)
+// STATUS: CLEAN - VERIFIED - FULL FILE REPLACEMENT
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,7 +26,7 @@ import { ClientImportModal } from './modals/ClientImportModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 import { Panel } from '../ui/Panel';
 
-// HeroStatCard with colored left border (restored - intentional design feature)
+// HeroStatCard with theme-aware variables and colored left border
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     let borderLeftColor = 'border-l-primary';
     let iconColor = 'text-primary';
@@ -40,10 +40,10 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
         amountColor = 'text-success-start';
     }
     if (type === 'expense') { 
-        borderLeftColor = 'border-l-danger';
-        iconColor = 'text-danger';
-        iconBg = 'bg-danger/10';
-        amountColor = 'text-danger';
+        borderLeftColor = 'border-l-danger-start';
+        iconColor = 'text-danger-start';
+        iconBg = 'bg-danger-start/10';
+        amountColor = 'text-danger-start';
     }
     if (type === 'warning') { 
         borderLeftColor = 'border-l-warning-start';
@@ -81,14 +81,28 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
 };
 
 const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
-    <button onClick={onClick} className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group ${primary ? 'btn-primary' : 'btn-secondary border border-border-strong'}`}>
+    <button 
+        onClick={onClick} 
+        className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group ${
+            primary 
+                ? 'btn-primary shadow-md hover:shadow-lg' 
+                : 'btn-secondary border border-border-strong'
+        }`}
+    >
         <span>{icon}</span>
         <span>{label}</span>
     </button>
 );
 
 const TabButton = ({ label, icon, isActive, onClick }: any) => (
-    <button onClick={onClick} className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${isActive ? 'bg-primary/20 text-primary border border-primary/30' : 'text-text-muted hover:text-text-primary hover:bg-hover border border-transparent'}`}>
+    <button 
+        onClick={onClick} 
+        className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+            isActive 
+                ? 'bg-primary/20 text-primary border border-primary/30' 
+                : 'text-text-muted hover:text-text-primary hover:bg-hover border border-transparent'
+        }`}
+    >
         <span className="relative z-10">{icon}</span>
         <span className="relative z-10">{label}</span>
     </button>
@@ -230,11 +244,11 @@ export const FinanceTab: React.FC = () => {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
             <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } 
+                .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 10px; opacity: 0.3; } 
                 select option { background-color: var(--bg-card); color: var(--text-primary); }
             `}</style>
             
-            {/* KPI Cards Row - Colored left borders restored */}
+            {/* KPI Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
                 <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
@@ -242,7 +256,7 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            {/* Action Buttons Row */}
+            {/* Action Buttons Row - FIXED THEME SYNC */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-surface/40 p-4 rounded-3xl border border-border-strong backdrop-blur-sm">
                 <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
@@ -250,7 +264,7 @@ export const FinanceTab: React.FC = () => {
                 <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
-            {/* Main Content Area - Using Panel component */}
+            {/* Main Content Area */}
             <Panel className="p-0 overflow-hidden h-[70vh] min-h-[600px] flex flex-col">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-border-strong pb-6 px-6 pt-6">
                     <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
@@ -313,13 +327,13 @@ export const FinanceTab: React.FC = () => {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {filteredPartners.map((partner) => (
-                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface/30 border border-border-strong rounded-2xl p-5 hover:border-primary/30 transition-all group relative">
+                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface/30 border border-border-strong rounded-2xl p-5 hover:border-primary transition-all group relative">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="p-3 rounded-xl bg-primary/10 text-primary border border-primary/20"><Users size={20} /></div>
                                                 <div className="flex flex-col items-end gap-2">
                                                     <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-success-start/20 text-success-start' : 'bg-warning-start/20 text-warning-start'}`}>{partner.type}</span>
                                                     <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-surface/50 text-danger hover:bg-danger hover:text-inverse transition-all border border-border-strong" title={t('general.delete')}><Trash2 size={14}/></button>
+                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-surface/50 text-danger hover:bg-danger hover:text-white transition-all border border-border-strong" title={t('general.delete')}><Trash2 size={14}/></button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -409,12 +423,10 @@ export const FinanceTab: React.FC = () => {
                 )}
             </AnimatePresence>
 
-            {/* Modals */}
             <InvoiceModal isOpen={showInvoiceModal} onClose={() => { setShowInvoiceModal(false); setSelectedInvoice(null); }} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
             <ExpenseModal isOpen={showExpenseModal} onClose={() => { setShowExpenseModal(false); setSelectedExpense(null); }} expenseToEdit={selectedExpense} onSuccess={refreshData} />
             <ClientImportModal isOpen={showClientImportModal} onClose={() => setShowClientImportModal(false)} onSuccess={() => { refreshData(); if (activeTab === 'partners') { apiService.getPartners().then(setPartners); } }} />
             
-            {/* Archive Invoice Modal */}
             {showArchiveInvoiceModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-md p-6 shadow-xl">
@@ -431,7 +443,6 @@ export const FinanceTab: React.FC = () => {
                 </div>
             )}
 
-            {/* Archive Expense Modal */}
             {showArchiveExpenseModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-md p-6 shadow-xl">
