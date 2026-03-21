@@ -1,5 +1,5 @@
 // FILE: src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - ANALYST PANEL V12.0 (ENHANCED BORDERS & STYLES)
+// PHOENIX PROTOCOL - ANALYST PANEL V13.0 (CONSISTENT BORDERS & STYLES)
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -125,10 +125,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     if (status === 'idle') {
         return (
             <>
-            <div className="min-h-[500px] flex flex-col items-center justify-center p-6 text-center">
+            <div className="bg-card border border-border-main rounded-2xl p-6 min-h-[500px] flex flex-col items-center justify-center">
                 {/* Desktop Upload Zone */}
                 <div 
-                    className="hidden sm:flex w-full max-w-2xl flex-col items-center justify-center border-2 border-dashed border-border-main rounded-2xl bg-surface/40 hover:bg-surface/60 transition-all cursor-pointer group py-12"
+                    className="hidden sm:flex w-full max-w-2xl flex-col items-center justify-center border-2 border-dashed border-border-main rounded-2xl bg-surface/30 hover:bg-surface/50 transition-all cursor-pointer group py-12"
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleDrop}
                 >
@@ -136,7 +136,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                         <UploadCloud className="w-16 h-16 text-primary" />
                     </div>
                     <h2 className="text-xl font-bold text-text-primary mb-2">{t('analyst.dropTitle', 'Ngarko ose Hidh Skedarin')}</h2>
-                    <p className="text-text-muted mb-6 max-w-md">{t('analyst.dropDesc', 'Tërhiqni një skedar Excel, CSV, ose imazh.')}</p>
+                    <p className="text-text-muted mb-6 max-w-md text-center">{t('analyst.dropDesc', 'Tërhiqni një skedar Excel, CSV, ose imazh.')}</p>
                     <div className="flex items-center gap-4">
                         <button onClick={() => fileInputRef.current?.click()} className="btn-primary px-6 py-3 text-sm">{t('analyst.selectButton', 'Zgjidh Skedarin')}</button>
                         <button onClick={startHandoff} className="btn-secondary flex items-center justify-center gap-2 text-sm"><Smartphone size={18} /> {t('analyst.scanFromPhone', 'Skano nga Telefoni')}</button>
@@ -148,11 +148,11 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     <div className="p-4 rounded-full bg-primary/10 mb-4">
                         <FileSpreadsheet className="w-12 h-12 text-primary" />
                     </div>
-                    <h2 className="text-lg font-bold text-text-primary mb-2">{t('analyst.mobileTitle', 'Analizo një Dokument')}</h2>
+                    <h2 className="text-lg font-bold text-text-primary mb-2 text-center">{t('analyst.mobileTitle', 'Analizo një Dokument')}</h2>
                     <p className="text-text-muted text-sm mb-6 text-center">{t('analyst.mobileDesc', 'Skanoni një dokument me kamerë ose ngarkoni një skedar nga telefoni juaj.')}</p>
                     <div className="w-full space-y-3">
                         <button onClick={() => scanInputRef.current?.click()} className="btn-primary w-full flex items-center justify-center gap-2 py-3"><Camera size={18} />{t('analyst.scanButton', 'Skano me Kamerë')}</button>
-                        <div className="text-text-muted text-xs font-medium uppercase">{t('general.or', 'ose')}</div>
+                        <div className="text-text-muted text-xs font-medium uppercase text-center">{t('general.or', 'ose')}</div>
                         <button onClick={() => fileInputRef.current?.click()} className="btn-secondary w-full flex items-center justify-center gap-2 py-3"><FileUp size={18} />{t('analyst.uploadButton', 'Ngarko Skedar')}</button>
                     </div>
                 </div>
@@ -186,13 +186,13 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         const isImage = file?.type.startsWith('image/');
         const statusMessage = isImage ? t('analyst.statusScanning', 'Duke skanuar dhe strukturuar të dhënat...') : t('analyst.statusAnalyzing', 'Duke kërkuar për anomali financiare...');
         return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center bg-surface/40 rounded-2xl p-8 text-center border border-border-main">
+            <div className="bg-card border border-border-main rounded-2xl p-8 min-h-[500px] flex flex-col items-center justify-center">
                 <div className="relative mb-6">
                     <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse"></div>
                     <Loader2 className="w-14 h-14 text-primary animate-spin relative z-10" />
                 </div>
                 <h3 className="text-lg font-bold text-text-primary mb-2">{statusMessage}</h3>
-                <p className="text-text-muted text-sm animate-pulse break-all max-w-md">{file?.name}</p>
+                <p className="text-text-muted text-sm animate-pulse break-all max-w-md text-center">{file?.name}</p>
             </div>
         );
     }
@@ -200,10 +200,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 3. ERROR STATE
     if (status === 'error') {
         return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center bg-danger/5 border border-danger/20 rounded-2xl text-center p-8">
+            <div className="bg-card border border-danger/20 rounded-2xl p-8 min-h-[500px] flex flex-col items-center justify-center">
                 <AlertTriangle className="w-12 h-12 text-danger mb-4" />
                 <h3 className="text-lg font-bold text-text-primary mb-2">{t('analyst.analysisErrorTitle', 'Gabim në Analizë')}</h3>
-                <p className="text-danger text-sm mb-5 max-w-md">{errorMsg}</p>
+                <p className="text-danger text-sm mb-5 max-w-md text-center">{errorMsg}</p>
                 <button onClick={reset} className="btn-secondary text-sm">{t('analyst.tryAgainButton', 'Provo Përsëri')}</button>
             </div>
         );
@@ -213,7 +213,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     if (status === 'complete' && result) {
         const maxVal = Math.max(...result.chart_data.map(d => d.value), 1);
         return (
-            <div className="bg-card border border-border-main rounded-2xl p-5 sm:p-6 min-h-[500px]">
+            <div className="bg-card border border-border-main rounded-2xl p-5 sm:p-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-border-main">
                     <div>
@@ -230,25 +230,25 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-surface/50 p-4 rounded-xl border border-border-main">
+                    <div className="bg-surface p-4 rounded-xl border border-border-main">
                         <div className="flex items-center gap-2 mb-2 text-text-muted text-xs font-semibold uppercase tracking-wider">
                             <DollarSign size={14} /> {t('analyst.totalVolume', 'Total Volum')}
                         </div>
-                        <div className={clsx("text-xl font-bold", { 'text-success-start': result.stats.total_sum >= 0, 'text-danger': result.stats.total_sum < 0 })}>
+                        <div className={clsx("text-2xl font-bold", { 'text-success-start': result.stats.total_sum >= 0, 'text-danger': result.stats.total_sum < 0 })}>
                             €{result.stats.total_sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </div>
-                    <div className="bg-surface/50 p-4 rounded-xl border border-border-main">
+                    <div className="bg-surface p-4 rounded-xl border border-border-main">
                         <div className="flex items-center gap-2 mb-2 text-text-muted text-xs font-semibold uppercase tracking-wider">
                             <Activity size={14} /> {t('analyst.transactions', 'Transaksione')}
                         </div>
-                        <div className="text-xl font-bold text-text-primary">{result.stats.transaction_count}</div>
+                        <div className="text-2xl font-bold text-text-primary">{result.stats.transaction_count}</div>
                     </div>
-                    <div className="bg-surface/50 p-4 rounded-xl border border-border-main">
+                    <div className="bg-surface p-4 rounded-xl border border-border-main">
                         <div className="flex items-center gap-2 mb-2 text-text-muted text-xs font-semibold uppercase tracking-wider">
                             <TrendingUp size={14} /> {t('analyst.average', 'Mesatarja')}
                         </div>
-                        <div className={clsx("text-xl font-bold", { 'text-primary': result.stats.average >= 0, 'text-warning-start': result.stats.average < 0 })}>
+                        <div className={clsx("text-2xl font-bold", { 'text-primary': result.stats.average >= 0, 'text-warning-start': result.stats.average < 0 })}>
                             €{result.stats.average.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </div>
