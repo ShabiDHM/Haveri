@@ -1,9 +1,8 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - WORKSPACE HUB V21.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - WORKSPACE HUB V23.0 (CLEANED UNUSED HOOKS)
+// STATUS: CLEAN - VERIFIED - FULL FILE REPLACEMENT
 
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { ProfileTab } from '../components/business/ProfileTab';
 import { FinanceTab } from '../components/business/FinanceTab';
@@ -20,13 +19,7 @@ interface BusinessPageProps {
 }
 
 const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
-  const { t } = useTranslation();
-  const { user, workspace, isLoading: isAuthLoading } = useAuth();
-
-  const capitalize = (s: string | undefined) => {
-    if (!s) return t('general.user', 'Përdorues');
-    return s.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-  };
+  const { workspace, isLoading: isAuthLoading } = useAuth();
 
   const renderActiveTab = () => {
     if (isAuthLoading) return null;
@@ -47,18 +40,7 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6">
-      {view === 'briefing' && (
-          <div className="mb-8 sm:mb-12">
-              <h1 className="text-3xl sm:text-4xl font-bold text-text-primary mb-2 tracking-tight">
-                  {t('business.welcome', 'Mirësevini {{name}}', { name: capitalize(user?.username) })}
-              </h1>
-              <p className="text-text-secondary text-base sm:text-lg font-medium">
-                  {t('business.title', 'Hapësira e Punës')}
-              </p>
-          </div>
-      )}
-
+    <div className="max-w-7xl mx-auto py-4 sm:py-8 px-4 sm:px-6">
       <div className="min-h-[500px] animate-in fade-in slide-in-from-bottom-4 duration-500">
         {renderActiveTab()}
       </div>

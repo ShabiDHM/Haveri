@@ -1,14 +1,16 @@
 /* FILE: src/index.css */
+/* PHOENIX PROTOCOL - V10.0 (FIXED KPI BORDER SPECIFICITY) */
+/* STATUS: CLEAN - FULL FILE REPLACEMENT */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* --- LIGHT THEME (default) --- */
+    /* --- LIGHT THEME --- */
     --bg-base: #F4F6F9;
     --bg-surface: #ECEEF3;
-    /* Use RGB for surface to allow Tailwind opacity modifiers like bg-surface/40 */
     --bg-surface-rgb: 236, 238, 243; 
     --bg-card: #FFFFFF;
     --bg-glass: rgba(255, 255, 255, 0.85);
@@ -27,59 +29,21 @@
     --accent-text: #4345B5;
     --accent-primary-rgb: 99, 102, 241;
 
+    /* Status Colors with RGB */
     --status-success: #059669;
+    --status-success-rgb: 5, 150, 105;
     --status-warning: #D97706;
+    --status-warning-rgb: 217, 119, 6;
     --status-danger: #DC2626;
-    --status-neutral: #475569;
+    --status-danger-rgb: 220, 38, 38;
 
-    /* Typography Scale */
-    --text-xs: 0.75rem;
-    --text-sm: 0.875rem;
-    --text-base: 1rem;
-    --text-lg: 1.125rem;
-    --text-xl: 1.25rem;
-    --text-2xl: 1.5rem;
-    --text-3xl: 1.875rem;
-    --text-4xl: 2.25rem;
-    --text-5xl: 3rem;
-
-    /* Font Weights */
-    --font-normal: 400;
-    --font-medium: 500;
-    --font-semibold: 600;
-    --font-bold: 700;
-    --font-black: 800;
-
-    /* Line Heights */
-    --leading-tight: 1.25;
-    --leading-normal: 1.5;
-    --leading-relaxed: 1.625;
-    --leading-loose: 2;
-
-    /* Shadows */
-    --shadow-xs: 0 1px 2px rgba(15, 22, 35, 0.05), 0 1px 3px rgba(15, 22, 35, 0.08);
-    --shadow-sm: 0 2px 4px rgba(15, 22, 35, 0.06), 0 4px 12px rgba(15, 22, 35, 0.08);
-    --shadow-md: 0 4px 8px rgba(15, 22, 35, 0.08), 0 8px 24px rgba(15, 22, 35, 0.12), 0 0 0 1px rgba(99, 102, 241, 0.1);
-    --shadow-lg: 0 8px 16px rgba(15, 22, 35, 0.1), 0 20px 48px rgba(15, 22, 35, 0.15), 0 0 0 1px rgba(15, 22, 35, 0.08);
-    --shadow-xl: 0 16px 32px rgba(15, 22, 35, 0.12), 0 40px 80px rgba(15, 22, 35, 0.2), 0 0 0 1px rgba(15, 22, 35, 0.1);
-
-    /* Main Borders */
     --border-main: #CBD5E1;
     --border-strong: #94A3B8;
-    
-    /* Colorful accent borders */
-    --border-primary: #6366F1;
-    --border-success: #059669;
-    --border-warning: #D97706;
-    --border-danger: #DC2626;
-
-    --glass-border: 1px solid rgba(255, 255, 255, 0.9);
-    --glass-border-bottom: 1px solid rgba(203, 213, 225, 0.6);
-    --glass-border-right: 1px solid rgba(203, 213, 225, 0.6);
+    --shadow-xs: 0 1px 2px rgba(15, 22, 35, 0.05);
   }
 
   .dark {
-    /* --- DARK THEME (override) --- */
+    /* --- DARK THEME --- */
     --bg-base: #020617;
     --bg-surface: #0F172A;
     --bg-surface-rgb: 15, 23, 42;
@@ -91,48 +55,26 @@
     --text-primary: #F8FAFC;
     --text-secondary: #CBD5E1;
     --text-muted: #94A3B8;
-    --text-disabled: #475569;
-    --text-inverse: #0F1623;
 
     --accent-primary: #818CF8;
     --accent-hover: #A5B4FC;
-    --accent-subtle: rgba(129, 140, 248, 0.15);
-    --accent-text: #A5B4FC;
-    --accent-primary-rgb: 129, 140, 248;
 
-    /* Shadows */
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(129, 140, 248, 0.2);
-    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5), 0 20px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12);
-    --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.6), 0 40px 80px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.15);
+    --status-success: #10B981;
+    --status-success-rgb: 16, 185, 129;
+    --status-warning: #F59E0B;
+    --status-warning-rgb: 245, 158, 11;
+    --status-danger: #F87171;
+    --status-danger-rgb: 248, 113, 113;
 
-    /* Main Borders */
     --border-main: rgba(255, 255, 255, 0.15);
     --border-strong: rgba(255, 255, 255, 0.25);
-    
-    /* Colorful accent borders */
-    --border-primary: #818CF8;
-    --border-success: #10B981;
-    --border-warning: #F59E0B;
-    --border-danger: #F87171;
-
-    --glass-border: 1px solid rgba(255, 255, 255, 0.2);
-    --glass-border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    --glass-border-right: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   body {
     background-color: var(--bg-base);
     color: var(--text-secondary);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    transition: background-color 0.4s ease, color 0.4s ease;
-  }
-
-  .dark body {
-    background-image: radial-gradient(circle at 50% -20%, rgba(129, 140, 248, 0.12) 0%, transparent 70%);
-    background-attachment: fixed;
+    transition: background-color 0.4s ease;
+    min-height: 100vh;
   }
 }
 
@@ -141,96 +83,63 @@
     background-color: var(--bg-card);
     border-radius: 1rem;
     border: 1px solid var(--border-main);
-    box-shadow: var(--shadow-sm);
-    transition: all 300ms;
-  }
-
-  .glass-panel {
-    background-color: var(--bg-glass);
-    backdrop-filter: blur(20px) saturate(160%);
-    border: var(--glass-border);
-    box-shadow: var(--shadow-lg);
-    border-radius: 1.5rem;
   }
 
   .btn-primary {
     background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%);
     color: var(--text-inverse);
-    font-weight: var(--font-bold);
+    font-weight: 700;
     padding: 0.75rem 1.5rem;
     border-radius: 0.75rem;
-    transition: all 200ms;
   }
 
   .btn-secondary {
     background: var(--bg-card);
     color: var(--text-primary);
     border: 1px solid var(--border-main);
-    font-weight: var(--font-semibold);
+    font-weight: 600;
     padding: 0.75rem 1.5rem;
     border-radius: 0.75rem;
-    transition: all 200ms;
-  }
-  .btn-secondary:hover {
-    background: var(--bg-hover);
-    border-color: var(--accent-primary);
-  }
-
-  .glass-input {
-    background-color: var(--bg-input);
-    border: 1.5px solid var(--border-main);
-    color: var(--text-primary);
-    border-radius: 0.75rem;
-    padding: 0.625rem 1rem;
-    outline: none;
-    transition: all 200ms;
-  }
-  .glass-input:focus {
-    background-color: var(--bg-card);
-    border-color: var(--accent-primary);
   }
 }
 
 /* ============================================ */
-/* GLOBAL UI UNIFICATION - THEME COMPLIANT */
+/* GLOBAL UI UNIFICATION - FORCE BORDER STANDARDS */
 /* ============================================ */
 
-/* Unified borders using theme variables instead of hardcoded hex */
+/* Base container styling */
 .panel, 
 .card-panel, 
 .card,
-.bg-card.border-border-strong,
-.bg-card.border-border-main,
 div[class*="rounded-2xl"],
-div[class*="rounded-3xl"],
-div[class*="rounded-xl"] {
-  border: 1px solid var(--border-main) !important;
-  box-shadow: var(--shadow-xs) !important;
+div[class*="rounded-3xl"] {
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--border-main);
   background-color: var(--bg-card);
+  box-shadow: var(--shadow-xs);
 }
 
 .dark .panel, 
 .dark .card-panel, 
 .dark .card,
-.dark .bg-card.border-border-strong,
-.dark .bg-card.border-border-main,
 .dark div[class*="rounded-2xl"],
-.dark div[class*="rounded-3xl"],
-.dark div[class*="rounded-xl"] {
-  border: 1px solid var(--border-strong) !important;
-  background-color: var(--bg-card);
+.dark div[class*="rounded-3xl"] {
+  border-color: var(--border-strong);
 }
 
-/* Preserve colored left borders */
-div[class*="border-l-4"] {
-  border-left-width: 4px !important;
-  border-top-width: 1px !important;
-  border-right-width: 1px !important;
-  border-bottom-width: 1px !important;
-  border-style: solid !important;
-}
+/* SPECIFICITY OVERRIDES: Allow KPI Card colors to survive unification */
 
-/* Keep colored accents clean */
-.border-danger, .border-success-start, .border-warning-start, .border-primary {
-  border-width: 1px !important;
+/* Force Widths */
+.border-l-4 { border-left-width: 4px !important; }
+
+/* Force Colors for Success/Danger/Warning/Primary */
+.border-l-success-start { border-left-color: var(--status-success) !important; }
+.border-l-danger-start { border-left-color: var(--status-danger) !important; }
+.border-l-warning-start { border-left-color: var(--status-warning) !important; }
+.border-l-primary { border-left-color: var(--accent-primary) !important; }
+
+/* Preserve gradient bars */
+.absolute.top-0.left-0.right-0.h-1 {
+  border: none !important;
 }

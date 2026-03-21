@@ -1,10 +1,11 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V11.0 (REMOVED INLINE STYLES)
+// PHOENIX PROTOCOL - DASHBOARD V12.0 (REMOVED HERO HEADER)
+// STATUS: CLEAN - VERIFIED - FULL FILE REPLACEMENT
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Target, AlertTriangle, Mail, ArrowRight } from 'lucide-react';
+import { Loader2, AlertTriangle, Mail, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
@@ -16,7 +17,6 @@ import { Workspace, UIAgendaItem, SalesTrendPoint } from '../../data/types';
 import { BusinessRhythmCard, DailySalesData } from './briefing/BusinessRhythmCard';
 import { BusinessPulseCard } from './briefing/BusinessPulseCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
-import { Panel } from '../ui/Panel';
 
 export const DailyBriefingTab: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -47,12 +47,6 @@ export const DailyBriefingTab: React.FC = () => {
 
     const isAlbanian = i18n.language.startsWith('sq') || i18n.language === 'al';
     const shortMonthsSQ = ['Jan', 'Shk', 'Mar', 'Pri', 'Maj', 'Qer', 'Kor', 'Gush', 'Sht', 'Tet', 'Nën', 'Dhj'];
-
-    const today = new Date();
-    const monthsSQ = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
-    const monthsEN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const currentMonths = isAlbanian ? monthsSQ : monthsEN;
-    const finalDate = `${today.getDate()} ${currentMonths[today.getMonth()]} ${today.getFullYear()}`;
 
     useEffect(() => {
         const loadAmbientData = async () => {
@@ -156,29 +150,7 @@ export const DailyBriefingTab: React.FC = () => {
                 {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={handleEventUpdate} workspaces={workspaces} />}
             </AnimatePresence>
             
-            {/* Hero Header - Using Panel */}
-            <Panel className="p-6 sm:p-10 relative overflow-hidden">
-                {/* Colored top accent bar */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/80 z-10 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-                <div className="absolute top-0 right-0 p-40 bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
-                <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h2 className="text-3xl sm:text-4xl font-bold text-text-primary mb-2 tracking-tight flex items-center justify-center sm:justify-start gap-3">
-                            <Target className="text-primary" />
-                            {t('dashboard.dailyOverviewTitle')}
-                        </h2>
-                        <p className="text-text-secondary text-lg max-w-xl">
-                            {t('dashboard.dailyOverviewSubtitle')} ({selectedYear})
-                        </p>
-                    </div>
-                    <div className="hidden sm:block text-right">
-                        <div className="text-sm text-text-muted uppercase tracking-widest font-semibold">{t('common.today')}</div>
-                        <div className="text-2xl text-text-primary font-mono font-bold tracking-tight">{finalDate}</div>
-                    </div>
-                </div>
-            </Panel>
-
-            {/* Three Column Grid */}
+            {/* Tactical Grid - Dashboard starts here */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                     <BusinessRhythmCard 
@@ -203,7 +175,6 @@ export const DailyBriefingTab: React.FC = () => {
                         onClick={() => navigate('/business/inbox')} 
                         className="group relative bg-card hover:bg-card/95 border border-border-strong rounded-3xl p-6 cursor-pointer transition-all duration-300 overflow-hidden shadow-sm"
                     >
-                        {/* Colored top accent bar */}
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/80 z-10 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                         
                         <div className="flex justify-between items-center relative z-10">
