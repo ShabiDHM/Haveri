@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V6.1 (REMOVED REDUNDANT YEAR SELECTOR)
+// PHOENIX PROTOCOL - FINANCE TAB V6.2 (RESTORED COLORED BORDERS)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,45 +24,38 @@ import { ExpenseModal } from './modals/ExpenseModal';
 import { ClientImportModal } from './modals/ClientImportModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 
-// Enhanced HeroStatCard with proper border and shadow
+// HeroStatCard with colored left border (restored)
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    let borderColor = 'border-primary/30';
+    let borderLeftColor = 'border-l-primary';
     let iconColor = 'text-primary';
     let iconBg = 'bg-primary/10';
     let amountColor = 'text-text-primary';
-    let gradientFrom = 'from-primary/10';
-    let gradientTo = 'to-primary/5';
+    let borderColor = 'border-border-main';
     
     if (type === 'income') { 
-        borderColor = 'border-success-start/30'; 
-        iconColor = 'text-success-start'; 
+        borderLeftColor = 'border-l-success-start';
+        iconColor = 'text-success-start';
         iconBg = 'bg-success-start/10';
         amountColor = 'text-success-start';
-        gradientFrom = 'from-success-start/10';
-        gradientTo = 'to-success-start/5';
     }
     if (type === 'expense') { 
-        borderColor = 'border-danger/30'; 
-        iconColor = 'text-danger'; 
+        borderLeftColor = 'border-l-danger';
+        iconColor = 'text-danger';
         iconBg = 'bg-danger/10';
         amountColor = 'text-danger';
-        gradientFrom = 'from-danger/10';
-        gradientTo = 'to-danger/5';
     }
     if (type === 'warning') { 
-        borderColor = 'border-warning-start/30'; 
-        iconColor = 'text-warning-start'; 
+        borderLeftColor = 'border-l-warning-start';
+        iconColor = 'text-warning-start';
         iconBg = 'bg-warning-start/10';
         amountColor = 'text-warning-start';
-        gradientFrom = 'from-warning-start/10';
-        gradientTo = 'to-warning-start/5';
     }
     
     return (
         <motion.div 
             whileHover={{ scale: 1.02, y: -2 }} 
             onClick={onClick} 
-            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradientFrom} ${gradientTo} border ${borderColor} p-5 backdrop-blur-sm cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300`}
+            className={`relative overflow-hidden rounded-2xl border ${borderColor} border-l-4 ${borderLeftColor} bg-card p-5 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300`}
         >
             <div className="flex justify-between items-start mb-3">
                 <div className={`p-2.5 rounded-xl ${iconBg} ${iconColor} border ${borderColor}`}>
@@ -240,7 +233,7 @@ export const FinanceTab: React.FC = () => {
                 select option { background-color: var(--bg-card); color: var(--text-primary); }
             `}</style>
             
-            {/* KPI Cards Row */}
+            {/* KPI Cards Row - Colored left borders restored */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
                 <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
@@ -248,7 +241,7 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            {/* Action Buttons Row - Removed Year Selector */}
+            {/* Action Buttons Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-surface/40 p-4 rounded-3xl border border-border-main backdrop-blur-sm">
                 <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
