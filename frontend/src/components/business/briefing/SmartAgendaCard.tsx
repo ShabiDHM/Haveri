@@ -1,5 +1,5 @@
 // FILE: src/components/business/briefing/SmartAgendaCard.tsx
-// PHOENIX PROTOCOL - AGENDA CARD V10.0 (REMOVED INLINE STYLES)
+// PHOENIX PROTOCOL - AGENDA CARD V10.1 (DYNAMIC CRITICAL STATE)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -33,16 +33,18 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
     const { t } = useTranslation();
     const navigate = useNavigate();
 
+    const hasCriticalEvents = agenda.some(item => item.priority === 'CRITICAL');
+
     const handleViewCalendar = () => {
         navigate('/calendar');
     };
 
     return (
-        <div className="bg-card border border-border-strong rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm">
-            {/* Colored top accent bar - 4px with glow */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning-start to-warning-start/80 z-10 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+        <div className="bg-card border border-border-strong rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm hover:border-warning-start/30 transition-all duration-500">
+            {/* Colored top accent bar - Dynamic Red if CRITICAL items exist, otherwise Amber */}
+            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${hasCriticalEvents ? 'from-danger to-danger/80 shadow-[0_0_8px_rgba(220,38,38,0.5)]' : 'from-warning-start to-warning-start/80 shadow-[0_0_8px_rgba(245,158,11,0.5)]'} z-20 rounded-t-3xl`} />
             
-            <div className="absolute top-0 right-0 w-32 h-32 bg-warning-start/5 rounded-full blur-[60px] group-hover:bg-warning-start/10 transition-all" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-warning-start/5 rounded-full blur-[60px] group-hover:bg-warning-start/10 transition-all pointer-events-none" />
             
             <div className="flex justify-between items-center mb-4 relative z-10">
                 <h3 className="text-text-muted text-xs font-bold uppercase tracking-wide flex items-center gap-2">

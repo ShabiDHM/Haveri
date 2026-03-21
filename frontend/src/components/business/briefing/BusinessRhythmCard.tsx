@@ -1,5 +1,5 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - RHYTHM CARD V11.0 (REMOVED INLINE STYLES)
+// PHOENIX PROTOCOL - RHYTHM CARD V11.1 (FIXED Z-INDEX CLIPPING)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -108,11 +108,11 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
       };
 
     return (
-        <div className="bg-card border border-border-strong rounded-3xl p-6 relative overflow-hidden h-full flex flex-col justify-between group hover:border-success-start/30 transition-colors duration-500 shadow-sm">
-            {/* Colored top accent bar - 4px with glow */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success-start to-success-start/80 z-10 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+        <div className="bg-card border border-border-strong rounded-3xl p-6 relative h-full flex flex-col justify-between group hover:border-success-start/30 transition-colors duration-500 shadow-sm">
+            {/* Colored top accent bar - Explicitly z-20 to ensure visibility above parent containers */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success-start to-success-start/80 z-20 rounded-t-3xl shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
             
-            <div className="absolute top-0 right-0 w-32 h-32 bg-success-start/10 blur-[60px] rounded-full group-hover:bg-success-start/20 transition-all" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-success-start/10 blur-[60px] rounded-full group-hover:bg-success-start/20 transition-all pointer-events-none" />
 
             <div className="flex justify-between items-start mb-4 relative z-10">
                 <div>

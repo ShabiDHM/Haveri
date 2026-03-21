@@ -1,5 +1,5 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V10.0 (REMOVED INLINE STYLES)
+// PHOENIX PROTOCOL - PULSE CARD V10.1 (FIXED Z-INDEX & UNIFIED ACCENT)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -71,11 +71,11 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
     const hotItem = useMemo(() => signals.find(s => s.type === 'bestseller'), [signals]);
 
     return (
-        <div className="bg-card border border-border-strong rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm">
-            {/* Colored top accent bar - 4px with glow */}
-            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isRestDay ? 'from-primary to-primary/80' : 'from-success-start to-success-start/80'} z-10 shadow-[0_0_8px_rgba(59,130,246,0.5)]`} />
+        <div className="bg-card border border-border-strong rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm hover:border-primary/20 transition-all duration-500">
+            {/* Colored top accent bar - Dynamic gradient and explicit z-20 for rendering priority */}
+            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isRestDay ? 'from-primary to-primary/80' : 'from-success-start to-success-start/80'} z-20 rounded-t-3xl shadow-[0_0_8px_${isRestDay ? 'rgba(59,130,246,0.5)' : 'rgba(16,185,129,0.5)'}]`} />
             
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[60px] group-hover:bg-primary/10 transition-colors" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[60px] group-hover:bg-primary/10 transition-colors pointer-events-none" />
             
             <div className="flex justify-between items-start mb-6 relative z-10">
                 <h3 className="text-text-muted text-xs font-bold uppercase tracking-wide flex items-center gap-2">
