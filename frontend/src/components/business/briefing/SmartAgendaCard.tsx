@@ -1,6 +1,5 @@
 // FILE: src/components/business/briefing/SmartAgendaCard.tsx
-// PHOENIX PROTOCOL - AGENDA CARD V8.0 (CONSISTENT WHITE BACKGROUND)
-// UPDATED: Changed background to match Panel component (bg-card)
+// PHOENIX PROTOCOL - AGENDA CARD V9.0 (VISIBLE ACCENT BAR)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -40,8 +39,8 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
 
     return (
         <div className="bg-card border border-border-strong rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm">
-            {/* Colored top accent bar */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning-start to-warning-start/60 z-10" />
+            {/* Colored top accent bar - 4px with glow */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warning-start to-warning-start/80 z-10 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
             
             <div className="absolute top-0 right-0 w-32 h-32 bg-warning-start/5 rounded-full blur-[60px] group-hover:bg-warning-start/10 transition-all" />
             
