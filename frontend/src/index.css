@@ -66,8 +66,8 @@
     --glass-border-right: 1px solid rgba(203, 213, 225, 0.6);
     
     /* MAIN BORDERS - Updated for better visibility */
-    --border-main: #CBD5E1; /* Darker than before for better contrast */
-    --border-strong: #94A3B8; /* Even stronger for important separators */
+    --border-main: #CBD5E1;
+    --border-strong: #94A3B8;
     
     /* Colorful accent borders for interactive elements */
     --border-primary: #6366F1;
@@ -534,26 +534,6 @@
   /* Utility classes for background hover and borders */
   .bg-hover {
     background-color: var(--bg-hover);
-  }
-  .border-border-main {
-    border-color: var(--border-main);
-  }
-  .border-border-strong {
-    border-color: var(--border-strong);
-  }
-  
-  /* Colorful border utilities */
-  .border-primary-accent {
-    border-color: var(--border-accent-primary);
-  }
-  .border-success-accent {
-    border-color: var(--border-accent-success);
-  }
-  .border-warning-accent {
-    border-color: var(--border-accent-warning);
-  }
-  .border-danger-accent {
-    border-color: var(--border-accent-danger);
   }
   
   /* Table row with colored border on hover */

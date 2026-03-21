@@ -1,5 +1,5 @@
 // FILE: src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - ANALYST PANEL V18.0 (USING CARD-PANEL CLASS)
+// PHOENIX PROTOCOL - ANALYST PANEL V20.0 (FIXED BORDERS)
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -121,12 +121,12 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
 
     // --- RENDERERS ---
 
-    // 1. IDLE STATE - USING card-panel CLASS
+    // 1. IDLE STATE - USING STRONG BORDER
     if (status === 'idle') {
         return (
             <>
-            <div className="card-panel overflow-hidden">
-                {/* Header with accent */}
+            <div className="card-panel border-strong overflow-hidden">
+                {/* Header with accent - using border-main for internal border */}
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary/5 to-transparent">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-primary/10 rounded-lg">
@@ -199,10 +199,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         );
     }
     
-    // 2. PROCESSING STATE - USING card-panel CLASS
+    // 2. PROCESSING STATE
     if (status === 'uploading' || status === 'analyzing') {
         return (
-            <div className="card-panel overflow-hidden">
+            <div className="card-panel border-strong overflow-hidden">
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary/5 to-transparent">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-primary/10 rounded-lg">
@@ -220,10 +220,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         );
     }
 
-    // 3. ERROR STATE - USING card-panel CLASS
+    // 3. ERROR STATE
     if (status === 'error') {
         return (
-            <div className="card-panel overflow-hidden border-danger/30">
+            <div className="card-panel border-strong overflow-hidden border-danger/30">
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-danger/5 to-transparent">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-danger/10 rounded-lg">
@@ -242,11 +242,11 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         );
     }
 
-    // 4. DASHBOARD (SUCCESS) - USING card-panel CLASS
+    // 4. DASHBOARD (SUCCESS)
     if (status === 'complete' && result) {
         const maxVal = Math.max(...result.chart_data.map(d => d.value), 1);
         return (
-            <div className="card-panel overflow-hidden">
+            <div className="card-panel border-strong overflow-hidden">
                 {/* Header */}
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary/5 to-transparent">
                     <div className="flex items-center justify-between">
