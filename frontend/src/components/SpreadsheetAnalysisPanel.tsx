@@ -1,5 +1,6 @@
 // FILE: src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - ANALYST PANEL V22.0 (FIXED TEXT & REMOVED SCAN BUTTON)
+// PHOENIX PROTOCOL - ANALYST PANEL V23.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses Panel component, removed conflicting border classes, unified spacing
 
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -13,6 +14,7 @@ import { apiService } from '../services/api';
 import { AnalysisResult } from '../data/types';
 import { AxiosError } from 'axios';
 import clsx from 'clsx';
+import { Panel } from './ui/Panel';
 
 // --- COMPONENT ---
 const SpreadsheetAnalysisPanel: React.FC = () => {
@@ -77,7 +79,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 1. IDLE STATE
     if (status === 'idle') {
         return (
-            <div className="card-panel border-border-strong overflow-hidden">
+            <Panel className="p-0 overflow-hidden">
                 {/* Header */}
                 <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center gap-2">
@@ -136,14 +138,14 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept=".csv, .xlsx, .xls, .png, .jpg, .jpeg"/>
                     <input type="file" ref={scanInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" capture="environment"/>
                 </div>
-            </div>
+            </Panel>
         );
     }
     
     // 2. PROCESSING STATE
     if (status === 'uploading' || status === 'analyzing') {
         return (
-            <div className="card-panel border-border-strong overflow-hidden">
+            <Panel className="p-0 overflow-hidden">
                 <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-primary-start/10 rounded-lg">
@@ -161,14 +163,14 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     </p>
                     <p className="text-text-muted text-xs">{file?.name}</p>
                 </div>
-            </div>
+            </Panel>
         );
     }
 
     // 3. ERROR STATE
     if (status === 'error') {
         return (
-            <div className="card-panel border-border-strong overflow-hidden border-danger-start/30">
+            <Panel className="p-0 overflow-hidden border-danger-start/30">
                 <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-danger-start/5 to-transparent">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-danger-start/10 rounded-lg">
@@ -189,7 +191,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                         {t('analyst.tryAgainButton', 'Provo Përsëri')}
                     </button>
                 </div>
-            </div>
+            </Panel>
         );
     }
 
@@ -197,7 +199,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     if (status === 'complete' && result) {
         const maxVal = Math.max(...result.chart_data.map(d => d.value), 1);
         return (
-            <div className="card-panel border-border-strong overflow-hidden">
+            <Panel className="p-0 overflow-hidden">
                 {/* Header */}
                 <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center justify-between">
@@ -335,7 +337,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </Panel>
         );
     }
     return null;

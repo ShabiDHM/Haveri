@@ -190,7 +190,16 @@
 }
 
 @layer components {
-  /* Glass Panel */
+  /* MASTER PANEL - Admin Panel Aesthetic (UNIFIED) */
+  .panel {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 1rem; /* 16px - Matches Admin Panel */
+    box-shadow: var(--shadow-sm);
+    transition: all 300ms;
+  }
+
+  /* Glass Panel - For modals and special cases */
   .glass-panel {
     background-color: var(--bg-glass);
     backdrop-filter: blur(20px) saturate(160%);
@@ -203,18 +212,13 @@
     transition: all 300ms;
   }
 
-  /* Card Panel - SIMPLE, NO CONFLICTING UTILITIES */
+  /* DEPRECATED: Use .panel instead. Keeping for backward compatibility only */
   .card-panel {
     background-color: var(--bg-card);
     border: 1px solid var(--border-strong);
-    border-radius: 1.5rem;
+    border-radius: 1rem; /* Now matches Admin Panel */
     box-shadow: var(--shadow-sm);
     transition: all 300ms;
-  }
-  .card-panel:hover {
-    border-color: var(--border-primary);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
   }
 
   /* Buttons */
@@ -299,6 +303,26 @@
     background: rgba(220, 38, 38, 0.2);
     color: #F87171;
     border-color: rgba(220, 38, 38, 0.4);
+  }
+  .badge-warning {
+    background: rgba(217, 119, 6, 0.12);
+    color: #B45309;
+    border-color: rgba(217, 119, 6, 0.3);
+  }
+  .dark .badge-warning {
+    background: rgba(217, 119, 6, 0.2);
+    color: #FBBF24;
+    border-color: rgba(217, 119, 6, 0.4);
+  }
+  .badge-neutral {
+    background: rgba(71, 85, 105, 0.12);
+    color: #334155;
+    border-color: rgba(71, 85, 105, 0.3);
+  }
+  .dark .badge-neutral {
+    background: rgba(71, 85, 105, 0.2);
+    color: #94A3B8;
+    border-color: rgba(71, 85, 105, 0.4);
   }
 }
 
