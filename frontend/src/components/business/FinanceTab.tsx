@@ -1,16 +1,12 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V5.1 (ENHANCED CARD STYLES)
-// 1. UPDATED: HeroStatCard with colored left borders and colored numbers
-// 2. ENHANCED: Visual hierarchy with stat-card classes
-// 3. COLOR: Numbers now show green for positive, red for negative
-// 4. STATUS: Fully synchronized with design system
+// PHOENIX PROTOCOL - FINANCE TAB V6.1 (REMOVED REDUNDANT YEAR SELECTOR)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
-    Sparkles, X, Users, Calendar, Phone, Mail, MapPin,
+    Sparkles, X, Users, Phone, Mail, MapPin,
     Trash2
 } from 'lucide-react';
 import { apiService } from '../../services/api';
@@ -28,41 +24,45 @@ import { ExpenseModal } from './modals/ExpenseModal';
 import { ClientImportModal } from './modals/ClientImportModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 
-// Enhanced HeroStatCard with colored left border and colored numbers
+// Enhanced HeroStatCard with proper border and shadow
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     let borderColor = 'border-primary/30';
     let iconColor = 'text-primary';
-    let iconBg = 'bg-primary/20';
+    let iconBg = 'bg-primary/10';
     let amountColor = 'text-text-primary';
-    let statType = 'stat-card-neutral';
+    let gradientFrom = 'from-primary/10';
+    let gradientTo = 'to-primary/5';
     
     if (type === 'income') { 
         borderColor = 'border-success-start/30'; 
         iconColor = 'text-success-start'; 
-        iconBg = 'bg-success-start/20';
-        amountColor = 'text-positive';
-        statType = 'stat-card-income';
+        iconBg = 'bg-success-start/10';
+        amountColor = 'text-success-start';
+        gradientFrom = 'from-success-start/10';
+        gradientTo = 'to-success-start/5';
     }
     if (type === 'expense') { 
         borderColor = 'border-danger/30'; 
         iconColor = 'text-danger'; 
-        iconBg = 'bg-danger/20';
-        amountColor = 'text-negative';
-        statType = 'stat-card-expense';
+        iconBg = 'bg-danger/10';
+        amountColor = 'text-danger';
+        gradientFrom = 'from-danger/10';
+        gradientTo = 'to-danger/5';
     }
     if (type === 'warning') { 
         borderColor = 'border-warning-start/30'; 
         iconColor = 'text-warning-start'; 
-        iconBg = 'bg-warning-start/20';
-        amountColor = 'text-warning';
-        statType = 'stat-card-warning';
+        iconBg = 'bg-warning-start/10';
+        amountColor = 'text-warning-start';
+        gradientFrom = 'from-warning-start/10';
+        gradientTo = 'to-warning-start/5';
     }
     
     return (
         <motion.div 
             whileHover={{ scale: 1.02, y: -2 }} 
             onClick={onClick} 
-            className={`stat-card ${statType} cursor-pointer group`}
+            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradientFrom} ${gradientTo} border ${borderColor} p-5 backdrop-blur-sm cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300`}
         >
             <div className="flex justify-between items-start mb-3">
                 <div className={`p-2.5 rounded-xl ${iconBg} ${iconColor} border ${borderColor}`}>
@@ -87,13 +87,14 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
 };
 
 const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
-    <button onClick={onClick} className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group ${primary ? 'btn-primary' : 'btn-secondary'}`}>
-        <span>{icon}</span><span>{label}</span>
+    <button onClick={onClick} className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group ${primary ? 'btn-primary' : 'btn-secondary border border-border-main'}`}>
+        <span>{icon}</span>
+        <span>{label}</span>
     </button>
 );
 
 const TabButton = ({ label, icon, isActive, onClick }: any) => (
-    <button onClick={onClick} className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${isActive ? 'bg-primary/20 text-primary border border-primary/30' : 'text-text-muted hover:text-text-primary hover:bg-hover border-transparent'}`}>
+    <button onClick={onClick} className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${isActive ? 'bg-primary/20 text-primary border border-primary/30' : 'text-text-muted hover:text-text-primary hover:bg-hover border border-transparent'}`}>
         <span className="relative z-10">{icon}</span>
         <span className="relative z-10">{label}</span>
     </button>
@@ -101,7 +102,7 @@ const TabButton = ({ label, icon, isActive, onClick }: any) => (
 
 export const FinanceTab: React.FC = () => {
     const { t, i18n } = useTranslation();
-    const { loading, invoices, expenses, workspaces, posTransactions, analyticsData, totalExpenses, displayIncome, displayProfit, costOfGoodsSold, refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos, selectedYear, setSelectedYear, availableYears } = useFinanceData();
+    const { loading, invoices, expenses, workspaces, posTransactions, analyticsData, totalExpenses, displayIncome, displayProfit, costOfGoodsSold, refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos, selectedYear } = useFinanceData();
 
     const [activeTab, setActiveTab] = useState<'transactions' | 'reports' | 'partners'>('transactions');
     const [partners, setPartners] = useState<any[]>([]);
@@ -247,37 +248,21 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            {/* Action Buttons Row */}
-            <div className="flex flex-col lg:flex-row gap-4">
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-surface/40 p-4 rounded-3xl border border-border-main backdrop-blur-md">
-                    <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
-                    <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
-                    <ActionButton icon={<Users size={20} />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} />
-                    <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
-                </div>
-                
-                {/* Year Selector */}
-                <div className="flex items-center gap-4 bg-surface/40 p-4 rounded-3xl border border-border-main backdrop-blur-md">
-                    <Calendar size={20} className="text-primary ml-2" />
-                    <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-text-muted tracking-widest">{t('general.year', 'Viti Fiskal')}</span>
-                        <select 
-                            value={selectedYear} 
-                            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                            className="bg-transparent text-text-primary font-black text-lg outline-none cursor-pointer hover:text-primary transition-colors appearance-none pr-6"
-                        >
-                            {availableYears.map(year => (
-                                <option key={year} value={year}>{year}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+            {/* Action Buttons Row - Removed Year Selector */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-surface/40 p-4 rounded-3xl border border-border-main backdrop-blur-sm">
+                <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
+                <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
+                <ActionButton icon={<Users size={20} />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} />
+                <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
             {/* Main Content Area */}
-            <div className="bg-surface/60 border border-border-main rounded-3xl p-6 backdrop-blur-md h-[70vh] min-h-[600px] flex flex-col shadow-xl">
+            <div className="bg-surface/60 border border-border-main rounded-3xl p-6 backdrop-blur-sm h-[70vh] min-h-[600px] flex flex-col shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-border-main pb-6">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3"><Activity className="text-primary" />{t('finance.activityAndReports')}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
+                        <Activity className="text-primary" />
+                        {t('finance.activityAndReports')}
+                    </h2>
                     <div className="w-full sm:w-auto flex bg-surface p-1.5 rounded-2xl border border-border-main gap-1">
                         <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
                         <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
@@ -362,13 +347,13 @@ export const FinanceTab: React.FC = () => {
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
                             {!analyticsData ? ( <div className="text-center text-text-muted py-10">{t('finance.reports.noData')}</div> ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="bg-surface/30 rounded-3xl p-6 border border-border-main shadow-lg">
+                                    <div className="bg-surface/30 rounded-3xl p-6 border border-border-main shadow-sm">
                                         <h4 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-primary" /> {t('finance.analytics.salesTrend')}</h4>
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%"><AreaChart data={analyticsData.sales_trend}><defs><linearGradient id="colorSales" x1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} /><YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} /><Tooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" /></AreaChart></ResponsiveContainer>
                                         </div>
                                     </div>
-                                    <div className="bg-surface/30 rounded-3xl p-6 border border-border-main shadow-lg">
+                                    <div className="bg-surface/30 rounded-3xl p-6 border border-border-main shadow-sm">
                                         <h4 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-success-start" /> {t('finance.analytics.topProducts')}</h4>
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%"><BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 10 }}><XAxis type="number" hide /><YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} /><Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>{analyticsData.top_products.map((_: any, index: number) => (<Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />))}</Bar></BarChart></ResponsiveContainer>
