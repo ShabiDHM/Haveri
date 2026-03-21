@@ -1,6 +1,6 @@
 // FILE: src/components/ui/Panel.tsx
-// PHOENIX PROTOCOL - PANEL COMPONENT V3.0 (TAILWIND UTILITY-FIRST)
-// UPDATED: Uses Tailwind border utilities to override Preflight reset
+// PHOENIX PROTOCOL - PANEL COMPONENT V4.0 (FORCED GREY BORDER)
+// UPDATED: Uses Tailwind border utilities with forced grey color
 
 import React from 'react';
 import clsx from 'clsx';
@@ -16,7 +16,7 @@ interface PanelProps {
  * Master Panel Component - Enforces Admin Panel Aesthetic Globally
  * 
  * Design Rules:
- * - border: 1px solid via Tailwind's border utility
+ * - border: 1px solid #cbd5e1 (light mode) / #334155 (dark mode)
  * - border-radius: 1rem (16px)
  * - background: var(--bg-card)
  * - shadow: var(--shadow-sm)
@@ -33,7 +33,7 @@ export const Panel: React.FC<PanelProps> = ({
   return (
     <div 
       className={clsx(
-        "panel border border-border-strong",
+        "panel",
         !noPadding && "p-6",
         className
       )}

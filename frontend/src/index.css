@@ -190,7 +190,7 @@
 }
 
 @layer components {
-  /* MASTER PANEL - Border handled by Tailwind utilities */
+  /* MASTER PANEL - Professional Grey Border */
   .panel {
     background-color: var(--bg-card);
     border-radius: 1rem; /* 16px */
@@ -352,4 +352,64 @@
   
   .text-positive { color: var(--status-success) !important; }
   .text-negative { color: var(--status-danger) !important; }
+}
+
+/* ============================================ */
+/* GLOBAL UI UNIFICATION - FORCE BORDER STANDARDS */
+/* ============================================ */
+
+/* Force the Admin Panel's professional grey border on all card components */
+.panel, 
+.card-panel, 
+.card,
+.bg-card.border-border-strong,
+.bg-card.border-border-main,
+div[class*="rounded-2xl"],
+div[class*="rounded-3xl"],
+div[class*="rounded-xl"] {
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Force dark mode compatibility with high-contrast grey */
+.dark .panel, 
+.dark .card-panel, 
+.dark .card,
+.dark .bg-card.border-border-strong,
+.dark .bg-card.border-border-main,
+.dark div[class*="rounded-2xl"],
+.dark div[class*="rounded-3xl"],
+.dark div[class*="rounded-xl"] {
+  border: 1px solid #334155 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Preserve colorful top accent bars - these should NOT be overridden */
+.absolute.top-0.left-0.right-0.h-1.bg-gradient-to-r {
+  border: none !important;
+  border-top: none !important;
+  box-shadow: none !important;
+}
+
+/* Keep colored borders for specific elements like danger cards, success cards, etc. */
+.border-danger,
+.border-success-start,
+.border-warning-start,
+.border-primary {
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+
+/* Ensure the colored left borders on drill-down cards remain */
+div[class*="border-l-4"] {
+  border-left-width: 4px !important;
+  border-top-width: 1px !important;
+  border-right-width: 1px !important;
+  border-bottom-width: 1px !important;
+  border-style: solid !important;
+}
+
+/* Keep the colored top accent bars - they should be colorful */
+div[class*="bg-gradient-to-r"][class*="h-1"] {
+  border: none !important;
 }
