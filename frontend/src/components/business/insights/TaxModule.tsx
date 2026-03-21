@@ -1,5 +1,5 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX MODULE V11.0 (VISIBLE ACCENT BAR)
+// PHOENIX PROTOCOL - TAX MODULE V11.1 (LAYOUT-SAFE BORDER PATTERN)
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -47,13 +47,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className="bg-card border border-border-strong rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
-                {/* Colored top accent bar - Dynamic gradient and dynamic shadow based on state */}
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r z-10 ${
-                    isPositive 
-                        ? 'from-danger to-danger/80 shadow-[0_0_8px_rgba(220,38,38,0.5)]' 
-                        : 'from-success-start to-success-start/80 shadow-[0_0_8px_rgba(34,197,94,0.5)]'
-                }`} />
+            <div className={`bg-card border border-border-strong border-top-accent ${isPositive ? 'border-t-danger' : 'border-t-success'} rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative`}>
                 
                 <div className="p-5 flex-shrink-0">
                     <div className="flex justify-between items-start mb-4">
@@ -92,7 +86,6 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                     </div>
                 </div>
 
-                {/* Scrollable content area for buttons */}
                 <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-3 custom-scrollbar">
                     <button 
                         onClick={() => setShowForensicChat(true)}
@@ -115,7 +108,6 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                     </p>
                 </div>
 
-                {/* Ambient Background */}
                 <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
                 <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
             </div>

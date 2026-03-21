@@ -1,5 +1,5 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - PROFIT MODULE V12.0 (VISIBLE ACCENT BAR)
+// PHOENIX PROTOCOL - PROFIT MODULE V12.1 (LAYOUT-SAFE BORDER PATTERN)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,13 +91,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className="bg-card border border-border-strong rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
-                {/* Colored top accent bar - Dynamic gradient and dynamic shadow based on state */}
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r z-10 ${
-                    hasLowStock 
-                        ? 'from-warning-start to-warning-start/80 shadow-[0_0_8px_rgba(245,158,11,0.5)]' 
-                        : 'from-success-start to-success-start/80 shadow-[0_0_8px_rgba(34,197,94,0.5)]'
-                }`} />
+            <div className={`bg-card border border-border-strong border-top-accent ${hasLowStock ? 'border-t-warning' : 'border-t-success'} rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300`}>
                 
                 <div className="p-5 flex-shrink-0">
                     <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
@@ -113,16 +107,15 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
 
                     <div className="flex justify-between items-center mb-3">
                         <div className="flex items-center gap-2">
-                            <div className={`h-3 w-1 ${hasLowStock ? 'bg-warning-start' : 'bg-success-start'} rounded-full`}></div>
+                            <div className={`h-3 w-1 ${hasLowStock ? 'bg-status-warning' : 'bg-status-success'} rounded-full`}></div>
                             <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider">{t('inventory.lowStock', 'Stoku Kritik')}</h4>
                         </div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${hasLowStock ? 'bg-warning-start/10 text-warning-start border-warning-start/20' : 'bg-success-start/10 text-success-start border-success-start/20'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${hasLowStock ? 'bg-status-warning/10 text-status-warning border-status-warning/20' : 'bg-status-success/10 text-status-success border-status-success/20'}`}>
                             {lowStockItems.length} {t('inventory.itemsCount', 'Artikuj')}
                         </span>
                     </div>
                 </div>
 
-                {/* Scrollable content area */}
                 <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-2 custom-scrollbar">
                     {lowStockItems.length === 0 ? (
                         <div className="p-6 text-center bg-surface rounded-xl border border-border-strong">
@@ -133,15 +126,15 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                             <div 
                                 key={idx} 
                                 onClick={() => handleItemClick(item)} 
-                                className="flex justify-between items-center p-3 bg-surface rounded-xl border border-border-strong hover:border-warning-start/40 hover:shadow-sm transition-all cursor-pointer group"
+                                className="flex justify-between items-center p-3 bg-surface rounded-xl border border-border-strong hover:border-status-warning/40 hover:shadow-sm transition-all cursor-pointer group"
                             >
                                 <div className="flex items-center gap-3 overflow-hidden flex-1">
-                                    <div className="p-2 bg-warning-start/10 rounded-lg text-warning-start group-hover:scale-105 transition-transform">
+                                    <div className="p-2 bg-status-warning/10 rounded-lg text-status-warning group-hover:scale-105 transition-transform">
                                         <Zap size={14} />
                                     </div>
                                     <span className="text-sm text-text-secondary font-medium truncate">{item.name}</span>
                                 </div>
-                                <span className="text-xs font-mono text-warning-start flex items-center gap-1 bg-warning-start/10 px-2 py-1 rounded-lg border border-warning-start/20 shrink-0">
+                                <span className="text-xs font-mono text-status-warning flex items-center gap-1 bg-status-warning/10 px-2 py-1 rounded-lg border border-status-warning/20 shrink-0">
                                     <AlertCircle size={10} /> {item.current_stock} {item.unit}
                                 </span>
                             </div>
@@ -158,7 +151,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                 <div>
                                     <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
                                         {selectedItem.name}
-                                        <span className="text-xs bg-danger text-inverse px-2 py-0.5 rounded-full">{t('inventory.analysis.critical', 'Kritike')}</span>
+                                        <span className="text-xs bg-status-danger text-inverse px-2 py-0.5 rounded-full">{t('inventory.analysis.critical', 'Kritike')}</span>
                                     </h3>
                                     <p className="text-sm text-text-muted mt-1">{t('inventory.analysis.currentStock', 'Stoku Aktual')}: {selectedItem.current_stock} {selectedItem.unit}</p>
                                 </div>
@@ -188,9 +181,9 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             </button>
                                         </div>
 
-                                        <div className="bg-surface border border-success-start/20 rounded-xl p-4 relative overflow-hidden">
-                                            <div className="absolute top-0 left-0 w-1 h-full bg-success-start" />
-                                            <h4 className="text-sm font-bold text-success-start mb-2 flex items-center gap-2"><TrendingUp size={14} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}</h4>
+                                        <div className="bg-surface border border-status-success/20 rounded-xl p-4 relative overflow-hidden">
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-status-success" />
+                                            <h4 className="text-sm font-bold text-status-success mb-2 flex items-center gap-2"><TrendingUp size={14} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}</h4>
                                             <p className="text-sm text-text-secondary">
                                                 {aiData.trend?.trend_analysis || t('inventory.analysis.unavailable', 'Nuk ka të dhëna mjaftueshme shitjeje.')}
                                             </p>

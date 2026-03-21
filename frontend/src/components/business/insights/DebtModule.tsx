@@ -1,5 +1,5 @@
 // FILE: src/components/business/insights/DebtModule.tsx
-// PHOENIX PROTOCOL - DEBT MODULE V8.0 (VISIBLE ACCENT BAR)
+// PHOENIX PROTOCOL - DEBT MODULE V8.2 (REPAIRED STRUCTURE)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,13 +26,7 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
     const hasDebt = totalDebt > 0;
 
     return (
-        <div className="bg-card border border-border-strong rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
-            {/* Colored top accent bar - Dynamic gradient and dynamic shadow based on state */}
-            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r z-10 ${
-                hasDebt 
-                    ? 'from-danger to-danger/80 shadow-[0_0_8px_rgba(220,38,38,0.5)]' 
-                    : 'from-success-start to-success-start/80 shadow-[0_0_8px_rgba(34,197,94,0.5)]'
-            }`} />
+        <div className={`bg-card border border-border-strong border-top-accent ${hasDebt ? 'border-t-danger' : 'border-t-success'} rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300`}>
             
             <div className="p-5 flex-shrink-0">
                 <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
@@ -68,7 +62,6 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
                 </h4>
             </div>
 
-            {/* Scrollable content area */}
             <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-2 custom-scrollbar">
                 {topDebtors.length === 0 ? (
                     <div className="p-6 text-center bg-surface rounded-xl border border-border-strong">

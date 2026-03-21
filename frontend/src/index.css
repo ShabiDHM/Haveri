@@ -1,6 +1,5 @@
 /* FILE: src/index.css */
-/* PHOENIX PROTOCOL - V12.0 (FIXED INPUT THEMING) */
-/* STATUS: CLEAN - FULL FILE REPLACEMENT */
+/* PHOENIX PROTOCOL - V12.1 (FIXED ACCENT BORDER OVERRIDES) */
 
 @tailwind base;
 @tailwind components;
@@ -42,7 +41,6 @@
   }
 
   .dark {
-    /* --- DARK THEME --- */
     --bg-base: #020617;
     --bg-surface: #0F172A;
     --bg-surface-rgb: 15, 23, 42;
@@ -73,7 +71,6 @@
   body {
     background-color: var(--bg-base);
     color: var(--text-secondary);
-    transition: background-color 0.4s ease;
   }
 }
 
@@ -84,7 +81,6 @@
     border: 1px solid var(--border-main);
   }
 
-  /* FORCED THEME INPUTS */
   .glass-input {
     background-color: var(--bg-input) !important;
     border: 1.5px solid var(--border-main) !important;
@@ -92,18 +88,6 @@
     border-radius: 0.75rem;
     padding: 0.625rem 1rem;
     outline: none;
-    transition: all 200ms;
-  }
-  
-  .glass-input::placeholder {
-    color: var(--text-muted);
-    opacity: 0.7;
-  }
-
-  .glass-input:focus {
-    background-color: var(--bg-card) !important;
-    border-color: var(--accent-primary) !important;
-    box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.2);
   }
 
   .btn-primary {
@@ -113,10 +97,7 @@
   }
 }
 
-/* ============================================ */
-/* GLOBAL UI UNIFICATION - THEME COMPLIANT */
-/* ============================================ */
-
+/* Global Unification */
 .panel, .card-panel, .card,
 div[class*="rounded-2xl"], div[class*="rounded-3xl"] {
   border-style: solid;
@@ -131,19 +112,19 @@ div[class*="rounded-2xl"], div[class*="rounded-3xl"] {
   border-color: var(--border-strong);
 }
 
-/* Specificity Overrides */
-.border-l-4 { border-left-width: 4px !important; }
-.border-l-success-start { border-left-color: var(--status-success) !important; }
-.border-l-danger-start { border-left-color: var(--status-danger) !important; }
-.border-l-warning-start { border-left-color: var(--status-warning) !important; }
-.border-l-primary { border-left-color: var(--accent-primary) !important; }
+/* NEW: ACCENT BORDER UTILITIES */
+.border-top-accent {
+  border-top-width: 4px !important;
+  border-top-style: solid !important;
+}
 
+.border-t-danger { border-top-color: var(--status-danger) !important; }
+.border-t-success { border-top-color: var(--status-success) !important; }
+.border-t-warning { border-top-color: var(--status-warning) !important; }
+.border-t-primary { border-top-color: var(--accent-primary) !important; }
+
+/* Status Text/BG Overrides */
 .text-success-start { color: var(--status-success) !important; }
 .text-danger-start { color: var(--status-danger) !important; }
 .text-warning-start { color: var(--status-warning) !important; }
 .text-primary { color: var(--accent-primary) !important; }
-
-.bg-success-start\/10 { background-color: rgba(var(--status-success-rgb), 0.1) !important; }
-.bg-danger-start\/10 { background-color: rgba(var(--status-danger-rgb), 0.1) !important; }
-.bg-warning-start\/10 { background-color: rgba(var(--status-warning-rgb), 0.1) !important; }
-.bg-primary\/10 { background-color: rgba(var(--accent-primary-rgb), 0.1) !important; }

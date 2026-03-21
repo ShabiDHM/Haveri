@@ -1,5 +1,5 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V10.1 (FIXED Z-INDEX & UNIFIED ACCENT)
+// PHOENIX PROTOCOL - PULSE CARD V10.2 (LAYOUT-SAFE BORDER PATTERN)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -71,9 +71,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
     const hotItem = useMemo(() => signals.find(s => s.type === 'bestseller'), [signals]);
 
     return (
-        <div className="bg-card border border-border-strong rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm hover:border-primary/20 transition-all duration-500">
-            {/* Colored top accent bar - Dynamic gradient and explicit z-20 for rendering priority */}
-            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isRestDay ? 'from-primary to-primary/80' : 'from-success-start to-success-start/80'} z-20 rounded-t-3xl shadow-[0_0_8px_${isRestDay ? 'rgba(59,130,246,0.5)' : 'rgba(16,185,129,0.5)'}]`} />
+        <div className={`bg-card border border-border-strong border-top-accent ${isRestDay ? 'border-t-primary' : 'border-t-success'} rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm hover:border-primary/20 transition-all duration-500`}>
             
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[60px] group-hover:bg-primary/10 transition-colors pointer-events-none" />
             
@@ -82,8 +80,8 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                     <Activity className="w-4 h-4 text-primary" /> {t('dashboard.pulse.title', 'Pulsi i Biznesit')}
                 </h3>
                 <span className="flex h-3 w-3 relative">
-                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isRestDay ? 'bg-primary' : 'bg-success-start'}`}></span>
-                    <span className={`relative inline-flex rounded-full h-3 w-3 ${isRestDay ? 'bg-primary' : 'bg-success-start'}`}></span>
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isRestDay ? 'bg-primary' : 'bg-status-success'}`}></span>
+                    <span className={`relative inline-flex rounded-full h-3 w-3 ${isRestDay ? 'bg-primary' : 'bg-status-success'}`}></span>
                 </span>
             </div>
 
@@ -105,7 +103,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                         />
                     </div>
                     <p className="text-xs text-text-muted mt-2 flex items-center gap-1.5 font-medium">
-                        <Zap size={12} className="text-warning-start" /> 
+                        <Zap size={12} className="text-status-warning" /> 
                         {isRestDay ? "Ritmi i ditëve të pushimit (Vikend)" : t('dashboard.pulse.basedOnVelocity', 'Bazuar në ritmin aktual')}
                     </p>
                 </div>
@@ -113,9 +111,9 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                 <div className="bg-surface border border-border-strong rounded-2xl p-4">
                     {hotItem ? (
                         <div className="flex items-start gap-3">
-                            <div className="p-2 bg-danger/10 rounded-xl text-danger"><TrendingUp size={16} /></div>
+                            <div className="p-2 bg-status-danger/10 rounded-xl text-status-danger"><TrendingUp size={16} /></div>
                             <div>
-                                <p className="text-xs text-danger font-bold uppercase mb-1">Trendi Hot</p>
+                                <p className="text-xs text-status-danger font-bold uppercase mb-1">Trendi Hot</p>
                                 <p className="text-sm text-text-secondary leading-snug font-medium">"{hotItem.label}" po kërkohet shumë.</p>
                             </div>
                         </div>
