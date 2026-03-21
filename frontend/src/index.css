@@ -65,9 +65,9 @@
     --glass-border-bottom: 1px solid rgba(203, 213, 225, 0.6);
     --glass-border-right: 1px solid rgba(203, 213, 225, 0.6);
     
-    /* MAIN BORDERS - More visible with subtle color */
-    --border-main: #A0AEC0;
-    --border-strong: #718096;
+    /* MAIN BORDERS - Updated for better visibility */
+    --border-main: #CBD5E1; /* Darker than before for better contrast */
+    --border-strong: #94A3B8; /* Even stronger for important separators */
     
     /* Colorful accent borders for interactive elements */
     --border-primary: #6366F1;
@@ -150,9 +150,9 @@
     --glass-border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     --glass-border-right: 1px solid rgba(255, 255, 255, 0.15);
     
-    /* MAIN BORDERS - Much more visible in dark mode */
-    --border-main: rgba(255, 255, 255, 0.3);
-    --border-strong: rgba(255, 255, 255, 0.45);
+    /* MAIN BORDERS - Updated for better visibility */
+    --border-main: rgba(255, 255, 255, 0.2);
+    --border-strong: rgba(255, 255, 255, 0.35);
     
     /* Colorful accent borders for interactive elements */
     --border-primary: #818CF8;
