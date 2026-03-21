@@ -92,8 +92,12 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
     return (
         <>
             <div className="bg-card border border-border-strong rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
-                {/* Colored top accent bar - 4px with glow - Yellow if low stock, Green if all good */}
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${hasLowStock ? 'from-warning-start to-warning-start/80' : 'from-success-start to-success-start/80'} z-10 shadow-[0_0_8px_rgba(245,158,11,0.5)]`} />
+                {/* Colored top accent bar - Dynamic gradient and dynamic shadow based on state */}
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r z-10 ${
+                    hasLowStock 
+                        ? 'from-warning-start to-warning-start/80 shadow-[0_0_8px_rgba(245,158,11,0.5)]' 
+                        : 'from-success-start to-success-start/80 shadow-[0_0_8px_rgba(34,197,94,0.5)]'
+                }`} />
                 
                 <div className="p-5 flex-shrink-0">
                     <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">

@@ -48,8 +48,12 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
     return (
         <>
             <div className="bg-card border border-border-strong rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
-                {/* Colored top accent bar - 4px with glow - Red if positive liability, Green if credit */}
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isPositive ? 'from-danger to-danger/80' : 'from-success-start to-success-start/80'} z-10 shadow-[0_0_8px_rgba(220,38,38,0.5)]`} />
+                {/* Colored top accent bar - Dynamic gradient and dynamic shadow based on state */}
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r z-10 ${
+                    isPositive 
+                        ? 'from-danger to-danger/80 shadow-[0_0_8px_rgba(220,38,38,0.5)]' 
+                        : 'from-success-start to-success-start/80 shadow-[0_0_8px_rgba(34,197,94,0.5)]'
+                }`} />
                 
                 <div className="p-5 flex-shrink-0">
                     <div className="flex justify-between items-start mb-4">
