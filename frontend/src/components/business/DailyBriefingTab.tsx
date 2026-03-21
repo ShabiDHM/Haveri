@@ -1,5 +1,5 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V10.0 (VISIBLE ACCENT BARS)
+// PHOENIX PROTOCOL - DASHBOARD V11.0 (REMOVED INLINE STYLES)
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -158,7 +158,7 @@ export const DailyBriefingTab: React.FC = () => {
             
             {/* Hero Header - Using Panel */}
             <Panel className="p-6 sm:p-10 relative overflow-hidden">
-                {/* Colored top accent bar - 4px with glow */}
+                {/* Colored top accent bar */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/80 z-10 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                 <div className="absolute top-0 right-0 p-40 bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
                 <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -196,14 +196,14 @@ export const DailyBriefingTab: React.FC = () => {
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-6">
-                    {/* Inbox Card - With colorful accent bar */}
+                    {/* Inbox Card */}
                     <motion.div 
                         whileHover={{ scale: 1.02, y: -2 }} 
                         whileTap={{ scale: 0.98 }} 
                         onClick={() => navigate('/business/inbox')} 
                         className="group relative bg-card hover:bg-card/95 border border-border-strong rounded-3xl p-6 cursor-pointer transition-all duration-300 overflow-hidden shadow-sm"
                     >
-                        {/* Colored top accent bar - 4px with glow */}
+                        {/* Colored top accent bar */}
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/80 z-10 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                         
                         <div className="flex justify-between items-center relative z-10">

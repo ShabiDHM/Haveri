@@ -1,5 +1,5 @@
 // FILE: src/components/business/briefing/SmartAgendaCard.tsx
-// PHOENIX PROTOCOL - AGENDA CARD V9.0 (VISIBLE ACCENT BAR)
+// PHOENIX PROTOCOL - AGENDA CARD V10.0 (REMOVED INLINE STYLES)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';

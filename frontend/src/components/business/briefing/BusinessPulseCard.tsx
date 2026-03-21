@@ -1,5 +1,5 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V9.0 (VISIBLE ACCENT BAR)
+// PHOENIX PROTOCOL - PULSE CARD V10.0 (REMOVED INLINE STYLES)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -110,7 +110,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                     </p>
                 </div>
 
-                <div className="bg-surface border border-border-strong rounded-2xl p-4 backdrop-blur-md">
+                <div className="bg-surface border border-border-strong rounded-2xl p-4">
                     {hotItem ? (
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-danger/10 rounded-xl text-danger"><TrendingUp size={16} /></div>

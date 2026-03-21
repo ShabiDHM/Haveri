@@ -1,5 +1,5 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - RHYTHM CARD V10.0 (VISIBLE ACCENT BAR)
+// PHOENIX PROTOCOL - RHYTHM CARD V11.0 (REMOVED INLINE STYLES)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
