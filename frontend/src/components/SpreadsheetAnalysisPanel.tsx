@@ -1,7 +1,6 @@
 // FILE: src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - ANALYST PANEL V24.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses Panel component, removed conflicting border classes, unified spacing
-// FIXED: Removed duplicate header text, changed upload button to "Ngarko Skedarin"
+// PHOENIX PROTOCOL - ANALYST PANEL V25.0 (COLORFUL ACCENT BAR)
+// UPDATED: Added colorful top accent bar to match other modules
 
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -80,7 +79,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 1. IDLE STATE
     if (status === 'idle') {
         return (
-            <Panel className="p-0 overflow-hidden">
+            <Panel className="p-0 overflow-hidden relative">
+                {/* Colored top accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60 z-10" />
+                
                 {/* Header */}
                 <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center gap-2">
@@ -146,7 +148,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 2. PROCESSING STATE
     if (status === 'uploading' || status === 'analyzing') {
         return (
-            <Panel className="p-0 overflow-hidden">
+            <Panel className="p-0 overflow-hidden relative">
+                {/* Colored top accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60 z-10" />
+                
                 <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-primary-start/10 rounded-lg">
@@ -171,7 +176,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 3. ERROR STATE
     if (status === 'error') {
         return (
-            <Panel className="p-0 overflow-hidden border-danger-start/30">
+            <Panel className="p-0 overflow-hidden border-danger-start/30 relative">
+                {/* Colored top accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-danger to-danger/60 z-10" />
+                
                 <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-danger-start/5 to-transparent">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-danger-start/10 rounded-lg">
@@ -200,7 +208,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     if (status === 'complete' && result) {
         const maxVal = Math.max(...result.chart_data.map(d => d.value), 1);
         return (
-            <Panel className="p-0 overflow-hidden">
+            <Panel className="p-0 overflow-hidden relative">
+                {/* Colored top accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success-start to-success-start/60 z-10" />
+                
                 {/* Header */}
                 <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center justify-between">
