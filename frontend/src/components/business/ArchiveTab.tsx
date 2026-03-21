@@ -1,9 +1,6 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V6.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. UI: Implemented responsive grid for action buttons (Mobile: 2-col, Desktop: flex).
-// 2. STYLING: Refined padding and button sizing for professional mobile look.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 4. STATUS: Fully synchronized.
+// PHOENIX PROTOCOL - ARCHIVE TAB V7.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses Panel component, unified border styling
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +17,7 @@ import PDFViewerModal from '../PDFViewerModal';
 import ShareModal from '../ShareModal';
 import { ForensicAccountantModal } from './insights/ForensicAccountantModal';
 import { getFileIcon } from './archive/ArchiveCard';
+import { Panel } from '../ui/Panel';
 
 interface ArchiveTabProps {
     workspaceId?: string;
@@ -77,7 +75,7 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
     return (
         <div className="fixed inset-0 z-[110] flex justify-end pointer-events-none">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/20 backdrop-blur-[2px] pointer-events-auto" />
-            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="relative w-full max-w-md h-full bg-glass backdrop-blur-xl border-l border-border-main shadow-xl flex flex-col pointer-events-auto">
+            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="relative w-full max-w-md h-full bg-glass backdrop-blur-xl border-l border-border-strong shadow-xl flex flex-col pointer-events-auto">
                 <div className="bg-primary p-5 flex items-center justify-between">
                     <div className="flex items-center gap-3 text-inverse font-bold">
                         <Bot size={22} />
@@ -88,14 +86,14 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar" ref={scrollRef}>
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[90%] p-4 rounded-2xl ${msg.role === 'user' ? 'bg-primary text-inverse rounded-tr-none' : 'bg-surface border border-border-main text-text-secondary rounded-tl-none'}`}>
+                            <div className={`max-w-[90%] p-4 rounded-2xl ${msg.role === 'user' ? 'bg-primary text-inverse rounded-tr-none' : 'bg-surface border border-border-strong text-text-secondary rounded-tl-none'}`}>
                                 <MarkdownRenderer content={msg.content} />
                             </div>
                         </div>
                     ))}
                     {loading && <div className="flex justify-start p-4"><Loader2 className="animate-spin text-primary" /></div>}
                 </div>
-                <form onSubmit={handleSend} className="p-6 bg-surface border-t border-border-main flex gap-2">
+                <form onSubmit={handleSend} className="p-6 bg-surface border-t border-border-strong flex gap-2">
                     <input autoFocus type="text" value={input} onChange={(e) => setInput(e.target.value)} className="glass-input flex-1 text-sm" placeholder={t('ai.ask_placeholder')} />
                     <button type="submit" disabled={loading} className="p-3 bg-primary text-inverse rounded-xl"><Send size={20}/></button>
                 </form>
@@ -107,10 +105,10 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
 const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelete, onRename, onShare, onReIndex, onAskAI, isShared, isFolder, isLoading, indexingStatus }: any) => { 
     const { t } = useTranslation();
     return ( 
-        <motion.div whileHover={{ scale: 1.01 }} onClick={onClick} className="group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-3xl bg-surface/60 border border-border-main hover:border-primary/30 transition-all cursor-pointer"> 
+        <motion.div whileHover={{ scale: 1.01 }} onClick={onClick} className="group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-3xl bg-surface/60 border border-border-strong hover:border-primary/30 transition-all cursor-pointer"> 
             <div> 
                 <div className="flex justify-between items-start gap-2 mb-4"> 
-                    <div className="p-3 rounded-2xl bg-surface border border-border-main">{isFolder ? <FolderOpen className="w-6 h-6 text-warning-start" /> : getFileIcon(type)}</div> 
+                    <div className="p-3 rounded-2xl bg-surface border border-border-strong">{isFolder ? <FolderOpen className="w-6 h-6 text-warning-start" /> : getFileIcon(type)}</div> 
                     <div className="flex items-center gap-2">
                         {indexingStatus === 'READY' && <CheckCircle size={14} className="text-success-start" />}
                         {indexingStatus === 'PROCESSING' && <Loader2 size={14} className="animate-spin text-primary" />}
@@ -120,7 +118,7 @@ const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelet
                 <h2 className="text-lg font-bold text-text-primary line-clamp-2 leading-tight">{title}</h2>
                 <div className="flex items-center gap-2 mt-2 text-text-muted text-xs italic"><span>{subtitle}</span></div>
             </div> 
-            <div className="pt-4 border-t border-border-main flex justify-between items-center mt-4"> 
+            <div className="pt-4 border-t border-border-strong flex justify-between items-center mt-4"> 
                 <div className="flex items-center gap-1.5 text-text-muted"><Calendar size={12}/> <span className="text-[10px]">{date}</span></div>
                 <div className="flex gap-1 items-center">
                     {!isFolder && onReIndex && <button onClick={(e) => { e.stopPropagation(); onReIndex(); }} className="p-2 text-text-muted hover:text-warning-start transition-colors" title={t('archive.reindex')}><Zap size={16} /></button>}
@@ -219,10 +217,11 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-8 h-full flex flex-col pb-20 px-2 sm:px-0">
-            <div className="bg-surface/40 p-4 sm:p-6 rounded-3xl border border-border-main backdrop-blur-md flex-shrink-0">
-                 <div className="flex flex-col xl:flex-row gap-4">
+            {/* Search and Actions Panel */}
+            <Panel className="p-4 sm:p-6 flex-shrink-0">
+                <div className="flex flex-col xl:flex-row gap-4">
                     <div className="flex-1 relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
                         <input 
                             type="text" 
                             placeholder={t('header.searchPlaceholder')} 
@@ -246,20 +245,22 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                             {isUploading ? <Loader2 className="animate-spin" size={18}/> : <FileUp size={18}/>} {t('archive.upload')}
                         </button>
                     </div>
-                 </div>
-            </div>
+                </div>
+            </Panel>
 
+            {/* Breadcrumb Navigation */}
             <div className="flex items-center gap-2 overflow-x-auto text-xs sm:text-sm no-scrollbar pb-2 flex-shrink-0">
                 {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={crumb.id || index}>
                         <button onClick={() => navigateTo(index)} className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg border ${index === breadcrumbs.length - 1 ? 'bg-primary/20 text-primary border-primary/30' : 'text-text-muted border-transparent hover:bg-hover'}`}>
                             <Archive size={14} />{crumb.name === "My Workspace" ? t('archive.myWorkspace') : crumb.name}
                         </button>
-                        {index < breadcrumbs.length - 1 && <ChevronRight size={14} className="text-border-main" />}
+                        {index < breadcrumbs.length - 1 && <ChevronRight size={14} className="text-border-strong" />}
                     </React.Fragment>
                 ))}
             </div>
             
+            {/* Archive Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 <AnimatePresence>
                     {filteredItems.map(item => (
@@ -286,11 +287,13 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
             
             <ForensicAccountantModal isOpen={showForensicModal} onClose={() => setShowForensicModal(false)} />
             <AnimatePresence>{chatDoc && <DocumentChatModal documentId={chatDoc.id} documentTitle={chatDoc.title} onClose={() => setChatDoc(null)} />}</AnimatePresence>
+            
+            {/* Create Folder Modal */}
             <AnimatePresence>
                 {showFolderModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
                         <motion.div onClick={() => setShowFolderModal(false)} className="absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" />
-                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="relative bg-glass backdrop-blur-xl border border-border-main rounded-3xl p-6 sm:p-8 pointer-events-auto max-w-md w-full mx-4 space-y-4 shadow-xl">
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="relative bg-glass backdrop-blur-xl border border-border-strong rounded-3xl p-6 sm:p-8 pointer-events-auto max-w-md w-full mx-4 space-y-4 shadow-xl">
                             <div className="flex justify-between items-center">
                                 <h3 className="text-xl font-bold text-text-primary">{t('archive.createFolder')}</h3>
                                 <button onClick={() => setShowFolderModal(false)} className="p-2 hover:bg-hover rounded-full text-text-muted"><X size={20} /></button>
@@ -313,11 +316,13 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            
+            {/* Rename Modal */}
             <AnimatePresence>
                 {showRenameModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
                         <motion.div onClick={() => setShowRenameModal(false)} className="absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" />
-                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="relative bg-glass backdrop-blur-xl border border-border-main rounded-3xl p-6 sm:p-8 pointer-events-auto max-w-md w-full mx-4 space-y-4 shadow-xl">
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="relative bg-glass backdrop-blur-xl border border-border-strong rounded-3xl p-6 sm:p-8 pointer-events-auto max-w-md w-full mx-4 space-y-4 shadow-xl">
                             <div className="flex justify-between items-center">
                                 <h3 className="text-xl font-bold text-text-primary">{t('general.edit')}</h3>
                                 <button onClick={() => setShowRenameModal(false)} className="p-2 hover:bg-hover rounded-full text-text-muted"><X size={20} /></button>
@@ -340,6 +345,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={() => setViewingDoc(null)} t={t} directUrl={viewingUrl || ""} />}
             {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={(isInsideWorkspace ? currentView.id : workspaceId) || ""} caseTitle={currentView.name} />}
         </motion.div>

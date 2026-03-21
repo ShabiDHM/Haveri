@@ -1,13 +1,12 @@
 // FILE: src/components/EmailIngestCard.tsx
-// PHOENIX PROTOCOL - I18N V2.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. REFACTOR: Replaced all hardcoded strings with i18next 't()' function calls.
-// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 3. INTEGRITY: Component is now fully translatable and adheres to project architecture.
+// PHOENIX PROTOCOL - I18N V3.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Mail, Copy, Check, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Panel } from './ui/Panel';
 
 export const EmailIngestCard: React.FC = () => {
     const { t } = useTranslation();
@@ -30,7 +29,7 @@ export const EmailIngestCard: React.FC = () => {
     };
 
     return (
-        <div className="card-panel p-6 shadow-lg">
+        <Panel className="p-6 shadow-lg">
             <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20">
                     <Mail size={24} />
@@ -41,14 +40,14 @@ export const EmailIngestCard: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-surface rounded-lg p-4 border border-border-main mb-6">
+            <div className="bg-surface rounded-lg p-4 border border-border-strong mb-6">
                  <div className="flex items-center gap-2 mb-2">
                     <Info size={14} className="text-primary" />
                     <span className="text-sm font-medium text-text-secondary">{t('settings.integrations.emailIngest.yourAddress')}</span>
                 </div>
                 
                 {inboundEmail ? (
-                    <div className="flex items-center justify-between gap-4 bg-card p-3 rounded-lg border border-border-main">
+                    <div className="flex items-center justify-between gap-4 bg-card p-3 rounded-lg border border-border-strong">
                         <code className="text-base font-mono text-success-start truncate">{inboundEmail}</code>
                         <button 
                             onClick={handleCopy}
@@ -72,6 +71,6 @@ export const EmailIngestCard: React.FC = () => {
                     <li>{t('settings.integrations.emailIngest.step4')}</li>
                 </ul>
             </div>
-        </div>
+        </Panel>
     );
 };

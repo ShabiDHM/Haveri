@@ -1,8 +1,8 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V19.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - INVOICE MODAL V20.0 (UNIFIED ADMIN AESTHETIC)
 // 1. FEATURE: Added "Apliko TVSH" checkbox for optional VAT application.
 // 2. LOGIC: Dynamically sets tax_rate to 0 if VAT is not included.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. UPDATED: Uses unified border styling
 // 4. STATUS: Essential invoicing control restored.
 
 import React, { useState, useEffect } from 'react';
@@ -85,7 +85,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-glass backdrop-blur-xl border border-border-main rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 custom-finance-scroll shadow-xl">
+            <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 custom-finance-scroll shadow-xl">
                 <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-text-primary">{invoiceToEdit ? t('finance.editInvoice') : t('finance.createInvoice')}</h2><button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24} /></button></div>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
@@ -104,7 +104,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                         </div>
                         <input placeholder={t('business.address')} className="w-full glass-input" value={formData.client_address} onChange={e => setFormData({...formData, client_address: e.target.value})} />
                     </div>
-                    <div className="space-y-3 pt-4 border-t border-border-main">
+                    <div className="space-y-3 pt-4 border-t border-border-strong">
                         <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2"><FileText size={14} /> {t('finance.services')}</h3>
                         {lineItems.map((item, index) => (
                             <div key={index} className="flex gap-2 items-center">
@@ -120,7 +120,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                             <input
                                 id="includeVat"
                                 type="checkbox"
-                                className="form-checkbox h-4 w-4 text-primary bg-surface border-border-main rounded focus:ring-primary"
+                                className="form-checkbox h-4 w-4 text-primary bg-surface border-border-strong rounded focus:ring-primary"
                                 checked={includeVat}
                                 onChange={(e) => setIncludeVat(e.target.checked)}
                             />

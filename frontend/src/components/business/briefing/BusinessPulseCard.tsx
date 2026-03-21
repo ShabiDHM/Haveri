@@ -1,8 +1,8 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V5.0 (CONSISTENT TYPOGRAPHY)
+// PHOENIX PROTOCOL - PULSE CARD V6.0 (UNIFIED ADMIN AESTHETIC)
 // 1. FIXED: Filtered out static "Sistemi aktiv..." message from AI Insight.
 // 2. FIXED: Made AI Insight rendering conditional on meaningful content.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. UPDATED: Uses unified border styling
 // 4. TYPOGRAPHY: Standardized text sizes (removed text-[10px], text-[11px])
 // 5. STATUS: UI Insight Redundancy Resolved.
 
@@ -76,7 +76,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
     const hotItem = useMemo(() => signals.find(s => s.type === 'bestseller'), [signals]);
 
     return (
-        <div className="bg-surface/50 border border-border-main rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm">
+        <div className="bg-surface/50 border border-border-strong rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[60px] group-hover:bg-primary/10 transition-colors" />
             
             <div className="flex justify-between items-start mb-6 relative z-10">
@@ -99,7 +99,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                             {t('dashboard.pulse.eodForecast', 'Parashikimi mbylljes')}
                         </span>
                     </div>
-                    <div className="mt-3 h-1.5 w-full bg-border-main rounded-full overflow-hidden">
+                    <div className="mt-3 h-1.5 w-full bg-border-strong rounded-full overflow-hidden">
                         <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${Math.min((currentSales / (projection || 1)) * 100, 100)}%` }}
@@ -112,7 +112,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                     </p>
                 </div>
 
-                <div className="bg-surface border border-border-main rounded-2xl p-4 backdrop-blur-md">
+                <div className="bg-surface border border-border-strong rounded-2xl p-4 backdrop-blur-md">
                     {hotItem ? (
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-danger/10 rounded-xl text-danger"><TrendingUp size={16} /></div>
@@ -147,7 +147,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                 </div>
 
                 {insight && (
-                    <div className="pt-4 border-t border-border-main">
+                    <div className="pt-4 border-t border-border-strong">
                         <div className="flex items-start gap-2">
                             <div className="mt-0.5 p-1 bg-primary/20 rounded text-primary">
                                 <Info size={12} />

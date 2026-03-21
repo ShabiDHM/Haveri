@@ -1,14 +1,13 @@
 // FILE: src/pages/AccountPage.tsx
-// PHOENIX PROTOCOL - I18N ALIGNMENT V2.0
-// 1. I18N FIX: Replaced all hardcoded labels with t() function calls using the 'account' namespace for consistency.
-// 2. VERIFIED: All password change and account deletion functionality is preserved.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - I18N ALIGNMENT V3.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling and Panel component
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { User, Lock, Trash2, Save, Loader2 } from 'lucide-react';
+import { Panel } from '../components/ui/Panel';
 
 const AccountPage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -58,34 +57,34 @@ const AccountPage: React.FC = () => {
         
         <div className="grid gap-8">
             {/* Profile Info */}
-            <div className="card-panel p-6">
+            <Panel className="p-6">
                 <h3 className="text-xl font-semibold text-text-primary mb-6 flex items-center gap-2">
                     <User className="text-primary" /> {t('account.profileInfo')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm text-text-secondary mb-1">{t('account.username')}</label>
-                        <div className="px-4 py-2 bg-surface rounded-lg text-text-primary border border-border-main">
+                        <div className="px-4 py-2 bg-surface rounded-lg text-text-primary border border-border-strong">
                             {user.username}
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm text-text-secondary mb-1">{t('account.email')}</label>
-                        <div className="px-4 py-2 bg-surface rounded-lg text-text-primary border border-border-main">
+                        <div className="px-4 py-2 bg-surface rounded-lg text-text-primary border border-border-strong">
                             {user.email}
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm text-text-secondary mb-1">{t('account.role')}</label>
-                        <div className="px-4 py-2 bg-surface rounded-lg text-text-primary border border-border-main capitalize">
+                        <div className="px-4 py-2 bg-surface rounded-lg text-text-primary border border-border-strong capitalize">
                             {user.role.toLowerCase()}
                         </div>
                     </div>
                 </div>
-            </div>
+            </Panel>
 
             {/* Password Change */}
-            <div className="card-panel p-6">
+            <Panel className="p-6">
                 <h3 className="text-xl font-semibold text-text-primary mb-6 flex items-center gap-2">
                     <Lock className="text-primary" /> {t('account.security')}
                 </h3>
@@ -119,7 +118,7 @@ const AccountPage: React.FC = () => {
                         {t('general.save')}
                     </button>
                 </form>
-            </div>
+            </Panel>
 
             {/* Danger Zone */}
             <div className="bg-danger/10 p-6 rounded-2xl border border-danger/20">

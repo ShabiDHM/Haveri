@@ -1,8 +1,8 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V4.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - INVENTORY LIST V5.0 (UNIFIED ADMIN AESTHETIC)
 // 1. LOGIC: Implemented automatic sorting. Items with LOWEST stock now appear at the top.
 // 2. UX: This ensures critical items are seen first, as requested.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. UPDATED: Uses unified border styling
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -33,12 +33,12 @@ const ItemCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="group relative flex flex-col justify-between h-full min-h-[13rem] p-5 sm:p-6 rounded-3xl bg-surface/60 border border-border-main hover:border-success-start/30 transition-all duration-300 shadow-sm"
+            className="group relative flex flex-col justify-between h-full min-h-[13rem] p-5 sm:p-6 rounded-3xl bg-surface/60 border border-border-strong hover:border-success-start/30 transition-all duration-300 shadow-sm"
         >
             {/* Top Section */}
             <div>
                 <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
-                    <div className={`p-2.5 sm:p-3 rounded-2xl bg-surface border border-border-main ${isPos ? 'text-primary' : 'text-success-start'}`}>
+                    <div className={`p-2.5 sm:p-3 rounded-2xl bg-surface border border-border-strong ${isPos ? 'text-primary' : 'text-success-start'}`}>
                         {isPos ? <Layers size={18} /> : <Package size={18} />}
                     </div>
                     {isLowStock && (
@@ -59,7 +59,7 @@ const ItemCard: React.FC<{
             </div>
             
             {/* Bottom Section */}
-            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-border-main flex justify-between items-end">
+            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-border-strong flex justify-between items-end">
                 <div>
                     <span className="block text-[10px] sm:text-xs text-text-muted uppercase tracking-wider font-bold">
                         {t('inventory.items.cost', 'Kosto / Njësi')}

@@ -1,7 +1,7 @@
 // FILE: src/components/business/modals/RenameItemModal.tsx
-// PHOENIX PROTOCOL - COMPONENT EXTRACTION V2.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - COMPONENT EXTRACTION V3.0 (UNIFIED ADMIN AESTHETIC)
 // Modal for renaming items.
-// UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// UPDATED: Uses unified border styling
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -34,7 +34,7 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({ item, onClose,
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-            <div className="bg-glass backdrop-blur-xl border border-border-main rounded-3xl w-full max-w-sm p-5 sm:p-8 shadow-xl scale-100">
+            <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-3xl w-full max-w-sm p-5 sm:p-8 shadow-xl scale-100">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-text-primary">{t('documentsPanel.renameTitle')}</h3>
                     <button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24}/></button>

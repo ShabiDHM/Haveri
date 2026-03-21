@@ -1,8 +1,6 @@
 // FILE: src/components/ContactModal.tsx
-// PHOENIX PROTOCOL - REAL API INTEGRATION V2.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. LOGIC: Switched from 'setTimeout' to 'apiService.sendContactForm'.
-// 2. UX: Added error handling and loading states.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - REAL API INTEGRATION V3.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,9 +54,9 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-glass backdrop-blur-xl border border-border-main rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
+        className="bg-glass backdrop-blur-xl border border-border-strong rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
       >
-        <div className="p-5 border-b border-border-main flex justify-between items-center bg-surface/50">
+        <div className="p-5 border-b border-border-strong flex justify-between items-center bg-surface/50">
           <h2 className="text-lg sm:text-xl font-bold text-text-primary flex items-center gap-2">
             <MessageSquare className="text-primary h-5 w-5" />
             {t('footer.contactSupport', 'Kontakto Mbështetjen')}

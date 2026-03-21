@@ -1,9 +1,6 @@
 // FILE: src/pages/LoginPage.tsx
-// PHOENIX PROTOCOL - LOGIN PAGE V4.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. STYLE: Applied Phoenix Glassmorphism to the login panel and form elements using design system variables.
-// 2. CONSISTENCY: Aligned fonts, colors, and spacing with the new UI standard.
-// 3. UX: Enhanced visual feedback on all interactive elements.
-// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - LOGIN PAGE V5.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -50,7 +47,7 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-canvas p-4 font-sans">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none" />
         
-        <div className="relative max-w-md w-full space-y-8 p-8 bg-glass backdrop-blur-xl rounded-3xl border border-border-main shadow-xl">
+        <div className="relative max-w-md w-full space-y-8 p-8 bg-glass backdrop-blur-xl rounded-3xl border border-border-strong shadow-xl">
             <div className="flex justify-center">
                 <BrandLogo />
             </div>

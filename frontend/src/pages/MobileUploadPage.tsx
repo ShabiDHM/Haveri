@@ -1,9 +1,6 @@
 // FILE: frontend/src/pages/MobileUploadPage.tsx
-// PHOENIX PROTOCOL - MOBILE UPLOAD V2.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. FEATURE: A standalone, lightweight page for mobile devices to upload files via a tokenized URL.
-// 2. UI/UX: Provides clear, immediate feedback on the upload status (uploading, success, error).
-// 3. LOGIC: Uses URL parameters to get the session token and posts the selected file to the handoff endpoint.
-// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - MOBILE UPLOAD V3.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
@@ -87,7 +84,7 @@ const MobileUploadPage: React.FC = () => {
 
     return (
         <div className="bg-canvas text-text-primary min-h-screen flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md bg-glass backdrop-blur-xl rounded-3xl p-8 flex flex-col items-center justify-center text-center border border-border-main shadow-lg">
+            <div className="w-full max-w-md bg-glass backdrop-blur-xl rounded-3xl p-8 flex flex-col items-center justify-center text-center border border-border-strong shadow-lg">
                 {renderContent()}
             </div>
             <input 

@@ -1,8 +1,8 @@
 // FILE: src/components/business/archive/ArchiveCard.tsx
-// PHOENIX PROTOCOL - ARCHIVE CARD V2.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - ARCHIVE CARD V3.0 (UNIFIED ADMIN AESTHETIC)
 // 1. REMOVED: 'Zap' icon to keep Forensic Accountant localized in Finance.
 // 2. KEPT: All other functional icons (Share, Rename, View, Download, Delete).
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. UPDATED: Uses unified border styling
 // 4. STATUS: Clean and logically correct.
 
 import React from 'react';
@@ -47,12 +47,12 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
     const { t } = useTranslation();
 
     return (
-        <div onClick={onClick} className={`group relative flex flex-col justify-between h-full min-h-[12rem] sm:min-h-[14rem] p-4 sm:p-6 rounded-2xl transition-all duration-300 cursor-pointer bg-surface/40 backdrop-blur-md border border-border-main shadow-sm hover:shadow-md hover:bg-surface/60 hover:-translate-y-1 hover:scale-[1.01]`}>
+        <div onClick={onClick} className={`group relative flex flex-col justify-between h-full min-h-[12rem] sm:min-h-[14rem] p-4 sm:p-6 rounded-2xl transition-all duration-300 cursor-pointer bg-surface/40 backdrop-blur-md border border-border-strong shadow-sm hover:shadow-md hover:bg-surface/60 hover:-translate-y-1 hover:scale-[1.01]`}>
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             <div>
                 <div className="flex flex-col mb-3 sm:mb-4 relative z-10">
                     <div className="flex justify-between items-start gap-2">
-                        <div className="p-2 sm:p-2.5 rounded-xl bg-surface border border-border-main group-hover:scale-110 transition-transform duration-300">
+                        <div className="p-2 sm:p-2.5 rounded-xl bg-surface border border-border-strong group-hover:scale-110 transition-transform duration-300">
                             {icon}
                         </div>
                         {isShared && (
@@ -70,7 +70,7 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                     </div>
                 </div>
                 <div className="flex flex-col mb-4 sm:mb-6 relative z-10">
-                    <div className="flex items-center gap-2 mb-2 sm:mb-3 pb-2 border-b border-border-main">
+                    <div className="flex items-center gap-2 mb-2 sm:mb-3 pb-2 border-b border-border-strong">
                         <Info className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-primary" />
                         <span className="text-xs sm:text-sm font-bold text-text-secondary uppercase tracking-wider">{isFolder ? t('archive.contents') : t('archive.details')}</span>
                     </div>
@@ -86,7 +86,7 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                     </div>
                 </div>
             </div>
-            <div className="relative z-10 pt-3 sm:pt-4 border-t border-border-main flex items-center justify-between min-h-[2.5rem] sm:min-h-[3rem]">
+            <div className="relative z-10 pt-3 sm:pt-4 border-t border-border-strong flex items-center justify-between min-h-[2.5rem] sm:min-h-[3rem]">
                 <span className="text-xs sm:text-sm font-medium text-primary group-hover:text-primary/80 transition-colors flex items-center gap-1">{isFolder ? t('archive.openFolder') : ''}</span>
                 
                 <div className="flex gap-1 items-center flex-wrap justify-end">

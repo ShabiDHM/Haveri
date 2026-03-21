@@ -1,7 +1,6 @@
 // FILE: src/pages/AcceptInvitePage.tsx
-// PHOENIX PROTOCOL - INVITATION LANDING PAGE V2.0
-// 1. FEATURE: Handles the 'Accept Invite' flow. Captures token from URL, validates password input, and calls API.
-// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - INVITATION LANDING PAGE V3.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
@@ -79,7 +78,7 @@ const AcceptInvitePage: React.FC = () => {
                     </p>
                 </div>
 
-                <div className="bg-glass backdrop-blur-xl border border-border-main rounded-3xl p-8 shadow-lg">
+                <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-3xl p-8 shadow-lg">
                     {success ? (
                         <div className="text-center py-8">
                             <div className="w-16 h-16 bg-success-start/20 rounded-full flex items-center justify-center mx-auto mb-4 text-success-start">

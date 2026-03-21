@@ -1,11 +1,6 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - WORKSPACE HUB V20.2 (CONSISTENT TYPOGRAPHY)
-// 1. FEATURE: Integrated with AuthContext 'workspace' singleton.
-// 2. REBRAND: Global terminology shift from Case to Workspace.
-// 3. OPTIMIZATION: Removed redundant API calls and local loading states.
-// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 5. TYPOGRAPHY: Standardized text sizes for consistent hierarchy
-// 6. STATUS: Fully synchronized.
+// PHOENIX PROTOCOL - WORKSPACE HUB V21.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';

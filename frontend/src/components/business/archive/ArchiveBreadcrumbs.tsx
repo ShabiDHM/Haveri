@@ -1,7 +1,7 @@
 // FILE: src/components/business/archive/ArchiveBreadcrumbs.tsx
-// PHOENIX PROTOCOL - COMPONENT EXTRACTION V2.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - COMPONENT EXTRACTION V3.0 (UNIFIED ADMIN AESTHETIC)
 // Handles breadcrumb navigation.
-// UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// UPDATED: Uses unified border styling
 
 import React from 'react';
 import { Home, Briefcase, FolderOpen, ChevronRight } from 'lucide-react';
@@ -28,7 +28,7 @@ export const ArchiveBreadcrumbs: React.FC<ArchiveBreadcrumbsProps> = ({ breadcru
                         {crumb.type === 'ROOT' ? <Home size={14} /> : crumb.type === 'WORKSPACE' ? <Briefcase size={14} /> : <FolderOpen size={14} />}
                         {crumb.name}
                     </button>
-                    {index < breadcrumbs.length - 1 && <ChevronRight size={14} className="text-border-main flex-shrink-0" />}
+                    {index < breadcrumbs.length - 1 && <ChevronRight size={14} className="text-border-strong flex-shrink-0" />}
                 </React.Fragment>
             ))}
         </div>

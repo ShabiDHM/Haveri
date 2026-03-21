@@ -1,8 +1,8 @@
 // FILE: src/components/modals/EventDetailModal.tsx
-// PHOENIX PROTOCOL - WORKSPACE ALIGNMENT V4.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - WORKSPACE ALIGNMENT V5.0 (UNIFIED ADMIN AESTHETIC)
 // 1. REBRAND: Renamed 'Case' to 'Workspace' across interfaces and logic.
 // 2. FIXED: Updated property access to use 'workspace_id'.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. UPDATED: Uses unified border styling
 // 4. STATUS: Fully synchronized with rebranding.
 
 import React, { useState } from 'react';
@@ -37,7 +37,7 @@ const getEventStyle = (type: string) => {
       case 'APPOINTMENT': return { border: 'border-primary/50', bg: 'bg-primary/10', text: 'text-primary', icon: <Handshake size={32} className="text-primary" /> };
       case 'TASK': return { border: 'border-success-start/50', bg: 'bg-success-start/10', text: 'text-success-start', icon: <CheckSquare size={32} className="text-success-start" /> };
       case 'PERSONAL': return { border: 'border-text-muted/50', bg: 'bg-text-muted/10', text: 'text-text-secondary', icon: <Users size={32} className="text-text-muted" /> };
-      default: return { border: 'border-border-main/50', bg: 'bg-surface', text: 'text-text-secondary', icon: <CalendarIcon size={32} className="text-text-muted" /> };
+      default: return { border: 'border-border-strong/50', bg: 'bg-surface', text: 'text-text-secondary', icon: <CalendarIcon size={32} className="text-text-muted" /> };
     }
 };
 
@@ -88,8 +88,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClo
                             <h2 className="text-2xl font-bold text-text-primary mb-2">{event.title}</h2>
                             <div className="flex flex-wrap gap-2">
                                 <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider ${style.bg} ${style.text} border ${style.border}`}>{t(`calendar.types.${rawEvent.event_type}`, rawEvent.event_type)}</span>
-                                {rawEvent.priority && <span className="text-xs px-3 py-1 rounded-full border border-border-main bg-surface text-text-secondary font-bold uppercase tracking-wider">{t(`calendar.priorities.${rawEvent.priority}`)}</span>}
-                                {relatedWorkspace && <span className="text-xs px-3 py-1 rounded-full border border-border-main bg-surface text-text-secondary font-bold flex items-center gap-2"><Briefcase size={14}/> {relatedWorkspace.title}</span>}
+                                {rawEvent.priority && <span className="text-xs px-3 py-1 rounded-full border border-border-strong bg-surface text-text-secondary font-bold uppercase tracking-wider">{t(`calendar.priorities.${rawEvent.priority}`)}</span>}
+                                {relatedWorkspace && <span className="text-xs px-3 py-1 rounded-full border border-border-strong bg-surface text-text-secondary font-bold flex items-center gap-2"><Briefcase size={14}/> {relatedWorkspace.title}</span>}
                             </div>
                         </div>
                     </div>
@@ -97,16 +97,16 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClo
                 </div>
 
                 <div className="space-y-6">
-                    {rawEvent.description && (<div className="bg-surface p-4 rounded-xl border border-border-main"><h3 className="text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.detailModal.description')}</h3><p className="text-text-secondary text-sm leading-relaxed">{rawEvent.description}</p></div>)}
+                    {rawEvent.description && (<div className="bg-surface p-4 rounded-xl border border-border-strong"><h3 className="text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.detailModal.description')}</h3><p className="text-text-secondary text-sm leading-relaxed">{rawEvent.description}</p></div>)}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div><h3 className="text-xs font-bold text-text-muted uppercase mb-1">{t('calendar.detailModal.startDate')}</h3><div className="flex items-center text-text-primary gap-3"><Clock className="h-4 w-4 text-primary" />{formatEventDate(rawEvent.start_date)}</div></div>
                         {rawEvent.end_date && rawEvent.end_date !== rawEvent.start_date && <div><h3 className="text-xs font-bold text-text-muted uppercase mb-1">{t('calendar.detailModal.endDate')}</h3><div className="flex items-center text-text-primary gap-3"><Clock className="h-4 w-4 text-primary" />{formatEventDate(rawEvent.end_date)}</div></div>}
                     </div>
                     {rawEvent.location && <div><h3 className="text-xs font-bold text-text-muted uppercase mb-1">{t('calendar.detailModal.location')}</h3><div className="flex items-center text-text-primary gap-3"><MapPin className="h-4 w-4 text-primary" />{rawEvent.location}</div></div>}
-                    {rawEvent.attendees && rawEvent.attendees.length > 0 && (<div><h3 className="text-xs font-bold text-text-muted uppercase mb-1">{t('calendar.detailModal.attendees')}</h3><div className="flex flex-wrap gap-2 mt-2">{rawEvent.attendees.map((att, i) => (<span key={i} className="flex items-center text-sm bg-surface px-3 py-1.5 rounded-lg border border-border-main text-text-secondary"><Users className="h-4 w-4 mr-2" />{att}</span>))}</div></div>)}
+                    {rawEvent.attendees && rawEvent.attendees.length > 0 && (<div><h3 className="text-xs font-bold text-text-muted uppercase mb-1">{t('calendar.detailModal.attendees')}</h3><div className="flex flex-wrap gap-2 mt-2">{rawEvent.attendees.map((att, i) => (<span key={i} className="flex items-center text-sm bg-surface px-3 py-1.5 rounded-lg border border-border-strong text-text-secondary"><Users className="h-4 w-4 mr-2" />{att}</span>))}</div></div>)}
                     {rawEvent.notes && (<div><h3 className="text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.detailModal.notes')}</h3><p className="text-text-muted italic text-sm">{rawEvent.notes}</p></div>)}
                 </div>
-                <div className="flex space-x-4 mt-10 pt-6 border-t border-border-main">
+                <div className="flex space-x-4 mt-10 pt-6 border-t border-border-strong">
                     <button onClick={onClose} className="flex-1 px-4 py-3 rounded-xl bg-surface text-text-secondary hover:bg-hover transition font-medium">{t('calendar.detailModal.close')}</button>
                     {onUpdate && <button onClick={handleDelete} disabled={isDeleting} className="flex-1 px-4 py-3 bg-danger/10 hover:bg-danger/20 text-danger border border-danger/20 rounded-xl transition font-medium disabled:opacity-50">{isDeleting ? t('general.loading') : t('calendar.detailModal.delete')}</button>}
                 </div>

@@ -1,9 +1,6 @@
 // FILE: src/components/BrandLogo.tsx
-// PHOENIX PROTOCOL - PLATFORM IDENTITY V5.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. REMOVED: All dynamic props ('firmName', 'logoUrl') have been removed.
-// 2. MODIFIED: The component now permanently renders the 'Haveri AI' name and Brain icon.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 4. REASON: This guarantees brand consistency across the entire application and removes complex, fragile state dependencies.
+// PHOENIX PROTOCOL - PLATFORM IDENTITY V6.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React from 'react';
 import { Brain } from 'lucide-react';
@@ -19,7 +16,7 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
 }) => {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className="w-8 h-8 flex-shrink-0 bg-surface border border-border-main rounded-lg flex items-center justify-center shadow-sm overflow-hidden">
+      <div className="w-8 h-8 flex-shrink-0 bg-surface border border-border-strong rounded-lg flex items-center justify-center shadow-sm overflow-hidden">
         <Brain className="w-5 h-5 text-primary" />
       </div>
       

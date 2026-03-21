@@ -1,8 +1,6 @@
 // FILE: src/components/DayEventsModal.tsx
-// PHOENIX PROTOCOL - TYPE ALIGNMENT V2.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. FIX: Changed 'event.start_time' to 'event.start_date' to match the 'CalendarEvent' type.
-// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 3. STATUS: Type error resolved.
+// PHOENIX PROTOCOL - TYPE ALIGNMENT V3.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -41,9 +39,9 @@ const DayEventsModal: React.FC<DayEventsModalProps> = ({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-md bg-glass backdrop-blur-xl border border-border-main rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[80vh]"
+        className="w-full max-w-md bg-glass backdrop-blur-xl border border-border-strong rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[80vh]"
       >
-        <div className="p-6 border-b border-border-main bg-surface/30 flex justify-between items-center shrink-0">
+        <div className="p-6 border-b border-border-strong bg-surface/30 flex justify-between items-center shrink-0">
           <div>
             <h2 className="text-xl font-bold text-text-primary capitalize">{dateString}</h2>
             <p className="text-sm text-text-muted mt-1">
@@ -67,7 +65,7 @@ const DayEventsModal: React.FC<DayEventsModalProps> = ({
             events.map((event) => (
               <div 
                 key={event.id} 
-                className="bg-surface/30 border border-border-main hover:border-border-main rounded-xl p-4 transition-all group"
+                className="bg-surface/30 border border-border-strong hover:border-border-strong rounded-xl p-4 transition-all group"
               >
                 <div className="flex items-start gap-3">
                   <div className={`mt-1.5 w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] ${priorityColors[event.priority as keyof typeof priorityColors] || 'bg-text-muted'}`} />
@@ -94,7 +92,7 @@ const DayEventsModal: React.FC<DayEventsModalProps> = ({
             ))
           )}
         </div>
-        <div className="p-4 border-t border-border-main bg-surface/30 shrink-0 flex gap-3">
+        <div className="p-4 border-t border-border-strong bg-surface/30 shrink-0 flex gap-3">
             <button 
                 onClick={onAddEvent}
                 className="flex-1 btn-primary py-3 rounded-xl text-sm flex items-center justify-center gap-2"

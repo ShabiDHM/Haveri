@@ -1,8 +1,8 @@
 // FILE: src/components/business/insights/ForensicAccountantModal.tsx
-// PHOENIX PROTOCOL - FORENSIC MODAL V3.0 (ENHANCED BORDERS)
+// PHOENIX PROTOCOL - FORENSIC MODAL V4.0 (UNIFIED ADMIN AESTHETIC)
 // 1. ADDED: Colored top accent bar for better visual hierarchy
 // 2. ENHANCED: Stronger borders with hover effects
-// 3. UPDATED: Uses new design system CSS variables
+// 3. UPDATED: Uses unified border styling
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -114,11 +114,11 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
     return (
         <AnimatePresence>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
-                <motion.div initial={{ scale: 0.98, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.98, y: 20 }} className="bg-glass backdrop-blur-xl border border-border-main rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-xl flex flex-col overflow-hidden relative">
+                <motion.div initial={{ scale: 0.98, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.98, y: 20 }} className="bg-glass backdrop-blur-xl border border-border-strong rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-xl flex flex-col overflow-hidden relative">
                     {/* Colored top accent bar */}
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60" />
                     
-                    <div className="p-4 border-b border-border-main bg-gradient-to-r from-primary/40 to-surface flex justify-between items-center shrink-0">
+                    <div className="p-4 border-b border-border-strong bg-gradient-to-r from-primary/40 to-surface flex justify-between items-center shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 bg-primary/20 rounded-xl text-primary border border-primary/30 shadow-sm"><ShieldCheck size={24} /></div>
                             <div>
@@ -132,14 +132,14 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                             <button 
                                 onClick={handleSaveToArchive} 
                                 disabled={!lastMessageIsCompleteAI || isSaving} 
-                                className={`p-2.5 rounded-xl transition-all flex items-center gap-2 ${saveSuccess ? 'text-success-start bg-success-start/10 border border-success-start/30' : 'text-text-muted hover:text-text-primary hover:bg-hover border border-border-main'} disabled:opacity-30 disabled:cursor-not-allowed`}
+                                className={`p-2.5 rounded-xl transition-all flex items-center gap-2 ${saveSuccess ? 'text-success-start bg-success-start/10 border border-success-start/30' : 'text-text-muted hover:text-text-primary hover:bg-hover border border-border-strong'} disabled:opacity-30 disabled:cursor-not-allowed`}
                                 title={t('forensic.save_to_archive', 'Ruaj në Arkivë')}
                             >
                                 {isSaving ? <Loader2 size={22} className="animate-spin" /> : saveSuccess ? <CheckCircle size={22} /> : <FolderInput size={22} />}
                             </button>
                             
-                            <button onClick={clearChat} disabled={isStreaming} className="p-2.5 hover:bg-hover rounded-xl text-text-muted hover:text-danger transition-all border border-border-main disabled:opacity-20" title={t('general.clear')}><Trash2 size={22} /></button>
-                            <button onClick={onClose} className="p-2.5 hover:bg-hover rounded-xl text-text-muted hover:text-text-primary transition-all border border-border-main"><X size={24}/></button>
+                            <button onClick={clearChat} disabled={isStreaming} className="p-2.5 hover:bg-hover rounded-xl text-text-muted hover:text-danger transition-all border border-border-strong disabled:opacity-20" title={t('general.clear')}><Trash2 size={22} /></button>
+                            <button onClick={onClose} className="p-2.5 hover:bg-hover rounded-xl text-text-muted hover:text-text-primary transition-all border border-border-strong"><X size={24}/></button>
                         </div>
                     </div>
 
@@ -147,7 +147,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                         {messages.map((msg, idx) => (
                             msg.content !== '' && (
                                 <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[90%] p-4 rounded-2xl text-base shadow-sm leading-relaxed border ${msg.role === 'user' ? 'bg-primary text-inverse rounded-tr-none border-primary/40' : 'bg-surface text-text-secondary rounded-tl-none border-border-main hover:border-primary/30 transition-colors'}`}>
+                                    <div className={`max-w-[90%] p-4 rounded-2xl text-base shadow-sm leading-relaxed border ${msg.role === 'user' ? 'bg-primary text-inverse rounded-tr-none border-primary/40' : 'bg-surface text-text-secondary rounded-tl-none border-border-strong hover:border-primary/30 transition-colors'}`}>
                                         {msg.role === 'ai' ? <MarkdownRenderer content={msg.content} /> : msg.content}
                                     </div>
                                 </motion.div>
@@ -165,7 +165,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                         <div ref={messagesEndRef} />
                     </div>
 
-                    <form onSubmit={handleSend} className="p-4 border-t border-border-main bg-surface shrink-0">
+                    <form onSubmit={handleSend} className="p-4 border-t border-border-strong bg-surface shrink-0">
                         <div className="relative flex items-center gap-3">
                             <div className="relative flex-1">
                                 <input type="text" autoFocus value={input} onChange={(e) => setInput(e.target.value)} placeholder={t('forensic.placeholder')} className="glass-input w-full pr-16 py-3.5 text-base" />

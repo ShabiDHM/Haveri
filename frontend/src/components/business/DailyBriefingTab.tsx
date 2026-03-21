@@ -1,10 +1,6 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V6.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. FIXED: Charts now pivot based on 'selectedYear' using server-side analytics.
-// 2. FIXED: Removed redundant/blind API calls to unify data state across tabs.
-// 3. FIXED: Aligned Peak Traffic analysis with the selected Fiscal Year.
-// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 5. STATUS: Dashboard UI Fully Synchronized.
+// PHOENIX PROTOCOL - DASHBOARD V7.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses Panel component, unified border styling
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +17,7 @@ import { Workspace, UIAgendaItem, SalesTrendPoint } from '../../data/types';
 import { BusinessRhythmCard, DailySalesData } from './briefing/BusinessRhythmCard';
 import { BusinessPulseCard } from './briefing/BusinessPulseCard';
 import { SmartAgendaCard } from './briefing/SmartAgendaCard';
+import { Panel } from '../ui/Panel';
 
 export const DailyBriefingTab: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -160,7 +157,8 @@ export const DailyBriefingTab: React.FC = () => {
                 {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={handleEventUpdate} workspaces={workspaces} />}
             </AnimatePresence>
             
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/80 to-surface border border-border-main p-6 sm:p-10 text-center sm:text-left shadow-xl">
+            {/* Hero Header - Using Panel */}
+            <Panel className="p-6 sm:p-10 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-40 bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
                 <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
@@ -177,8 +175,9 @@ export const DailyBriefingTab: React.FC = () => {
                         <div className="text-2xl text-text-primary font-mono font-bold tracking-tight">{finalDate}</div>
                     </div>
                 </div>
-            </div>
+            </Panel>
 
+            {/* Three Column Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
                     <BusinessRhythmCard 
@@ -196,11 +195,12 @@ export const DailyBriefingTab: React.FC = () => {
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-6">
+                    {/* Inbox Card - Using Panel styling via custom class */}
                     <motion.div 
                         whileHover={{ scale: 1.02, y: -2 }} 
                         whileTap={{ scale: 0.98 }} 
                         onClick={() => navigate('/business/inbox')} 
-                        className="group relative bg-surface/60 hover:bg-surface/80 border border-border-main rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md"
+                        className="group relative bg-surface/60 hover:bg-surface/80 border border-border-strong rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md"
                     >
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">

@@ -1,9 +1,6 @@
 // FILE: src/pages/DocumentViewPage.tsx
-// PHOENIX PROTOCOL - MOBILE OPTIMIZATION V2.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. RESPONSIVE GRID: Switched from fixed 'grid-cols-3' to 'grid-cols-1 lg:grid-cols-3'.
-// 2. STACKING: Details panel now stacks above content on mobile.
-// 3. CONTENT HEIGHT: Adjusted content box height for mobile usability.
-// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - MOBILE OPTIMIZATION V3.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
@@ -101,13 +98,13 @@ const DocumentViewPage: React.FC = () => {
 
   return (
     <motion.div 
-        className="space-y-6 p-4 sm:p-6 bg-card rounded-2xl shadow-sm h-full overflow-y-auto" 
+        className="space-y-6 p-4 sm:p-6 h-full overflow-y-auto" 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         transition={{ duration: 0.3 }}
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border-main pb-4 gap-4 sm:gap-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border-strong pb-4 gap-4 sm:gap-0">
         <div className="flex flex-col w-full sm:w-auto">
             <Link to={`/case/${caseId}`} className="text-sm text-primary hover:text-primary-hover transition-colors mb-2 flex items-center space-x-2">
               <ArrowLeft size={16} /> <span>{t('documentView.backToCase')}</span>
@@ -140,7 +137,7 @@ const DocumentViewPage: React.FC = () => {
         <div className="col-span-1 space-y-6">
             <div className="space-y-2">
                 <h3 className="text-lg font-semibold text-text-primary">{t('documentView.details')}</h3>
-                <div className="bg-surface p-4 rounded-xl space-y-2 border border-border-main">
+                <div className="bg-surface p-4 rounded-xl space-y-2 border border-border-strong">
                     <p className="text-sm text-text-secondary break-words"><strong>{t('documentView.fileName')}:</strong> <span className="text-text-primary">{docDetails.file_name}</span></p>
                     <p className="text-sm text-text-secondary"><strong>{t('documentView.uploadedAt')}:</strong> <span className="text-text-primary">{moment(docDetails.created_at).format('YYYY-MM-DD HH:mm')}</span></p>
                     <p className="text-sm text-text-secondary"><strong>{t('documentView.fileType')}:</strong> <span className="text-text-primary">{docDetails.mime_type}</span></p>
@@ -149,7 +146,7 @@ const DocumentViewPage: React.FC = () => {
             
             <div className="space-y-2">
                 <h3 className="text-lg font-semibold text-text-primary">{t('documentView.summary')}</h3>
-                <div className="bg-surface p-4 rounded-xl min-h-[150px] text-text-primary text-sm sm:text-base border border-border-main">
+                <div className="bg-surface p-4 rounded-xl min-h-[150px] text-text-primary text-sm sm:text-base border border-border-strong">
                     {isProcessed && docDetails.summary ? (
                         <span className="italic">{docDetails.summary}</span>
                     ) : (
@@ -164,7 +161,7 @@ const DocumentViewPage: React.FC = () => {
         {/* Content Area */}
         <div className="col-span-1 lg:col-span-2 space-y-2">
             <h3 className="text-lg font-semibold text-text-primary">{t('documentView.extractedContent')}</h3>
-            <div className="bg-surface p-4 rounded-xl h-[50vh] sm:h-[70vh] overflow-y-auto text-text-primary whitespace-pre-wrap font-mono text-xs sm:text-sm custom-scrollbar border border-border-main">
+            <div className="bg-surface p-4 rounded-xl h-[50vh] sm:h-[70vh] overflow-y-auto text-text-primary whitespace-pre-wrap font-mono text-xs sm:text-sm custom-scrollbar border border-border-strong">
                 {content ? content : (
                     <div className="text-center text-text-muted py-10">
                         {isProcessed ? t('documentView.noContentFound') : t('documentView.contentProcessing')}

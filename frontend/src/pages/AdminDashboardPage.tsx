@@ -1,8 +1,6 @@
 // FILE: src/pages/AdminDashboardPage.tsx
-// PHOENIX PROTOCOL - ADMIN DASHBOARD V3.2 (DESIGN SYSTEM ALIGNMENT)
-// 1. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 2. PRESERVED: All admin functionality (user management, plan tiers, expiry dates, etc.)
-// 3. STATUS: Fully aligned with TypeScript definitions.
+// PHOENIX PROTOCOL - ADMIN DASHBOARD V4.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +8,7 @@ import { Users, Search, Edit2, Trash2, CheckCircle, Loader2, Clock, Shield, Brie
 import { motion } from 'framer-motion';
 import { apiService } from '../services/api';
 import { User, UpdateUserRequest } from '../data/types';
+import { Panel } from '../components/ui/Panel';
 
 // Extend the type locally to include the new fields if they aren't in the global type yet
 interface ExtendedUpdateUserRequest extends UpdateUserRequest {
@@ -134,19 +133,21 @@ const AdminDashboardPage: React.FC = () => {
                 <p className="text-text-secondary">{t('admin.subtitle', 'Menaxhimi i përdoruesve dhe sistemit.')}</p>
             </div>
 
+            {/* Stats Cards - Using Panel component */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="card-panel p-6 flex items-center justify-between">
+                <Panel className="p-6 flex items-center justify-between">
                     <div><p className="text-text-secondary text-sm font-medium">{t('admin.totalUsers', 'Total Përdorues')}</p><h3 className="text-3xl font-bold text-text-primary">{users.length}</h3></div>
                     <div className="p-3 rounded-xl bg-primary/20 text-primary"><Users /></div>
-                </div>
-                <div className="card-panel p-6 flex items-center justify-between">
+                </Panel>
+                <Panel className="p-6 flex items-center justify-between">
                     <div><p className="text-text-secondary text-sm font-medium">{t('admin.pendingApproval', 'Në Pritje')}</p><h3 className="text-3xl font-bold text-warning-start">{users.filter(u => u.status !== 'active').length}</h3></div>
                     <div className="p-3 rounded-xl bg-warning-start/20 text-warning-start"><Clock /></div>
-                </div>
+                </Panel>
             </div>
 
-            <div className="card-panel overflow-hidden">
-                <div className="p-4 border-b border-border-main flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            {/* Users Table Panel */}
+            <Panel className="overflow-hidden">
+                <div className="p-4 border-b border-border-strong flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h3 className="text-lg font-semibold text-text-primary">{t('admin.registeredUsers', 'Përdoruesit e Regjistruar')}</h3>
                     <div className="relative w-full sm:w-auto">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
@@ -173,7 +174,7 @@ const AdminDashboardPage: React.FC = () => {
                                 <th className="px-6 py-3 text-right font-semibold tracking-wider">{t('general.actions', 'Veprime')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-border-main">
+                        <tbody className="divide-y divide-border-strong">
                             {filteredUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-hover transition-colors">
                                     <td className="px-6 py-4">
@@ -224,16 +225,17 @@ const AdminDashboardPage: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </Panel>
 
+            {/* Edit User Modal */}
             {editingUser && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <motion.div 
                         initial={{ scale: 0.95, opacity: 0 }} 
                         animate={{ scale: 1, opacity: 1 }} 
-                        className="bg-glass backdrop-blur-xl border border-border-main p-6 rounded-2xl w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto"
+                        className="bg-glass backdrop-blur-xl border border-border-strong p-6 rounded-2xl w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto"
                     >
-                        <h3 className="text-xl font-bold text-text-primary mb-6 border-b border-border-main pb-4">{t('admin.editModal.title', 'Ndrysho Përdoruesin')}</h3>
+                        <h3 className="text-xl font-bold text-text-primary mb-6 border-b border-border-strong pb-4">{t('admin.editModal.title', 'Ndrysho Përdoruesin')}</h3>
                         <form onSubmit={handleUpdateUser} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-medium text-text-muted uppercase mb-1">{t('admin.editModal.username', 'Emri i Përdoruesit')}</label>
@@ -306,7 +308,7 @@ const AdminDashboardPage: React.FC = () => {
                                     <option value="inactive">{t('admin.statuses.INACTIVE', 'Në Pritje')}</option>
                                 </select>
                             </div>
-                            <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-border-main">
+                            <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-border-strong">
                                 <button type="button" onClick={() => setEditingUser(null)} className="px-4 py-2 rounded-lg hover:bg-hover text-text-secondary hover:text-text-primary transition-colors">{t('general.cancel', 'Anulo')}</button>
                                 <button type="submit" className="btn-primary">{t('general.save', 'Ruaj')}</button>
                             </div>

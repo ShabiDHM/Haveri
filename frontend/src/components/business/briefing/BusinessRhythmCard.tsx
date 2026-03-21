@@ -1,7 +1,7 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - RHYTHM CARD V6.0 (CONSISTENT TYPOGRAPHY)
+// PHOENIX PROTOCOL - RHYTHM CARD V7.0 (UNIFIED ADMIN AESTHETIC)
 // 1. FIXED: Removed static "SOT" text as trend data is now year-aware.
-// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 2. UPDATED: Uses unified border styling
 // 3. TYPOGRAPHY: Standardized text sizes (removed text-[10px], text-[11px])
 // 4. STATUS: UI Label Consistency Achieved.
 
@@ -112,7 +112,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
       };
 
     return (
-        <div className="bg-surface/50 border border-border-main rounded-3xl p-6 relative overflow-hidden h-full flex flex-col justify-between group hover:border-success-start/30 transition-colors duration-500 shadow-sm">
+        <div className="bg-surface/50 border border-border-strong rounded-3xl p-6 relative overflow-hidden h-full flex flex-col justify-between group hover:border-success-start/30 transition-colors duration-500 shadow-sm">
             <div className="absolute top-0 right-0 w-32 h-32 bg-success-start/10 blur-[60px] rounded-full group-hover:bg-success-start/20 transition-all" />
 
             <div className="flex justify-between items-start mb-4 relative z-10">

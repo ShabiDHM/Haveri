@@ -1,8 +1,8 @@
 // FILE: src/components/business/modals/InventoryItemModal.tsx
-// PHOENIX PROTOCOL - INVENTORY INTELLIGENCE V4.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - INVENTORY INTELLIGENCE V5.0 (UNIFIED ADMIN AESTHETIC)
 // 1. FEATURE: Surgically integrated AI Restock and Trend analysis.
 // 2. LOGIC: Preserved existing form layout and Deletion Workflow V2.0.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. UPDATED: Uses unified border styling
 // 4. STATUS: Synchronized with Backend Analysis API.
 
 import React, { useState, useEffect } from 'react';
@@ -96,7 +96,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({ isOpen, 
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-glass backdrop-blur-xl border border-border-main rounded-2xl w-full max-w-md p-5 sm:p-6 max-h-[90vh] overflow-y-auto custom-finance-scroll shadow-xl">
+            <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-2xl w-full max-w-md p-5 sm:p-6 max-h-[90vh] overflow-y-auto custom-finance-scroll shadow-xl">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg sm:text-xl font-bold text-text-primary">
                         {itemToEdit ? t('inventory.items.edit', 'Edit Item') : t('inventory.items.add')}
@@ -110,7 +110,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({ isOpen, 
                 {itemToEdit && (
                     <div className="space-y-4 mb-8">
                         {loadingAI ? (
-                            <div className="flex flex-col items-center py-4 gap-2 bg-surface rounded-xl border border-border-main">
+                            <div className="flex flex-col items-center py-4 gap-2 bg-surface rounded-xl border border-border-strong">
                                 <Loader2 className="animate-spin text-success-start" size={24} />
                                 <span className="text-xs text-text-muted animate-pulse">{t('finance.analyzing')}...</span>
                             </div>
@@ -191,7 +191,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({ isOpen, 
                             />
                         </div>
                     </div>
-                    <div className="flex justify-between items-center gap-3 pt-4 border-t border-border-main">
+                    <div className="flex justify-between items-center gap-3 pt-4 border-t border-border-strong">
                         <div>
                             {itemToEdit && (
                                 <button type="button" onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 text-danger hover:bg-danger/10 rounded-lg transition-colors text-sm font-medium">

@@ -1,8 +1,6 @@
 // FILE: src/pages/SupportPage.tsx
-// PHOENIX PROTOCOL - SUPPORT PAGE V19.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. I18N: Replaced all hardcoded text with dynamic translation keys.
-// 2. STYLE: Preserved the 'Phoenix Glassmorphism' aesthetic using design system variables.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - SUPPORT PAGE V20.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -51,7 +49,7 @@ const SupportPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 auto-rows-fr">
           {/* Left Column */}
           <div className="flex flex-col gap-8">
-            <div className="bg-glass backdrop-blur-md border border-border-main rounded-3xl p-8 shadow-xl flex-1 flex flex-col">
+            <div className="bg-glass backdrop-blur-md border border-border-strong rounded-3xl p-8 shadow-xl flex-1 flex flex-col">
               <h3 className="text-2xl font-bold mb-6 text-text-primary">{t('support.contactInfo', 'Informacion Kontakti')}</h3>
               <div className="space-y-6 text-text-secondary text-lg">
                 <div className="flex items-center gap-4">
@@ -65,7 +63,7 @@ const SupportPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-glass backdrop-blur-md border border-border-main rounded-3xl p-8 shadow-xl flex-1 flex flex-col">
+            <div className="bg-glass backdrop-blur-md border border-border-strong rounded-3xl p-8 shadow-xl flex-1 flex flex-col">
               <h3 className="text-2xl font-bold mb-4 text-text-primary">{t('support.legalInfo', 'Informacione Ligjore')}</h3>
               <p className="text-text-secondary text-sm mb-6 flex-1">{t('support.legalDesc', 'Lexoni politikën tonë të privatësisë për të kuptuar se si i mbrojmë të dhënat tuaja.')}</p>
               <button 
@@ -78,7 +76,7 @@ const SupportPage: React.FC = () => {
           </div>
 
           {/* Right Column: Form */}
-          <div className="bg-glass backdrop-blur-md border border-border-main rounded-3xl p-8 shadow-xl">
+          <div className="bg-glass backdrop-blur-md border border-border-strong rounded-3xl p-8 shadow-xl">
             <h3 className="text-2xl font-bold mb-8 text-text-primary">{t('support.sendMessage', 'Na Dërgoni Mesazh')}</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

@@ -1,8 +1,8 @@
 // FILE: src/components/landing/ProductShowcase.tsx
-// PHOENIX PROTOCOL - SHOWCASE V20.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - SHOWCASE V21.0 (UNIFIED ADMIN AESTHETIC)
 // 1. ADDED: Forensic Auditor AI and Client Portal slides.
 // 2. UI: Updated mockups to reflect real-world Haveri UI (ATK labels, legal citations).
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. UPDATED: Uses unified border styling
 // 4. STATUS: 100% synchronized with Pro features.
 
 import { useState, useEffect } from 'react';
@@ -94,7 +94,7 @@ const ProductShowcase = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                     <div className="space-y-3">
                         {features.map((feature, index) => (
-                            <button key={feature.id} onClick={() => setActiveTab(index)} className={`w-full text-left p-5 rounded-2xl transition-all duration-300 border group ${ activeTab === index ? 'bg-surface/50 border-border-main shadow-lg scale-[1.02]' : 'bg-transparent border-transparent opacity-50 hover:opacity-100'}`}>
+                            <button key={feature.id} onClick={() => setActiveTab(index)} className={`w-full text-left p-5 rounded-2xl transition-all duration-300 border group ${ activeTab === index ? 'bg-surface/50 border-border-strong shadow-lg scale-[1.02]' : 'bg-transparent border-transparent opacity-50 hover:opacity-100'}`}>
                                 <div className="flex items-center gap-4">
                                     <div className={`p-3 rounded-xl bg-gradient-to-br ${feature.color} text-inverse shadow-sm`}>{feature.icon}</div>
                                     <div>
@@ -108,8 +108,8 @@ const ProductShowcase = () => {
                     <div className="relative h-[400px] lg:h-[550px] w-full">
                         <AnimatePresence mode="wait">
                             <motion.div key={activeTab} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }} className="absolute inset-0">
-                                <div className="w-full h-full bg-card rounded-3xl border border-border-main shadow-xl overflow-hidden relative flex flex-col">
-                                    <div className="h-10 bg-surface border-b border-border-main flex items-center px-4 gap-2">
+                                <div className="w-full h-full bg-card rounded-3xl border border-border-strong shadow-xl overflow-hidden relative flex flex-col">
+                                    <div className="h-10 bg-surface border-b border-border-strong flex items-center px-4 gap-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-danger/40" />
                                         <div className="w-2.5 h-2.5 rounded-full bg-warning-start/40" />
                                         <div className="w-2.5 h-2.5 rounded-full bg-success-start/40" />
@@ -137,7 +137,7 @@ const ForensicMockup = () => (
                 <span className="text-xs font-bold text-text-primary uppercase">Gjetje e Auditorit</span>
             </div>
             <p className="text-sm text-text-secondary italic mb-3">"Fatura #2024-001 përmban TVSH 18% për qira banimi."</p>
-            <div className="bg-surface p-2.5 rounded-lg border border-border-main">
+            <div className="bg-surface p-2.5 rounded-lg border border-border-strong">
                 <p className="text-[10px] text-primary font-bold mb-1">REFERENCA LIGJORE:</p>
                 <p className="text-[11px] text-text-muted">Ligji për TVSH, Neni 9, p. 1(p). Lirimi nga tatimi për qiratë e banimit.</p>
             </div>
@@ -147,19 +147,19 @@ const ForensicMockup = () => (
 );
 
 const PortalMockup = () => (
-    <div className="w-full max-w-sm bg-card border border-border-main rounded-2xl overflow-hidden shadow-sm">
-        <div className="p-4 bg-success-start/10 border-b border-border-main flex items-center gap-3">
+    <div className="w-full max-w-sm bg-card border border-border-strong rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-4 bg-success-start/10 border-b border-border-strong flex items-center gap-3">
             <Globe className="text-success-start" size={18} />
             <span className="text-xs font-bold text-text-primary uppercase">Client Portal Hub</span>
         </div>
         <div className="p-4 space-y-3">
-            <div className="h-12 bg-surface rounded-xl border border-border-main flex items-center px-3 justify-between">
+            <div className="h-12 bg-surface rounded-xl border border-border-strong flex items-center px-3 justify-between">
                 <div className="flex items-center gap-2"><div className="w-6 h-6 bg-danger/20 rounded flex items-center justify-center"><FileQuestion size={12} className="text-danger"/></div><span className="text-xs text-text-secondary">Fatura_Janar.pdf</span></div>
                 <div className="text-[10px] font-bold text-success-start uppercase">Shared</div>
             </div>
-            <div className="h-20 bg-surface rounded-xl border border-border-main p-3">
+            <div className="h-20 bg-surface rounded-xl border border-border-strong p-3">
                  <p className="text-[10px] text-text-muted uppercase font-bold mb-1">Dërgo Mesazh</p>
-                 <div className="flex gap-2"><div className="flex-1 h-6 bg-surface rounded border border-border-main" /><div className="w-6 h-6 bg-primary rounded" /></div>
+                 <div className="flex gap-2"><div className="flex-1 h-6 bg-surface rounded border border-border-strong" /><div className="w-6 h-6 bg-primary rounded" /></div>
             </div>
         </div>
     </div>
@@ -167,10 +167,10 @@ const PortalMockup = () => (
 
 const RecipeMockup = () => (
     <div className="w-full max-w-sm space-y-3">
-        <div className="bg-surface border border-border-main rounded-2xl p-4 relative overflow-hidden">
+        <div className="bg-surface border border-border-strong rounded-2xl p-4 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-2"><div className="bg-success-start/20 text-success-start text-[9px] px-2 py-0.5 rounded-full font-bold">SMART COGS</div></div>
             <div className="flex justify-between items-start mb-2"><div className="flex items-center gap-3"><div className="p-2 bg-warning-start/20 rounded-xl"><ChefHat className="text-warning-start" size={18} /></div><h4 className="text-text-primary font-bold text-sm">Macchiato e Madhe</h4></div><div className="text-right"><span className="block text-danger font-mono font-bold">€0.34</span><span className="text-[10px] text-text-muted uppercase">Kosto</span></div></div>
-            <div className="space-y-1.5 pl-4 border-l border-dashed border-border-main ml-4">
+            <div className="space-y-1.5 pl-4 border-l border-dashed border-border-strong ml-4">
                 <div className="text-[11px] text-text-muted flex justify-between"><span>Kafe Antica</span> <span className="text-primary">€0.22</span></div>
                 <div className="text-[11px] text-text-muted flex justify-between"><span>Qumësht Vita</span> <span className="text-primary">€0.12</span></div>
             </div>
@@ -181,7 +181,7 @@ const RecipeMockup = () => (
 const DashboardMockup = () => (
     <div className="w-full max-w-md grid grid-cols-2 gap-3">
         {[{t: 'Të Hyrat', a: '€12,450', i: <TrendingUp/>, c: 'text-success-start'}, {t: 'Fitimi Neto', a: '€3,120', i: <Calculator/>, c: 'text-primary'}].map(d => (
-            <div key={d.t} className="bg-surface/50 border border-border-main rounded-2xl p-4"><p className={`text-[10px] font-bold uppercase flex items-center gap-2 ${d.c}`}>{d.i} {d.t}</p><p className="text-2xl font-black text-text-primary mt-1">{d.a}</p></div>
+            <div key={d.t} className="bg-surface/50 border border-border-strong rounded-2xl p-4"><p className={`text-[10px] font-bold uppercase flex items-center gap-2 ${d.c}`}>{d.i} {d.t}</p><p className="text-2xl font-black text-text-primary mt-1">{d.a}</p></div>
         ))}
         <div className="col-span-2 bg-danger/5 border border-danger/20 rounded-2xl p-4 flex items-center gap-4">
             <div className="p-2 bg-danger/20 rounded-lg text-danger"><AlertTriangle size={20} /></div>
@@ -191,13 +191,13 @@ const DashboardMockup = () => (
 );
 
 const DataAnalystMockup = () => (
-    <div className="w-full max-w-sm p-5 bg-card border border-border-main rounded-2xl space-y-4">
+    <div className="w-full max-w-sm p-5 bg-card border border-border-strong rounded-2xl space-y-4">
         <div className="flex items-center gap-3">
             <div className="p-2.5 bg-primary/20 rounded-xl border border-primary/20"><FileSpreadsheet className="text-primary" size={20} /></div>
             <h4 className="text-text-primary font-bold text-sm">analiza_q4.csv</h4>
         </div>
         <div className="space-y-2">
-            <div className="h-2 w-full bg-border-main rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: '75%' }} transition={{ duration: 2, repeat: Infinity }} className="h-full bg-primary" /></div>
+            <div className="h-2 w-full bg-border-strong rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: '75%' }} transition={{ duration: 2, repeat: Infinity }} className="h-full bg-primary" /></div>
             <p className="text-[10px] text-primary font-mono text-center">AI IS IDENTIFYING TRENDS...</p>
         </div>
     </div>
@@ -206,11 +206,11 @@ const DataAnalystMockup = () => (
 const DualAgentMockup = () => (
     <div className="w-full max-w-sm space-y-4">
         <div className="flex gap-3 items-start">
-            <div className="w-8 h-8 rounded-full bg-primary/20 border border-border-main flex items-center justify-center shrink-0"><BrainCircuit size={16} className="text-primary" /></div>
-            <div className="bg-surface border border-border-main p-3 rounded-2xl rounded-tl-none text-xs text-text-secondary leading-relaxed">"Sipas analizës, ky shpenzim nuk është i zbritshëm."</div>
+            <div className="w-8 h-8 rounded-full bg-primary/20 border border-border-strong flex items-center justify-center shrink-0"><BrainCircuit size={16} className="text-primary" /></div>
+            <div className="bg-surface border border-border-strong p-3 rounded-2xl rounded-tl-none text-xs text-text-secondary leading-relaxed">"Sipas analizës, ky shpenzim nuk është i zbritshëm."</div>
         </div>
         <div className="flex gap-3 items-start flex-row-reverse">
-             <div className="w-8 h-8 rounded-full bg-success-start/20 border border-border-main flex items-center justify-center shrink-0"><Search size={16} className="text-success-start" /></div>
+             <div className="w-8 h-8 rounded-full bg-success-start/20 border border-border-strong flex items-center justify-center shrink-0"><Search size={16} className="text-success-start" /></div>
             <div className="bg-success-start/10 border border-success-start/20 p-3 rounded-2xl rounded-tr-none text-xs text-success-start leading-relaxed">"Saktë. Neni 12 i ligjit për rregullat e shpenzimeve e konfirmon këtë."</div>
         </div>
     </div>

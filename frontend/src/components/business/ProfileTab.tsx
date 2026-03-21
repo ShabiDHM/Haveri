@@ -1,10 +1,6 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V25.0 (CONSISTENT TYPOGRAPHY)
-// 1. FIXED: Responsive grid for Fiscal parameters (1-col mobile, 3-col desktop).
-// 2. FIXED: Scaled 'Save' button and inputs for professional mobile ergonomics.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 4. TYPOGRAPHY: Standardized text sizes (removed text-[9px], text-[10px], text-[11px])
-// 5. STATUS: 100% Mobile & Desktop optimized.
+// PHOENIX PROTOCOL - PROFILE TAB V26.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses Panel component, unified border styling
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
@@ -16,6 +12,7 @@ import { apiService, API_V1_URL } from '../../services/api';
 import { BusinessProfile, BusinessProfileUpdate, User } from '../../data/types';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
+import { Panel } from '../ui/Panel';
 
 const PLAN_LIMITS: Record<string, number> = {
     "SOLO": 1, "STARTUP": 5, "GROWTH": 10, "ENTERPRISE": 50
@@ -162,19 +159,23 @@ export const ProfileTab: React.FC = () => {
                 
                 {/* --- SIDEBAR --- */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-surface/60 border border-border-main rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-8 flex flex-col items-center text-center shadow-xl backdrop-blur-md">
+                    {/* Logo Card */}
+                    <Panel className="p-6 sm:p-8 flex flex-col items-center text-center">
                         <div className="relative group mb-6" onClick={() => fileInputRef.current?.click()}>
-                            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl overflow-hidden flex items-center justify-center border-2 border-border-main bg-surface shadow-xl group-hover:border-primary/50 transition-all duration-500">
+                            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl overflow-hidden flex items-center justify-center border-2 border-border-strong bg-surface shadow-xl group-hover:border-primary/50 transition-all duration-500">
                                 {logoLoading ? <Loader2 className="animate-spin text-primary" /> : logoSrc ? <img src={logoSrc} className="w-full h-full object-contain p-3" alt="Logo" /> : <Upload className="text-text-muted" />}
                             </div>
-                            <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"><Camera className="text-inverse" size={20} /></div>
+                            <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                                <Camera className="text-inverse" size={20} />
+                            </div>
                         </div>
                         <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
                         <h2 className="text-lg sm:text-xl font-bold text-text-primary tracking-tight leading-tight px-2">{profile?.firm_name || "Kompania Juaj"}</h2>
                         <span className="text-text-muted text-xs font-semibold uppercase tracking-wide mt-2 block">{t('business.profile')}</span>
-                    </div>
+                    </Panel>
 
-                    <div className="bg-surface/60 border border-border-main rounded-[1.5rem] sm:rounded-[2rem] p-6 shadow-xl backdrop-blur-md">
+                    {/* Subscription Card */}
+                    <Panel className="p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h4 className="text-text-muted text-xs font-semibold uppercase tracking-wide">Abonimi</h4>
                             <div className="px-2 py-0.5 bg-primary/10 rounded border border-primary/30 text-primary text-xs font-semibold uppercase flex items-center gap-1">
@@ -182,7 +183,7 @@ export const ProfileTab: React.FC = () => {
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <div className="h-1.5 w-full bg-border-main rounded-full overflow-hidden">
+                            <div className="h-1.5 w-full bg-border-strong rounded-full overflow-hidden">
                                 <div className="h-full bg-primary" style={{ width: `${(teamMembers.length / maxUsers) * 100}%` }} />
                             </div>
                             <div className="flex justify-between items-center text-xs font-semibold text-text-muted uppercase font-mono">
@@ -190,10 +191,11 @@ export const ProfileTab: React.FC = () => {
                                 <span className="text-text-primary">{teamMembers.length} / {maxUsers}</span>
                             </div>
                         </div>
-                    </div>
+                    </Panel>
 
+                    {/* Team Card */}
                     {user?.organization_role === 'OWNER' && (
-                        <div className="bg-surface/60 border border-border-main rounded-[1.5rem] sm:rounded-[2rem] p-6 shadow-xl backdrop-blur-md">
+                        <Panel className="p-6">
                             <SectionHeader icon={<Users size={16} />} title="Ekipi" />
                             <form onSubmit={handleInviteUser} className="mb-6">
                                 <div className="relative group mb-3">
@@ -211,90 +213,96 @@ export const ProfileTab: React.FC = () => {
                             </form>
                             <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
                                 {teamMembers.map(member => (
-                                    <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface rounded-xl border border-border-main group">
+                                    <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface rounded-xl border border-border-strong group">
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-xs font-bold border border-primary/20 uppercase shrink-0">{member.username.charAt(0)}</div>
+                                            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-xs font-bold border border-primary/20 uppercase shrink-0">
+                                                {member.username.charAt(0)}
+                                            </div>
                                             <div className="min-w-0">
                                                 <p className="text-text-primary text-xs font-medium truncate">{member.email}</p>
                                             </div>
                                         </div>
                                         {member.organization_role !== 'OWNER' && (
-                                            <button onClick={() => handleRemoveMember(member.id)} className="p-1 text-text-muted hover:text-danger transition-all opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                                            <button onClick={() => handleRemoveMember(member.id)} className="p-1 text-text-muted hover:text-danger transition-all opacity-0 group-hover:opacity-100">
+                                                <Trash2 size={14} />
+                                            </button>
                                         )}
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </Panel>
                     )}
                 </div>
 
                 {/* --- MAIN FORM --- */}
                 <div className="lg:col-span-8">
-                    <form onSubmit={handleProfileSubmit} className="bg-surface/60 border border-border-main rounded-[1.5rem] sm:rounded-[2rem] p-6 sm:p-10 shadow-xl backdrop-blur-md">
-                        <SectionHeader icon={<Building2 size={20} />} title="Konfigurimi i Biznesit" subtitle="Të dhënat kryesore të hapësirës tuaj." />
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                            <div className="md:col-span-2">
-                                <FormField label="Emri Zyrtar" icon={<Building2 size={16} />}>
-                                    <input type="text" value={formData.firm_name} onChange={(e) => setFormData({...formData, firm_name: e.target.value})} className={inputClasses} placeholder="Shënoni emrin..." />
-                                </FormField>
-                            </div>
+                    <form onSubmit={handleProfileSubmit}>
+                        <Panel className="p-6 sm:p-10">
+                            <SectionHeader icon={<Building2 size={20} />} title="Konfigurimi i Biznesit" subtitle="Të dhënat kryesore të hapësirës tuaj." />
                             
-                            <FormField label="Email Publik" icon={<Mail size={16} />}>
-                                <input type="email" value={formData.email_public} onChange={(e) => setFormData({...formData, email_public: e.target.value})} className={inputClasses} />
-                            </FormField>
-                            
-                            <FormField label="Telefon" icon={<Phone size={16} />}>
-                                <input type="text" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={inputClasses} />
-                            </FormField>
-
-                            <div className="md:col-span-2">
-                                <FormField label="Adresa" icon={<MapPin size={16} />}>
-                                    <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className={inputClasses} />
-                                </FormField>
-                            </div>
-
-                            <FormField label="Qyteti" icon={<MapPin size={16} />}>
-                                <input type="text" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} className={inputClasses} />
-                            </FormField>
-
-                            <FormField label="Website" icon={<Globe size={16} />}>
-                                <input type="text" value={formData.website} onChange={(e) => setFormData({...formData, website: e.target.value})} className={inputClasses} />
-                            </FormField>
-
-                            <div className="md:col-span-2">
-                                <FormField label="Numri Fiskal (NUI)" icon={<CreditCard size={16} />}>
-                                    <input type="text" value={formData.tax_id} onChange={(e) => setFormData({...formData, tax_id: e.target.value})} className={inputClasses} />
-                                </FormField>
-                            </div>
-
-                            {/* FISCAL - Optimized for Mobile Grid */}
-                            <div className="md:col-span-2 pt-8 border-t border-border-main mt-4">
-                                <SectionHeader icon={<Calculator size={18} />} title="Parametrat Fiskal" />
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                                    <FormField label="TVSH %" icon={<span className="text-xs font-bold">%</span>}>
-                                        <input type="number" value={formData.vat_rate} onChange={(e) => setFormData({...formData, vat_rate: parseFloat(e.target.value)})} className={inputClasses} />
-                                    </FormField>
-                                    <FormField label="Margjina %" icon={<TrendingUp size={16} />}>
-                                        <input type="number" value={formData.target_margin} onChange={(e) => setFormData({...formData, target_margin: parseFloat(e.target.value)})} className={inputClasses} />
-                                    </FormField>
-                                    <FormField label="Monedha" icon={<Coins size={16} />}>
-                                        <select value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value})} className={`${inputClasses} appearance-none cursor-pointer`}>
-                                            <option value="EUR">Euro (€)</option>
-                                            <option value="LEK">Lek (ALL)</option>
-                                            <option value="USD">Dollar ($)</option>
-                                        </select>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                                <div className="md:col-span-2">
+                                    <FormField label="Emri Zyrtar" icon={<Building2 size={16} />}>
+                                        <input type="text" value={formData.firm_name} onChange={(e) => setFormData({...formData, firm_name: e.target.value})} className={inputClasses} placeholder="Shënoni emrin..." />
                                     </FormField>
                                 </div>
-                            </div>
-                        </div>
+                                
+                                <FormField label="Email Publik" icon={<Mail size={16} />}>
+                                    <input type="email" value={formData.email_public} onChange={(e) => setFormData({...formData, email_public: e.target.value})} className={inputClasses} />
+                                </FormField>
+                                
+                                <FormField label="Telefon" icon={<Phone size={16} />}>
+                                    <input type="text" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={inputClasses} />
+                                </FormField>
 
-                        <div className="mt-10 sm:mt-12 flex justify-end">
-                            <button type="submit" disabled={saving} className="btn-primary w-full sm:w-auto flex items-center justify-center gap-3 px-8 sm:px-12 py-3.5 sm:py-4 tracking-wide text-xs sm:text-sm">
-                                {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                                RUHAJ NDRYSHIMET
-                            </button>
-                        </div>
+                                <div className="md:col-span-2">
+                                    <FormField label="Adresa" icon={<MapPin size={16} />}>
+                                        <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className={inputClasses} />
+                                    </FormField>
+                                </div>
+
+                                <FormField label="Qyteti" icon={<MapPin size={16} />}>
+                                    <input type="text" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} className={inputClasses} />
+                                </FormField>
+
+                                <FormField label="Website" icon={<Globe size={16} />}>
+                                    <input type="text" value={formData.website} onChange={(e) => setFormData({...formData, website: e.target.value})} className={inputClasses} />
+                                </FormField>
+
+                                <div className="md:col-span-2">
+                                    <FormField label="Numri Fiskal (NUI)" icon={<CreditCard size={16} />}>
+                                        <input type="text" value={formData.tax_id} onChange={(e) => setFormData({...formData, tax_id: e.target.value})} className={inputClasses} />
+                                    </FormField>
+                                </div>
+
+                                {/* FISCAL - Optimized for Mobile Grid */}
+                                <div className="md:col-span-2 pt-8 border-t border-border-strong mt-4">
+                                    <SectionHeader icon={<Calculator size={18} />} title="Parametrat Fiskal" />
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                                        <FormField label="TVSH %" icon={<span className="text-xs font-bold">%</span>}>
+                                            <input type="number" value={formData.vat_rate} onChange={(e) => setFormData({...formData, vat_rate: parseFloat(e.target.value)})} className={inputClasses} />
+                                        </FormField>
+                                        <FormField label="Margjina %" icon={<TrendingUp size={16} />}>
+                                            <input type="number" value={formData.target_margin} onChange={(e) => setFormData({...formData, target_margin: parseFloat(e.target.value)})} className={inputClasses} />
+                                        </FormField>
+                                        <FormField label="Monedha" icon={<Coins size={16} />}>
+                                            <select value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value})} className={`${inputClasses} appearance-none cursor-pointer`}>
+                                                <option value="EUR">Euro (€)</option>
+                                                <option value="LEK">Lek (ALL)</option>
+                                                <option value="USD">Dollar ($)</option>
+                                            </select>
+                                        </FormField>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-10 sm:mt-12 flex justify-end">
+                                <button type="submit" disabled={saving} className="btn-primary w-full sm:w-auto flex items-center justify-center gap-3 px-8 sm:px-12 py-3.5 sm:py-4 tracking-wide text-xs sm:text-sm">
+                                    {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                                    RUHAJ NDRYSHIMET
+                                </button>
+                            </div>
+                        </Panel>
                     </form>
                 </div>
             </div>

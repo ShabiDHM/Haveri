@@ -1,5 +1,6 @@
 // FILE: src/components/business/insights/DebtModule.tsx
-// PHOENIX PROTOCOL - DEBT MODULE V5.0 (FIXED SCROLLING & BORDERS)
+// PHOENIX PROTOCOL - DEBT MODULE V6.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,7 +25,7 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
     };
 
     return (
-        <div className="bg-surface/60 border border-border-main rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
+        <div className="bg-surface/60 border border-border-strong rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
             {/* Colored top accent bar */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-danger to-danger/60 z-10" />
             
@@ -34,14 +35,14 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
                     {t('insights.debt.title', 'Analiza e Borxheve')}
                 </h3>
 
-                <div className="mb-5 p-4 bg-surface rounded-xl border border-border-main">
+                <div className="mb-5 p-4 bg-surface rounded-xl border border-border-strong">
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-semibold text-text-muted">Totali i Borxhit</span>
                         <span className={`font-mono font-bold text-lg ${totalDebt > 0 ? 'text-danger' : 'text-text-primary'}`}>
                             €{totalDebt.toFixed(2)}
                         </span>
                     </div>
-                    <div className="w-full h-2 bg-border-main rounded-full overflow-hidden flex">
+                    <div className="w-full h-2 bg-border-strong rounded-full overflow-hidden flex">
                         <div style={{ width: `${totalDebt > 0 ? (aging.fresh / totalDebt) * 100 : 0}%` }} className="bg-success-start h-full" />
                         <div style={{ width: `${totalDebt > 0 ? (aging.warning / totalDebt) * 100 : 0}%` }} className="bg-warning-start h-full" />
                         <div style={{ width: `${totalDebt > 0 ? (aging.danger / totalDebt) * 100 : 0}%` }} className="bg-danger h-full" />
@@ -61,12 +62,12 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
             {/* Scrollable content area */}
             <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-2 custom-scrollbar">
                 {topDebtors.length === 0 ? (
-                    <div className="p-6 text-center bg-surface rounded-xl border border-border-main">
+                    <div className="p-6 text-center bg-surface rounded-xl border border-border-strong">
                         <p className="text-text-muted text-sm">{t('insights.debt.noDebts', 'Asnjë borxh aktiv!')}</p>
                     </div>
                 ) : (
                     topDebtors.map((d: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between p-3 bg-surface rounded-xl border border-border-main hover:border-danger/30 hover:shadow-sm transition-all">
+                        <div key={idx} className="flex items-center justify-between p-3 bg-surface rounded-xl border border-border-strong hover:border-danger/30 hover:shadow-sm transition-all">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <div className="p-2 bg-danger/10 rounded-lg shrink-0"><User size={14} className="text-danger" /></div>
                                 <div className="min-w-0 flex-1">

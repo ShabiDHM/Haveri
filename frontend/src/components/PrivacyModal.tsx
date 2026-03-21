@@ -1,8 +1,6 @@
 // FILE: src/components/PrivacyModal.tsx
-// PHOENIX PROTOCOL - NEW COMPONENT V2.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. CONTENT: Professional privacy policy structure (Data & Human Management).
-// 2. UI: Scrollable content area with custom scrollbar and clean typography.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - NEW COMPONENT V3.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -31,9 +29,9 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) => {
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-glass backdrop-blur-xl border border-border-main rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+        className="bg-glass backdrop-blur-xl border border-border-strong rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
       >
-        <div className="p-6 border-b border-border-main flex justify-between items-center bg-surface/50">
+        <div className="p-6 border-b border-border-strong flex justify-between items-center bg-surface/50">
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
             <Shield className="text-primary h-5 w-5" />
             {t('footer.privacyPolicy', 'Politika e Privatësisë')}
@@ -76,12 +74,12 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) => {
             </p>
           </div>
 
-          <div className="pt-4 border-t border-border-main text-xs text-center opacity-50">
+          <div className="pt-4 border-t border-border-strong text-xs text-center opacity-50">
             Përditësuar së fundmi: Nëntor 2025
           </div>
         </div>
 
-        <div className="p-4 border-t border-border-main bg-surface/30 text-center">
+        <div className="p-4 border-t border-border-strong bg-surface/30 text-center">
             <button onClick={onClose} className="btn-secondary px-6 py-2">
                 {t('general.close', 'Mbyll')}
             </button>

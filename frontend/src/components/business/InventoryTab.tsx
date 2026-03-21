@@ -1,8 +1,6 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V20.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. INTEGRATION: The 'handleDeleteItem' function is now passed to the InventoryItemModal.
-// 2. UX: Enables deletion directly from the 'Edit Item' modal.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - INVENTORY TAB V21.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses Panel component, unified border styling
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -16,6 +14,7 @@ import { RecipeList } from './inventory/RecipeList';
 import { InventoryItemModal } from './modals/InventoryItemModal';
 import { RecipeModal } from './modals/RecipeModal';
 import { InventoryImportModal } from './modals/InventoryImportModal';
+import { Panel } from '../ui/Panel';
 
 // --- TACTICAL UI COMPONENTS ---
 
@@ -94,29 +93,33 @@ export const InventoryTab: React.FC = () => {
                 .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: var(--success-start); opacity: 0.5; }
             `}</style>
 
-            <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 sm:gap-4 bg-surface/40 p-3 sm:p-4 rounded-3xl border border-border-main backdrop-blur-md">
-                {activeTab === 'items' ? (
-                    <>
-                        <ActionButton primary icon={<Plus size={20} />} label={t('inventory.items.add')} onClick={openCreateItem} />
-                        <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.items.import', 'Importo Artikujt')} onClick={() => openImport('items')} />
-                    </>
-                ) : (
-                    <>
-                         <ActionButton primary icon={<Plus size={20} />} label={t('inventory.recipes.add')} onClick={openCreateRecipe} />
-                         <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.recipes.import')} onClick={() => openImport('recipes')} />
-                    </>
-                )}
-            </div>
+            {/* Action Buttons Panel */}
+            <Panel className="p-3 sm:p-4">
+                <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 sm:gap-4">
+                    {activeTab === 'items' ? (
+                        <>
+                            <ActionButton primary icon={<Plus size={20} />} label={t('inventory.items.add')} onClick={openCreateItem} />
+                            <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.items.import', 'Importo Artikujt')} onClick={() => openImport('items')} />
+                        </>
+                    ) : (
+                        <>
+                            <ActionButton primary icon={<Plus size={20} />} label={t('inventory.recipes.add')} onClick={openCreateRecipe} />
+                            <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.recipes.import')} onClick={() => openImport('recipes')} />
+                        </>
+                    )}
+                </div>
+            </Panel>
 
-            <div className="bg-surface/60 border border-border-main rounded-3xl p-4 sm:p-6 backdrop-blur-md h-[700px] flex flex-col shadow-xl overflow-hidden">
+            {/* Main Content Panel */}
+            <Panel className="p-4 sm:p-6 h-[700px] flex flex-col overflow-hidden">
                 
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 border-b border-border-main pb-4 sm:pb-6 shrink-0">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 border-b border-border-strong pb-4 sm:pb-6 shrink-0">
                     <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
                         <Box className="text-success-start" />
                         {t('inventory.title')}
                     </h2>
                     
-                    <div className="w-full md:w-auto flex bg-surface p-1.5 rounded-2xl border border-border-main backdrop-blur-md gap-1">
+                    <div className="w-full md:w-auto flex bg-surface p-1.5 rounded-2xl border border-border-strong backdrop-blur-md gap-1">
                         <TabButton label={t('inventory.tabItems', 'Artikujt')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
                         <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
                     </div>
@@ -155,7 +158,7 @@ export const InventoryTab: React.FC = () => {
                         )}
                     </div>
                 </div>
-            </div>
+            </Panel>
 
             <InventoryItemModal 
                 isOpen={showItemModal} 

@@ -1,8 +1,8 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// PHOENIX PROTOCOL - UNIFIED BULK DELETE V9.0 (COLORFUL ACCENT BORDERS)
+// PHOENIX PROTOCOL - UNIFIED BULK DELETE V10.0 (UNIFIED ADMIN AESTHETIC)
 // 1. CRITICAL FIX: The bulk delete handler now correctly categorizes ALL transaction types
 // 2. ENHANCED: Colorful left border accents for positive/negative cards
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility
+// 3. UPDATED: Uses unified border styling
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,7 +62,7 @@ const TransactionCard: React.FC<{ tx: TransactionItem, props: TransactionListPro
             animate={{ opacity: 1, x: 0 }} 
             exit={{ opacity: 0, x: -20 }} 
             transition={{ duration: 0.2 }} 
-            className={`group flex items-center justify-between p-3 rounded-xl bg-surface hover:bg-hover transition-all duration-300 border border-border-main hover:border-l-4 
+            className={`group flex items-center justify-between p-3 rounded-xl bg-surface hover:bg-hover transition-all duration-300 border border-border-strong hover:border-l-4 
                 ${isIncome ? 'hover:border-l-success-start' : isExpense ? 'hover:border-l-danger' : 'hover:border-l-primary'}`}
         >
             <div className="flex items-center gap-3 min-w-0">
@@ -126,7 +126,7 @@ const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: n
                 </span>
                 <p className="text-xs text-text-muted font-bold uppercase tracking-wider">{t('finance.netBalance', 'Balansi Neto')}</p>
             </div>
-            <hr className="border-border-main" />
+            <hr className="border-border-strong" />
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 text-sm text-text-muted">
                     <Hash size={14}/>

@@ -1,8 +1,8 @@
 // FILE: src/components/business/modals/ClientImportModal.tsx
-// PHOENIX PROTOCOL - CLIENT IMPORT V2.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - CLIENT IMPORT V3.0 (UNIFIED ADMIN AESTHETIC)
 // 1. CAPABILITY: Enables bulk import of Clients and Suppliers via CSV.
 // 2. UX: Consistent design with Inventory Import for seamless user experience.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. UPDATED: Uses unified border styling
 
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -46,7 +46,7 @@ export const ClientImportModal: React.FC<ClientImportModalProps> = ({ isOpen, on
                 
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-success-start/10 to-primary/10 border border-border-main mb-4 shadow-sm">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-success-start/10 to-primary/10 border border-border-strong mb-4 shadow-sm">
                         <Users className="w-8 h-8 text-success-start" />
                     </div>
                     <h3 className="text-2xl font-bold text-text-primary mb-2">{t('clients.importTitle', 'Importo Klientët & Furnitorët')}</h3>
@@ -63,7 +63,7 @@ export const ClientImportModal: React.FC<ClientImportModalProps> = ({ isOpen, on
                             {t('inventory.import.requiredStructure', 'Struktura e Kërkuar (CSV)')}
                         </span>
                     </div>
-                    <code className="text-xs font-mono text-text-secondary break-words block leading-relaxed bg-surface p-3 rounded-lg border border-border-main">
+                    <code className="text-xs font-mono text-text-secondary break-words block leading-relaxed bg-surface p-3 rounded-lg border border-border-strong">
                         Emri, Email, Telefon, Adresa, NIPT, Tipi
                     </code>
                     <p className="text-[10px] text-text-muted mt-2 italic">
@@ -85,7 +85,7 @@ export const ClientImportModal: React.FC<ClientImportModalProps> = ({ isOpen, on
                         className={`w-full py-10 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-300 group
                             ${file 
                                 ? 'border-success-start bg-success-start/5' 
-                                : 'border-border-main hover:border-success-start/50 hover:bg-hover'
+                                : 'border-border-strong hover:border-success-start/50 hover:bg-hover'
                             }
                         `}
                     >

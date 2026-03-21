@@ -1,7 +1,6 @@
 // FILE: src/pages/IntegrationsPage.tsx
-// PHOENIX PROTOCOL - I18N V2.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. REFACTOR: Replaced hardcoded title and subtitle with i18next 't()' function calls.
-// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - I18N V3.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React from 'react';
 import { motion } from 'framer-motion';

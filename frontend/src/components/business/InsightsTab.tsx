@@ -1,5 +1,6 @@
 // FILE: frontend/src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V3.0 (FIXED LAYOUT - ANALYST PANEL ALONGSIDE METRICS)
+// PHOENIX PROTOCOL - INSIGHTS UI V4.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses Panel component, unified border styling
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useBusinessIntelligence } from '../../hooks/useBusinessIntelligence';
 import { useAuth } from '../../context/AuthContext';
+import { Panel } from '../ui/Panel';
 
 // Modules
 import { DebtModule } from './insights/DebtModule';
@@ -43,9 +45,9 @@ export const InsightsTab: React.FC = () => {
 
     return (
         <div className="space-y-8">
-            {/* Hero Section - Analyst Panel Toggle */}
-            <div className="bg-gradient-to-r from-primary/5 to-primary/2 border border-border-main rounded-2xl p-5">
-                <div className="flex items-center justify-between">
+            {/* Hero Section - Analyst Panel Toggle - Using Panel */}
+            <Panel className="p-5">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-primary/10 rounded-xl">
                             <FileSpreadsheet className="text-primary" size={24} />
@@ -61,22 +63,22 @@ export const InsightsTab: React.FC = () => {
                     </div>
                     <button
                         onClick={() => setShowAnalystPanel(!showAnalystPanel)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface hover:bg-hover border border-border-main transition-all"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface hover:bg-hover border border-border-strong transition-all"
                     >
                         {showAnalystPanel ? (
                             <>
                                 <ChevronUp size={18} />
-                                <span className="text-sm font-medium">Fshih Analizën</span>
+                                <span className="text-sm font-medium">{t('insights.hideAnalysis', 'Fshih Analizën')}</span>
                             </>
                         ) : (
                             <>
                                 <ChevronDown size={18} />
-                                <span className="text-sm font-medium">Hap Analizën</span>
+                                <span className="text-sm font-medium">{t('insights.showAnalysis', 'Hap Analizën')}</span>
                             </>
                         )}
                     </button>
                 </div>
-            </div>
+            </Panel>
 
             {/* Expandable Analyst Panel */}
             <AnimatePresence>

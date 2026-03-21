@@ -1,9 +1,6 @@
 // FILE: src/pages/RegisterPage.tsx
-// PHOENIX PROTOCOL - REGISTER PAGE V4.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. STYLE: Applied Phoenix Glassmorphism to all panels, inputs, and buttons using design system variables.
-// 2. CONSISTENCY: Aligned fonts, colors, and spacing with the new LoginPage style.
-// 3. UX: Enhanced visual feedback on all interactive elements.
-// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - REGISTER PAGE V5.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -70,7 +67,7 @@ const RegisterPage: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center bg-canvas p-4 font-sans">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none" />
             
-            <div className="relative max-w-md w-full p-8 bg-glass backdrop-blur-xl rounded-3xl border border-border-main text-center shadow-xl">
+            <div className="relative max-w-md w-full p-8 bg-glass backdrop-blur-xl rounded-3xl border border-border-strong text-center shadow-xl">
                 <div className="w-20 h-20 bg-success-start/10 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-success-start/20">
                     <Sparkles className="w-10 h-10 text-success-start" />
                 </div>
@@ -95,7 +92,7 @@ const RegisterPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-canvas p-4 font-sans">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none" />
       
-      <div className="relative max-w-md w-full p-8 bg-glass backdrop-blur-xl rounded-3xl border border-border-main shadow-xl">
+      <div className="relative max-w-md w-full p-8 bg-glass backdrop-blur-xl rounded-3xl border border-border-strong shadow-xl">
         
         <div className="mb-6 flex justify-center">
             <BrandLogo />

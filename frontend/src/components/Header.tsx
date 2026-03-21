@@ -1,3 +1,7 @@
+// FILE: src/components/Header.tsx
+// PHOENIX PROTOCOL - HEADER V6.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Bell, LogOut, User as UserIcon, LayoutDashboard, 
@@ -108,7 +112,7 @@ const Header: React.FC = () => {
         
         {/* Year Selector */}
         {isAuthenticated && (
-            <div className="flex items-center gap-2 bg-hover border border-border-main px-3 py-1.5 rounded-xl">
+            <div className="flex items-center gap-2 bg-hover border border-border-strong px-3 py-1.5 rounded-xl">
                 <Calendar size={14} className="text-primary" />
                 <select 
                     value={selectedYear} 
@@ -127,10 +131,10 @@ const Header: React.FC = () => {
           {alertCount > 0 && (<span className="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full animate-pulse"></span>)}
         </Link>
 
-        <div className="h-6 w-px bg-border-main"></div>
+        <div className="h-6 w-px bg-border-strong"></div>
         
         <div className="relative">
-          <button ref={buttonRef} onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-3 p-1.5 rounded-xl transition-all border border-transparent hover:bg-hover hover:border-border-main">
+          <button ref={buttonRef} onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-3 p-1.5 rounded-xl transition-all border border-transparent hover:bg-hover hover:border-border-strong">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-primary">{user?.username || 'Përdorues'}</p>
               <p className="text-xs text-text-secondary uppercase tracking-wider font-bold">{user?.role || 'USER'}</p>
@@ -141,8 +145,8 @@ const Header: React.FC = () => {
           </button>
           
           {isProfileOpen && (
-            <div ref={dropdownRef} className="absolute right-0 mt-2 w-60 bg-glass backdrop-blur-xl border border-border-main rounded-xl shadow-lg py-2 z-50 animate-in fade-in slide-in-from-top-2">
-              <div className="px-4 py-3 border-b border-border-main mb-1 bg-hover/5">
+            <div ref={dropdownRef} className="absolute right-0 mt-2 w-60 bg-glass backdrop-blur-xl border border-border-strong rounded-xl shadow-lg py-2 z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="px-4 py-3 border-b border-border-strong mb-1 bg-hover/5">
                   <p className="text-sm text-primary font-bold truncate">{user?.username}</p>
                   <p className="text-xs text-text-secondary truncate">{user?.email}</p>
               </div>
@@ -160,7 +164,7 @@ const Header: React.FC = () => {
                   <MessageSquare size={16} className="mr-3 text-primary" />{t('sidebar.support')}
               </button>
               
-              <div className="h-px bg-border-main my-1"></div>
+              <div className="h-px bg-border-strong my-1"></div>
               <button onClick={() => { setIsProfileOpen(false); logout(); }} className="w-full flex items-center px-4 py-2.5 text-sm text-danger hover:bg-danger/10 transition-colors">
                   <LogOut size={16} className="mr-3" />{t('header.logout')}
               </button>
@@ -174,7 +178,7 @@ const Header: React.FC = () => {
       </div>
 
       {isMobileMenuOpen && (
-        <div ref={mobileMenuRef} className="fixed inset-x-0 top-16 bg-glass backdrop-blur-xl border-b border-border-main p-4 lg:hidden z-30 animate-in slide-in-from-top-2 shadow-lg">
+        <div ref={mobileMenuRef} className="fixed inset-x-0 top-16 bg-glass backdrop-blur-xl border-b border-border-strong p-4 lg:hidden z-30 animate-in slide-in-from-top-2 shadow-lg">
             <div className="grid grid-cols-2 gap-3">
                 {navItems.map(item => (
                     <Link 
@@ -184,7 +188,7 @@ const Header: React.FC = () => {
                         className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${
                             location.pathname === item.path 
                             ? 'bg-accent-subtle border-accent-primary/30 text-primary' 
-                            : 'bg-card border-border-main text-text-secondary hover:text-primary hover:bg-hover'
+                            : 'bg-card border-border-strong text-text-secondary hover:text-primary hover:bg-hover'
                         }`}
                     >
                         <item.icon size={28} className="mb-2" />

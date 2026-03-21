@@ -1,7 +1,8 @@
 // FILE: src/components/business/inventory/RecipeList.tsx
-// PHOENIX PROTOCOL - RECIPE LIST V3.3 (MOBILE OPTIMIZED)
+// PHOENIX PROTOCOL - RECIPE LIST V4.0 (UNIFIED ADMIN AESTHETIC)
 // 1. LAYOUT: Updated grid gap and padding for better mobile viewing.
 // 2. CONSISTENCY: Matched style tweaks with InventoryList.
+// 3. UPDATED: Uses unified border styling
 
 import React from 'react';
 import { ChefHat, Edit, Trash2 } from 'lucide-react';
@@ -32,45 +33,45 @@ const RecipeCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="group relative flex flex-col justify-between h-full min-h-[13rem] p-5 sm:p-6 rounded-3xl bg-gray-900/60 border border-white/10 hover:border-blue-500/30 transition-all duration-300"
+            className="group relative flex flex-col justify-between h-full min-h-[13rem] p-5 sm:p-6 rounded-3xl bg-surface/60 border border-border-strong hover:border-primary/30 transition-all duration-300 shadow-sm"
         >
             {/* Top Section */}
             <div>
                 <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
-                    <div className="p-2.5 sm:p-3 rounded-2xl bg-white/5 border border-white/10 text-blue-400">
+                    <div className="p-2.5 sm:p-3 rounded-2xl bg-surface border border-border-strong text-primary">
                         <ChefHat size={18} />
                     </div>
                 </div>
                 
-                <h2 className="text-base sm:text-lg font-bold text-gray-100 group-hover:text-white line-clamp-2">{recipe.product_name}</h2>
+                <h2 className="text-base sm:text-lg font-bold text-text-primary group-hover:text-text-primary line-clamp-2">{recipe.product_name}</h2>
                 
                 <div className="mt-3 space-y-2 max-h-24 overflow-y-auto no-scrollbar pr-1">
                     {recipe.ingredients.map((ing, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
+                        <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-text-secondary">
                             <span className="opacity-50">•</span>
                             <span>{getIngredientName(ing.inventory_item_id)}</span>
-                            <span className="font-mono text-blue-400">x{ing.quantity_required}</span>
+                            <span className="font-mono text-success-start">x{ing.quantity_required}</span>
                         </div>
                     ))}
                 </div>
             </div>
             
             {/* Bottom Section */}
-            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/10 flex justify-between items-end">
+            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-border-strong flex justify-between items-end">
                 <div>
-                    <span className="block text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider font-bold">
+                    <span className="block text-[10px] sm:text-xs text-text-muted uppercase tracking-wider font-bold">
                         {t('inventory.recipes.cost', 'Kosto e Vlerësuar')}
                     </span>
-                    <span className="text-lg sm:text-xl font-mono font-bold text-rose-400">
+                    <span className="text-lg sm:text-xl font-mono font-bold text-success-start">
                         €{calculateCost(recipe.ingredients).toFixed(2)}
                     </span>
                 </div>
                 
                 <div className="flex items-center gap-1">
-                    <button onClick={() => onEdit(recipe)} className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300 transition-colors" title={t('general.edit')}>
+                    <button onClick={() => onEdit(recipe)} className="p-2 hover:bg-hover rounded-lg text-warning-start hover:text-warning-start/80 transition-colors" title={t('general.edit')}>
                         <Edit size={16} />
                     </button>
-                    <button onClick={() => onDelete(recipe._id)} className="p-2 hover:bg-white/10 rounded-lg text-rose-400 hover:text-rose-300 transition-colors" title={t('general.delete')}>
+                    <button onClick={() => onDelete(recipe._id)} className="p-2 hover:bg-hover rounded-lg text-danger hover:text-danger/80 transition-colors" title={t('general.delete')}>
                         <Trash2 size={16} />
                     </button>
                 </div>
@@ -85,7 +86,7 @@ export const RecipeList: React.FC<RecipeListProps> = ({ recipes, inventoryItems,
 
     if (recipes.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-48 text-gray-500">
+            <div className="flex flex-col items-center justify-center h-48 text-text-muted">
                 <ChefHat size={40} className="mb-4 opacity-20" />
                 <p className="text-sm sm:text-base">{t('inventory.recipes.noRecipes', 'No recipes found')}</p>
             </div>

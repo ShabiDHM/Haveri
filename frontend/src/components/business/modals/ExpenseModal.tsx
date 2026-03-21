@@ -1,7 +1,7 @@
 // FILE: src/components/business/modals/ExpenseModal.tsx
-// PHOENIX PROTOCOL - V4.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - V5.0 (UNIFIED ADMIN AESTHETIC)
 // 1. CLEANUP: Surgically removed unused type imports to resolve TS6133 warnings.
-// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 2. UPDATED: Uses unified border styling
 // 3. STATUS: Fully synchronized with QR Handoff, AI Extraction, and Supplier Autocomplete.
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -203,7 +203,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
     return (
         <>
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-glass backdrop-blur-xl border border-border-main rounded-2xl w-full max-w-md p-4 sm:p-6 shadow-xl">
+                <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-2xl w-full max-w-md p-4 sm:p-6 shadow-xl">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-bold text-text-primary flex items-center gap-2"><MinusCircle size={20} className="text-danger" />{expenseToEdit ? t('finance.editExpense') : t('finance.addExpense')}</h2>
                         <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors"><X size={24} /></button>
@@ -211,10 +211,10 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
 
                     <div className="mb-6 flex items-center gap-2">
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileSelected} />
-                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'} className={`flex-1 py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${extractionStatus === 'COMPLETED' ? 'bg-primary/20 border-primary text-primary' : 'bg-surface border-border-main text-text-muted hover:bg-hover'} disabled:opacity-50`}>
+                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'} className={`flex-1 py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${extractionStatus === 'COMPLETED' ? 'bg-primary/20 border-primary text-primary' : 'bg-surface border-border-strong text-text-muted hover:bg-hover'} disabled:opacity-50`}>
                             {getButtonContent()}
                         </button>
-                        <button type="button" title={t('finance.scanFromPhone')} onClick={startHandoff} className="p-3 border border-dashed rounded-xl bg-surface border-border-main text-text-muted hover:bg-hover hover:border-border-main transition-all">
+                        <button type="button" title={t('finance.scanFromPhone')} onClick={startHandoff} className="p-3 border border-dashed rounded-xl bg-surface border-border-strong text-text-muted hover:bg-hover hover:border-border-strong transition-all">
                             <Smartphone size={24} />
                         </button>
                     </div>
@@ -260,11 +260,11 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
             {/* QR Handoff Modal */}
             {isQrModalOpen && handoffToken && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-glass backdrop-blur-xl border border-border-main p-8 rounded-2xl w-full max-w-sm shadow-xl text-center relative">
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-glass backdrop-blur-xl border border-border-strong p-8 rounded-2xl w-full max-w-sm shadow-xl text-center relative">
                         <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-text-muted hover:text-text-primary hover:bg-hover rounded-full transition-colors"><X size={18} /></button>
                         <h3 className="text-xl font-bold text-text-primary mb-2">Skano për të Ngarkuar</h3>
                         <p className="text-text-muted mb-6 text-sm">Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.</p>
-                        <div className="bg-card p-4 rounded-xl inline-block shadow-sm border border-border-main">
+                        <div className="bg-card p-4 rounded-xl inline-block shadow-sm border border-border-strong">
                             <QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={200} />
                         </div>
                         <div className="mt-6 flex items-center justify-center gap-2 text-text-muted animate-pulse text-sm">

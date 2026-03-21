@@ -1,9 +1,6 @@
 // FILE: src/pages/MainLayout.tsx
-// PHOENIX PROTOCOL - TOP NAVIGATION LAYOUT V2.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. REMOVED: Deleted the <Sidebar /> component and all its state management.
-// 2. REFACTOR: The main content area is now full-width.
-// 3. CLEANUP: Consolidated mobile and desktop headers into a single responsive <Header />.
-// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// PHOENIX PROTOCOL - TOP NAVIGATION LAYOUT V3.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Uses unified border styling
 
 import React from 'react';
 import { Outlet } from 'react-router-dom';

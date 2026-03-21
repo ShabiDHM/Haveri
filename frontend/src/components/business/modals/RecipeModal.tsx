@@ -1,8 +1,8 @@
 // FILE: src/components/business/modals/RecipeModal.tsx
-// PHOENIX PROTOCOL - RECIPE MODAL V16.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - RECIPE MODAL V17.0 (UNIFIED ADMIN AESTHETIC)
 // 1. FIX: Mapped all labels to specific translation keys.
 // 2. FIX: Removed hardcoded English fallbacks.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. UPDATED: Uses unified border styling
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -72,7 +72,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-glass backdrop-blur-xl border border-border-main rounded-2xl w-full max-w-lg p-5 sm:p-6 max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-2xl w-full max-w-lg p-5 sm:p-6 max-h-[90vh] overflow-y-auto shadow-xl">
                 <h3 className="text-lg sm:text-xl font-bold text-text-primary mb-2">
                     {recipeToEdit ? t('inventory.recipes.edit') : t('inventory.recipes.add')}
                 </h3>
@@ -85,7 +85,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                         <p className="text-xs text-text-muted mt-1">{t('inventory.recipes.productNameDesc')}</p>
                     </div>
                     
-                    <div className="border-t border-border-main pt-4">
+                    <div className="border-t border-border-strong pt-4">
                         <h4 className="text-sm font-bold text-primary mb-3">{t('inventory.recipes.ingredients')}</h4>
                         {formData.ingredients.map((ing, index) => (
                             <div key={index} className="flex gap-2 mb-2 items-center">
