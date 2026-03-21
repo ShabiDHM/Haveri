@@ -1,6 +1,5 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - PROFIT MODULE V11.0 (CONSISTENT WHITE BACKGROUND)
-// UPDATED: Changed background to bg-card
+// PHOENIX PROTOCOL - PROFIT MODULE V12.0 (VISIBLE ACCENT BAR)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -93,8 +92,8 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
     return (
         <>
             <div className="bg-card border border-border-strong rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
-                {/* Colored top accent bar */}
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${hasLowStock ? 'from-warning-start to-warning-start/60' : 'from-success-start to-success-start/60'} z-10`} />
+                {/* Colored top accent bar - 4px with glow - Yellow if low stock, Green if all good */}
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${hasLowStock ? 'from-warning-start to-warning-start/80' : 'from-success-start to-success-start/80'} z-10 shadow-[0_0_8px_rgba(245,158,11,0.5)]`} />
                 
                 <div className="p-5 flex-shrink-0">
                     <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">

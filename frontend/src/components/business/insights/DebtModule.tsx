@@ -1,6 +1,5 @@
 // FILE: src/components/business/insights/DebtModule.tsx
-// PHOENIX PROTOCOL - DEBT MODULE V7.0 (CONSISTENT WHITE BACKGROUND)
-// UPDATED: Changed background to bg-card
+// PHOENIX PROTOCOL - DEBT MODULE V8.0 (VISIBLE ACCENT BAR)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,8 +25,8 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
 
     return (
         <div className="bg-card border border-border-strong rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
-            {/* Colored top accent bar */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-danger to-danger/60 z-10" />
+            {/* Colored top accent bar - 4px with red glow */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-danger to-danger/80 z-10 shadow-[0_0_8px_rgba(220,38,38,0.5)]" />
             
             <div className="p-5 flex-shrink-0">
                 <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
