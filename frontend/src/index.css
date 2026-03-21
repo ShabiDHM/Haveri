@@ -1,5 +1,5 @@
 /* FILE: src/index.css */
-/* PHOENIX PROTOCOL - V10.0 (FIXED KPI BORDER SPECIFICITY) */
+/* PHOENIX PROTOCOL - V11.0 (RESTORED TEXT COLOR SPECIFICITY) */
 /* STATUS: CLEAN - FULL FILE REPLACEMENT */
 
 @tailwind base;
@@ -29,7 +29,7 @@
     --accent-text: #4345B5;
     --accent-primary-rgb: 99, 102, 241;
 
-    /* Status Colors with RGB */
+    /* Status Colors */
     --status-success: #059669;
     --status-success-rgb: 5, 150, 105;
     --status-warning: #D97706;
@@ -84,7 +84,6 @@
     border-radius: 1rem;
     border: 1px solid var(--border-main);
   }
-
   .btn-primary {
     background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%);
     color: var(--text-inverse);
@@ -92,22 +91,12 @@
     padding: 0.75rem 1.5rem;
     border-radius: 0.75rem;
   }
-
-  .btn-secondary {
-    background: var(--bg-card);
-    color: var(--text-primary);
-    border: 1px solid var(--border-main);
-    font-weight: 600;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.75rem;
-  }
 }
 
 /* ============================================ */
-/* GLOBAL UI UNIFICATION - FORCE BORDER STANDARDS */
+/* GLOBAL UI UNIFICATION - OVERRIDE PROTECTION */
 /* ============================================ */
 
-/* Base container styling */
 .panel, 
 .card-panel, 
 .card,
@@ -120,26 +109,31 @@ div[class*="rounded-3xl"] {
   box-shadow: var(--shadow-xs);
 }
 
-.dark .panel, 
-.dark .card-panel, 
-.dark .card,
-.dark div[class*="rounded-2xl"],
-.dark div[class*="rounded-3xl"] {
+.dark .panel, .dark .card-panel, .dark .card,
+.dark div[class*="rounded-2xl"], .dark div[class*="rounded-3xl"] {
   border-color: var(--border-strong);
 }
 
-/* SPECIFICITY OVERRIDES: Allow KPI Card colors to survive unification */
+/* --- SPECIFICITY OVERRIDES --- */
 
-/* Force Widths */
+/* Border Overrides */
 .border-l-4 { border-left-width: 4px !important; }
-
-/* Force Colors for Success/Danger/Warning/Primary */
 .border-l-success-start { border-left-color: var(--status-success) !important; }
 .border-l-danger-start { border-left-color: var(--status-danger) !important; }
 .border-l-warning-start { border-left-color: var(--status-warning) !important; }
 .border-l-primary { border-left-color: var(--accent-primary) !important; }
 
-/* Preserve gradient bars */
-.absolute.top-0.left-0.right-0.h-1 {
-  border: none !important;
-}
+/* Text Overrides - RESTORES THE COLORS OF NUMBERS */
+.text-success-start { color: var(--status-success) !important; }
+.text-danger-start { color: var(--status-danger) !important; }
+.text-warning-start { color: var(--status-warning) !important; }
+.text-primary { color: var(--accent-primary) !important; }
+
+/* Background Overrides - RESTORES ICON CIRCLES */
+.bg-success-start\/10 { background-color: rgba(var(--status-success-rgb), 0.1) !important; }
+.bg-danger-start\/10 { background-color: rgba(var(--status-danger-rgb), 0.1) !important; }
+.bg-warning-start\/10 { background-color: rgba(var(--status-warning-rgb), 0.1) !important; }
+.bg-primary\/10 { background-color: rgba(var(--accent-primary-rgb), 0.1) !important; }
+
+/* Cleanup */
+.absolute.top-0.left-0.right-0.h-1 { border: none !important; }

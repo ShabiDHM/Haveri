@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V8.0 (THEME-SYNCED)
+// PHOENIX PROTOCOL - FINANCE TAB V9.0 (RESTORED KPI COLORS)
 // STATUS: CLEAN - VERIFIED - FULL FILE REPLACEMENT
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -26,7 +26,6 @@ import { ClientImportModal } from './modals/ClientImportModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 import { Panel } from '../ui/Panel';
 
-// HeroStatCard with theme-aware variables and colored left border
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     let borderLeftColor = 'border-l-primary';
     let iconColor = 'text-primary';
@@ -248,7 +247,6 @@ export const FinanceTab: React.FC = () => {
                 select option { background-color: var(--bg-card); color: var(--text-primary); }
             `}</style>
             
-            {/* KPI Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
                 <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
@@ -256,7 +254,6 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            {/* Action Buttons Row - FIXED THEME SYNC */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-surface/40 p-4 rounded-3xl border border-border-strong backdrop-blur-sm">
                 <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
@@ -264,7 +261,6 @@ export const FinanceTab: React.FC = () => {
                 <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
-            {/* Main Content Area */}
             <Panel className="p-0 overflow-hidden h-[70vh] min-h-[600px] flex flex-col">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-border-strong pb-6 px-6 pt-6">
                     <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
@@ -374,7 +370,6 @@ export const FinanceTab: React.FC = () => {
                 </div>
             </Panel>
 
-            {/* KPI Insight Modal */}
             <AnimatePresence>
                 {kpiModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
