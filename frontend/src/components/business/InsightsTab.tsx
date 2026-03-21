@@ -1,11 +1,10 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V4.3 (TRANSFORMER APPLIED)
+// PHOENIX PROTOCOL - INSIGHTS UI V4.4 (GRID CLEANUP - REMOVED INBOX/AGENDA)
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Loader2, FileSpreadsheet, ChevronDown, ChevronUp, Mail } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Loader2, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-react';
 import { useBusinessIntelligence } from '../../hooks/useBusinessIntelligence';
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
@@ -16,19 +15,17 @@ import { Panel } from '../ui/Panel';
 import { DebtModule } from './insights/DebtModule';
 import { TaxModule } from './insights/TaxModule';
 import { ProfitModule } from './insights/ProfitModule';
-import { BusinessRhythmCard, DailySalesData } from './briefing/BusinessRhythmCard';
-import { BusinessPulseCard } from './briefing/BusinessPulseCard';
-import { SmartAgendaCard } from './briefing/SmartAgendaCard';
+import { BusinessRhythmCard, DailySalesData } from './insights/BusinessRhythmCard';
+import { BusinessPulseCard } from './insights/BusinessPulseCard';
 import SpreadsheetAnalysisPanel from '../SpreadsheetAnalysisPanel';
 
 export const InsightsTab: React.FC = () => {
     const { t } = useTranslation();
-    const navigate = useNavigate();
     useAuth();
     
     const { loading: intelLoading, debtAnalytics, profitAnalytics, taxAnalytics } = useBusinessIntelligence();
     const { displayIncome, analyticsData, loading: financeLoading } = useFinanceData();
-    const { data: briefingData, loading: briefingLoading } = useStrategicBriefing();
+    const { loading: briefingLoading } = useStrategicBriefing();
     
     const [showAnalystPanel, setShowAnalystPanel] = useState(false);
 
@@ -72,20 +69,10 @@ export const InsightsTab: React.FC = () => {
                 )}
             </AnimatePresence>
 
+            {/* Dashboard Metrics Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <BusinessRhythmCard currentSales={displayIncome} salesHistory={salesHistory} />
-                <BusinessPulseCard signals={briefingData?.market.signals} currentSales={displayIncome} />
-                
-                <div className="flex flex-col gap-6">
-                     <div onClick={() => navigate('/business/inbox')} className="group bg-card border border-border-strong rounded-3xl p-6 cursor-pointer hover:border-primary/30 transition-all shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-2xl bg-primary/20 text-primary border border-primary/20"><Mail size={20} /></div>
-                            <div><h3 className="font-bold text-lg">Inbox</h3><p className="text-sm text-text-muted">Mesazhe të reja</p></div>
-                        </div>
-                     </div>
-                     {briefingData && <SmartAgendaCard agenda={briefingData.agenda} />}
-                </div>
-                
+                <BusinessPulseCard currentSales={displayIncome} />
                 <DebtModule data={debtAnalytics} />
                 <TaxModule data={taxAnalytics} />
                 <ProfitModule data={profitAnalytics} />
