@@ -1,8 +1,7 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - PROFIT MODULE V7.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. FIX: Changed import path for AI types to 'src/data/types' to resolve TS2459.
-// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 3. STATUS: Fully synchronized with project type definitions.
+// PHOENIX PROTOCOL - PROFIT MODULE V8.0 (ENHANCED BORDERS & COLORS)
+// 1. ADDED: Colored top accent bar for better visual hierarchy
+// 2. ENHANCED: Cards now have stronger borders and hover effects
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -90,15 +89,20 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
         }
     };
 
+    const hasLowStock = lowStockItems.length > 0;
+
     return (
         <>
-            <div className="bg-surface/50 border border-border-main rounded-2xl p-6 backdrop-blur-md h-auto lg:h-[540px] flex flex-col shadow-sm">
+            <div className="bg-surface/50 border border-border-main rounded-2xl p-6 backdrop-blur-md h-auto lg:h-[540px] flex flex-col shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
+                {/* Colored top accent bar */}
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${hasLowStock ? 'from-warning-start to-warning-start/60' : 'from-success-start to-success-start/60'}`} />
+                
                 <h3 className="text-2xl font-bold text-text-primary mb-6 flex items-center gap-2 flex-shrink-0">
                     <Package className="text-primary" /> 
                     {t('insights.inventory.title', 'Inteligjenca e Stokut')}
                 </h3>
                 
-                <div className="mb-6 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl flex-shrink-0">
+                <div className="mb-6 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl flex-shrink-0 shadow-sm">
                     <p className="text-text-muted text-xs uppercase tracking-wider font-bold mb-1">{t('insights.inventory.value', 'Vlera Totale e Stokut')}</p>
                     <p className="text-2xl font-mono font-bold text-text-primary">€{totalStockValue.toFixed(2)}</p>
                     <p className="text-[10px] text-text-muted mt-1">{t('insights.inventory.valueDesc', 'Para të bllokuara në rafte')}</p>
@@ -106,29 +110,34 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
 
                 <div className="flex-1 flex flex-col min-h-0">
                     <div className="flex justify-between items-center mb-3 flex-shrink-0">
-                        <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider">{t('inventory.lowStock', 'Stoku Kritik')}</h4>
-                        <span className="bg-danger/10 text-danger text-xs px-2 py-0.5 rounded-full font-bold">
+                        <div className="flex items-center gap-2">
+                            <div className={`h-4 w-1 ${hasLowStock ? 'bg-warning-start' : 'bg-success-start'} rounded-full`}></div>
+                            <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider">{t('inventory.lowStock', 'Stoku Kritik')}</h4>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${hasLowStock ? 'bg-warning-start/10 text-warning-start border-warning-start/20' : 'bg-success-start/10 text-success-start border-success-start/20'}`}>
                             {lowStockItems.length} {t('inventory.itemsCount', 'Artikuj')}
                         </span>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto pr-1 custom-finance-scroll space-y-2">
                         {lowStockItems.length === 0 ? (
-                            <p className="text-text-muted text-sm italic mt-2">{t('general.allGood', 'Gjithçka në rregull!')}</p>
+                            <div className="p-6 text-center bg-surface rounded-xl border border-border-main">
+                                <p className="text-text-muted text-sm italic">{t('general.allGood', 'Gjithçka në rregull!')}</p>
+                            </div>
                         ) : (
                             lowStockItems.map((item: any, idx: number) => (
                                 <div 
                                     key={idx} 
                                     onClick={() => handleItemClick(item)} 
-                                    className="flex justify-between items-center p-3 rounded-xl bg-surface border border-border-main shrink-0 cursor-pointer hover:bg-hover hover:border-primary/30 transition-all group"
+                                    className="flex justify-between items-center p-3 rounded-xl bg-surface border border-border-main hover:border-warning-start/40 hover:shadow-md transition-all cursor-pointer group"
                                 >
                                     <div className="flex items-center gap-3 overflow-hidden">
-                                        <div className="p-2 bg-primary/20 rounded-lg text-primary group-hover:scale-110 transition-transform">
+                                        <div className="p-2 bg-warning-start/10 rounded-lg text-warning-start group-hover:scale-110 transition-transform border border-warning-start/20">
                                             <Zap size={14} />
                                         </div>
                                         <span className="text-sm text-text-secondary font-medium truncate">{item.name}</span>
                                     </div>
-                                    <span className="text-xs font-mono text-danger flex items-center gap-1 bg-danger/10 px-2 py-1 rounded-lg border border-danger/20">
+                                    <span className="text-xs font-mono text-warning-start flex items-center gap-1 bg-warning-start/10 px-2 py-1 rounded-lg border border-warning-start/20">
                                         <AlertCircle size={10} /> {item.current_stock} {item.unit}
                                     </span>
                                 </div>
@@ -161,7 +170,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
-                                        <div className="bg-surface border border-border-main rounded-xl p-4 relative overflow-hidden">
+                                        <div className="bg-surface border border-primary/20 rounded-xl p-4 relative overflow-hidden shadow-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
                                             <h4 className="text-sm font-bold text-primary mb-2 flex items-center gap-2"><ShoppingCart size={16} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}</h4>
                                             <p className="text-text-secondary text-sm mb-3 leading-relaxed">
@@ -176,7 +185,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             </button>
                                         </div>
 
-                                        <div className="bg-surface border border-border-main rounded-xl p-4 relative overflow-hidden">
+                                        <div className="bg-surface border border-success-start/20 rounded-xl p-4 relative overflow-hidden shadow-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-success-start" />
                                             <h4 className="text-sm font-bold text-success-start mb-2 flex items-center gap-2"><TrendingUp size={16} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}</h4>
                                             <div className="space-y-3">

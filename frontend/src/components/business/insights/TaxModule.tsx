@@ -1,9 +1,7 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX MODULE V6.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. ADDED: "Audito me AI" button to trigger the Forensic Accountant.
-// 2. INTEGRATED: ForensicAccountantModal for specialized chat.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 4. UI: Cleaned up and modernized the card layout.
+// PHOENIX PROTOCOL - TAX MODULE V7.0 (ENHANCED BORDERS & COLORS)
+// 1. ADDED: Colored top accent bar for better visual hierarchy
+// 2. ENHANCED: Cards now have stronger borders and hover effects
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -47,9 +45,13 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
         }
     };
 
+    const isPositive = estimatedLiability > 0;
+
     return (
         <>
-            <div className="bg-surface/50 border border-border-main rounded-2xl p-6 backdrop-blur-md h-auto lg:h-[540px] flex flex-col relative overflow-hidden group hover:border-border-main/80 transition-all duration-500 shadow-sm">
+            <div className="bg-surface/50 border border-border-main rounded-2xl p-6 backdrop-blur-md h-auto lg:h-[540px] flex flex-col relative overflow-hidden group hover:border-primary/30 transition-all duration-500 shadow-sm">
+                {/* Colored top accent bar */}
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isPositive ? 'from-danger to-danger/60' : 'from-success-start to-success-start/60'}`} />
                 
                 {/* Header */}
                 <div className="flex justify-between items-start mb-6 flex-shrink-0 relative z-10">
@@ -58,7 +60,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                     </h3>
                     <button 
                         onClick={() => setShowForensicChat(true)} 
-                        className="p-2 bg-surface hover:bg-hover rounded-full text-primary transition-colors" 
+                        className="p-2 bg-surface hover:bg-hover rounded-full text-primary transition-colors border border-border-main hover:border-primary/30" 
                         title="Hap Auditorin Forenzik"
                     >
                         <HelpCircle size={20} />
@@ -67,22 +69,24 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
 
                 {/* Main Content */}
                 <div className="flex-1 flex flex-col justify-center relative z-10">
-                    <div className="relative pt-4 pb-8 text-center">
+                    <div className="relative pt-4 pb-8 text-center bg-surface/30 rounded-xl border border-border-main mb-4">
                         <p className="text-text-muted text-sm mb-1">{t('insights.tax.toPay', 'Për të paguar (Vlerësim)')}</p>
-                        <h2 className={`text-4xl font-bold tracking-tight ${estimatedLiability > 0 ? 'text-text-primary' : 'text-success-start'}`}>
+                        <h2 className={`text-4xl font-bold tracking-tight ${isPositive ? 'text-danger' : 'text-success-start'}`}>
                             €{Math.abs(estimatedLiability).toFixed(2)}
                         </h2>
-                        {estimatedLiability < 0 && <span className="text-xs text-success-start bg-success-start/10 px-2 py-1 rounded-full border border-success-start/20 mt-2 inline-block">Kredi Tatimore</span>}
+                        {!isPositive && estimatedLiability < 0 && (
+                            <span className="text-xs text-success-start bg-success-start/10 px-2 py-1 rounded-full border border-success-start/20 mt-2 inline-block">Kredi Tatimore</span>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="p-4 bg-success-start/5 border border-success-start/10 rounded-xl">
+                        <div className="p-4 bg-success-start/5 border border-success-start/20 rounded-xl hover:border-success-start/40 transition-all">
                             <div className="flex items-center gap-2 text-success-start text-xs font-bold uppercase mb-2"><TrendingUp size={14} /> TVSH e Mbledhur</div>
-                            <p className="text-xl font-mono text-text-primary">€{vatCollected.toFixed(2)}</p>
+                            <p className="text-xl font-mono text-text-primary font-bold">€{vatCollected.toFixed(2)}</p>
                         </div>
-                        <div className="p-4 bg-danger/5 border border-danger/10 rounded-xl">
+                        <div className="p-4 bg-danger/5 border border-danger/20 rounded-xl hover:border-danger/40 transition-all">
                             <div className="flex items-center gap-2 text-danger text-xs font-bold uppercase mb-2"><TrendingDown size={14} /> TVSH e Zbritshme</div>
-                            <p className="text-xl font-mono text-text-primary">€{vatDeductible.toFixed(2)}</p>
+                            <p className="text-xl font-mono text-text-primary font-bold">€{vatDeductible.toFixed(2)}</p>
                         </div>
                     </div>
 
@@ -90,7 +94,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                     <div className="px-4 space-y-3">
                         <button 
                             onClick={() => setShowForensicChat(true)}
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-surface hover:bg-hover border border-border-main text-primary font-bold rounded-xl transition-all active:scale-95 group"
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-surface hover:bg-hover border border-border-main hover:border-primary/30 text-primary font-bold rounded-xl transition-all active:scale-95 group"
                         >
                             <ScanSearch size={18} className="text-primary" />
                             Audito me AI
@@ -132,16 +136,16 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
-                                        <div className="flex items-center gap-4">
-                                            <div className={`p-3 rounded-full ${auditResult?.status === 'CLEAR' ? 'bg-success-start/20 text-success-start' : 'bg-warning-start/20 text-warning-start'}`}>{auditResult?.status === 'CLEAR' ? <CheckCircle size={32} /> : <AlertTriangle size={32} />}</div>
+                                        <div className="flex items-center gap-4 p-4 bg-surface rounded-xl border border-border-main">
+                                            <div className={`p-3 rounded-full ${auditResult?.status === 'CLEAR' ? 'bg-success-start/20 text-success-start border border-success-start/30' : 'bg-warning-start/20 text-warning-start border border-warning-start/30'}`}>{auditResult?.status === 'CLEAR' ? <CheckCircle size={32} /> : <AlertTriangle size={32} />}</div>
                                             <div><h3 className="text-xl font-bold text-text-primary">{auditResult?.status === 'CLEAR' ? 'Gjithçka Duket Mirë' : 'U Zbuluan Anomali'}</h3><p className="text-sm text-text-muted">Raporti i Inteligjencës Artificiale</p></div>
                                         </div>
-                                        <div className="bg-surface rounded-xl p-4 border border-border-main max-h-60 overflow-y-auto custom-scrollbar">
-                                            {auditResult?.anomalies.map((note, idx) => (<div key={idx} className="flex gap-3 mb-3 last:mb-0 text-sm text-text-secondary"><div className="min-w-[6px] w-[6px] h-[6px] rounded-full bg-warning-start mt-1.5" /><p>{note}</p></div>))}
-                                            {auditResult?.anomalies.length === 0 && (<p className="text-text-muted italic text-center text-sm">Nuk u gjet asnjë problem. Jeni gati për mbyllje.</p>)}
+                                        <div className="bg-surface rounded-xl p-4 border border-border-main max-h-60 overflow-y-auto custom-scrollbar shadow-inner">
+                                            {auditResult?.anomalies.map((note, idx) => (<div key={idx} className="flex gap-3 mb-3 last:mb-0 text-sm text-text-secondary p-2 border-b border-border-main last:border-0"><div className="min-w-[6px] w-[6px] h-[6px] rounded-full bg-warning-start mt-1.5" /><p>{note}</p></div>))}
+                                            {auditResult?.anomalies.length === 0 && (<p className="text-text-muted italic text-center text-sm py-4">Nuk u gjet asnjë problem. Jeni gati për mbyllje.</p>)}
                                         </div>
                                         <div className="flex gap-3 pt-2">
-                                            <button onClick={() => setShowAudit(false)} className="flex-1 py-3 rounded-xl bg-surface hover:bg-hover text-text-secondary font-medium transition-colors">Rishiko sërish</button>
+                                            <button onClick={() => setShowAudit(false)} className="flex-1 py-3 rounded-xl bg-surface hover:bg-hover text-text-secondary font-medium transition-colors border border-border-main">Rishiko sërish</button>
                                             <button onClick={() => navigate('/finance/wizard')} className="flex-1 py-3 rounded-xl btn-primary transition-all">{auditResult?.status === 'CLEAR' ? 'Vazhdo te Mbyllja' : 'Injoro & Vazhdo'}</button>
                                         </div>
                                     </div>
