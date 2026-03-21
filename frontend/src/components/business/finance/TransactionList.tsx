@@ -1,8 +1,9 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// PHOENIX PROTOCOL - UNIFIED BULK DELETE V7.3
+// PHOENIX PROTOCOL - UNIFIED BULK DELETE V8.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. CRITICAL FIX: The bulk delete handler now correctly categorizes ALL transaction types (invoices, expenses, POS).
 // 2. LOGIC: Replaced the POS-only filter, ensuring that all items in a period are deleted as intended.
 // 3. PROPS: Renamed 'onBulkDeletePos' to 'onBulkDelete' and updated its signature for the unified payload.
+// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,7 +18,6 @@ import { Invoice, Expense } from '../../../data/types';
 
 export type TransactionItem = { id: string; type: 'invoice' | 'expense' | 'pos'; date: string; amount: number; label: string; raw: any; };
 
-// PHOENIX: Upgraded props for unified bulk delete
 interface TransactionListProps { 
     allTransactions: TransactionItem[]; 
     openingDocId: string | null; 
@@ -36,16 +36,53 @@ interface TransactionListProps {
     onBulkDelete: (ids: { invoice_ids: string[], expense_ids: string[], pos_ids: string[] }) => void;
 }
 
-const getCategoryIcon = (category: string) => { const cat = category.toLowerCase(); if (cat.includes('transport') || cat.includes('naft') || cat.includes('vetur')) return <Car size={16} />; if (cat.includes('ushqim') || cat.includes('drek')) return <Utensils size={16} />; if (cat.includes('kafe')) return <Coffee size={16} />; if (cat.includes('zyr') || cat.includes('rent')) return <Building size={16} />; if (cat.includes('pag') || cat.includes('rrog')) return <Users size={16} />; if (cat.includes('tatim')) return <Landmark size={16} />; if (cat.includes('rrym')) return <Zap size={16} />; if (cat.includes('internet')) return <Wifi size={16} />; return <ArrowUpRight size={16} />; };
+const getCategoryIcon = (category: string) => { 
+    const cat = category.toLowerCase(); 
+    if (cat.includes('transport') || cat.includes('naft') || cat.includes('vetur')) return <Car size={16} />; 
+    if (cat.includes('ushqim') || cat.includes('drek')) return <Utensils size={16} />; 
+    if (cat.includes('kafe')) return <Coffee size={16} />; 
+    if (cat.includes('zyr') || cat.includes('rent')) return <Building size={16} />; 
+    if (cat.includes('pag') || cat.includes('rrog')) return <Users size={16} />; 
+    if (cat.includes('tatim')) return <Landmark size={16} />; 
+    if (cat.includes('rrym')) return <Zap size={16} />; 
+    if (cat.includes('internet')) return <Wifi size={16} />; 
+    return <ArrowUpRight size={16} />; 
+};
 
 // --- CARD COMPONENTS ---
 
 const TransactionCard: React.FC<{ tx: TransactionItem, props: TransactionListProps }> = ({ tx, props }) => {
     const hasSourceDocument = tx.type === 'expense' && (tx.raw as Expense).source_archive_id;
     return (
-        <motion.div layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="group flex items-center justify-between p-3 rounded-xl bg-black/40 hover:bg-black/60 transition-colors">
-            <div className="flex items-center gap-3 min-w-0"><div className={`p-2 rounded-lg shrink-0 ${ tx.type === 'invoice' ? 'bg-emerald-500/10 text-emerald-400' : tx.type === 'expense' ? 'bg-rose-500/10 text-rose-400' : 'bg-purple-500/10 text-purple-400' }`}>{tx.type === 'invoice' ? <ArrowDownRight size={16} /> : tx.type === 'pos' ? <ShoppingCart size={16} /> : getCategoryIcon(tx.label)}</div><div className="min-w-0"><p className="text-sm font-medium text-white truncate">{tx.label}</p><p className="text-[10px] text-gray-500 uppercase tracking-wider">{tx.type}</p></div></div>
-            <div className="flex items-center gap-4"><span className={`font-mono text-sm font-bold ${tx.type === 'expense' ? 'text-rose-400' : 'text-emerald-400'}`}>{tx.type === 'expense' ? '-' : '+'}€{tx.amount.toFixed(2)}</span><div className="flex items-center gap-1 transition-opacity">{hasSourceDocument && (<button onClick={() => props.onViewSourceDocument((tx.raw as Expense).source_archive_id!, tx.label)} className="p-1.5 hover:bg-white/10 rounded-md text-sky-400"><FileText size={14} /></button>)}{tx.type !== 'pos' ? (<><button onClick={() => tx.type === 'invoice' ? props.onEditInvoice(tx.raw as Invoice) : props.onEditExpense(tx.raw as Expense)} className="p-1.5 hover:bg-white/10 rounded-md text-amber-400"><Edit2 size={14} /></button><button onClick={() => tx.type === 'invoice' ? props.onViewInvoice(tx.raw as Invoice) : props.onViewExpense(tx.raw as Expense)} disabled={props.openingDocId === tx.id} className="p-1.5 hover:bg-white/10 rounded-md text-blue-400">{props.openingDocId === tx.id ? <Loader2 size={14} className="animate-spin"/> : <Eye size={14} />}</button><button onClick={() => tx.type === 'invoice' ? props.onDownloadInvoice(tx.id) : props.onDownloadExpense(tx.raw as Expense)} className="p-1.5 hover:bg-white/10 rounded-md text-green-400"><Download size={14} /></button><button onClick={() => tx.type === 'invoice' ? props.onArchiveInvoice(tx.id) : props.onArchiveExpense(tx.id)} className="p-1.5 hover:bg-white/10 rounded-md text-indigo-400"><Archive size={14} /></button><button onClick={() => tx.type === 'invoice' ? props.onDeleteInvoice(tx.id) : props.onDeleteExpense(tx.id)} className="p-1.5 hover:bg-white/10 rounded-md text-red-400"><Trash2 size={14} /></button></>) : (<button onClick={() => props.onDeletePos(tx.id)} className="p-1.5 hover:bg-white/10 rounded-md text-red-400"><Trash2 size={14} /></button>)}</div></div>
+        <motion.div layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="group flex items-center justify-between p-3 rounded-xl bg-surface hover:bg-hover transition-colors border border-border-main">
+            <div className="flex items-center gap-3 min-w-0">
+                <div className={`p-2 rounded-lg shrink-0 ${ tx.type === 'invoice' ? 'bg-success-start/10 text-success-start' : tx.type === 'expense' ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary' }`}>
+                    {tx.type === 'invoice' ? <ArrowDownRight size={16} /> : tx.type === 'pos' ? <ShoppingCart size={16} /> : getCategoryIcon(tx.label)}
+                </div>
+                <div className="min-w-0">
+                    <p className="text-sm font-medium text-text-primary truncate">{tx.label}</p>
+                    <p className="text-[10px] text-text-muted uppercase tracking-wider">{tx.type}</p>
+                </div>
+            </div>
+            <div className="flex items-center gap-4">
+                <span className={`font-mono text-sm font-bold ${tx.type === 'expense' ? 'text-danger' : 'text-success-start'}`}>
+                    {tx.type === 'expense' ? '-' : '+'}€{tx.amount.toFixed(2)}
+                </span>
+                <div className="flex items-center gap-1 transition-opacity">
+                    {hasSourceDocument && (<button onClick={() => props.onViewSourceDocument((tx.raw as Expense).source_archive_id!, tx.label)} className="p-1.5 hover:bg-hover rounded-md text-primary"><FileText size={14} /></button>)}
+                    {tx.type !== 'pos' ? (
+                        <>
+                            <button onClick={() => tx.type === 'invoice' ? props.onEditInvoice(tx.raw as Invoice) : props.onEditExpense(tx.raw as Expense)} className="p-1.5 hover:bg-hover rounded-md text-warning-start"><Edit2 size={14} /></button>
+                            <button onClick={() => tx.type === 'invoice' ? props.onViewInvoice(tx.raw as Invoice) : props.onViewExpense(tx.raw as Expense)} disabled={props.openingDocId === tx.id} className="p-1.5 hover:bg-hover rounded-md text-primary">{props.openingDocId === tx.id ? <Loader2 size={14} className="animate-spin"/> : <Eye size={14} />}</button>
+                            <button onClick={() => tx.type === 'invoice' ? props.onDownloadInvoice(tx.id) : props.onDownloadExpense(tx.raw as Expense)} className="p-1.5 hover:bg-hover rounded-md text-success-start"><Download size={14} /></button>
+                            <button onClick={() => tx.type === 'invoice' ? props.onArchiveInvoice(tx.id) : props.onArchiveExpense(tx.id)} className="p-1.5 hover:bg-hover rounded-md text-primary"><Archive size={14} /></button>
+                            <button onClick={() => tx.type === 'invoice' ? props.onDeleteInvoice(tx.id) : props.onDeleteExpense(tx.id)} className="p-1.5 hover:bg-hover rounded-md text-danger"><Trash2 size={14} /></button>
+                        </>
+                    ) : (
+                        <button onClick={() => props.onDeletePos(tx.id)} className="p-1.5 hover:bg-hover rounded-md text-danger"><Trash2 size={14} /></button>
+                    )}
+                </div>
+            </div>
         </motion.div>
     );
 };
@@ -53,26 +90,26 @@ const TransactionCard: React.FC<{ tx: TransactionItem, props: TransactionListPro
 const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: number, onDrillDown: () => void, onDelete: () => void }> = ({ title, total, count, onDrillDown, onDelete }) => {
     const { t } = useTranslation();
     return (
-        <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="group relative bg-gray-900/60 hover:bg-gray-800/80 border border-white/10 hover:border-blue-500/30 p-5 rounded-3xl transition-all duration-300 flex flex-col gap-4">
+        <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="group relative bg-surface/60 hover:bg-surface/80 border border-border-main hover:border-primary/30 p-5 rounded-3xl transition-all duration-300 flex flex-col gap-4 shadow-sm">
             <div onClick={onDrillDown} className="cursor-pointer flex-1 flex flex-col">
                 <div className="flex items-start justify-between">
-                    <h3 className="text-2xl font-bold text-white">{title}</h3>
-                    <div className={`p-3 rounded-xl ${total >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                    <h3 className="text-2xl font-bold text-text-primary">{title}</h3>
+                    <div className={`p-3 rounded-xl ${total >= 0 ? 'bg-success-start/10 text-success-start' : 'bg-danger/10 text-danger'}`}>
                         {total >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
                     </div>
                 </div>
                 <div className="flex-1 mt-2">
-                    <span className={`text-3xl font-mono font-bold ${total >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{total >= 0 ? '+' : ''}€{total.toFixed(2)}</span>
-                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{t('finance.netBalance', 'Balansi Neto')}</p>
+                    <span className={`text-3xl font-mono font-bold ${total >= 0 ? 'text-success-start' : 'text-danger'}`}>{total >= 0 ? '+' : ''}€{total.toFixed(2)}</span>
+                    <p className="text-xs text-text-muted font-bold uppercase tracking-wider">{t('finance.netBalance', 'Balansi Neto')}</p>
                 </div>
             </div>
-            <hr className="border-white/10" />
+            <hr className="border-border-main" />
             <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 text-sm text-gray-400">
+                <div className="flex items-center gap-2 text-sm text-text-muted">
                     <Hash size={14}/>
                     <span className="font-bold">{count}</span> {t('finance.transactions', 'transaksione')}
                 </div>
-                <button onClick={onDelete} className="p-2 rounded-lg text-gray-500 bg-transparent hover:bg-red-500/10 hover:text-red-400 transition-colors">
+                <button onClick={onDelete} className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-danger/10 hover:text-danger transition-colors">
                     <Trash2 size={16} />
                 </button>
             </div>
@@ -111,7 +148,6 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         else if (view === 'months') setView('years');
     };
 
-    // PHOENIX: UPGRADED BULK DELETE HANDLER
     const handleBulkDelete = (transactions: TransactionItem[], scope: string) => {
         const idsToProcess = {
             invoice_ids: transactions.filter(tx => tx.type === 'invoice').map(tx => tx.id),
@@ -193,7 +229,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
     };
 
     if (allTransactions.length === 0) {
-        return <div className="flex flex-col items-center justify-center h-64 text-gray-500"><ShoppingCart size={48} className="mb-4 opacity-20" /><p>{t('finance.noTransactions')}</p></div>;
+        return <div className="flex flex-col items-center justify-center h-64 text-text-muted"><ShoppingCart size={48} className="mb-4 opacity-20" /><p>{t('finance.noTransactions')}</p></div>;
     }
 
     return (
@@ -201,8 +237,8 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
             <AnimatePresence>
                 {view !== 'years' && (
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-                        <button onClick={handleBack} className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-white transition-colors group">
-                            <div className="p-2 rounded-full bg-white/5 group-hover:bg-white/10"><ArrowLeft size={16}/></div>
+                        <button onClick={handleBack} className="flex items-center gap-2 text-sm font-bold text-text-muted hover:text-text-primary transition-colors group">
+                            <div className="p-2 rounded-full bg-surface group-hover:bg-hover"><ArrowLeft size={16}/></div>
                             <span>
                                 {view === 'months' && t('general.backToYears', 'Back to Years')}
                                 {view === 'days' && `${t('general.backTo', 'Back to')} ${selectedYear}`}

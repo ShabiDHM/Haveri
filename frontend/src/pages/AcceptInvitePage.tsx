@@ -1,6 +1,7 @@
 // FILE: src/pages/AcceptInvitePage.tsx
-// PHOENIX PROTOCOL - INVITATION LANDING PAGE V1.0
+// PHOENIX PROTOCOL - INVITATION LANDING PAGE V2.0
 // 1. FEATURE: Handles the 'Accept Invite' flow. Captures token from URL, validates password input, and calls API.
+// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
@@ -60,40 +61,40 @@ const AcceptInvitePage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-4 relative overflow-hidden">
             {/* Background Effects */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[128px]" />
-                <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[128px]" />
+                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary-start/10 rounded-full blur-[128px]" />
+                <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-primary-start/10 rounded-full blur-[128px]" />
             </div>
 
             <div className="z-10 w-full max-w-md">
                 <div className="text-center mb-8">
                     <BrandLogo />
-                    <h2 className="mt-6 text-3xl font-bold text-white tracking-tight">
+                    <h2 className="mt-6 text-3xl font-bold text-text-primary tracking-tight">
                         Mirësevini në Ekip
                     </h2>
-                    <p className="mt-2 text-gray-400">
+                    <p className="mt-2 text-text-secondary">
                         Krijoni fjalëkalimin tuaj për të aktivizuar llogarinë.
                     </p>
                 </div>
 
-                <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+                <div className="bg-glass backdrop-blur-xl border border-border-main rounded-3xl p-8 shadow-lg">
                     {success ? (
                         <div className="text-center py-8">
-                            <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-400">
+                            <div className="w-16 h-16 bg-success-start/20 rounded-full flex items-center justify-center mx-auto mb-4 text-success-start">
                                 <CheckCircle size={32} />
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Llogaria u Aktivizua!</h3>
-                            <p className="text-gray-400 mb-6">Fjalëkalimi juaj u ruajt me sukses. Tani mund të hyni në platformë.</p>
-                            <Link to="/login" className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-bold">
+                            <h3 className="text-xl font-bold text-text-primary mb-2">Llogaria u Aktivizua!</h3>
+                            <p className="text-text-secondary mb-6">Fjalëkalimi juaj u ruajt me sukses. Tani mund të hyni në platformë.</p>
+                            <Link to="/login" className="inline-flex items-center gap-2 text-primary hover:text-primary-hover font-bold">
                                 Shko te Hyrja <ArrowRight size={16} />
                             </Link>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {error && (
-                                <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl flex items-start gap-3 text-sm">
+                                <div className="bg-danger/10 border border-danger/20 text-danger p-4 rounded-xl flex items-start gap-3 text-sm">
                                     <AlertCircle size={18} className="shrink-0 mt-0.5" />
                                     <span>{error}</span>
                                 </div>
@@ -101,25 +102,25 @@ const AcceptInvitePage: React.FC = () => {
 
                             <div className="space-y-4">
                                 <div className="relative group">
-                                    <Lock className="absolute left-3.5 top-3.5 text-gray-500 w-5 h-5 group-focus-within:text-blue-400 transition-colors" />
+                                    <Lock className="absolute left-3.5 top-3.5 text-text-muted w-5 h-5 group-focus-within:text-primary transition-colors" />
                                     <input 
                                         type="password" 
                                         required 
                                         placeholder="Fjalëkalimi i Ri"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 outline-none transition-all"
+                                        className="glass-input w-full pl-11"
                                     />
                                 </div>
                                 <div className="relative group">
-                                    <Lock className="absolute left-3.5 top-3.5 text-gray-500 w-5 h-5 group-focus-within:text-blue-400 transition-colors" />
+                                    <Lock className="absolute left-3.5 top-3.5 text-text-muted w-5 h-5 group-focus-within:text-primary transition-colors" />
                                     <input 
                                         type="password" 
                                         required 
                                         placeholder="Konfirmo Fjalëkalimin"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full bg-[#020617] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 outline-none transition-all"
+                                        className="glass-input w-full pl-11"
                                     />
                                 </div>
                             </div>
@@ -127,7 +128,7 @@ const AcceptInvitePage: React.FC = () => {
                             <button 
                                 type="submit" 
                                 disabled={loading || !token}
-                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? <Loader2 className="animate-spin" size={20} /> : "Aktivizo Llogarinë"}
                             </button>
@@ -136,7 +137,7 @@ const AcceptInvitePage: React.FC = () => {
                 </div>
                 
                 <div className="mt-8 text-center">
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-text-muted text-sm">
                         &copy; {new Date().getFullYear()} Haveri AI. Të gjitha të drejtat e rezervuara.
                     </p>
                 </div>

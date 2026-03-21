@@ -1,8 +1,9 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V3.3 (AI INSIGHT FILTERING)
+// PHOENIX PROTOCOL - PULSE CARD V4.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. FIXED: Filtered out static "Sistemi aktiv..." message from AI Insight.
 // 2. FIXED: Made AI Insight rendering conditional on meaningful content.
-// 3. STATUS: UI Insight Redundancy Resolved.
+// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 4. STATUS: UI Insight Redundancy Resolved.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -55,9 +56,8 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
         const fetchInsight = async () => {
             try {
                 const data = await apiService.getProactiveInsight();
-                // PHOENIX: Filter out the specific generic system status message
                 if (data.insight === "Sistemi aktiv dhe i monitoruar në kohë reale.") {
-                    setInsight(""); // Set to empty to hide it
+                    setInsight("");
                 } else {
                     setInsight(data.insight);
                 }
@@ -75,66 +75,66 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
     const hotItem = useMemo(() => signals.find(s => s.type === 'bestseller'), [signals]);
 
     return (
-        <div className="bg-gray-900/50 border border-white/10 rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-[60px] group-hover:bg-indigo-500/10 transition-colors" />
+        <div className="bg-surface/50 border border-border-main rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[60px] group-hover:bg-primary/10 transition-colors" />
             
             <div className="flex justify-between items-start mb-6 relative z-10">
-                <h3 className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-400" /> {t('dashboard.pulse.title', 'Pulsi i Biznesit')}
+                <h3 className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-primary" /> {t('dashboard.pulse.title', 'Pulsi i Biznesit')}
                 </h3>
                 <span className="flex h-3 w-3 relative">
-                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isRestDay ? 'bg-blue-400' : 'bg-emerald-400'}`}></span>
-                    <span className={`relative inline-flex rounded-full h-3 w-3 ${isRestDay ? 'bg-blue-500' : 'bg-emerald-500'}`}></span>
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isRestDay ? 'bg-primary' : 'bg-success-start'}`}></span>
+                    <span className={`relative inline-flex rounded-full h-3 w-3 ${isRestDay ? 'bg-primary' : 'bg-success-start'}`}></span>
                 </span>
             </div>
 
             <div className="flex-1 space-y-6 relative z-10">
                 <div>
                     <div className="flex items-baseline gap-2">
-                        <h2 className="text-4xl font-black text-white tracking-tighter">
+                        <h2 className="text-4xl font-black text-text-primary tracking-tighter">
                             €{projection.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </h2>
-                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">
+                        <span className="text-[10px] text-text-muted font-bold uppercase tracking-tight">
                             {t('dashboard.pulse.eodForecast', 'Parashikimi mbylljes')}
                         </span>
                     </div>
-                    <div className="mt-3 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="mt-3 h-1.5 w-full bg-border-main rounded-full overflow-hidden">
                         <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${Math.min((currentSales / (projection || 1)) * 100, 100)}%` }}
-                            className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full"
+                            className="h-full bg-gradient-to-r from-primary to-primary rounded-full"
                         />
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-2 flex items-center gap-1.5 font-medium">
-                        <Zap size={10} className="text-yellow-400" /> 
+                    <p className="text-[10px] text-text-muted mt-2 flex items-center gap-1.5 font-medium">
+                        <Zap size={10} className="text-warning-start" /> 
                         {isRestDay ? "Ritmi i ditëve të pushimit (Vikend)" : t('dashboard.pulse.basedOnVelocity', 'Bazuar në ritmin aktual')}
                     </p>
                 </div>
 
-                <div className="bg-black/20 border border-white/5 rounded-2xl p-4 backdrop-blur-md">
+                <div className="bg-surface border border-border-main rounded-2xl p-4 backdrop-blur-md">
                     {hotItem ? (
                         <div className="flex items-start gap-3">
-                            <div className="p-2 bg-rose-500/10 rounded-xl text-rose-400"><TrendingUp size={16} /></div>
+                            <div className="p-2 bg-danger/10 rounded-xl text-danger"><TrendingUp size={16} /></div>
                             <div>
-                                <p className="text-[10px] text-rose-400 font-black uppercase mb-1">Trendi Hot</p>
-                                <p className="text-sm text-gray-200 leading-snug font-medium">"{hotItem.label}" po kërkohet shumë.</p>
+                                <p className="text-[10px] text-danger font-black uppercase mb-1">Trendi Hot</p>
+                                <p className="text-sm text-text-secondary leading-snug font-medium">"{hotItem.label}" po kërkohet shumë.</p>
                             </div>
                         </div>
                     ) : (
                         <div className="flex items-start gap-3">
-                            <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400">
+                            <div className="p-2 bg-primary/10 rounded-xl text-primary">
                                 {isRestDay ? <Coffee size={16} /> : <Clock size={16} />}
                             </div>
                             <div className="flex-1">
-                                <p className="text-[10px] text-indigo-300 font-black uppercase mb-1">
+                                <p className="text-[10px] text-primary font-black uppercase mb-1">
                                     {isRestDay ? "Sygjerim për Vikend" : t('dashboard.pulse.trafficAnalysis', 'Analiza e Trafikut')}
                                 </p>
                                 {peakTime ? (
-                                    <p className="text-sm text-gray-200 leading-snug font-medium">
-                                        Fluks i lartë pritet rreth orës: <span className="text-white">{peakTime}</span>.
+                                    <p className="text-sm text-text-secondary leading-snug font-medium">
+                                        Fluks i lartë pritet rreth orës: <span className="text-text-primary">{peakTime}</span>.
                                     </p>
                                 ) : (
-                                    <p className="text-xs text-gray-400 italic leading-relaxed">
+                                    <p className="text-xs text-text-muted italic leading-relaxed">
                                         {isRestDay 
                                             ? "Fundjavat zakonisht kanë fluks më të ulët. Fokusohuni në rishikimin e javës."
                                             : "Duke mbledhur të dhëna për të identifikuar orët e pikut..."}
@@ -145,15 +145,14 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                     )}
                 </div>
 
-                {/* PHOENIX: Only render AI Insight section if 'insight' has content */}
                 {insight && (
-                    <div className="pt-4 border-t border-white/5">
+                    <div className="pt-4 border-t border-border-main">
                         <div className="flex items-start gap-2">
-                            <div className="mt-0.5 p-1 bg-indigo-500/20 rounded text-indigo-400">
+                            <div className="mt-0.5 p-1 bg-primary/20 rounded text-primary">
                                 <Info size={10} />
                             </div>
-                            <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
-                                <span className="text-indigo-400 font-bold mr-1">AI INSIGHT:</span> 
+                            <p className="text-[11px] text-text-muted leading-relaxed font-medium">
+                                <span className="text-primary font-bold mr-1">AI INSIGHT:</span> 
                                 {insight}
                             </p>
                         </div>

@@ -1,7 +1,8 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V19.8 (DELETE PROP WIRING)
+// PHOENIX PROTOCOL - INVENTORY TAB V20.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. INTEGRATION: The 'handleDeleteItem' function is now passed to the InventoryItemModal.
 // 2. UX: Enables deletion directly from the 'Edit Item' modal.
+// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -24,12 +25,12 @@ const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.R
         className={`
             flex items-center justify-center text-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl text-sm sm:text-base font-bold transition-all duration-300 group w-full sm:w-auto
             ${primary 
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 border border-emerald-400/50' 
-                : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10 hover:border-white/20'
+                ? 'btn-primary' 
+                : 'btn-secondary'
             }
         `}
     >
-        <span className={`transition-transform duration-300 group-hover:scale-110 ${primary ? 'text-white' : 'text-emerald-400'}`}>{icon}</span>
+        <span className={`transition-transform duration-300 group-hover:scale-110 ${primary ? '' : 'text-success-start'}`}>{icon}</span>
         <span className="truncate">{label}</span>
     </button>
 );
@@ -40,8 +41,8 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
         className={`
             flex-1 sm:flex-initial relative px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2
             ${isActive 
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
-                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                ? 'bg-success-start/20 text-success-start border border-success-start/30' 
+                : 'text-text-muted hover:text-text-primary hover:bg-hover border border-transparent'
             }
         `}
     >
@@ -82,18 +83,18 @@ export const InventoryTab: React.FC = () => {
     const filteredPos = posItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
     const filteredRecipes = recipes.filter(r => r.product_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-emerald-500" /></div>;
+    if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-success-start" /></div>;
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-8">
              <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(16,185,129,0.3); border-radius: 10px; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: rgba(16,185,129,0.5); }
+                .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--success-start); border-radius: 10px; opacity: 0.3; } 
+                .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: var(--success-start); opacity: 0.5; }
             `}</style>
 
-            <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 sm:gap-4 bg-gray-900/40 p-3 sm:p-4 rounded-3xl border border-white/5 backdrop-blur-md">
+            <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 sm:gap-4 bg-surface/40 p-3 sm:p-4 rounded-3xl border border-border-main backdrop-blur-md">
                 {activeTab === 'items' ? (
                     <>
                         <ActionButton primary icon={<Plus size={20} />} label={t('inventory.items.add')} onClick={openCreateItem} />
@@ -107,15 +108,15 @@ export const InventoryTab: React.FC = () => {
                 )}
             </div>
 
-            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-4 sm:p-6 backdrop-blur-md h-[700px] flex flex-col shadow-2xl overflow-hidden">
+            <div className="bg-surface/60 border border-border-main rounded-3xl p-4 sm:p-6 backdrop-blur-md h-[700px] flex flex-col shadow-xl overflow-hidden">
                 
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 border-b border-white/5 pb-4 sm:pb-6 shrink-0">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-                        <Box className="text-emerald-500" />
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 border-b border-border-main pb-4 sm:pb-6 shrink-0">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
+                        <Box className="text-success-start" />
                         {t('inventory.title')}
                     </h2>
                     
-                    <div className="w-full md:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md gap-1">
+                    <div className="w-full md:w-auto flex bg-surface p-1.5 rounded-2xl border border-border-main backdrop-blur-md gap-1">
                         <TabButton label={t('inventory.tabItems', 'Artikujt')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
                         <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
                     </div>
@@ -123,11 +124,11 @@ export const InventoryTab: React.FC = () => {
 
                 <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
                     <div className="relative group mb-4 shrink-0">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-emerald-400 transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-success-start transition-colors" />
                         <input 
                             type="text" 
                             placeholder={t('header.searchPlaceholder')} 
-                            className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-3 sm:py-4 text-sm sm:text-base text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 focus:bg-black/60 transition-all shadow-inner" 
+                            className="glass-input w-full pl-12 py-3 sm:py-4 text-sm sm:text-base" 
                             value={searchTerm} 
                             onChange={(e) => setSearchTerm(e.target.value)} 
                         />
@@ -156,7 +157,6 @@ export const InventoryTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* PHOENIX: onDelete prop is now passed to the modal */}
             <InventoryItemModal 
                 isOpen={showItemModal} 
                 onClose={() => setShowItemModal(false)} 

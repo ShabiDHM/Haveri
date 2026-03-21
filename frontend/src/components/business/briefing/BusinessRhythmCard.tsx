@@ -1,7 +1,8 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - RHYTHM CARD V4.5 (STATIC 'SOT' REMOVAL)
+// PHOENIX PROTOCOL - RHYTHM CARD V5.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. FIXED: Removed static "SOT" text as trend data is now year-aware.
-// 2. STATUS: UI Label Consistency Achieved.
+// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. STATUS: UI Label Consistency Achieved.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -110,29 +111,27 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
       };
 
     return (
-        <div className="bg-gray-900/50 border border-white/10 rounded-3xl p-6 relative overflow-hidden h-full flex flex-col justify-between group hover:border-emerald-500/30 transition-colors duration-500">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[60px] rounded-full group-hover:bg-emerald-500/20 transition-all" />
+        <div className="bg-surface/50 border border-border-main rounded-3xl p-6 relative overflow-hidden h-full flex flex-col justify-between group hover:border-success-start/30 transition-colors duration-500 shadow-sm">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-success-start/10 blur-[60px] rounded-full group-hover:bg-success-start/20 transition-all" />
 
             <div className="flex justify-between items-start mb-4 relative z-10">
                 <div>
-                    <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider flex items-center gap-2">
-                        <CalendarDays className="w-4 h-4 text-emerald-400" /> {t('dashboard.monthlyTrend', 'Trendi Mujor')}
+                    <h3 className="text-text-muted text-sm font-medium uppercase tracking-wider flex items-center gap-2">
+                        <CalendarDays className="w-4 h-4 text-success-start" /> {t('dashboard.monthlyTrend', 'Trendi Mujor')}
                     </h3>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <span className="text-2xl sm:text-3xl font-bold text-white">€{currentSales.toFixed(2)}</span>
-                        {/* PHOENIX: Removed static 'Sot' text */}
+                        <span className="text-2xl sm:text-3xl font-bold text-text-primary">€{currentSales.toFixed(2)}</span>
                     </div>
                 </div>
             </div>
 
-            {/* PHOENIX: Fixed container height for mobile rendering calculation */}
             <div className="h-40 sm:h-48 w-full relative z-10 min-h-[160px]">
                 {salesHistory.labels.length > 0 && <Bar options={chartOptions} data={chartData} />}
             </div>
 
-            <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-500 mt-4 relative z-10">
+            <div className="flex items-center justify-between text-[10px] sm:text-xs text-text-muted mt-4 relative z-10">
                 <span>{t('dashboard.monthToDate', 'Muaji deri më sot')}</span>
-                <span className={progress >= 100 ? "text-emerald-400 font-bold" : "text-gray-400"}>
+                <span className={progress >= 100 ? "text-success-start font-bold" : "text-text-muted"}>
                     {progress >= 100 
                         ? t('dashboard.targetAchieved', 'Objektivi u arrit!') 
                         : `${progress.toFixed(0)}% ${t('dashboard.ofTarget', 'e targetit')}`

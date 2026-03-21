@@ -1,7 +1,8 @@
 // FILE: src/pages/AccountPage.tsx
-// PHOENIX PROTOCOL - I18N ALIGNMENT
+// PHOENIX PROTOCOL - I18N ALIGNMENT V2.0
 // 1. I18N FIX: Replaced all hardcoded labels with t() function calls using the 'account' namespace for consistency.
 // 2. VERIFIED: All password change and account deletion functionality is preserved.
+// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -57,26 +58,26 @@ const AccountPage: React.FC = () => {
         
         <div className="grid gap-8">
             {/* Profile Info */}
-            <div className="bg-background-light/30 p-6 rounded-2xl border border-glass-edge">
-                <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-                    <User className="text-primary-start" /> {t('account.profileInfo')}
+            <div className="card-panel p-6">
+                <h3 className="text-xl font-semibold text-text-primary mb-6 flex items-center gap-2">
+                    <User className="text-primary" /> {t('account.profileInfo')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm text-text-secondary mb-1">{t('account.username')}</label>
-                        <div className="px-4 py-2 bg-background-dark rounded-lg text-white border border-glass-edge">
+                        <div className="px-4 py-2 bg-surface rounded-lg text-text-primary border border-border-main">
                             {user.username}
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm text-text-secondary mb-1">{t('account.email')}</label>
-                        <div className="px-4 py-2 bg-background-dark rounded-lg text-white border border-glass-edge">
+                        <div className="px-4 py-2 bg-surface rounded-lg text-text-primary border border-border-main">
                             {user.email}
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm text-text-secondary mb-1">{t('account.role')}</label>
-                        <div className="px-4 py-2 bg-background-dark rounded-lg text-white border border-glass-edge capitalize">
+                        <div className="px-4 py-2 bg-surface rounded-lg text-text-primary border border-border-main capitalize">
                             {user.role.toLowerCase()}
                         </div>
                     </div>
@@ -84,9 +85,9 @@ const AccountPage: React.FC = () => {
             </div>
 
             {/* Password Change */}
-            <div className="bg-background-light/30 p-6 rounded-2xl border border-glass-edge">
-                <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-                    <Lock className="text-secondary-start" /> {t('account.security')}
+            <div className="card-panel p-6">
+                <h3 className="text-xl font-semibold text-text-primary mb-6 flex items-center gap-2">
+                    <Lock className="text-primary" /> {t('account.security')}
                 </h3>
                 <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
                     <input 
@@ -95,7 +96,7 @@ const AccountPage: React.FC = () => {
                         required
                         value={passwords.current}
                         onChange={e => setPasswords({...passwords, current: e.target.value})}
-                        className="w-full bg-background-dark border border-glass-edge rounded-lg px-4 py-2 text-white focus:ring-1 focus:ring-secondary-start outline-none"
+                        className="glass-input w-full"
                     />
                     <input 
                         type="password" 
@@ -103,7 +104,7 @@ const AccountPage: React.FC = () => {
                         required
                         value={passwords.new}
                         onChange={e => setPasswords({...passwords, new: e.target.value})}
-                        className="w-full bg-background-dark border border-glass-edge rounded-lg px-4 py-2 text-white focus:ring-1 focus:ring-secondary-start outline-none"
+                        className="glass-input w-full"
                     />
                     <input 
                         type="password" 
@@ -111,9 +112,9 @@ const AccountPage: React.FC = () => {
                         required
                         value={passwords.confirm}
                         onChange={e => setPasswords({...passwords, confirm: e.target.value})}
-                        className="w-full bg-background-dark border border-glass-edge rounded-lg px-4 py-2 text-white focus:ring-1 focus:ring-secondary-start outline-none"
+                        className="glass-input w-full"
                     />
-                    <button type="submit" disabled={isSaving} className="px-6 py-2 rounded-lg bg-secondary-start hover:bg-secondary-end text-white font-medium transition-colors flex items-center gap-2 disabled:opacity-50">
+                    <button type="submit" disabled={isSaving} className="btn-primary flex items-center gap-2 disabled:opacity-50">
                         {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="w-4 h-4" />}
                         {t('general.save')}
                     </button>
@@ -121,12 +122,12 @@ const AccountPage: React.FC = () => {
             </div>
 
             {/* Danger Zone */}
-            <div className="bg-red-900/10 p-6 rounded-2xl border border-red-500/20">
-                <h3 className="text-xl font-semibold text-red-400 mb-4 flex items-center gap-2">
+            <div className="bg-danger/10 p-6 rounded-2xl border border-danger/20">
+                <h3 className="text-xl font-semibold text-danger mb-4 flex items-center gap-2">
                     <Trash2 /> {t('account.dangerZone')}
                 </h3>
-                <p className="text-sm text-red-300/70 mb-4">{t('account.deleteWarning')}</p>
-                <button onClick={handleDeleteAccount} className="px-4 py-2 rounded-lg border border-red-500 text-red-400 hover:bg-red-500 hover:text-white transition-all">
+                <p className="text-sm text-danger/70 mb-4">{t('account.deleteWarning')}</p>
+                <button onClick={handleDeleteAccount} className="px-4 py-2 rounded-lg border border-danger text-danger hover:bg-danger hover:text-inverse transition-all">
                     {t('account.deleteAccount')}
                 </button>
             </div>

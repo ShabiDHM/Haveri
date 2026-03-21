@@ -1,7 +1,8 @@
 // FILE: src/components/PrivacyModal.tsx
-// PHOENIX PROTOCOL - NEW COMPONENT
+// PHOENIX PROTOCOL - NEW COMPONENT V2.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. CONTENT: Professional privacy policy structure (Data & Human Management).
 // 2. UI: Scrollable content area with custom scrollbar and clean typography.
+// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -25,25 +26,25 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <style>{scrollbarStyles}</style>
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-background-dark border border-glass-edge rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+        className="bg-glass backdrop-blur-xl border border-border-main rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
       >
-        <div className="p-6 border-b border-glass-edge flex justify-between items-center bg-background-light/50">
+        <div className="p-6 border-b border-border-main flex justify-between items-center bg-surface/50">
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <Shield className="text-primary-start h-5 w-5" />
+            <Shield className="text-primary h-5 w-5" />
             {t('footer.privacyPolicy', 'Politika e Privatësisë')}
           </h2>
-          <button onClick={onClose} className="text-text-secondary hover:text-white"><X size={24} /></button>
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24} /></button>
         </div>
 
         <div className="p-6 overflow-y-auto privacy-scroll space-y-6 text-text-secondary text-sm leading-relaxed">
           <div className="space-y-2">
-            <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-                <Lock size={16} className="text-primary-start" /> Mbrojtja e Të Dhënave
+            <h3 className="text-text-primary font-semibold text-lg flex items-center gap-2">
+                <Lock size={16} className="text-primary" /> Mbrojtja e Të Dhënave
             </h3>
             <p>
               Në <strong>Data And Human Management</strong>, ne e trajtojmë sigurinë e të dhënave tuaja si prioritetin tonë absolut. 
@@ -52,8 +53,8 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-                <Eye size={16} className="text-primary-start" /> Përdorimi i Informacionit
+            <h3 className="text-text-primary font-semibold text-lg flex items-center gap-2">
+                <Eye size={16} className="text-primary" /> Përdorimi i Informacionit
             </h3>
             <p>
               Të dhënat e ngarkuara në platformën Advocatus AI përdoren ekskluzivisht për qëllimin e analizës ligjore, 
@@ -68,20 +69,20 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-white font-semibold text-lg">Të Drejtat e Përdoruesit</h3>
+            <h3 className="text-text-primary font-semibold text-lg">Të Drejtat e Përdoruesit</h3>
             <p>
               Ju keni të drejtën të kërkoni akses, korrigjim ose fshirje të të dhënave tuaja personale në çdo kohë. 
               Për çdo shqetësim lidhur me privatësinë, ju lutemi përdorni formularin e kontaktit.
             </p>
           </div>
 
-          <div className="pt-4 border-t border-glass-edge/30 text-xs text-center opacity-50">
+          <div className="pt-4 border-t border-border-main text-xs text-center opacity-50">
             Përditësuar së fundmi: Nëntor 2025
           </div>
         </div>
 
-        <div className="p-4 border-t border-glass-edge bg-background-dark/80 text-center">
-            <button onClick={onClose} className="px-6 py-2 bg-background-light hover:bg-white/10 border border-glass-edge text-white rounded-xl font-medium transition-all">
+        <div className="p-4 border-t border-border-main bg-surface/30 text-center">
+            <button onClick={onClose} className="btn-secondary px-6 py-2">
                 {t('general.close', 'Mbyll')}
             </button>
         </div>

@@ -1,8 +1,9 @@
 // FILE: src/pages/LoginPage.tsx
-// PHOENIX PROTOCOL - LOGIN PAGE V3.0 (TACTICAL UPGRADE)
-// 1. STYLE: Applied Phoenix Glassmorphism to the login panel and form elements.
+// PHOENIX PROTOCOL - LOGIN PAGE V4.0 (DESIGN SYSTEM ALIGNMENT)
+// 1. STYLE: Applied Phoenix Glassmorphism to the login panel and form elements using design system variables.
 // 2. CONSISTENCY: Aligned fonts, colors, and spacing with the new UI standard.
 // 3. UX: Enhanced visual feedback on all interactive elements.
+// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -46,71 +47,71 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background-dark p-4 font-sans">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-transparent to-blue-900/10 pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center bg-canvas p-4 font-sans">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none" />
         
-        <div className="relative max-w-md w-full space-y-8 p-8 bg-gray-900/60 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl shadow-blue-900/20">
+        <div className="relative max-w-md w-full space-y-8 p-8 bg-glass backdrop-blur-xl rounded-3xl border border-border-main shadow-xl">
             <div className="flex justify-center">
                 <BrandLogo />
             </div>
 
             <div className="text-center">
-                <h2 className="text-3xl font-black text-white tracking-tight">{t('auth.loginTitle')}</h2>
-                <p className="mt-2 text-sm text-gray-400">{t('auth.loginSubtitle')}</p>
+                <h2 className="text-3xl font-black text-text-primary tracking-tight">{t('auth.loginTitle')}</h2>
+                <p className="mt-2 text-sm text-text-secondary">{t('auth.loginSubtitle')}</p>
             </div>
 
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                 <div className="space-y-4">
                     <div className="group">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                        <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
                             {t('auth.usernameOrEmail')}
                         </label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <User className="h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
+                                <User className="h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
                             </div>
                             <input 
                                 type="text" 
                                 required 
                                 value={identity} 
                                 onChange={(e) => setIdentity(e.target.value)} 
-                                className="block w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none transition-all" 
+                                className="glass-input w-full pl-12" 
                                 placeholder={t('auth.usernameOrEmailPlaceholder')} 
                             />
                         </div>
                     </div>
                     <div className="group">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('auth.password')}</label>
+                        <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">{t('auth.password')}</label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Lock className="h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
+                                <Lock className="h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
                             </div>
                             <input 
                                 type="password" 
                                 required 
                                 value={password} 
                                 onChange={(e) => setPassword(e.target.value)} 
-                                className="block w-full pl-12 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:border-blue-500/50 outline-none transition-all" 
+                                className="glass-input w-full pl-12" 
                                 placeholder="••••••••" 
                             />
                         </div>
                     </div>
                 </div>
 
-                {error && <div className="text-red-400 text-sm text-center bg-rose-500/10 p-3 rounded-xl border border-rose-500/20">{error}</div>}
+                {error && <div className="text-danger text-sm text-center bg-danger/10 p-3 rounded-xl border border-danger/20">{error}</div>}
 
                 <button 
                     type="submit" 
                     disabled={isSubmitting} 
-                    className="w-full flex justify-center py-4 px-4 rounded-2xl text-white bg-gradient-to-r from-blue-600 to-blue-700 font-bold shadow-lg shadow-blue-600/30 hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all"
+                    className="btn-primary w-full flex justify-center py-4"
                 >
                     {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : t('auth.loginButton')}
                 </button>
             </form>
 
             <div className="text-center text-sm">
-                <span className="text-gray-400">{t('auth.noAccount')} </span>
-                <Link to="/register" className="font-medium text-blue-400 hover:text-blue-300 transition-colors">{t('auth.registerLink')}</Link>
+                <span className="text-text-secondary">{t('auth.noAccount')} </span>
+                <Link to="/register" className="font-medium text-primary hover:text-primary-hover transition-colors">{t('auth.registerLink')}</Link>
             </div>
       </div>
     </div>

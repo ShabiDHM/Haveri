@@ -1,11 +1,7 @@
-// FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTING V4.0 (WORKSPACE ALIGNMENT)
-// 1. REBRAND: Renamed portal parameters to workspaceId.
-// 2. STATUS: Fully synchronized with AuthContext Singleton.
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import MainLayout from './pages/MainLayout';
 
 // Pages
@@ -25,14 +21,14 @@ import MobileUploadPage from './pages/MobileUploadPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
-  if (isLoading) return <div className="flex items-center justify-center h-screen bg-background-dark"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-start"></div></div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen bg-canvas"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-start"></div></div>;
   if (!isAuthenticated) return <Navigate to="/login" />;
   return <>{children}</>;
 };
 
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
-  if (isLoading) return <div className="flex items-center justify-center h-screen bg-background-dark"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-start"></div></div>;
+  if (isLoading) return <div className="flex items-center justify-center h-screen bg-canvas"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-start"></div></div>;
   if (!isAuthenticated) return <Navigate to="/login" />;
   if (user?.role?.toUpperCase() !== 'ADMIN') return <Navigate to="/business" />;
   return <>{children}</>;
@@ -49,7 +45,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/register" element={isAuthenticated ? <Navigate to="/business" /> : <RegisterPage />} />
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
       
-      {/* PHOENIX: Rebranded Portal Route */}
       <Route path="/portal/:workspaceId" element={<ClientPortalPage />} />
 
       {/* Standalone Protected Routes (No Sidebar) */}
@@ -87,7 +82,9 @@ const App: React.FC = () => {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <ThemeProvider>
+          <AppRoutes />
+        </ThemeProvider>
       </AuthProvider>
     </Router>
   );

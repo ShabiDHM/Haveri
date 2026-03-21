@@ -1,8 +1,9 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V18.4 (VAT CHECKBOX INTEGRATION)
+// PHOENIX PROTOCOL - INVOICE MODAL V19.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. FEATURE: Added "Apliko TVSH" checkbox for optional VAT application.
 // 2. LOGIC: Dynamically sets tax_rate to 0 if VAT is not included.
-// 3. STATUS: Essential invoicing control restored.
+// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 4. STATUS: Essential invoicing control restored.
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2, Search } from 'lucide-react';
@@ -53,7 +54,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                 setLineItems(invoiceToEdit.items || [{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
             } else {
                 setFormData({ client_name: '', client_email: '', client_phone: '', client_address: '', client_city: '', client_tax_id: '', client_website: '', tax_rate: 18, notes: '', status: 'PAID' });
-                setIncludeVat(true); // Default to include VAT for new invoices
+                setIncludeVat(true);
                 setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
             }
         }
@@ -74,7 +75,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            // PHOENIX: Adjust tax_rate based on includeVat checkbox
             const payload = { ...formData, items: lineItems, tax_rate: includeVat ? formData.tax_rate : 0 };
             if (invoiceToEdit) await apiService.updateInvoice(invoiceToEdit.id, payload);
             else await apiService.createInvoice(payload);
@@ -84,53 +84,52 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
 
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 custom-finance-scroll shadow-2xl">
-                <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-white">{invoiceToEdit ? t('finance.editInvoice') : t('finance.createInvoice')}</h2><button onClick={onClose} className="text-gray-400 hover:text-white"><X size={24} /></button></div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-glass backdrop-blur-xl border border-border-main rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 custom-finance-scroll shadow-xl">
+                <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-text-primary">{invoiceToEdit ? t('finance.editInvoice') : t('finance.createInvoice')}</h2><button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24} /></button></div>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
-                        <h3 className="text-xs font-bold text-primary-start uppercase tracking-widest flex items-center gap-2"><User size={14} /> {t('caseCard.client')}</h3>
+                        <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2"><User size={14} /> {t('caseCard.client')}</h3>
                         <div className="relative">
-                            <label className="block text-sm text-gray-400 mb-1">{t('business.clientName')}</label>
+                            <label className="block text-sm text-text-muted mb-1">{t('business.clientName')}</label>
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
-                                <input list="p-list" required className="w-full bg-background-light border-glass-edge rounded-lg pl-9 pr-3 py-2 text-white" value={formData.client_name} onChange={e => handleClientChange(e.target.value)} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
+                                <input list="p-list" required className="glass-input w-full pl-9" value={formData.client_name} onChange={e => handleClientChange(e.target.value)} />
                                 <datalist id="p-list">{partners.map(p => <option key={p.id} value={p.name} />)}</datalist>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <input placeholder={t('business.publicEmail')} className="bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={formData.client_email} onChange={e => setFormData({...formData, client_email: e.target.value})} />
-                            <input placeholder={t('business.phone')} className="bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={formData.client_phone} onChange={e => setFormData({...formData, client_phone: e.target.value})} />
+                            <input placeholder={t('business.publicEmail')} className="glass-input" value={formData.client_email} onChange={e => setFormData({...formData, client_email: e.target.value})} />
+                            <input placeholder={t('business.phone')} className="glass-input" value={formData.client_phone} onChange={e => setFormData({...formData, client_phone: e.target.value})} />
                         </div>
-                        <input placeholder={t('business.address')} className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={formData.client_address} onChange={e => setFormData({...formData, client_address: e.target.value})} />
+                        <input placeholder={t('business.address')} className="w-full glass-input" value={formData.client_address} onChange={e => setFormData({...formData, client_address: e.target.value})} />
                     </div>
-                    <div className="space-y-3 pt-4 border-t border-white/10">
-                        <h3 className="text-xs font-bold text-primary-start uppercase tracking-widest flex items-center gap-2"><FileText size={14} /> {t('finance.services')}</h3>
+                    <div className="space-y-3 pt-4 border-t border-border-main">
+                        <h3 className="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2"><FileText size={14} /> {t('finance.services')}</h3>
                         {lineItems.map((item, index) => (
                             <div key={index} className="flex gap-2 items-center">
-                                <input required placeholder={t('finance.description')} className="flex-1 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} />
-                                <input type="number" className="w-20 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))} />
-                                <input type="number" className="w-24 bg-background-light border-glass-edge rounded-lg px-3 py-2 text-white" value={item.unit_price} onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))} />
-                                <button type="button" onClick={() => setLineItems(lineItems.filter((_, idx) => idx !== index))} className="p-2 text-rose-400"><Trash2 size={18} /></button>
+                                <input required placeholder={t('finance.description')} className="flex-1 glass-input" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} />
+                                <input type="number" className="w-20 glass-input" value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))} />
+                                <input type="number" className="w-24 glass-input" value={item.unit_price} onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))} />
+                                <button type="button" onClick={() => setLineItems(lineItems.filter((_, idx) => idx !== index))} className="p-2 text-danger"><Trash2 size={18} /></button>
                             </div>
                         ))}
-                        <button type="button" onClick={() => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0 }])} className="text-sm text-primary-start flex items-center gap-1"><Plus size={14} /> {t('finance.addLine')}</button>
+                        <button type="button" onClick={() => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0 }])} className="text-sm text-primary flex items-center gap-1"><Plus size={14} /> {t('finance.addLine')}</button>
                         
-                        {/* PHOENIX: Add the "Apliko TVSH" checkbox here */}
                         <div className="flex items-center gap-2 pt-2">
                             <input
                                 id="includeVat"
                                 type="checkbox"
-                                className="form-checkbox h-4 w-4 text-blue-600 bg-background-light border-glass-edge rounded focus:ring-blue-500"
+                                className="form-checkbox h-4 w-4 text-primary bg-surface border-border-main rounded focus:ring-primary"
                                 checked={includeVat}
                                 onChange={(e) => setIncludeVat(e.target.checked)}
                             />
-                            <label htmlFor="includeVat" className="text-sm text-gray-300 cursor-pointer">
+                            <label htmlFor="includeVat" className="text-sm text-text-secondary cursor-pointer">
                                 {t('finance.applyVat', 'Apliko TVSH (18%)')}
                             </label>
                         </div>
                     </div>
-                    <div className="flex justify-end gap-3 pt-4"><button type="button" onClick={onClose} className="px-4 py-2 text-gray-400">{t('general.cancel')}</button><button type="submit" className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold">{t('general.save')}</button></div>
+                    <div className="flex justify-end gap-3 pt-4"><button type="button" onClick={onClose} className="px-4 py-2 text-text-muted hover:text-text-primary">{t('general.cancel')}</button><button type="submit" className="btn-primary px-6 py-2">{t('general.save')}</button></div>
                 </form>
             </div>
         </div>

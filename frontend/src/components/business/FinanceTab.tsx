@@ -1,15 +1,16 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V4.10 (STATIC AI BANNER REMOVAL - ERROR FIX)
+// PHOENIX PROTOCOL - FINANCE TAB V5.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. FIXED: Removed usage of ProactiveInsightBanner to resolve "Cannot find name" TypeScript error.
 // 2. CLEANUP: Removed unused imports related to the banner.
-// 3. STATUS: UI Cleaned and Type-Error Resolved.
+// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 4. STATUS: UI Cleaned and Type-Error Resolved.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
-    Sparkles, X, Users, Calendar, Phone, Mail, MapPin, // PHOENIX: Removed Lightbulb, ArrowRight
+    Sparkles, X, Users, Calendar, Phone, Mail, MapPin,
     Trash2
 } from 'lucide-react';
 import { apiService } from '../../services/api';
@@ -28,27 +29,28 @@ import { ClientImportModal } from './modals/ClientImportModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    let g = 'from-blue-500/20 to-blue-500/5', b = 'border-blue-500/30', ic = 'text-blue-400', ib = 'bg-blue-500/20';
-    if (type === 'income') { g = 'from-emerald-500/20 to-emerald-500/5'; b = 'border-emerald-500/30'; ic = 'text-emerald-400'; ib = 'bg-emerald-500/20'; }
-    if (type === 'expense') { g = 'from-rose-500/20 to-rose-500/5'; b = 'border-rose-500/30'; ic = 'text-rose-400'; ib = 'bg-rose-500/20'; }
-    if (type === 'warning') { g = 'from-amber-500/20 to-amber-500/5'; b = 'border-amber-500/30'; ic = 'text-amber-400'; ib = 'bg-amber-500/20'; }
+    let g = 'from-primary/20 to-primary/5', b = 'border-primary/30', ic = 'text-primary', ib = 'bg-primary/20';
+    if (type === 'income') { g = 'from-success-start/20 to-success-start/5'; b = 'border-success-start/30'; ic = 'text-success-start'; ib = 'bg-success-start/20'; }
+    if (type === 'expense') { g = 'from-danger/20 to-danger/5'; b = 'border-danger/30'; ic = 'text-danger'; ib = 'bg-danger/20'; }
+    if (type === 'warning') { g = 'from-warning-start/20 to-warning-start/5'; b = 'border-warning-start/30'; ic = 'text-warning-start'; ib = 'bg-warning-start/20'; }
     return (
         <motion.div whileHover={{ scale: 1.02 }} onClick={onClick} className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${g} border ${b} p-6 backdrop-blur-md cursor-pointer group shadow-lg`}>
-            <div className="flex justify-between items-start mb-4 relative z-10"><div className={`p-3 rounded-2xl ${ib} ${ic} border ${b}`}>{icon}</div>{trend && <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-black/40 text-gray-300 border border-white/10">{trend}</span>}</div>
-            <div className="relative z-10"><p className="text-sm text-gray-400 font-bold uppercase tracking-wider mb-1 opacity-80">{title}</p><h3 className="text-3xl font-black text-white tracking-tight">{amount}</h3></div>
+            <div className="flex justify-between items-start mb-4 relative z-10"><div className={`p-3 rounded-2xl ${ib} ${ic} border ${b}`}>{icon}</div>{trend && <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-surface text-text-muted border border-border-main">{trend}</span>}</div>
+            <div className="relative z-10"><p className="text-sm text-text-muted font-bold uppercase tracking-wider mb-1 opacity-80">{title}</p><h3 className="text-3xl font-black text-text-primary tracking-tight">{amount}</h3></div>
         </motion.div>
     );
 };
 
-// PHOENIX: ProactiveInsightBanner definition removed in previous step, no longer needed.
-// const ProactiveInsightBanner = () => { /* ... existing code ... */ };
-
 const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
-    <button onClick={onClick} className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group ${primary ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg border border-blue-400/50' : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-white/10'}`}><span className={`${primary ? 'text-white' : 'text-blue-400'}`}>{icon}</span><span>{label}</span></button>
+    <button onClick={onClick} className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group ${primary ? 'btn-primary' : 'btn-secondary'}`}>
+        <span>{icon}</span><span>{label}</span>
+    </button>
 );
 
 const TabButton = ({ label, icon, isActive, onClick }: any) => (
-    <button onClick={onClick} className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${isActive ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-gray-400 hover:text-white hover:bg-white/5 border-transparent'}`}><span className="relative z-10">{icon}</span><span className="relative z-10">{label}</span></button>
+    <button onClick={onClick} className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${isActive ? 'bg-primary/20 text-primary border border-primary/30' : 'text-text-muted hover:text-text-primary hover:bg-hover border-transparent'}`}>
+        <span className="relative z-10">{icon}</span><span className="relative z-10">{label}</span>
+    </button>
 );
 
 export const FinanceTab: React.FC = () => {
@@ -185,7 +187,7 @@ export const FinanceTab: React.FC = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-            <style>{`.custom-finance-scroll::-webkit-scrollbar { width: 6px; } .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } select option { background-color: #0f172a; color: #f9fafb; }`}</style>
+            <style>{`.custom-finance-scroll::-webkit-scrollbar { width: 6px; } .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } select option { background-color: var(--bg-card); color: var(--text-primary); }`}</style>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
@@ -194,25 +196,22 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            {/* PHOENIX: Removed ProactiveInsightBanner component from here */}
-            {/* <ProactiveInsightBanner /> */}
-
             <div className="flex flex-col lg:flex-row gap-4">
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-surface/40 p-4 rounded-3xl border border-border-main backdrop-blur-md">
                     <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                     <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
                     <ActionButton icon={<Users size={20} />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} />
                     <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
                 </div>
                 
-                <div className="flex items-center gap-4 bg-gray-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
-                    <Calendar size={20} className="text-blue-400 ml-2" />
+                <div className="flex items-center gap-4 bg-surface/40 p-4 rounded-3xl border border-border-main backdrop-blur-md">
+                    <Calendar size={20} className="text-primary ml-2" />
                     <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">{t('general.year', 'Viti Fiskal')}</span>
+                        <span className="text-[10px] uppercase font-bold text-text-muted tracking-widest">{t('general.year', 'Viti Fiskal')}</span>
                         <select 
                             value={selectedYear} 
                             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                            className="bg-transparent text-white font-black text-lg outline-none cursor-pointer hover:text-blue-400 transition-colors appearance-none pr-6"
+                            className="bg-transparent text-text-primary font-black text-lg outline-none cursor-pointer hover:text-primary transition-colors appearance-none pr-6"
                         >
                             {availableYears.map(year => (
                                 <option key={year} value={year}>{year}</option>
@@ -222,10 +221,10 @@ export const FinanceTab: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-gray-900/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md h-[70vh] min-h-[600px] flex flex-col shadow-2xl">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3"><Activity className="text-blue-500" />{t('finance.activityAndReports')}</h2>
-                    <div className="w-full sm:w-auto flex bg-black/40 p-1.5 rounded-2xl border border-white/5 gap-1">
+            <div className="bg-surface/60 border border-border-main rounded-3xl p-6 backdrop-blur-md h-[70vh] min-h-[600px] flex flex-col shadow-xl">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-border-main pb-6">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3"><Activity className="text-primary" />{t('finance.activityAndReports')}</h2>
+                    <div className="w-full sm:w-auto flex bg-surface p-1.5 rounded-2xl border border-border-main gap-1">
                         <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
                         <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
                         <TabButton label={t('clients.title', 'Partnerët')} icon={<Users size={16} />} isActive={activeTab === 'partners'} onClick={() => setActiveTab('partners')} />
@@ -235,11 +234,11 @@ export const FinanceTab: React.FC = () => {
                 <div className="flex-1 overflow-hidden relative">
                     {(activeTab === 'transactions' || activeTab === 'partners') && (
                         <div className="mb-6 relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-blue-400 transition-colors" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
                             <input 
                                 type="text" 
                                 placeholder={activeTab === 'partners' ? t('general.searchPartners', 'Kërko partnerë...') : t('header.searchPlaceholder')} 
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-blue-500/50 transition-all shadow-inner" 
+                                className="glass-input w-full pl-12 py-4" 
                                 value={searchTerm} 
                                 onChange={(e) => setSearchTerm(e.target.value)} 
                             />
@@ -249,7 +248,7 @@ export const FinanceTab: React.FC = () => {
                     {activeTab === 'transactions' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2 space-y-3 pb-20">
                             {loading ? (
-                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>
+                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>
                             ) : (
                                 <TransactionList 
                                     allTransactions={allTransactions} 
@@ -275,29 +274,29 @@ export const FinanceTab: React.FC = () => {
                     {activeTab === 'partners' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2 space-y-3 pb-20">
                             {partnersLoading ? (
-                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-blue-500" /></div>
+                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>
                             ) : filteredPartners.length === 0 ? (
-                                <div className="text-center text-gray-500 py-10">{t('general.noPartnersFound', 'Nuk u gjet asnjë partner.')}</div>
+                                <div className="text-center text-text-muted py-10">{t('general.noPartnersFound', 'Nuk u gjet asnjë partner.')}</div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {filteredPartners.map((partner) => (
-                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-black/30 border border-white/5 rounded-2xl p-5 hover:border-blue-500/30 transition-all group relative">
+                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface/30 border border-border-main rounded-2xl p-5 hover:border-primary/30 transition-all group relative">
                                             <div className="flex justify-between items-start mb-4">
-                                                <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20"><Users size={20} /></div>
+                                                <div className="p-3 rounded-xl bg-primary/10 text-primary border border-primary/20"><Users size={20} /></div>
                                                 <div className="flex flex-col items-end gap-2">
-                                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{partner.type}</span>
+                                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-success-start/20 text-success-start' : 'bg-warning-start/20 text-warning-start'}`}>{partner.type}</span>
                                                     <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-gray-800/50 text-rose-400 hover:bg-rose-500 hover:text-white transition-all border border-white/5" title={t('general.delete')}><Trash2 size={14}/></button>
+                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-surface/50 text-danger hover:bg-danger hover:text-inverse transition-all border border-border-main" title={t('general.delete')}><Trash2 size={14}/></button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <h4 className="text-lg font-bold text-white mb-3 group-hover:text-blue-400 transition-colors">{partner.name}</h4>
+                                            <h4 className="text-lg font-bold text-text-primary mb-3 group-hover:text-primary transition-colors">{partner.name}</h4>
                                             <div className="space-y-2">
-                                                {partner.email && <div className="flex items-center gap-2 text-xs text-gray-400"><Mail size={14} className="text-blue-500/50" /> {partner.email}</div>}
-                                                {partner.phone && <div className="flex items-center gap-2 text-xs text-gray-400"><Phone size={14} className="text-blue-500/50" /> {partner.phone}</div>}
-                                                {partner.address && <div className="flex items-center gap-2 text-xs text-gray-400"><MapPin size={14} className="text-blue-500/50" /> {partner.address}</div>}
+                                                {partner.email && <div className="flex items-center gap-2 text-xs text-text-muted"><Mail size={14} className="text-primary/50" /> {partner.email}</div>}
+                                                {partner.phone && <div className="flex items-center gap-2 text-xs text-text-muted"><Phone size={14} className="text-primary/50" /> {partner.phone}</div>}
+                                                {partner.address && <div className="flex items-center gap-2 text-xs text-text-muted"><MapPin size={14} className="text-primary/50" /> {partner.address}</div>}
                                             </div>
-                                            {partner.tax_id && <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center"><span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">NIPT / TAX ID</span><span className="text-xs font-mono text-gray-300">{partner.tax_id}</span></div>}
+                                            {partner.tax_id && <div className="mt-4 pt-4 border-t border-border-main flex justify-between items-center"><span className="text-[10px] text-text-muted uppercase font-bold tracking-widest">NIPT / TAX ID</span><span className="text-xs font-mono text-text-secondary">{partner.tax_id}</span></div>}
                                         </motion.div>
                                     ))}
                                 </div>
@@ -307,18 +306,18 @@ export const FinanceTab: React.FC = () => {
 
                     {activeTab === 'reports' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
-                            {!analyticsData ? ( <div className="text-center text-gray-500 py-10">{t('finance.reports.noData')}</div> ) : (
+                            {!analyticsData ? ( <div className="text-center text-text-muted py-10">{t('finance.reports.noData')}</div> ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
-                                        <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-blue-400" /> {t('finance.analytics.salesTrend')}</h4>
+                                    <div className="bg-surface/30 rounded-3xl p-6 border border-border-main shadow-lg">
+                                        <h4 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-primary" /> {t('finance.analytics.salesTrend')}</h4>
                                         <div className="h-[300px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%"><AreaChart data={analyticsData.sales_trend}><defs><linearGradient id="colorSales" x1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} /><YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} /><Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" /></AreaChart></ResponsiveContainer>
+                                            <ResponsiveContainer width="100%" height="100%"><AreaChart data={analyticsData.sales_trend}><defs><linearGradient id="colorSales" x1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} /><YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} /><Tooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" /></AreaChart></ResponsiveContainer>
                                         </div>
                                     </div>
-                                    <div className="bg-black/30 rounded-3xl p-6 border border-white/5 shadow-lg">
-                                        <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-emerald-400" /> {t('finance.analytics.topProducts')}</h4>
+                                    <div className="bg-surface/30 rounded-3xl p-6 border border-border-main shadow-lg">
+                                        <h4 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-success-start" /> {t('finance.analytics.topProducts')}</h4>
                                         <div className="h-[300px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%"><BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 10 }}><XAxis type="number" hide /><YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} /><Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>{analyticsData.top_products.map((_: any, index: number) => (<Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />))}</Bar></BarChart></ResponsiveContainer>
+                                            <ResponsiveContainer width="100%" height="100%"><BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 10 }}><XAxis type="number" hide /><YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} /><Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>{analyticsData.top_products.map((_: any, index: number) => (<Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />))}</Bar></BarChart></ResponsiveContainer>
                                         </div>
                                     </div>
                                 </div>
@@ -327,38 +326,38 @@ export const FinanceTab: React.FC = () => {
                     )}
                 </div>
             </div>
-            <AnimatePresence>{kpiModalOpen && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"><motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative"><div className="p-6 border-b border-white/10 bg-blue-900/20 flex justify-between items-center"><h3 className="text-xl font-bold text-white flex items-center gap-2"><Sparkles size={20} className="text-yellow-400" />{kpiAnalysis?.type}</h3><button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"><X size={20}/></button></div><div className="p-6 space-y-6">{kpiLoading ? (<div className="flex flex-col items-center py-10 gap-4"><Loader2 size={40} className="animate-spin text-blue-500" /><p className="text-gray-400 animate-pulse">{t('finance.smartAnalyst.analyzing')}</p></div>) : (<>{kpiAnalysis?.summary && <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4"><h4 className="text-sm font-bold text-blue-300 uppercase mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4><p className="text-white leading-relaxed">{kpiAnalysis?.summary}</p></div>}{kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (<div><h4 className="text-sm font-bold text-gray-400 uppercase mb-3">{t('finance.smartAnalyst.keyContributors')}</h4><div className="space-y-2">{kpiAnalysis.contributors.map((c:any, i:any) => (<div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-sm text-gray-200">{c}</span></div>))}</div></div>)}</>)}</div></motion.div></motion.div>)}</AnimatePresence>
+            <AnimatePresence>{kpiModalOpen && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"><motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden relative"><div className="p-6 border-b border-border-main bg-primary/20 flex justify-between items-center"><h3 className="text-xl font-bold text-text-primary flex items-center gap-2"><Sparkles size={20} className="text-warning-start" />{kpiAnalysis?.type}</h3><button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-hover rounded-lg text-text-muted transition-colors"><X size={20}/></button></div><div className="p-6 space-y-6">{kpiLoading ? (<div className="flex flex-col items-center py-10 gap-4"><Loader2 size={40} className="animate-spin text-primary" /><p className="text-text-muted animate-pulse">{t('finance.smartAnalyst.analyzing')}</p></div>) : (<>{kpiAnalysis?.summary && <div className="bg-primary/10 border border-primary/20 rounded-xl p-4"><h4 className="text-sm font-bold text-primary uppercase mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4><p className="text-text-primary leading-relaxed">{kpiAnalysis?.summary}</p></div>}{kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (<div><h4 className="text-sm font-bold text-text-muted uppercase mb-3">{t('finance.smartAnalyst.keyContributors')}</h4><div className="space-y-2">{kpiAnalysis.contributors.map((c:any, i:any) => (<div key={i} className="flex items-center gap-3 p-3 bg-surface rounded-lg border border-border-main"><div className="w-2 h-2 rounded-full bg-success-start" /><span className="text-sm text-text-secondary">{c}</span></div>))}</div></div>)}</>)}</div></motion.div></motion.div>)}</AnimatePresence>
             <InvoiceModal isOpen={showInvoiceModal} onClose={() => { setShowInvoiceModal(false); setSelectedInvoice(null); }} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
             <ExpenseModal isOpen={showExpenseModal} onClose={() => { setShowExpenseModal(false); setSelectedExpense(null); }} expenseToEdit={selectedExpense} onSuccess={refreshData} />
             <ClientImportModal isOpen={showClientImportModal} onClose={() => setShowClientImportModal(false)} onSuccess={() => { refreshData(); if (activeTab === 'partners') { apiService.getPartners().then(setPartners); } }} />
             
             {showArchiveInvoiceModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20">
-                        <h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveInvoice')}</h2>
-                        <select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white mb-6" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-md p-6 shadow-xl">
+                        <h2 className="text-xl font-bold text-text-primary mb-4">{t('finance.archiveInvoice')}</h2>
+                        <select className="glass-input w-full mb-6" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowArchiveInvoiceModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 font-medium">{t('general.cancel')}</button>
-                            <button onClick={submitArchiveInvoice} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-900/20">{t('general.save')}</button>
+                            <button onClick={() => setShowArchiveInvoiceModal(false)} className="btn-secondary px-5 py-2.5">{t('general.cancel')}</button>
+                            <button onClick={submitArchiveInvoice} className="btn-primary px-6 py-2.5">{t('general.save')}</button>
                         </div>
                     </div>
                 </div>
             )}
 
             {showArchiveExpenseModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-[#0f172a] border border-blue-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl shadow-blue-900/20">
-                        <h2 className="text-xl font-bold text-white mb-4">{t('finance.archiveExpenseTitle')}</h2>
-                        <select className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white mb-6" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-md p-6 shadow-xl">
+                        <h2 className="text-xl font-bold text-text-primary mb-4">{t('finance.archiveExpenseTitle')}</h2>
+                        <select className="glass-input w-full mb-6" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowArchiveExpenseModal(false)} className="px-5 py-2.5 rounded-xl bg-white/5 text-gray-300 font-medium">{t('general.cancel')}</button>
-                            <button onClick={submitArchiveExpense} className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-900/20">{t('general.save')}</button>
+                            <button onClick={() => setShowArchiveExpenseModal(false)} className="btn-secondary px-5 py-2.5">{t('general.cancel')}</button>
+                            <button onClick={submitArchiveExpense} className="btn-primary px-6 py-2.5">{t('general.save')}</button>
                         </div>
                     </div>
                 </div>

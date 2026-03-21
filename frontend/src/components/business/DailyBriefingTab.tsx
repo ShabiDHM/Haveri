@@ -1,9 +1,10 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V5.6 (TEMPORAL ALIGNMENT)
+// PHOENIX PROTOCOL - DASHBOARD V6.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. FIXED: Charts now pivot based on 'selectedYear' using server-side analytics.
 // 2. FIXED: Removed redundant/blind API calls to unify data state across tabs.
 // 3. FIXED: Aligned Peak Traffic analysis with the selected Fiscal Year.
-// 4. STATUS: Dashboard UI Fully Synchronized.
+// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 5. STATUS: Dashboard UI Fully Synchronized.
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,7 +26,6 @@ export const DailyBriefingTab: React.FC = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     
-    // PHOENIX: Consuming unified, context-aware finance data from the hook
     const { 
         displayIncome, 
         analyticsData, 
@@ -52,7 +52,6 @@ export const DailyBriefingTab: React.FC = () => {
     const isAlbanian = i18n.language.startsWith('sq') || i18n.language === 'al';
     const shortMonthsSQ = ['Jan', 'Shk', 'Mar', 'Pri', 'Maj', 'Qer', 'Kor', 'Gush', 'Sht', 'Tet', 'Nën', 'Dhj'];
 
-    // Local display date logic
     const today = new Date();
     const monthsSQ = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
     const monthsEN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -62,7 +61,6 @@ export const DailyBriefingTab: React.FC = () => {
     useEffect(() => {
         const loadAmbientData = async () => {
             try {
-                // Fetch non-temporal data
                 const [workspacesData, msgs] = await Promise.all([
                     apiService.getWorkspaces(),
                     apiService.getInboundMessages('INBOX')
@@ -78,7 +76,6 @@ export const DailyBriefingTab: React.FC = () => {
         loadAmbientData();
     }, []);
 
-    // PHOENIX: Re-process history whenever analyticsData (which is now year-aware) changes
     useEffect(() => {
         if (analyticsData?.sales_trend) {
             processSalesHistory(analyticsData.sales_trend);
@@ -99,7 +96,6 @@ export const DailyBriefingTab: React.FC = () => {
             return;
         }
 
-        // PHOENIX: Map server-side trend points (filtered for 2026) to chart labels
         const labels = trend.map(point => {
             const date = new Date(point.date);
             if (isNaN(date.getTime())) return point.date;
@@ -122,7 +118,6 @@ export const DailyBriefingTab: React.FC = () => {
 
         const hourCounts: Record<number, number> = {};
         
-        // PHOENIX: Filter peak analysis by the selected year context to ensure accuracy
         transactions.forEach(tx => {
             const dateVal = tx.transaction_date || tx.date_time || tx.date;
             if (!dateVal) return;
@@ -156,8 +151,8 @@ export const DailyBriefingTab: React.FC = () => {
 
     const isLoading = briefingLoading || financeLoading || localLoading;
 
-    if (isLoading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-indigo-500" /></div>;
-    if (briefingError) return <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-center"><AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" /><h3 className="text-white font-bold">{t('error.generic')}</h3><p>{t('error.failedToLoad')}</p></div>;
+    if (isLoading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
+    if (briefingError) return <div className="p-6 bg-danger/10 border border-danger/20 rounded-2xl text-center"><AlertTriangle className="w-10 h-10 text-danger mx-auto mb-3" /><h3 className="text-text-primary font-bold">{t('error.generic')}</h3><p>{t('error.failedToLoad')}</p></div>;
 
     return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 sm:space-y-8 pb-10">
@@ -165,21 +160,21 @@ export const DailyBriefingTab: React.FC = () => {
                 {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={handleEventUpdate} workspaces={workspaces} />}
             </AnimatePresence>
             
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950 to-slate-900 border border-white/10 p-6 sm:p-10 text-center sm:text-left shadow-2xl">
-                <div className="absolute top-0 right-0 p-40 bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/80 to-surface border border-border-main p-6 sm:p-10 text-center sm:text-left shadow-xl">
+                <div className="absolute top-0 right-0 p-40 bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
                 <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
-                        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight flex items-center justify-center sm:justify-start gap-3">
-                            <Target className="text-indigo-400" />
+                        <h2 className="text-3xl sm:text-4xl font-bold text-text-primary mb-2 tracking-tight flex items-center justify-center sm:justify-start gap-3">
+                            <Target className="text-primary" />
                             {t('dashboard.dailyOverviewTitle')}
                         </h2>
-                        <p className="text-gray-400 text-lg max-w-xl">
+                        <p className="text-text-secondary text-lg max-w-xl">
                             {t('dashboard.dailyOverviewSubtitle')} ({selectedYear})
                         </p>
                     </div>
                     <div className="hidden sm:block text-right">
-                        <div className="text-sm text-gray-500 uppercase tracking-widest font-semibold">{t('common.today')}</div>
-                        <div className="text-2xl text-white font-mono font-bold tracking-tight">{finalDate}</div>
+                        <div className="text-sm text-text-muted uppercase tracking-widest font-semibold">{t('common.today')}</div>
+                        <div className="text-2xl text-text-primary font-mono font-bold tracking-tight">{finalDate}</div>
                     </div>
                 </div>
             </div>
@@ -205,17 +200,17 @@ export const DailyBriefingTab: React.FC = () => {
                         whileHover={{ scale: 1.02, y: -2 }} 
                         whileTap={{ scale: 0.98 }} 
                         onClick={() => navigate('/business/inbox')} 
-                        className="group relative bg-gray-900/60 hover:bg-gray-900/80 border border-white/10 rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md"
+                        className="group relative bg-surface/60 hover:bg-surface/80 border border-border-main rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md"
                     >
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
-                                <div className="p-3 rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/20"><Mail size={20} /></div>
+                                <div className="p-3 rounded-2xl bg-primary/20 text-primary border border-primary/20"><Mail size={20} /></div>
                                 <div>
-                                    <h3 className="font-bold text-white text-lg">Inbox</h3>
-                                    <p className="text-sm text-gray-400">{messageCount} {t('inbox.newMessages', 'mesazhe të reja')}</p>
+                                    <h3 className="font-bold text-text-primary text-lg">Inbox</h3>
+                                    <p className="text-sm text-text-muted">{messageCount} {t('inbox.newMessages', 'mesazhe të reja')}</p>
                                 </div>
                             </div>
-                            <div className="p-2 rounded-full bg-white/5 group-hover:bg-blue-500/20 group-hover:text-blue-300 transition-all text-gray-400"><ArrowRight size={20} /></div>
+                            <div className="p-2 rounded-full bg-surface group-hover:bg-primary/20 group-hover:text-primary transition-all text-text-muted"><ArrowRight size={20} /></div>
                         </div>
                     </motion.div>
                     <div className="flex-1 min-h-0">

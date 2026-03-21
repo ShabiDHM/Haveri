@@ -1,9 +1,10 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - WORKSPACE HUB V20.0 (SINGLETON ALIGNMENT)
+// PHOENIX PROTOCOL - WORKSPACE HUB V20.1 (DESIGN SYSTEM ALIGNMENT)
 // 1. FEATURE: Integrated with AuthContext 'workspace' singleton.
 // 2. REBRAND: Global terminology shift from Case to Workspace.
 // 3. OPTIMIZATION: Removed redundant API calls and local loading states.
-// 4. STATUS: Fully synchronized.
+// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 5. STATUS: Fully synchronized.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,7 +25,7 @@ interface BusinessPageProps {
 
 const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
   const { t } = useTranslation();
-  const { user, workspace, isLoading: isAuthLoading } = useAuth(); // PHOENIX: Consuming singleton from context
+  const { user, workspace, isLoading: isAuthLoading } = useAuth();
 
   const capitalize = (s: string | undefined) => {
     if (!s) return t('general.user', 'Përdorues');
@@ -32,7 +33,6 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
   };
 
   const renderActiveTab = () => {
-    // PHOENIX: Ensure we don't render sub-tabs until auth/workspace is ready
     if (isAuthLoading) return null;
 
     switch (view) {
@@ -41,7 +41,6 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
       case 'inventory': return <InventoryTab />;
       
       case 'archive': 
-        // PHOENIX: Passed workspace.id instead of mainCase.id
         return <ArchiveTab key={workspace?.id || 'root'} workspaceId={workspace?.id} />;
         
       case 'insights': return <InsightsTab />;
@@ -53,13 +52,12 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6">
-      {/* PHOENIX: Header restricted to Briefing view only */}
       {view === 'briefing' && (
           <div className="mb-8 sm:mb-12">
-              <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-black text-text-primary mb-2 tracking-tight">
                   {t('business.welcome', 'Mirësevini {{name}}', { name: capitalize(user?.username) })}
               </h1>
-              <p className="text-gray-400 text-base sm:text-lg font-medium">
+              <p className="text-text-secondary text-base sm:text-lg font-medium">
                   {t('business.title', 'Hapësira e Punës')}
               </p>
           </div>

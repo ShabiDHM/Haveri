@@ -1,7 +1,7 @@
 // FILE: src/components/PDFViewerModal.tsx
-// PHOENIX PROTOCOL - UNIVERSAL DOCUMENT VIEWER V5.1 (TOTAL INTEGRATION)
-// 1. FIXED: Utilized all previously "unused" variables (isLoading, error, onMinimize, etc.).
-// 2. FEATURE: High-Fidelity Table Rendering for CSV/Excel verification.
+// PHOENIX PROTOCOL - UNIVERSAL DOCUMENT VIEWER V6.1 (JSX FIX)
+// 1. FIXED: Corrected JSX closing tags in renderDataView.
+// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
 // 3. STATUS: 100% Warning-free and functionally complete.
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -143,34 +143,53 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
       if (!textContent) return null;
       const rows = textContent.split('\n').filter(r => r.trim()).map(r => r.split(','));
       return (
-          <div className="flex justify-center p-4 sm:p-8 min-h-full bg-[#0a0a0a]">
-              <div className="bg-white text-gray-900 shadow-2xl p-6 sm:p-10 min-h-[800px] w-full max-w-5xl rounded-sm border border-gray-300">
-                  <div className="border-b-2 border-gray-100 pb-4 mb-6 flex justify-between">
-                      <div><h1 className="text-xl font-black text-blue-900 uppercase">Dokument Verifikimi</h1><p className="text-[10px] font-mono text-gray-400">{documentData.file_name}</p></div>
-                      <div className="text-right text-[10px] text-gray-400 uppercase font-bold"><p>Haveri Forensic</p><p>{new Date().toLocaleDateString()}</p></div>
+          <div className="flex justify-center p-4 sm:p-8 min-h-full bg-canvas">
+              <div className="bg-card text-text-primary shadow-xl p-6 sm:p-10 min-h-[800px] w-full max-w-5xl rounded-sm border border-border-main">
+                  <div className="border-b-2 border-border-main pb-4 mb-6 flex justify-between">
+                      <div><h1 className="text-xl font-black text-primary uppercase">Dokument Verifikimi</h1><p className="text-[10px] font-mono text-text-muted">{documentData.file_name}</p></div>
+                      <div className="text-right text-[10px] text-text-muted uppercase font-bold"><p>Haveri Forensic</p><p>{new Date().toLocaleDateString()}</p></div>
                   </div>
-                  <div className="overflow-x-auto"><table className="w-full text-left border-collapse"><thead><tr className="bg-gray-100">{rows[0]?.map((h, i) => (<th key={i} className="px-3 py-2 text-[10px] font-bold border border-gray-200">{h}</th>))}</tr></thead><tbody>{rows.slice(1).map((row, i) => (<tr key={i} className="border-b border-gray-100">{row.map((c, j) => (<td key={j} className="px-3 py-2 text-[11px] border border-gray-50">{c}</td>))}</tr>))}</tbody></table></div>
+                  <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                          <thead>
+                              <tr className="bg-surface">
+                                  {rows[0]?.map((h, i) => (
+                                      <th key={i} className="px-3 py-2 text-[10px] font-bold border border-border-main text-text-primary">{h}</th>
+                                  ))}
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {rows.slice(1).map((row, i) => (
+                                  <tr key={i} className="border-b border-border-main">
+                                      {row.map((c, j) => (
+                                          <td key={j} className="px-3 py-2 text-[11px] border border-border-main text-text-secondary">{c}</td>
+                                      ))}
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                  </div>
               </div>
           </div>
       );
   };
 
   const renderContent = () => {
-    if (isLoading) return <div className="flex flex-col items-center justify-center h-64"><Loader className="animate-spin h-10 w-10 text-blue-500 mb-4" /><p className="text-gray-500 text-sm animate-pulse">{t('general.loading')}</p></div>;
+    if (isLoading) return <div className="flex flex-col items-center justify-center h-64"><Loader className="animate-spin h-10 w-10 text-primary mb-4" /><p className="text-text-muted text-sm animate-pulse">{t('general.loading')}</p></div>;
     
     if (error) return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <AlertTriangle className="h-16 w-16 text-rose-500 mb-6" />
-            <h3 className="text-xl font-bold text-white mb-2">{t('error.generic')}</h3>
-            <p className="text-gray-400 max-w-md">{error}</p>
+            <AlertTriangle className="h-16 w-16 text-danger mb-6" />
+            <h3 className="text-xl font-bold text-text-primary mb-2">{t('error.generic')}</h3>
+            <p className="text-text-muted max-w-md">{error}</p>
         </div>
     );
 
     if (actualViewerMode === 'DOWNLOAD') return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <TableIcon size={64} className="text-gray-600 mb-6" />
-            <h3 className="text-xl font-bold text-white mb-4">{t('pdfViewer.previewNotAvailable')}</h3>
-            <button onClick={handleDownloadOriginal} disabled={isDownloading} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold flex items-center gap-2">
+            <TableIcon size={64} className="text-text-muted mb-6" />
+            <h3 className="text-xl font-bold text-text-primary mb-4">{t('pdfViewer.previewNotAvailable')}</h3>
+            <button onClick={handleDownloadOriginal} disabled={isDownloading} className="btn-primary flex items-center gap-2">
                 {isDownloading ? <Loader className="animate-spin" size={20}/> : <Download size={20}/>} {t('pdfViewer.downloadOriginal')}
             </button>
         </div>
@@ -178,50 +197,50 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
 
     switch (actualViewerMode) {
       case 'PDF': return (
-          <div className="flex flex-col items-center w-full min-h-full bg-[#1a1a1a] overflow-auto pt-8 pb-20" ref={containerRef}>
+          <div className="flex flex-col items-center w-full min-h-full bg-canvas overflow-auto pt-8 pb-20" ref={containerRef}>
              <PdfDocument file={pdfSource} onLoadSuccess={({numPages}) => setNumPages(numPages)} onLoadError={() => setActualViewerMode('DOWNLOAD')} loading={null}>
-                 <Page pageNumber={pageNumber} width={containerWidth > 0 ? containerWidth : 600} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} className="shadow-2xl mb-4" />
+                 <Page pageNumber={pageNumber} width={containerWidth > 0 ? containerWidth : 600} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} className="shadow-xl mb-4" />
              </PdfDocument>
           </div>
       );
       case 'DATA': return renderDataView();
-      case 'IMAGE': return <div className="flex items-center justify-center h-full p-4"><img src={imageSource!} alt="Preview" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" /></div>;
-      case 'TEXT': return <div className="flex justify-center p-4 sm:p-8 min-h-full"><div className="bg-white text-gray-900 p-8 w-full max-w-3xl rounded-sm shadow-xl font-mono text-xs"><pre className="whitespace-pre-wrap">{textContent}</pre></div></div>;
+      case 'IMAGE': return <div className="flex items-center justify-center h-full p-4"><img src={imageSource!} alt="Preview" className="max-w-full max-h-full object-contain rounded-lg shadow-xl" /></div>;
+      case 'TEXT': return <div className="flex justify-center p-4 sm:p-8 min-h-full"><div className="bg-card text-text-primary p-8 w-full max-w-3xl rounded-sm shadow-xl font-mono text-xs border border-border-main"><pre className="whitespace-pre-wrap">{textContent}</pre></div></div>;
       default: return null;
     }
   };
 
   return ReactDOM.createPortal(
     <AnimatePresence>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/95 backdrop-blur-md z-[9999] flex items-center justify-center p-0 sm:p-4" onClick={onClose}>
-        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-[#1a1a1a] w-full h-full sm:max-w-6xl sm:max-h-[95vh] rounded-none sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/10" onClick={(e) => e.stopPropagation()}>
-          <header className="flex items-center justify-between p-3 sm:p-4 bg-[#1a1a1a] border-b border-white/5 backdrop-blur-xl z-20 shrink-0">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-md z-[9999] flex items-center justify-center p-0 sm:p-4" onClick={onClose}>
+        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-glass backdrop-blur-xl w-full h-full sm:max-w-6xl sm:max-h-[95vh] rounded-none sm:rounded-2xl shadow-xl flex flex-col overflow-hidden border border-border-main" onClick={(e) => e.stopPropagation()}>
+          <header className="flex items-center justify-between p-3 sm:p-4 bg-surface border-b border-border-main backdrop-blur-xl z-20 shrink-0">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-                {actualViewerMode === 'DATA' ? <FileSpreadsheet className="text-emerald-400" /> : <TableIcon className="text-blue-400" />}
-                <h2 className="text-sm sm:text-base font-bold text-gray-200 truncate">{documentData.file_name}</h2>
+                {actualViewerMode === 'DATA' ? <FileSpreadsheet className="text-success-start" /> : <TableIcon className="text-primary" />}
+                <h2 className="text-sm sm:text-base font-bold text-text-primary truncate">{documentData.file_name}</h2>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
               {actualViewerMode === 'PDF' && (
-                  <div className="hidden sm:flex items-center gap-1 mr-4 bg-black/20 p-1 rounded-lg border border-white/5">
-                      <button onClick={() => setScale(s => Math.max(s - 0.1, 0.5))} className="p-1.5 text-gray-400 hover:text-white"><ZoomOut size={16}/></button>
-                      <button onClick={() => setScale(1.0)} className="p-1.5 text-gray-400 hover:text-white"><Maximize size={16}/></button>
-                      <button onClick={() => setScale(s => Math.min(s + 0.1, 3.0))} className="p-1.5 text-gray-400 hover:text-white"><ZoomIn size={16}/></button>
+                  <div className="hidden sm:flex items-center gap-1 mr-4 bg-surface p-1 rounded-lg border border-border-main">
+                      <button onClick={() => setScale(s => Math.max(s - 0.1, 0.5))} className="p-1.5 text-text-muted hover:text-text-primary"><ZoomOut size={16}/></button>
+                      <button onClick={() => setScale(1.0)} className="p-1.5 text-text-muted hover:text-text-primary"><Maximize size={16}/></button>
+                      <button onClick={() => setScale(s => Math.min(s + 0.1, 3.0))} className="p-1.5 text-text-muted hover:text-text-primary"><ZoomIn size={16}/></button>
                   </div>
               )}
-              <button onClick={handleDownloadOriginal} disabled={isDownloading} className="p-2 text-gray-400 hover:text-white transition-colors" title={t('general.download')}>
+              <button onClick={handleDownloadOriginal} disabled={isDownloading} className="p-2 text-text-muted hover:text-text-primary transition-colors" title={t('general.download')}>
                   {isDownloading ? <Loader className="animate-spin" size={20}/> : <Download size={22} />}
               </button>
-              {onMinimize && <button onClick={onMinimize} className="p-2 text-gray-400 hover:text-white transition-colors"><Minus size={22} /></button>}
-              <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
+              {onMinimize && <button onClick={onMinimize} className="p-2 text-text-muted hover:text-text-primary transition-colors"><Minus size={22} /></button>}
+              <button onClick={onClose} className="p-2 text-text-muted hover:text-text-primary transition-colors"><X size={24} /></button>
             </div>
           </header>
-          <div className="flex-grow relative bg-[#0f0f0f] overflow-auto custom-scrollbar">{renderContent()}</div>
+          <div className="flex-grow relative bg-canvas/50 overflow-auto custom-scrollbar">{renderContent()}</div>
           {actualViewerMode === 'PDF' && numPages && numPages > 1 && (
-            <footer className="flex items-center justify-center p-3 bg-[#1a1a1a] border-t border-white/5 z-20">
-              <div className="flex items-center gap-4 bg-black/60 px-4 py-2 rounded-full border border-white/10 shadow-xl">
-                <button onClick={() => setPageNumber(p => Math.max(1, p - 1))} disabled={pageNumber <= 1} className="p-1 hover:text-white disabled:opacity-20"><ChevronLeft size={24} /></button>
-                <span className="text-xs font-bold text-gray-300 w-16 text-center">{pageNumber} / {numPages}</span>
-                <button onClick={() => setPageNumber(p => Math.min(numPages, p + 1))} disabled={pageNumber >= numPages} className="p-1 hover:text-white disabled:opacity-20"><ChevronRight size={24} /></button>
+            <footer className="flex items-center justify-center p-3 bg-surface border-t border-border-main z-20">
+              <div className="flex items-center gap-4 bg-surface px-4 py-2 rounded-full border border-border-main shadow-sm">
+                <button onClick={() => setPageNumber(p => Math.max(1, p - 1))} disabled={pageNumber <= 1} className="p-1 hover:text-text-primary disabled:opacity-20 text-text-muted"><ChevronLeft size={24} /></button>
+                <span className="text-xs font-bold text-text-primary w-16 text-center">{pageNumber} / {numPages}</span>
+                <button onClick={() => setPageNumber(p => Math.min(numPages, p + 1))} disabled={pageNumber >= numPages} className="p-1 hover:text-text-primary disabled:opacity-20 text-text-muted"><ChevronRight size={24} /></button>
               </div>
             </footer>
           )}

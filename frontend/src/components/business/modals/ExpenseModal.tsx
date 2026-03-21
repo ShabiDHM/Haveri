@@ -1,7 +1,8 @@
 // FILE: src/components/business/modals/ExpenseModal.tsx
-// PHOENIX PROTOCOL - V3.3 (FINAL SYNC & CLEANUP)
+// PHOENIX PROTOCOL - V4.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. CLEANUP: Surgically removed unused type imports to resolve TS6133 warnings.
-// 2. STATUS: Fully synchronized with QR Handoff, AI Extraction, and Supplier Autocomplete.
+// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. STATUS: Fully synchronized with QR Handoff, AI Extraction, and Supplier Autocomplete.
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -39,12 +40,10 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
     const [extractionError, setExtractionError] = useState<string | null>(null);
     const [sourceArchiveId, setSourceArchiveId] = useState<string | null>(null);
     
-    // PHOENIX: State for QR Modal
     const [isQrModalOpen, setIsQrModalOpen] = useState(false);
     const [handoffToken, setHandoffToken] = useState<string | null>(null);
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    // PHOENIX: Fetch Supplier list for autocomplete
     useEffect(() => {
         if (isOpen) {
             apiService.getPartners().then(data => {
@@ -71,7 +70,6 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
 
     useEffect(() => { if (isOpen) { resetForm(expenseToEdit); } }, [isOpen, expenseToEdit]);
 
-    // PHOENIX: Polling logic for Smartphone Handoff
     useEffect(() => {
         if (isQrModalOpen && handoffToken) {
             pollingIntervalRef.current = setInterval(async () => {
@@ -92,7 +90,6 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
         };
     }, [isQrModalOpen, handoffToken]);
     
-    // SSE Listener for AI Extraction results
     useEffect(() => {
         if (!isOpen || !sourceArchiveId) return;
         const abortController = new AbortController();
@@ -205,45 +202,45 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-background-dark border border-glass-edge rounded-2xl w-full max-w-md p-4 sm:p-6 shadow-2xl">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-glass backdrop-blur-xl border border-border-main rounded-2xl w-full max-w-md p-4 sm:p-6 shadow-xl">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2"><MinusCircle size={20} className="text-rose-500" />{expenseToEdit ? t('finance.editExpense') : t('finance.addExpense')}</h2>
-                        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
+                        <h2 className="text-xl font-bold text-text-primary flex items-center gap-2"><MinusCircle size={20} className="text-danger" />{expenseToEdit ? t('finance.editExpense') : t('finance.addExpense')}</h2>
+                        <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors"><X size={24} /></button>
                     </div>
 
                     <div className="mb-6 flex items-center gap-2">
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileSelected} />
-                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'} className={`flex-1 py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${extractionStatus === 'COMPLETED' ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'} disabled:opacity-50`}>
+                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'} className={`flex-1 py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${extractionStatus === 'COMPLETED' ? 'bg-primary/20 border-primary text-primary' : 'bg-surface border-border-main text-text-muted hover:bg-hover'} disabled:opacity-50`}>
                             {getButtonContent()}
                         </button>
-                        <button type="button" title={t('finance.scanFromPhone')} onClick={startHandoff} className="p-3 border border-dashed rounded-xl bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20 transition-all">
+                        <button type="button" title={t('finance.scanFromPhone')} onClick={startHandoff} className="p-3 border border-dashed rounded-xl bg-surface border-border-main text-text-muted hover:bg-hover hover:border-border-main transition-all">
                             <Smartphone size={24} />
                         </button>
                     </div>
-                    {extractionError && <p className="text-xs text-red-400 -mt-4 mb-4">{extractionError}</p>}
+                    {extractionError && <p className="text-xs text-danger -mt-4 mb-4">{extractionError}</p>}
                     
                     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                         <div>
-                            <label className="block text-sm text-gray-300 mb-1">{t('finance.expenseCategory')}</label>
-                            <input required type="text" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white focus:border-rose-500/50 outline-none transition-all" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
+                            <label className="block text-sm text-text-secondary mb-1">{t('finance.expenseCategory')}</label>
+                            <input required type="text" className="glass-input w-full" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-300 mb-1">{t('finance.amount')}</label>
-                            <input required type="number" step="0.01" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white focus:border-rose-500/50 outline-none transition-all" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})} />
+                            <label className="block text-sm text-text-secondary mb-1">{t('finance.amount')}</label>
+                            <input required type="number" step="0.01" className="glass-input w-full" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})} />
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-300 mb-1">{t('finance.date')}</label>
-                            <DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="w-full bg-background-light border-glass-edge rounded-lg px-3 py-2 text-base sm:text-sm text-white focus:border-rose-500/50 outline-none transition-all" required />
+                            <label className="block text-sm text-text-secondary mb-1">{t('finance.date')}</label>
+                            <DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="glass-input w-full" required />
                         </div>
                         <div>
-                            <label className="block text-sm text-gray-300 mb-1">{t('finance.description')}</label>
+                            <label className="block text-sm text-text-secondary mb-1">{t('finance.description')}</label>
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
                                 <input 
                                     list="suppliers-list"
                                     type="text" 
-                                    className="w-full bg-background-light border-glass-edge rounded-lg pl-9 pr-3 py-2 text-base sm:text-sm text-white focus:border-rose-500 transition-all outline-none" 
+                                    className="glass-input w-full pl-9" 
                                     value={formData.description} 
                                     onChange={e => setFormData({...formData, description: e.target.value})} 
                                 />
@@ -253,24 +250,24 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 pt-4">
-                            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white transition-colors">{t('general.cancel')}</button>
-                            <button type="submit" className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold shadow-lg shadow-rose-900/20 transition-all transform hover:scale-[1.02]">{t('general.save')}</button>
+                            <button type="button" onClick={onClose} className="px-4 py-2 text-text-muted hover:text-text-primary transition-colors">{t('general.cancel')}</button>
+                            <button type="submit" className="btn-primary px-6 py-2">{t('general.save')}</button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            {/* PHOENIX: QR Handoff Modal */}
+            {/* QR Handoff Modal */}
             {isQrModalOpen && handoffToken && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#1f2937] border border-white/10 p-8 rounded-2xl w-full max-w-sm shadow-2xl text-center relative">
-                        <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-full transition-colors"><X size={18} /></button>
-                        <h3 className="text-xl font-bold text-white mb-2">Skano për të Ngarkuar</h3>
-                        <p className="text-gray-400 mb-6 text-sm">Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.</p>
-                        <div className="bg-white p-4 rounded-xl inline-block shadow-inner">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-glass backdrop-blur-xl border border-border-main p-8 rounded-2xl w-full max-w-sm shadow-xl text-center relative">
+                        <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-text-muted hover:text-text-primary hover:bg-hover rounded-full transition-colors"><X size={18} /></button>
+                        <h3 className="text-xl font-bold text-text-primary mb-2">Skano për të Ngarkuar</h3>
+                        <p className="text-text-muted mb-6 text-sm">Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.</p>
+                        <div className="bg-card p-4 rounded-xl inline-block shadow-sm border border-border-main">
                             <QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={200} />
                         </div>
-                        <div className="mt-6 flex items-center justify-center gap-2 text-gray-500 animate-pulse text-sm">
+                        <div className="mt-6 flex items-center justify-center gap-2 text-text-muted animate-pulse text-sm">
                            <Loader2 className="w-4 h-4 animate-spin"/> Duke pritur për skedarin...
                         </div>
                     </motion.div>

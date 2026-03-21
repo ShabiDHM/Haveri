@@ -1,6 +1,7 @@
 // FILE: src/pages/IntegrationsPage.tsx
-// PHOENIX PROTOCOL - I18N V1.2
+// PHOENIX PROTOCOL - I18N V2.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. REFACTOR: Replaced hardcoded title and subtitle with i18next 't()' function calls.
+// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -19,10 +20,10 @@ export const IntegrationsPage: React.FC = () => {
         >
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
-                    <Share2 className="text-blue-400" size={32}/>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">{t('settings.integrations.title')}</h1>
+                    <Share2 className="text-primary" size={32}/>
+                    <h1 className="text-3xl font-bold text-text-primary tracking-tight">{t('settings.integrations.title')}</h1>
                 </div>
-                <p className="text-lg text-gray-400">{t('settings.integrations.subtitle')}</p>
+                <p className="text-lg text-text-secondary">{t('settings.integrations.subtitle')}</p>
             </div>
 
             <div className="space-y-8">

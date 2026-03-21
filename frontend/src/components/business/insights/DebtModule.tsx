@@ -1,6 +1,7 @@
 // FILE: src/components/business/insights/DebtModule.tsx
-// PHOENIX PROTOCOL - DEBT MODULE V2.2 (TYPOGRAPHY)
+// PHOENIX PROTOCOL - DEBT MODULE V3.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. TYPOGRAPHY: Upgraded Header to 'text-2xl' for consistency.
+// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,52 +26,51 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
     };
 
     return (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md h-auto lg:h-[540px] flex flex-col">
+        <div className="bg-surface/50 border border-border-main rounded-2xl p-6 backdrop-blur-md h-auto lg:h-[540px] flex flex-col shadow-sm">
             
             <div className="flex-shrink-0">
-                {/* PHOENIX: Increased text size */}
-                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                    <AlertTriangle className="text-rose-500" /> {t('insights.debt.title', 'Analiza e Borxheve')}
+                <h3 className="text-2xl font-bold text-text-primary mb-6 flex items-center gap-2">
+                    <AlertTriangle className="text-danger" /> {t('insights.debt.title', 'Analiza e Borxheve')}
                 </h3>
 
                 <div className="mb-8">
-                    <div className="flex justify-between text-sm mb-2 text-gray-400">
+                    <div className="flex justify-between text-sm mb-2 text-text-muted">
                         <span>Totali i Borxhit</span>
-                        <span className="text-white font-mono font-bold">€{totalDebt.toFixed(2)}</span>
+                        <span className="text-text-primary font-mono font-bold">€{totalDebt.toFixed(2)}</span>
                     </div>
-                    <div className="w-full h-4 bg-gray-700 rounded-full overflow-hidden flex">
-                        <div style={{ width: `${totalDebt > 0 ? (aging.fresh / totalDebt) * 100 : 0}%` }} className="bg-emerald-500 h-full" title="0-30 Ditë" />
-                        <div style={{ width: `${totalDebt > 0 ? (aging.warning / totalDebt) * 100 : 0}%` }} className="bg-amber-500 h-full" title="30-60 Ditë" />
-                        <div style={{ width: `${totalDebt > 0 ? (aging.danger / totalDebt) * 100 : 0}%` }} className="bg-rose-500 h-full" title="60+ Ditë" />
+                    <div className="w-full h-4 bg-border-main rounded-full overflow-hidden flex">
+                        <div style={{ width: `${totalDebt > 0 ? (aging.fresh / totalDebt) * 100 : 0}%` }} className="bg-success-start h-full" title="0-30 Ditë" />
+                        <div style={{ width: `${totalDebt > 0 ? (aging.warning / totalDebt) * 100 : 0}%` }} className="bg-warning-start h-full" title="30-60 Ditë" />
+                        <div style={{ width: `${totalDebt > 0 ? (aging.danger / totalDebt) * 100 : 0}%` }} className="bg-danger h-full" title="60+ Ditë" />
                     </div>
-                    <div className="flex justify-between text-xs mt-2 text-gray-500">
-                        <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> E re (0-30)</span>
-                        <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-500"></div> Kujdes (30-60)</span>
-                        <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-rose-500"></div> Kritik (60+)</span>
+                    <div className="flex justify-between text-xs mt-2 text-text-muted">
+                        <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-success-start"></div> E re (0-30)</span>
+                        <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-warning-start"></div> Kujdes (30-60)</span>
+                        <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-danger"></div> Kritik (60+)</span>
                     </div>
                 </div>
 
-                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">{t('insights.debt.topDebtors', 'Klientët me Borxhe')}</h4>
+                <h4 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-4">{t('insights.debt.topDebtors', 'Klientët me Borxhe')}</h4>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 min-h-0 space-y-3 custom-scrollbar max-h-[300px] lg:max-h-none">
                 {topDebtors.length === 0 ? (
-                    <p className="text-gray-500 text-sm italic">{t('insights.debt.noDebts', 'Asnjë borxh aktiv!')}</p>
+                    <p className="text-text-muted text-sm italic">{t('insights.debt.noDebts', 'Asnjë borxh aktiv!')}</p>
                 ) : (
                     topDebtors.map((d: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5 shrink-0">
+                        <div key={idx} className="flex items-center justify-between p-3 bg-surface rounded-xl border border-border-main shrink-0">
                             <div className="flex items-center gap-3 min-w-0">
-                                <div className="p-2 bg-white/5 rounded-lg shrink-0"><User size={16} className="text-gray-300" /></div>
+                                <div className="p-2 bg-surface rounded-lg shrink-0 border border-border-main"><User size={16} className="text-text-secondary" /></div>
                                 <div className="min-w-0">
-                                    <p className="text-sm font-bold text-white truncate">{d.name}</p>
-                                    <p className="text-xs text-rose-400">{d.daysOverdue} {t('time.days', 'ditë vonesë')}</p>
+                                    <p className="text-sm font-bold text-text-primary truncate">{d.name}</p>
+                                    <p className="text-xs text-danger">{d.daysOverdue} {t('time.days', 'ditë vonesë')}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
-                                <span className="font-mono text-white font-bold">€{d.amount.toFixed(2)}</span>
+                                <span className="font-mono text-text-primary font-bold">€{d.amount.toFixed(2)}</span>
                                 <button 
                                     onClick={() => sendWhatsApp(d)}
-                                    className="p-2 bg-green-500/10 text-green-400 hover:bg-green-500/20 rounded-lg transition-colors"
+                                    className="p-2 bg-success-start/10 text-success-start hover:bg-success-start/20 rounded-lg transition-colors"
                                     title="Dërgo Rikujtesë në WhatsApp"
                                 >
                                     <Send size={16} />

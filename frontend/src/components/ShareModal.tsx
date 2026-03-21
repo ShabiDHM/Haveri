@@ -1,8 +1,9 @@
 // FILE: src/components/ShareModal.tsx
-// PHOENIX PROTOCOL - SHARE MODAL V1.3 (DIRECT LINK FIX)
+// PHOENIX PROTOCOL - SHARE MODAL V2.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. FIX: Now copies the direct Portal URL (https://haveri.tech/portal/...) as requested.
 // 2. LOGIC: Removed API redirect link generation.
-// 3. STATUS: Aligned with user requirements.
+// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 4. STATUS: Aligned with user requirements.
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -19,7 +20,7 @@ interface ShareModalProps {
 const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, caseId, caseTitle }) => {
   if (!isOpen) return null;
 
-  // PHOENIX FIX: Direct Portal URL
+  // Direct Portal URL
   const shareUrl = `${window.location.origin}/portal/${caseId}`;
   
   const handleCopy = () => {
@@ -41,17 +42,17 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, caseId, caseTi
     <AnimatePresence>
       <motion.div 
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
         onClick={onClose}
       >
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-background-dark w-full max-w-sm rounded-2xl border border-glass-edge shadow-2xl p-6"
+          className="bg-glass backdrop-blur-xl w-full max-w-sm rounded-2xl border border-border-main shadow-xl p-6"
           onClick={e => e.stopPropagation()}
         >
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-white">Ndaj me Klientin</h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={20}/></button>
+            <h3 className="text-lg font-bold text-text-primary">Ndaj me Klientin</h3>
+            <button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={20}/></button>
           </div>
 
           <div className="space-y-3">
@@ -74,19 +75,19 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, caseId, caseTi
             </button>
 
             {/* Copy Link - Fallback */}
-            <button onClick={handleCopy} className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl group transition-all">
+            <button onClick={handleCopy} className="w-full flex items-center justify-between p-4 bg-surface hover:bg-hover border border-border-main rounded-xl group transition-all">
                 <div className="flex items-center gap-3">
-                    <Copy className="text-gray-400" />
-                    <span className="font-medium text-gray-300">Kopjo Linkun</span>
+                    <Copy className="text-text-muted" />
+                    <span className="font-medium text-text-secondary">Kopjo Linkun</span>
                 </div>
-                <div className="text-xs text-gray-600 font-mono bg-black/20 px-2 py-1 rounded max-w-[150px] truncate">
+                <div className="text-xs text-text-muted font-mono bg-surface/50 px-2 py-1 rounded max-w-[150px] truncate">
                     {shareUrl}
                 </div>
             </button>
           </div>
           
           <div className="mt-6 text-center">
-              <p className="text-xs text-gray-500">Ky link i jep klientit qasje të kufizuar (vetëm lexim) në dosje.</p>
+              <p className="text-xs text-text-muted">Ky link i jep klientit qasje të kufizuar (vetëm lexim) në dosje.</p>
           </div>
 
         </motion.div>

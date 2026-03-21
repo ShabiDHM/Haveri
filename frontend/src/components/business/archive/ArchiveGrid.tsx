@@ -1,19 +1,20 @@
 // FILE: src/components/business/archive/ArchiveGrid.tsx
-// PHOENIX PROTOCOL - ARCHIVE GRID V3.0 (WORKSPACE ALIGNMENT)
+// PHOENIX PROTOCOL - ARCHIVE GRID V4.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. REBRAND: Renamed 'Case' to 'Workspace' throughout the grid and logic.
 // 2. FIXED: Property access updated to use 'workspace_number'.
-// 3. STATUS: Fully synchronized with the Single User Workspace model.
+// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 4. STATUS: Fully synchronized with the Single User Workspace model.
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { ArchiveCard, getFileIcon } from './ArchiveCard';
-import { ArchiveItemOut, Workspace } from '../../../data/types'; // PHOENIX: Swapped Case for Workspace
+import { ArchiveItemOut, Workspace } from '../../../data/types';
 import { Briefcase, FolderOpen } from 'lucide-react';
 
 interface ArchiveGridProps {
-    currentViewType: 'ROOT' | 'WORKSPACE' | 'FOLDER'; // PHOENIX: Updated view type
-    filteredWorkspaces: Workspace[]; // PHOENIX: Renamed from filteredCases
+    currentViewType: 'ROOT' | 'WORKSPACE' | 'FOLDER';
+    filteredWorkspaces: Workspace[];
     filteredItems: ArchiveItemOut[];
     openingDocId: string | null;
     onEnterFolder: (id: string, name: string, type: 'FOLDER' | 'WORKSPACE') => void;
@@ -36,7 +37,6 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
             {currentViewType === 'ROOT' && filteredWorkspaces.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                     {filteredWorkspaces.map(w => {
-                        // Guard against rendering workspaces without a valid ID
                         if (!w.id) return null;
                         return (
                             <div key={w.id} className="h-full">
@@ -45,7 +45,7 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
                                     subtitle={w.workspace_number || 'ID-001'} 
                                     type={t('archive.myWorkspace')} 
                                     date={new Date(w.created_at).toLocaleDateString()} 
-                                    icon={<Briefcase className="w-4 sm:w-5 h-4 sm:h-5 text-indigo-400" />} 
+                                    icon={<Briefcase className="w-4 sm:w-5 h-4 sm:h-5 text-primary" />} 
                                     isFolder={true} 
                                     isShared={w.is_shared}
                                     onClick={() => onEnterFolder(w.id, w.title, 'WORKSPACE')} 
@@ -76,7 +76,7 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
                                         subtitle={isFolder ? t('archive.myWorkspace') : `${fileExt} Dokument`} 
                                         type={isFolder ? 'Folder' : fileExt} 
                                         date={new Date(item.created_at).toLocaleDateString()} 
-                                        icon={isFolder ? <FolderOpen className="w-4 sm:w-5 h-4 sm:h-5 text-amber-500" /> : getFileIcon(fileExt)} 
+                                        icon={isFolder ? <FolderOpen className="w-4 sm:w-5 h-4 sm:h-5 text-warning-start" /> : getFileIcon(fileExt)} 
                                         isFolder={isFolder} 
                                         isShared={item.is_shared}
                                         isLoading={openingDocId === item.id}

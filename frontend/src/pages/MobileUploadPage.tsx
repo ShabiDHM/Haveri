@@ -1,8 +1,9 @@
 // FILE: frontend/src/pages/MobileUploadPage.tsx
-// PHOENIX PROTOCOL - MOBILE UPLOAD V1.0
+// PHOENIX PROTOCOL - MOBILE UPLOAD V2.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. FEATURE: A standalone, lightweight page for mobile devices to upload files via a tokenized URL.
 // 2. UI/UX: Provides clear, immediate feedback on the upload status (uploading, success, error).
 // 3. LOGIC: Uses URL parameters to get the session token and posts the selected file to the handoff endpoint.
+// 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
 
 import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
@@ -46,36 +47,36 @@ const MobileUploadPage: React.FC = () => {
             case 'uploading':
                 return (
                     <>
-                        <Loader2 className="w-16 h-16 text-blue-400 animate-spin" />
-                        <h1 className="text-2xl font-bold mt-4">Duke Ngarkuar...</h1>
-                        <p className="text-gray-400 break-all">{fileName}</p>
+                        <Loader2 className="w-16 h-16 text-primary animate-spin" />
+                        <h1 className="text-2xl font-bold mt-4 text-text-primary">Duke Ngarkuar...</h1>
+                        <p className="text-text-secondary break-all">{fileName}</p>
                     </>
                 );
             case 'complete':
                 return (
                     <>
-                        <CheckCircle2 className="w-16 h-16 text-emerald-400" />
-                        <h1 className="text-2xl font-bold mt-4">Ngarkimi Përfundoi</h1>
-                        <p className="text-gray-400">Tani mund ta mbyllni këtë faqe.</p>
+                        <CheckCircle2 className="w-16 h-16 text-success-start" />
+                        <h1 className="text-2xl font-bold mt-4 text-text-primary">Ngarkimi Përfundoi</h1>
+                        <p className="text-text-secondary">Tani mund ta mbyllni këtë faqe.</p>
                     </>
                 );
             case 'error':
                 return (
                     <>
-                        <AlertTriangle className="w-16 h-16 text-red-400" />
-                        <h1 className="text-2xl font-bold mt-4">Gabim</h1>
-                        <p className="text-red-300">{errorMsg}</p>
+                        <AlertTriangle className="w-16 h-16 text-danger" />
+                        <h1 className="text-2xl font-bold mt-4 text-text-primary">Gabim</h1>
+                        <p className="text-danger">{errorMsg}</p>
                     </>
                 );
             default: // idle
                 return (
                     <>
-                        <UploadCloud className="w-16 h-16 text-blue-400" />
-                        <h1 className="text-2xl font-bold mt-4">Gati për Ngarkim</h1>
-                        <p className="text-gray-400 max-w-sm text-center mb-8">Zgjidhni një skedar ose imazh për ta dërguar në kompjuterin tuaj.</p>
+                        <UploadCloud className="w-16 h-16 text-primary" />
+                        <h1 className="text-2xl font-bold mt-4 text-text-primary">Gati për Ngarkim</h1>
+                        <p className="text-text-secondary max-w-sm text-center mb-8">Zgjidhni një skedar ose imazh për ta dërguar në kompjuterin tuaj.</p>
                         <button 
                             onClick={() => fileInputRef.current?.click()}
-                            className="w-full max-w-xs px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2"
+                            className="btn-primary w-full max-w-xs px-8 py-4 flex items-center justify-center gap-2"
                         >
                             <FileUp size={18} /> Zgjidh Skedarin
                         </button>
@@ -85,8 +86,8 @@ const MobileUploadPage: React.FC = () => {
     };
 
     return (
-        <div className="bg-background-dark text-white min-h-screen flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md bg-background-light/30 rounded-3xl p-8 flex flex-col items-center justify-center text-center">
+        <div className="bg-canvas text-text-primary min-h-screen flex flex-col items-center justify-center p-4">
+            <div className="w-full max-w-md bg-glass backdrop-blur-xl rounded-3xl p-8 flex flex-col items-center justify-center text-center border border-border-main shadow-lg">
                 {renderContent()}
             </div>
             <input 

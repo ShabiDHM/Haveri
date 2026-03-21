@@ -1,7 +1,8 @@
 // FILE: src/components/EmailIngestCard.tsx
-// PHOENIX PROTOCOL - I18N V1.2
+// PHOENIX PROTOCOL - I18N V2.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. REFACTOR: Replaced all hardcoded strings with i18next 't()' function calls.
-// 2. INTEGRITY: Component is now fully translatable and adheres to project architecture.
+// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. INTEGRITY: Component is now fully translatable and adheres to project architecture.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,42 +30,42 @@ export const EmailIngestCard: React.FC = () => {
     };
 
     return (
-        <div className="bg-gray-900/50 border border-white/10 rounded-3xl p-6 shadow-lg">
+        <div className="card-panel p-6 shadow-lg">
             <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20">
                     <Mail size={24} />
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold text-white">{t('settings.integrations.emailIngest.title')}</h2>
-                    <p className="text-sm text-gray-400">{t('settings.integrations.emailIngest.subtitle')}</p>
+                    <h2 className="text-xl font-bold text-text-primary">{t('settings.integrations.emailIngest.title')}</h2>
+                    <p className="text-sm text-text-secondary">{t('settings.integrations.emailIngest.subtitle')}</p>
                 </div>
             </div>
 
-            <div className="bg-black/40 rounded-lg p-4 border border-white/10 mb-6">
+            <div className="bg-surface rounded-lg p-4 border border-border-main mb-6">
                  <div className="flex items-center gap-2 mb-2">
-                    <Info size={14} className="text-blue-400" />
-                    <span className="text-sm font-medium text-gray-300">{t('settings.integrations.emailIngest.yourAddress')}</span>
+                    <Info size={14} className="text-primary" />
+                    <span className="text-sm font-medium text-text-secondary">{t('settings.integrations.emailIngest.yourAddress')}</span>
                 </div>
                 
                 {inboundEmail ? (
-                    <div className="flex items-center justify-between gap-4 bg-gray-900 p-3 rounded-lg">
-                        <code className="text-base font-mono text-emerald-400 truncate">{inboundEmail}</code>
+                    <div className="flex items-center justify-between gap-4 bg-card p-3 rounded-lg border border-border-main">
+                        <code className="text-base font-mono text-success-start truncate">{inboundEmail}</code>
                         <button 
                             onClick={handleCopy}
-                            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 transition-colors"
+                            className="p-2 rounded-lg bg-surface hover:bg-hover text-text-secondary transition-colors"
                             title={t('settings.integrations.emailIngest.copy')}
                         >
-                            {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                            {copied ? <Check size={16} className="text-success-start" /> : <Copy size={16} />}
                         </button>
                     </div>
                 ) : (
-                    <p className="text-gray-500">{t('settings.integrations.emailIngest.loading')}</p>
+                    <p className="text-text-muted">{t('settings.integrations.emailIngest.loading')}</p>
                 )}
             </div>
 
             <div>
-                <h3 className="text-base font-bold text-gray-200 mb-2">{t('settings.integrations.emailIngest.setupTitle')}</h3>
-                <ul className="space-y-3 text-sm text-gray-400 list-decimal list-inside">
+                <h3 className="text-base font-bold text-text-primary mb-2">{t('settings.integrations.emailIngest.setupTitle')}</h3>
+                <ul className="space-y-3 text-sm text-text-secondary list-decimal list-inside">
                     <li>{t('settings.integrations.emailIngest.step1')}</li>
                     <li>{t('settings.integrations.emailIngest.step2')}</li>
                     <li>{t('settings.integrations.emailIngest.step3')}</li>

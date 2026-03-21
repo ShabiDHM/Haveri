@@ -1,7 +1,8 @@
 // FILE: frontend/src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V1.5 (NEXUS REMOVAL)
+// PHOENIX PROTOCOL - INSIGHTS UI V2.0 (DESIGN SYSTEM ALIGNMENT)
 // 1. REMOVED: Nexus Topology button and conditional rendering for graph mode.
-// 2. STATUS: Cleaned of all graph references.
+// 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
+// 3. STATUS: Cleaned of all graph references.
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,26 +36,26 @@ export const InsightsTab: React.FC = () => {
         return (
             <div className="flex flex-col justify-center items-center h-96 space-y-4">
                 <div className="relative">
-                    <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full"></div>
-                    <Loader2 className="w-12 h-12 animate-spin text-blue-400 relative z-10" />
+                    <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
+                    <Loader2 className="w-12 h-12 animate-spin text-primary relative z-10" />
                 </div>
-                <span className="text-slate-400 font-mono text-sm tracking-widest animate-pulse">LOADING INTELLIGENCE...</span>
+                <span className="text-text-muted font-mono text-sm tracking-widest animate-pulse">LOADING INTELLIGENCE...</span>
             </div>
         );
     }
 
     const ViewHeader = ({ title, icon: Icon }: { title: string, icon: any }) => (
-        <div className="flex items-center justify-between mb-4 bg-slate-900/50 backdrop-blur border border-white/5 p-3 rounded-xl">
+        <div className="flex items-center justify-between mb-4 bg-surface/50 backdrop-blur border border-border-main p-3 rounded-xl">
             <div className="flex items-center gap-3">
                 <button 
                     onClick={() => setViewMode('dashboard')} 
-                    className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all border border-slate-700 hover:border-slate-600"
+                    className="p-2 rounded-lg bg-surface hover:bg-hover text-text-muted hover:text-text-primary transition-all border border-border-main hover:border-border-main"
                 >
                     <ArrowLeft size={18} />
                 </button>
-                <div className="h-6 w-px bg-slate-700 mx-1"></div>
-                <div className="flex items-center gap-2 text-white font-medium">
-                    <Icon className="text-blue-400" size={20} />
+                <div className="h-6 w-px bg-border-main mx-1"></div>
+                <div className="flex items-center gap-2 text-text-primary font-medium">
+                    <Icon className="text-primary" size={20} />
                     <span>{title}</span>
                 </div>
             </div>
@@ -62,7 +63,7 @@ export const InsightsTab: React.FC = () => {
     );
 
     return (
-        <div className="min-h-[600px] text-slate-100">
+        <div className="min-h-[600px] text-text-primary">
             <AnimatePresence mode="wait">
                 
                 {/* --- MODE: ANALYST (SPREADSHEET) --- */}
@@ -75,7 +76,7 @@ export const InsightsTab: React.FC = () => {
                         transition={{ duration: 0.3 }}
                     >
                         <ViewHeader title={t('analyst.smartDataAnalystTitle', 'Smart Data Analyst')} icon={FileSpreadsheet} />
-                        <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative">
+                        <div className="bg-card border border-border-main rounded-2xl overflow-hidden shadow-xl relative">
                              <SpreadsheetAnalysisPanel />
                         </div>
                     </motion.div>
@@ -95,29 +96,29 @@ export const InsightsTab: React.FC = () => {
                             
                             {/* Card: Analyst Button */}
                             <motion.button 
-                                whileHover={{ scale: 1.02, boxShadow: '0 0 30px rgba(59, 130, 246, 0.15)' }} 
+                                whileHover={{ scale: 1.02 }} 
                                 whileTap={{ scale: 0.98 }} 
                                 onClick={() => setViewMode('analyst')} 
-                                className="relative overflow-hidden group rounded-2xl p-px bg-gradient-to-b from-blue-500/20 to-slate-800/20 text-left h-full"
+                                className="relative overflow-hidden group rounded-2xl p-px bg-gradient-to-b from-primary/20 to-border-main text-left h-full"
                             >
-                                <div className="absolute inset-0 bg-slate-900/95 rounded-2xl z-0" />
-                                <div className="absolute inset-0 bg-grid-slate-800/[0.2] z-0" style={{ backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '20px 20px', opacity: 0.1 }} />
+                                <div className="absolute inset-0 bg-card rounded-2xl z-0" />
+                                <div className="absolute inset-0 bg-grid-primary/[0.05] z-0" style={{ backgroundImage: 'radial-gradient(var(--primary) 1px, transparent 1px)', backgroundSize: '20px 20px', opacity: 0.1 }} />
                                 
                                 <div className="relative z-10 p-6 flex flex-col h-full justify-between">
                                     <div className="space-y-3">
-                                        <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center border border-blue-500/20 group-hover:border-blue-500/50 transition-colors">
-                                            <FileSpreadsheet className="text-blue-400" size={24} />
+                                        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 group-hover:border-primary/50 transition-colors">
+                                            <FileSpreadsheet className="text-primary" size={24} />
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+                                            <h3 className="text-xl font-bold text-text-primary group-hover:text-primary transition-colors">
                                                 {t('analyst.smartDataAnalystTitle', 'Smart Analyst')}
                                             </h3>
-                                            <p className="text-slate-400 text-sm mt-1 leading-relaxed">
+                                            <p className="text-text-muted text-sm mt-1 leading-relaxed">
                                                 {t('analyst.description', 'Deep dive into excel data with AI-powered anomaly detection.')}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="mt-6 flex items-center text-xs font-mono text-blue-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="mt-6 flex items-center text-xs font-mono text-primary uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
                                         {t('analyst.initialize', 'Initialize Analysis')} <span className="ml-2">→</span>
                                     </div>
                                 </div>
@@ -129,7 +130,7 @@ export const InsightsTab: React.FC = () => {
                         
                         {/* Section 2: Real-time Metrics (Modules) */}
                         <div className="space-y-4">
-                            <div className="flex items-center gap-2 text-slate-500 mb-2">
+                            <div className="flex items-center gap-2 text-text-muted mb-2">
                                 <Cpu size={16} />
                                 <span className="text-xs font-bold uppercase tracking-widest">{t('insights.liveMetrics')}</span>
                             </div>
