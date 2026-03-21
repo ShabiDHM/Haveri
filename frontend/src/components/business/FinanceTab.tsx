@@ -1,9 +1,9 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V5.0 (DESIGN SYSTEM ALIGNMENT)
-// 1. FIXED: Removed usage of ProactiveInsightBanner to resolve "Cannot find name" TypeScript error.
-// 2. CLEANUP: Removed unused imports related to the banner.
-// 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 4. STATUS: UI Cleaned and Type-Error Resolved.
+// PHOENIX PROTOCOL - FINANCE TAB V5.1 (ENHANCED CARD STYLES)
+// 1. UPDATED: HeroStatCard with colored left borders and colored numbers
+// 2. ENHANCED: Visual hierarchy with stat-card classes
+// 3. COLOR: Numbers now show green for positive, red for negative
+// 4. STATUS: Fully synchronized with design system
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,15 +28,60 @@ import { ExpenseModal } from './modals/ExpenseModal';
 import { ClientImportModal } from './modals/ClientImportModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 
+// Enhanced HeroStatCard with colored left border and colored numbers
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    let g = 'from-primary/20 to-primary/5', b = 'border-primary/30', ic = 'text-primary', ib = 'bg-primary/20';
-    if (type === 'income') { g = 'from-success-start/20 to-success-start/5'; b = 'border-success-start/30'; ic = 'text-success-start'; ib = 'bg-success-start/20'; }
-    if (type === 'expense') { g = 'from-danger/20 to-danger/5'; b = 'border-danger/30'; ic = 'text-danger'; ib = 'bg-danger/20'; }
-    if (type === 'warning') { g = 'from-warning-start/20 to-warning-start/5'; b = 'border-warning-start/30'; ic = 'text-warning-start'; ib = 'bg-warning-start/20'; }
+    let borderColor = 'border-primary/30';
+    let iconColor = 'text-primary';
+    let iconBg = 'bg-primary/20';
+    let amountColor = 'text-text-primary';
+    let statType = 'stat-card-neutral';
+    
+    if (type === 'income') { 
+        borderColor = 'border-success-start/30'; 
+        iconColor = 'text-success-start'; 
+        iconBg = 'bg-success-start/20';
+        amountColor = 'text-positive';
+        statType = 'stat-card-income';
+    }
+    if (type === 'expense') { 
+        borderColor = 'border-danger/30'; 
+        iconColor = 'text-danger'; 
+        iconBg = 'bg-danger/20';
+        amountColor = 'text-negative';
+        statType = 'stat-card-expense';
+    }
+    if (type === 'warning') { 
+        borderColor = 'border-warning-start/30'; 
+        iconColor = 'text-warning-start'; 
+        iconBg = 'bg-warning-start/20';
+        amountColor = 'text-warning';
+        statType = 'stat-card-warning';
+    }
+    
     return (
-        <motion.div whileHover={{ scale: 1.02 }} onClick={onClick} className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${g} border ${b} p-6 backdrop-blur-md cursor-pointer group shadow-lg`}>
-            <div className="flex justify-between items-start mb-4 relative z-10"><div className={`p-3 rounded-2xl ${ib} ${ic} border ${b}`}>{icon}</div>{trend && <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-surface text-text-muted border border-border-main">{trend}</span>}</div>
-            <div className="relative z-10"><p className="text-sm text-text-muted font-bold uppercase tracking-wider mb-1 opacity-80">{title}</p><h3 className="text-3xl font-black text-text-primary tracking-tight">{amount}</h3></div>
+        <motion.div 
+            whileHover={{ scale: 1.02, y: -2 }} 
+            onClick={onClick} 
+            className={`stat-card ${statType} cursor-pointer group`}
+        >
+            <div className="flex justify-between items-start mb-3">
+                <div className={`p-2.5 rounded-xl ${iconBg} ${iconColor} border ${borderColor}`}>
+                    {icon}
+                </div>
+                {trend && (
+                    <span className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-surface text-text-muted border border-border-main">
+                        {trend}
+                    </span>
+                )}
+            </div>
+            <div>
+                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">
+                    {title}
+                </p>
+                <h3 className={`text-2xl font-bold ${amountColor} tracking-tight`}>
+                    {amount}
+                </h3>
+            </div>
         </motion.div>
     );
 };
@@ -49,7 +94,8 @@ const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
 
 const TabButton = ({ label, icon, isActive, onClick }: any) => (
     <button onClick={onClick} className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${isActive ? 'bg-primary/20 text-primary border border-primary/30' : 'text-text-muted hover:text-text-primary hover:bg-hover border-transparent'}`}>
-        <span className="relative z-10">{icon}</span><span className="relative z-10">{label}</span>
+        <span className="relative z-10">{icon}</span>
+        <span className="relative z-10">{label}</span>
     </button>
 );
 
@@ -187,15 +233,21 @@ export const FinanceTab: React.FC = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-            <style>{`.custom-finance-scroll::-webkit-scrollbar { width: 6px; } .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } select option { background-color: var(--bg-card); color: var(--text-primary); }`}</style>
+            <style>{`
+                .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
+                .custom-finance-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; } 
+                select option { background-color: var(--bg-card); color: var(--text-primary); }
+            `}</style>
             
+            {/* KPI Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
                 <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
-                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={24} />} type="neutral" trend="+12%" onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} />
+                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={24} />} type={displayProfit >= 0 ? 'income' : 'expense'} trend="+12%" onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} />
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
+            {/* Action Buttons Row */}
             <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-surface/40 p-4 rounded-3xl border border-border-main backdrop-blur-md">
                     <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
@@ -204,6 +256,7 @@ export const FinanceTab: React.FC = () => {
                     <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
                 </div>
                 
+                {/* Year Selector */}
                 <div className="flex items-center gap-4 bg-surface/40 p-4 rounded-3xl border border-border-main backdrop-blur-md">
                     <Calendar size={20} className="text-primary ml-2" />
                     <div className="flex flex-col">
@@ -221,6 +274,7 @@ export const FinanceTab: React.FC = () => {
                 </div>
             </div>
 
+            {/* Main Content Area */}
             <div className="bg-surface/60 border border-border-main rounded-3xl p-6 backdrop-blur-md h-[70vh] min-h-[600px] flex flex-col shadow-xl">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-8 border-b border-border-main pb-6">
                     <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3"><Activity className="text-primary" />{t('finance.activityAndReports')}</h2>
@@ -326,11 +380,62 @@ export const FinanceTab: React.FC = () => {
                     )}
                 </div>
             </div>
-            <AnimatePresence>{kpiModalOpen && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"><motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden relative"><div className="p-6 border-b border-border-main bg-primary/20 flex justify-between items-center"><h3 className="text-xl font-bold text-text-primary flex items-center gap-2"><Sparkles size={20} className="text-warning-start" />{kpiAnalysis?.type}</h3><button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-hover rounded-lg text-text-muted transition-colors"><X size={20}/></button></div><div className="p-6 space-y-6">{kpiLoading ? (<div className="flex flex-col items-center py-10 gap-4"><Loader2 size={40} className="animate-spin text-primary" /><p className="text-text-muted animate-pulse">{t('finance.smartAnalyst.analyzing')}</p></div>) : (<>{kpiAnalysis?.summary && <div className="bg-primary/10 border border-primary/20 rounded-xl p-4"><h4 className="text-sm font-bold text-primary uppercase mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4><p className="text-text-primary leading-relaxed">{kpiAnalysis?.summary}</p></div>}{kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (<div><h4 className="text-sm font-bold text-text-muted uppercase mb-3">{t('finance.smartAnalyst.keyContributors')}</h4><div className="space-y-2">{kpiAnalysis.contributors.map((c:any, i:any) => (<div key={i} className="flex items-center gap-3 p-3 bg-surface rounded-lg border border-border-main"><div className="w-2 h-2 rounded-full bg-success-start" /><span className="text-sm text-text-secondary">{c}</span></div>))}</div></div>)}</>)}</div></motion.div></motion.div>)}</AnimatePresence>
+
+            {/* KPI Insight Modal */}
+            <AnimatePresence>
+                {kpiModalOpen && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden relative">
+                            <div className="p-6 border-b border-border-main bg-primary/20 flex justify-between items-center">
+                                <h3 className="text-xl font-bold text-text-primary flex items-center gap-2">
+                                    <Sparkles size={20} className="text-warning-start" />
+                                    {kpiAnalysis?.type}
+                                </h3>
+                                <button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-hover rounded-lg text-text-muted transition-colors">
+                                    <X size={20}/>
+                                </button>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {kpiLoading ? (
+                                    <div className="flex flex-col items-center py-10 gap-4">
+                                        <Loader2 size={40} className="animate-spin text-primary" />
+                                        <p className="text-text-muted animate-pulse">{t('finance.smartAnalyst.analyzing')}</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {kpiAnalysis?.summary && (
+                                            <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
+                                                <h4 className="text-sm font-bold text-primary uppercase mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4>
+                                                <p className="text-text-primary leading-relaxed">{kpiAnalysis?.summary}</p>
+                                            </div>
+                                        )}
+                                        {kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-bold text-text-muted uppercase mb-3">{t('finance.smartAnalyst.keyContributors')}</h4>
+                                                <div className="space-y-2">
+                                                    {kpiAnalysis.contributors.map((c:any, i:any) => (
+                                                        <div key={i} className="flex items-center gap-3 p-3 bg-surface rounded-lg border border-border-main">
+                                                            <div className="w-2 h-2 rounded-full bg-success-start" />
+                                                            <span className="text-sm text-text-secondary">{c}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Modals */}
             <InvoiceModal isOpen={showInvoiceModal} onClose={() => { setShowInvoiceModal(false); setSelectedInvoice(null); }} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
             <ExpenseModal isOpen={showExpenseModal} onClose={() => { setShowExpenseModal(false); setSelectedExpense(null); }} expenseToEdit={selectedExpense} onSuccess={refreshData} />
             <ClientImportModal isOpen={showClientImportModal} onClose={() => setShowClientImportModal(false)} onSuccess={() => { refreshData(); if (activeTab === 'partners') { apiService.getPartners().then(setPartners); } }} />
             
+            {/* Archive Invoice Modal */}
             {showArchiveInvoiceModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-md p-6 shadow-xl">
@@ -347,6 +452,7 @@ export const FinanceTab: React.FC = () => {
                 </div>
             )}
 
+            {/* Archive Expense Modal */}
             {showArchiveExpenseModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-md p-6 shadow-xl">
