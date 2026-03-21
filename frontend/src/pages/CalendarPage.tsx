@@ -16,7 +16,7 @@ import { sq, enUS } from 'date-fns/locale';
 import {
   Calendar as CalendarIcon, Users, AlertCircle, Plus, ChevronLeft, ChevronRight,
   Search, Bell, ChevronDown, Eye, EyeOff, ShieldAlert, X,
-  DollarSign, CheckSquare, Handshake, Info, Zap
+  DollarSign, CheckSquare, Handshake, Info, Zap, CalendarX
 } from 'lucide-react';
 import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -310,10 +310,18 @@ const CalendarPage: React.FC = () => {
                         {viewMode === 'month' ? renderMonthView() : renderListView()}
                     </div>
                     <div className="xl:col-span-1 space-y-8">
-                        <div className="card-panel p-6 relative overflow-hidden">
+                        <div className="card-panel p-6 relative overflow-hidden border-top-accent border-t-warning">
                             <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><Bell size={80} /></div>
                             <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-3"><Bell className="text-warning-start" size={20} />{t('calendar.upcomingAlerts')}</h3>
-                            <div className="space-y-4">{upcomingAlerts.length === 0 ? (<p className="text-text-muted text-sm text-center py-6">{t('calendar.noUpcomingEvents')}</p>) : (upcomingAlerts.map(ev => { const style = getEventStyle(ev.event_type); return (<button key={getEventId(ev)} onClick={() => handleEventClick(ev)} className="w-full flex gap-4 items-start group text-left p-3 rounded-xl hover:bg-hover transition-colors"><div className={`mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${style.indicator}`} /><div className="min-w-0"><h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors truncate">{ev.title}</h4><p className="text-xs text-text-muted mt-1 flex items-center gap-3">{format(parseISO(ev.start_date), 'dd MMM')} <span className={`text-[10px] px-2 py-0.5 rounded-md border ${style.border} ${style.bg} ${style.text} uppercase font-medium`}>{t(`calendar.types.${ev.event_type}`, ev.event_type)}</span></p></div></button>)}))}</div>
+                            <div className="space-y-4">{upcomingAlerts.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-8 text-center">
+                                    <div className="w-16 h-16 rounded-full bg-surface flex items-center justify-center mb-4">
+                                        <CalendarX size={28} className="text-text-muted" />
+                                    </div>
+                                    <p className="text-text-muted text-sm font-medium">{t('calendar.noUpcomingEvents')}</p>
+                                    <p className="text-text-muted/60 text-xs mt-1">{t('calendar.noUpcomingEventsDesc')}</p>
+                                </div>
+                            ) : (upcomingAlerts.map(ev => { const style = getEventStyle(ev.event_type); return (<button key={getEventId(ev)} onClick={() => handleEventClick(ev)} className="w-full flex gap-4 items-start group text-left p-3 rounded-xl hover:bg-hover transition-colors"><div className={`mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${style.indicator}`} /><div className="min-w-0"><h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors truncate">{ev.title}</h4><p className="text-xs text-text-muted mt-1 flex items-center gap-3">{format(parseISO(ev.start_date), 'dd MMM')} <span className={`text-[10px] px-2 py-0.5 rounded-md border ${style.border} ${style.bg} ${style.text} uppercase font-medium`}>{t(`calendar.types.${ev.event_type}`, ev.event_type)}</span></p></div></button>)}))}</div>
                         </div>
                         <div className="card-panel p-6">
                             <h3 className="text-xl font-bold text-text-primary mb-6">{t('calendar.eventTypes')}</h3>
