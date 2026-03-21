@@ -1,6 +1,6 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V7.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses Panel component, unified border styling
+// PHOENIX PROTOCOL - DASHBOARD V8.0 (COLORFUL ACCENT BARS)
+// UPDATED: Added colorful accent bars to all cards
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -159,6 +159,8 @@ export const DailyBriefingTab: React.FC = () => {
             
             {/* Hero Header - Using Panel */}
             <Panel className="p-6 sm:p-10 relative overflow-hidden">
+                {/* Colored top accent bar for hero */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60 z-10" />
                 <div className="absolute top-0 right-0 p-40 bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
                 <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
@@ -195,24 +197,32 @@ export const DailyBriefingTab: React.FC = () => {
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-6">
-                    {/* Inbox Card - Using Panel styling via custom class */}
+                    {/* Inbox Card - With colorful accent bar */}
                     <motion.div 
                         whileHover={{ scale: 1.02, y: -2 }} 
                         whileTap={{ scale: 0.98 }} 
                         onClick={() => navigate('/business/inbox')} 
-                        className="group relative bg-surface/60 hover:bg-surface/80 border border-border-strong rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md"
+                        className="group relative bg-surface/60 hover:bg-surface/80 border border-border-strong rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md overflow-hidden"
                     >
-                        <div className="flex justify-between items-center">
+                        {/* Colored top accent bar */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60 z-10" />
+                        
+                        <div className="flex justify-between items-center relative z-10">
                             <div className="flex items-center gap-3">
-                                <div className="p-3 rounded-2xl bg-primary/20 text-primary border border-primary/20"><Mail size={20} /></div>
+                                <div className="p-3 rounded-2xl bg-primary/20 text-primary border border-primary/20">
+                                    <Mail size={20} />
+                                </div>
                                 <div>
                                     <h3 className="font-bold text-text-primary text-lg">Inbox</h3>
                                     <p className="text-sm text-text-muted">{messageCount} {t('inbox.newMessages', 'mesazhe të reja')}</p>
                                 </div>
                             </div>
-                            <div className="p-2 rounded-full bg-surface group-hover:bg-primary/20 group-hover:text-primary transition-all text-text-muted"><ArrowRight size={20} /></div>
+                            <div className="p-2 rounded-full bg-surface group-hover:bg-primary/20 group-hover:text-primary transition-all text-text-muted">
+                                <ArrowRight size={20} />
+                            </div>
                         </div>
                     </motion.div>
+                    
                     <div className="flex-1 min-h-0">
                         {briefingData && <SmartAgendaCard agenda={briefingData.agenda} onEventClick={(event) => setSelectedEvent(event)} />}
                     </div>

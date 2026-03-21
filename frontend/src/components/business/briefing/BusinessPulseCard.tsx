@@ -1,10 +1,6 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V6.0 (UNIFIED ADMIN AESTHETIC)
-// 1. FIXED: Filtered out static "Sistemi aktiv..." message from AI Insight.
-// 2. FIXED: Made AI Insight rendering conditional on meaningful content.
-// 3. UPDATED: Uses unified border styling
-// 4. TYPOGRAPHY: Standardized text sizes (removed text-[10px], text-[11px])
-// 5. STATUS: UI Insight Redundancy Resolved.
+// PHOENIX PROTOCOL - PULSE CARD V7.0 (COLORFUL ACCENT BAR)
+// UPDATED: Added colorful top accent bar
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -77,6 +73,9 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
 
     return (
         <div className="bg-surface/50 border border-border-strong rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm">
+            {/* Colored top accent bar */}
+            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isRestDay ? 'from-primary to-primary/60' : 'from-success-start to-success-start/60'} z-10`} />
+            
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[60px] group-hover:bg-primary/10 transition-colors" />
             
             <div className="flex justify-between items-start mb-6 relative z-10">
