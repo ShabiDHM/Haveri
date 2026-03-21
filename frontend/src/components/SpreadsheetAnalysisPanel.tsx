@@ -1,5 +1,5 @@
 // FILE: src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - ANALYST PANEL V20.0 (FIXED BORDERS)
+// PHOENIX PROTOCOL - ANALYST PANEL V21.0 (USING border-border-strong)
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -121,16 +121,16 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
 
     // --- RENDERERS ---
 
-    // 1. IDLE STATE - USING STRONG BORDER
+    // 1. IDLE STATE
     if (status === 'idle') {
         return (
             <>
-            <div className="card-panel border-strong overflow-hidden">
-                {/* Header with accent - using border-main for internal border */}
-                <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary/5 to-transparent">
+            <div className="card-panel border-border-strong overflow-hidden">
+                {/* Header */}
+                <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <FileText className="text-primary" size={18} />
+                        <div className="p-2 bg-primary-start/10 rounded-lg">
+                            <FileText className="text-primary-start" size={18} />
                         </div>
                         <h3 className="text-lg font-bold text-text-primary">
                             {t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}
@@ -143,14 +143,13 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
 
                 {/* Upload Area */}
                 <div className="p-6 flex flex-col items-center justify-center">
-                    {/* Desktop Upload Zone */}
                     <div 
-                        className="hidden sm:flex w-full max-w-md flex-col items-center justify-center border-2 border-dashed border-border-main rounded-xl bg-surface/30 hover:bg-surface/50 transition-all cursor-pointer group py-8"
+                        className="hidden sm:flex w-full max-w-md flex-col items-center justify-center border-2 border-dashed border-border-strong rounded-xl bg-surface/30 hover:bg-surface/50 transition-all cursor-pointer group py-8"
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleDrop}
                     >
-                        <div className="p-3 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-all mb-3">
-                            <UploadCloud className="w-10 h-10 text-primary" />
+                        <div className="p-3 rounded-full bg-primary-start/10 group-hover:bg-primary-start/20 transition-all mb-3">
+                            <UploadCloud className="w-10 h-10 text-primary-start" />
                         </div>
                         <h4 className="text-base font-semibold text-text-primary mb-1">{t('analyst.dropTitle', 'Ngarko Skedarin')}</h4>
                         <p className="text-text-muted text-xs mb-4 text-center px-4">{t('analyst.dropDesc', 'Tërhiqni një skedar Excel, CSV, ose imazh.')}</p>
@@ -162,8 +161,8 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     
                     {/* Mobile View */}
                     <div className="sm:hidden w-full flex flex-col items-center justify-center">
-                        <div className="p-2 rounded-full bg-primary/10 mb-2">
-                            <FileSpreadsheet className="w-8 h-8 text-primary" />
+                        <div className="p-2 rounded-full bg-primary-start/10 mb-2">
+                            <FileSpreadsheet className="w-8 h-8 text-primary-start" />
                         </div>
                         <h4 className="text-sm font-semibold text-text-primary mb-1 text-center">{t('analyst.mobileTitle', 'Analizo një Dokument')}</h4>
                         <p className="text-text-muted text-xs mb-4 text-center">{t('analyst.mobileDesc', 'Skanoni një dokument me kamerë ose ngarkoni një skedar nga telefoni juaj.')}</p>
@@ -182,11 +181,11 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
             {/* QR Modal */}
             {isQrModalOpen && handoffToken && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-glass backdrop-blur-xl border border-border-main p-5 rounded-2xl w-full max-w-sm shadow-xl text-center relative">
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-glass backdrop-blur-xl border border-border-strong p-5 rounded-2xl w-full max-w-sm shadow-xl text-center relative">
                         <button onClick={closeQrModal} className="absolute top-2 right-2 p-1.5 text-text-muted hover:text-text-primary hover:bg-hover rounded-full"><X size={16} /></button>
                         <h3 className="text-base font-bold text-text-primary mb-1">{t('analyst.qrModalTitle', 'Skano për të Ngarkuar')}</h3>
                         <p className="text-text-muted text-xs mb-4">{t('analyst.qrModalDesc', 'Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.')}</p>
-                        <div className="bg-card p-3 rounded-xl inline-block border border-border-main">
+                        <div className="bg-card p-3 rounded-xl inline-block border border-border-strong">
                             <QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={160} />
                         </div>
                         <div className="mt-4 flex items-center justify-center gap-2 text-text-muted text-xs">
@@ -202,17 +201,17 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 2. PROCESSING STATE
     if (status === 'uploading' || status === 'analyzing') {
         return (
-            <div className="card-panel border-strong overflow-hidden">
-                <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary/5 to-transparent">
+            <div className="card-panel border-border-strong overflow-hidden">
+                <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <FileSpreadsheet className="text-primary" size={18} />
+                        <div className="p-2 bg-primary-start/10 rounded-lg">
+                            <FileSpreadsheet className="text-primary-start" size={18} />
                         </div>
                         <h3 className="text-lg font-bold text-text-primary">{t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}</h3>
                     </div>
                 </div>
                 <div className="p-8 flex flex-col items-center justify-center">
-                    <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+                    <Loader2 className="w-10 h-10 text-primary-start animate-spin mb-4" />
                     <p className="text-text-primary text-sm font-medium mb-1">{t('analyst.statusAnalyzing', 'Duke analizuar...')}</p>
                     <p className="text-text-muted text-xs">{file?.name}</p>
                 </div>
@@ -223,19 +222,19 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 3. ERROR STATE
     if (status === 'error') {
         return (
-            <div className="card-panel border-strong overflow-hidden border-danger/30">
-                <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-danger/5 to-transparent">
+            <div className="card-panel border-border-strong overflow-hidden border-danger-start/30">
+                <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-danger-start/5 to-transparent">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-danger/10 rounded-lg">
-                            <AlertTriangle className="text-danger" size={18} />
+                        <div className="p-2 bg-danger-start/10 rounded-lg">
+                            <AlertTriangle className="text-danger-start" size={18} />
                         </div>
                         <h3 className="text-lg font-bold text-text-primary">{t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}</h3>
                     </div>
                 </div>
                 <div className="p-8 flex flex-col items-center justify-center">
-                    <AlertTriangle className="w-10 h-10 text-danger mb-4" />
+                    <AlertTriangle className="w-10 h-10 text-danger-start mb-4" />
                     <p className="text-text-primary text-sm font-medium mb-1">{t('analyst.analysisErrorTitle', 'Gabim në Analizë')}</p>
-                    <p className="text-danger text-xs mb-4 text-center">{errorMsg}</p>
+                    <p className="text-danger-start text-xs mb-4 text-center">{errorMsg}</p>
                     <button onClick={reset} className="btn-secondary text-xs">{t('analyst.tryAgainButton', 'Provo Përsëri')}</button>
                 </div>
             </div>
@@ -246,13 +245,13 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     if (status === 'complete' && result) {
         const maxVal = Math.max(...result.chart_data.map(d => d.value), 1);
         return (
-            <div className="card-panel border-strong overflow-hidden">
+            <div className="card-panel border-border-strong overflow-hidden">
                 {/* Header */}
-                <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary/5 to-transparent">
+                <div className="px-5 pt-5 pb-3 border-b border-border-strong bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <FileSpreadsheet className="text-primary" size={18} />
+                            <div className="p-2 bg-primary-start/10 rounded-lg">
+                                <FileSpreadsheet className="text-primary-start" size={18} />
                             </div>
                             <h3 className="text-lg font-bold text-text-primary">
                                 {t('analyst.reportTitle', 'Raporti i Analizës')}
@@ -269,25 +268,25 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                 <div className="p-5 space-y-5">
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="bg-surface p-4 rounded-xl border border-border-main">
+                        <div className="bg-surface p-4 rounded-xl border border-border-strong">
                             <div className="flex items-center gap-2 mb-2 text-text-muted text-xs font-semibold uppercase tracking-wider">
                                 <DollarSign size={14} /> {t('analyst.totalVolume', 'Total Volum')}
                             </div>
-                            <div className={clsx("text-2xl font-bold", { 'text-success-start': result.stats.total_sum >= 0, 'text-danger': result.stats.total_sum < 0 })}>
+                            <div className={clsx("text-2xl font-bold", { 'text-success-start': result.stats.total_sum >= 0, 'text-danger-start': result.stats.total_sum < 0 })}>
                                 €{result.stats.total_sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-xl border border-border-main">
+                        <div className="bg-surface p-4 rounded-xl border border-border-strong">
                             <div className="flex items-center gap-2 mb-2 text-text-muted text-xs font-semibold uppercase tracking-wider">
                                 <Activity size={14} /> {t('analyst.transactions', 'Transaksione')}
                             </div>
                             <div className="text-2xl font-bold text-text-primary">{result.stats.transaction_count}</div>
                         </div>
-                        <div className="bg-surface p-4 rounded-xl border border-border-main">
+                        <div className="bg-surface p-4 rounded-xl border border-border-strong">
                             <div className="flex items-center gap-2 mb-2 text-text-muted text-xs font-semibold uppercase tracking-wider">
                                 <TrendingUp size={14} /> {t('analyst.average', 'Mesatarja')}
                             </div>
-                            <div className={clsx("text-2xl font-bold", { 'text-primary': result.stats.average >= 0, 'text-warning-start': result.stats.average < 0 })}>
+                            <div className={clsx("text-2xl font-bold", { 'text-primary-start': result.stats.average >= 0, 'text-warning-start': result.stats.average < 0 })}>
                                 €{result.stats.average.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                         </div>
@@ -295,16 +294,16 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     
                     {/* AI Summary */}
                     <div className="space-y-4">
-                        <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-xl border border-primary/20">
-                            <h3 className="text-sm font-bold text-primary mb-2 flex items-center gap-2">
+                        <div className="bg-gradient-to-r from-primary-start/10 to-primary-start/5 p-4 rounded-xl border border-primary-start/20">
+                            <h3 className="text-sm font-bold text-primary-start mb-2 flex items-center gap-2">
                                 <CheckCircle2 size={16} /> {t('analyst.executiveSummaryTitle', 'Përmbledhja Ekzekutive')}
                             </h3>
                             <p className="text-sm text-text-secondary leading-relaxed">{result.ai_summary.summary}</p>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-danger/5 p-4 rounded-xl border border-danger/20">
-                                <h3 className="text-sm font-bold text-danger mb-2 flex items-center gap-2">
+                            <div className="bg-danger-start/5 p-4 rounded-xl border border-danger-start/20">
+                                <h3 className="text-sm font-bold text-danger-start mb-2 flex items-center gap-2">
                                     <ShieldAlert size={16} /> {t('analyst.primaryRiskTitle', 'Rreziku Primar')}
                                 </h3>
                                 <p className="text-sm text-text-secondary leading-relaxed">{result.ai_summary.primary_risk}</p>
@@ -320,7 +319,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     
                     {/* Charts */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                        <div className="bg-surface/30 p-4 rounded-xl border border-border-main">
+                        <div className="bg-surface/30 p-4 rounded-xl border border-border-strong">
                             <h3 className="font-semibold text-text-primary mb-3 flex items-center gap-2 text-sm">
                                 <BarChart3 size={16} className="text-success-start"/> {t('analyst.expenseTrendTitle', 'Trendi i Shpenzimeve')}
                             </h3>
@@ -331,7 +330,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                                     ) : (
                                         result.chart_data.map((item, idx) => (
                                             <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-1 group relative">
-                                                <div className="hidden sm:block absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card text-text-primary text-[10px] px-2 py-1 rounded whitespace-nowrap z-10 border border-border-main shadow-sm">
+                                                <div className="hidden sm:block absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card text-text-primary text-[10px] px-2 py-1 rounded whitespace-nowrap z-10 border border-border-strong shadow-sm">
                                                     €{item.value.toLocaleString()}
                                                 </div>
                                                 <motion.div 
@@ -350,10 +349,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                             </div>
                         </div>
                         
-                        <div className="bg-surface/30 p-4 rounded-xl border border-border-main">
+                        <div className="bg-surface/30 p-4 rounded-xl border border-border-strong">
                             <div className="flex justify-between items-center mb-3">
                                 <h3 className="font-semibold text-text-primary text-sm">{t('analyst.anomaliesTitle', 'Anomali & Të Dyshimta')}</h3>
-                                <span className="px-2 py-0.5 bg-danger/20 text-danger text-xs rounded-full font-semibold">
+                                <span className="px-2 py-0.5 bg-danger-start/20 text-danger-start text-xs rounded-full font-semibold">
                                     {result.anomalies.length} {t('analyst.findingsCount', 'Gjetje')}
                                 </span>
                             </div>
@@ -365,8 +364,8 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                                     </div>
                                 ) : (
                                     result.anomalies.map((ano, i) => (
-                                        <div key={i} className="flex gap-2 p-2 bg-danger/5 border border-danger/10 rounded-lg hover:bg-danger/10 transition-colors">
-                                            <AlertTriangle className={`flex-shrink-0 w-3 h-3 mt-0.5 ${ ano.severity === 'high' ? 'text-danger' : 'text-warning-start' }`} />
+                                        <div key={i} className="flex gap-2 p-2 bg-danger-start/5 border border-danger-start/10 rounded-lg hover:bg-danger-start/10 transition-colors">
+                                            <AlertTriangle className={`flex-shrink-0 w-3 h-3 mt-0.5 ${ ano.severity === 'high' ? 'text-danger-start' : 'text-warning-start' }`} />
                                             <div>
                                                 <p className="text-xs font-medium text-text-primary">{ano.type}</p>
                                                 <p className="text-[11px] text-text-muted leading-relaxed">{ano.description}</p>
