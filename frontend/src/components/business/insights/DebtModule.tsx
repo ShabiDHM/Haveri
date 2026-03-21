@@ -1,4 +1,4 @@
-// FILE: src/components/business/insights/DebtModule.tsx
+// FILE: src/components/ business/insights/DebtModule.tsx
 // PHOENIX PROTOCOL - DEBT MODULE V8.0 (VISIBLE ACCENT BAR)
 
 import React from 'react';
