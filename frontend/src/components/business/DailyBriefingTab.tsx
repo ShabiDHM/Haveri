@@ -1,6 +1,6 @@
 // FILE: src/components/business/DailyBriefingTab.tsx
-// PHOENIX PROTOCOL - DASHBOARD V8.0 (COLORFUL ACCENT BARS)
-// UPDATED: Added colorful accent bars to all cards
+// PHOENIX PROTOCOL - DASHBOARD V9.0 (CONSISTENT WHITE BACKGROUNDS)
+// UPDATED: All cards now use bg-card for consistent white background
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -197,12 +197,12 @@ export const DailyBriefingTab: React.FC = () => {
                 </motion.div>
                 
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="flex flex-col gap-6">
-                    {/* Inbox Card - With colorful accent bar */}
+                    {/* Inbox Card - With colorful accent bar - White background */}
                     <motion.div 
                         whileHover={{ scale: 1.02, y: -2 }} 
                         whileTap={{ scale: 0.98 }} 
                         onClick={() => navigate('/business/inbox')} 
-                        className="group relative bg-surface/60 hover:bg-surface/80 border border-border-strong rounded-3xl p-6 cursor-pointer transition-all duration-300 backdrop-blur-md overflow-hidden"
+                        className="group relative bg-card hover:bg-card/95 border border-border-strong rounded-3xl p-6 cursor-pointer transition-all duration-300 overflow-hidden shadow-sm"
                     >
                         {/* Colored top accent bar */}
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60 z-10" />

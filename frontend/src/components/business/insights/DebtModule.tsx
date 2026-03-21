@@ -1,6 +1,6 @@
 // FILE: src/components/business/insights/DebtModule.tsx
-// PHOENIX PROTOCOL - DEBT MODULE V6.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - DEBT MODULE V7.0 (CONSISTENT WHITE BACKGROUND)
+// UPDATED: Changed background to bg-card
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,7 +25,7 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
     };
 
     return (
-        <div className="bg-surface/60 border border-border-strong rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
+        <div className="bg-card border border-border-strong rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative">
             {/* Colored top accent bar */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-danger to-danger/60 z-10" />
             

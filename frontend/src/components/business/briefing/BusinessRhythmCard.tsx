@@ -1,6 +1,6 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - RHYTHM CARD V8.0 (COLORFUL ACCENT BAR)
-// UPDATED: Added colorful top accent bar
+// PHOENIX PROTOCOL - RHYTHM CARD V9.0 (CONSISTENT WHITE BACKGROUND)
+// UPDATED: Changed background to match Panel component (bg-card)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -109,7 +109,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
       };
 
     return (
-        <div className="bg-surface/50 border border-border-strong rounded-3xl p-6 relative overflow-hidden h-full flex flex-col justify-between group hover:border-success-start/30 transition-colors duration-500 shadow-sm">
+        <div className="bg-card border border-border-strong rounded-3xl p-6 relative overflow-hidden h-full flex flex-col justify-between group hover:border-success-start/30 transition-colors duration-500 shadow-sm">
             {/* Colored top accent bar */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success-start to-success-start/60 z-10" />
             

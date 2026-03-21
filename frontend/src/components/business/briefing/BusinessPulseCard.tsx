@@ -1,6 +1,6 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V7.0 (COLORFUL ACCENT BAR)
-// UPDATED: Added colorful top accent bar
+// PHOENIX PROTOCOL - PULSE CARD V8.0 (CONSISTENT WHITE BACKGROUND)
+// UPDATED: Changed background to match Panel component (bg-card)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -72,7 +72,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
     const hotItem = useMemo(() => signals.find(s => s.type === 'bestseller'), [signals]);
 
     return (
-        <div className="bg-surface/50 border border-border-strong rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm">
+        <div className="bg-card border border-border-strong rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm">
             {/* Colored top accent bar */}
             <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${isRestDay ? 'from-primary to-primary/60' : 'from-success-start to-success-start/60'} z-10`} />
             
