@@ -1,5 +1,5 @@
 // FILE: src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - ANALYST PANEL V16.0 (FIXED QR INTEGRATION)
+// PHOENIX PROTOCOL - ANALYST PANEL V17.0 (PROPER VISUAL ANCHORING)
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -121,12 +121,12 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
 
     // --- RENDERERS ---
 
-    // 1. IDLE STATE
+    // 1. IDLE STATE - PROPERLY ANCHORED WITH BORDER AND SHADOW
     if (status === 'idle') {
         return (
             <>
-            <div className="bg-card border border-border-main rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col">
-                {/* Header */}
+            <div className="bg-card border border-border-main rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+                {/* Header with accent - MATCHES OTHER MODULES EXACTLY */}
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary/5 to-transparent">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-primary/10 rounded-lg">
@@ -136,16 +136,16 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                             {t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}
                         </h3>
                     </div>
-                    <p className="text-xs text-text-muted mt-2">
+                    <p className="text-xs text-text-muted mt-2 leading-relaxed">
                         {t('analyst.description', 'Merrni analiza të thelluara të të dhënave Excel me zbulim anomalish të fuqizuar nga AI.')}
                     </p>
                 </div>
 
-                {/* Upload Area */}
-                <div className="flex-1 p-5 flex flex-col items-center justify-center min-h-[400px]">
+                {/* Upload Area - TIGHTER PADDING */}
+                <div className="p-6 flex flex-col items-center justify-center">
                     {/* Desktop Upload Zone */}
                     <div 
-                        className="hidden sm:flex w-full max-w-md flex-col items-center justify-center border-2 border-dashed border-border-main rounded-2xl bg-surface/20 hover:bg-surface/40 transition-all cursor-pointer group py-10"
+                        className="hidden sm:flex w-full max-w-md flex-col items-center justify-center border-2 border-dashed border-border-main rounded-xl bg-surface/30 hover:bg-surface/50 transition-all cursor-pointer group py-8"
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleDrop}
                     >
@@ -199,10 +199,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         );
     }
     
-    // 2. PROCESSING STATE
+    // 2. PROCESSING STATE - WITH PROPER BORDER
     if (status === 'uploading' || status === 'analyzing') {
         return (
-            <div className="bg-card border border-border-main rounded-2xl shadow-sm h-full flex flex-col">
+            <div className="bg-card border border-border-main rounded-2xl shadow-sm overflow-hidden">
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary/5 to-transparent">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-primary/10 rounded-lg">
@@ -211,7 +211,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                         <h3 className="text-lg font-bold text-text-primary">{t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}</h3>
                     </div>
                 </div>
-                <div className="flex-1 p-5 flex flex-col items-center justify-center">
+                <div className="p-8 flex flex-col items-center justify-center">
                     <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
                     <p className="text-text-primary text-sm font-medium mb-1">{t('analyst.statusAnalyzing', 'Duke analizuar...')}</p>
                     <p className="text-text-muted text-xs">{file?.name}</p>
@@ -220,10 +220,10 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         );
     }
 
-    // 3. ERROR STATE
+    // 3. ERROR STATE - WITH PROPER BORDER
     if (status === 'error') {
         return (
-            <div className="bg-card border border-danger/20 rounded-2xl shadow-sm h-full flex flex-col">
+            <div className="bg-card border border-danger/20 rounded-2xl shadow-sm overflow-hidden">
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-danger/5 to-transparent">
                     <div className="flex items-center gap-2">
                         <div className="p-2 bg-danger/10 rounded-lg">
@@ -232,7 +232,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                         <h3 className="text-lg font-bold text-text-primary">{t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}</h3>
                     </div>
                 </div>
-                <div className="flex-1 p-5 flex flex-col items-center justify-center">
+                <div className="p-8 flex flex-col items-center justify-center">
                     <AlertTriangle className="w-10 h-10 text-danger mb-4" />
                     <p className="text-text-primary text-sm font-medium mb-1">{t('analyst.analysisErrorTitle', 'Gabim në Analizë')}</p>
                     <p className="text-danger text-xs mb-4 text-center">{errorMsg}</p>
@@ -242,11 +242,11 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
         );
     }
 
-    // 4. DASHBOARD (SUCCESS)
+    // 4. DASHBOARD (SUCCESS) - WITH PROPER BORDER AND SHADOW
     if (status === 'complete' && result) {
         const maxVal = Math.max(...result.chart_data.map(d => d.value), 1);
         return (
-            <div className="bg-card border border-border-main rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col">
+            <div className="bg-card border border-border-main rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
                 {/* Header */}
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary/5 to-transparent">
                     <div className="flex items-center justify-between">
@@ -265,8 +265,8 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     <p className="text-xs text-text-muted mt-1 break-all">{file?.name} • {new Date().toLocaleDateString()}</p>
                 </div>
                 
-                {/* Content */}
-                <div className="flex-1 p-5 space-y-5 overflow-y-auto">
+                {/* Content - TIGHTER PADDING */}
+                <div className="p-5 space-y-5">
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="bg-surface p-4 rounded-xl border border-border-main">
