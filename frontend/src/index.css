@@ -190,11 +190,10 @@
 }
 
 @layer components {
-  /* MASTER PANEL - Admin Panel Aesthetic (UNIFIED) */
+  /* MASTER PANEL - Border handled by Tailwind utilities */
   .panel {
     background-color: var(--bg-card);
-    border: 1px solid var(--border-strong);
-    border-radius: 1rem; /* 16px - Matches Admin Panel */
+    border-radius: 1rem; /* 16px */
     box-shadow: var(--shadow-sm);
     transition: all 300ms;
   }
@@ -215,8 +214,7 @@
   /* DEPRECATED: Use .panel instead. Keeping for backward compatibility only */
   .card-panel {
     background-color: var(--bg-card);
-    border: 1px solid var(--border-strong);
-    border-radius: 1rem; /* Now matches Admin Panel */
+    border-radius: 1rem;
     box-shadow: var(--shadow-sm);
     transition: all 300ms;
   }
