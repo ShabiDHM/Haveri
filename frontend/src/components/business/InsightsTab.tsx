@@ -1,5 +1,5 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V4.4 (GRID CLEANUP - REMOVED INBOX/AGENDA)
+// PHOENIX PROTOCOL - INSIGHTS UI V4.5 (AGENDA RESTORED)
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,7 @@ import { TaxModule } from './insights/TaxModule';
 import { ProfitModule } from './insights/ProfitModule';
 import { BusinessRhythmCard, DailySalesData } from './insights/BusinessRhythmCard';
 import { BusinessPulseCard } from './insights/BusinessPulseCard';
+import { SmartAgendaCard } from './insights/SmartAgendaCard';
 import SpreadsheetAnalysisPanel from '../SpreadsheetAnalysisPanel';
 
 export const InsightsTab: React.FC = () => {
@@ -25,11 +26,10 @@ export const InsightsTab: React.FC = () => {
     
     const { loading: intelLoading, debtAnalytics, profitAnalytics, taxAnalytics } = useBusinessIntelligence();
     const { displayIncome, analyticsData, loading: financeLoading } = useFinanceData();
-    const { loading: briefingLoading } = useStrategicBriefing();
+    const { data: briefingData, loading: briefingLoading } = useStrategicBriefing();
     
     const [showAnalystPanel, setShowAnalystPanel] = useState(false);
 
-    // Transform raw trend data into the format expected by BusinessRhythmCard
     const salesHistory: DailySalesData = useMemo(() => {
         if (!analyticsData?.sales_trend) return { labels: [], data: [] };
         return {
@@ -52,7 +52,6 @@ export const InsightsTab: React.FC = () => {
                         <div className="p-3 bg-primary/10 rounded-xl"><FileSpreadsheet className="text-primary" size={24} /></div>
                         <div>
                             <h2 className="text-lg font-bold text-text-primary">{t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}</h2>
-                            <p className="text-sm text-text-muted">{t('analyst.description', 'Merrni analiza të thelluara të të dhënave Excel.')}</p>
                         </div>
                     </div>
                     <button onClick={() => setShowAnalystPanel(!showAnalystPanel)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface hover:bg-hover border border-border-strong transition-all">
@@ -73,6 +72,7 @@ export const InsightsTab: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <BusinessRhythmCard currentSales={displayIncome} salesHistory={salesHistory} />
                 <BusinessPulseCard currentSales={displayIncome} />
+                {briefingData && <SmartAgendaCard agenda={briefingData.agenda} />}
                 <DebtModule data={debtAnalytics} />
                 <TaxModule data={taxAnalytics} />
                 <ProfitModule data={profitAnalytics} />
