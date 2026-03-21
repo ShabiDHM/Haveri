@@ -1,6 +1,7 @@
 // FILE: src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - ANALYST PANEL V23.0 (UNIFIED ADMIN AESTHETIC)
+// PHOENIX PROTOCOL - ANALYST PANEL V24.0 (UNIFIED ADMIN AESTHETIC)
 // UPDATED: Uses Panel component, removed conflicting border classes, unified spacing
+// FIXED: Removed duplicate header text, changed upload button to "Ngarko Skedarin"
 
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -123,14 +124,14 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                             <FileSpreadsheet className="w-8 h-8 text-primary-start" />
                         </div>
                         <h4 className="text-sm font-semibold text-text-primary mb-1 text-center">
-                            {t('analyst.mobileTitle', 'Analizo një Dokument')}
+                            {t('analyst.mobileTitle', 'Ngarko Skedarin')}
                         </h4>
                         <p className="text-text-muted text-xs mb-4 text-center">
                             {t('analyst.mobileDesc', 'Ngarkoni një skedar nga telefoni juaj.')}
                         </p>
                         <div className="w-full space-y-2">
                             <button onClick={() => fileInputRef.current?.click()} className="btn-primary w-full flex items-center justify-center gap-2 py-2 text-xs">
-                                <FileUp size={14} /> {t('analyst.uploadButton', 'Ngarko Skedar')}
+                                <FileUp size={14} /> {t('analyst.uploadButton', 'Ngarko Skedarin')}
                             </button>
                         </div>
                     </div>
