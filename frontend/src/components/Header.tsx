@@ -1,11 +1,11 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.2 (FULL FUNCTIONALITY RESTORED)
+// PHOENIX PROTOCOL - HEADER V6.3 (YEAR SELECTOR MOVED TO PROFILE DROPDOWN)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Bell, LogOut, User as UserIcon, LayoutDashboard, 
     MessageSquare, Menu, FileText, Package, FolderOpen, 
-    Sparkles, Building2, X, Shield, Share2, Calendar,
+    Sparkles, Building2, X, Shield, Share2, 
     Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -104,15 +104,6 @@ const Header: React.FC = () => {
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
         
-        {isAuthenticated && (
-            <div className="hidden sm:flex items-center gap-2 bg-hover border border-border-strong px-3 py-1.5 rounded-xl">
-                <Calendar size={14} className="text-primary" />
-                <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="bg-transparent text-text-primary text-sm font-bold outline-none cursor-pointer">
-                    {[2026, 2025, 2024, 2023].map(y => <option key={y} value={y} className="bg-card">{y}</option>)}
-                </select>
-            </div>
-        )}
-
         <Link to="/calendar" className="p-2 text-text-secondary hover:text-primary hover:bg-hover rounded-lg relative">
           <Bell size={20} />
           {alertCount > 0 && (<span className="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full animate-pulse"></span>)}
@@ -133,6 +124,17 @@ const Header: React.FC = () => {
               <div className="px-4 py-2 border-b border-border-strong mb-1">
                   <p className="text-xs text-primary font-bold">{user?.username}</p>
               </div>
+
+              {/* Year Selector Moved Inside Dropdown */}
+              {isAuthenticated && (
+                <div className="px-4 py-2 flex items-center justify-between hover:bg-hover">
+                    <span className="text-xs font-bold text-text-muted">{t('navigation.year', 'Viti Fiskal')}</span>
+                    <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="bg-transparent text-primary text-sm font-bold outline-none cursor-pointer">
+                        {[2026, 2025, 2024, 2023].map(y => <option key={y} value={y} className="bg-card">{y}</option>)}
+                    </select>
+                </div>
+              )}
+
               <button onClick={() => handleDropdownNavigate('/account')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
                   <UserIcon size={16} className="mr-3 text-primary" />{t('sidebar.account')}
               </button>

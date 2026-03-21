@@ -1,6 +1,5 @@
 // FILE: frontend/src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V4.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses Panel component, unified border styling
+// PHOENIX PROTOCOL - INSIGHTS UI V4.1 (LAYOUT-SAFE BORDER PATTERN)
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,10 +44,8 @@ export const InsightsTab: React.FC = () => {
 
     return (
         <div className="space-y-8">
-            {/* Hero Section - Analyst Panel Toggle - Added unified accent bar logic */}
-            <Panel className="p-5 relative overflow-hidden">
-                {/* Colored top accent bar - Primary color for Data Analyst */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/80 z-10 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+            {/* Hero Section - Analyst Panel Toggle - Fixed using Layout-Safe Border Pattern */}
+            <Panel className="p-5 border-top-accent border-t-primary relative">
                 
                 <div className="flex items-center justify-between flex-wrap gap-4 relative z-20">
                     <div className="flex items-center gap-4">
