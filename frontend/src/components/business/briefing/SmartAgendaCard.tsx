@@ -1,9 +1,10 @@
 // FILE: src/components/business/briefing/SmartAgendaCard.tsx
-// PHOENIX PROTOCOL - SMART GREETING V5.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - SMART GREETING V6.0 (CONSISTENT TYPOGRAPHY)
 // 1. REFINEMENT: Removed redundant username to avoid duplication with page header.
 // 2. LOGIC: Maintained time-based greetings and Kosovo-specific contextual messages.
 // 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 4. STATUS: Pure, streamlined implementation.
+// 4. TYPOGRAPHY: Standardized text sizes (removed text-[9px], text-[10px])
+// 5. STATUS: Pure, streamlined implementation.
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -68,7 +69,7 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda, onEven
 
             {/* Section Label */}
             <div className="flex justify-between items-center mb-4 pt-4 border-t border-border-main relative z-10">
-                <h3 className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                <h3 className="text-text-muted text-xs font-bold uppercase tracking-wide flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5 text-primary" /> 
                     {t('dashboard.smartAgenda', 'Axhenda Inteligjente')}
                 </h3>
@@ -120,11 +121,11 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda, onEven
                                     
                                     <div className="flex items-center gap-3">
                                         {isCritical && (
-                                            <span className="flex items-center gap-1 text-[9px] uppercase font-black text-danger tracking-tighter">
-                                                <AlertCircle size={10} /> {t('common.urgent', 'Urgjente')}
+                                            <span className="flex items-center gap-1 text-xs font-bold uppercase text-danger tracking-wide">
+                                                <AlertCircle size={12} /> {t('common.urgent', 'Urgjente')}
                                             </span>
                                         )}
-                                        <span className="text-[10px] text-text-muted truncate font-medium">
+                                        <span className="text-xs text-text-muted truncate font-medium">
                                             {item.type.replace('_', ' ')}
                                         </span>
                                     </div>
@@ -140,7 +141,7 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda, onEven
             {/* Footer Action */}
             <button 
                 onClick={() => navigate('/calendar')} 
-                className="w-full mt-6 py-4 rounded-2xl bg-primary/5 hover:bg-primary text-primary hover:text-inverse text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 border border-primary/20 shadow-sm relative z-10 active:scale-[0.98]"
+                className="w-full mt-6 py-4 rounded-2xl bg-primary/5 hover:bg-primary text-primary hover:text-inverse text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-3 border border-primary/20 shadow-sm relative z-10 active:scale-[0.98]"
             >
                 {t('dashboard.viewCalendar', 'Hap Kalendarin')}
                 <ArrowRight className="w-4 h-4" />

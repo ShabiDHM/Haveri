@@ -1,9 +1,10 @@
 // FILE: src/components/business/briefing/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V4.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - PULSE CARD V5.0 (CONSISTENT TYPOGRAPHY)
 // 1. FIXED: Filtered out static "Sistemi aktiv..." message from AI Insight.
 // 2. FIXED: Made AI Insight rendering conditional on meaningful content.
 // 3. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 4. STATUS: UI Insight Redundancy Resolved.
+// 4. TYPOGRAPHY: Standardized text sizes (removed text-[10px], text-[11px])
+// 5. STATUS: UI Insight Redundancy Resolved.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -79,7 +80,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-[60px] group-hover:bg-primary/10 transition-colors" />
             
             <div className="flex justify-between items-start mb-6 relative z-10">
-                <h3 className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                <h3 className="text-text-muted text-xs font-bold uppercase tracking-wide flex items-center gap-2">
                     <Activity className="w-4 h-4 text-primary" /> {t('dashboard.pulse.title', 'Pulsi i Biznesit')}
                 </h3>
                 <span className="flex h-3 w-3 relative">
@@ -91,10 +92,10 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
             <div className="flex-1 space-y-6 relative z-10">
                 <div>
                     <div className="flex items-baseline gap-2">
-                        <h2 className="text-4xl font-black text-text-primary tracking-tighter">
+                        <h2 className="text-3xl font-black text-text-primary tracking-tighter">
                             €{projection.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </h2>
-                        <span className="text-[10px] text-text-muted font-bold uppercase tracking-tight">
+                        <span className="text-xs text-text-muted font-semibold uppercase tracking-wide">
                             {t('dashboard.pulse.eodForecast', 'Parashikimi mbylljes')}
                         </span>
                     </div>
@@ -105,8 +106,8 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                             className="h-full bg-gradient-to-r from-primary to-primary rounded-full"
                         />
                     </div>
-                    <p className="text-[10px] text-text-muted mt-2 flex items-center gap-1.5 font-medium">
-                        <Zap size={10} className="text-warning-start" /> 
+                    <p className="text-xs text-text-muted mt-2 flex items-center gap-1.5 font-medium">
+                        <Zap size={12} className="text-warning-start" /> 
                         {isRestDay ? "Ritmi i ditëve të pushimit (Vikend)" : t('dashboard.pulse.basedOnVelocity', 'Bazuar në ritmin aktual')}
                     </p>
                 </div>
@@ -116,7 +117,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                         <div className="flex items-start gap-3">
                             <div className="p-2 bg-danger/10 rounded-xl text-danger"><TrendingUp size={16} /></div>
                             <div>
-                                <p className="text-[10px] text-danger font-black uppercase mb-1">Trendi Hot</p>
+                                <p className="text-xs text-danger font-bold uppercase mb-1">Trendi Hot</p>
                                 <p className="text-sm text-text-secondary leading-snug font-medium">"{hotItem.label}" po kërkohet shumë.</p>
                             </div>
                         </div>
@@ -126,7 +127,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                                 {isRestDay ? <Coffee size={16} /> : <Clock size={16} />}
                             </div>
                             <div className="flex-1">
-                                <p className="text-[10px] text-primary font-black uppercase mb-1">
+                                <p className="text-xs text-primary font-bold uppercase mb-1">
                                     {isRestDay ? "Sygjerim për Vikend" : t('dashboard.pulse.trafficAnalysis', 'Analiza e Trafikut')}
                                 </p>
                                 {peakTime ? (
@@ -149,10 +150,10 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                     <div className="pt-4 border-t border-border-main">
                         <div className="flex items-start gap-2">
                             <div className="mt-0.5 p-1 bg-primary/20 rounded text-primary">
-                                <Info size={10} />
+                                <Info size={12} />
                             </div>
-                            <p className="text-[11px] text-text-muted leading-relaxed font-medium">
-                                <span className="text-primary font-bold mr-1">AI INSIGHT:</span> 
+                            <p className="text-xs text-text-muted leading-relaxed font-medium">
+                                <span className="text-primary font-semibold mr-1">AI INSIGHT:</span> 
                                 {insight}
                             </p>
                         </div>

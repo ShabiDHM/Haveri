@@ -1,10 +1,11 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - WORKSPACE HUB V20.1 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - WORKSPACE HUB V20.2 (CONSISTENT TYPOGRAPHY)
 // 1. FEATURE: Integrated with AuthContext 'workspace' singleton.
 // 2. REBRAND: Global terminology shift from Case to Workspace.
 // 3. OPTIMIZATION: Removed redundant API calls and local loading states.
 // 4. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 5. STATUS: Fully synchronized.
+// 5. TYPOGRAPHY: Standardized text sizes for consistent hierarchy
+// 6. STATUS: Fully synchronized.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -54,7 +55,7 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6">
       {view === 'briefing' && (
           <div className="mb-8 sm:mb-12">
-              <h1 className="text-3xl sm:text-4xl font-black text-text-primary mb-2 tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-bold text-text-primary mb-2 tracking-tight">
                   {t('business.welcome', 'Mirësevini {{name}}', { name: capitalize(user?.username) })}
               </h1>
               <p className="text-text-secondary text-base sm:text-lg font-medium">

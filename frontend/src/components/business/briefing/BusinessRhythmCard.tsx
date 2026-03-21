@@ -1,8 +1,9 @@
 // FILE: src/components/business/briefing/BusinessRhythmCard.tsx
-// PHOENIX PROTOCOL - RHYTHM CARD V5.0 (DESIGN SYSTEM ALIGNMENT)
+// PHOENIX PROTOCOL - RHYTHM CARD V6.0 (CONSISTENT TYPOGRAPHY)
 // 1. FIXED: Removed static "SOT" text as trend data is now year-aware.
 // 2. UPDATED: Uses new design system CSS variables for light/dark theme compatibility.
-// 3. STATUS: UI Label Consistency Achieved.
+// 3. TYPOGRAPHY: Standardized text sizes (removed text-[10px], text-[11px])
+// 4. STATUS: UI Label Consistency Achieved.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -93,7 +94,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
             grid: { color: 'rgba(255, 255, 255, 0.05)' },
             ticks: { 
                 color: '#9ca3af', 
-                font: { size: 10 },
+                font: { size: 11 },
                 callback: (value: any) => `€${value}`
             },
           },
@@ -101,7 +102,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
             grid: { display: false },
             ticks: { 
                 color: '#9ca3af', 
-                font: { size: 10 },
+                font: { size: 11 },
                 maxRotation: 0,
                 autoSkip: true, 
                 maxTicksLimit: 10 
@@ -116,7 +117,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
 
             <div className="flex justify-between items-start mb-4 relative z-10">
                 <div>
-                    <h3 className="text-text-muted text-sm font-medium uppercase tracking-wider flex items-center gap-2">
+                    <h3 className="text-text-muted text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
                         <CalendarDays className="w-4 h-4 text-success-start" /> {t('dashboard.monthlyTrend', 'Trendi Mujor')}
                     </h3>
                     <div className="flex items-baseline gap-2 mt-1">
@@ -129,9 +130,9 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
                 {salesHistory.labels.length > 0 && <Bar options={chartOptions} data={chartData} />}
             </div>
 
-            <div className="flex items-center justify-between text-[10px] sm:text-xs text-text-muted mt-4 relative z-10">
+            <div className="flex items-center justify-between text-xs text-text-muted mt-4 relative z-10">
                 <span>{t('dashboard.monthToDate', 'Muaji deri më sot')}</span>
-                <span className={progress >= 100 ? "text-success-start font-bold" : "text-text-muted"}>
+                <span className={progress >= 100 ? "text-success-start font-semibold" : "text-text-muted"}>
                     {progress >= 100 
                         ? t('dashboard.targetAchieved', 'Objektivi u arrit!') 
                         : `${progress.toFixed(0)}% ${t('dashboard.ofTarget', 'e targetit')}`
