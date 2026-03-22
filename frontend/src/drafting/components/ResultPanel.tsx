@@ -1,19 +1,14 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V5.0 (WORLD CLASS SYMMETRY)
-// 1. FIXED: Removed hardcoded dark hex colors (#0d0f14). Replaced with 'glass-panel' and 'bg-paper'.
-// 2. FIXED: 'text-white' converted to 'text-text-primary' for perfect Light/Dark visibility.
-// 3. ENHANCED: Button hover states upgraded to the "Executive" border-revealing standard.
-// 4. RETAINED: 100% of saving, printing, downloading, and rendering logic.
+// PHOENIX PROTOCOL - RESULT PANEL V6.0 (NO CASE REFERENCES)
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RefreshCw, AlertCircle, CheckCircle, Clock,
-  FileText, Trash2, Archive, Scale, Save, Copy, Download,
+  FileText, Trash2, Archive, Scale, Copy, Download,
   BrainCircuit
 } from 'lucide-react';
 import { ResultPanelProps } from '../types';
-import { SaveModal } from './SaveModal';
 import { ThinkingDots } from './ThinkingDots';
 import { DraftResultRenderer } from './DraftResultRenderer';
 
@@ -23,15 +18,10 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   saving,
   notification,
   onSave,
-  onSaveToCase,
   onRetry,
   onClear,
-  selectedCaseId,
-  saveModalOpen,
-  setSaveModalOpen,
 }) => {
   
-  // Adjusted status colors to use the new semantic design system variables
   const statusUI = useMemo(() => {
     switch (currentJob.status) {
       case 'COMPLETED':
@@ -63,15 +53,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         
         {/* Action Button Cluster */}
         <div className="flex items-center gap-1 sm:gap-2">
-          {currentJob.status === 'COMPLETED' && selectedCaseId && (
-            <button
-              onClick={() => setSaveModalOpen(true)}
-              title="Ruaj në lëndë"
-              className={actionButtonBase}
-            >
-              <Save size={18} />
-            </button>
-          )}
           <button
             onClick={onSave}
             title={t('drafting.saveToArchive')}
@@ -189,12 +170,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </AnimatePresence>
         </div>
       </div>
-      <SaveModal
-        isOpen={saveModalOpen}
-        onClose={() => setSaveModalOpen(false)}
-        onSave={onSaveToCase}
-        saving={saving}
-      />
     </div>
   );
 };

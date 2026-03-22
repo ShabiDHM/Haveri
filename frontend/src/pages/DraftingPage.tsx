@@ -1,18 +1,13 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V6.2 (HAVERI INTEGRATION)
-// 1. FIXED: plan_tier comparison to match Haveri tiers (GROWTH/ENTERPRISE = PRO)
-// 2. FIXED: for-await-of stream handling for AsyncIterable
-// 3. RETAINED: All drafting logic and UI
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.0 (NO CASE REFERENCES)
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Case } from '../data/types';
 import { PenTool } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// Import drafting modules
 import { TemplateType, DraftingJobState, NotificationState } from '../drafting/types';
 import { ConfigPanel } from '../drafting/components/ConfigPanel';
 import { ResultPanel } from '../drafting/components/ResultPanel';
@@ -60,14 +55,10 @@ const DraftingPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [context, setContext] = useState(() => localStorage.getItem('drafting_context') || '');
-  const [cases, setCases] = useState<Case[]>([]);
-  const [selectedCaseId, setSelectedCaseId] = useState<string>('');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('generic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<NotificationState | null>(null);
-  const [saveModalOpen, setSaveModalOpen] = useState(false);
-
   const [currentJob, setCurrentJob] = useState<DraftingJobState>(() => {
     const saved = localStorage.getItem('drafting_job');
     if (saved) {
@@ -83,7 +74,6 @@ const DraftingPage: React.FC = () => {
     return { status: null, result: null, error: null };
   });
 
-  // FIXED: Haveri uses GROWTH/ENTERPRISE as premium tiers (equivalent to PRO)
   const isPro = useMemo(() => user?.plan_tier === 'GROWTH' || user?.plan_tier === 'ENTERPRISE' || user?.role === 'ADMIN', [user]);
 
   useEffect(() => {
@@ -95,36 +85,12 @@ const DraftingPage: React.FC = () => {
   }, [currentJob]);
 
   useEffect(() => {
-    if (isPro) apiService.getCases().then(res => setCases(res || [])).catch(console.error);
-  }, [isPro]);
-
-  useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => setNotification(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [notification]);
 
-  const handleAutofillCase = useCallback(
-    (caseId: string) => {
-      const c = cases.find(item => item.id === caseId);
-      if (c) {
-        setContext(prev => {
-          const caseBlock = `[[TË_DHËNAT_E_RASTIT]]\n${t('drafting.caseRef', 'REFERENCA E RASTIT')}: ${
-            c.title || c.case_number
-          }\n${t('drafting.clientLabel', 'KLIENTI')}: ${c.client?.name || 'N/A'}\n${t('drafting.factsLabel', 'FAKTET')}: ${
-            c.description || '-'
-          }\n[[FUND_TËDHËNAVE]]\n\n`;
-          if (prev.includes('[[TË_DHËNAT_E_RASTIT]]'))
-            return prev.replace(/\[\[TË_DHËNAT_E_RASTIT\]\][\s\S]*?\[\[FUND_TËDHËNAVE\]\]\s*/, caseBlock);
-          return caseBlock + prev;
-        });
-      }
-    },
-    [cases, t]
-  );
-
-  // FIXED: Proper stream handling with for-await-of loop
   const runDraftingStream = async () => {
     if (!context.trim() || isSubmitting) return;
     setIsSubmitting(true);
@@ -132,27 +98,11 @@ const DraftingPage: React.FC = () => {
     setNotification(null);
     let acc = '';
     try {
-      let finalPromptText = context.trim();
-      if (isPro && selectedCaseId) {
-        const selectedCase = cases.find(c => c.id === selectedCaseId);
-        if (selectedCase && !finalPromptText.includes('[[TË_DHËNAT_E_RASTIT]]')) {
-          const hiddenContext = `\n\n[DATABASE DATA]\n${t('drafting.caseRef')}: ${
-            selectedCase.title || selectedCase.case_number
-          }\n${t('drafting.clientLabel')}: ${selectedCase.client?.name || 'N/A'}\n${t('drafting.factsLabel')}: ${
-            selectedCase.description || 'N/A'
-          }\n[END DATABASE DATA]\n`;
-          finalPromptText = hiddenContext + finalPromptText;
-        }
-      }
-      
       const stream = await apiService.draftLegalDocumentStream({
-        user_prompt: constructSmartPrompt(finalPromptText, selectedTemplate, t),
+        user_prompt: constructSmartPrompt(context.trim(), selectedTemplate, t),
         document_type: isPro ? selectedTemplate : 'generic',
-        case_id: isPro && selectedCaseId ? selectedCaseId : undefined,
-        use_library: isPro && !!selectedCaseId,
       });
       
-      // Handle the stream using for-await-of loop
       for await (const chunk of stream) {
         acc += chunk;
         setCurrentJob(prev => ({ ...prev, result: acc }));
@@ -173,26 +123,10 @@ const DraftingPage: React.FC = () => {
     try {
       const blob = new Blob([currentJob.result], { type: 'text/plain;charset=utf-8' });
       const fileName = `draft-${selectedTemplate}-${Date.now()}.txt`;
-      await apiService.uploadArchiveItem(new File([blob], fileName), fileName, 'DRAFT', selectedCaseId || undefined);
+      await apiService.uploadArchiveItem(new File([blob], fileName), fileName, 'DRAFT');
       setNotification({ msg: t('drafting.savedToArchive'), type: 'success' });
     } catch (err) {
       setNotification({ msg: t('drafting.saveFailed'), type: 'error' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveToCase = async (title: string) => {
-    if (!currentJob.result || !selectedCaseId) return;
-    setSaving(true);
-    try {
-      const blob = new Blob([currentJob.result], { type: 'text/plain;charset=utf-8' });
-      const fileName = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.txt`;
-      await apiService.uploadArchiveItem(new File([blob], fileName), fileName, 'DRAFT', selectedCaseId);
-      setNotification({ msg: 'Drafti u ruajt me sukses në lëndë', type: 'success' });
-      setSaveModalOpen(false);
-    } catch (err) {
-      setNotification({ msg: 'Ruajtja dështoi', type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -213,9 +147,8 @@ const DraftingPage: React.FC = () => {
       <div className="max-w-7xl w-full mx-auto px-6 sm:px-8 pt-24 pb-8 flex flex-col h-full">
         <style>{lawyerGradeStyles}</style>
 
-        {/* Page Header: Executive Alignment (Matches Case View) */}
         <div className="flex items-center gap-4 mb-8 ml-2 flex-shrink-0">
-            <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-lawyer-light">
+            <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start">
                 <PenTool size={24} />
             </div>
             <h1 className="text-4xl font-black text-text-primary tracking-tighter leading-none">
@@ -223,20 +156,13 @@ const DraftingPage: React.FC = () => {
             </h1>
         </div>
 
-        {/* Main Grid: Symmetrical with Case View */}
         <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 flex-1 lg:h-[750px] min-h-0">
           <ConfigPanel
             t={t}
             isPro={isPro}
-            cases={cases}
-            selectedCaseId={selectedCaseId}
             selectedTemplate={selectedTemplate}
             context={context}
             isSubmitting={isSubmitting}
-            onSelectCase={(id: string) => {
-              setSelectedCaseId(id);
-              handleAutofillCase(id);
-            }}
             onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
             onChangeContext={setContext}
             onSubmit={runDraftingStream}
@@ -247,12 +173,8 @@ const DraftingPage: React.FC = () => {
             saving={saving}
             notification={notification}
             onSave={handleSaveToArchive}
-            onSaveToCase={handleSaveToCase}
             onRetry={retry}
             onClear={clearJob}
-            selectedCaseId={selectedCaseId}
-            saveModalOpen={saveModalOpen}
-            setSaveModalOpen={setSaveModalOpen}
           />
         </div>
       </div>

@@ -1,15 +1,28 @@
 // src/drafting/types.ts
+// PHOENIX PROTOCOL - DRAFTING TYPES V7.0 (NO CASE REFERENCES)
+
 import { TFunction } from 'i18next';
-import { Case } from '../data/types';
 
 export type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 export type TemplateType =
-  | 'generic' | 'padi' | 'pergjigje' | 'kunderpadi' | 'ankese' | 'prapësim'
-  | 'nda' | 'mou' | 'shareholders' | 'sla'
-  | 'employment_contract' | 'termination_notice' | 'warning_letter'
-  | 'terms_conditions' | 'privacy_policy'
-  | 'lease_agreement' | 'sales_purchase'
+  | 'generic' 
+  | 'padi' 
+  | 'pergjigje' 
+  | 'kunderpadi' 
+  | 'ankese' 
+  | 'prapësim'
+  | 'nda' 
+  | 'mou' 
+  | 'shareholders' 
+  | 'sla'
+  | 'employment_contract' 
+  | 'termination_notice' 
+  | 'warning_letter'
+  | 'terms_conditions' 
+  | 'privacy_policy'
+  | 'lease_agreement' 
+  | 'sales_purchase'
   | 'power_of_attorney';
 
 export interface DraftingJobState {
@@ -24,36 +37,30 @@ export interface NotificationState {
 }
 
 export interface TemplateConfig {
-  structureInstructions: string;   // the format guidelines for the AI
-  placeholder: string;             // example prompt for the user
-  label: string;                   // display name (may be translated later)
+  structureInstructions: string;
+  placeholder: string;
+  label: string;
 }
 
-// Props for subcomponents
+// Props for ConfigPanel
 export interface ConfigPanelProps {
   t: TFunction;
   isPro: boolean;
-  cases: Case[];
-  selectedCaseId: string;
   selectedTemplate: TemplateType;
   context: string;
   isSubmitting: boolean;
-  onSelectCase: (id: string) => void;
   onSelectTemplate: (val: string) => void;
   onChangeContext: (val: string) => void;
   onSubmit: () => void;
 }
 
+// Props for ResultPanel - NO CASE REFERENCES
 export interface ResultPanelProps {
   t: TFunction;
   currentJob: DraftingJobState;
   saving: boolean;
   notification: NotificationState | null;
   onSave: () => void;
-  onSaveToCase: (title: string) => Promise<void>;
   onRetry: () => void;
   onClear: () => void;
-  selectedCaseId: string;
-  saveModalOpen: boolean;
-  setSaveModalOpen: (open: boolean) => void;
 }
