@@ -1,5 +1,5 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.4 (NAVIGATION REORDERED & RENAMED)
+// PHOENIX PROTOCOL - HEADER V6.5 (ZYTRA LIGJORE FIXED)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -63,7 +63,7 @@ const Header: React.FC = () => {
       { label: t('business.archive', 'Arkiva'), path: '/business/archive', icon: FolderOpen },
       { label: t('business.insights', 'Inteligjenca'), path: '/business/insights', icon: Sparkles },
       { label: t('business.profile', 'Profili'), path: '/business/profile', icon: Building2 },
-      { label: t('sidebar.legal', 'Zyra Ligjore'), path: '/business', icon: LayoutDashboard, exact: true },
+      { label: t('sidebar.legal', 'Zyra Ligjore'), path: '/business/briefing', icon: LayoutDashboard, exact: true },
   ];
 
   if (user?.role?.toUpperCase() === 'ADMIN') {
@@ -82,7 +82,7 @@ const Header: React.FC = () => {
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-text-primary lg:hidden hover:bg-hover rounded-lg">
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
-        <Link to="/business" className="flex items-center"><BrandLogo /></Link>
+        <Link to="/business/briefing" className="flex items-center"><BrandLogo /></Link>
       </div>
 
       <nav className="hidden lg:flex items-center gap-1">
