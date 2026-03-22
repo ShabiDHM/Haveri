@@ -30,7 +30,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) return <div className="flex items-center justify-center h-screen bg-canvas"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-start"></div></div>;
   if (!isAuthenticated) return <Navigate to="/login" />;
-  if (user?.role?.toUpperCase() !== 'ADMIN') return <Navigate to="/business" />;
+  if (user?.role?.toUpperCase() !== 'ADMIN') return <Navigate to="/business/insights" />;
   return <>{children}</>;
 };
 
@@ -40,9 +40,9 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={isAuthenticated ? <Navigate to="/business" /> : <LandingPage />} />
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/business" /> : <LoginPage />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/business" /> : <RegisterPage />} />
+      <Route path="/" element={isAuthenticated ? <Navigate to="/business/insights" /> : <LandingPage />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/business/insights" /> : <LoginPage />} />
+      <Route path="/register" element={isAuthenticated ? <Navigate to="/business/insights" /> : <RegisterPage />} />
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
       
       <Route path="/portal/:workspaceId" element={<ClientPortalPage />} />
@@ -59,7 +59,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/integrations" element={<IntegrationsPage />} />
 
         {/* Business Workspace Sub-Routes */}
-        <Route path="/business" element={<BusinessPage view="briefing" />} />
+        <Route path="/business" element={<Navigate to="/business/insights" replace />} />
         <Route path="/business/finance" element={<BusinessPage view="finance" />} />
         <Route path="/business/inventory" element={<BusinessPage view="inventory" />} />
         <Route path="/business/archive" element={<BusinessPage view="archive" />} />
