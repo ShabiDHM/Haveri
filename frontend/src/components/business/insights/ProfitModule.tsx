@@ -1,5 +1,5 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - PROFIT MODULE V12.1 (LAYOUT-SAFE BORDER PATTERN)
+// PHOENIX PROTOCOL - PROFIT MODULE V13.0 (GLASSMORPHISM ALIGNED + CLEAN MODALS)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,106 +91,151 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className={`bg-card border border-border-strong border-top-accent ${hasLowStock ? 'border-t-warning' : 'border-t-success'} rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300`}>
+            <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group">
                 
-                <div className="p-5 flex-shrink-0">
-                    <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-                        <Package className="text-primary" size={20} /> 
+                {/* Executive Header */}
+                <div className="flex items-center gap-3 border-b border-border-main pb-5 mb-6 flex-shrink-0">
+                    <Package className="text-primary-start" size={20} /> 
+                    <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
                         {t('insights.inventory.title', 'Inteligjenca e Stokut')}
-                    </h3>
-                    
-                    <div className="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl">
-                        <p className="text-text-muted text-xs uppercase tracking-wider font-semibold mb-1">{t('insights.inventory.value', 'Vlera Totale e Stokut')}</p>
-                        <p className="text-2xl font-mono font-bold text-text-primary">€{totalStockValue.toFixed(2)}</p>
-                        <p className="text-[10px] text-text-muted mt-1">{t('insights.inventory.valueDesc', 'Para të bllokuara në rafte')}</p>
+                    </h2>
+                </div>
+                
+                <div className="flex flex-col flex-1 min-h-0">
+                    {/* Main Value Box */}
+                    <div className="glass-input p-5 mb-6 flex-shrink-0">
+                        <p className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-2">
+                            {t('insights.inventory.value', 'Vlera Totale e Stokut')}
+                        </p>
+                        <p className="text-2xl font-mono font-black text-text-primary">
+                            €{totalStockValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-[9px] text-text-muted mt-1 uppercase font-black tracking-widest">
+                            {t('insights.inventory.valueDesc', 'Para të bllokuara në rafte')}
+                        </p>
                     </div>
 
-                    <div className="flex justify-between items-center mb-3">
+                    {/* Critical Stock List Header */}
+                    <div className="flex justify-between items-center mb-3 flex-shrink-0">
                         <div className="flex items-center gap-2">
-                            <div className={`h-3 w-1 ${hasLowStock ? 'bg-status-warning' : 'bg-status-success'} rounded-full`}></div>
-                            <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider">{t('inventory.lowStock', 'Stoku Kritik')}</h4>
+                            <div className={`w-1.5 h-1.5 rounded-full ${hasLowStock ? 'bg-warning-start' : 'bg-success-start'}`}></div>
+                            <h3 className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                                {t('inventory.lowStock', 'Stoku Kritik')}
+                            </h3>
                         </div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${hasLowStock ? 'bg-status-warning/10 text-status-warning border-status-warning/20' : 'bg-status-success/10 text-status-success border-status-success/20'}`}>
+                        <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest border ${hasLowStock ? 'bg-warning-start/10 text-warning-start border-warning-start/20' : 'bg-success-start/10 text-success-start border-success-start/20'}`}>
                             {lowStockItems.length} {t('inventory.itemsCount', 'Artikuj')}
                         </span>
                     </div>
-                </div>
 
-                <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-2 custom-scrollbar">
-                    {lowStockItems.length === 0 ? (
-                        <div className="p-6 text-center bg-surface rounded-xl border border-border-strong">
-                            <p className="text-text-muted text-sm">{t('general.allGood', 'Gjithçka në rregull!')}</p>
-                        </div>
-                    ) : (
-                        lowStockItems.map((item: any, idx: number) => (
-                            <div 
-                                key={idx} 
-                                onClick={() => handleItemClick(item)} 
-                                className="flex justify-between items-center p-3 bg-surface rounded-xl border border-border-strong hover:border-status-warning/40 hover:shadow-sm transition-all cursor-pointer group"
-                            >
-                                <div className="flex items-center gap-3 overflow-hidden flex-1">
-                                    <div className="p-2 bg-status-warning/10 rounded-lg text-status-warning group-hover:scale-105 transition-transform">
-                                        <Zap size={14} />
-                                    </div>
-                                    <span className="text-sm text-text-secondary font-medium truncate">{item.name}</span>
-                                </div>
-                                <span className="text-xs font-mono text-status-warning flex items-center gap-1 bg-status-warning/10 px-2 py-1 rounded-lg border border-status-warning/20 shrink-0">
-                                    <AlertCircle size={10} /> {item.current_stock} {item.unit}
-                                </span>
+                    {/* List Area */}
+                    <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
+                        {lowStockItems.length === 0 ? (
+                            <div className="glass-input p-6 flex items-center justify-center text-center">
+                                <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                                    {t('general.allGood', 'Gjithçka në rregull!')}
+                                </p>
                             </div>
-                        ))
-                    )}
+                        ) : (
+                            lowStockItems.map((item: any, idx: number) => (
+                                <div 
+                                    key={idx} 
+                                    onClick={() => handleItemClick(item)} 
+                                    className="glass-input p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer"
+                                >
+                                    <div className="flex items-center gap-3 overflow-hidden flex-1">
+                                        <div className="text-warning-start/70 group-hover:text-warning-start transition-colors shrink-0">
+                                            <Zap size={14} />
+                                        </div>
+                                        <span className="text-xs font-bold text-text-primary truncate">
+                                            {item.name}
+                                        </span>
+                                    </div>
+                                    <span className="text-[10px] font-mono font-black text-warning-start flex items-center gap-1.5 shrink-0 ml-3">
+                                        <AlertCircle size={12} /> {item.current_stock} {item.unit}
+                                    </span>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             </div>
 
+            {/* AI Analysis Modal */}
             <AnimatePresence>
                 {selectedItem && !showPOModal && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden relative">
-                            <div className="p-5 border-b border-border-strong bg-primary/20 flex justify-between items-start">
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }} 
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.98, y: 20 }} 
+                            animate={{ scale: 1, y: 0 }} 
+                            exit={{ scale: 0.98, y: 20 }} 
+                            className="glass-panel w-full max-w-lg shadow-2xl overflow-hidden relative"
+                        >
+                            <div className="p-6 sm:p-8 border-b border-border-main flex justify-between items-start">
                                 <div>
-                                    <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                                    <h3 className="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-3 mb-2">
                                         {selectedItem.name}
-                                        <span className="text-xs bg-status-danger text-inverse px-2 py-0.5 rounded-full">{t('inventory.analysis.critical', 'Kritike')}</span>
+                                        <span className="text-[9px] bg-danger/10 border border-danger/20 text-danger px-2 py-0.5 rounded uppercase font-black tracking-widest">
+                                            {t('inventory.analysis.critical', 'Kritike')}
+                                        </span>
                                     </h3>
-                                    <p className="text-sm text-text-muted mt-1">{t('inventory.analysis.currentStock', 'Stoku Aktual')}: {selectedItem.current_stock} {selectedItem.unit}</p>
+                                    <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                                        {t('inventory.analysis.currentStock', 'Stoku Aktual')}: {selectedItem.current_stock} {selectedItem.unit}
+                                    </p>
                                 </div>
-                                <button onClick={() => setSelectedItem(null)} className="p-1 hover:bg-hover rounded-lg text-text-muted transition-colors"><X size={20}/></button>
+                                <button onClick={() => setSelectedItem(null)} className="p-2 hover:bg-white/5 rounded-lg text-text-muted transition-colors">
+                                    <X size={20}/>
+                                </button>
                             </div>
                             
-                            <div className="p-5 min-h-[280px]">
+                            <div className="p-6 sm:p-8 min-h-[280px]">
                                 {loading ? (
-                                    <div className="flex flex-col items-center justify-center py-10 space-y-4 text-center">
-                                        <Loader2 size={40} className="animate-spin text-primary" />
-                                        <p className="text-text-muted animate-pulse font-medium">{t('inventory.analysis.analyzing', 'Inteligjenca Artificiale po analizon...')}</p>
+                                    <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
+                                        <Loader2 size={32} className="animate-spin text-primary-start" />
+                                        <p className="text-[10px] text-text-muted uppercase font-black tracking-widest animate-pulse">
+                                            {t('inventory.analysis.analyzing', 'Inteligjenca Artificiale po analizon...')}
+                                        </p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-5">
-                                        <div className="bg-surface border border-primary/20 rounded-xl p-4 relative overflow-hidden">
-                                            <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-                                            <h4 className="text-sm font-bold text-primary mb-2 flex items-center gap-2"><ShoppingCart size={14} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}</h4>
-                                            <p className="text-sm text-text-secondary mb-3 leading-relaxed">
+                                    <div className="space-y-6">
+                                        <div className="glass-input p-5 relative overflow-hidden">
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-primary-start" />
+                                            <h4 className="text-[10px] font-black text-primary-start uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                <ShoppingCart size={14} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}
+                                            </h4>
+                                            <p className="text-xs text-text-secondary mb-4 leading-relaxed font-medium">
                                                 {aiData.prediction?.reason || t('inventory.analysis.unavailable', 'Analiza momentalisht e padisponueshme.')}
                                             </p>
                                             <button 
                                                 onClick={handleOpenDraftModal} 
                                                 disabled={!aiData.prediction || aiData.prediction.suggested_quantity === 0} 
-                                                className="w-full mt-2 py-2 btn-primary rounded-lg text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                                                className="w-full h-12 btn-primary rounded-lg text-[10px] uppercase font-black tracking-widest flex items-center justify-center gap-2 disabled:opacity-40"
                                             >
                                                 {t('inventory.analysis.draftOrder', 'Drafto Porosinë')} <ArrowRight size={14} />
                                             </button>
                                         </div>
 
-                                        <div className="bg-surface border border-status-success/20 rounded-xl p-4 relative overflow-hidden">
-                                            <div className="absolute top-0 left-0 w-1 h-full bg-status-success" />
-                                            <h4 className="text-sm font-bold text-status-success mb-2 flex items-center gap-2"><TrendingUp size={14} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}</h4>
-                                            <p className="text-sm text-text-secondary">
+                                        <div className="glass-input p-5 relative overflow-hidden">
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-success-start" />
+                                            <h4 className="text-[10px] font-black text-success-start uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                <TrendingUp size={14} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}
+                                            </h4>
+                                            <p className="text-xs text-text-secondary font-medium leading-relaxed">
                                                 {aiData.trend?.trend_analysis || t('inventory.analysis.unavailable', 'Nuk ka të dhëna mjaftueshme shitjeje.')}
                                             </p>
                                             {aiData.trend?.cross_sell_opportunities && (
-                                                <div className="mt-3 pt-2 border-t border-border-strong">
-                                                    <p className="text-[10px] text-text-muted uppercase font-semibold mb-1">{t('inventory.analysis.crossSell', 'Mundësi Cross-Sell')}</p>
-                                                    <p className="text-sm text-text-secondary">{aiData.trend.cross_sell_opportunities}</p>
+                                                <div className="mt-4 pt-4 border-t border-border-main">
+                                                    <p className="text-[9px] text-text-muted uppercase font-black tracking-widest mb-2">
+                                                        {t('inventory.analysis.crossSell', 'Mundësi Cross-Sell')}
+                                                    </p>
+                                                    <p className="text-xs text-text-secondary font-medium leading-relaxed">
+                                                        {aiData.trend.cross_sell_opportunities}
+                                                    </p>
                                                 </div>
                                             )}
                                         </div>
@@ -202,50 +247,85 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                 )}
             </AnimatePresence>
 
+            {/* PO Generation Modal */}
             <AnimatePresence>
                 {showPOModal && selectedItem && (
-                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-glass backdrop-blur-xl border border-primary/30 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden relative">
-                            <div className="p-5 border-b border-border-strong">
-                                <h3 className="text-lg font-bold text-text-primary">{t('inventory.poModal.title', 'Konfirmo Porosinë')}</h3>
-                                <p className="text-sm text-text-muted">{t('inventory.poModal.subtitle', 'Verifikoni detajet para se të gjeneroni dokumentin final.')}</p>
+                     <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }} 
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.98, y: 20 }} 
+                            animate={{ scale: 1, y: 0 }} 
+                            exit={{ scale: 0.98, y: 20 }} 
+                            className="glass-panel w-full max-w-lg shadow-2xl overflow-hidden relative"
+                        >
+                            <div className="p-6 sm:p-8 border-b border-border-main">
+                                <h3 className="text-sm font-black text-text-primary uppercase tracking-widest mb-2">
+                                    {t('inventory.poModal.title', 'Konfirmo Porosinë')}
+                                </h3>
+                                <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                                    {t('inventory.poModal.subtitle', 'Verifikoni detajet para se të gjeneroni dokumentin final.')}
+                                </p>
                             </div>
-                            <div className="p-5 space-y-4">
+                            
+                            <div className="p-6 sm:p-8 space-y-6">
                                 <div>
-                                    <label className="text-xs font-bold text-text-muted uppercase">{t('inventory.poModal.supplierName', 'Emri i Furnitorit')}</label>
+                                    <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2">
+                                        {t('inventory.poModal.supplierName', 'Emri i Furnitorit')}
+                                    </label>
                                     <textarea 
                                         value={poSupplier} 
                                         onChange={(e) => setPoSupplier(e.target.value)}
-                                        className="glass-input w-full h-20 resize-none text-sm"
+                                        className="glass-input w-full p-4 h-24 resize-none text-sm placeholder:text-text-disabled"
                                         placeholder={t('inventory.poModal.supplierPlaceholder', 'Shkruani emrin dhe adresën e furnitorit...')}
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="text-xs font-bold text-text-muted uppercase">{t('inventory.poModal.quantity', 'Sasia')}</label>
-                                        <input type="number" value={poQuantity} onChange={(e) => setPoQuantity(parseFloat(e.target.value) || 0)} className="glass-input w-full"/>
+                                        <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2">
+                                            {t('inventory.poModal.quantity', 'Sasia')}
+                                        </label>
+                                        <input 
+                                            type="number" 
+                                            value={poQuantity} 
+                                            onChange={(e) => setPoQuantity(parseFloat(e.target.value) || 0)} 
+                                            className="glass-input w-full p-4 text-sm"
+                                        />
                                     </div>
                                     <div>
-                                        <label className="text-xs font-bold text-text-muted uppercase">{t('inventory.poModal.totalCost', 'Kosto Totale')}</label>
+                                        <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2">
+                                            {t('inventory.poModal.totalCost', 'Kosto Totale')}
+                                        </label>
                                         <input 
                                             type="number" 
                                             value={manualCost !== "" ? manualCost : calculatedCost.toFixed(2)}
                                             onChange={(e) => setManualCost(e.target.value)}
                                             placeholder={`Calculated: €${calculatedCost.toFixed(2)}`}
-                                            className="glass-input w-full"
+                                            className="glass-input w-full p-4 text-sm font-mono"
                                         />
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-5 bg-surface/30 flex justify-end gap-3 border-t border-border-strong">
-                                <button onClick={() => setShowPOModal(false)} className="btn-secondary px-5 py-2">{t('general.cancel')}</button>
+                            
+                            <div className="p-6 sm:p-8 border-t border-border-main flex justify-end gap-3 bg-black/20">
+                                <button 
+                                    onClick={() => setShowPOModal(false)} 
+                                    className="px-6 h-12 rounded-lg text-[10px] uppercase font-black tracking-widest text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors"
+                                >
+                                    {t('general.cancel', 'Anulo')}
+                                </button>
                                 <button 
                                     onClick={handleConfirmAndGeneratePO} 
                                     disabled={drafting} 
-                                    className="btn-primary px-6 py-2 flex items-center gap-2 disabled:opacity-50"
+                                    className="btn-primary px-6 h-12 rounded-lg flex items-center justify-center gap-2 disabled:opacity-40"
                                 >
                                     {drafting ? <Loader2 size={16} className="animate-spin"/> : null}
-                                    {t('inventory.poModal.generatePDF', 'Gjenero PDF')}
+                                    <span className="text-[10px] uppercase font-black tracking-widest">
+                                        {t('inventory.poModal.generatePDF', 'Gjenero PDF')}
+                                    </span>
                                 </button>
                             </div>
                         </motion.div>

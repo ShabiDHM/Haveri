@@ -1,5 +1,5 @@
-// FILE: src/components/business/briefing/SmartAgendaCard.tsx
-// PHOENIX PROTOCOL - AGENDA CARD V10.2 (LAYOUT-SAFE BORDER PATTERN)
+// FILE: src/components/business/briefing/SmartAgendaCard.tsx 
+// PHOENIX PROTOCOL - AGENDA CARD V11.0 (GLASSMORPHISM ALIGNED)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,11 +21,21 @@ interface SmartAgendaCardProps {
 
 const getEventIcon = (type: string) => {
     switch (type) {
-        case 'TAX_DEADLINE': return <AlertCircle size={14} className="text-status-danger" />;
-        case 'PAYMENT_DUE': return <DollarSign size={14} className="text-status-warning" />;
-        case 'APPOINTMENT': return <Users size={14} className="text-primary" />;
-        case 'TASK': return <CheckSquare size={14} className="text-status-success" />;
-        default: return <CalendarIcon size={14} className="text-text-muted" />;
+        case 'TAX_DEADLINE': return <AlertCircle size={16} />;
+        case 'PAYMENT_DUE': return <DollarSign size={16} />;
+        case 'APPOINTMENT': return <Users size={16} />;
+        case 'TASK': return <CheckSquare size={16} />;
+        default: return <CalendarIcon size={16} />;
+    }
+};
+
+const getEventColorClass = (type: string) => {
+    switch (type) {
+        case 'TAX_DEADLINE': return 'text-danger';
+        case 'PAYMENT_DUE': return 'text-warning-start';
+        case 'APPOINTMENT': return 'text-primary-start';
+        case 'TASK': return 'text-success-start';
+        default: return 'text-text-muted';
     }
 };
 
@@ -33,59 +43,70 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    const hasCriticalEvents = agenda.some(item => item.priority === 'CRITICAL');
-
     const handleViewCalendar = () => {
         navigate('/calendar');
     };
 
     return (
-        <div className={`bg-card border border-border-strong border-top-accent ${hasCriticalEvents ? 'border-t-danger' : 'border-t-warning'} rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group shadow-sm hover:border-status-warning/30 transition-all duration-500`}>
+        <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group">
             
-            <div className="absolute top-0 right-0 w-32 h-32 bg-status-warning/5 rounded-full blur-[60px] group-hover:bg-status-warning/10 transition-all pointer-events-none" />
+            {/* Ambient Background Glow (Subtle) */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-warning-start/5 rounded-full blur-[60px] group-hover:bg-warning-start/10 transition-colors pointer-events-none" />
             
-            <div className="flex justify-between items-center mb-4 relative z-10">
-                <h3 className="text-text-muted text-xs font-bold uppercase tracking-wide flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-status-warning" /> {t('dashboard.smartAgenda', 'Axhenda')}
-                </h3>
+            {/* Executive Header */}
+            <div className="flex justify-between items-center border-b border-border-main pb-5 mb-6 flex-shrink-0 relative z-10">
+                <div className="flex items-center gap-3">
+                    <Calendar className="text-warning-start" size={20} />
+                    <h3 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
+                        {t('dashboard.smartAgenda', 'Axhenda')}
+                    </h3>
+                </div>
                 <button 
                     onClick={handleViewCalendar}
-                    className="text-xs text-text-muted hover:text-text-primary transition-colors flex items-center gap-1"
+                    className="text-[9px] text-text-muted hover:text-text-primary transition-colors flex items-center gap-1.5 uppercase font-black tracking-widest group/btn"
                 >
                     {t('dashboard.viewCalendar', 'Shiko Kalendarin')}
-                    <ChevronRight size={12} />
+                    <ChevronRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform" />
                 </button>
             </div>
 
-            <div className="flex-1 relative z-10">
+            <div className="flex-1 flex flex-col min-h-0 relative z-10">
                 {agenda.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-32 text-center">
-                        <div className="w-12 h-12 rounded-full bg-surface border border-border-strong flex items-center justify-center mb-3">
+                    <div className="glass-input flex-1 flex flex-col items-center justify-center text-center p-6">
+                        <div className="w-12 h-12 rounded-full bg-black/20 border border-white/5 flex items-center justify-center mb-4">
                             <Calendar size={20} className="text-text-muted" />
                         </div>
-                        <p className="text-sm text-text-muted">{t('dashboard.noEvents', 'Nuk ka ngjarje për sot')}</p>
+                        <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                            {t('dashboard.noEvents', 'Nuk ka ngjarje për sot.')}
+                        </p>
                     </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
                         {agenda.slice(0, 4).map((item) => (
                             <div 
                                 key={item.id}
                                 onClick={() => onEventClick?.(item)}
-                                className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-border-strong hover:border-status-warning/30 hover:bg-hover transition-all cursor-pointer group/item"
+                                className="glass-input p-4 flex items-center gap-4 group/item hover:border-warning-start/30 transition-all cursor-pointer"
                             >
-                                <div className={`p-2 rounded-lg ${item.priority === 'CRITICAL' ? 'bg-status-danger/10' : item.priority === 'HIGH' ? 'bg-status-warning/10' : 'bg-primary/10'}`}>
+                                <div className={`shrink-0 ${getEventColorClass(item.type)}`}>
                                     {getEventIcon(item.type)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-text-primary truncate">{item.title}</p>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="text-[10px] text-text-muted">{item.time}</span>
+                                    <p className="text-xs font-bold text-text-primary truncate">
+                                        {item.title}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-1.5">
+                                        <span className="text-[9px] text-text-muted uppercase font-black tracking-widest leading-none">
+                                            {item.time}
+                                        </span>
                                         {item.priority === 'CRITICAL' && (
-                                            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-status-danger/10 text-status-danger uppercase font-bold">Urgjente</span>
+                                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-danger/10 text-danger uppercase font-black tracking-widest border border-danger/20 leading-none">
+                                                Urgjente
+                                            </span>
                                         )}
                                     </div>
                                 </div>
-                                <ChevronRight size={14} className="text-text-muted group-hover/item:text-primary transition-colors" />
+                                <ChevronRight size={14} className="text-text-muted group-hover/item:text-warning-start transition-colors shrink-0" />
                             </div>
                         ))}
                     </div>

@@ -1,5 +1,5 @@
 // FILE: src/components/business/insights/DebtModule.tsx
-// PHOENIX PROTOCOL - DEBT MODULE V8.2 (REPAIRED STRUCTURE)
+// PHOENIX PROTOCOL - DEBT MODULE V9.0 (GLASSMORPHISM ALIGNED)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,70 +26,95 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
     const hasDebt = totalDebt > 0;
 
     return (
-        <div className={`bg-card border border-border-strong border-top-accent ${hasDebt ? 'border-t-danger' : 'border-t-success'} rounded-2xl flex flex-col h-full min-h-[480px] max-h-[600px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300`}>
+        <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift">
             
-            <div className="p-5 flex-shrink-0">
-                <h3 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-                    {hasDebt ? (
-                        <AlertTriangle className="text-danger" size={20} />
-                    ) : (
-                        <CheckCircle className="text-success-start" size={20} />
-                    )}
+            {/* Executive Header */}
+            <div className="flex items-center gap-3 border-b border-border-main pb-5 mb-6 flex-shrink-0">
+                {hasDebt ? (
+                    <AlertTriangle className="text-danger" size={20} />
+                ) : (
+                    <CheckCircle className="text-success-start" size={20} />
+                )}
+                <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
                     {t('insights.debt.title', 'Analiza e Borxheve')}
-                </h3>
+                </h2>
+            </div>
 
-                <div className="mb-5 p-4 bg-surface rounded-xl border border-border-strong">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-semibold text-text-muted">Totali i Borxhit</span>
-                        <span className={`font-mono font-bold text-lg ${hasDebt ? 'text-danger' : 'text-text-primary'}`}>
+            <div className="flex flex-col flex-1 min-h-0">
+                {/* Total Debt Summary Box */}
+                <div className="glass-input p-5 mb-6 flex-shrink-0">
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                            Totali i Borxhit
+                        </span>
+                        <span className={`font-mono font-black text-lg ${hasDebt ? 'text-danger' : 'text-text-primary'}`}>
                             €{totalDebt.toFixed(2)}
                         </span>
                     </div>
-                    <div className="w-full h-2 bg-border-strong rounded-full overflow-hidden flex">
+                    
+                    {/* Progress Bar */}
+                    <div className="w-full h-1.5 bg-black/20 rounded-full overflow-hidden flex mb-3">
                         <div style={{ width: `${hasDebt ? (aging.fresh / totalDebt) * 100 : 0}%` }} className="bg-success-start h-full" />
                         <div style={{ width: `${hasDebt ? (aging.warning / totalDebt) * 100 : 0}%` }} className="bg-warning-start h-full" />
                         <div style={{ width: `${hasDebt ? (aging.danger / totalDebt) * 100 : 0}%` }} className="bg-danger h-full" />
                     </div>
-                    <div className="flex justify-between text-xs mt-3 text-text-muted">
-                        <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-success-start" /> 0-30</span>
-                        <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-warning-start" /> 30-60</span>
-                        <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-danger" /> 60+</span>
+                    
+                    {/* Legend */}
+                    <div className="flex justify-between text-[9px] uppercase font-black tracking-widest text-text-muted">
+                        <span className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-success-start" /> 0-30
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-warning-start" /> 30-60
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-danger" /> 60+
+                        </span>
                     </div>
                 </div>
 
-                <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">
+                {/* Debtors List Section */}
+                <h3 className="block text-[10px] text-text-muted uppercase font-black tracking-widest mb-3 flex-shrink-0">
                     {t('insights.debt.topDebtors', 'Klientët me Borxhe')}
-                </h4>
-            </div>
+                </h3>
 
-            <div className="flex-1 overflow-y-auto px-5 pb-5 space-y-2 custom-scrollbar">
-                {topDebtors.length === 0 ? (
-                    <div className="p-6 text-center bg-surface rounded-xl border border-border-strong">
-                        <p className="text-text-muted text-sm">{t('insights.debt.noDebts', 'Asnjë borxh aktiv!')}</p>
-                    </div>
-                ) : (
-                    topDebtors.map((d: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between p-3 bg-surface rounded-xl border border-border-strong hover:border-danger/30 hover:shadow-sm transition-all">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className="p-2 bg-danger/10 rounded-lg shrink-0"><User size={14} className="text-danger" /></div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-medium text-text-primary truncate">{d.name}</p>
-                                    <p className="text-xs text-danger">{d.daysOverdue} {t('time.days', 'ditë vonesë')}</p>
+                <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
+                    {topDebtors.length === 0 ? (
+                        <div className="glass-input p-6 flex items-center justify-center text-center">
+                            <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                                {t('insights.debt.noDebts', 'Asnjë borxh aktiv!')}
+                            </p>
+                        </div>
+                    ) : (
+                        topDebtors.map((d: any, idx: number) => (
+                            <div key={idx} className="glass-input p-4 flex items-center justify-between group hover:border-danger/30 transition-all">
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className="text-danger/70 group-hover:text-danger transition-colors shrink-0">
+                                        <User size={16} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-bold text-text-primary truncate">{d.name}</p>
+                                        <p className="text-[9px] text-danger uppercase font-black tracking-widest mt-0.5">
+                                            {d.daysOverdue} {t('time.days', 'ditë vonesë')}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <span className="font-mono text-sm font-black text-text-primary">
+                                        €{d.amount.toFixed(2)}
+                                    </span>
+                                    <button 
+                                        onClick={() => sendWhatsApp(d)}
+                                        className="text-text-muted hover:text-success-start transition-colors p-1"
+                                        title="Dërgo Rikujtesë"
+                                    >
+                                        <Send size={16} />
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                                <span className="font-mono text-sm font-bold text-text-primary">€{d.amount.toFixed(2)}</span>
-                                <button 
-                                    onClick={() => sendWhatsApp(d)}
-                                    className="p-2 bg-success-start/10 text-success-start hover:bg-success-start/20 rounded-lg transition-colors"
-                                    title="Dërgo Rikujtesë"
-                                >
-                                    <Send size={14} />
-                                </button>
-                            </div>
-                        </div>
-                    ))
-                )}
+                        ))
+                    )}
+                </div>
             </div>
         </div>
     );

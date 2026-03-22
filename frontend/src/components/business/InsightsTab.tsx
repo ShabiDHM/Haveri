@@ -1,5 +1,5 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V4.5 (AGENDA RESTORED)
+// PHOENIX PROTOCOL - INSIGHTS UI V5.0 (GLASSMORPHISM ALIGNED)
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,7 +9,6 @@ import { useBusinessIntelligence } from '../../hooks/useBusinessIntelligence';
 import { useFinanceData } from '../../hooks/useFinanceData';
 import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 import { useAuth } from '../../context/AuthContext';
-import { Panel } from '../ui/Panel';
 
 // Modules
 import { DebtModule } from './insights/DebtModule';
@@ -41,32 +40,49 @@ export const InsightsTab: React.FC = () => {
     const loading = intelLoading || financeLoading || briefingLoading;
 
     if (loading) {
-        return <div className="flex justify-center items-center h-96"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
+        return (
+            <div className="flex justify-center items-center h-96">
+                <Loader2 className="w-12 h-12 animate-spin text-primary-start" />
+            </div>
+        );
     }
 
     return (
         <div className="space-y-8">
-            <Panel className="p-5 border-top-accent border-t-primary relative">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-primary/10 rounded-xl"><FileSpreadsheet className="text-primary" size={24} /></div>
-                        <div>
-                            <h2 className="text-lg font-bold text-text-primary">{t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}</h2>
-                        </div>
+            {/* Top Analysis Header - Aligned to Drafting Style */}
+            <div className="glass-panel p-6 sm:p-8">
+                <div className="flex items-center justify-between border-b border-border-main pb-5 flex-wrap gap-4">
+                    <div className="flex items-center gap-3">
+                        <FileSpreadsheet className="text-primary-start" size={20} />
+                        <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
+                            {t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}
+                        </h2>
                     </div>
-                    <button onClick={() => setShowAnalystPanel(!showAnalystPanel)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface hover:bg-hover border border-border-strong transition-all">
-                        {showAnalystPanel ? <><ChevronUp size={18} /> {t('insights.hideAnalysis', 'Fshih Analizën')}</> : <><ChevronDown size={18} /> {t('insights.showAnalysis', 'Hap Analizën')}</>}
+                    <button 
+                        onClick={() => setShowAnalystPanel(!showAnalystPanel)} 
+                        className="glass-input px-4 py-2.5 flex items-center gap-2 text-[10px] uppercase font-black tracking-widest transition-colors hover:bg-white/5"
+                    >
+                        {showAnalystPanel ? (
+                            <><ChevronUp size={14} /> {t('insights.hideAnalysis', 'Fshih Analizën')}</>
+                        ) : (
+                            <><ChevronDown size={14} /> {t('insights.showAnalysis', 'Hap Analizën')}</>
+                        )}
                     </button>
                 </div>
-            </Panel>
 
-            <AnimatePresence>
-                {showAnalystPanel && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                        <SpreadsheetAnalysisPanel />
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                <AnimatePresence>
+                    {showAnalystPanel && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }} 
+                            animate={{ opacity: 1, height: 'auto' }} 
+                            exit={{ opacity: 0, height: 0 }} 
+                            className="overflow-hidden pt-6"
+                        >
+                            <SpreadsheetAnalysisPanel />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
 
             {/* Dashboard Metrics Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
