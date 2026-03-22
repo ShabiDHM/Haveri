@@ -1,8 +1,8 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V6.0 (LOGIC PRESERVED + WORLD CLASS UI)
-// 1. FIXED: Title visibility across all themes using 'text-text-primary'.
-// 2. FIXED: Page layout spacing and alignment matches Case View perfectly.
-// 3. RETAINED: 100% of the original drafting logic, HTTP streaming, and CSS strings.
+// PHOENIX PROTOCOL - DRAFTING PAGE V6.2 (HAVERI INTEGRATION)
+// 1. FIXED: plan_tier comparison to match Haveri tiers (GROWTH/ENTERPRISE = PRO)
+// 2. FIXED: for-await-of stream handling for AsyncIterable
+// 3. RETAINED: All drafting logic and UI
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -83,7 +83,9 @@ const DraftingPage: React.FC = () => {
     return { status: null, result: null, error: null };
   });
 
-  const isPro = useMemo(() => user?.plan_tier === 'PRO' || user?.role === 'ADMIN', [user]);
+  // FIXED: Haveri uses GROWTH/ENTERPRISE as premium tiers (equivalent to PRO)
+  const isPro = useMemo(() => user?.plan_tier === 'GROWTH' || user?.plan_tier === 'ENTERPRISE' || user?.role === 'ADMIN', [user]);
+
   useEffect(() => {
     localStorage.setItem('drafting_context', context);
   }, [context]);
@@ -122,6 +124,7 @@ const DraftingPage: React.FC = () => {
     [cases, t]
   );
 
+  // FIXED: Proper stream handling with for-await-of loop
   const runDraftingStream = async () => {
     if (!context.trim() || isSubmitting) return;
     setIsSubmitting(true);
@@ -141,16 +144,20 @@ const DraftingPage: React.FC = () => {
           finalPromptText = hiddenContext + finalPromptText;
         }
       }
-      const stream = apiService.draftLegalDocumentStream({
+      
+      const stream = await apiService.draftLegalDocumentStream({
         user_prompt: constructSmartPrompt(finalPromptText, selectedTemplate, t),
         document_type: isPro ? selectedTemplate : 'generic',
         case_id: isPro && selectedCaseId ? selectedCaseId : undefined,
         use_library: isPro && !!selectedCaseId,
       });
+      
+      // Handle the stream using for-await-of loop
       for await (const chunk of stream) {
         acc += chunk;
         setCurrentJob(prev => ({ ...prev, result: acc }));
       }
+      
       setCurrentJob(prev => ({ ...prev, status: 'COMPLETED' }));
     } catch (e: any) {
       setCurrentJob(prev => ({ ...prev, status: 'FAILED', error: e.message || t('common.error') }));
