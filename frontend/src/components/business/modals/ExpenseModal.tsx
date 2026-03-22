@@ -1,8 +1,6 @@
 // FILE: src/components/business/modals/ExpenseModal.tsx
-// PHOENIX PROTOCOL - V5.0 (UNIFIED ADMIN AESTHETIC)
-// 1. CLEANUP: Surgically removed unused type imports to resolve TS6133 warnings.
-// 2. UPDATED: Uses unified border styling
-// 3. STATUS: Fully synchronized with QR Handoff, AI Extraction, and Supplier Autocomplete.
+// PHOENIX PROTOCOL - V6.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -203,38 +201,38 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
     return (
         <>
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-2xl w-full max-w-md p-4 sm:p-6 shadow-xl">
+                <div className="glass-panel w-full max-w-md p-4 sm:p-6 shadow-xl">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-text-primary flex items-center gap-2"><MinusCircle size={20} className="text-danger" />{expenseToEdit ? t('finance.editExpense') : t('finance.addExpense')}</h2>
+                        <h2 className="text-xl font-bold text-text-primary flex items-center gap-2"><MinusCircle size={20} className="text-danger-start" />{expenseToEdit ? t('finance.editExpense') : t('finance.addExpense')}</h2>
                         <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors"><X size={24} /></button>
                     </div>
 
                     <div className="mb-6 flex items-center gap-2">
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileSelected} />
-                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'} className={`flex-1 py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${extractionStatus === 'COMPLETED' ? 'bg-primary/20 border-primary text-primary' : 'bg-surface border-border-strong text-text-muted hover:bg-hover'} disabled:opacity-50`}>
+                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'} className={`flex-1 py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${extractionStatus === 'COMPLETED' ? 'bg-primary/20 border-primary-start/30 text-primary' : 'bg-surface border-border-main text-text-muted hover:bg-hover'} disabled:opacity-50`}>
                             {getButtonContent()}
                         </button>
-                        <button type="button" title={t('finance.scanFromPhone')} onClick={startHandoff} className="p-3 border border-dashed rounded-xl bg-surface border-border-strong text-text-muted hover:bg-hover hover:border-border-strong transition-all">
+                        <button type="button" title={t('finance.scanFromPhone')} onClick={startHandoff} className="p-3 border border-dashed rounded-xl bg-surface border-border-main text-text-muted hover:bg-hover hover:border-border-main transition-all">
                             <Smartphone size={24} />
                         </button>
                     </div>
-                    {extractionError && <p className="text-xs text-danger -mt-4 mb-4">{extractionError}</p>}
+                    {extractionError && <p className="text-xs text-danger-start -mt-4 mb-4">{extractionError}</p>}
                     
                     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                         <div>
-                            <label className="block text-sm text-text-secondary mb-1">{t('finance.expenseCategory')}</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.expenseCategory')}</label>
                             <input required type="text" className="glass-input w-full" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
                         </div>
                         <div>
-                            <label className="block text-sm text-text-secondary mb-1">{t('finance.amount')}</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.amount')}</label>
                             <input required type="number" step="0.01" className="glass-input w-full" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})} />
                         </div>
                         <div>
-                            <label className="block text-sm text-text-secondary mb-1">{t('finance.date')}</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.date')}</label>
                             <DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="glass-input w-full" required />
                         </div>
                         <div>
-                            <label className="block text-sm text-text-secondary mb-1">{t('finance.description')}</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.description')}</label>
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
                                 <input 
@@ -250,8 +248,12 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                             </div>
                         </div>
                         <div className="flex justify-end gap-3 pt-4">
-                            <button type="button" onClick={onClose} className="px-4 py-2 text-text-muted hover:text-text-primary transition-colors">{t('general.cancel')}</button>
-                            <button type="submit" className="btn-primary px-6 py-2">{t('general.save')}</button>
+                            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors">
+                                {t('general.cancel')}
+                            </button>
+                            <button type="submit" className="btn-primary px-6 py-2 rounded-xl">
+                                {t('general.save')}
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -260,11 +262,11 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
             {/* QR Handoff Modal */}
             {isQrModalOpen && handoffToken && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-glass backdrop-blur-xl border border-border-strong p-8 rounded-2xl w-full max-w-sm shadow-xl text-center relative">
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-panel p-8 w-full max-w-sm shadow-xl text-center relative">
                         <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-text-muted hover:text-text-primary hover:bg-hover rounded-full transition-colors"><X size={18} /></button>
                         <h3 className="text-xl font-bold text-text-primary mb-2">Skano për të Ngarkuar</h3>
                         <p className="text-text-muted mb-6 text-sm">Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.</p>
-                        <div className="bg-card p-4 rounded-xl inline-block shadow-sm border border-border-strong">
+                        <div className="bg-card p-4 rounded-xl inline-block shadow-sm border border-border-main">
                             <QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={200} />
                         </div>
                         <div className="mt-6 flex items-center justify-center gap-2 text-text-muted animate-pulse text-sm">

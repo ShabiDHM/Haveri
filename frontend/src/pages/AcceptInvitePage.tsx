@@ -1,6 +1,6 @@
 // FILE: src/pages/AcceptInvitePage.tsx
-// PHOENIX PROTOCOL - INVITATION LANDING PAGE V3.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - INVITATION LANDING PAGE V4.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
@@ -60,11 +60,11 @@ const AcceptInvitePage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen bg-base flex flex-col items-center justify-center p-4 relative overflow-hidden">
             {/* Background Effects */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary-start/10 rounded-full blur-[128px]" />
-                <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-primary-start/10 rounded-full blur-[128px]" />
+                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[128px]" />
+                <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[128px]" />
             </div>
 
             <div className="z-10 w-full max-w-md">
@@ -78,22 +78,22 @@ const AcceptInvitePage: React.FC = () => {
                     </p>
                 </div>
 
-                <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-3xl p-8 shadow-lg">
+                <div className="glass-panel w-full">
                     {success ? (
-                        <div className="text-center py-8">
-                            <div className="w-16 h-16 bg-success-start/20 rounded-full flex items-center justify-center mx-auto mb-4 text-success-start">
+                        <div className="text-center py-8 px-6">
+                            <div className="w-16 h-16 bg-success-start/20 rounded-full flex items-center justify-center mx-auto mb-4 text-success-start border border-success-start/30">
                                 <CheckCircle size={32} />
                             </div>
                             <h3 className="text-xl font-bold text-text-primary mb-2">Llogaria u Aktivizua!</h3>
                             <p className="text-text-secondary mb-6">Fjalëkalimi juaj u ruajt me sukses. Tani mund të hyni në platformë.</p>
-                            <Link to="/login" className="inline-flex items-center gap-2 text-primary hover:text-primary-hover font-bold">
+                            <Link to="/login" className="inline-flex items-center gap-2 text-primary hover:text-primary-hover font-bold transition-colors">
                                 Shko te Hyrja <ArrowRight size={16} />
                             </Link>
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-6 p-6 sm:p-8">
                             {error && (
-                                <div className="bg-danger/10 border border-danger/20 text-danger p-4 rounded-xl flex items-start gap-3 text-sm">
+                                <div className="bg-danger-start/10 border border-danger-start/30 text-danger-start p-4 rounded-xl flex items-start gap-3 text-sm">
                                     <AlertCircle size={18} className="shrink-0 mt-0.5" />
                                     <span>{error}</span>
                                 </div>
@@ -127,7 +127,7 @@ const AcceptInvitePage: React.FC = () => {
                             <button 
                                 type="submit" 
                                 disabled={loading || !token}
-                                className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="btn-primary w-full flex items-center justify-center gap-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed py-4"
                             >
                                 {loading ? <Loader2 className="animate-spin" size={20} /> : "Aktivizo Llogarinë"}
                             </button>
@@ -136,7 +136,7 @@ const AcceptInvitePage: React.FC = () => {
                 </div>
                 
                 <div className="mt-8 text-center">
-                    <p className="text-text-muted text-sm">
+                    <p className="text-text-muted text-[10px] font-black uppercase tracking-widest">
                         &copy; {new Date().getFullYear()} Haveri AI. Të gjitha të drejtat e rezervuara.
                     </p>
                 </div>

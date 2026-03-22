@@ -1,6 +1,6 @@
 // FILE: src/components/business/TransactionImporter.tsx
-// PHOENIX PROTOCOL - I18N V23.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses Panel styling via consistent border classes
+// PHOENIX PROTOCOL - I18N V24.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2, ShoppingCart, Landmark } from 'lucide-react';
@@ -125,14 +125,14 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             <style>{`select option { background-color: var(--bg-card); color: var(--text-primary); }`}</style>
-            <div className="bg-glass backdrop-blur-xl border border-success-start/20 rounded-3xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-xl">
+            <div className="glass-panel w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-xl">
                 
-                <div className="p-6 border-b border-border-strong flex justify-between items-center">
+                <div className="p-6 border-b border-border-main flex justify-between items-center">
                     <h2 className="text-xl font-bold text-text-primary flex items-center gap-3">
                         <FileSpreadsheet className="text-success-start" />
                         {t('finance.import.title')}
                     </h2>
-                    <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
+                    <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors p-1 hover:bg-hover rounded-lg">
                         <X size={24} />
                     </button>
                 </div>
@@ -143,12 +143,12 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                             <h3 className="text-lg font-bold text-text-primary">{t('finance.import.selectTypeTitle')}</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
                                 <button onClick={() => handleSelectType('pos')} 
-                                    className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-surface border border-border-strong hover:border-success-start/50 hover:bg-success-start/10 transition-all">
+                                    className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-surface border border-border-main hover:border-success-start/30 hover:bg-success-start/10 transition-all">
                                     <ShoppingCart size={32} className="text-success-start"/>
                                     <span className="font-bold text-text-primary">{t('finance.import.typePos')}</span>
                                 </button>
                                 <button onClick={() => handleSelectType('bank')} 
-                                    className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-surface border border-border-strong hover:border-primary/50 hover:bg-primary/10 transition-all">
+                                    className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-surface border border-border-main hover:border-primary-start/30 hover:bg-primary/10 transition-all">
                                     <Landmark size={32} className="text-primary"/>
                                     <span className="font-bold text-text-primary">{t('finance.import.typeBank')}</span>
                                 </button>
@@ -158,7 +158,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
 
                     {step === 'upload' && (
                         <div className="text-center py-10 space-y-6">
-                            <div className="w-24 h-24 bg-success-start/10 rounded-full flex items-center justify-center mx-auto border-2 border-dashed border-success-start/20">
+                            <div className="w-24 h-24 bg-success-start/10 rounded-full flex items-center justify-center mx-auto border-2 border-dashed border-success-start/30">
                                 <Upload size={36} className="text-success-start" />
                             </div>
                             <div>
@@ -167,7 +167,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                             </div>
                             <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv, .xlsx" />
                             <button onClick={() => fileInputRef.current?.click()} disabled={isLoading} 
-                                className="btn-primary w-full sm:w-auto px-8 py-4 flex items-center justify-center gap-3 mx-auto disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="btn-primary w-full sm:w-auto px-8 py-4 flex items-center justify-center gap-3 mx-auto disabled:opacity-50 disabled:cursor-not-allowed rounded-xl">
                                 {isLoading ? <Loader2 className="animate-spin" /> : <Upload size={18} />}
                                 {isLoading ? t('finance.import.analyzing') : t('finance.import.selectFile')}
                             </button>
@@ -176,7 +176,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
 
                     {step === 'mapping' && previewData && (
                         <div className="space-y-6">
-                            <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex gap-4 items-start">
+                            <div className="bg-primary/10 border border-primary-start/30 p-4 rounded-xl flex gap-4 items-start">
                                 <AlertCircle className="text-primary shrink-0 mt-0.5" size={20} />
                                 <div>
                                     <p className="text-primary font-bold text-sm">{t('finance.import.mappingTitle')}</p>
@@ -185,12 +185,12 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                             </div>
                             <div className="space-y-4">
                                 {requiredFields.map((field) => (
-                                    <div key={field.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface p-4 rounded-xl border border-border-strong">
+                                    <div key={field.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface p-4 rounded-xl border border-border-main">
                                         <label className="flex-1 font-bold text-text-primary text-sm flex items-center gap-2">
                                             {field.label}
-                                            {field.required && <span className="text-danger text-xs font-mono">*</span>}
+                                            {field.required && <span className="text-danger-start text-xs font-mono">*</span>}
                                         </label>
-                                        <div className="hidden sm:block"><ArrowRight className="text-border-strong" size={16} /></div>
+                                        <div className="hidden sm:block"><ArrowRight className="text-border-main" size={16} /></div>
                                         <div className="flex-1">
                                             <select 
                                                 className="glass-input w-full text-sm appearance-none cursor-pointer" 
@@ -217,12 +217,12 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                 </div>
 
                 {step === 'mapping' && (
-                    <div className="p-6 border-t border-border-strong flex justify-between items-center bg-surface/30">
-                        <button onClick={() => { setStep('selection'); setFile(null); }} className="btn-secondary px-6 py-3">
+                    <div className="p-6 border-t border-border-main flex justify-between items-center bg-surface/30">
+                        <button onClick={() => { setStep('selection'); setFile(null); }} className="glass-input !bg-surface hover:bg-hover transition-colors px-6 py-3 rounded-xl">
                             {t('finance.import.back')}
                         </button>
                         <button onClick={handleSmartImport} disabled={!isMappingValid()} 
-                            className="btn-primary px-8 py-3 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            className="btn-primary px-8 py-3 flex items-center gap-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
                             <CheckCircle size={18} />
                             {t('finance.import.confirm')}
                         </button>

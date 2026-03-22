@@ -1,8 +1,6 @@
 // FILE: src/components/business/modals/RecipeModal.tsx
-// PHOENIX PROTOCOL - RECIPE MODAL V17.0 (UNIFIED ADMIN AESTHETIC)
-// 1. FIX: Mapped all labels to specific translation keys.
-// 2. FIX: Removed hardcoded English fallbacks.
-// 3. UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - RECIPE MODAL V18.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -72,21 +70,21 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-2xl w-full max-w-lg p-5 sm:p-6 max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="glass-panel w-full max-w-lg p-5 sm:p-6 max-h-[90vh] overflow-y-auto shadow-xl">
                 <h3 className="text-lg sm:text-xl font-bold text-text-primary mb-2">
                     {recipeToEdit ? t('inventory.recipes.edit') : t('inventory.recipes.add')}
                 </h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm text-text-muted mb-1">{t('inventory.recipes.productName')}</label>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('inventory.recipes.productName')}</label>
                         <input placeholder={t('inventory.recipes.example')} required type="text" className="glass-input w-full" 
                             value={formData.product_name} onChange={e => setFormData({...formData, product_name: e.target.value})} 
                         />
                         <p className="text-xs text-text-muted mt-1">{t('inventory.recipes.productNameDesc')}</p>
                     </div>
                     
-                    <div className="border-t border-border-strong pt-4">
-                        <h4 className="text-sm font-bold text-primary mb-3">{t('inventory.recipes.ingredients')}</h4>
+                    <div className="border-t border-border-main pt-4">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">{t('inventory.recipes.ingredients')}</h4>
                         {formData.ingredients.map((ing, index) => (
                             <div key={index} className="flex gap-2 mb-2 items-center">
                                 <select required className="flex-1 glass-input text-sm appearance-none w-full min-w-0" 
@@ -98,7 +96,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                                 <input required type="number" step="0.001" placeholder="Qty" className="w-16 sm:w-20 glass-input text-sm" 
                                     value={ing.quantity_required} onChange={e => updateIngredient(index, 'quantity_required', parseFloat(e.target.value))}
                                 />
-                                <button type="button" onClick={() => removeIngredient(index)} className="text-danger hover:bg-danger/10 p-1.5 rounded">
+                                <button type="button" onClick={() => removeIngredient(index)} className="text-danger-start hover:bg-danger-start/10 p-1.5 rounded">
                                     <Trash2 size={16} />
                                 </button>
                             </div>
@@ -109,13 +107,17 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     </div>
                     
                     <div className="bg-surface p-3 rounded-lg text-right">
-                        <span className="text-sm text-text-muted">{t('inventory.recipes.costPreview')}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('inventory.recipes.costPreview')}</span>
                         <span className="text-success-start font-bold ml-2">€{calculateCost(formData.ingredients).toFixed(3)}</span>
                     </div>
                     
                     <div className="flex justify-end gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-text-muted hover:text-text-primary transition-colors">{t('inventory.cancel')}</button>
-                        <button type="submit" className="btn-primary px-6 py-2">{t('inventory.save')}</button>
+                        <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors">
+                            {t('inventory.cancel')}
+                        </button>
+                        <button type="submit" className="btn-primary px-6 py-2 rounded-xl">
+                            {t('inventory.save')}
+                        </button>
                     </div>
                 </form>
             </div>

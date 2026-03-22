@@ -1,8 +1,6 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// PHOENIX PROTOCOL - UNIFIED BULK DELETE V10.0 (UNIFIED ADMIN AESTHETIC)
-// 1. CRITICAL FIX: The bulk delete handler now correctly categorizes ALL transaction types
-// 2. ENHANCED: Colorful left border accents for positive/negative cards
-// 3. UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - UNIFIED BULK DELETE V11.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,20 +60,20 @@ const TransactionCard: React.FC<{ tx: TransactionItem, props: TransactionListPro
             animate={{ opacity: 1, x: 0 }} 
             exit={{ opacity: 0, x: -20 }} 
             transition={{ duration: 0.2 }} 
-            className={`group flex items-center justify-between p-3 rounded-xl bg-surface hover:bg-hover transition-all duration-300 border border-border-strong hover:border-l-4 
-                ${isIncome ? 'hover:border-l-success-start' : isExpense ? 'hover:border-l-danger' : 'hover:border-l-primary'}`}
+            className={`group flex items-center justify-between p-3 rounded-xl bg-surface hover:bg-hover transition-all duration-300 border border-border-main hover:border-l-4 
+                ${isIncome ? 'hover:border-l-success-start' : isExpense ? 'hover:border-l-danger-start' : 'hover:border-l-primary'}`}
         >
             <div className="flex items-center gap-3 min-w-0">
-                <div className={`p-2 rounded-lg shrink-0 ${ tx.type === 'invoice' ? 'bg-success-start/10 text-success-start' : tx.type === 'expense' ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary' }`}>
+                <div className={`p-2 rounded-lg shrink-0 ${ tx.type === 'invoice' ? 'bg-success-start/10 text-success-start' : tx.type === 'expense' ? 'bg-danger-start/10 text-danger-start' : 'bg-primary/10 text-primary' }`}>
                     {tx.type === 'invoice' ? <ArrowDownRight size={16} /> : tx.type === 'pos' ? <ShoppingCart size={16} /> : getCategoryIcon(tx.label)}
                 </div>
                 <div className="min-w-0">
                     <p className="text-sm font-medium text-text-primary truncate">{tx.label}</p>
-                    <p className="text-xs text-text-muted uppercase tracking-wider">{tx.type}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{tx.type}</p>
                 </div>
             </div>
             <div className="flex items-center gap-4">
-                <span className={`font-mono text-sm font-bold ${tx.type === 'expense' ? 'text-danger' : 'text-success-start'}`}>
+                <span className={`font-mono text-sm font-bold ${tx.type === 'expense' ? 'text-danger-start' : 'text-success-start'}`}>
                     {tx.type === 'expense' ? '-' : '+'}€{tx.amount.toFixed(2)}
                 </span>
                 <div className="flex items-center gap-1 transition-opacity">
@@ -86,10 +84,10 @@ const TransactionCard: React.FC<{ tx: TransactionItem, props: TransactionListPro
                             <button onClick={() => tx.type === 'invoice' ? props.onViewInvoice(tx.raw as Invoice) : props.onViewExpense(tx.raw as Expense)} disabled={props.openingDocId === tx.id} className="p-1.5 hover:bg-hover rounded-md text-primary">{props.openingDocId === tx.id ? <Loader2 size={14} className="animate-spin"/> : <Eye size={14} />}</button>
                             <button onClick={() => tx.type === 'invoice' ? props.onDownloadInvoice(tx.id) : props.onDownloadExpense(tx.raw as Expense)} className="p-1.5 hover:bg-hover rounded-md text-success-start"><Download size={14} /></button>
                             <button onClick={() => tx.type === 'invoice' ? props.onArchiveInvoice(tx.id) : props.onArchiveExpense(tx.id)} className="p-1.5 hover:bg-hover rounded-md text-primary"><Archive size={14} /></button>
-                            <button onClick={() => tx.type === 'invoice' ? props.onDeleteInvoice(tx.id) : props.onDeleteExpense(tx.id)} className="p-1.5 hover:bg-hover rounded-md text-danger"><Trash2 size={14} /></button>
+                            <button onClick={() => tx.type === 'invoice' ? props.onDeleteInvoice(tx.id) : props.onDeleteExpense(tx.id)} className="p-1.5 hover:bg-hover rounded-md text-danger-start"><Trash2 size={14} /></button>
                         </>
                     ) : (
-                        <button onClick={() => props.onDeletePos(tx.id)} className="p-1.5 hover:bg-hover rounded-md text-danger"><Trash2 size={14} /></button>
+                        <button onClick={() => props.onDeletePos(tx.id)} className="p-1.5 hover:bg-hover rounded-md text-danger-start"><Trash2 size={14} /></button>
                     )}
                 </div>
             </div>
@@ -107,26 +105,26 @@ const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: n
             initial={{ opacity: 0, scale: 0.95 }} 
             animate={{ opacity: 1, scale: 1 }} 
             exit={{ opacity: 0, scale: 0.95 }} 
-            className={`group relative bg-surface/60 hover:bg-surface/80 border-l-4 rounded-3xl p-5 transition-all duration-300 flex flex-col gap-4 shadow-sm cursor-pointer
+            className={`group relative bg-surface/60 hover:bg-surface/80 border-l-4 rounded-2xl p-5 transition-all duration-300 flex flex-col gap-4 shadow-sm cursor-pointer border border-border-main
                 ${isPositive 
-                    ? 'border-l-success-accent hover:border-l-success-start' 
-                    : 'border-l-danger-accent hover:border-l-danger'
+                    ? 'border-l-success-start hover:border-l-success-start/70' 
+                    : 'border-l-danger-start hover:border-l-danger-start/70'
                 }`}
             onClick={onDrillDown}
         >
             <div className="flex items-start justify-between">
                 <h3 className="text-2xl font-bold text-text-primary">{title}</h3>
-                <div className={`p-3 rounded-xl ${isPositive ? 'bg-success-start/10 text-success-start' : 'bg-danger/10 text-danger'}`}>
+                <div className={`p-3 rounded-xl ${isPositive ? 'bg-success-start/10 text-success-start' : 'bg-danger-start/10 text-danger-start'}`}>
                     {isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
                 </div>
             </div>
             <div className="flex-1 mt-2">
-                <span className={`text-3xl font-mono font-bold ${isPositive ? 'text-success-start' : 'text-danger'}`}>
+                <span className={`text-3xl font-mono font-bold ${isPositive ? 'text-success-start' : 'text-danger-start'}`}>
                     {isPositive ? '+' : ''}€{total.toFixed(2)}
                 </span>
-                <p className="text-xs text-text-muted font-bold uppercase tracking-wider">{t('finance.netBalance', 'Balansi Neto')}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('finance.netBalance', 'Balansi Neto')}</p>
             </div>
-            <hr className="border-border-strong" />
+            <hr className="border-border-main" />
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 text-sm text-text-muted">
                     <Hash size={14}/>
@@ -134,7 +132,7 @@ const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: n
                 </div>
                 <button 
                     onClick={(e) => { e.stopPropagation(); onDelete(); }} 
-                    className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-danger/10 hover:text-danger transition-colors"
+                    className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-danger-start/10 hover:text-danger-start transition-colors"
                 >
                     <Trash2 size={16} />
                 </button>
@@ -264,7 +262,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                 {view !== 'years' && (
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
                         <button onClick={handleBack} className="flex items-center gap-2 text-sm font-bold text-text-muted hover:text-text-primary transition-colors group">
-                            <div className="p-2 rounded-full bg-surface group-hover:bg-hover"><ArrowLeft size={16}/></div>
+                            <div className="p-2 rounded-full bg-surface group-hover:bg-hover border border-border-main"><ArrowLeft size={16}/></div>
                             <span>
                                 {view === 'months' && t('general.backToYears', 'Back to Years')}
                                 {view === 'days' && `${t('general.backTo', 'Back to')} ${selectedYear}`}

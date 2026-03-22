@@ -1,7 +1,7 @@
 // FILE: src/components/business/modals/CreateFolderModal.tsx
-// PHOENIX PROTOCOL - COMPONENT EXTRACTION V3.0 (UNIFIED ADMIN AESTHETIC)
+// PHOENIX PROTOCOL - COMPONENT EXTRACTION V4.0 (DESIGN SYSTEM STANDARDIZED)
 // Modal for creating new archive folders.
-// UPDATED: Uses unified border styling
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +31,7 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, on
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-            <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-3xl w-full max-w-sm p-5 sm:p-8 shadow-xl scale-100">
+            <div className="glass-panel w-full max-w-sm p-5 sm:p-8 shadow-xl scale-100">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-text-primary">{t('archive.newFolderTitle')}</h3>
                     <button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24}/></button>
@@ -52,8 +52,12 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({ isOpen, on
                         </select>
                     </div>
                     <div className="flex justify-end gap-3">
-                        <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl text-text-muted hover:text-text-primary hover:bg-hover transition-colors font-medium">{t('general.cancel')}</button>
-                        <button type="submit" className="btn-primary px-8 py-3">{t('general.create')}</button>
+                        <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors font-medium">
+                            {t('general.cancel')}
+                        </button>
+                        <button type="submit" className="btn-primary px-8 py-3 rounded-xl">
+                            {t('general.create')}
+                        </button>
                     </div>
                 </form>
             </div>

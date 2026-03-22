@@ -1,5 +1,6 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - WORKSPACE HUB V23.1 (DEBUG LOGGING ADDED)
+// PHOENIX PROTOCOL - WORKSPACE HUB V24.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -19,46 +20,33 @@ interface BusinessPageProps {
 
 const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
   const { workspace, isLoading: isAuthLoading } = useAuth();
-  
-  // DEBUG: Log which view is being rendered
-  console.log("BusinessPage rendering with view:", view);
 
   const renderActiveTab = () => {
     if (isAuthLoading) return null;
 
-    console.log("Rendering tab for view:", view);
-
     switch (view) {
       case 'briefing': 
-        console.log("Rendering DailyBriefingTab (Zyra Ligjore)");
         return <DailyBriefingTab />;
       case 'finance': 
-        console.log("Rendering FinanceTab");
         return <FinanceTab />;
       case 'inventory': 
-        console.log("Rendering InventoryTab");
         return <InventoryTab />;
       case 'archive': 
-        console.log("Rendering ArchiveTab");
         return <ArchiveTab key={workspace?.id || 'root'} workspaceId={workspace?.id} />;
       case 'insights': 
-        console.log("Rendering InsightsTab");
         return <InsightsTab />;
       case 'profile': 
-        console.log("Rendering ProfileTab");
         return <ProfileTab />;
       case 'inbox': 
-        console.log("Rendering InboxTab");
         return <InboxTab />;
       default: 
-        console.log("Default - Rendering DailyBriefingTab");
         return <DailyBriefingTab />;
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-4 sm:py-8 px-4 sm:px-6">
-      <div className="min-h-[500px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      <div className="min-h-[500px]">
         {renderActiveTab()}
       </div>
     </div>

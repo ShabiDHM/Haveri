@@ -1,6 +1,6 @@
 // FILE: src/components/ArchiveImportModal.tsx
-// PHOENIX PROTOCOL - ARCHIVE SELECTOR MODAL V4.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - ARCHIVE SELECTOR MODAL V5.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
@@ -94,11 +94,11 @@ const ArchiveImportModal: React.FC<ArchiveImportModalProps> = ({ isOpen, onClose
       >
         <motion.div 
           initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-glass backdrop-blur-xl w-full max-w-2xl rounded-2xl border border-border-strong shadow-xl overflow-hidden flex flex-col h-[600px]"
+          className="glass-panel w-full max-w-2xl overflow-hidden flex flex-col h-[600px]"
           onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-4 border-b border-border-strong flex justify-between items-center bg-surface/50">
+          <div className="p-4 border-b border-border-main flex justify-between items-center bg-surface/50">
             <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
               <Folder className="text-warning-start" /> Importo nga Arkiva
             </h2>
@@ -108,7 +108,7 @@ const ArchiveImportModal: React.FC<ArchiveImportModalProps> = ({ isOpen, onClose
           </div>
 
           {/* Breadcrumbs & Nav */}
-          <div className="px-4 py-3 bg-surface border-b border-border-strong flex items-center gap-2 text-sm text-text-secondary">
+          <div className="px-4 py-3 bg-surface border-b border-border-main flex items-center gap-2 text-sm text-text-secondary">
             {breadcrumbs.length > 1 && (
               <button onClick={handleBack} className="p-1 hover:bg-hover rounded mr-2 text-primary">
                 <ArrowLeft size={16} />
@@ -146,9 +146,9 @@ const ArchiveImportModal: React.FC<ArchiveImportModalProps> = ({ isOpen, onClose
                     }}
                     className={`
                         flex items-center justify-between p-3 rounded-xl border transition-all 
-                        ${item.item_type === 'FOLDER' ? 'cursor-pointer hover:bg-hover border-border-strong bg-surface' : ''}
-                        ${item.item_type === 'FILE' && isSelected ? 'cursor-pointer bg-primary/20 border-primary/50' : ''}
-                        ${item.item_type === 'FILE' && !isSelected && !isDisabled ? 'cursor-pointer bg-surface border-border-strong hover:bg-hover' : ''}
+                        ${item.item_type === 'FOLDER' ? 'cursor-pointer hover:bg-hover border-border-main bg-surface' : ''}
+                        ${item.item_type === 'FILE' && isSelected ? 'cursor-pointer bg-primary/20 border-primary-start/30' : ''}
+                        ${item.item_type === 'FILE' && !isSelected && !isDisabled ? 'cursor-pointer bg-surface border-border-main hover:bg-hover' : ''}
                         ${isDisabled ? 'opacity-50 cursor-not-allowed bg-surface/30 border-transparent' : ''}
                     `}
                   >
@@ -161,7 +161,7 @@ const ArchiveImportModal: React.FC<ArchiveImportModalProps> = ({ isOpen, onClose
                       <span className={`text-sm ${isSelected ? 'text-text-primary font-medium' : 'text-text-secondary'}`}>{item.title}</span>
                     </div>
                     {item.item_type === 'FILE' && (
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary' : 'border-border-strong'}`}>
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary' : 'border-border-main'}`}>
                         {isSelected && <Check size={12} className="text-inverse" />}
                       </div>
                     )}
@@ -172,7 +172,7 @@ const ArchiveImportModal: React.FC<ArchiveImportModalProps> = ({ isOpen, onClose
           </div>
 
           {/* Footer Actions */}
-          <div className="p-4 border-t border-border-strong bg-surface/30 flex justify-between items-center">
+          <div className="p-4 border-t border-border-main bg-surface/30 flex justify-between items-center">
             <span className="text-sm text-text-muted">
                 {selectedIds.size === 0 
                     ? "Zgjidhni një dokument" 
@@ -181,7 +181,7 @@ const ArchiveImportModal: React.FC<ArchiveImportModalProps> = ({ isOpen, onClose
             <button 
               onClick={handleImport}
               disabled={selectedIds.size === 0 || importing}
-              className="btn-primary px-6 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary px-6 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
             >
               {importing ? <Loader2 className="animate-spin" size={16} /> : null}
               {importing ? "Duke importuar..." : "Shto në Rast"}

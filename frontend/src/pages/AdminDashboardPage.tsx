@@ -1,6 +1,6 @@
 // FILE: src/pages/AdminDashboardPage.tsx
-// PHOENIX PROTOCOL - ADMIN DASHBOARD V4.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - ADMIN DASHBOARD V5.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -119,35 +119,41 @@ const AdminDashboardPage: React.FC = () => {
     const renderStatusBadge = (user: User) => {
         const status = user.status || 'inactive';
         if (status.toLowerCase() === 'active') {
-            return <span className="badge badge-success"><CheckCircle className="w-3 h-3 mr-1" /> {t('admin.statuses.ACTIVE', 'Aktive')}</span>;
+            return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-success-start/10 text-success-start border border-success-start/30 text-[10px] font-black uppercase tracking-widest"><CheckCircle className="w-3 h-3" /> {t('admin.statuses.ACTIVE', 'Aktive')}</span>;
         }
-        return <span className="badge badge-warning"><Clock className="w-3 h-3 mr-1" /> {t('admin.statuses.INACTIVE', 'Në Pritje')}</span>;
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-warning-start/10 text-warning-start border border-warning-start/30 text-[10px] font-black uppercase tracking-widest"><Clock className="w-3 h-3" /> {t('admin.statuses.INACTIVE', 'Në Pritje')}</span>;
     };
 
     if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-hidden">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-text-primary mb-2">{t('admin.title', 'Paneli i Administratorit')}</h1>
-                <p className="text-text-secondary">{t('admin.subtitle', 'Menaxhimi i përdoruesve dhe sistemit.')}</p>
+        <div className="glass-panel p-6 md:p-8 space-y-6">
+            <div>
+                <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-2">{t('admin.title', 'Paneli i Administratorit')}</h1>
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('admin.subtitle', 'Menaxhimi i përdoruesve dhe sistemit.')}</p>
             </div>
 
             {/* Stats Cards - Using Panel component */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Panel className="p-6 flex items-center justify-between">
-                    <div><p className="text-text-secondary text-sm font-medium">{t('admin.totalUsers', 'Total Përdorues')}</p><h3 className="text-3xl font-bold text-text-primary">{users.length}</h3></div>
-                    <div className="p-3 rounded-xl bg-primary/20 text-primary"><Users /></div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('admin.totalUsers', 'Total Përdorues')}</p>
+                        <h3 className="text-3xl font-bold text-text-primary">{users.length}</h3>
+                    </div>
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary border border-border-main"><Users /></div>
                 </Panel>
                 <Panel className="p-6 flex items-center justify-between">
-                    <div><p className="text-text-secondary text-sm font-medium">{t('admin.pendingApproval', 'Në Pritje')}</p><h3 className="text-3xl font-bold text-warning-start">{users.filter(u => u.status !== 'active').length}</h3></div>
-                    <div className="p-3 rounded-xl bg-warning-start/20 text-warning-start"><Clock /></div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('admin.pendingApproval', 'Në Pritje')}</p>
+                        <h3 className="text-3xl font-bold text-warning-start">{users.filter(u => u.status !== 'active').length}</h3>
+                    </div>
+                    <div className="p-3 rounded-xl bg-warning-start/10 text-warning-start border border-border-main"><Clock /></div>
                 </Panel>
             </div>
 
             {/* Users Table Panel */}
             <Panel className="overflow-hidden">
-                <div className="p-4 border-b border-border-strong flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="p-4 border-b border-border-main flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h3 className="text-lg font-semibold text-text-primary">{t('admin.registeredUsers', 'Përdoruesit e Regjistruar')}</h3>
                     <div className="relative w-full sm:w-auto">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
@@ -157,29 +163,29 @@ const AdminDashboardPage: React.FC = () => {
 
                 <div className="w-full overflow-x-auto">
                     <table className="w-full text-left text-sm text-text-secondary min-w-[1000px]">
-                        <thead className="bg-surface text-text-primary uppercase text-xs">
+                        <thead className="bg-surface text-text-primary text-[10px] font-black uppercase tracking-widest">
                             <tr>
-                                <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.user', 'Përdoruesi')}</th>
-                                <th className="px-6 py-3 font-semibold tracking-wider">Organizata</th>
-                                <th className="px-6 py-3 font-semibold tracking-wider">Plani</th>
-                                <th className="px-6 py-3 font-semibold tracking-wider">
+                                <th className="px-6 py-3 font-black tracking-widest">{t('admin.table.user', 'Përdoruesi')}</th>
+                                <th className="px-6 py-3 font-black tracking-widest">Organizata</th>
+                                <th className="px-6 py-3 font-black tracking-widest">Plani</th>
+                                <th className="px-6 py-3 font-black tracking-widest">
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-4 h-4 text-text-muted" />
                                         <span>Skadimi</span>
                                     </div>
                                 </th>
-                                <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.role', 'Roli')}</th>
-                                <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.status', 'Statusi')}</th>
-                                <th className="px-6 py-3 font-semibold tracking-wider">{t('admin.table.registered', 'Regjistruar')}</th>
-                                <th className="px-6 py-3 text-right font-semibold tracking-wider">{t('general.actions', 'Veprime')}</th>
+                                <th className="px-6 py-3 font-black tracking-widest">{t('admin.table.role', 'Roli')}</th>
+                                <th className="px-6 py-3 font-black tracking-widest">{t('admin.table.status', 'Statusi')}</th>
+                                <th className="px-6 py-3 font-black tracking-widest">{t('admin.table.registered', 'Regjistruar')}</th>
+                                <th className="px-6 py-3 text-right font-black tracking-widest">{t('general.actions', 'Veprime')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-border-strong">
+                        <tbody className="divide-y divide-border-main">
                             {filteredUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-hover transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
-                                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold mr-3 border border-primary/30 shrink-0">
+                                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold mr-3 border border-border-main shrink-0">
                                                 {user.username.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="min-w-0">
@@ -206,19 +212,23 @@ const AdminDashboardPage: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         {user.subscription_expiry_date ? (
-                                            <span className="text-xs font-mono text-text-secondary bg-surface px-2 py-1 rounded">
+                                            <span className="text-xs font-mono text-text-secondary bg-surface px-2 py-1 rounded border border-border-main">
                                                 {new Date(user.subscription_expiry_date).toLocaleDateString()}
                                             </span>
                                         ) : (
                                             <span className="text-xs text-text-muted">-</span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4"><span className={`badge ${user.role.toUpperCase() === 'ADMIN' ? 'badge-danger' : 'badge-neutral'}`}>{user.role}</span></td>
+                                    <td className="px-6 py-4">
+                                        <span className={`inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${user.role.toUpperCase() === 'ADMIN' ? 'bg-danger-start/10 text-danger-start border-danger-start/30' : 'bg-surface text-text-muted border-border-main'}`}>
+                                            {user.role}
+                                        </span>
+                                    </td>
                                     <td className="px-6 py-4">{renderStatusBadge(user)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{new Date(user.created_at).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-xs">{new Date(user.created_at).toLocaleDateString()}</td>
                                     <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                                        <button onClick={() => handleEditClick(user)} className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors border border-primary/20" title={t('general.edit', 'Ndrysho')}><Edit2 className="w-4 h-4" /></button>
-                                        <button onClick={() => handleDeleteUser(user.id)} className="p-2 rounded-lg bg-danger/10 hover:bg-danger/20 text-danger transition-colors border border-danger/20" title={t('general.delete', 'Fshi')}><Trash2 className="w-4 h-4" /></button>
+                                        <button onClick={() => handleEditClick(user)} className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors border border-border-main" title={t('general.edit', 'Ndrysho')}><Edit2 className="w-4 h-4" /></button>
+                                        <button onClick={() => handleDeleteUser(user.id)} className="p-2 rounded-lg bg-danger-start/10 hover:bg-danger-start/20 text-danger-start transition-colors border border-border-main" title={t('general.delete', 'Fshi')}><Trash2 className="w-4 h-4" /></button>
                                     </td>
                                 </tr>
                             ))}
@@ -233,28 +243,30 @@ const AdminDashboardPage: React.FC = () => {
                     <motion.div 
                         initial={{ scale: 0.95, opacity: 0 }} 
                         animate={{ scale: 1, opacity: 1 }} 
-                        className="bg-glass backdrop-blur-xl border border-border-strong p-6 rounded-2xl w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto"
+                        className="glass-panel w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto"
                     >
-                        <h3 className="text-xl font-bold text-text-primary mb-6 border-b border-border-strong pb-4">{t('admin.editModal.title', 'Ndrysho Përdoruesin')}</h3>
-                        <form onSubmit={handleUpdateUser} className="space-y-4">
+                        <div className="p-6 border-b border-border-main">
+                            <h3 className="text-xl font-bold text-text-primary">{t('admin.editModal.title', 'Ndrysho Përdoruesin')}</h3>
+                        </div>
+                        <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-xs font-medium text-text-muted uppercase mb-1">{t('admin.editModal.username', 'Emri i Përdoruesit')}</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.username', 'Emri i Përdoruesit')}</label>
                                 <input type="text" value={editForm.username || ''} onChange={e => setEditForm({ ...editForm, username: e.target.value })} className="glass-input w-full" />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-text-muted uppercase mb-1">{t('admin.editModal.email', 'Email')}</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.email', 'Email')}</label>
                                 <input type="email" value={editForm.email || ''} onChange={e => setEditForm({ ...editForm, email: e.target.value })} className="glass-input w-full" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-text-muted uppercase mb-1">{t('admin.editModal.role', 'Roli')}</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.role', 'Roli')}</label>
                                     <select value={editForm.role || 'STANDARD'} onChange={e => setEditForm({ ...editForm, role: e.target.value })} className="glass-input w-full">
                                         <option value="STANDARD">{t('admin.roles.STANDARD', 'Përdorues')}</option>
                                         <option value="ADMIN">{t('admin.roles.ADMIN', 'Admin')}</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-text-muted uppercase mb-1">{t('admin.editModal.subscriptionStatus', 'Abonimi')}</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.subscriptionStatus', 'Abonimi')}</label>
                                     <select 
                                         value={editForm.subscription_status} 
                                         onChange={e => setEditForm({ ...editForm, subscription_status: e.target.value })} 
@@ -269,7 +281,7 @@ const AdminDashboardPage: React.FC = () => {
                             
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-text-muted uppercase mb-1">Paketa</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">Paketa</label>
                                     <select 
                                         value={editForm.plan_tier || 'SOLO'} 
                                         onChange={e => setEditForm({ ...editForm, plan_tier: e.target.value })} 
@@ -282,7 +294,7 @@ const AdminDashboardPage: React.FC = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="flex items-center gap-1 text-xs font-medium text-text-muted uppercase mb-1">
+                                    <label className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">
                                         <Calendar className="w-3 h-3" />
                                         Skadimi
                                     </label>
@@ -298,7 +310,7 @@ const AdminDashboardPage: React.FC = () => {
                             </div>
                             
                             <div>
-                                <label className="block text-xs font-medium text-text-muted uppercase mb-1">{t('admin.editModal.accountStatus', 'Llogaria (Gatekeeper)')}</label>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.accountStatus', 'Llogaria (Gatekeeper)')}</label>
                                 <select 
                                     value={editForm.status} 
                                     onChange={e => setEditForm({ ...editForm, status: e.target.value as 'active' | 'inactive' })} 
@@ -308,9 +320,9 @@ const AdminDashboardPage: React.FC = () => {
                                     <option value="inactive">{t('admin.statuses.INACTIVE', 'Në Pritje')}</option>
                                 </select>
                             </div>
-                            <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-border-strong">
-                                <button type="button" onClick={() => setEditingUser(null)} className="px-4 py-2 rounded-lg hover:bg-hover text-text-secondary hover:text-text-primary transition-colors">{t('general.cancel', 'Anulo')}</button>
-                                <button type="submit" className="btn-primary">{t('general.save', 'Ruaj')}</button>
+                            <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-border-main">
+                                <button type="button" onClick={() => setEditingUser(null)} className="glass-input !bg-surface hover:bg-hover transition-colors px-4 py-2 rounded-xl">{t('general.cancel', 'Anulo')}</button>
+                                <button type="submit" className="btn-primary px-6 py-2 rounded-xl">{t('general.save', 'Ruaj')}</button>
                             </div>
                         </form>
                     </motion.div>

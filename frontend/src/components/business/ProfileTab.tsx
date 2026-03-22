@@ -1,5 +1,6 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V27.3 (FULL FUNCTIONALITY RESTORED)
+// PHOENIX PROTOCOL - PROFILE TAB V28.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
@@ -21,16 +22,16 @@ const PLAN_LIMITS: Record<string, number> = {
 const SectionHeader = ({ icon, title, subtitle }: { icon: React.ReactNode, title: string, subtitle?: string }) => (
     <div className="mb-6">
         <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">{icon}</div>
+            <div className="p-2 rounded-xl bg-primary/10 text-primary border border-border-main">{icon}</div>
             <h3 className="text-base sm:text-lg font-bold text-text-primary tracking-tight">{title}</h3>
         </div>
-        {subtitle && <p className="text-text-muted text-xs mt-1.5 ml-1 font-medium leading-relaxed">{subtitle}</p>}
+        {subtitle && <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mt-1.5 ml-1">{subtitle}</p>}
     </div>
 );
 
 const FormField = ({ label, icon, children }: { label: string, icon: React.ReactNode, children: React.ReactNode }) => (
     <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-text-muted uppercase tracking-wide ml-1">{label}</label>
+        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">{label}</label>
         <div className="relative group">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors">{icon}</span>
             {children}
@@ -148,12 +149,12 @@ export const ProfileTab: React.FC = () => {
     const inputClasses = "glass-input w-full pl-11 text-sm";
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto px-2 sm:px-6 pb-20">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 <div className="lg:col-span-4 space-y-6">
                     <Panel className="p-6 sm:p-8 flex flex-col items-center text-center">
                         <div className="relative group mb-6" onClick={() => fileInputRef.current?.click()}>
-                            <div className="w-24 h-24 rounded-2xl flex items-center justify-center border-2 border-border-strong bg-surface">
+                            <div className="w-24 h-24 rounded-2xl flex items-center justify-center border border-border-main bg-surface">
                                 {logoLoading ? <Loader2 className="animate-spin text-primary" /> : logoSrc ? <img src={logoSrc} className="w-full h-full object-contain" alt="Logo" /> : <Upload />}
                             </div>
                             <div className="absolute inset-0 rounded-2xl bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
@@ -166,18 +167,18 @@ export const ProfileTab: React.FC = () => {
 
                     <Panel className="p-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h4 className="text-text-muted text-xs font-semibold uppercase tracking-wide">Abonimi</h4>
-                            <div className="px-2 py-0.5 bg-primary/10 rounded border border-primary/30 text-primary text-xs font-semibold uppercase flex items-center gap-1">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted">Abonimi</h4>
+                            <div className="px-2 py-0.5 bg-primary/10 rounded border border-primary-start/30 text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
                                 <Crown size={10} /> {currentPlan}
                             </div>
                         </div>
                     </Panel>
 
                     <div onClick={() => navigate('/business/inbox')} className="cursor-pointer">
-                        <Panel className="p-6 hover:border-primary/30 transition-all shadow-sm">
+                        <Panel className="p-6 hover:border-primary-start/30 transition-all shadow-sm">
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-3 rounded-2xl bg-primary/20 text-primary border border-primary/20"><Mail size={20} /></div>
+                                    <div className="p-3 rounded-2xl bg-primary/20 text-primary border border-border-main"><Mail size={20} /></div>
                                     <div><h3 className="font-bold text-lg">Inbox</h3><p className="text-sm text-text-muted">Mesazhe</p></div>
                                 </div>
                                 <ArrowRight size={20} className="text-text-muted" />
@@ -190,15 +191,17 @@ export const ProfileTab: React.FC = () => {
                             <SectionHeader icon={<Users size={16} />} title="Ekipi" />
                             <form onSubmit={handleInviteUser} className="mb-6">
                                 <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} disabled={isPlanFull} className="glass-input w-full mb-3" placeholder="email@ekipi.com" />
-                                <button type="submit" disabled={inviting} className="w-full py-2 bg-primary text-inverse rounded-xl font-bold text-xs">
-                                    {inviting ? <Loader2 className="animate-spin" size={12} /> : <UserPlus className="inline mr-2" size={12}/>} FTO ANËTARIN
+                                <button type="submit" disabled={inviting} className="w-full py-2 btn-primary rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+                                    {inviting ? <Loader2 className="animate-spin" size={12} /> : <UserPlus size={12}/>} FTO ANËTARIN
                                 </button>
                             </form>
                             <div className="space-y-2 max-h-[200px] overflow-y-auto">
                                 {teamMembers.map(member => (
-                                    <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface rounded-xl">
-                                        <p className="text-xs">{member.email}</p>
-                                        <button onClick={() => handleRemoveMember(member.id)}><Trash2 size={14} /></button>
+                                    <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface rounded-xl border border-border-main">
+                                        <p className="text-xs text-text-secondary truncate max-w-[70%]">{member.email}</p>
+                                        <button onClick={() => handleRemoveMember(member.id)} className="p-1.5 rounded-md text-text-muted hover:text-danger-start hover:bg-danger-start/10 transition-colors">
+                                            <Trash2 size={14} />
+                                        </button>
                                     </div>
                                 ))}
                             </div>
@@ -218,8 +221,8 @@ export const ProfileTab: React.FC = () => {
                                 <FormField label="Qyteti" icon={<MapPin size={16} />}><input type="text" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} className={inputClasses} /></FormField>
                                 <FormField label="Website" icon={<Globe size={16} />}><input type="text" value={formData.website} onChange={(e) => setFormData({...formData, website: e.target.value})} className={inputClasses} /></FormField>
                                 <FormField label="Numri Fiskal" icon={<CreditCard size={16} />}><input type="text" value={formData.tax_id} onChange={(e) => setFormData({...formData, tax_id: e.target.value})} className={inputClasses} /></FormField>
-                                <div className="md:col-span-2 pt-8 border-t border-border-strong mt-4"><SectionHeader icon={<Calculator size={18} />} title="Parametrat Fiskal" /><div className="grid grid-cols-1 sm:grid-cols-3 gap-6"><FormField label="TVSH %" icon={<span className="text-xs font-bold">%</span>}><input type="number" value={formData.vat_rate} onChange={(e) => setFormData({...formData, vat_rate: parseFloat(e.target.value)})} className={inputClasses} /></FormField><FormField label="Margjina %" icon={<TrendingUp size={16} />}><input type="number" value={formData.target_margin} onChange={(e) => setFormData({...formData, target_margin: parseFloat(e.target.value)})} className={inputClasses} /></FormField><FormField label="Monedha" icon={<Coins size={16} />}><select value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value})} className={`${inputClasses} appearance-none cursor-pointer`}><option value="EUR">Euro (€)</option><option value="LEK">Lek (ALL)</option><option value="USD">Dollar ($)</option></select></FormField></div></div>
-                                <div className="md:col-span-2 mt-6"><button type="submit" className="btn-primary w-full py-4 flex items-center justify-center gap-2" disabled={saving}>{saving ? <Loader2 className="animate-spin" /> : <><Save size={18} />RUHAJ</>}</button></div>
+                                <div className="md:col-span-2 pt-8 border-t border-border-main mt-4"><SectionHeader icon={<Calculator size={18} />} title="Parametrat Fiskal" /><div className="grid grid-cols-1 sm:grid-cols-3 gap-6"><FormField label="TVSH %" icon={<span className="text-xs font-bold">%</span>}><input type="number" value={formData.vat_rate} onChange={(e) => setFormData({...formData, vat_rate: parseFloat(e.target.value)})} className={inputClasses} /></FormField><FormField label="Margjina %" icon={<TrendingUp size={16} />}><input type="number" value={formData.target_margin} onChange={(e) => setFormData({...formData, target_margin: parseFloat(e.target.value)})} className={inputClasses} /></FormField><FormField label="Monedha" icon={<Coins size={16} />}><select value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value})} className={`${inputClasses} appearance-none cursor-pointer`}><option value="EUR">Euro (€)</option><option value="LEK">Lek (ALL)</option><option value="USD">Dollar ($)</option></select></FormField></div></div>
+                                <div className="md:col-span-2 mt-6"><button type="submit" className="btn-primary w-full py-4 flex items-center justify-center gap-2 rounded-xl" disabled={saving}>{saving ? <Loader2 className="animate-spin" /> : <><Save size={18} />RUHAJ</>}</button></div>
                             </div>
                         </Panel>
                     </form>

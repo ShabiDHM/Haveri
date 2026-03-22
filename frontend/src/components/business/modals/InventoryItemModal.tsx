@@ -1,9 +1,6 @@
 // FILE: src/components/business/modals/InventoryItemModal.tsx
-// PHOENIX PROTOCOL - INVENTORY INTELLIGENCE V5.0 (UNIFIED ADMIN AESTHETIC)
-// 1. FEATURE: Surgically integrated AI Restock and Trend analysis.
-// 2. LOGIC: Preserved existing form layout and Deletion Workflow V2.0.
-// 3. UPDATED: Uses unified border styling
-// 4. STATUS: Synchronized with Backend Analysis API.
+// PHOENIX PROTOCOL - INVENTORY INTELLIGENCE V6.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -96,7 +93,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({ isOpen, 
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-2xl w-full max-w-md p-5 sm:p-6 max-h-[90vh] overflow-y-auto custom-finance-scroll shadow-xl">
+            <div className="glass-panel w-full max-w-md p-5 sm:p-6 max-h-[90vh] overflow-y-auto custom-finance-scroll shadow-xl">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg sm:text-xl font-bold text-text-primary">
                         {itemToEdit ? t('inventory.items.edit', 'Edit Item') : t('inventory.items.add')}
@@ -110,36 +107,36 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({ isOpen, 
                 {itemToEdit && (
                     <div className="space-y-4 mb-8">
                         {loadingAI ? (
-                            <div className="flex flex-col items-center py-4 gap-2 bg-surface rounded-xl border border-border-strong">
+                            <div className="flex flex-col items-center py-4 gap-2 bg-surface rounded-xl border border-border-main">
                                 <Loader2 className="animate-spin text-success-start" size={24} />
                                 <span className="text-xs text-text-muted animate-pulse">{t('finance.analyzing')}...</span>
                             </div>
                         ) : (
                             <>
                                 {/* Restock Suggestion Card */}
-                                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 relative overflow-hidden">
+                                <div className="p-4 rounded-xl bg-primary/5 border border-primary-start/30 relative overflow-hidden">
                                     <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-                                    <h4 className="text-xs font-bold text-primary mb-2 flex items-center gap-2">
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
                                         <ShoppingCart size={14} /> {t('inventory.ai.restockTitle', 'Sugjerim për Rimbushje')}
                                     </h4>
                                     <p className="text-sm text-text-secondary leading-relaxed">
                                         {restockData?.reason || t('inventory.ai.error', 'Analiza e padisponueshme.')}
                                     </p>
                                     {restockData && restockData.suggested_quantity > 0 && (
-                                        <button type="button" className="mt-3 w-full py-2 btn-primary text-xs font-bold flex items-center justify-center gap-2">
+                                        <button type="button" className="mt-3 w-full py-2 btn-primary text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 rounded-xl">
                                             {t('inventory.ai.draftOrder', 'Drafto Porosinë')} <ArrowRight size={14} />
                                         </button>
                                     )}
                                 </div>
 
                                 {/* Trend Analysis Card */}
-                                <div className="p-4 rounded-xl bg-success-start/5 border border-success-start/20 relative overflow-hidden">
+                                <div className="p-4 rounded-xl bg-success-start/5 border border-success-start/30 relative overflow-hidden">
                                     <div className="absolute top-0 left-0 w-1 h-full bg-success-start" />
-                                    <h4 className="text-xs font-bold text-success-start mb-2 flex items-center gap-2">
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-success-start mb-2 flex items-center gap-2">
                                         <TrendingUp size={14} /> {t('inventory.ai.trendTitle', 'Analiza e Trendit')}
                                     </h4>
                                     <div className="space-y-2">
-                                        <p className="text-xs text-text-muted font-bold uppercase">{t('inventory.ai.performance', 'Performance')}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('inventory.ai.performance', 'Performance')}</p>
                                         <p className="text-sm text-text-secondary">
                                             {trendData?.trend_analysis || t('inventory.ai.error', 'Analiza dështoi.')}
                                         </p>
@@ -152,14 +149,14 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({ isOpen, 
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm text-text-muted mb-1">{t('inventory.items.name')}</label>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('inventory.items.name')}</label>
                         <input required type="text" className="glass-input w-full" 
                             value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm text-text-muted mb-1">{t('inventory.items.unit')}</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('inventory.items.unit')}</label>
                             <select className="glass-input w-full appearance-none" 
                                 value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})}
                             >
@@ -171,7 +168,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({ isOpen, 
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm text-text-muted mb-1">{t('inventory.items.cost')}</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('inventory.items.cost')}</label>
                             <input required type="number" step="0.01" className="glass-input w-full" 
                                 value={formData.cost_per_unit} onChange={e => setFormData({...formData, cost_per_unit: parseFloat(e.target.value) || 0})} 
                             />
@@ -179,30 +176,34 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({ isOpen, 
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm text-text-muted mb-1">{t('inventory.items.stock')}</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('inventory.items.stock')}</label>
                             <input required type="number" step="0.001" className="glass-input w-full" 
                                 value={formData.current_stock} onChange={e => setFormData({...formData, current_stock: parseFloat(e.target.value) || 0})} 
                             />
                         </div>
                         <div>
-                            <label className="block text-sm text-text-muted mb-1">{t('inventory.items.lowStock')}</label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('inventory.items.lowStock')}</label>
                             <input type="number" step="1" className="glass-input w-full" 
                                 value={formData.low_stock_threshold} onChange={e => setFormData({...formData, low_stock_threshold: parseFloat(e.target.value) || 0})} 
                             />
                         </div>
                     </div>
-                    <div className="flex justify-between items-center gap-3 pt-4 border-t border-border-strong">
+                    <div className="flex justify-between items-center gap-3 pt-4 border-t border-border-main">
                         <div>
                             {itemToEdit && (
-                                <button type="button" onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 text-danger hover:bg-danger/10 rounded-lg transition-colors text-sm font-medium">
+                                <button type="button" onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 text-danger-start hover:bg-danger-start/10 rounded-lg transition-colors text-sm font-medium">
                                     <Trash2 size={16} />
                                     {t('general.delete', 'Delete')}
                                 </button>
                             )}
                         </div>
                         <div className="flex items-center gap-3">
-                            <button type="button" onClick={onClose} className="px-4 py-2 text-text-muted hover:text-text-primary transition-colors">{t('general.cancel')}</button>
-                            <button type="submit" className="btn-primary px-6 py-2">{t('general.save')}</button>
+                            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors">
+                                {t('general.cancel')}
+                            </button>
+                            <button type="submit" className="btn-primary px-6 py-2 rounded-xl">
+                                {t('general.save')}
+                            </button>
                         </div>
                     </div>
                 </form>

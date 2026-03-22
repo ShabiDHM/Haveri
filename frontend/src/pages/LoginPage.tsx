@@ -1,6 +1,6 @@
 // FILE: src/pages/LoginPage.tsx
-// PHOENIX PROTOCOL - LOGIN PAGE V5.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - LOGIN PAGE V6.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -44,10 +44,10 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-canvas p-4 font-sans">
+    <div className="min-h-screen flex items-center justify-center bg-base p-4 font-sans">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none" />
         
-        <div className="relative max-w-md w-full space-y-8 p-8 bg-glass backdrop-blur-xl rounded-3xl border border-border-strong shadow-xl">
+        <div className="relative max-w-md w-full space-y-8 p-8 glass-panel">
             <div className="flex justify-center">
                 <BrandLogo />
             </div>
@@ -60,7 +60,7 @@ const LoginPage: React.FC = () => {
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                 <div className="space-y-4">
                     <div className="group">
-                        <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                             {t('auth.usernameOrEmail')}
                         </label>
                         <div className="relative">
@@ -78,7 +78,7 @@ const LoginPage: React.FC = () => {
                         </div>
                     </div>
                     <div className="group">
-                        <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">{t('auth.password')}</label>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.password')}</label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Lock className="h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
@@ -95,12 +95,12 @@ const LoginPage: React.FC = () => {
                     </div>
                 </div>
 
-                {error && <div className="text-danger text-sm text-center bg-danger/10 p-3 rounded-xl border border-danger/20">{error}</div>}
+                {error && <div className="text-danger-start text-sm text-center bg-danger-start/10 p-3 rounded-xl border border-danger-start/30">{error}</div>}
 
                 <button 
                     type="submit" 
                     disabled={isSubmitting} 
-                    className="btn-primary w-full flex justify-center py-4"
+                    className="btn-primary w-full flex justify-center py-4 rounded-xl"
                 >
                     {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : t('auth.loginButton')}
                 </button>

@@ -1,6 +1,6 @@
 // FILE: src/components/BrandLogo.tsx
-// PHOENIX PROTOCOL - PLATFORM IDENTITY V6.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - PLATFORM IDENTITY V7.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
 import { Brain } from 'lucide-react';
@@ -16,7 +16,7 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
 }) => {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className="w-8 h-8 flex-shrink-0 bg-surface border border-border-strong rounded-lg flex items-center justify-center shadow-sm overflow-hidden">
+      <div className="w-8 h-8 flex-shrink-0 bg-surface border border-border-main rounded-lg flex items-center justify-center shadow-sm overflow-hidden">
         <Brain className="w-5 h-5 text-primary" />
       </div>
       

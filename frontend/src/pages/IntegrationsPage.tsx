@@ -1,6 +1,6 @@
 // FILE: src/pages/IntegrationsPage.tsx
-// PHOENIX PROTOCOL - I18N V3.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - I18N V4.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -15,14 +15,18 @@ export const IntegrationsPage: React.FC = () => {
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 sm:p-8 max-w-4xl mx-auto"
+            className="glass-panel p-6 md:p-8 space-y-6"
         >
-            <div className="mb-8">
-                <div className="flex items-center gap-3 mb-2">
+            <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
                     <Share2 className="text-primary" size={32}/>
-                    <h1 className="text-3xl font-bold text-text-primary tracking-tight">{t('settings.integrations.title')}</h1>
+                    <h1 className="text-3xl font-bold text-text-primary tracking-tight">
+                        {t('settings.integrations.title')}
+                    </h1>
                 </div>
-                <p className="text-lg text-text-secondary">{t('settings.integrations.subtitle')}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">
+                    {t('settings.integrations.subtitle')}
+                </p>
             </div>
 
             <div className="space-y-8">

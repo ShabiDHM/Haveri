@@ -1,6 +1,6 @@
 // FILE: src/pages/LandingPage.tsx
-// PHOENIX PROTOCOL - LANDING PAGE V20.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - LANDING PAGE V21.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -21,7 +21,7 @@ const LandingPage: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-canvas text-text-primary overflow-hidden font-sans selection:bg-success-start/30 selection:text-inverse">
+    <div className="min-h-screen bg-base text-text-primary overflow-hidden font-sans selection:bg-success-start/30 selection:text-inverse">
       
       {/* BACKGROUND EFFECTS */}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -33,7 +33,7 @@ const LandingPage: React.FC = () => {
       <div className="relative z-10">
         
         {/* --- NAVIGATION --- */}
-        <nav className="fixed top-0 w-full z-[100] border-b border-border-strong bg-glass backdrop-blur-xl">
+        <nav className="fixed top-0 w-full z-[100] border-b border-border-main bg-glass backdrop-blur-xl">
             <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-success-start rounded-lg flex items-center justify-center shadow-lg shadow-success-start/20">
@@ -72,7 +72,7 @@ const LandingPage: React.FC = () => {
                 {t('landing.getStarted')}
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link to="/login" className="w-full sm:w-auto px-10 py-5 bg-surface hover:bg-hover border border-border-strong rounded-2xl font-bold text-lg transition-all text-center text-text-primary">
+              <Link to="/login" className="w-full sm:w-auto px-10 py-5 glass-input !bg-surface hover:bg-hover transition-colors rounded-2xl font-bold text-lg text-center text-text-primary border border-border-main">
                 Demo Live
               </Link>
             </div>
@@ -81,7 +81,7 @@ const LandingPage: React.FC = () => {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
                 className="mt-20 flex flex-col items-center gap-3 text-text-muted"
             >
-                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Mësoni më shumë</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Mësoni më shumë</span>
                 <ChevronDown className="animate-bounce" />
             </motion.div>
           </motion.div>
@@ -92,7 +92,7 @@ const LandingPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
                 {/* 1. Forensic Audit */}
-                <div className="md:col-span-2 group relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary/20 to-primary/10 border border-border-strong p-10 h-[450px] flex flex-col justify-between">
+                <div className="md:col-span-2 group relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary/20 to-primary/10 border border-border-main p-10 h-[450px] flex flex-col justify-between">
                     <div className="absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-primary/20 blur-[100px] rounded-full group-hover:bg-primary/30 transition-all duration-700" />
                     <ShieldCheck className="text-primary mb-6" size={48} strokeWidth={1} />
                     <div>
@@ -102,13 +102,13 @@ const LandingPage: React.FC = () => {
                         </p>
                     </div>
                     <div className="flex gap-2 mt-6">
-                        <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-bold text-primary uppercase tracking-widest">Neni 9 TVSH</span>
-                        <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-bold text-primary uppercase tracking-widest">Auditimi Pro</span>
+                        <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest text-primary">Neni 9 TVSH</span>
+                        <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest text-primary">Auditimi Pro</span>
                     </div>
                 </div>
 
                 {/* 2. Secure Portal */}
-                <div className="group relative overflow-hidden rounded-[2.5rem] bg-surface border border-border-strong p-10 flex flex-col justify-between h-[450px]">
+                <div className="group relative overflow-hidden rounded-[2.5rem] bg-surface border border-border-main p-10 flex flex-col justify-between h-[450px]">
                     <Users className="text-success-start" size={40} strokeWidth={1} />
                     <div>
                         <h3 className="text-3xl font-bold mb-3 tracking-tight text-text-primary">{t('landing.feature2Title')}</h3>
@@ -116,7 +116,7 @@ const LandingPage: React.FC = () => {
                             {t('landing.feature2Desc')}
                         </p>
                     </div>
-                    <div className="p-4 bg-card rounded-2xl border border-border-strong text-[10px] font-mono text-success-start/70">
+                    <div className="p-4 bg-card rounded-2xl border border-border-main text-[10px] font-mono text-success-start/70">
                         GET /portal/secure_auth_v4
                     </div>
                 </div>
@@ -157,7 +157,7 @@ const LandingPage: React.FC = () => {
                         }
                     ].map((item, i) => (
                         <div key={i} className="flex gap-6 group">
-                            <div className="w-14 h-14 rounded-2xl bg-surface border border-border-strong flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-hover transition-all duration-500">
+                            <div className="w-14 h-14 rounded-2xl bg-surface border border-border-main flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-hover transition-all duration-500">
                                 {item.i}
                             </div>
                             <div>
@@ -171,9 +171,9 @@ const LandingPage: React.FC = () => {
 
             <div className="relative">
                 <div className="absolute -inset-10 bg-success-start/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="relative rounded-[3rem] border border-border-strong bg-card p-8 shadow-xl">
+                <div className="relative rounded-[3rem] border border-border-main bg-card p-8 shadow-xl">
                     <div className="space-y-6">
-                        <div className="flex justify-between items-center border-b border-border-strong pb-4">
+                        <div className="flex justify-between items-center border-b border-border-main pb-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-success-start/20 flex items-center justify-center text-success-start font-bold italic">H</div>
                                 <span className="text-sm font-bold uppercase tracking-widest text-text-muted">Smart Advice</span>
@@ -185,7 +185,7 @@ const LandingPage: React.FC = () => {
                         </p>
                         <div className="pt-4 flex gap-3">
                             <button className="flex-1 py-3 btn-primary text-xs font-black uppercase tracking-tighter">Aprovo Porosinë</button>
-                            <button className="flex-1 py-3 bg-surface rounded-xl text-xs font-black uppercase tracking-tighter border border-border-strong text-text-muted">Refuzo</button>
+                            <button className="flex-1 py-3 glass-input !bg-surface hover:bg-hover rounded-xl text-xs font-black uppercase tracking-tighter border border-border-main text-text-muted">Refuzo</button>
                         </div>
                     </div>
                 </div>
@@ -195,7 +195,7 @@ const LandingPage: React.FC = () => {
 
         {/* --- CTA --- */}
         <section className="py-24 text-center max-w-7xl mx-auto px-6">
-            <div className="bg-gradient-to-br from-success-start/20 via-primary/20 to-primary/20 border border-border-strong rounded-[3rem] p-16 relative overflow-hidden group">
+            <div className="bg-gradient-to-br from-success-start/20 via-primary/20 to-primary/20 border border-border-main rounded-[3rem] p-16 relative overflow-hidden group">
                 <div className="relative z-10">
                     <h2 className="text-5xl md:text-6xl font-black mb-8 tracking-tighter text-text-primary">Transformoni mënyrën<br/>si punoni.</h2>
                     <Link to="/register" className="inline-flex items-center gap-4 px-12 py-6 btn-primary text-xl">
@@ -208,14 +208,14 @@ const LandingPage: React.FC = () => {
         </section>
 
         {/* --- FOOTER --- */}
-        <footer className="py-12 border-t border-border-strong text-center">
+        <footer className="py-12 border-t border-border-main text-center">
             <div className="flex items-center justify-center gap-2 mb-6">
                 <div className="w-6 h-6 bg-success-start rounded flex items-center justify-center">
                     <Zap size={14} className="text-inverse fill-inverse" />
                 </div>
                 <span className="font-bold tracking-tighter uppercase text-sm text-text-primary">Haveri AI</span>
             </div>
-            <p className="text-text-muted text-xs uppercase tracking-widest font-bold">
+            <p className="text-text-muted text-[10px] font-black uppercase tracking-widest">
                 &copy; {new Date().getFullYear()} Data And Human Management. Të gjitha të drejtat e rezervuara.
             </p>
         </footer>

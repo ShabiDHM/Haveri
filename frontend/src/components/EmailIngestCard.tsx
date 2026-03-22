@@ -1,6 +1,6 @@
 // FILE: src/components/EmailIngestCard.tsx
-// PHOENIX PROTOCOL - I18N V3.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - I18N V4.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +31,7 @@ export const EmailIngestCard: React.FC = () => {
     return (
         <Panel className="p-6 shadow-lg">
             <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20">
+                <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary-start/30">
                     <Mail size={24} />
                 </div>
                 <div>
@@ -40,14 +40,14 @@ export const EmailIngestCard: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-surface rounded-lg p-4 border border-border-strong mb-6">
+            <div className="bg-surface rounded-lg p-4 border border-border-main mb-6">
                  <div className="flex items-center gap-2 mb-2">
                     <Info size={14} className="text-primary" />
                     <span className="text-sm font-medium text-text-secondary">{t('settings.integrations.emailIngest.yourAddress')}</span>
                 </div>
                 
                 {inboundEmail ? (
-                    <div className="flex items-center justify-between gap-4 bg-card p-3 rounded-lg border border-border-strong">
+                    <div className="flex items-center justify-between gap-4 bg-card p-3 rounded-lg border border-border-main">
                         <code className="text-base font-mono text-success-start truncate">{inboundEmail}</code>
                         <button 
                             onClick={handleCopy}

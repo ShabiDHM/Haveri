@@ -1,5 +1,6 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.5 (ZYTRA LIGJORE FIXED)
+// PHOENIX PROTOCOL - HEADER V7.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -90,7 +91,7 @@ const Header: React.FC = () => {
               const isActive = item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
               return (
                   <NavLink key={item.path} to={item.path} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-base font-medium transition-all ${
-                      isActive ? 'text-primary bg-accent-subtle border border-accent-primary/20' : 'text-text-secondary hover:text-primary hover:bg-hover'
+                      isActive ? 'text-primary bg-primary/10 border border-primary-start/30' : 'text-text-secondary hover:text-primary hover:bg-hover'
                   }`}>
                       <item.icon size={18} />
                       <span>{item.label}</span>
@@ -106,11 +107,11 @@ const Header: React.FC = () => {
         
         <Link to="/calendar" className="p-2 text-text-secondary hover:text-primary hover:bg-hover rounded-lg relative">
           <Bell size={20} />
-          {alertCount > 0 && (<span className="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full animate-pulse"></span>)}
+          {alertCount > 0 && (<span className="absolute top-2 right-2 w-2 h-2 bg-danger-start rounded-full animate-pulse"></span>)}
         </Link>
         
         <div className="relative">
-          <button ref={buttonRef} onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-2 p-1.5 rounded-xl border border-transparent hover:bg-hover hover:border-border-strong">
+          <button ref={buttonRef} onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-2 p-1.5 rounded-xl border border-transparent hover:bg-hover hover:border-border-main">
             <div className="hidden sm:block text-right">
               <p className="text-xs font-bold text-primary">{user?.username || 'Përdorues'}</p>
             </div>
@@ -120,8 +121,8 @@ const Header: React.FC = () => {
           </button>
           
           {isProfileOpen && (
-            <div ref={dropdownRef} className="absolute right-0 mt-2 w-56 bg-card border border-border-strong rounded-xl shadow-xl py-2 z-50">
-              <div className="px-4 py-2 border-b border-border-strong mb-1">
+            <div ref={dropdownRef} className="absolute right-0 mt-2 w-56 bg-card border border-border-main rounded-xl shadow-xl py-2 z-50">
+              <div className="px-4 py-2 border-b border-border-main mb-1">
                   <p className="text-xs text-primary font-bold">{user?.username}</p>
               </div>
 
@@ -143,8 +144,8 @@ const Header: React.FC = () => {
               <button onClick={() => handleDropdownNavigate('/support')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
                   <MessageSquare size={16} className="mr-3 text-primary" />{t('sidebar.support')}
               </button>
-              <div className="h-px bg-border-strong my-1"></div>
-              <button onClick={() => { setIsProfileOpen(false); logout(); }} className="w-full flex items-center px-4 py-2.5 text-sm text-danger hover:bg-danger/10 transition-colors">
+              <div className="h-px bg-border-main my-1"></div>
+              <button onClick={() => { setIsProfileOpen(false); logout(); }} className="w-full flex items-center px-4 py-2.5 text-sm text-danger-start hover:bg-danger-start/10 transition-colors">
                   <LogOut size={16} className="mr-3" />{t('header.logout')}
               </button>
             </div>
@@ -153,10 +154,10 @@ const Header: React.FC = () => {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="fixed inset-x-0 top-16 bg-card border-b border-border-strong p-4 lg:hidden z-40 shadow-lg">
+        <div className="fixed inset-x-0 top-16 bg-card border-b border-border-main p-4 lg:hidden z-40 shadow-lg">
             <div className="grid grid-cols-2 gap-3">
                 {navItems.map(item => (
-                    <Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center p-4 rounded-xl bg-surface border border-border-strong text-text-secondary hover:text-primary hover:bg-hover transition-all">
+                    <Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center p-4 rounded-xl bg-surface border border-border-main text-text-secondary hover:text-primary hover:bg-hover transition-all">
                         <item.icon size={24} className="mb-2" />
                         <span className="text-xs font-bold">{item.label}</span>
                     </Link>

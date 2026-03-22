@@ -1,6 +1,6 @@
 // FILE: src/components/PDFViewerModal.tsx
-// PHOENIX PROTOCOL - UNIVERSAL DOCUMENT VIEWER V7.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - UNIVERSAL DOCUMENT VIEWER V8.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
@@ -141,26 +141,26 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
       if (!textContent) return null;
       const rows = textContent.split('\n').filter(r => r.trim()).map(r => r.split(','));
       return (
-          <div className="flex justify-center p-4 sm:p-8 min-h-full bg-canvas">
-              <div className="bg-card text-text-primary shadow-xl p-6 sm:p-10 min-h-[800px] w-full max-w-5xl rounded-sm border border-border-strong">
-                  <div className="border-b-2 border-border-strong pb-4 mb-6 flex justify-between">
+          <div className="flex justify-center p-4 sm:p-8 min-h-full bg-base">
+              <div className="bg-card text-text-primary shadow-xl p-6 sm:p-10 min-h-[800px] w-full max-w-5xl rounded-sm border border-border-main">
+                  <div className="border-b-2 border-border-main pb-4 mb-6 flex justify-between">
                       <div><h1 className="text-xl font-black text-primary uppercase">Dokument Verifikimi</h1><p className="text-[10px] font-mono text-text-muted">{documentData.file_name}</p></div>
-                      <div className="text-right text-[10px] text-text-muted uppercase font-bold"><p>Haveri Forensic</p><p>{new Date().toLocaleDateString()}</p></div>
+                      <div className="text-right text-[10px] text-text-muted uppercase font-black tracking-widest"><p>Haveri Forensic</p><p>{new Date().toLocaleDateString()}</p></div>
                   </div>
                   <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                           <thead>
                               <tr className="bg-surface">
                                   {rows[0]?.map((h, i) => (
-                                      <th key={i} className="px-3 py-2 text-[10px] font-bold border border-border-strong text-text-primary">{h}</th>
+                                      <th key={i} className="px-3 py-2 text-[10px] font-black uppercase tracking-widest border border-border-main text-text-primary">{h}</th>
                                   ))}
-                               </tr>
+                                </tr>
                           </thead>
                           <tbody>
                               {rows.slice(1).map((row, i) => (
-                                  <tr key={i} className="border-b border-border-strong">
+                                  <tr key={i} className="border-b border-border-main">
                                       {row.map((c, j) => (
-                                          <td key={j} className="px-3 py-2 text-[11px] border border-border-strong text-text-secondary">{c}</td>
+                                          <td key={j} className="px-3 py-2 text-[11px] border border-border-main text-text-secondary">{c}</td>
                                       ))}
                                   </tr>
                               ))}
@@ -177,7 +177,7 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
     
     if (error) return (
         <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <AlertTriangle className="h-16 w-16 text-danger mb-6" />
+            <AlertTriangle className="h-16 w-16 text-danger-start mb-6" />
             <h3 className="text-xl font-bold text-text-primary mb-2">{t('error.generic')}</h3>
             <p className="text-text-muted max-w-md">{error}</p>
         </div>
@@ -187,7 +187,7 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
         <div className="flex flex-col items-center justify-center h-full text-center p-8">
             <TableIcon size={64} className="text-text-muted mb-6" />
             <h3 className="text-xl font-bold text-text-primary mb-4">{t('pdfViewer.previewNotAvailable')}</h3>
-            <button onClick={handleDownloadOriginal} disabled={isDownloading} className="btn-primary flex items-center gap-2">
+            <button onClick={handleDownloadOriginal} disabled={isDownloading} className="btn-primary flex items-center gap-2 rounded-xl">
                 {isDownloading ? <Loader className="animate-spin" size={20}/> : <Download size={20}/>} {t('pdfViewer.downloadOriginal')}
             </button>
         </div>
@@ -195,7 +195,7 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
 
     switch (actualViewerMode) {
       case 'PDF': return (
-          <div className="flex flex-col items-center w-full min-h-full bg-canvas overflow-auto pt-8 pb-20" ref={containerRef}>
+          <div className="flex flex-col items-center w-full min-h-full bg-base overflow-auto pt-8 pb-20" ref={containerRef}>
              <PdfDocument file={pdfSource} onLoadSuccess={({numPages}) => setNumPages(numPages)} onLoadError={() => setActualViewerMode('DOWNLOAD')} loading={null}>
                  <Page pageNumber={pageNumber} width={containerWidth > 0 ? containerWidth : 600} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} className="shadow-xl mb-4" />
              </PdfDocument>
@@ -203,7 +203,7 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
       );
       case 'DATA': return renderDataView();
       case 'IMAGE': return <div className="flex items-center justify-center h-full p-4"><img src={imageSource!} alt="Preview" className="max-w-full max-h-full object-contain rounded-lg shadow-xl" /></div>;
-      case 'TEXT': return <div className="flex justify-center p-4 sm:p-8 min-h-full"><div className="bg-card text-text-primary p-8 w-full max-w-3xl rounded-sm shadow-xl font-mono text-xs border border-border-strong"><pre className="whitespace-pre-wrap">{textContent}</pre></div></div>;
+      case 'TEXT': return <div className="flex justify-center p-4 sm:p-8 min-h-full"><div className="bg-card text-text-primary p-8 w-full max-w-3xl rounded-sm shadow-xl font-mono text-xs border border-border-main"><pre className="whitespace-pre-wrap">{textContent}</pre></div></div>;
       default: return null;
     }
   };
@@ -211,15 +211,15 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
   return ReactDOM.createPortal(
     <AnimatePresence>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-md z-[9999] flex items-center justify-center p-0 sm:p-4" onClick={onClose}>
-        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-glass backdrop-blur-xl w-full h-full sm:max-w-6xl sm:max-h-[95vh] rounded-none sm:rounded-2xl shadow-xl flex flex-col overflow-hidden border border-border-strong" onClick={(e) => e.stopPropagation()}>
-          <header className="flex items-center justify-between p-3 sm:p-4 bg-surface border-b border-border-strong backdrop-blur-xl z-20 shrink-0">
+        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="glass-panel w-full h-full sm:max-w-6xl sm:max-h-[95vh] rounded-none sm:rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <header className="flex items-center justify-between p-3 sm:p-4 bg-surface border-b border-border-main backdrop-blur-xl z-20 shrink-0">
             <div className="flex items-center gap-3 flex-1 min-w-0">
                 {actualViewerMode === 'DATA' ? <FileSpreadsheet className="text-success-start" /> : <TableIcon className="text-primary" />}
                 <h2 className="text-sm sm:text-base font-bold text-text-primary truncate">{documentData.file_name}</h2>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
               {actualViewerMode === 'PDF' && (
-                  <div className="hidden sm:flex items-center gap-1 mr-4 bg-surface p-1 rounded-lg border border-border-strong">
+                  <div className="hidden sm:flex items-center gap-1 mr-4 bg-surface p-1 rounded-lg border border-border-main">
                       <button onClick={() => setScale(s => Math.max(s - 0.1, 0.5))} className="p-1.5 text-text-muted hover:text-text-primary"><ZoomOut size={16}/></button>
                       <button onClick={() => setScale(1.0)} className="p-1.5 text-text-muted hover:text-text-primary"><Maximize size={16}/></button>
                       <button onClick={() => setScale(s => Math.min(s + 0.1, 3.0))} className="p-1.5 text-text-muted hover:text-text-primary"><ZoomIn size={16}/></button>
@@ -232,10 +232,10 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
               <button onClick={onClose} className="p-2 text-text-muted hover:text-text-primary transition-colors"><X size={24} /></button>
             </div>
           </header>
-          <div className="flex-grow relative bg-canvas/50 overflow-auto custom-scrollbar">{renderContent()}</div>
+          <div className="flex-grow relative bg-base/50 overflow-auto custom-scrollbar">{renderContent()}</div>
           {actualViewerMode === 'PDF' && numPages && numPages > 1 && (
-            <footer className="flex items-center justify-center p-3 bg-surface border-t border-border-strong z-20">
-              <div className="flex items-center gap-4 bg-surface px-4 py-2 rounded-full border border-border-strong shadow-sm">
+            <footer className="flex items-center justify-center p-3 bg-surface border-t border-border-main z-20">
+              <div className="flex items-center gap-4 bg-surface px-4 py-2 rounded-full border border-border-main shadow-sm">
                 <button onClick={() => setPageNumber(p => Math.max(1, p - 1))} disabled={pageNumber <= 1} className="p-1 hover:text-text-primary disabled:opacity-20 text-text-muted"><ChevronLeft size={24} /></button>
                 <span className="text-xs font-bold text-text-primary w-16 text-center">{pageNumber} / {numPages}</span>
                 <button onClick={() => setPageNumber(p => Math.min(numPages, p + 1))} disabled={pageNumber >= numPages} className="p-1 hover:text-text-primary disabled:opacity-20 text-text-muted"><ChevronRight size={24} /></button>

@@ -1,6 +1,6 @@
 // FILE: src/pages/RegisterPage.tsx
-// PHOENIX PROTOCOL - REGISTER PAGE V5.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - REGISTER PAGE V6.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -64,10 +64,10 @@ const RegisterPage: React.FC = () => {
 
   if (isSuccess) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-canvas p-4 font-sans">
+        <div className="min-h-screen flex items-center justify-center bg-base p-4 font-sans">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none" />
             
-            <div className="relative max-w-md w-full p-8 bg-glass backdrop-blur-xl rounded-3xl border border-border-strong text-center shadow-xl">
+            <div className="relative max-w-md w-full p-8 glass-panel text-center">
                 <div className="w-20 h-20 bg-success-start/10 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-success-start/20">
                     <Sparkles className="w-10 h-10 text-success-start" />
                 </div>
@@ -80,7 +80,7 @@ const RegisterPage: React.FC = () => {
                     {t('auth.welcomeMessage', 'Llogaria juaj është krijuar. Ndërsa ekipi ynë verifikon të dhënat, ju jeni një hap më afër bashkimit të inteligjencës njerëzore me fuqinë e të dhënave për të transformuar mënyrën se si menaxhoni biznesin.')}
                 </p>
                 
-                <Link to="/login" className="btn-primary inline-flex items-center justify-center gap-3 px-8 py-4">
+                <Link to="/login" className="btn-primary inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl">
                     {t('auth.backToLogin', 'Kthehu te Kyçja')} <ArrowRight className="w-5 h-5" />
                 </Link>
             </div>
@@ -89,10 +89,10 @@ const RegisterPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-canvas p-4 font-sans">
+    <div className="min-h-screen flex items-center justify-center bg-base p-4 font-sans">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none" />
       
-      <div className="relative max-w-md w-full p-8 bg-glass backdrop-blur-xl rounded-3xl border border-border-strong shadow-xl">
+      <div className="relative max-w-md w-full p-8 glass-panel">
         
         <div className="mb-6 flex justify-center">
             <BrandLogo />
@@ -105,7 +105,7 @@ const RegisterPage: React.FC = () => {
 
         <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="group">
-                <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">{t('account.username')}</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('account.username')}</label>
                 <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
                     <input 
@@ -121,7 +121,7 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <div className="group">
-                <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">{t('account.email')}</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('account.email')}</label>
                 <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
                     <input 
@@ -136,7 +136,7 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <div className="group">
-                <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">{t('auth.password')}</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.password')}</label>
                 <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
                     <input 
@@ -153,7 +153,7 @@ const RegisterPage: React.FC = () => {
             </div>
             
             {error && (
-                <div className="flex items-start gap-3 bg-danger/10 border border-danger/20 rounded-xl p-3 text-danger text-sm">
+                <div className="flex items-start gap-3 bg-danger-start/10 border border-danger-start/30 rounded-xl p-3 text-danger-start text-sm">
                     <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
                     <span>{error}</span>
                 </div>
@@ -162,7 +162,7 @@ const RegisterPage: React.FC = () => {
             <button 
                 type="submit" 
                 disabled={isSubmitting} 
-                className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
             >
                 {isSubmitting ? (
                     <>

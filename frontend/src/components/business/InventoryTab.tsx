@@ -1,6 +1,6 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V21.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses Panel component, unified border styling
+// PHOENIX PROTOCOL - INVENTORY TAB V22.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -25,7 +25,7 @@ const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.R
             flex items-center justify-center text-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl text-sm sm:text-base font-bold transition-all duration-300 group w-full sm:w-auto
             ${primary 
                 ? 'btn-primary' 
-                : 'btn-secondary'
+                : 'glass-input !bg-surface hover:bg-hover transition-colors cursor-pointer'
             }
         `}
     >
@@ -41,7 +41,7 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
             flex-1 sm:flex-initial relative px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2
             ${isActive 
                 ? 'bg-success-start/20 text-success-start border border-success-start/30' 
-                : 'text-text-muted hover:text-text-primary hover:bg-hover border border-transparent'
+                : 'text-text-muted hover:text-text-primary hover:bg-hover border border-border-main hover:border-success-start/30'
             }
         `}
     >
@@ -85,12 +85,12 @@ export const InventoryTab: React.FC = () => {
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-success-start" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 sm:space-y-8">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6">
              <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--success-start); border-radius: 10px; opacity: 0.3; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: var(--success-start); opacity: 0.5; }
+                .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--status-success); border-radius: 10px; opacity: 0.3; } 
+                .custom-finance-scroll::-webkit-scrollbar-thumb:hover { background: var(--status-success); opacity: 0.5; }
             `}</style>
 
             {/* Action Buttons Panel */}
@@ -113,13 +113,13 @@ export const InventoryTab: React.FC = () => {
             {/* Main Content Panel */}
             <Panel className="p-4 sm:p-6 h-[700px] flex flex-col overflow-hidden">
                 
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 border-b border-border-strong pb-4 sm:pb-6 shrink-0">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 border-b border-border-main pb-4 sm:pb-6 shrink-0">
                     <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
                         <Box className="text-success-start" />
                         {t('inventory.title')}
                     </h2>
                     
-                    <div className="w-full md:w-auto flex bg-surface p-1.5 rounded-2xl border border-border-strong backdrop-blur-md gap-1">
+                    <div className="w-full md:w-auto flex bg-surface p-1.5 rounded-2xl border border-border-main backdrop-blur-md gap-1">
                         <TabButton label={t('inventory.tabItems', 'Artikujt')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
                         <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
                     </div>

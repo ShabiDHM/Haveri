@@ -1,9 +1,6 @@
 // FILE: src/components/business/archive/ArchiveGrid.tsx
-// PHOENIX PROTOCOL - ARCHIVE GRID V5.0 (UNIFIED ADMIN AESTHETIC)
-// 1. REBRAND: Renamed 'Case' to 'Workspace' throughout the grid and logic.
-// 2. FIXED: Property access updated to use 'workspace_number'.
-// 3. UPDATED: Uses unified border styling
-// 4. STATUS: Fully synchronized with the Single User Workspace model.
+// PHOENIX PROTOCOL - ARCHIVE GRID V6.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';

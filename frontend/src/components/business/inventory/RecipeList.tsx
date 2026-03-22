@@ -1,8 +1,6 @@
 // FILE: src/components/business/inventory/RecipeList.tsx
-// PHOENIX PROTOCOL - RECIPE LIST V4.0 (UNIFIED ADMIN AESTHETIC)
-// 1. LAYOUT: Updated grid gap and padding for better mobile viewing.
-// 2. CONSISTENCY: Matched style tweaks with InventoryList.
-// 3. UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - RECIPE LIST V5.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
 import { ChefHat, Edit, Trash2 } from 'lucide-react';
@@ -33,12 +31,12 @@ const RecipeCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="group relative flex flex-col justify-between h-full min-h-[13rem] p-5 sm:p-6 rounded-3xl bg-surface/60 border border-border-strong hover:border-primary/30 transition-all duration-300 shadow-sm"
+            className="group relative flex flex-col justify-between h-full min-h-[13rem] p-5 sm:p-6 rounded-3xl bg-surface/60 border border-border-main hover:border-primary/30 transition-all duration-300 shadow-sm"
         >
             {/* Top Section */}
             <div>
                 <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
-                    <div className="p-2.5 sm:p-3 rounded-2xl bg-surface border border-border-strong text-primary">
+                    <div className="p-2.5 sm:p-3 rounded-2xl bg-surface border border-border-main text-primary">
                         <ChefHat size={18} />
                     </div>
                 </div>
@@ -57,7 +55,7 @@ const RecipeCard: React.FC<{
             </div>
             
             {/* Bottom Section */}
-            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-border-strong flex justify-between items-end">
+            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-border-main flex justify-between items-end">
                 <div>
                     <span className="block text-[10px] sm:text-xs text-text-muted uppercase tracking-wider font-bold">
                         {t('inventory.recipes.cost', 'Kosto e Vlerësuar')}
@@ -71,7 +69,7 @@ const RecipeCard: React.FC<{
                     <button onClick={() => onEdit(recipe)} className="p-2 hover:bg-hover rounded-lg text-warning-start hover:text-warning-start/80 transition-colors" title={t('general.edit')}>
                         <Edit size={16} />
                     </button>
-                    <button onClick={() => onDelete(recipe._id)} className="p-2 hover:bg-hover rounded-lg text-danger hover:text-danger/80 transition-colors" title={t('general.delete')}>
+                    <button onClick={() => onDelete(recipe._id)} className="p-2 hover:bg-hover rounded-lg text-danger-start hover:text-danger-start/80 transition-colors" title={t('general.delete')}>
                         <Trash2 size={16} />
                     </button>
                 </div>

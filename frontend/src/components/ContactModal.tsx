@@ -1,6 +1,6 @@
 // FILE: src/components/ContactModal.tsx
-// PHOENIX PROTOCOL - REAL API INTEGRATION V3.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - REAL API INTEGRATION V4.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -54,9 +54,9 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-glass backdrop-blur-xl border border-border-strong rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
+        className="glass-panel w-full max-w-lg overflow-hidden"
       >
-        <div className="p-5 border-b border-border-strong flex justify-between items-center bg-surface/50">
+        <div className="p-5 border-b border-border-main flex justify-between items-center bg-surface/50">
           <h2 className="text-lg sm:text-xl font-bold text-text-primary flex items-center gap-2">
             <MessageSquare className="text-primary h-5 w-5" />
             {t('footer.contactSupport', 'Kontakto Mbështetjen')}
@@ -81,7 +81,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <label className="text-xs font-medium text-text-muted uppercase">Emri</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Emri</label>
                         <div className="relative">
                             <User className="absolute left-3 top-2.5 h-4 w-4 text-text-muted/50" />
                             <input 
@@ -94,7 +94,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
                     <div className="space-y-1">
-                        <label className="text-xs font-medium text-text-muted uppercase">Mbiemri</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Mbiemri</label>
                         <input 
                             type="text" required
                             value={formData.lastName}
@@ -107,7 +107,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <label className="text-xs font-medium text-text-muted uppercase">Email</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Email</label>
                         <div className="relative">
                             <Mail className="absolute left-3 top-2.5 h-4 w-4 text-text-muted/50" />
                             <input 
@@ -120,7 +120,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
                     <div className="space-y-1">
-                        <label className="text-xs font-medium text-text-muted uppercase">Telefoni</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Telefoni</label>
                         <div className="relative">
                             <Phone className="absolute left-3 top-2.5 h-4 w-4 text-text-muted/50" />
                             <input 
@@ -135,7 +135,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                 </div>
                 
                 <div className="space-y-1">
-                    <label className="text-xs font-medium text-text-muted uppercase">Mesazhi</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Mesazhi</label>
                     <textarea 
                         required rows={4}
                         value={formData.message}
@@ -148,7 +148,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                 <button 
                     type="submit" 
                     disabled={isSending}
-                    className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
+                    className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base rounded-xl"
                 >
                     {isSending ? 'Duke dërguar...' : <><Send size={18} /> Dërgo Mesazhin</>}
                 </button>

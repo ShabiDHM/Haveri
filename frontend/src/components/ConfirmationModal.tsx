@@ -1,6 +1,6 @@
 // FILE: src/components/ConfirmationModal.tsx
-// PHOENIX PROTOCOL - MOBILE OPTIMIZATION V3.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - MOBILE OPTIMIZATION V4.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import { motion } from 'framer-motion'; 
 import { X } from 'lucide-react';
@@ -18,16 +18,16 @@ export function ConfirmationModal({ title, message, confirmText, onConfirm, onCl
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       
       <motion.div 
-        className="w-full max-w-sm bg-glass backdrop-blur-xl border border-border-strong rounded-2xl shadow-xl p-6 space-y-4"
+        className="w-full max-w-sm glass-panel p-6 space-y-4"
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -50 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
-        <div className="flex justify-between items-center border-b border-border-strong pb-3">
+        <div className="flex justify-between items-center border-b border-border-main pb-3">
           <h3 className="text-xl font-bold text-text-primary">{title}</h3>
           <motion.button 
-            className="text-text-muted hover:text-danger p-1 transition-colors rounded-full hover:bg-hover" 
+            className="text-text-muted hover:text-danger-start p-1 transition-colors rounded-full hover:bg-hover" 
             onClick={onClose}
             whileHover={{ scale: 1.1, rotate: 90 }}
             whileTap={{ scale: 0.9 }}
@@ -43,7 +43,7 @@ export function ConfirmationModal({ title, message, confirmText, onConfirm, onCl
         {/* Stack buttons vertically on mobile, row on desktop */}
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
           <motion.button 
-            className="w-full sm:w-auto px-4 py-3 sm:py-2 rounded-xl text-text-secondary hover:text-text-primary bg-surface border border-border-strong transition-colors font-medium" 
+            className="w-full sm:w-auto px-4 py-3 sm:py-2 rounded-xl text-text-secondary hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors font-medium" 
             onClick={onClose}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -52,7 +52,7 @@ export function ConfirmationModal({ title, message, confirmText, onConfirm, onCl
           </motion.button>
           
           <motion.button 
-            className="w-full sm:w-auto text-inverse font-semibold py-3 sm:py-2 px-4 rounded-xl transition-all duration-300 shadow-lg bg-gradient-to-r from-danger to-danger/80 hover:from-danger/90 hover:to-danger/70" 
+            className="w-full sm:w-auto text-inverse font-semibold py-3 sm:py-2 px-4 rounded-xl transition-all duration-300 shadow-lg bg-danger-start hover:bg-danger-start/80" 
             onClick={onConfirm}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}

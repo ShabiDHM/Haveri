@@ -1,6 +1,6 @@
 // FILE: src/components/ShareModal.tsx
-// PHOENIX PROTOCOL - SHARE MODAL V3.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - SHARE MODAL V4.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -44,7 +44,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, caseId, caseTi
       >
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-glass backdrop-blur-xl w-full max-w-sm rounded-2xl border border-border-strong shadow-xl p-6"
+          className="glass-panel w-full max-w-sm p-6"
           onClick={e => e.stopPropagation()}
         >
           <div className="flex justify-between items-center mb-6">
@@ -72,7 +72,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, caseId, caseTi
             </button>
 
             {/* Copy Link - Fallback */}
-            <button onClick={handleCopy} className="w-full flex items-center justify-between p-4 bg-surface hover:bg-hover border border-border-strong rounded-xl group transition-all">
+            <button onClick={handleCopy} className="w-full flex items-center justify-between p-4 bg-surface hover:bg-hover border border-border-main rounded-xl group transition-all">
                 <div className="flex items-center gap-3">
                     <Copy className="text-text-muted" />
                     <span className="font-medium text-text-secondary">Kopjo Linkun</span>

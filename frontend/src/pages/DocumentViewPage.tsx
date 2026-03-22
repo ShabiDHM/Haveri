@@ -1,6 +1,6 @@
 // FILE: src/pages/DocumentViewPage.tsx
-// PHOENIX PROTOCOL - MOBILE OPTIMIZATION V3.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - MOBILE OPTIMIZATION V4.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
@@ -80,49 +80,49 @@ const DocumentViewPage: React.FC = () => {
     switch (s) {
       case 'READY':
       case 'COMPLETED':
-        return { color: 'bg-success-start text-inverse', icon: <Zap size={16} />, label: t('documentView.statusReady') };
+        return { color: 'bg-success-start/10 text-success-start border border-success-start/30', icon: <Zap size={14} />, label: t('documentView.statusReady') };
       case 'PENDING':
-        return { color: 'bg-warning-start text-inverse', icon: <Clock size={16} />, label: t('documentView.statusPending') };
+        return { color: 'bg-warning-start/10 text-warning-start border border-warning-start/30', icon: <Clock size={14} />, label: t('documentView.statusPending') };
       case 'FAILED':
-        return { color: 'bg-danger text-inverse', icon: <Zap size={16} />, label: t('documentView.statusFailed') };
+        return { color: 'bg-danger-start/10 text-danger-start border border-danger-start/30', icon: <Zap size={14} />, label: t('documentView.statusFailed') };
       default:
-        return { color: 'bg-text-muted text-inverse', icon: <FileText size={16} />, label: status };
+        return { color: 'bg-text-muted/10 text-text-muted border border-border-main', icon: <FileText size={14} />, label: status };
     }
   };
 
-  if (isLoading) return <div className="text-center py-10 text-text-primary">{t('loading')}...</div>;
-  if (error || !docDetails) return <div className="text-danger text-center py-10">{error || t('documentView.notFound')}</div>;
+  if (isLoading) return <div className="flex justify-center h-96 items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+  if (error || !docDetails) return <div className="text-danger-start text-center py-10 glass-panel p-6">{error || t('documentView.notFound')}</div>;
 
   const statusInfo = getStatusInfo(docDetails.status);
   const isProcessed = docDetails.status.toUpperCase() === 'READY' || docDetails.status.toUpperCase() === 'COMPLETED';
 
   return (
     <motion.div 
-        className="space-y-6 p-4 sm:p-6 h-full overflow-y-auto" 
+        className="glass-panel p-6 md:p-8 space-y-6 h-full overflow-y-auto" 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         transition={{ duration: 0.3 }}
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border-strong pb-4 gap-4 sm:gap-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border-main pb-4 gap-4 sm:gap-0">
         <div className="flex flex-col w-full sm:w-auto">
             <Link to={`/case/${caseId}`} className="text-sm text-primary hover:text-primary-hover transition-colors mb-2 flex items-center space-x-2">
               <ArrowLeft size={16} /> <span>{t('documentView.backToCase')}</span>
             </Link>
             <h1 className="text-2xl sm:text-3xl font-bold text-text-primary flex items-center space-x-3 break-all">
-              <FileText className="flex-shrink-0 h-6 w-6 sm:h-8 sm:w-8" /> 
+              <FileText className="flex-shrink-0 h-6 w-6 sm:h-8 sm:w-8 text-primary" /> 
               <span className="truncate">{docDetails.file_name}</span>
             </h1>
         </div>
         
         <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
-            <span className={`text-xs sm:text-sm font-semibold px-3 py-1 rounded-full flex items-center space-x-1 ${statusInfo.color}`}>
+            <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full flex items-center space-x-1.5 ${statusInfo.color}`}>
               {statusInfo.icon} <span>{statusInfo.label}</span>
             </span>
             <motion.button 
                 onClick={handleDownload}
                 disabled={isDownloading}
-                className="btn-primary py-2 px-4 flex items-center justify-center"
+                className="btn-primary py-2.5 px-5 flex items-center justify-center rounded-xl"
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 title={t('documentView.exportPdfTooltip')}
             >
@@ -136,17 +136,26 @@ const DocumentViewPage: React.FC = () => {
         {/* Sidebar: Details & Summary */}
         <div className="col-span-1 space-y-6">
             <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-text-primary">{t('documentView.details')}</h3>
-                <div className="bg-surface p-4 rounded-xl space-y-2 border border-border-strong">
-                    <p className="text-sm text-text-secondary break-words"><strong>{t('documentView.fileName')}:</strong> <span className="text-text-primary">{docDetails.file_name}</span></p>
-                    <p className="text-sm text-text-secondary"><strong>{t('documentView.uploadedAt')}:</strong> <span className="text-text-primary">{moment(docDetails.created_at).format('YYYY-MM-DD HH:mm')}</span></p>
-                    <p className="text-sm text-text-secondary"><strong>{t('documentView.fileType')}:</strong> <span className="text-text-primary">{docDetails.mime_type}</span></p>
+                <h3 className="text-lg font-bold text-text-primary tracking-tight">{t('documentView.details')}</h3>
+                <div className="bg-surface p-4 rounded-xl space-y-2 border border-border-main">
+                    <p className="text-sm text-text-secondary break-words">
+                        <strong className="text-[10px] font-black uppercase tracking-widest text-text-muted inline-block w-24">{t('documentView.fileName')}:</strong> 
+                        <span className="text-text-primary ml-2">{docDetails.file_name}</span>
+                    </p>
+                    <p className="text-sm text-text-secondary">
+                        <strong className="text-[10px] font-black uppercase tracking-widest text-text-muted inline-block w-24">{t('documentView.uploadedAt')}:</strong> 
+                        <span className="text-text-primary ml-2">{moment(docDetails.created_at).format('YYYY-MM-DD HH:mm')}</span>
+                    </p>
+                    <p className="text-sm text-text-secondary">
+                        <strong className="text-[10px] font-black uppercase tracking-widest text-text-muted inline-block w-24">{t('documentView.fileType')}:</strong> 
+                        <span className="text-text-primary ml-2">{docDetails.mime_type}</span>
+                    </p>
                 </div>
             </div>
             
             <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-text-primary">{t('documentView.summary')}</h3>
-                <div className="bg-surface p-4 rounded-xl min-h-[150px] text-text-primary text-sm sm:text-base border border-border-strong">
+                <h3 className="text-lg font-bold text-text-primary tracking-tight">{t('documentView.summary')}</h3>
+                <div className="bg-surface p-4 rounded-xl min-h-[150px] text-text-primary text-sm sm:text-base border border-border-main">
                     {isProcessed && docDetails.summary ? (
                         <span className="italic">{docDetails.summary}</span>
                     ) : (
@@ -160,8 +169,8 @@ const DocumentViewPage: React.FC = () => {
 
         {/* Content Area */}
         <div className="col-span-1 lg:col-span-2 space-y-2">
-            <h3 className="text-lg font-semibold text-text-primary">{t('documentView.extractedContent')}</h3>
-            <div className="bg-surface p-4 rounded-xl h-[50vh] sm:h-[70vh] overflow-y-auto text-text-primary whitespace-pre-wrap font-mono text-xs sm:text-sm custom-scrollbar border border-border-strong">
+            <h3 className="text-lg font-bold text-text-primary tracking-tight">{t('documentView.extractedContent')}</h3>
+            <div className="bg-surface p-4 rounded-xl h-[50vh] sm:h-[70vh] overflow-y-auto text-text-primary whitespace-pre-wrap font-mono text-xs sm:text-sm custom-scrollbar border border-border-main">
                 {content ? content : (
                     <div className="text-center text-text-muted py-10">
                         {isProcessed ? t('documentView.noContentFound') : t('documentView.contentProcessing')}

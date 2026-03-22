@@ -1,8 +1,6 @@
 // FILE: src/components/business/modals/ClientImportModal.tsx
-// PHOENIX PROTOCOL - CLIENT IMPORT V3.0 (UNIFIED ADMIN AESTHETIC)
-// 1. CAPABILITY: Enables bulk import of Clients and Suppliers via CSV.
-// 2. UX: Consistent design with Inventory Import for seamless user experience.
-// 3. UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - CLIENT IMPORT V4.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -42,11 +40,11 @@ export const ClientImportModal: React.FC<ClientImportModalProps> = ({ isOpen, on
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-            <div className="bg-glass backdrop-blur-xl border border-success-start/20 rounded-3xl w-full max-w-md p-6 shadow-xl">
+            <div className="glass-panel w-full max-w-md p-6 shadow-xl">
                 
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-success-start/10 to-primary/10 border border-border-strong mb-4 shadow-sm">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-success-start/10 to-primary/10 border border-border-main mb-4 shadow-sm">
                         <Users className="w-8 h-8 text-success-start" />
                     </div>
                     <h3 className="text-2xl font-bold text-text-primary mb-2">{t('clients.importTitle', 'Importo Klientët & Furnitorët')}</h3>
@@ -56,14 +54,14 @@ export const ClientImportModal: React.FC<ClientImportModalProps> = ({ isOpen, on
                 </div>
 
                 {/* Instructions Box */}
-                <div className="bg-primary/10 rounded-xl p-4 border border-primary/20 mb-6 text-left">
+                <div className="bg-primary/10 rounded-xl p-4 border border-primary-start/30 mb-6 text-left">
                     <div className="flex items-center gap-2 mb-3">
                         <Info size={14} className="text-primary" />
-                        <span className="text-[10px] uppercase font-bold text-primary tracking-wider">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">
                             {t('inventory.import.requiredStructure', 'Struktura e Kërkuar (CSV)')}
                         </span>
                     </div>
-                    <code className="text-xs font-mono text-text-secondary break-words block leading-relaxed bg-surface p-3 rounded-lg border border-border-strong">
+                    <code className="text-xs font-mono text-text-secondary break-words block leading-relaxed bg-surface p-3 rounded-lg border border-border-main">
                         Emri, Email, Telefon, Adresa, NIPT, Tipi
                     </code>
                     <p className="text-[10px] text-text-muted mt-2 italic">
@@ -85,7 +83,7 @@ export const ClientImportModal: React.FC<ClientImportModalProps> = ({ isOpen, on
                         className={`w-full py-10 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-300 group
                             ${file 
                                 ? 'border-success-start bg-success-start/5' 
-                                : 'border-border-strong hover:border-success-start/50 hover:bg-hover'
+                                : 'border-border-main hover:border-success-start/30 hover:bg-hover'
                             }
                         `}
                     >
@@ -111,14 +109,14 @@ export const ClientImportModal: React.FC<ClientImportModalProps> = ({ isOpen, on
                 <div className="flex justify-between items-center gap-4">
                     <button 
                         onClick={onClose} 
-                        className="flex-1 px-4 py-3 rounded-xl text-text-muted hover:text-text-primary hover:bg-hover transition-all font-medium text-sm"
+                        className="flex-1 px-4 py-3 rounded-xl text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-all font-medium text-sm"
                     >
                         {t('general.cancel')}
                     </button>
                     <button 
                         onClick={handleImport} 
                         disabled={!file || loading} 
-                        className="flex-[2] px-6 py-3 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-[2] px-6 py-3 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
                     >
                         {loading ? <Loader2 size={18} className="animate-spin" /> : <Briefcase size={18} />}
                         {t('general.import', 'Importo Kontaktet')}

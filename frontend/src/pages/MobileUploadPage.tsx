@@ -1,6 +1,6 @@
 // FILE: frontend/src/pages/MobileUploadPage.tsx
-// PHOENIX PROTOCOL - MOBILE UPLOAD V3.0 (UNIFIED ADMIN AESTHETIC)
-// UPDATED: Uses unified border styling
+// PHOENIX PROTOCOL - MOBILE UPLOAD V4.0 (DESIGN SYSTEM STANDARDIZED)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
@@ -60,9 +60,9 @@ const MobileUploadPage: React.FC = () => {
             case 'error':
                 return (
                     <>
-                        <AlertTriangle className="w-16 h-16 text-danger" />
+                        <AlertTriangle className="w-16 h-16 text-danger-start" />
                         <h1 className="text-2xl font-bold mt-4 text-text-primary">Gabim</h1>
-                        <p className="text-danger">{errorMsg}</p>
+                        <p className="text-danger-start">{errorMsg}</p>
                     </>
                 );
             default: // idle
@@ -73,7 +73,7 @@ const MobileUploadPage: React.FC = () => {
                         <p className="text-text-secondary max-w-sm text-center mb-8">Zgjidhni një skedar ose imazh për ta dërguar në kompjuterin tuaj.</p>
                         <button 
                             onClick={() => fileInputRef.current?.click()}
-                            className="btn-primary w-full max-w-xs px-8 py-4 flex items-center justify-center gap-2"
+                            className="btn-primary w-full max-w-xs px-8 py-4 flex items-center justify-center gap-2 rounded-xl"
                         >
                             <FileUp size={18} /> Zgjidh Skedarin
                         </button>
@@ -83,8 +83,8 @@ const MobileUploadPage: React.FC = () => {
     };
 
     return (
-        <div className="bg-canvas text-text-primary min-h-screen flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md bg-glass backdrop-blur-xl rounded-3xl p-8 flex flex-col items-center justify-center text-center border border-border-strong shadow-lg">
+        <div className="bg-base text-text-primary min-h-screen flex flex-col items-center justify-center p-4">
+            <div className="w-full max-w-md glass-panel p-8 flex flex-col items-center justify-center text-center">
                 {renderContent()}
             </div>
             <input 
