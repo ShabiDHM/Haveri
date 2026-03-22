@@ -1,6 +1,5 @@
 /* FILE: src/index.css */
-/* PHOENIX PROTOCOL - V12.2 (LEGAL DRAFTING INTEGRATION) */
-/* ADDED: RGB variables for status colors and surface */
+/* PHOENIX PROTOCOL - V12.3 (VISIBLE BORDERS FOR LEGAL DRAFTING) */
 
 @tailwind base;
 @tailwind components;
@@ -36,11 +35,11 @@
     --status-danger: #DC2626;
     --status-danger-rgb: 220, 38, 38;
 
+    /* BORDERS - Enhanced for visibility */
     --border-main: #CBD5E1;
-    --border-strong: #94A3B8;
-    --shadow-xs: 0 1px 2px rgba(15, 22, 35, 0.05);
+    --border-strong: #64748B;
     
-    /* Additional shadows for legal drafting */
+    --shadow-xs: 0 1px 2px rgba(15, 22, 35, 0.05);
     --shadow-sm: 0 2px 4px rgba(15, 22, 35, 0.06), 0 4px 12px rgba(15, 22, 35, 0.08);
     --shadow-md: 0 4px 8px rgba(15, 22, 35, 0.08), 0 8px 24px rgba(15, 22, 35, 0.12), 0 0 0 1px rgba(99, 102, 241, 0.1);
     --shadow-lg: 0 8px 16px rgba(15, 22, 35, 0.1), 0 20px 48px rgba(15, 22, 35, 0.15), 0 0 0 1px rgba(15, 22, 35, 0.08);
@@ -72,10 +71,10 @@
     --status-danger: #F87171;
     --status-danger-rgb: 248, 113, 113;
 
-    --border-main: rgba(255, 255, 255, 0.15);
-    --border-strong: rgba(255, 255, 255, 0.25);
+    /* BORDERS - Enhanced for visibility in dark mode */
+    --border-main: rgba(255, 255, 255, 0.25);
+    --border-strong: rgba(255, 255, 255, 0.4);
     
-    /* Additional shadows for legal drafting */
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(129, 140, 248, 0.2);
     --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5), 0 20px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12);
@@ -93,6 +92,14 @@
     background-color: var(--bg-card);
     border-radius: 1rem;
     border: 1px solid var(--border-main);
+  }
+
+  .glass-panel {
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--border-strong);
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow-md);
   }
 
   .glass-input {
@@ -143,7 +150,7 @@ div[class*="rounded-2xl"], div[class*="rounded-3xl"] {
 .text-warning-start { color: var(--status-warning) !important; }
 .text-primary { color: var(--accent-primary) !important; }
 
-/* Additional utility classes for legal drafting */
+/* Utility classes */
 .bg-surface {
   background-color: var(--bg-surface);
 }
