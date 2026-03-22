@@ -57,3 +57,19 @@ export interface GraphData { nodes: GraphNode[]; links: GraphLink[]; }
 export interface Anomaly { type: string; severity: 'low' | 'medium' | 'high'; description: string; row_id: number; }
 export interface ChartItem { label: string; value: number; }
 export interface AnalysisResult { ai_summary: { summary: string; primary_risk: string; key_recommendation: string; }; stats: { total_sum: number; transaction_count: number; average: number; }; chart_data: ChartItem[]; anomalies: Anomaly[]; }
+
+// ========== LEGAL DRAFTING TYPES ==========
+
+export interface Case {
+    id: string;
+    title?: string;
+    case_number: string;
+    description?: string;
+    client?: {
+        id: string;
+        name: string;
+    };
+    status?: string;
+    created_at?: string;
+    updated_at?: string;
+}

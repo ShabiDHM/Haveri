@@ -1,6 +1,6 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V13.4 (FISCAL CONTEXT ALIGNMENT)
-// 1. FIXED: getAnalyticsDashboard now supports 'year' param to resolve 2026 data blindness.
+// PHOENIX PROTOCOL - API V13.5 (LEGAL DRAFTING INTEGRATION)
+// 1. ADDED: getCases() and draftLegalDocumentStream() for legal drafting module.
 // 2. INTEGRITY: Preserved 100% of existing interceptors, methods, and configurations.
 // 3. STATUS: API Service Synchronized.
 
@@ -17,7 +17,8 @@ import type {
     AnalysisResult,
     Partner,
     RestockPrediction,
-    SalesTrendAnalysis
+    SalesTrendAnalysis,
+    Case
 } from '../data/types';
 
 export interface DailyBriefingResponse { id: string; content: string; created_at: string; tasks_summary?: string; }
@@ -259,6 +260,59 @@ class ApiService {
     public async getGraphData(mode: string = 'global'): Promise<GraphData> {
         try { const response = await this.axiosInstance.get<GraphData>('/graph/visualize', { params: { mode } }); return response.data || { nodes: [], links: [] };
         } catch (error) { console.error("Failed to fetch graph data:", error); return { nodes: [], links: [] }; }
+    }
+
+    // ========== LEGAL DRAFTING ==========
+    
+    public async getCases(): Promise<Case[]> {
+        try {
+            const response = await this.axiosInstance.get<any>('/cases');
+            return Array.isArray(response.data) ? response.data : (response.data?.cases || []);
+        } catch (error) {
+            console.warn("Failed to fetch cases:", error);
+            return [];
+        }
+    }
+    
+    public async draftLegalDocumentStream(params: {
+        user_prompt: string;
+        document_type: string;
+        case_id?: string;
+        use_library?: boolean;
+    }): Promise<AsyncIterable<string>> {
+        const token = tokenManager.get();
+        if (!token) await this.refreshToken();
+        
+        const response = await fetch(`${API_V1_URL}/drafting/stream`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenManager.get()}`
+            },
+            body: JSON.stringify(params)
+        });
+        
+        if (!response.ok || !response.body) {
+            throw new Error("Failed to start drafting stream");
+        }
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        return {
+            [Symbol.asyncIterator]() {
+                return {
+                    async next() {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            return { done: true, value: undefined };
+                        }
+                        const chunk = decoder.decode(value, { stream: true });
+                        return { done: false, value: chunk };
+                    }
+                };
+            }
+        } as AsyncIterable<string>;
     }
 }
 
