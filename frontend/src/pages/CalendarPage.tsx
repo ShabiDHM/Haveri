@@ -1,5 +1,6 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR V5.1 (UNIFIED UI & LAYOUT FIXES)
+// PHOENIX PROTOCOL - BUSINESS KUJDESTARI UI V5.0 (UNIFIED ADMIN AESTHETIC)
+// UPDATED: Modal color consistency + proper scrolling
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -15,7 +16,7 @@ import { sq, enUS } from 'date-fns/locale';
 import {
   Calendar as CalendarIcon, Users, AlertCircle, Plus, ChevronLeft, ChevronRight,
   Search, Bell, ChevronDown, Eye, EyeOff, ShieldAlert, X,
-  DollarSign, CheckSquare, Handshake, Info, Zap, CalendarX
+  DollarSign, CheckSquare, Handshake, Info, Zap, AlertTriangle
 } from 'lucide-react';
 import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -86,43 +87,121 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existin
     const formElementClasses = "glass-input w-full";
     
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
-            <div className="bg-glass backdrop-blur-xl border border-border-strong rounded-3xl p-8 w-full max-w-lg max-h-[90vh] flex flex-col shadow-xl">
-                <div className="flex justify-between items-center mb-6 flex-shrink-0"><h2 className="text-2xl font-bold text-text-primary">{t('calendar.createModal.title')}</h2><button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors"><X size={24} /></button></div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+            <div className="bg-card border border-border-strong rounded-3xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
+                {/* Header - Fixed */}
+                <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0 border-b border-border-strong">
+                    <h2 className="text-2xl font-bold text-text-primary">{t('calendar.createModal.title')}</h2>
+                    <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors p-2 hover:bg-hover rounded-xl">
+                        <X size={24} />
+                    </button>
+                </div>
                 
-                {isSmartType && (
-                    <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 mb-4 flex items-center gap-3">
-                        <Zap className="text-primary h-5 w-5 animate-pulse" />
-                        <span className="text-primary text-xs font-bold uppercase tracking-tight">Kujdestari Active: Auto-adjusts for Kosovo holidays.</span>
-                    </div>
-                )}
-
-                {conflictWarning && !isSmartType && <div className="bg-warning-start/10 border border-warning-start/20 rounded-xl p-3 mb-4 flex items-center gap-3"><ShieldAlert className="text-warning-start h-5 w-5" /><span className="text-warning-start text-xs font-bold">{conflictWarning}</span></div>}
-                
-                <form onSubmit={handleSubmit} className="flex flex-col flex-grow overflow-hidden gap-5">
-                    <div className="overflow-y-auto pr-2 space-y-5 flex-grow custom-scrollbar">
-                        <div><label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.eventTitle')}</label><input type="text" required value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} className={formElementClasses} /></div>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                            <div><label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.eventType')}</label><select value={formData.event_type} onChange={(e) => setFormData(prev => ({ ...prev, event_type: e.target.value as CalendarEvent['event_type'] }))} className={formElementClasses}>{Object.keys(t('calendar.types', { returnObjects: true })).map(key => <option key={key} value={key}>{t(`calendar.types.${key}`)}</option>)}</select></div>
-                            <div><label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.priority')}</label><select value={formData.priority} onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as EventPriority }))} className={formElementClasses}><option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option><option value="CRITICAL">CRITICAL</option></select></div>
+                {/* Content - Scrollable */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+                    {isSmartType && (
+                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-3">
+                            <Zap className="text-primary h-5 w-5 animate-pulse" />
+                            <span className="text-primary text-xs font-bold uppercase tracking-tight">Kujdestari Active: Auto-adjusts for Kosovo holidays.</span>
                         </div>
-                        
-                        <div><label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.eventDate')}</label><DatePicker selected={eventDate} onChange={(date: Date | null) => setEventDate(date)} locale={currentLocale} dateFormat="dd.MM.yyyy" placeholderText={t('calendar.createModal.dateTimePlaceholder')} className={formElementClasses} portalId="react-datepicker-portal" required /></div>
-                        
-                        <div><label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.relatedWorkspace')}</label><select value={formData.workspace_id} onChange={(e) => setFormData(prev => ({ ...prev, workspace_id: e.target.value }))} className={formElementClasses}><option value="">{t('calendar.noCaseRelated')}</option>{workspaces.map(w => <option key={w.id} value={w.id}>{w.title || w.workspace_name || w.workspace_number}</option>)}</select></div>
-                        
-                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center justify-between cursor-pointer" onClick={() => setIsPublic(!isPublic)}><div className="flex items-center gap-4"><div className={`p-2 rounded-lg ${isPublic ? 'bg-primary text-inverse' : 'bg-surface text-text-muted'}`}>{isPublic ? <Eye size={18} /> : <EyeOff size={18} />}</div><div><h4 className={`text-sm font-bold ${isPublic ? 'text-primary' : 'text-text-muted'}`}>{isPublic ? t('calendar.visibilityPublic') : t('calendar.visibilityPrivate')}</h4><p className="text-xs text-text-muted">{isPublic ? t('calendar.visibilityPublicDesc') : t('calendar.visibilityPrivateDesc')}</p></div></div><div className={`w-12 h-6 rounded-full relative transition-colors ${isPublic ? 'bg-primary' : 'bg-border-strong'}`}><div className={`absolute top-1 left-1 w-4 h-4 bg-inverse rounded-full transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-0'}`} /></div></div>
-                        
-                        {!showAdvanced && <div className="pt-2 text-center"><button type="button" onClick={() => setShowAdvanced(true)} className="text-sm text-primary hover:text-primary-hover flex items-center justify-center mx-auto gap-1"><ChevronDown className="h-4 w-4" />{t('calendar.createModal.addDetails')}</button></div>}
-                        
-                        {showAdvanced && <div className="space-y-5 pt-4 border-t border-border-strong"><div><label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.description')}</label><textarea rows={3} value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} className={formElementClasses} /></div><div><label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.location')}</label><input type="text" value={formData.location} onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))} className={formElementClasses} /></div><div><label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.attendees')}</label><input type="text" value={formData.attendees} onChange={(e) => setFormData(prev => ({ ...prev, attendees: e.target.value }))} className={formElementClasses} /></div></div>}
+                    )}
+
+                    {conflictWarning && !isSmartType && (
+                        <div className="bg-warning-start/10 border border-warning-start/20 rounded-xl p-3 flex items-center gap-3">
+                            <ShieldAlert className="text-warning-start h-5 w-5" />
+                            <span className="text-warning-start text-xs font-bold">{conflictWarning}</span>
+                        </div>
+                    )}
+                    
+                    <div>
+                        <label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.eventTitle')}</label>
+                        <input type="text" required value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} className={formElementClasses} />
                     </div>
-                    <div className="flex space-x-4 pt-6 mt-auto flex-shrink-0 border-t border-border-strong">
-                        <button type="button" onClick={onClose} className="flex-1 px-4 py-3 rounded-xl bg-surface text-text-secondary hover:bg-hover transition font-medium">{t('calendar.createModal.cancel')}</button>
-                        <button type="submit" disabled={isCreating} className="flex-1 px-4 py-3 btn-primary disabled:opacity-50">{isCreating ? t('calendar.createModal.creating') : t('calendar.createModal.create')}</button>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                            <label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.eventType')}</label>
+                            <select value={formData.event_type} onChange={(e) => setFormData(prev => ({ ...prev, event_type: e.target.value as CalendarEvent['event_type'] }))} className={formElementClasses}>
+                                {Object.keys(t('calendar.types', { returnObjects: true })).map(key => <option key={key} value={key}>{t(`calendar.types.${key}`)}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.priority')}</label>
+                            <select value={formData.priority} onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as EventPriority }))} className={formElementClasses}>
+                                <option value="LOW">LOW</option>
+                                <option value="MEDIUM">MEDIUM</option>
+                                <option value="HIGH">HIGH</option>
+                                <option value="CRITICAL">CRITICAL</option>
+                            </select>
+                        </div>
                     </div>
-                </form>
+                    
+                    <div>
+                        <label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.eventDate')}</label>
+                        <DatePicker selected={eventDate} onChange={(date: Date | null) => setEventDate(date)} locale={currentLocale} dateFormat="dd.MM.yyyy" placeholderText={t('calendar.createModal.dateTimePlaceholder')} className={formElementClasses} portalId="react-datepicker-portal" required />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.relatedWorkspace')}</label>
+                        <select value={formData.workspace_id} onChange={(e) => setFormData(prev => ({ ...prev, workspace_id: e.target.value }))} className={formElementClasses}>
+                            <option value="">{t('calendar.noCaseRelated')}</option>
+                            {workspaces.map(w => <option key={w.id} value={w.id}>{w.title || w.workspace_name || w.workspace_number}</option>)}
+                        </select>
+                    </div>
+                    
+                    <div className="bg-surface/50 border border-border-strong rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-hover transition-colors" onClick={() => setIsPublic(!isPublic)}>
+                        <div className="flex items-center gap-4">
+                            <div className={`p-2 rounded-lg ${isPublic ? 'bg-primary text-inverse' : 'bg-surface text-text-muted'}`}>
+                                {isPublic ? <Eye size={18} /> : <EyeOff size={18} />}
+                            </div>
+                            <div>
+                                <h4 className={`text-sm font-bold ${isPublic ? 'text-primary' : 'text-text-muted'}`}>
+                                    {isPublic ? t('calendar.visibilityPublic') : t('calendar.visibilityPrivate')}
+                                </h4>
+                                <p className="text-xs text-text-muted">{isPublic ? t('calendar.visibilityPublicDesc') : t('calendar.visibilityPrivateDesc')}</p>
+                            </div>
+                        </div>
+                        <div className={`w-12 h-6 rounded-full relative transition-colors ${isPublic ? 'bg-primary' : 'bg-border-strong'}`}>
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-inverse rounded-full transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-0'}`} />
+                        </div>
+                    </div>
+                    
+                    {!showAdvanced && (
+                        <div className="pt-2 text-center">
+                            <button type="button" onClick={() => setShowAdvanced(true)} className="text-sm text-primary hover:text-primary-hover flex items-center justify-center mx-auto gap-1">
+                                <ChevronDown className="h-4 w-4" />
+                                {t('calendar.createModal.addDetails')}
+                            </button>
+                        </div>
+                    )}
+                    
+                    {showAdvanced && (
+                        <div className="space-y-5 pt-4 border-t border-border-strong">
+                            <div>
+                                <label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.description')}</label>
+                                <textarea rows={3} value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} className={formElementClasses} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.location')}</label>
+                                <input type="text" value={formData.location} onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))} className={formElementClasses} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-text-muted uppercase mb-2">{t('calendar.createModal.attendees')}</label>
+                                <input type="text" value={formData.attendees} onChange={(e) => setFormData(prev => ({ ...prev, attendees: e.target.value }))} className={formElementClasses} />
+                            </div>
+                        </div>
+                    )}
+                </div>
+                
+                {/* Footer - Fixed */}
+                <div className="flex space-x-4 p-6 pt-4 flex-shrink-0 border-t border-border-strong">
+                    <button type="button" onClick={onClose} className="flex-1 px-4 py-3 rounded-xl bg-surface text-text-secondary hover:bg-hover transition font-medium">
+                        {t('calendar.createModal.cancel')}
+                    </button>
+                    <button type="submit" disabled={isCreating} onClick={handleSubmit} className="flex-1 px-4 py-3 btn-primary rounded-xl disabled:opacity-50">
+                        {isCreating ? t('calendar.createModal.creating') : t('calendar.createModal.create')}
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -292,28 +371,20 @@ const CalendarPage: React.FC = () => {
             <div id="react-datepicker-portal"></div>
             <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-8">
-                    <div>
-                        <h1 className="text-4xl font-black text-text-primary flex items-center gap-4">
-                            <CalendarIcon className="text-primary h-10 w-10" />
-                            <span className="capitalize">{format(currentDate, 'LLLL yyyy', { locale: currentLocale })}</span>
-                        </h1>
-                        <p className="text-text-secondary mt-2 ml-14">{t('calendar.pageSubtitle')}</p>
-                    </div>
-                    {/* FIXED: Added flex-wrap and shrink-0 to prevent button crowding/bleeding */}
+                    <div><h1 className="text-4xl font-black text-text-primary flex items-center gap-4"><CalendarIcon className="text-primary h-10 w-10" /><span className="capitalize">{format(currentDate, 'LLLL yyyy', { locale: currentLocale })}</span></h1><p className="text-text-secondary mt-2 ml-14">{t('calendar.pageSubtitle')}</p></div>
                     <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
-                        <div className="flex items-center bg-surface border border-border-strong rounded-2xl p-2 shrink-0">
+                        <div className="flex items-center bg-surface border border-border-strong rounded-2xl p-2">
                             <button onClick={() => navigateMonth('prev')} className="p-3 hover:bg-hover rounded-xl transition-colors"><ChevronLeft size={20} /></button>
-                            <button onClick={() => setCurrentDate(new Date())} className="px-6 py-2 text-sm font-bold hover:bg-hover rounded-xl transition-colors">{t('calendar.today')}</button>
+                            <button onClick={() => setCurrentDate(new Date())} className="px-6 py-2 text-sm font-bold hover:bg-hover rounded-xl transition-colors whitespace-nowrap">{t('calendar.today')}</button>
                             <button onClick={() => navigateMonth('next')} className="p-3 hover:bg-hover rounded-xl transition-colors"><ChevronRight size={20} /></button>
                         </div>
-                        <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary flex items-center gap-3 shrink-0 whitespace-nowrap">
-                            <Plus size={20} /> <span className="hidden sm:inline">{t('calendar.newEvent')}</span>
+                        <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary flex items-center gap-3 px-5 py-3 rounded-xl whitespace-nowrap flex-shrink-0">
+                            <Plus size={20} /> 
+                            <span>{t('calendar.newEvent')}</span>
                         </button>
                     </div>
                 </div>
-
                 {error && <div className="bg-danger/10 border border-danger/20 rounded-xl p-4 mb-6 flex items-center space-x-3"><AlertCircle className="h-5 w-5 text-danger" /><span className="text-danger text-sm">{error}</span></div>}
-                
                 <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
                     <div className="xl:col-span-3 space-y-6">
                         <div className="flex flex-col sm:flex-row gap-4 p-4 bg-surface border border-border-strong rounded-3xl">
@@ -327,20 +398,21 @@ const CalendarPage: React.FC = () => {
                         {viewMode === 'month' ? renderMonthView() : renderListView()}
                     </div>
                     <div className="xl:col-span-1 space-y-8">
-                        
-                        {/* FIXED: Applied card-panel and border-top-accent to Alarmet card */}
+                        {/* Alarmet e Ardhshme - Yellow/Warning accent border + Empty State */}
                         <div className="card-panel p-6 relative overflow-hidden border-top-accent border-t-warning">
                             <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><Bell size={80} /></div>
-                            <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-3"><Bell className="text-warning-start" size={20} />{t('calendar.upcomingAlerts')}</h3>
-                            
+                            <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-3">
+                                <Bell className="text-warning-start" size={20} />
+                                {t('calendar.upcomingAlerts')}
+                            </h3>
                             <div className="space-y-4">
                                 {upcomingAlerts.length === 0 ? (
-                                    /* FIXED: Added styled empty state */
                                     <div className="flex flex-col items-center justify-center py-8 text-center">
-                                        <div className="w-16 h-16 rounded-full bg-surface border border-border-strong flex items-center justify-center mb-4">
-                                            <CalendarX size={28} className="text-text-muted" />
+                                        <div className="w-16 h-16 rounded-full bg-surface flex items-center justify-center mb-4">
+                                            <AlertTriangle size={28} className="text-text-muted" />
                                         </div>
-                                        <p className="text-text-muted text-sm font-medium">{t('calendar.noUpcomingEvents', "S'ka alarme të ardhshme.")}</p>
+                                        <p className="text-text-muted text-sm font-medium">{t('calendar.noUpcomingEvents')}</p>
+                                        <p className="text-text-muted/60 text-xs mt-1">Asnjë pagesë ose taksë në 7 ditët e ardhshme</p>
                                     </div>
                                 ) : (
                                     upcomingAlerts.map(ev => { 
@@ -350,16 +422,21 @@ const CalendarPage: React.FC = () => {
                                                 <div className={`mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${style.indicator}`} />
                                                 <div className="min-w-0">
                                                     <h4 className="text-sm font-bold text-text-primary group-hover:text-primary transition-colors truncate">{ev.title}</h4>
-                                                    <p className="text-xs text-text-muted mt-1 flex items-center gap-3">{format(parseISO(ev.start_date), 'dd MMM')} <span className={`text-[10px] px-2 py-0.5 rounded-md border ${style.border} ${style.bg} ${style.text} uppercase font-medium`}>{t(`calendar.types.${ev.event_type}`, ev.event_type)}</span></p>
+                                                    <p className="text-xs text-text-muted mt-1 flex items-center gap-3">
+                                                        {format(parseISO(ev.start_date), 'dd MMM')} 
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded-md border ${style.border} ${style.bg} ${style.text} uppercase font-medium`}>
+                                                            {t(`calendar.types.${ev.event_type}`, ev.event_type)}
+                                                        </span>
+                                                    </p>
                                                 </div>
                                             </button>
-                                        )
+                                        );
                                     })
                                 )}
                             </div>
                         </div>
 
-                        {/* FIXED: Applied card-panel and border-top-accent to Legjenda card */}
+                        {/* Legjenda - Primary/Blue accent border */}
                         <div className="card-panel p-6 border-top-accent border-t-primary">
                             <h3 className="text-xl font-bold text-text-primary mb-6">{t('calendar.eventTypes')}</h3>
                             <div className="space-y-3">
@@ -367,11 +444,15 @@ const CalendarPage: React.FC = () => {
                                     const style = getEventStyle(key); 
                                     return (
                                         <div key={key} className="flex items-center gap-4 p-3 rounded-xl hover:bg-hover transition-colors cursor-pointer" onClick={() => setFilterType(filterType === key ? 'ALL' : key)}>
-                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${style.border} ${style.bg}`}>{style.icon}</div>
-                                            <span className={`text-base font-bold ${filterType === key ? 'text-text-primary' : 'text-text-muted'}`}>{t(`calendar.types.${key}`)}</span>
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${style.border} ${style.bg}`}>
+                                                {style.icon}
+                                            </div>
+                                            <span className={`text-base font-bold ${filterType === key ? 'text-text-primary' : 'text-text-muted'}`}>
+                                                {t(`calendar.types.${key}`)}
+                                            </span>
                                             {filterType === key && <div className="ml-auto w-2 h-2 rounded-full bg-primary animate-pulse" />}
                                         </div>
-                                    )
+                                    );
                                 })}
                             </div>
                         </div>
