@@ -1,6 +1,5 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - WORKSPACE HUB V23.0 (CLEANED UNUSED HOOKS)
-// STATUS: CLEAN - VERIFIED - FULL FILE REPLACEMENT
+// PHOENIX PROTOCOL - WORKSPACE HUB V23.1 (DEBUG LOGGING ADDED)
 
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -20,22 +19,40 @@ interface BusinessPageProps {
 
 const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
   const { workspace, isLoading: isAuthLoading } = useAuth();
+  
+  // DEBUG: Log which view is being rendered
+  console.log("BusinessPage rendering with view:", view);
 
   const renderActiveTab = () => {
     if (isAuthLoading) return null;
 
+    console.log("Rendering tab for view:", view);
+
     switch (view) {
-      case 'briefing': return <DailyBriefingTab />;
-      case 'finance': return <FinanceTab />;
-      case 'inventory': return <InventoryTab />;
-      
+      case 'briefing': 
+        console.log("Rendering DailyBriefingTab (Zyra Ligjore)");
+        return <DailyBriefingTab />;
+      case 'finance': 
+        console.log("Rendering FinanceTab");
+        return <FinanceTab />;
+      case 'inventory': 
+        console.log("Rendering InventoryTab");
+        return <InventoryTab />;
       case 'archive': 
+        console.log("Rendering ArchiveTab");
         return <ArchiveTab key={workspace?.id || 'root'} workspaceId={workspace?.id} />;
-        
-      case 'insights': return <InsightsTab />;
-      case 'profile': return <ProfileTab />;
-      case 'inbox': return <InboxTab />;
-      default: return <DailyBriefingTab />;
+      case 'insights': 
+        console.log("Rendering InsightsTab");
+        return <InsightsTab />;
+      case 'profile': 
+        console.log("Rendering ProfileTab");
+        return <ProfileTab />;
+      case 'inbox': 
+        console.log("Rendering InboxTab");
+        return <InboxTab />;
+      default: 
+        console.log("Default - Rendering DailyBriefingTab");
+        return <DailyBriefingTab />;
     }
   };
 

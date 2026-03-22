@@ -5,6 +5,8 @@ import React from 'react';
 import DraftingPage from '../../pages/DraftingPage';
 
 export const DailyBriefingTab: React.FC = () => {
+    console.log("DailyBriefingTab rendering - Zyra Ligjore is rendering DraftingPage");
+    
     return (
         <div className="w-full h-full">
             <DraftingPage />
