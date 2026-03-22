@@ -1,4 +1,4 @@
-// FILE: src/pages/DraftingPage.tsx
+// FILE: src/pages/ DraftingPage.tsx
 // PHOENIX PROTOCOL - DRAFTING PAGE V7.2 (FIXED PROPS)
 
 import React, { useState, useEffect, useMemo } from 'react';
