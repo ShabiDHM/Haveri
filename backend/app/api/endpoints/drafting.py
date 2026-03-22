@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V1.0
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V1.1 (FIXED PREFIX)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -10,7 +10,8 @@ from app.services.drafting_service import DraftingService
 from app.api.endpoints.dependencies import get_current_user
 from app.models.user import UserInDB
 
-router = APIRouter(prefix="/drafting", tags=["drafting"])
+# Removed prefix="/drafting" to avoid duplication with main.py
+router = APIRouter(tags=["drafting"])
 
 class DraftRequest(BaseModel):
     user_prompt: str
