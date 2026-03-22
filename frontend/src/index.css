@@ -1,5 +1,6 @@
 /* FILE: src/index.css */
-/* PHOENIX PROTOCOL - V12.1 (FIXED ACCENT BORDER OVERRIDES) */
+/* PHOENIX PROTOCOL - V12.2 (LEGAL DRAFTING INTEGRATION) */
+/* ADDED: RGB variables for status colors and surface */
 
 @tailwind base;
 @tailwind components;
@@ -27,7 +28,7 @@
     --accent-hover: #4F52D9;
     --accent-primary-rgb: 99, 102, 241;
 
-    /* Status Colors */
+    /* Status Colors with RGB */
     --status-success: #059669;
     --status-success-rgb: 5, 150, 105;
     --status-warning: #D97706;
@@ -38,6 +39,12 @@
     --border-main: #CBD5E1;
     --border-strong: #94A3B8;
     --shadow-xs: 0 1px 2px rgba(15, 22, 35, 0.05);
+    
+    /* Additional shadows for legal drafting */
+    --shadow-sm: 0 2px 4px rgba(15, 22, 35, 0.06), 0 4px 12px rgba(15, 22, 35, 0.08);
+    --shadow-md: 0 4px 8px rgba(15, 22, 35, 0.08), 0 8px 24px rgba(15, 22, 35, 0.12), 0 0 0 1px rgba(99, 102, 241, 0.1);
+    --shadow-lg: 0 8px 16px rgba(15, 22, 35, 0.1), 0 20px 48px rgba(15, 22, 35, 0.15), 0 0 0 1px rgba(15, 22, 35, 0.08);
+    --shadow-xl: 0 16px 32px rgba(15, 22, 35, 0.12), 0 40px 80px rgba(15, 22, 35, 0.2), 0 0 0 1px rgba(15, 22, 35, 0.1);
   }
 
   .dark {
@@ -57,6 +64,7 @@
     --accent-primary: #818CF8;
     --accent-primary-rgb: 129, 140, 248;
 
+    /* Status Colors with RGB */
     --status-success: #10B981;
     --status-success-rgb: 16, 185, 129;
     --status-warning: #F59E0B;
@@ -66,6 +74,12 @@
 
     --border-main: rgba(255, 255, 255, 0.15);
     --border-strong: rgba(255, 255, 255, 0.25);
+    
+    /* Additional shadows for legal drafting */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(129, 140, 248, 0.2);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5), 0 20px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12);
+    --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.6), 0 40px 80px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.15);
   }
 
   body {
@@ -112,7 +126,7 @@ div[class*="rounded-2xl"], div[class*="rounded-3xl"] {
   border-color: var(--border-strong);
 }
 
-/* NEW: ACCENT BORDER UTILITIES */
+/* ACCENT BORDER UTILITIES */
 .border-top-accent {
   border-top-width: 4px !important;
   border-top-style: solid !important;
@@ -128,3 +142,45 @@ div[class*="rounded-2xl"], div[class*="rounded-3xl"] {
 .text-danger-start { color: var(--status-danger) !important; }
 .text-warning-start { color: var(--status-warning) !important; }
 .text-primary { color: var(--accent-primary) !important; }
+
+/* Additional utility classes for legal drafting */
+.bg-surface {
+  background-color: var(--bg-surface);
+}
+
+.bg-card {
+  background-color: var(--bg-card);
+}
+
+.bg-hover {
+  background-color: var(--bg-hover);
+}
+
+.border-border-strong {
+  border-color: var(--border-strong);
+}
+
+.border-border-main {
+  border-color: var(--border-main);
+}
+
+/* Shadow utilities */
+.shadow-lawyer-light {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+.shadow-xl {
+  box-shadow: var(--shadow-xl);
+}
