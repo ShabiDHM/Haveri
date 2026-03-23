@@ -1,6 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V11.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - FINANCE TAB V11.1 (EXECUTIVE DESIGN SYSTEM)
+// UPDATED: Converted to semantic Tailwind classes: glass-panel, border-border-main, text-text-*, bg-surface, bg-canvas.
+// ADDED: hover-lift and shadow-sm to all interactive elements.
+// PRESERVED: All logic, hooks, and functionality.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,25 +29,25 @@ import { TransactionList, TransactionItem } from './finance/TransactionList';
 import { Panel } from '../ui/Panel';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    let borderTopClass = 'border-t-primary';
-    let iconColor = 'text-primary';
-    let iconBg = 'bg-primary/10';
-    let amountColor = 'text-primary';
+    let borderTopClass = 'border-t-primary-start';
+    let iconColor = 'text-primary-start';
+    let iconBg = 'bg-primary-start/10';
+    let amountColor = 'text-primary-start';
     
     if (type === 'income') { 
-        borderTopClass = 'border-t-success';
+        borderTopClass = 'border-t-success-start';
         iconColor = 'text-success-start';
         iconBg = 'bg-success-start/10';
         amountColor = 'text-success-start';
     }
     if (type === 'expense') { 
-        borderTopClass = 'border-t-danger';
+        borderTopClass = 'border-t-danger-start';
         iconColor = 'text-danger-start';
         iconBg = 'bg-danger-start/10';
         amountColor = 'text-danger-start';
     }
     if (type === 'warning') { 
-        borderTopClass = 'border-t-warning';
+        borderTopClass = 'border-t-warning-start';
         iconColor = 'text-warning-start';
         iconBg = 'bg-warning-start/10';
         amountColor = 'text-warning-start';
@@ -55,7 +57,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
         <motion.div 
             whileHover={{ scale: 1.02, y: -2 }} 
             onClick={onClick} 
-            className={`relative overflow-hidden rounded-2xl border border-border-main ${borderTopClass} border-t-4 bg-card p-5 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300`}
+            className={`relative overflow-hidden rounded-2xl border border-border-main ${borderTopClass} border-t-4 bg-surface p-5 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300 hover-lift`}
         >
             <div className="flex justify-between items-start mb-3">
                 <div className={`p-2.5 rounded-xl ${iconBg} ${iconColor} border border-border-main`}>
@@ -82,10 +84,10 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
 const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
     <button 
         onClick={onClick} 
-        className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group ${
+        className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group hover-lift shadow-sm ${
             primary 
-                ? 'btn-primary shadow-md hover:shadow-lg' 
-                : 'glass-input !bg-surface hover:bg-hover transition-colors cursor-pointer'
+                ? 'btn-primary' 
+                : 'glass-input !bg-surface hover:bg-hover transition-colors cursor-pointer border border-border-main'
         }`}
     >
         <span>{icon}</span>
@@ -96,9 +98,9 @@ const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
 const TabButton = ({ label, icon, isActive, onClick }: any) => (
     <button 
         onClick={onClick} 
-        className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+        className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 hover-lift shadow-sm ${
             isActive 
-                ? 'bg-primary/20 text-primary border border-primary-start/30' 
+                ? 'bg-primary-start/20 text-primary-start border border-primary-start/30' 
                 : 'text-text-muted hover:text-text-primary hover:bg-hover border border-border-main hover:border-primary-start/30'
         }`}
     >
@@ -240,10 +242,10 @@ export const FinanceTab: React.FC = () => {
     const handleArchiveExpense = (id: string) => { setSelectedExpenseId(id); setShowArchiveExpenseModal(true); };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 border border-border-main bg-canvas">
             <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 10px; opacity: 0.3; } 
+                .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--primary-start); border-radius: 10px; opacity: 0.3; } 
                 select option { background-color: var(--bg-card); color: var(--text-primary); }
             `}</style>
             
@@ -261,10 +263,10 @@ export const FinanceTab: React.FC = () => {
                 <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
-            <Panel className="p-0 overflow-hidden h-[70vh] min-h-[600px] flex flex-col">
+            <Panel className="p-0 overflow-hidden h-[70vh] min-h-[600px] flex flex-col border border-border-main bg-surface shadow-sm">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 border-b border-border-main pb-6 px-6 pt-6">
                     <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-                        <Activity className="text-primary" />
+                        <Activity className="text-primary-start" />
                         {t('finance.activityAndReports')}
                     </h2>
                     <div className="w-full sm:w-auto flex bg-surface p-1.5 rounded-2xl border border-border-main gap-1">
@@ -277,11 +279,11 @@ export const FinanceTab: React.FC = () => {
                 <div className="flex-1 overflow-hidden relative px-6 pb-6">
                     {(activeTab === 'transactions' || activeTab === 'partners') && (
                         <div className="mb-6 relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
                             <input 
                                 type="text" 
                                 placeholder={activeTab === 'partners' ? t('general.searchPartners', 'Kërko partnerë...') : t('header.searchPlaceholder')} 
-                                className="glass-input w-full pl-12 py-4 bg-input focus:bg-card transition-all" 
+                                className="glass-input w-full pl-12 py-4 bg-surface focus:bg-canvas transition-all border border-border-main text-text-primary placeholder:text-text-muted" 
                                 value={searchTerm} 
                                 onChange={(e) => setSearchTerm(e.target.value)} 
                             />
@@ -291,7 +293,7 @@ export const FinanceTab: React.FC = () => {
                     {activeTab === 'transactions' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2 space-y-3 pb-20">
                             {loading ? (
-                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>
+                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary-start" /></div>
                             ) : (
                                 <TransactionList 
                                     allTransactions={allTransactions} 
@@ -317,15 +319,15 @@ export const FinanceTab: React.FC = () => {
                     {activeTab === 'partners' && (
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2 space-y-3 pb-20">
                             {partnersLoading ? (
-                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>
+                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary-start" /></div>
                             ) : filteredPartners.length === 0 ? (
                                 <div className="text-center text-text-muted py-10">{t('general.noPartnersFound', 'Nuk u gjet asnjë partner.')}</div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {filteredPartners.map((partner) => (
-                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface/30 border border-border-main rounded-2xl p-5 hover:border-primary-start/30 transition-all group relative">
+                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface/30 border border-border-main rounded-2xl p-5 hover:border-primary-start/30 transition-all group relative hover-lift shadow-sm">
                                             <div className="flex justify-between items-start mb-4">
-                                                <div className="p-3 rounded-xl bg-primary/10 text-primary border border-border-main"><Users size={20} /></div>
+                                                <div className="p-3 rounded-xl bg-primary-start/10 text-primary-start border border-border-main"><Users size={20} /></div>
                                                 <div className="flex flex-col items-end gap-2">
                                                     <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-success-start/20 text-success-start border border-success-start/30' : 'bg-warning-start/20 text-warning-start border border-warning-start/30'}`}>{partner.type}</span>
                                                     <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -333,11 +335,11 @@ export const FinanceTab: React.FC = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <h4 className="text-lg font-bold text-text-primary mb-3 group-hover:text-primary transition-colors">{partner.name}</h4>
+                                            <h4 className="text-lg font-bold text-text-primary mb-3 group-hover:text-primary-start transition-colors">{partner.name}</h4>
                                             <div className="space-y-2">
-                                                {partner.email && <div className="flex items-center gap-2 text-xs text-text-muted"><Mail size={14} className="text-primary/50" /> {partner.email}</div>}
-                                                {partner.phone && <div className="flex items-center gap-2 text-xs text-text-muted"><Phone size={14} className="text-primary/50" /> {partner.phone}</div>}
-                                                {partner.address && <div className="flex items-center gap-2 text-xs text-text-muted"><MapPin size={14} className="text-primary/50" /> {partner.address}</div>}
+                                                {partner.email && <div className="flex items-center gap-2 text-xs text-text-muted"><Mail size={14} className="text-primary-start/50" /> {partner.email}</div>}
+                                                {partner.phone && <div className="flex items-center gap-2 text-xs text-text-muted"><Phone size={14} className="text-primary-start/50" /> {partner.phone}</div>}
+                                                {partner.address && <div className="flex items-center gap-2 text-xs text-text-muted"><MapPin size={14} className="text-primary-start/50" /> {partner.address}</div>}
                                             </div>
                                             {partner.tax_id && <div className="mt-4 pt-4 border-t border-border-main flex justify-between items-center"><span className="text-[10px] font-black uppercase tracking-widest text-text-muted">NIPT / TAX ID</span><span className="text-xs font-mono text-text-secondary">{partner.tax_id}</span></div>}
                                         </motion.div>
@@ -352,7 +354,7 @@ export const FinanceTab: React.FC = () => {
                             {!analyticsData ? ( <div className="text-center text-text-muted py-10">{t('finance.reports.noData')}</div> ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     <div className="bg-surface/30 rounded-2xl p-6 border border-border-main shadow-sm">
-                                        <h4 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-primary" /> {t('finance.analytics.salesTrend')}</h4>
+                                        <h4 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-primary-start" /> {t('finance.analytics.salesTrend')}</h4>
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%"><AreaChart data={analyticsData.sales_trend}><defs><linearGradient id="colorSales" x1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} /><YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} /><Tooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" /></AreaChart></ResponsiveContainer>
                                         </div>
@@ -373,8 +375,8 @@ export const FinanceTab: React.FC = () => {
             <AnimatePresence>
                 {kpiModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="glass-panel w-full max-w-lg shadow-xl overflow-hidden relative">
-                            <div className="p-6 border-b border-border-main bg-primary/20 flex justify-between items-center">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="glass-panel w-full max-w-lg shadow-xl overflow-hidden relative border border-border-main">
+                            <div className="p-6 border-b border-border-main bg-primary-start/20 flex justify-between items-center">
                                 <h3 className="text-xl font-bold text-text-primary flex items-center gap-2">
                                     <Sparkles size={20} className="text-warning-start" />
                                     {kpiAnalysis?.type}
@@ -386,14 +388,14 @@ export const FinanceTab: React.FC = () => {
                             <div className="p-6 space-y-6">
                                 {kpiLoading ? (
                                     <div className="flex flex-col items-center py-10 gap-4">
-                                        <Loader2 size={40} className="animate-spin text-primary" />
+                                        <Loader2 size={40} className="animate-spin text-primary-start" />
                                         <p className="text-text-muted animate-pulse">{t('finance.smartAnalyst.analyzing')}</p>
                                     </div>
                                 ) : (
                                     <>
                                         {kpiAnalysis?.summary && (
-                                            <div className="bg-primary/10 border border-primary-start/30 rounded-xl p-4">
-                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4>
+                                            <div className="bg-primary-start/10 border border-primary-start/30 rounded-xl p-4">
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary-start mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4>
                                                 <p className="text-text-primary leading-relaxed">{kpiAnalysis?.summary}</p>
                                             </div>
                                         )}
@@ -424,15 +426,15 @@ export const FinanceTab: React.FC = () => {
             
             {showArchiveInvoiceModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="glass-panel w-full max-w-md p-6 shadow-xl">
+                    <div className="glass-panel w-full max-w-md p-6 shadow-xl border border-border-main">
                         <h2 className="text-xl font-bold text-text-primary mb-4">{t('finance.archiveInvoice')}</h2>
-                        <select className="glass-input w-full mb-6" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                        <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowArchiveInvoiceModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-5 py-2.5">{t('general.cancel')}</button>
-                            <button onClick={submitArchiveInvoice} className="btn-primary px-6 py-2.5 rounded-xl">{t('general.save')}</button>
+                            <button onClick={() => setShowArchiveInvoiceModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-5 py-2.5 border border-border-main hover-lift shadow-sm">{t('general.cancel')}</button>
+                            <button onClick={submitArchiveInvoice} className="btn-primary px-6 py-2.5 rounded-xl hover-lift shadow-sm">{t('general.save')}</button>
                         </div>
                     </div>
                 </div>
@@ -440,15 +442,15 @@ export const FinanceTab: React.FC = () => {
 
             {showArchiveExpenseModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="glass-panel w-full max-w-md p-6 shadow-xl">
+                    <div className="glass-panel w-full max-w-md p-6 shadow-xl border border-border-main">
                         <h2 className="text-xl font-bold text-text-primary mb-4">{t('finance.archiveExpenseTitle')}</h2>
-                        <select className="glass-input w-full mb-6" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                        <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowArchiveExpenseModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-5 py-2.5">{t('general.cancel')}</button>
-                            <button onClick={submitArchiveExpense} className="btn-primary px-6 py-2.5 rounded-xl">{t('general.save')}</button>
+                            <button onClick={() => setShowArchiveExpenseModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-5 py-2.5 border border-border-main hover-lift shadow-sm">{t('general.cancel')}</button>
+                            <button onClick={submitArchiveExpense} className="btn-primary px-6 py-2.5 rounded-xl hover-lift shadow-sm">{t('general.save')}</button>
                         </div>
                     </div>
                 </div>

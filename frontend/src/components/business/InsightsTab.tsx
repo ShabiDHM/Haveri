@@ -1,5 +1,8 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V5.0 (GLASSMORPHISM ALIGNED)
+// PHOENIX PROTOCOL - INSIGHTS UI V5.1 (EXECUTIVE DESIGN SYSTEM)
+// UPDATED: Converted to semantic Tailwind classes: glass-panel, border-border-main, text-text-*, etc.
+// ADDED: hover-lift and shadow-sm to interactive elements.
+// PRESERVED: All hooks, logic, and sub-components.
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,7 +53,7 @@ export const InsightsTab: React.FC = () => {
     return (
         <div className="space-y-8">
             {/* Top Analysis Header - Aligned to Drafting Style */}
-            <div className="glass-panel p-6 sm:p-8">
+            <div className="glass-panel p-6 sm:p-8 border border-border-main shadow-sm">
                 <div className="flex items-center justify-between border-b border-border-main pb-5 flex-wrap gap-4">
                     <div className="flex items-center gap-3">
                         <FileSpreadsheet className="text-primary-start" size={20} />
@@ -60,7 +63,7 @@ export const InsightsTab: React.FC = () => {
                     </div>
                     <button 
                         onClick={() => setShowAnalystPanel(!showAnalystPanel)} 
-                        className="glass-input px-4 py-2.5 flex items-center gap-2 text-[10px] uppercase font-black tracking-widest transition-colors hover:bg-white/5"
+                        className="glass-input px-4 py-2.5 flex items-center gap-2 text-[10px] uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
                     >
                         {showAnalystPanel ? (
                             <><ChevronUp size={14} /> {t('insights.hideAnalysis', 'Fshih Analizën')}</>
