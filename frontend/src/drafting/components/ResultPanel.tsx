@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V7.6 (BRAINCIRCUIT ICON + Z-INDEX FORCE)
+// PHOENIX PROTOCOL - RESULT PANEL V7.7 (MATCHING BRAIN ICON)
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,17 +35,21 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     }
   }, [currentJob.status, t]);
 
-  // Base button style with explicit pointer events and forced icon colors
   const actionButtonBase = "p-3 bg-surface border border-border-main text-text-primary hover:text-primary-start hover:border-primary-start/50 rounded-xl transition-all shadow-sm hover:shadow-md hover-lift disabled:opacity-30 disabled:hover:shadow-none pointer-events-auto";
 
   return (
     <div className="glass-panel border border-border-main rounded-3xl p-0 flex flex-col h-auto lg:h-[700px] shadow-sm relative group overflow-visible">
-      {/* Absolute hover border – sits above everything, including toolbar background */}
+      {/* Absolute hover border – sits above everything */}
       <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none z-[200]" />
 
       {/* Executive Header Toolbar */}
       <div className="flex justify-between items-center px-6 py-4 bg-surface border-b border-border-main flex-shrink-0 relative z-50 pointer-events-auto">
         <div className="flex items-center gap-4">
+          {/* Static brain icon – matches ConfigPanel header */}
+          <div className="p-2 bg-primary-start/10 rounded-xl border border-primary-start/20">
+            <BrainCircuit className="text-primary-start" size={20} />
+          </div>
+          {/* Dynamic status indicator */}
           <div className={`${statusUI.color} p-2 bg-canvas border border-border-main rounded-xl shadow-inner`}>
             {statusUI.icon}
           </div>
