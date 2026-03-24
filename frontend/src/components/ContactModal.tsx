@@ -50,7 +50,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -81,7 +81,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Emri</label>
+                        <label className="text-xs font-black uppercase tracking-widest text-text-muted">Emri</label>
                         <div className="relative">
                             <User className="absolute left-3 top-2.5 h-4 w-4 text-text-muted/50" />
                             <input 
@@ -94,7 +94,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Mbiemri</label>
+                        <label className="text-xs font-black uppercase tracking-widest text-text-muted">Mbiemri</label>
                         <input 
                             type="text" required
                             value={formData.lastName}
@@ -107,7 +107,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Email</label>
+                        <label className="text-xs font-black uppercase tracking-widest text-text-muted">Email</label>
                         <div className="relative">
                             <Mail className="absolute left-3 top-2.5 h-4 w-4 text-text-muted/50" />
                             <input 
@@ -120,7 +120,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Telefoni</label>
+                        <label className="text-xs font-black uppercase tracking-widest text-text-muted">Telefoni</label>
                         <div className="relative">
                             <Phone className="absolute left-3 top-2.5 h-4 w-4 text-text-muted/50" />
                             <input 
@@ -135,7 +135,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
                 </div>
                 
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Mesazhi</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-text-muted">Mesazhi</label>
                     <textarea 
                         required rows={4}
                         value={formData.message}

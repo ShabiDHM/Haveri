@@ -18,7 +18,7 @@ const FolderButton: React.FC<{ label: string; icon: React.ElementType; isActive:
 ({ label, icon: Icon, isActive, onClick, count }) => (
     <button onClick={onClick} className={`flex items-center w-full px-4 py-3 rounded-xl text-sm font-bold transition-all ${ isActive ? 'bg-primary/20 text-primary border border-primary-start/30' : 'text-text-muted hover:bg-hover hover:text-text-primary border border-transparent hover:border-border-main'}`}>
         <Icon size={16} className="mr-3"/> <span>{label}</span>
-        {count > 0 && <span className={`ml-auto text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isActive ? 'bg-primary text-inverse' : 'bg-surface text-text-secondary'}`}>{count}</span>}
+        {count > 0 && <span className={`ml-auto text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isActive ? 'bg-primary text-inverse' : 'bg-surface text-text-secondary'}`}>{count}</span>}
     </button>
 );
 
@@ -102,7 +102,7 @@ export const InboxTab: React.FC = () => {
                                         >
                                             <div className="flex justify-between items-start mb-1">
                                                 <h4 className="font-bold text-text-primary text-sm truncate">{msg.client_name}</h4>
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{new Date(msg.created_at).toLocaleDateString()}</span>
+                                                <span className="text-xs font-black uppercase tracking-widest text-text-muted">{new Date(msg.created_at).toLocaleDateString()}</span>
                                             </div>
                                             <p className="text-xs text-primary font-mono mb-2 truncate">{msg.case_title}</p>
                                             <p className="text-xs text-text-muted line-clamp-2">{msg.content}</p>

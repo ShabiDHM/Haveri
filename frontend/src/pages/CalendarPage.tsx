@@ -90,7 +90,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existin
     const formElementClasses = "glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-surface/30 backdrop-blur-sm";
     
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+        <div className="fixed inset-0 bg-canvas/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
             <div className="glass-panel w-full max-w-lg max-h-[85vh] flex flex-col shadow-sm border border-border-main">
                 {/* Header - Fixed */}
                 <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0 border-b border-border-main">
@@ -105,31 +105,31 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existin
                     {isSmartType && (
                         <div className="bg-primary-start/10 border border-primary-start/30 rounded-xl p-3 flex items-center gap-3">
                             <Zap className="text-primary-start h-5 w-5 animate-pulse" />
-                            <span className="text-primary-start text-[10px] font-black uppercase tracking-widest">Kujdestari Active: Auto-adjusts for Kosovo holidays.</span>
+                            <span className="text-primary-start text-xs font-black uppercase tracking-widest">Kujdestari Active: Auto-adjusts for Kosovo holidays.</span>
                         </div>
                     )}
 
                     {conflictWarning && !isSmartType && (
                         <div className="bg-warning-start/10 border border-warning-start/30 rounded-xl p-3 flex items-center gap-3">
                             <ShieldAlert className="text-warning-start h-5 w-5" />
-                            <span className="text-warning-start text-[10px] font-black uppercase tracking-widest">{conflictWarning}</span>
+                            <span className="text-warning-start text-xs font-black uppercase tracking-widest">{conflictWarning}</span>
                         </div>
                     )}
                     
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.eventTitle')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.eventTitle')}</label>
                         <input type="text" required value={formData.title} onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))} className={formElementClasses} />
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.eventType')}</label>
+                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.eventType')}</label>
                             <select value={formData.event_type} onChange={(e) => setFormData(prev => ({ ...prev, event_type: e.target.value as CalendarEvent['event_type'] }))} className={formElementClasses}>
                                 {Object.keys(t('calendar.types', { returnObjects: true })).map(key => <option key={key} value={key}>{t(`calendar.types.${key}`)}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.priority')}</label>
+                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.priority')}</label>
                             <select value={formData.priority} onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value as EventPriority }))} className={formElementClasses}>
                                 <option value="LOW">LOW</option>
                                 <option value="MEDIUM">MEDIUM</option>
@@ -140,12 +140,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existin
                     </div>
                     
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.eventDate')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.eventDate')}</label>
                         <DatePicker selected={eventDate} onChange={(date: Date | null) => setEventDate(date)} locale={currentLocale} dateFormat="dd.MM.yyyy" placeholderText={t('calendar.createModal.dateTimePlaceholder')} className={formElementClasses} portalId="react-datepicker-portal" required />
                     </div>
                     
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.relatedWorkspace')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.relatedWorkspace')}</label>
                         <select value={formData.workspace_id} onChange={(e) => setFormData(prev => ({ ...prev, workspace_id: e.target.value }))} className={formElementClasses}>
                             <option value="">{t('calendar.noCaseRelated')}</option>
                             {workspaces.map(w => <option key={w.id} value={w.id}>{w.title || w.workspace_name || w.workspace_number}</option>)}
@@ -154,7 +154,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existin
                     
                     <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-hover transition-colors hover-lift shadow-sm" onClick={() => setIsPublic(!isPublic)}>
                         <div className="flex items-center gap-4">
-                            <div className={`p-2 rounded-lg ${isPublic ? 'bg-primary-start text-white' : 'bg-surface text-text-muted'}`}>
+                            <div className={`p-2 rounded-lg ${isPublic ? 'bg-primary-start text-text-inverse' : 'bg-surface text-text-muted'}`}>
                                 {isPublic ? <Eye size={18} /> : <EyeOff size={18} />}
                             </div>
                             <div>
@@ -165,7 +165,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existin
                             </div>
                         </div>
                         <div className={`w-12 h-6 rounded-full relative transition-colors ${isPublic ? 'bg-primary-start' : 'bg-border-main'}`}>
-                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-0'}`} />
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-card rounded-full transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-0'}`} />
                         </div>
                     </div>
                     
@@ -181,15 +181,15 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existin
                     {showAdvanced && (
                         <div className="space-y-5 pt-4 border-t border-border-main">
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.description')}</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.description')}</label>
                                 <textarea rows={3} value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} className={formElementClasses} />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.location')}</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.location')}</label>
                                 <input type="text" value={formData.location} onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))} className={formElementClasses} />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.attendees')}</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.createModal.attendees')}</label>
                                 <input type="text" value={formData.attendees} onChange={(e) => setFormData(prev => ({ ...prev, attendees: e.target.value }))} className={formElementClasses} />
                             </div>
                         </div>
@@ -315,7 +315,7 @@ const CalendarPage: React.FC = () => {
                                             {event.is_public && <Eye size={14} className="text-success-start" />}
                                         </div>
                                         <div className="flex items-center gap-2 mt-2">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${style.border} ${style.bg} ${style.text} flex items-center gap-2`}>{style.icon} {t(`calendar.types.${event.event_type}`, event.event_type)}</span>
+                                            <span className={`text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${style.border} ${style.bg} ${style.text} flex items-center gap-2`}>{style.icon} {t(`calendar.types.${event.event_type}`, event.event_type)}</span>
                                             <span className="text-xs text-text-muted truncate max-w-[200px]">{isRescheduled ? event.notes : (event.description || '')}</span>
                                         </div>
                                     </div>
@@ -335,7 +335,7 @@ const CalendarPage: React.FC = () => {
           const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day); const dayEvents = filteredEvents.filter(event => isSameDay(parseISO(event.start_date), date)); const today = isTodayFns(date);
           days.push(
             <div key={day} className={`${cellClass} ${today ? 'bg-primary-start/10' : ''}`} onClick={() => handleDayClick(date)}>
-              <div className={`text-sm font-bold mb-2 flex justify-between items-center p-1 ${today ? 'text-primary-start' : 'text-text-muted'}`}><span className={`w-8 h-8 flex items-center justify-center rounded-full ${today ? 'bg-primary-start text-white shadow-sm shadow-primary-start/40' : ''}`}>{day}</span></div>
+              <div className={`text-sm font-bold mb-2 flex justify-between items-center p-1 ${today ? 'text-primary-start' : 'text-text-muted'}`}><span className={`w-8 h-8 flex items-center justify-center rounded-full ${today ? 'bg-primary-start text-text-inverse shadow-sm shadow-primary-start/40' : ''}`}>{day}</span></div>
               <div className="flex-1 w-full space-y-1 overflow-visible relative">
                 {dayEvents.slice(0, 4).map(event => {
                   const style = getEventStyle(event.event_type); const eventId = getEventId(event); const isHovered = hoveredEventId === eventId;
@@ -344,11 +344,11 @@ const CalendarPage: React.FC = () => {
                     <div key={eventId} className="relative w-full">
                         <button onClick={(e) => { e.stopPropagation(); handleEventClick(event); }} onMouseEnter={() => setHoveredEventId(eventId)} onMouseLeave={() => setHoveredEventId(null)} className={`w-full text-left px-2 py-1.5 rounded-md border flex items-center gap-2 transition-all duration-200 shadow-sm ${style.bg} ${style.border} group-hover:shadow-md ${isHovered ? 'scale-[1.05] z-10 ring-2 ring-primary-start/50' : ''}`}>
                             <div className={`w-2 h-2 rounded-full ${isRescheduled ? 'bg-primary-start shadow-[0_0_8px_#6366F1]' : style.indicator}`} />
-                            <span className={`text-[10px] font-black uppercase tracking-widest truncate ${style.text} flex-1`}>{event.title}</span>
+                            <span className={`text-xs font-black uppercase tracking-widest truncate ${style.text} flex-1`}>{event.title}</span>
                             {isRescheduled && <Zap size={10} className="text-primary-start ml-auto" />}
                         </button>
                         <AnimatePresence>{isHovered && (<motion.div initial={{ opacity: 0, scale: 0.9, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 5 }} transition={{ duration: 0.15 }} className="absolute left-0 top-full mt-2 z-[999] w-72 glass-panel p-4 shadow-sm border border-border-main"><div className="absolute -top-1.5 left-4 w-3 h-3 bg-glass border-t border-l border-border-main transform rotate-45" /><div className="relative z-10">
-                            <div className={`text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-2 ${style.text}`}>{style.icon} {t(`calendar.types.${event.event_type}`, event.event_type)}</div>
+                            <div className={`text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2 ${style.text}`}>{style.icon} {t(`calendar.types.${event.event_type}`, event.event_type)}</div>
                             <div className="text-text-primary font-bold text-base mb-2 line-clamp-2 leading-tight">{event.title}</div>
                             {isRescheduled && <div className="flex items-start gap-2 bg-primary-start/10 border border-primary-start/30 rounded-lg p-2 mb-2"><Info size={14} className="text-primary-start mt-0.5" /><span className="text-primary-start text-xs italic">{event.notes}</span></div>}
                             <div className="text-text-secondary text-sm mb-3 line-clamp-2">{event.description || t('general.notAvailable')}</div>
@@ -364,7 +364,7 @@ const CalendarPage: React.FC = () => {
         }
         const totalCells = Math.ceil(days.length / 7) * 7; while(days.length < totalCells) days.push(<div key={`empty-end-${days.length}`} className={`${cellClass} bg-surface/20 backdrop-blur-sm`} />);
         const weekStarts = startOfWeek(new Date(), { weekStartsOn }); const weekDays = Array.from({ length: 7 }, (_, i) => format(addDays(weekStarts, i), 'EEEEEE', { locale: currentLocale }));
-        return (<Panel className="overflow-hidden p-0 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm"><div className="grid grid-cols-7 bg-surface/30 backdrop-blur-sm border-b border-border-main">{weekDays.map(day => <div key={day} className="py-4 text-center text-[10px] font-black uppercase tracking-widest text-text-muted">{day}</div>)}</div><div className="grid grid-cols-7 border-l border-t border-border-main">{days}</div></Panel>);
+        return (<Panel className="overflow-hidden p-0 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm"><div className="grid grid-cols-7 bg-surface/30 backdrop-blur-sm border-b border-border-main">{weekDays.map(day => <div key={day} className="py-4 text-center text-xs font-black uppercase tracking-widest text-text-muted">{day}</div>)}</div><div className="grid grid-cols-7 border-l border-t border-border-main">{days}</div></Panel>);
     };
     
     if (loading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-start"></div></div>;
@@ -374,7 +374,7 @@ const CalendarPage: React.FC = () => {
             <div id="react-datepicker-portal"></div>
             <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-8">
-                    <div><h1 className="text-4xl font-black text-text-primary flex items-center gap-4"><CalendarIcon className="text-primary-start h-10 w-10" /><span className="capitalize">{format(currentDate, 'LLLL yyyy', { locale: currentLocale })}</span></h1><p className="text-[10px] font-black uppercase tracking-widest text-text-muted mt-2 ml-14">{t('calendar.pageSubtitle')}</p></div>
+                    <div><h1 className="text-4xl font-black text-text-primary flex items-center gap-4"><CalendarIcon className="text-primary-start h-10 w-10" /><span className="capitalize">{format(currentDate, 'LLLL yyyy', { locale: currentLocale })}</span></h1><p className="text-xs font-black uppercase tracking-widest text-text-muted mt-2 ml-14">{t('calendar.pageSubtitle')}</p></div>
                     <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
                         <div className="flex items-center bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-2 shadow-sm">
                             <button onClick={() => navigateMonth('prev')} className="p-3 hover:bg-hover rounded-xl transition-colors hover-lift"><ChevronLeft size={20} /></button>
@@ -395,7 +395,7 @@ const CalendarPage: React.FC = () => {
                             <div className="flex gap-3">
                                 <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="glass-input w-full sm:w-auto border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"><option value="ALL">{t('calendar.allTypes')}</option>{Object.keys(t('calendar.types', { returnObjects: true })).map(key => <option key={key} value={key}>{t(`calendar.types.${key}`)}</option>)}</select>
                                 <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} className="glass-input w-full sm:w-auto border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"><option value="ALL">{t('calendar.allPriorities')}</option><option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option><option value="CRITICAL">CRITICAL</option></select>
-                                <div className="flex bg-surface/30 backdrop-blur-sm p-1.5 rounded-2xl border border-border-main"><button onClick={() => setViewMode('month')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all hover-lift ${viewMode === 'month' ? 'bg-primary-start text-white shadow-sm' : 'text-text-muted hover:text-text-primary'}`}>{t('calendar.month')}</button><button onClick={() => setViewMode('list')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all hover-lift ${viewMode === 'list' ? 'bg-primary-start text-white shadow-sm' : 'text-text-muted hover:text-text-primary'}`}>{t('calendar.list')}</button></div>
+                                <div className="flex bg-surface/30 backdrop-blur-sm p-1.5 rounded-2xl border border-border-main"><button onClick={() => setViewMode('month')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all hover-lift ${viewMode === 'month' ? 'bg-primary-start text-text-inverse shadow-sm' : 'text-text-muted hover:text-text-primary'}`}>{t('calendar.month')}</button><button onClick={() => setViewMode('list')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all hover-lift ${viewMode === 'list' ? 'bg-primary-start text-text-inverse shadow-sm' : 'text-text-muted hover:text-text-primary'}`}>{t('calendar.list')}</button></div>
                             </div>
                         </div>
                         {viewMode === 'month' ? renderMonthView() : renderListView()}
@@ -427,7 +427,7 @@ const CalendarPage: React.FC = () => {
                                                     <h4 className="text-sm font-bold text-text-primary group-hover:text-primary-start transition-colors truncate">{ev.title}</h4>
                                                     <p className="text-xs text-text-muted mt-1 flex items-center gap-3">
                                                         {format(parseISO(ev.start_date), 'dd MMM')} 
-                                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${style.border} ${style.bg} ${style.text}`}>
+                                                        <span className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${style.border} ${style.bg} ${style.text}`}>
                                                             {t(`calendar.types.${ev.event_type}`, ev.event_type)}
                                                         </span>
                                                     </p>

@@ -47,7 +47,7 @@ export const InventoryImportModal: React.FC<InventoryImportModalProps> = ({ isOp
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="glass-panel w-full max-w-md p-6 shadow-xl">
                 <div className="text-center mb-6">
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface mb-4">
@@ -62,7 +62,7 @@ export const InventoryImportModal: React.FC<InventoryImportModalProps> = ({ isOp
                 <div className="bg-surface rounded-lg p-3 border border-border-main mb-6 text-left">
                     <div className="flex items-center gap-2 mb-2">
                         <Info size={12} className="text-primary" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('inventory.import.requiredStructure', 'Struktura e Kërkuar (CSV/Excel)')}</span>
+                        <span className="text-xs font-black uppercase tracking-widest text-text-muted">{t('inventory.import.requiredStructure', 'Struktura e Kërkuar (CSV/Excel)')}</span>
                     </div>
                     <code className="text-xs font-mono text-text-secondary break-words block leading-relaxed">
                         {requiredColumns}

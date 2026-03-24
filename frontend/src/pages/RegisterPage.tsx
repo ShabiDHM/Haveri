@@ -107,7 +107,7 @@ const RegisterPage: React.FC = () => {
 
         <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="group">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('account.username')}</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('account.username')}</label>
                 <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
                     <input 
@@ -123,7 +123,7 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <div className="group">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('account.email')}</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('account.email')}</label>
                 <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
                     <input 
@@ -138,7 +138,7 @@ const RegisterPage: React.FC = () => {
             </div>
 
             <div className="group">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.password')}</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.password')}</label>
                 <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
                     <input 

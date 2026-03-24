@@ -66,7 +66,7 @@ const StepIndicator = ({ currentStep }: { currentStep: number }) => {
         <div className="flex items-center justify-center space-x-2 sm:space-x-4 mb-12">
             {steps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
-                    <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-sm ${currentStep >= step.id ? 'bg-primary-start text-white border-primary-start shadow-primary-start/30' : 'bg-surface/30 backdrop-blur-sm border-border-main text-text-muted'}`}>
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-sm ${currentStep >= step.id ? 'bg-primary-start text-text-inverse border-primary-start shadow-primary-start/30' : 'bg-surface/30 backdrop-blur-sm border-border-main text-text-muted'}`}>
                         <step.icon size={20} />
                     </div>
                     <span className={`ml-3 text-sm font-bold hidden md:block ${currentStep >= step.id ? 'text-text-primary' : 'text-text-muted'}`}>{step.label}</span>
@@ -118,7 +118,7 @@ const TaxStep = ({ data }: { data: TaxCalculation }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
                 <div className="bg-primary-start/10 border border-primary-start/30 p-4 rounded-2xl shadow-sm">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-primary-start">
+                    <p className="text-xs font-black uppercase tracking-widest text-primary-start">
                         {data.regime === 'SMALL_BUSINESS' ? t('finance.wizard.regimeSmall') : t('finance.wizard.regimeVat')}
                     </p>
                 </div>

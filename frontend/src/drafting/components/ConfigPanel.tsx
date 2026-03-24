@@ -38,7 +38,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
               {t('drafting.templateLabel')}
             </label>
             {!isPro && (
-              <span className="text-[10px] text-warning-start font-black bg-warning-start/10 px-2 py-0.5 rounded border border-warning-start/20 flex items-center gap-1 uppercase tracking-widest">
+              <span className="text-xs text-warning-start font-black bg-warning-start/10 px-2 py-0.5 rounded border border-warning-start/20 flex items-center gap-1 uppercase tracking-widest">
                 <Lock size={10} /> PRO
               </span>
             )}

@@ -39,7 +39,7 @@ export const ClientImportModal: React.FC<ClientImportModalProps> = ({ isOpen, on
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             <div className="glass-panel w-full max-w-md p-6 shadow-xl">
                 
                 {/* Header */}
@@ -57,14 +57,14 @@ export const ClientImportModal: React.FC<ClientImportModalProps> = ({ isOpen, on
                 <div className="bg-primary/10 rounded-xl p-4 border border-primary-start/30 mb-6 text-left">
                     <div className="flex items-center gap-2 mb-3">
                         <Info size={14} className="text-primary" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">
+                        <span className="text-xs font-black uppercase tracking-widest text-primary">
                             {t('inventory.import.requiredStructure', 'Struktura e Kërkuar (CSV)')}
                         </span>
                     </div>
                     <code className="text-xs font-mono text-text-secondary break-words block leading-relaxed bg-surface p-3 rounded-lg border border-border-main">
                         Emri, Email, Telefon, Adresa, NIPT, Tipi
                     </code>
-                    <p className="text-[10px] text-text-muted mt-2 italic">
+                    <p className="text-xs text-text-muted mt-2 italic">
                         * Tipi: "Client" ose "Supplier"
                     </p>
                 </div>

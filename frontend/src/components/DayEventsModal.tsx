@@ -34,7 +34,7 @@ const DayEventsModal: React.FC<DayEventsModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+    <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

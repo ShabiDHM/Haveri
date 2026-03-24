@@ -15,7 +15,7 @@ interface ConfirmationModalProps {
 
 export function ConfirmationModal({ title, message, confirmText, onConfirm, onClose }: ConfirmationModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       
       <motion.div 
         className="w-full max-w-sm glass-panel p-6 space-y-4"

@@ -63,7 +63,7 @@ export const InsightsTab: React.FC = () => {
                     </div>
                     <button 
                         onClick={() => setShowAnalystPanel(!showAnalystPanel)} 
-                        className="glass-input px-4 py-2.5 flex items-center gap-2 text-[10px] uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
+                        className="glass-input px-4 py-2.5 flex items-center gap-2 text-xs uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
                     >
                         {showAnalystPanel ? (
                             <><ChevronUp size={14} /> {t('insights.hideAnalysis', 'Fshih Analizën')}</>

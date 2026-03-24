@@ -78,7 +78,7 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
                         <div className="w-12 h-12 rounded-full bg-surface/50 border border-border-main flex items-center justify-center mb-4">
                             <Calendar size={20} className="text-text-muted" />
                         </div>
-                        <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                        <p className="text-xs text-text-muted uppercase font-black tracking-widest">
                             {t('dashboard.noEvents', 'Nuk ka ngjarje për sot.')}
                         </p>
                     </div>

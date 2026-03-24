@@ -27,13 +27,13 @@ const SectionHeader = ({ icon, title, subtitle }: { icon: React.ReactNode, title
             <div className="p-2 rounded-xl bg-primary-start/10 text-primary-start border border-border-main">{icon}</div>
             <h3 className="text-base sm:text-lg font-bold text-text-primary tracking-tight">{title}</h3>
         </div>
-        {subtitle && <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mt-1.5 ml-1">{subtitle}</p>}
+        {subtitle && <p className="text-xs font-black uppercase tracking-widest text-text-muted mt-1.5 ml-1">{subtitle}</p>}
     </div>
 );
 
 const FormField = ({ label, icon, children }: { label: string, icon: React.ReactNode, children: React.ReactNode }) => (
     <div className="space-y-1.5">
-        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">{label}</label>
+        <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">{label}</label>
         <div className="relative group">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">{icon}</span>
             {children}
@@ -159,8 +159,8 @@ export const ProfileTab: React.FC = () => {
                             <div className="w-24 h-24 rounded-2xl flex items-center justify-center border border-border-main bg-surface/30 backdrop-blur-sm hover-lift shadow-sm">
                                 {logoLoading ? <Loader2 className="animate-spin text-primary-start" /> : logoSrc ? <img src={logoSrc} className="w-full h-full object-contain" alt="Logo" /> : <Upload className="text-text-muted" />}
                             </div>
-                            <div className="absolute inset-0 rounded-2xl bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
-                                <Camera className="text-white" size={20} />
+                            <div className="absolute inset-0 rounded-2xl bg-canvas/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                                <Camera className="text-text-inverse" size={20} />
                             </div>
                         </div>
                         <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
@@ -169,8 +169,8 @@ export const ProfileTab: React.FC = () => {
 
                     <Panel className="p-6 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
                         <div className="flex justify-between items-center mb-4">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted">Abonimi</h4>
-                            <div className="px-2 py-0.5 bg-primary-start/10 rounded border border-primary-start/30 text-primary-start text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-text-muted">Abonimi</h4>
+                            <div className="px-2 py-0.5 bg-primary-start/10 rounded border border-primary-start/30 text-primary-start text-xs font-black uppercase tracking-widest flex items-center gap-1">
                                 <Crown size={10} /> {currentPlan}
                             </div>
                         </div>

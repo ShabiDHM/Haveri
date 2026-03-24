@@ -54,7 +54,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                 <div className="flex flex-col flex-1 min-h-0">
                     {/* Main Value Box */}
                     <div className="glass-input p-6 mb-4 flex-shrink-0 text-center flex flex-col justify-center items-center relative overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm">
-                        <p className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-2 relative z-10">
+                        <p className="text-xs text-text-muted uppercase font-black tracking-widest mb-2 relative z-10">
                             {t('insights.tax.toPay', 'Për të paguar (Vlerësim)')}
                         </p>
                         <h2 className={`text-4xl font-mono font-black tracking-tight relative z-10 ${isPositive ? 'text-danger-start' : 'text-success-start'}`}>
@@ -88,7 +88,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                             onClick={() => setShowForensicChat(true)}
                             className="glass-input w-full h-12 flex items-center justify-center gap-2 hover:bg-hover transition-colors group/btn border border-border-main hover:border-primary-start/50 rounded-xl hover-lift shadow-sm"
                         >
-                            <span className="text-[10px] text-primary-start uppercase font-black tracking-widest group-hover/btn:scale-105 transition-transform">
+                            <span className="text-xs text-primary-start uppercase font-black tracking-widest group-hover/btn:scale-105 transition-transform">
                                 Audito me AI
                             </span>
                         </button>
@@ -98,7 +98,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                             className="btn-primary w-full h-12 flex items-center justify-center gap-3 hover-lift shadow-sm"
                         >
                             <Calculator size={16} />
-                            <span className="text-[10px] uppercase font-black tracking-widest">
+                            <span className="text-xs uppercase font-black tracking-widest">
                                 {t('finance.monthlyClose', 'Mbyllja Mujore')}
                             </span>
                         </button>

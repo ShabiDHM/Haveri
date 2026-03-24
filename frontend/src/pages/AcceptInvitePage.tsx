@@ -136,7 +136,7 @@ const AcceptInvitePage: React.FC = () => {
                 </div>
                 
                 <div className="mt-8 text-center">
-                    <p className="text-text-muted text-[10px] font-black uppercase tracking-widest">
+                    <p className="text-text-muted text-xs font-black uppercase tracking-widest">
                         &copy; {new Date().getFullYear()} Haveri AI. Të gjitha të drejtat e rezervuara.
                     </p>
                 </div>

@@ -76,7 +76,7 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
 
     return (
         <div className="fixed inset-0 z-[110] flex justify-end pointer-events-none">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/20 backdrop-blur-[2px] pointer-events-auto" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-canvas/20 backdrop-blur-[2px] pointer-events-auto" />
             <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="relative w-full max-w-md h-full glass-panel border-l border-border-main shadow-sm flex flex-col pointer-events-auto">
                 <div className="bg-primary-start p-5 flex items-center justify-between">
                     <div className="flex items-center gap-3 text-inverse font-bold">
@@ -88,7 +88,7 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar" ref={scrollRef}>
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[90%] p-4 rounded-2xl ${msg.role === 'user' ? 'bg-primary-start text-white rounded-tr-none' : 'bg-surface/30 backdrop-blur-sm border border-border-main text-text-secondary rounded-tl-none'}`}>
+                            <div className={`max-w-[90%] p-4 rounded-2xl ${msg.role === 'user' ? 'bg-primary-start text-text-inverse rounded-tr-none' : 'bg-surface/30 backdrop-blur-sm border border-border-main text-text-secondary rounded-tl-none'}`}>
                                 <MarkdownRenderer content={msg.content} />
                             </div>
                         </div>
@@ -97,7 +97,7 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
                 </div>
                 <form onSubmit={handleSend} className="p-6 bg-surface/30 backdrop-blur-sm border-t border-border-main flex gap-2">
                     <input autoFocus type="text" value={input} onChange={(e) => setInput(e.target.value)} className="glass-input flex-1 text-sm border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" placeholder={t('ai.ask_placeholder')} />
-                    <button type="submit" disabled={loading} className="p-3 bg-primary-start text-white rounded-xl hover-lift shadow-sm"><Send size={20}/></button>
+                    <button type="submit" disabled={loading} className="p-3 bg-primary-start text-text-inverse rounded-xl hover-lift shadow-sm"><Send size={20}/></button>
                 </form>
             </motion.div>
         </div>
@@ -119,13 +119,13 @@ const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelet
                 </div> 
                 <h2 className="text-lg font-bold text-text-primary line-clamp-2 leading-tight">{title}</h2>
                 <div className="flex items-center gap-2 mt-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{subtitle}</span>
+                    <span className="text-xs font-black uppercase tracking-widest text-text-muted">{subtitle}</span>
                 </div>
             </div> 
             <div className="pt-4 border-t border-border-main flex justify-between items-center mt-4"> 
                 <div className="flex items-center gap-1.5 text-text-muted">
                     <Calendar size={12}/> 
-                    <span className="text-[10px] font-black uppercase tracking-widest">{date}</span>
+                    <span className="text-xs font-black uppercase tracking-widest">{date}</span>
                 </div>
                 <div className="flex gap-1 items-center">
                     {!isFolder && onReIndex && <button onClick={(e) => { e.stopPropagation(); onReIndex(); }} className="p-2 text-text-muted hover:text-warning-start transition-colors hover-lift" title={t('archive.reindex')}><Zap size={16} /></button>}
@@ -299,7 +299,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
             <AnimatePresence>
                 {showFolderModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
-                        <motion.div onClick={() => setShowFolderModal(false)} className="absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" />
+                        <motion.div onClick={() => setShowFolderModal(false)} className="absolute inset-0 bg-canvas/50 backdrop-blur-sm pointer-events-auto" />
                         <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="relative glass-panel pointer-events-auto max-w-md w-full mx-4 space-y-4 shadow-sm border border-border-main">
                             <div className="flex justify-between items-center p-6 pb-0">
                                 <h3 className="text-xl font-bold text-text-primary">{t('archive.createFolder')}</h3>
@@ -328,7 +328,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
             <AnimatePresence>
                 {showRenameModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
-                        <motion.div onClick={() => setShowRenameModal(false)} className="absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" />
+                        <motion.div onClick={() => setShowRenameModal(false)} className="absolute inset-0 bg-canvas/50 backdrop-blur-sm pointer-events-auto" />
                         <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="relative glass-panel pointer-events-auto max-w-md w-full mx-4 space-y-4 shadow-sm border border-border-main">
                             <div className="flex justify-between items-center p-6 pb-0">
                                 <h3 className="text-xl font-bold text-text-primary">{t('general.edit')}</h3>

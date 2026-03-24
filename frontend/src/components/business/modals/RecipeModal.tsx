@@ -69,14 +69,14 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="glass-panel w-full max-w-lg p-5 sm:p-6 max-h-[90vh] overflow-y-auto shadow-xl">
                 <h3 className="text-lg sm:text-xl font-bold text-text-primary mb-2">
                     {recipeToEdit ? t('inventory.recipes.edit') : t('inventory.recipes.add')}
                 </h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('inventory.recipes.productName')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('inventory.recipes.productName')}</label>
                         <input placeholder={t('inventory.recipes.example')} required type="text" className="glass-input w-full" 
                             value={formData.product_name} onChange={e => setFormData({...formData, product_name: e.target.value})} 
                         />
@@ -84,7 +84,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     </div>
                     
                     <div className="border-t border-border-main pt-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">{t('inventory.recipes.ingredients')}</h4>
+                        <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-3">{t('inventory.recipes.ingredients')}</h4>
                         {formData.ingredients.map((ing, index) => (
                             <div key={index} className="flex gap-2 mb-2 items-center">
                                 <select required className="flex-1 glass-input text-sm appearance-none w-full min-w-0" 
@@ -107,7 +107,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
                     </div>
                     
                     <div className="bg-surface p-3 rounded-lg text-right">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('inventory.recipes.costPreview')}</span>
+                        <span className="text-xs font-black uppercase tracking-widest text-text-muted">{t('inventory.recipes.costPreview')}</span>
                         <span className="text-success-start font-bold ml-2">€{calculateCost(formData.ingredients).toFixed(3)}</span>
                     </div>
                     

@@ -46,7 +46,7 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
                 {/* Total Debt Summary Box */}
                 <div className="glass-input p-5 mb-6 flex-shrink-0 border border-border-main bg-surface/30 backdrop-blur-sm">
                     <div className="flex justify-between items-center mb-3">
-                        <span className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                        <span className="text-xs text-text-muted uppercase font-black tracking-widest">
                             Totali i Borxhit
                         </span>
                         <span className={`font-mono font-black text-lg ${hasDebt ? 'text-danger-start' : 'text-text-primary'}`}>
@@ -55,7 +55,7 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
                     </div>
                     
                     {/* Progress Bar */}
-                    <div className="w-full h-1.5 bg-black/20 rounded-full overflow-hidden flex mb-3">
+                    <div className="w-full h-1.5 bg-canvas/20 rounded-full overflow-hidden flex mb-3">
                         <div style={{ width: `${hasDebt ? (aging.fresh / totalDebt) * 100 : 0}%` }} className="bg-success-start h-full" />
                         <div style={{ width: `${hasDebt ? (aging.warning / totalDebt) * 100 : 0}%` }} className="bg-warning-start h-full" />
                         <div style={{ width: `${hasDebt ? (aging.danger / totalDebt) * 100 : 0}%` }} className="bg-danger-start h-full" />
@@ -76,14 +76,14 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
                 </div>
 
                 {/* Debtors List Section */}
-                <h3 className="block text-[10px] text-text-muted uppercase font-black tracking-widest mb-3 flex-shrink-0">
+                <h3 className="block text-xs text-text-muted uppercase font-black tracking-widest mb-3 flex-shrink-0">
                     {t('insights.debt.topDebtors', 'Klientët me Borxhe')}
                 </h3>
 
                 <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
                     {topDebtors.length === 0 ? (
                         <div className="glass-input p-6 flex items-center justify-center text-center border border-border-main bg-surface/30 backdrop-blur-sm">
-                            <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                            <p className="text-xs text-text-muted uppercase font-black tracking-widest">
                                 {t('insights.debt.noDebts', 'Asnjë borxh aktiv!')}
                             </p>
                         </div>

@@ -82,26 +82,26 @@ const SupportPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.firstName', 'Emri')}</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.firstName', 'Emri')}</label>
                   <FormField icon={<User />}>
                       <input type="text" placeholder={t('auth.firstName', 'Emri')} required value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} className="glass-input w-full pl-12 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" />
                   </FormField>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.lastName', 'Mbiemri')}</label>
+                  <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.lastName', 'Mbiemri')}</label>
                   <FormField icon={<User />}>
                       <input type="text" placeholder={t('auth.lastName', 'Mbiemri')} required value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="glass-input w-full pl-12 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" />
                   </FormField>
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.email', 'Email')}</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.email', 'Email')}</label>
                 <FormField icon={<AtSign />}>
                   <input type="email" placeholder={t('auth.email', 'Email')} required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="glass-input w-full pl-12 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" />
                 </FormField>
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('support.message', 'Mesazhi')}</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('support.message', 'Mesazhi')}</label>
                 <FormField icon={<MessageSquare />}>
                   <textarea placeholder={t('support.messagePlaceholder', 'Mesazhi juaj...')} required rows={5} value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="glass-input w-full pl-12 resize-none border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" />
                 </FormField>

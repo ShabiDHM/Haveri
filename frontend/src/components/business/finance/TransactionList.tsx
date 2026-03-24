@@ -71,7 +71,7 @@ const TransactionCard: React.FC<{ tx: TransactionItem, props: TransactionListPro
                 </div>
                 <div className="min-w-0">
                     <p className="text-sm font-medium text-text-primary truncate">{tx.label}</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{tx.type}</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-text-muted">{tx.type}</p>
                 </div>
             </div>
             <div className="flex items-center gap-4">
@@ -124,7 +124,7 @@ const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: n
                 <span className={`text-3xl font-mono font-bold ${isPositive ? 'text-success-start' : 'text-danger-start'}`}>
                     {isPositive ? '+' : ''}€{total.toFixed(2)}
                 </span>
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('finance.netBalance', 'Balansi Neto')}</p>
+                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('finance.netBalance', 'Balansi Neto')}</p>
             </div>
             <hr className="border-border-main" />
             <div className="flex justify-between items-center">

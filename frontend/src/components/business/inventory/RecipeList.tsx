@@ -59,7 +59,7 @@ const RecipeCard: React.FC<{
             {/* Bottom Section */}
             <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-border-main flex justify-between items-end">
                 <div>
-                    <span className="block text-[10px] sm:text-xs text-text-muted uppercase tracking-wider font-bold">
+                    <span className="block text-xs sm:text-xs text-text-muted uppercase tracking-wider font-bold">
                         {t('inventory.recipes.cost', 'Kosto e Vlerësuar')}
                     </span>
                     <span className="text-lg sm:text-xl font-mono font-bold text-success-start">

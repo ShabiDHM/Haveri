@@ -63,19 +63,19 @@ const AccountPage: React.FC = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('account.username')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('account.username')}</label>
                         <div className="px-4 py-2 bg-surface rounded-xl text-text-primary border border-border-main">
                             {user.username}
                         </div>
                     </div>
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('account.email')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('account.email')}</label>
                         <div className="px-4 py-2 bg-surface rounded-xl text-text-primary border border-border-main">
                             {user.email}
                         </div>
                     </div>
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('account.role')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('account.role')}</label>
                         <div className="px-4 py-2 bg-surface rounded-xl text-text-primary border border-border-main capitalize">
                             {user.role.toLowerCase()}
                         </div>
@@ -90,7 +90,7 @@ const AccountPage: React.FC = () => {
                 </h3>
                 <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('account.currentPassword')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('account.currentPassword')}</label>
                         <input 
                             type="password" 
                             required
@@ -100,7 +100,7 @@ const AccountPage: React.FC = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('account.newPassword')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('account.newPassword')}</label>
                         <input 
                             type="password" 
                             required
@@ -110,7 +110,7 @@ const AccountPage: React.FC = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('account.confirmPassword')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('account.confirmPassword')}</label>
                         <input 
                             type="password" 
                             required

@@ -143,10 +143,10 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
 
                 {/* Footer Metrics */}
                 <div className="mt-6 pt-5 border-t border-border-main flex items-center justify-between flex-shrink-0">
-                    <span className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                    <span className="text-xs text-text-muted uppercase font-black tracking-widest">
                         {t('dashboard.monthToDate', 'Muaji deri më sot')}
                     </span>
-                    <span className={`text-[10px] uppercase font-black tracking-widest ${progress >= 100 ? "text-success-start" : "text-text-muted"}`}>
+                    <span className={`text-xs uppercase font-black tracking-widest ${progress >= 100 ? "text-success-start" : "text-text-muted"}`}>
                         {progress >= 100 
                             ? t('dashboard.targetAchieved', 'Objektivi u arrit!') 
                             : `${progress.toFixed(0)}% ${t('dashboard.ofTarget', 'e targetit')}`

@@ -100,13 +100,13 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                         <h2 className="text-3xl font-mono font-black text-text-primary tracking-tight leading-none">
                             €{projection.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </h2>
-                        <span className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-1">
+                        <span className="text-xs text-text-muted uppercase font-black tracking-widest mb-1">
                             {t('dashboard.pulse.eodForecast', 'Parashikimi i ditës')}
                         </span>
                     </div>
                     
                     {/* Progress Bar */}
-                    <div className="w-full h-1.5 bg-black/20 rounded-full overflow-hidden mb-3">
+                    <div className="w-full h-1.5 bg-canvas/20 rounded-full overflow-hidden mb-3">
                         <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${Math.min((currentSales / (projection || 1)) * 100, 100)}%` }}
@@ -126,7 +126,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                         <div className="flex items-start gap-4">
                             <div className="text-danger shrink-0 mt-0.5"><TrendingUp size={16} /></div>
                             <div>
-                                <p className="text-[10px] text-danger uppercase font-black tracking-widest mb-1.5">Trendi Hot</p>
+                                <p className="text-xs text-danger uppercase font-black tracking-widest mb-1.5">Trendi Hot</p>
                                 <p className="text-xs text-text-primary font-bold">"{hotItem.label}" po kërkohet shumë.</p>
                             </div>
                         </div>
@@ -136,7 +136,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                                 {isRestDay ? <Coffee size={16} /> : <Clock size={16} />}
                             </div>
                             <div className="flex-1">
-                                <p className="text-[10px] text-primary-start uppercase font-black tracking-widest mb-1.5">
+                                <p className="text-xs text-primary-start uppercase font-black tracking-widest mb-1.5">
                                     {isRestDay ? "Sygjerim për Vikend" : t('dashboard.pulse.trafficAnalysis', 'Analiza e Trafikut')}
                                 </p>
                                 {peakTime ? (
@@ -144,7 +144,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                                         Fluks i lartë pritet rreth orës: <span className="text-primary-start">{peakTime}</span>.
                                     </p>
                                 ) : (
-                                    <p className="text-[10px] text-text-muted uppercase font-black tracking-widest leading-relaxed">
+                                    <p className="text-xs text-text-muted uppercase font-black tracking-widest leading-relaxed">
                                         {isRestDay 
                                             ? "Fundjavat zakonisht kanë fluks më të ulët. Fokusohuni në rishikimin e javës."
                                             : "Duke mbledhur të dhëna për të identifikuar orët e pikut..."}
@@ -161,7 +161,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                         <div className="text-primary-start shrink-0 mt-0.5">
                             <Info size={14} />
                         </div>
-                        <p className="text-[10px] text-text-muted uppercase font-black tracking-widest leading-relaxed">
+                        <p className="text-xs text-text-muted uppercase font-black tracking-widest leading-relaxed">
                             <span className="text-primary-start mr-1">AI:</span> 
                             {insight}
                         </p>

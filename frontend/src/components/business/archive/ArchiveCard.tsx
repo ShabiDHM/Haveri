@@ -66,21 +66,21 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                         <h2 className="text-lg sm:text-xl font-bold text-text-primary line-clamp-2 leading-tight tracking-tight group-hover:text-primary-start transition-colors break-words">{title}</h2>
                         <div className="flex items-center gap-2 mt-2">
                             <Calendar className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-text-muted flex-shrink-0" />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted truncate">{date}</p>
+                            <p className="text-xs font-black uppercase tracking-widest text-text-muted truncate">{date}</p>
                         </div>
                     </div>
                 </div>
                 <div className="flex flex-col mb-4 sm:mb-6 relative z-10">
                     <div className="flex items-center gap-2 mb-2 sm:mb-3 pb-2 border-b border-border-main">
                         <Info className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-primary-start" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{isFolder ? t('archive.contents') : t('archive.details')}</span>
+                        <span className="text-xs font-black uppercase tracking-widest text-text-muted">{isFolder ? t('archive.contents') : t('archive.details')}</span>
                     </div>
                     <div className="space-y-1.5 pl-1">
                         <div className="flex items-center gap-2 text-sm sm:text-base font-medium text-text-secondary">
                             {isFolder ? <FolderOpen className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-warning-start" /> : getFileIcon(type)}
                             <span className="truncate">{type}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-text-muted">
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted">
                             <Hash className="w-3 sm:w-3.5 h-3 sm:h-3.5 flex-shrink-0" />
                             <span className="truncate">{subtitle}</span>
                         </div>

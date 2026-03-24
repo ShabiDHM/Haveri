@@ -15,13 +15,13 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
         <div className="space-y-3 text-sm leading-relaxed whitespace-pre-wrap font-medium">
             {content.split('\n').map((line, i) => {
                 if (line.startsWith('###')) return (
-                    <h3 key={i} className="text-[10px] font-black text-primary-start uppercase tracking-widest mt-6 mb-2 pb-2 border-b border-border-main">
+                    <h3 key={i} className="text-xs font-black text-primary-start uppercase tracking-widest mt-6 mb-2 pb-2 border-b border-border-main">
                         {line.replace('###', '')}
                     </h3>
                 );
                 if (line.trim().startsWith('- ') || line.trim().startsWith('■')) return (
                     <div key={i} className="flex gap-3 ml-2 my-1.5">
-                        <span className="text-primary-start font-black mt-1 text-[10px]">■</span>
+                        <span className="text-primary-start font-black mt-1 text-xs">■</span>
                         <span className="text-text-secondary">{line.trim().substring(2)}</span>
                     </div>
                 );
@@ -134,7 +134,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
                     exit={{ opacity: 0 }} 
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm"
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-canvas/80 backdrop-blur-sm"
                 >
                     <motion.div 
                         initial={{ scale: 0.98, y: 20 }} 
@@ -221,7 +221,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                 <div className="flex justify-start">
                                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-input px-5 py-4 rounded-2xl rounded-tl-sm flex items-center gap-3 border border-border-main">
                                         <Loader2 size={14} className="animate-spin text-primary-start" />
-                                        <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                                        <span className="text-xs font-black text-text-muted uppercase tracking-widest">
                                             {t('forensic.analyzing', 'Duke analizuar...')}
                                         </span>
                                     </motion.div>
@@ -258,7 +258,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                             </div>
                             <div className="mt-4 flex items-center justify-center gap-2">
                                 <ShieldCheck size={12} className="text-success-start/50" />
-                                <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                                <p className="text-xs text-text-muted uppercase font-black tracking-widest">
                                     {t('forensic.privacy_note', 'Auditimi kryhet në kohë reale mbi të dhënat tuaja të arkivuara.')}
                                 </p>
                             </div>

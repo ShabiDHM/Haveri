@@ -62,7 +62,7 @@ const LoginPage: React.FC = () => {
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                 <div className="space-y-4">
                     <div className="group">
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">
                             {t('auth.usernameOrEmail')}
                         </label>
                         <div className="relative">
@@ -80,7 +80,7 @@ const LoginPage: React.FC = () => {
                         </div>
                     </div>
                     <div className="group">
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.password')}</label>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('auth.password')}</label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Lock className="h-5 w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />

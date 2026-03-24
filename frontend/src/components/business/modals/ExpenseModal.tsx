@@ -200,7 +200,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                 <div className="glass-panel w-full max-w-md p-4 sm:p-6 shadow-xl">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-bold text-text-primary flex items-center gap-2"><MinusCircle size={20} className="text-danger-start" />{expenseToEdit ? t('finance.editExpense') : t('finance.addExpense')}</h2>
@@ -220,19 +220,19 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
                     
                     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.expenseCategory')}</label>
+                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.expenseCategory')}</label>
                             <input required type="text" className="glass-input w-full" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.amount')}</label>
+                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.amount')}</label>
                             <input required type="number" step="0.01" className="glass-input w-full" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})} />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.date')}</label>
+                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.date')}</label>
                             <DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="glass-input w-full" required />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.description')}</label>
+                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.description')}</label>
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
                                 <input 
@@ -261,7 +261,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
 
             {/* QR Handoff Modal */}
             {isQrModalOpen && handoffToken && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-panel p-8 w-full max-w-sm shadow-xl text-center relative">
                         <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-text-muted hover:text-text-primary hover:bg-hover rounded-full transition-colors"><X size={18} /></button>
                         <h3 className="text-xl font-bold text-text-primary mb-2">Skano për të Ngarkuar</h3>

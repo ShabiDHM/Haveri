@@ -121,9 +121,9 @@ const AdminDashboardPage: React.FC = () => {
     const renderStatusBadge = (user: User) => {
         const status = user.status || 'inactive';
         if (status.toLowerCase() === 'active') {
-            return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-success-start/10 text-success-start border border-success-start/30 text-[10px] font-black uppercase tracking-widest"><CheckCircle className="w-3 h-3" /> {t('admin.statuses.ACTIVE', 'Aktive')}</span>;
+            return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-success-start/10 text-success-start border border-success-start/30 text-xs font-black uppercase tracking-widest"><CheckCircle className="w-3 h-3" /> {t('admin.statuses.ACTIVE', 'Aktive')}</span>;
         }
-        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-warning-start/10 text-warning-start border border-warning-start/30 text-[10px] font-black uppercase tracking-widest"><Clock className="w-3 h-3" /> {t('admin.statuses.INACTIVE', 'Në Pritje')}</span>;
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-warning-start/10 text-warning-start border border-warning-start/30 text-xs font-black uppercase tracking-widest"><Clock className="w-3 h-3" /> {t('admin.statuses.INACTIVE', 'Në Pritje')}</span>;
     };
 
     if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-8 w-8 text-primary-start" /></div>;
@@ -132,21 +132,21 @@ const AdminDashboardPage: React.FC = () => {
         <div className="glass-panel p-6 md:p-8 space-y-6 border border-border-main bg-canvas shadow-sm">
             <div>
                 <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-2">{t('admin.title', 'Paneli i Administratorit')}</h1>
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('admin.subtitle', 'Menaxhimi i përdoruesve dhe sistemit.')}</p>
+                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('admin.subtitle', 'Menaxhimi i përdoruesve dhe sistemit.')}</p>
             </div>
 
             {/* Stats Cards - Using Panel component */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Panel className="p-6 flex items-center justify-between border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm hover-lift">
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('admin.totalUsers', 'Total Përdorues')}</p>
+                        <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('admin.totalUsers', 'Total Përdorues')}</p>
                         <h3 className="text-3xl font-bold text-text-primary">{users.length}</h3>
                     </div>
                     <div className="p-3 rounded-xl bg-primary-start/10 text-primary-start border border-border-main"><Users /></div>
                 </Panel>
                 <Panel className="p-6 flex items-center justify-between border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm hover-lift">
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('admin.pendingApproval', 'Në Pritje')}</p>
+                        <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('admin.pendingApproval', 'Në Pritje')}</p>
                         <h3 className="text-3xl font-bold text-warning-start">{users.filter(u => u.status !== 'active').length}</h3>
                     </div>
                     <div className="p-3 rounded-xl bg-warning-start/10 text-warning-start border border-border-main"><Clock /></div>
@@ -165,7 +165,7 @@ const AdminDashboardPage: React.FC = () => {
 
                 <div className="w-full overflow-x-auto">
                     <table className="w-full text-left text-sm text-text-secondary min-w-[1000px]">
-                        <thead className="bg-surface/30 backdrop-blur-sm text-text-primary text-[10px] font-black uppercase tracking-widest border-b border-border-main">
+                        <thead className="bg-surface/30 backdrop-blur-sm text-text-primary text-xs font-black uppercase tracking-widest border-b border-border-main">
                             <tr>
                                 <th className="px-6 py-3 font-black tracking-widest">{t('admin.table.user', 'Përdoruesi')}</th>
                                 <th className="px-6 py-3 font-black tracking-widest">Organizata</th>
@@ -222,7 +222,7 @@ const AdminDashboardPage: React.FC = () => {
                                         )}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${user.role.toUpperCase() === 'ADMIN' ? 'bg-danger-start/10 text-danger-start border-danger-start/30' : 'bg-surface/30 text-text-muted border-border-main'}`}>
+                                        <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${user.role.toUpperCase() === 'ADMIN' ? 'bg-danger-start/10 text-danger-start border-danger-start/30' : 'bg-surface/30 text-text-muted border-border-main'}`}>
                                             {user.role}
                                         </span>
                                     </td>
@@ -241,7 +241,7 @@ const AdminDashboardPage: React.FC = () => {
 
             {/* Edit User Modal */}
             {editingUser && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <motion.div 
                         initial={{ scale: 0.95, opacity: 0 }} 
                         animate={{ scale: 1, opacity: 1 }} 
@@ -252,23 +252,23 @@ const AdminDashboardPage: React.FC = () => {
                         </div>
                         <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.username', 'Emri i Përdoruesit')}</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.username', 'Emri i Përdoruesit')}</label>
                                 <input type="text" value={editForm.username || ''} onChange={e => setEditForm({ ...editForm, username: e.target.value })} className="glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.email', 'Email')}</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.email', 'Email')}</label>
                                 <input type="email" value={editForm.email || ''} onChange={e => setEditForm({ ...editForm, email: e.target.value })} className="glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.role', 'Roli')}</label>
+                                    <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.role', 'Roli')}</label>
                                     <select value={editForm.role || 'STANDARD'} onChange={e => setEditForm({ ...editForm, role: e.target.value })} className="glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all">
                                         <option value="STANDARD">{t('admin.roles.STANDARD', 'Përdorues')}</option>
                                         <option value="ADMIN">{t('admin.roles.ADMIN', 'Admin')}</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.subscriptionStatus', 'Abonimi')}</label>
+                                    <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.subscriptionStatus', 'Abonimi')}</label>
                                     <select 
                                         value={editForm.subscription_status} 
                                         onChange={e => setEditForm({ ...editForm, subscription_status: e.target.value })} 
@@ -283,7 +283,7 @@ const AdminDashboardPage: React.FC = () => {
                             
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">Paketa</label>
+                                    <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">Paketa</label>
                                     <select 
                                         value={editForm.plan_tier || 'SOLO'} 
                                         onChange={e => setEditForm({ ...editForm, plan_tier: e.target.value })} 
@@ -296,7 +296,7 @@ const AdminDashboardPage: React.FC = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">
+                                    <label className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-text-muted mb-1">
                                         <Calendar className="w-3 h-3" />
                                         Skadimi
                                     </label>
@@ -312,7 +312,7 @@ const AdminDashboardPage: React.FC = () => {
                             </div>
                             
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.accountStatus', 'Llogaria (Gatekeeper)')}</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.accountStatus', 'Llogaria (Gatekeeper)')}</label>
                                 <select 
                                     value={editForm.status} 
                                     onChange={e => setEditForm({ ...editForm, status: e.target.value as 'active' | 'inactive' })} 

@@ -116,7 +116,7 @@ const DocumentViewPage: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
-            <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full flex items-center space-x-1.5 ${statusInfo.color}`}>
+            <span className={`text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full flex items-center space-x-1.5 ${statusInfo.color}`}>
               {statusInfo.icon} <span>{statusInfo.label}</span>
             </span>
             <motion.button 
@@ -139,15 +139,15 @@ const DocumentViewPage: React.FC = () => {
                 <h3 className="text-lg font-bold text-text-primary tracking-tight">{t('documentView.details')}</h3>
                 <div className="bg-surface p-4 rounded-xl space-y-2 border border-border-main">
                     <p className="text-sm text-text-secondary break-words">
-                        <strong className="text-[10px] font-black uppercase tracking-widest text-text-muted inline-block w-24">{t('documentView.fileName')}:</strong> 
+                        <strong className="text-xs font-black uppercase tracking-widest text-text-muted inline-block w-24">{t('documentView.fileName')}:</strong> 
                         <span className="text-text-primary ml-2">{docDetails.file_name}</span>
                     </p>
                     <p className="text-sm text-text-secondary">
-                        <strong className="text-[10px] font-black uppercase tracking-widest text-text-muted inline-block w-24">{t('documentView.uploadedAt')}:</strong> 
+                        <strong className="text-xs font-black uppercase tracking-widest text-text-muted inline-block w-24">{t('documentView.uploadedAt')}:</strong> 
                         <span className="text-text-primary ml-2">{moment(docDetails.created_at).format('YYYY-MM-DD HH:mm')}</span>
                     </p>
                     <p className="text-sm text-text-secondary">
-                        <strong className="text-[10px] font-black uppercase tracking-widest text-text-muted inline-block w-24">{t('documentView.fileType')}:</strong> 
+                        <strong className="text-xs font-black uppercase tracking-widest text-text-muted inline-block w-24">{t('documentView.fileType')}:</strong> 
                         <span className="text-text-primary ml-2">{docDetails.mime_type}</span>
                     </p>
                 </div>

@@ -81,7 +81,7 @@ const LandingPage: React.FC = () => {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
                 className="mt-20 flex flex-col items-center gap-3 text-text-muted"
             >
-                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Mësoni më shumë</span>
+                <span className="text-xs font-black uppercase tracking-[0.3em]">Mësoni më shumë</span>
                 <ChevronDown className="animate-bounce" />
             </motion.div>
           </motion.div>
@@ -102,8 +102,8 @@ const LandingPage: React.FC = () => {
                         </p>
                     </div>
                     <div className="flex gap-2 mt-6">
-                        <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest text-primary">Neni 9 TVSH</span>
-                        <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest text-primary">Auditimi Pro</span>
+                        <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-black uppercase tracking-widest text-primary">Neni 9 TVSH</span>
+                        <span className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-black uppercase tracking-widest text-primary">Auditimi Pro</span>
                     </div>
                 </div>
 
@@ -116,7 +116,7 @@ const LandingPage: React.FC = () => {
                             {t('landing.feature2Desc')}
                         </p>
                     </div>
-                    <div className="p-4 bg-card rounded-2xl border border-border-main text-[10px] font-mono text-success-start/70">
+                    <div className="p-4 bg-card rounded-2xl border border-border-main text-xs font-mono text-success-start/70">
                         GET /portal/secure_auth_v4
                     </div>
                 </div>
@@ -178,7 +178,7 @@ const LandingPage: React.FC = () => {
                                 <div className="w-10 h-10 rounded-xl bg-success-start/20 flex items-center justify-center text-success-start font-bold italic">H</div>
                                 <span className="text-sm font-bold uppercase tracking-widest text-text-muted">Smart Advice</span>
                             </div>
-                            <div className="text-[10px] text-text-muted font-mono">NOW LIVE</div>
+                            <div className="text-xs text-text-muted font-mono">NOW LIVE</div>
                         </div>
                         <p className="text-xl text-text-secondary font-medium leading-relaxed italic">
                             "Shitjet e Espresso Macchiato u rritën me 40% gjatë vizitës së diasporës. Sugjeroj rritjen e porosisë për qumësht me 15 litra për javën e ardhshme."
@@ -215,7 +215,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <span className="font-bold tracking-tighter uppercase text-sm text-text-primary">Haveri AI</span>
             </div>
-            <p className="text-text-muted text-[10px] font-black uppercase tracking-widest">
+            <p className="text-text-muted text-xs font-black uppercase tracking-widest">
                 &copy; {new Date().getFullYear()} Data And Human Management. Të gjitha të drejtat e rezervuara.
             </p>
         </footer>

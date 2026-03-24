@@ -237,7 +237,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="bg-surface/30 backdrop-blur-sm p-4 rounded-xl border border-border-main shadow-sm">
-                            <div className="flex items-center gap-2 mb-2 text-text-muted text-[10px] font-black uppercase tracking-widest">
+                            <div className="flex items-center gap-2 mb-2 text-text-muted text-xs font-black uppercase tracking-widest">
                                 <DollarSign size={14} /> {t('analyst.totalVolume', 'Total Volum')}
                             </div>
                             <div className={clsx("text-2xl font-bold", { 'text-success-start': result.stats.total_sum >= 0, 'text-danger-start': result.stats.total_sum < 0 })}>
@@ -245,13 +245,13 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                             </div>
                         </div>
                         <div className="bg-surface/30 backdrop-blur-sm p-4 rounded-xl border border-border-main shadow-sm">
-                            <div className="flex items-center gap-2 mb-2 text-text-muted text-[10px] font-black uppercase tracking-widest">
+                            <div className="flex items-center gap-2 mb-2 text-text-muted text-xs font-black uppercase tracking-widest">
                                 <Activity size={14} /> {t('analyst.transactions', 'Transaksione')}
                             </div>
                             <div className="text-2xl font-bold text-text-primary">{result.stats.transaction_count}</div>
                         </div>
                         <div className="bg-surface/30 backdrop-blur-sm p-4 rounded-xl border border-border-main shadow-sm">
-                            <div className="flex items-center gap-2 mb-2 text-text-muted text-[10px] font-black uppercase tracking-widest">
+                            <div className="flex items-center gap-2 mb-2 text-text-muted text-xs font-black uppercase tracking-widest">
                                 <TrendingUp size={14} /> {t('analyst.average', 'Mesatarja')}
                             </div>
                             <div className={clsx("text-2xl font-bold", { 'text-primary-start': result.stats.average >= 0, 'text-warning-start': result.stats.average < 0 })}>
@@ -300,7 +300,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                                     ) : (
                                         result.chart_data.map((item, idx) => (
                                             <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-1 group relative">
-                                                <div className="hidden sm:block absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card text-text-primary text-[10px] px-2 py-1 rounded whitespace-nowrap z-10 border border-border-main shadow-sm">
+                                                <div className="hidden sm:block absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity bg-card text-text-primary text-xs px-2 py-1 rounded whitespace-nowrap z-10 border border-border-main shadow-sm">
                                                     €{item.value.toLocaleString()}
                                                 </div>
                                                 <motion.div 
@@ -309,7 +309,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                                                     transition={{ duration: 0.5, delay: idx * 0.05 }} 
                                                     className="w-full bg-success-start/70 hover:bg-success-start transition-all rounded-t-sm"
                                                 />
-                                                <span className="text-[10px] text-text-muted truncate w-full text-center group-hover:text-text-primary transition-colors pt-1">
+                                                <span className="text-xs text-text-muted truncate w-full text-center group-hover:text-text-primary transition-colors pt-1">
                                                     {item.label}
                                                 </span>
                                             </div>
@@ -340,7 +340,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                                             <AlertTriangle className={`flex-shrink-0 w-3 h-3 mt-0.5 ${ ano.severity === 'high' ? 'text-danger-start' : 'text-warning-start' }`} />
                                             <div>
                                                 <p className="text-xs font-medium text-text-primary">{ano.type}</p>
-                                                <p className="text-[11px] text-text-muted leading-relaxed">{ano.description}</p>
+                                                <p className="text-xs text-text-muted leading-relaxed">{ano.description}</p>
                                             </div>
                                         </div>
                                     ))

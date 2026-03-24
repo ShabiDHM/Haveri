@@ -76,7 +76,7 @@ const ClientPortalPage: React.FC = () => {
                 </div>
                 
                 <div className="flex-1 pt-1.5 min-w-0">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1 group-hover:text-primary-start/70 transition-colors">{label}</h4>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-text-muted mb-1 group-hover:text-primary-start/70 transition-colors">{label}</h4>
                     {isLink ? (
                         <a 
                             href={value.startsWith('http') ? value : `https://${value}`} 
@@ -123,7 +123,7 @@ const ClientPortalPage: React.FC = () => {
                             <span className="font-bold text-lg tracking-tight text-text-primary leading-tight">{businessName || 'Portal'}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-success-start bg-success-start/10 px-3 py-1.5 rounded-full border border-success-start/30 shadow-sm">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-success-start bg-success-start/10 px-3 py-1.5 rounded-full border border-success-start/30 shadow-sm">
                         <ShieldCheck size={12} />
                         <span className="hidden sm:inline">Lidhje e Sigurt</span>
                     </div>
@@ -132,7 +132,7 @@ const ClientPortalPage: React.FC = () => {
             <main className="max-w-6xl mx-auto px-6 pt-12 relative z-10 space-y-16">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
                     <div className="space-y-6 pt-4">
-                        <div className="inline-flex items-center gap-2 text-success-start bg-success-start/10 px-3 py-1 rounded-lg border border-success-start/30 text-[10px] font-black uppercase tracking-widest shadow-sm"><Calendar size={12} /> {currentDate}</div>
+                        <div className="inline-flex items-center gap-2 text-success-start bg-success-start/10 px-3 py-1 rounded-lg border border-success-start/30 text-xs font-black uppercase tracking-widest shadow-sm"><Calendar size={12} /> {currentDate}</div>
                         <div><h1 className="text-5xl sm:text-6xl font-black text-text-primary tracking-tight leading-[1.1] mb-4">Përshëndetje,</h1><p className="text-text-secondary text-lg font-light leading-relaxed max-w-md">Këtu do të gjeni pasqyrën e plotë të dokumentacionit dhe komunikimet.</p></div>
                     </div>
                     <div className="relative group">
@@ -140,8 +140,8 @@ const ClientPortalPage: React.FC = () => {
                         <div className="relative glass-panel p-8 sm:p-10 shadow-sm border border-border-main">
                             <div className="flex items-start justify-between mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-success-start to-success-start/70 flex items-center justify-center shadow-sm border border-border-main"><Quote size={18} className="text-white" /></div>
-                                    <div><h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">Njoftim</h3><p className="text-[10px] font-black uppercase tracking-widest text-success-start mt-0.5">Nga Drejtoria</p></div>
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-success-start to-success-start/70 flex items-center justify-center shadow-sm border border-border-main"><Quote size={18} className="text-text-inverse" /></div>
+                                    <div><h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">Njoftim</h3><p className="text-xs font-black uppercase tracking-widest text-success-start mt-0.5">Nga Drejtoria</p></div>
                                 </div>
                                 <AlignLeft className="text-text-muted/20" size={24} />
                             </div>
@@ -178,8 +178,8 @@ const ClientPortalPage: React.FC = () => {
                                         <div className="flex items-center gap-2 text-xs text-text-muted"><Calendar size={12} /><span>{new Date(doc.created_at).toLocaleDateString()}</span></div>
                                     </div>
                                     <div className="relative z-10 mt-4 pt-4 border-t border-border-main flex justify-between items-center">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{doc.file_type || 'PDF'}</span>
-                                        <button onClick={() => handleDownload(doc.id, doc.source, doc.file_name)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-success-start hover:text-success-start/80 transition-colors hover-lift">Shkarko <Download size={12} /></button>
+                                        <span className="text-xs font-black uppercase tracking-widest text-text-muted">{doc.file_type || 'PDF'}</span>
+                                        <button onClick={() => handleDownload(doc.id, doc.source, doc.file_name)} className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-success-start hover:text-success-start/80 transition-colors hover-lift">Shkarko <Download size={12} /></button>
                                     </div>
                                 </motion.div>
                             ))

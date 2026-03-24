@@ -151,7 +151,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                 {currentJob.status === 'PROCESSING' ? (
                   <div className="flex flex-col items-center">
                     <div className="w-20 h-20 rounded-[1.5rem] bg-primary-start flex items-center justify-center shadow-sm mb-8 animate-pulse">
-                      <BrainCircuit className="w-10 h-10 text-white" />
+                      <BrainCircuit className="w-10 h-10 text-text-inverse" />
                     </div>
                     <p className="text-text-primary font-black uppercase tracking-widest text-sm flex items-center">
                       {t('drafting.statusWorking', 'Duke Gjeneruar')}

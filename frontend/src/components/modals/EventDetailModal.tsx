@@ -76,7 +76,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClo
     const relatedWorkspace = workspaces.find(w => w.id === rawEvent.workspace_id);
     
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} className="glass-panel p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl custom-scrollbar">
                 <div className="flex items-start justify-between mb-8">
                     <div className="flex items-start space-x-5">
@@ -84,9 +84,9 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClo
                         <div>
                             <h2 className="text-2xl font-bold text-text-primary mb-2">{event.title}</h2>
                             <div className="flex flex-wrap gap-2">
-                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${style.border} ${style.bg} ${style.text}`}>{t(`calendar.types.${rawEvent.event_type}`, rawEvent.event_type)}</span>
-                                {rawEvent.priority && <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-border-main bg-surface text-text-secondary">{t(`calendar.priorities.${rawEvent.priority}`)}</span>}
-                                {relatedWorkspace && <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-border-main bg-surface text-text-secondary flex items-center gap-2"><Briefcase size={14}/> {relatedWorkspace.title}</span>}
+                                <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border ${style.border} ${style.bg} ${style.text}`}>{t(`calendar.types.${rawEvent.event_type}`, rawEvent.event_type)}</span>
+                                {rawEvent.priority && <span className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-border-main bg-surface text-text-secondary">{t(`calendar.priorities.${rawEvent.priority}`)}</span>}
+                                {relatedWorkspace && <span className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-border-main bg-surface text-text-secondary flex items-center gap-2"><Briefcase size={14}/> {relatedWorkspace.title}</span>}
                             </div>
                         </div>
                     </div>
@@ -94,14 +94,14 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClo
                 </div>
 
                 <div className="space-y-6">
-                    {rawEvent.description && (<div className="bg-surface p-4 rounded-xl border border-border-main"><h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.detailModal.description')}</h3><p className="text-text-secondary text-sm leading-relaxed">{rawEvent.description}</p></div>)}
+                    {rawEvent.description && (<div className="bg-surface p-4 rounded-xl border border-border-main"><h3 className="text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.detailModal.description')}</h3><p className="text-text-secondary text-sm leading-relaxed">{rawEvent.description}</p></div>)}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div><h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('calendar.detailModal.startDate')}</h3><div className="flex items-center text-text-primary gap-3"><Clock className="h-4 w-4 text-primary" />{formatEventDate(rawEvent.start_date)}</div></div>
-                        {rawEvent.end_date && rawEvent.end_date !== rawEvent.start_date && <div><h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('calendar.detailModal.endDate')}</h3><div className="flex items-center text-text-primary gap-3"><Clock className="h-4 w-4 text-primary" />{formatEventDate(rawEvent.end_date)}</div></div>}
+                        <div><h3 className="text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('calendar.detailModal.startDate')}</h3><div className="flex items-center text-text-primary gap-3"><Clock className="h-4 w-4 text-primary" />{formatEventDate(rawEvent.start_date)}</div></div>
+                        {rawEvent.end_date && rawEvent.end_date !== rawEvent.start_date && <div><h3 className="text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('calendar.detailModal.endDate')}</h3><div className="flex items-center text-text-primary gap-3"><Clock className="h-4 w-4 text-primary" />{formatEventDate(rawEvent.end_date)}</div></div>}
                     </div>
-                    {rawEvent.location && <div><h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('calendar.detailModal.location')}</h3><div className="flex items-center text-text-primary gap-3"><MapPin className="h-4 w-4 text-primary" />{rawEvent.location}</div></div>}
-                    {rawEvent.attendees && rawEvent.attendees.length > 0 && (<div><h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('calendar.detailModal.attendees')}</h3><div className="flex flex-wrap gap-2 mt-2">{rawEvent.attendees.map((att, i) => (<span key={i} className="flex items-center text-sm bg-surface px-3 py-1.5 rounded-lg border border-border-main text-text-secondary"><Users className="h-4 w-4 mr-2" />{att}</span>))}</div></div>)}
-                    {rawEvent.notes && (<div><h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.detailModal.notes')}</h3><p className="text-text-muted italic text-sm">{rawEvent.notes}</p></div>)}
+                    {rawEvent.location && <div><h3 className="text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('calendar.detailModal.location')}</h3><div className="flex items-center text-text-primary gap-3"><MapPin className="h-4 w-4 text-primary" />{rawEvent.location}</div></div>}
+                    {rawEvent.attendees && rawEvent.attendees.length > 0 && (<div><h3 className="text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('calendar.detailModal.attendees')}</h3><div className="flex flex-wrap gap-2 mt-2">{rawEvent.attendees.map((att, i) => (<span key={i} className="flex items-center text-sm bg-surface px-3 py-1.5 rounded-lg border border-border-main text-text-secondary"><Users className="h-4 w-4 mr-2" />{att}</span>))}</div></div>)}
+                    {rawEvent.notes && (<div><h3 className="text-xs font-black uppercase tracking-widest text-text-muted mb-2">{t('calendar.detailModal.notes')}</h3><p className="text-text-muted italic text-sm">{rawEvent.notes}</p></div>)}
                 </div>
                 <div className="flex space-x-4 mt-10 pt-6 border-t border-border-main">
                     <button onClick={onClose} className="flex-1 px-4 py-3 rounded-xl bg-surface text-text-secondary hover:bg-hover transition font-medium">{t('calendar.detailModal.close')}</button>

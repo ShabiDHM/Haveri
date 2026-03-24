@@ -81,14 +81,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
 
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="glass-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 custom-finance-scroll shadow-xl">
                 <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-text-primary">{invoiceToEdit ? t('finance.editInvoice') : t('finance.createInvoice')}</h2><button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24} /></button></div>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2"><User size={14} /> {t('caseCard.client')}</h3>
+                        <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><User size={14} /> {t('caseCard.client')}</h3>
                         <div className="relative">
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('business.clientName')}</label>
+                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.clientName')}</label>
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
                                 <input list="p-list" required className="glass-input w-full pl-9" value={formData.client_name} onChange={e => handleClientChange(e.target.value)} />
@@ -97,21 +97,21 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('business.publicEmail')}</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.publicEmail')}</label>
                                 <input placeholder={t('business.publicEmail')} className="glass-input" value={formData.client_email} onChange={e => setFormData({...formData, client_email: e.target.value})} />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('business.phone')}</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.phone')}</label>
                                 <input placeholder={t('business.phone')} className="glass-input" value={formData.client_phone} onChange={e => setFormData({...formData, client_phone: e.target.value})} />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('business.address')}</label>
+                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.address')}</label>
                             <input placeholder={t('business.address')} className="w-full glass-input" value={formData.client_address} onChange={e => setFormData({...formData, client_address: e.target.value})} />
                         </div>
                     </div>
                     <div className="space-y-3 pt-4 border-t border-border-main">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2"><FileText size={14} /> {t('finance.services')}</h3>
+                        <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><FileText size={14} /> {t('finance.services')}</h3>
                         {lineItems.map((item, index) => (
                             <div key={index} className="flex gap-2 items-center">
                                 <input required placeholder={t('finance.description')} className="flex-1 glass-input" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} />

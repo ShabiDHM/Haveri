@@ -131,12 +131,12 @@ const ForensicMockup = () => (
         <div className="bg-primary/10 border border-primary-start/30 p-4 rounded-2xl">
             <div className="flex items-center gap-3 mb-3">
                 <ShieldCheck className="text-primary" size={20} />
-                <span className="text-[10px] font-black uppercase tracking-widest text-text-primary">Gjetje e Auditorit</span>
+                <span className="text-xs font-black uppercase tracking-widest text-text-primary">Gjetje e Auditorit</span>
             </div>
             <p className="text-sm text-text-secondary italic mb-3">"Fatura #2024-001 përmban TVSH 18% për qira banimi."</p>
             <div className="bg-surface p-2.5 rounded-lg border border-border-main">
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">REFERENCA LIGJORE:</p>
-                <p className="text-[11px] text-text-muted">Ligji për TVSH, Neni 9, p. 1(p). Lirimi nga tatimi për qiratë e banimit.</p>
+                <p className="text-xs font-black uppercase tracking-widest text-primary mb-1">REFERENCA LIGJORE:</p>
+                <p className="text-xs text-text-muted">Ligji për TVSH, Neni 9, p. 1(p). Lirimi nga tatimi për qiratë e banimit.</p>
             </div>
         </div>
         <div className="flex justify-center"><div className="px-4 py-2 btn-primary text-xs font-bold shadow-sm rounded-xl">Gjenero Raportin Forenzik</div></div>
@@ -147,15 +147,15 @@ const PortalMockup = () => (
     <div className="w-full max-w-sm bg-card border border-border-main rounded-2xl overflow-hidden shadow-sm">
         <div className="p-4 bg-success-start/10 border-b border-border-main flex items-center gap-3">
             <Globe className="text-success-start" size={18} />
-            <span className="text-[10px] font-black uppercase tracking-widest text-text-primary">Client Portal Hub</span>
+            <span className="text-xs font-black uppercase tracking-widest text-text-primary">Client Portal Hub</span>
         </div>
         <div className="p-4 space-y-3">
             <div className="h-12 bg-surface rounded-xl border border-border-main flex items-center px-3 justify-between">
                 <div className="flex items-center gap-2"><div className="w-6 h-6 bg-danger-start/20 rounded flex items-center justify-center"><FileQuestion size={12} className="text-danger-start"/></div><span className="text-xs text-text-secondary">Fatura_Janar.pdf</span></div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-success-start">Shared</div>
+                <div className="text-xs font-black uppercase tracking-widest text-success-start">Shared</div>
             </div>
             <div className="h-20 bg-surface rounded-xl border border-border-main p-3">
-                 <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">Dërgo Mesazh</p>
+                 <p className="text-xs font-black uppercase tracking-widest text-text-muted mb-1">Dërgo Mesazh</p>
                  <div className="flex gap-2"><div className="flex-1 h-6 bg-surface rounded border border-border-main" /><div className="w-6 h-6 bg-primary rounded" /></div>
             </div>
         </div>
@@ -165,11 +165,11 @@ const PortalMockup = () => (
 const RecipeMockup = () => (
     <div className="w-full max-w-sm space-y-3">
         <div className="bg-surface border border-border-main rounded-2xl p-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-2"><div className="bg-success-start/20 text-success-start text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">SMART COGS</div></div>
-            <div className="flex justify-between items-start mb-2"><div className="flex items-center gap-3"><div className="p-2 bg-warning-start/20 rounded-xl"><ChefHat className="text-warning-start" size={18} /></div><h4 className="text-text-primary font-bold text-sm">Macchiato e Madhe</h4></div><div className="text-right"><span className="block text-danger-start font-mono font-bold">€0.34</span><span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Kosto</span></div></div>
+            <div className="absolute top-0 right-0 p-2"><div className="bg-success-start/20 text-success-start text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full">SMART COGS</div></div>
+            <div className="flex justify-between items-start mb-2"><div className="flex items-center gap-3"><div className="p-2 bg-warning-start/20 rounded-xl"><ChefHat className="text-warning-start" size={18} /></div><h4 className="text-text-primary font-bold text-sm">Macchiato e Madhe</h4></div><div className="text-right"><span className="block text-danger-start font-mono font-bold">€0.34</span><span className="text-xs font-black uppercase tracking-widest text-text-muted">Kosto</span></div></div>
             <div className="space-y-1.5 pl-4 border-l border-dashed border-border-main ml-4">
-                <div className="text-[11px] text-text-muted flex justify-between"><span>Kafe Antica</span> <span className="text-primary">€0.22</span></div>
-                <div className="text-[11px] text-text-muted flex justify-between"><span>Qumësht Vita</span> <span className="text-primary">€0.12</span></div>
+                <div className="text-xs text-text-muted flex justify-between"><span>Kafe Antica</span> <span className="text-primary">€0.22</span></div>
+                <div className="text-xs text-text-muted flex justify-between"><span>Qumësht Vita</span> <span className="text-primary">€0.12</span></div>
             </div>
         </div>
     </div>
@@ -178,11 +178,11 @@ const RecipeMockup = () => (
 const DashboardMockup = () => (
     <div className="w-full max-w-md grid grid-cols-2 gap-3">
         {[{t: 'Të Hyrat', a: '€12,450', i: <TrendingUp/>, c: 'text-success-start'}, {t: 'Fitimi Neto', a: '€3,120', i: <Calculator/>, c: 'text-primary'}].map(d => (
-            <div key={d.t} className="bg-surface/50 border border-border-main rounded-2xl p-4"><p className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${d.c}`}>{d.i} {d.t}</p><p className="text-2xl font-black text-text-primary mt-1">{d.a}</p></div>
+            <div key={d.t} className="bg-surface/50 border border-border-main rounded-2xl p-4"><p className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 ${d.c}`}>{d.i} {d.t}</p><p className="text-2xl font-black text-text-primary mt-1">{d.a}</p></div>
         ))}
         <div className="col-span-2 bg-danger-start/5 border border-danger-start/30 rounded-2xl p-4 flex items-center gap-4">
             <div className="p-2 bg-danger-start/20 rounded-lg text-danger-start"><AlertTriangle size={20} /></div>
-            <div><p className="text-danger-start text-[10px] font-black uppercase tracking-widest">Stoku Kritik</p><p className="text-text-muted text-sm">3 artikuj duhet të rimbushen sot.</p></div>
+            <div><p className="text-danger-start text-xs font-black uppercase tracking-widest">Stoku Kritik</p><p className="text-text-muted text-sm">3 artikuj duhet të rimbushen sot.</p></div>
         </div>
     </div>
 );
@@ -195,7 +195,7 @@ const DataAnalystMockup = () => (
         </div>
         <div className="space-y-2">
             <div className="h-2 w-full bg-border-main rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: '75%' }} transition={{ duration: 2, repeat: Infinity }} className="h-full bg-primary" /></div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-primary font-mono text-center">AI IS IDENTIFYING TRENDS...</p>
+            <p className="text-xs font-black uppercase tracking-widest text-primary font-mono text-center">AI IS IDENTIFYING TRENDS...</p>
         </div>
     </div>
 );

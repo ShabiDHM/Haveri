@@ -106,7 +106,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                 <div className="flex flex-col flex-1 min-h-0">
                     {/* Main Value Box */}
                     <div className="glass-input p-5 mb-6 flex-shrink-0 border border-border-main bg-surface/30 backdrop-blur-sm">
-                        <p className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-2">
+                        <p className="text-xs text-text-muted uppercase font-black tracking-widest mb-2">
                             {t('insights.inventory.value', 'Vlera Totale e Stokut')}
                         </p>
                         <p className="text-2xl font-mono font-black text-text-primary">
@@ -121,7 +121,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                     <div className="flex justify-between items-center mb-3 flex-shrink-0">
                         <div className="flex items-center gap-2">
                             <div className={`w-1.5 h-1.5 rounded-full ${hasLowStock ? 'bg-warning-start' : 'bg-success-start'}`}></div>
-                            <h3 className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                            <h3 className="text-xs text-text-muted uppercase font-black tracking-widest">
                                 {t('inventory.lowStock', 'Stoku Kritik')}
                             </h3>
                         </div>
@@ -134,7 +134,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                     <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
                         {lowStockItems.length === 0 ? (
                             <div className="glass-input p-6 flex items-center justify-center text-center border border-border-main bg-surface/30 backdrop-blur-sm">
-                                <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                                <p className="text-xs text-text-muted uppercase font-black tracking-widest">
                                     {t('general.allGood', 'Gjithçka në rregull!')}
                                 </p>
                             </div>
@@ -153,7 +153,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             {item.name}
                                         </span>
                                     </div>
-                                    <span className="text-[10px] font-mono font-black text-warning-start flex items-center gap-1.5 shrink-0 ml-3">
+                                    <span className="text-xs font-mono font-black text-warning-start flex items-center gap-1.5 shrink-0 ml-3">
                                         <AlertCircle size={12} /> {item.current_stock} {item.unit}
                                     </span>
                                 </div>
@@ -170,7 +170,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                         initial={{ opacity: 0 }} 
                         animate={{ opacity: 1 }} 
                         exit={{ opacity: 0 }} 
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-canvas/80 backdrop-blur-sm"
                     >
                         <motion.div 
                             initial={{ scale: 0.98, y: 20 }} 
@@ -186,7 +186,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             {t('inventory.analysis.critical', 'Kritike')}
                                         </span>
                                     </h3>
-                                    <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                                    <p className="text-xs text-text-muted uppercase font-black tracking-widest">
                                         {t('inventory.analysis.currentStock', 'Stoku Aktual')}: {selectedItem.current_stock} {selectedItem.unit}
                                     </p>
                                 </div>
@@ -199,7 +199,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                 {loading ? (
                                     <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
                                         <Loader2 size={32} className="animate-spin text-primary-start" />
-                                        <p className="text-[10px] text-text-muted uppercase font-black tracking-widest animate-pulse">
+                                        <p className="text-xs text-text-muted uppercase font-black tracking-widest animate-pulse">
                                             {t('inventory.analysis.analyzing', 'Inteligjenca Artificiale po analizon...')}
                                         </p>
                                     </div>
@@ -207,7 +207,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                     <div className="space-y-6">
                                         <div className="glass-input p-5 relative overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-primary-start" />
-                                            <h4 className="text-[10px] font-black text-primary-start uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            <h4 className="text-xs font-black text-primary-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <ShoppingCart size={14} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}
                                             </h4>
                                             <p className="text-xs text-text-secondary mb-4 leading-relaxed font-medium">
@@ -216,7 +216,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             <button 
                                                 onClick={handleOpenDraftModal} 
                                                 disabled={!aiData.prediction || aiData.prediction.suggested_quantity === 0} 
-                                                className="w-full h-12 btn-primary rounded-lg text-[10px] uppercase font-black tracking-widest flex items-center justify-center gap-2 disabled:opacity-40 hover-lift shadow-sm"
+                                                className="w-full h-12 btn-primary rounded-lg text-xs uppercase font-black tracking-widest flex items-center justify-center gap-2 disabled:opacity-40 hover-lift shadow-sm"
                                             >
                                                 {t('inventory.analysis.draftOrder', 'Drafto Porosinë')} <ArrowRight size={14} />
                                             </button>
@@ -224,7 +224,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
 
                                         <div className="glass-input p-5 relative overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-success-start" />
-                                            <h4 className="text-[10px] font-black text-success-start uppercase tracking-widest mb-3 flex items-center gap-2">
+                                            <h4 className="text-xs font-black text-success-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <TrendingUp size={14} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}
                                             </h4>
                                             <p className="text-xs text-text-secondary font-medium leading-relaxed">
@@ -256,7 +256,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                         initial={{ opacity: 0 }} 
                         animate={{ opacity: 1 }} 
                         exit={{ opacity: 0 }} 
-                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-sm"
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-canvas/80 backdrop-blur-sm"
                     >
                         <motion.div 
                             initial={{ scale: 0.98, y: 20 }} 
@@ -268,14 +268,14 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                 <h3 className="text-sm font-black text-text-primary uppercase tracking-widest mb-2">
                                     {t('inventory.poModal.title', 'Konfirmo Porosinë')}
                                 </h3>
-                                <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+                                <p className="text-xs text-text-muted uppercase font-black tracking-widest">
                                     {t('inventory.poModal.subtitle', 'Verifikoni detajet para se të gjeneroni dokumentin final.')}
                                 </p>
                             </div>
                             
                             <div className="p-6 sm:p-8 space-y-6">
                                 <div>
-                                    <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2">
+                                    <label className="block text-xs font-black text-text-muted uppercase tracking-widest mb-2">
                                         {t('inventory.poModal.supplierName', 'Emri i Furnitorit')}
                                     </label>
                                     <textarea 
@@ -287,7 +287,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2">
+                                        <label className="block text-xs font-black text-text-muted uppercase tracking-widest mb-2">
                                             {t('inventory.poModal.quantity', 'Sasia')}
                                         </label>
                                         <input 
@@ -298,7 +298,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2">
+                                        <label className="block text-xs font-black text-text-muted uppercase tracking-widest mb-2">
                                             {t('inventory.poModal.totalCost', 'Kosto Totale')}
                                         </label>
                                         <input 
@@ -315,7 +315,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                             <div className="p-6 sm:p-8 border-t border-border-main flex justify-end gap-3 bg-surface/20 backdrop-blur-sm">
                                 <button 
                                     onClick={() => setShowPOModal(false)} 
-                                    className="px-6 h-12 rounded-lg text-[10px] uppercase font-black tracking-widest text-text-muted hover:text-text-primary hover:bg-hover transition-colors hover-lift shadow-sm"
+                                    className="px-6 h-12 rounded-lg text-xs uppercase font-black tracking-widest text-text-muted hover:text-text-primary hover:bg-hover transition-colors hover-lift shadow-sm"
                                 >
                                     {t('general.cancel', 'Anulo')}
                                 </button>
@@ -325,7 +325,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                     className="btn-primary px-6 h-12 rounded-lg flex items-center justify-center gap-2 disabled:opacity-40 hover-lift shadow-sm"
                                 >
                                     {drafting ? <Loader2 size={16} className="animate-spin"/> : null}
-                                    <span className="text-[10px] uppercase font-black tracking-widest">
+                                    <span className="text-xs uppercase font-black tracking-widest">
                                         {t('inventory.poModal.generatePDF', 'Gjenero PDF')}
                                     </span>
                                 </button>

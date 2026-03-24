@@ -123,7 +123,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             <style>{`select option { background-color: var(--bg-card); color: var(--text-primary); }`}</style>
             <div className="glass-panel w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-xl">
                 

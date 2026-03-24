@@ -24,7 +24,7 @@ export const IntegrationsPage: React.FC = () => {
                         {t('settings.integrations.title')}
                     </h1>
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">
+                <p className="text-xs font-black uppercase tracking-widest text-text-muted">
                     {t('settings.integrations.subtitle')}
                 </p>
             </div>

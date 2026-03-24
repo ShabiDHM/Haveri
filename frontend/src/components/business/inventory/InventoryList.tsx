@@ -42,7 +42,7 @@ const ItemCard: React.FC<{
                         {isPos ? <Layers size={18} /> : <Package size={18} />}
                     </div>
                     {isLowStock && (
-                        <div className="flex items-center gap-1.5 bg-danger-start/10 text-danger-start text-[10px] px-2 py-1 rounded-full uppercase tracking-wider font-bold animate-pulse border border-danger-start/20">
+                        <div className="flex items-center gap-1.5 bg-danger-start/10 text-danger-start text-xs px-2 py-1 rounded-full uppercase tracking-wider font-bold animate-pulse border border-danger-start/20">
                             <AlertTriangle size={12} /> {t('inventory.lowStock', 'Stoku Kritik')}
                         </div>
                     )}
@@ -61,7 +61,7 @@ const ItemCard: React.FC<{
             {/* Bottom Section */}
             <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-border-main flex justify-between items-end">
                 <div>
-                    <span className="block text-[10px] sm:text-xs text-text-muted uppercase tracking-wider font-bold">
+                    <span className="block text-xs sm:text-xs text-text-muted uppercase tracking-wider font-bold">
                         {t('inventory.items.cost', 'Kosto / Njësi')}
                     </span>
                     <span className="text-lg sm:text-xl font-mono font-bold text-success-start">

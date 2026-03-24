@@ -65,13 +65,13 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
                     {icon}
                 </div>
                 {trend && (
-                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-surface text-text-muted border border-border-main">
+                    <span className="text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-surface text-text-muted border border-border-main">
                         {trend}
                     </span>
                 )}
             </div>
             <div>
-                <p className="text-[11px] font-black uppercase tracking-widest text-text-muted mb-1">
+                <p className="text-xs font-black uppercase tracking-widest text-text-muted mb-1">
                     {title}
                 </p>
                 <h3 className={`text-2xl font-bold ${amountColor} tracking-tight`}>
@@ -330,9 +330,9 @@ export const FinanceTab: React.FC = () => {
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="p-3 rounded-xl bg-primary-start/10 text-primary-start border border-border-main"><Users size={20} /></div>
                                                 <div className="flex flex-col items-end gap-2">
-                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-success-start/20 text-success-start border border-success-start/30' : 'bg-warning-start/20 text-warning-start border border-warning-start/30'}`}>{partner.type}</span>
+                                                    <span className={`text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-success-start/20 text-success-start border border-success-start/30' : 'bg-warning-start/20 text-warning-start border border-warning-start/30'}`}>{partner.type}</span>
                                                     <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-surface/50 text-danger-start hover:bg-danger-start hover:text-white transition-all border border-border-main" title={t('general.delete')}><Trash2 size={14}/></button>
+                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-surface/50 text-danger-start hover:bg-danger-start hover:text-text-inverse transition-all border border-border-main" title={t('general.delete')}><Trash2 size={14}/></button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -342,7 +342,7 @@ export const FinanceTab: React.FC = () => {
                                                 {partner.phone && <div className="flex items-center gap-2 text-xs text-text-muted"><Phone size={14} className="text-primary-start/50" /> {partner.phone}</div>}
                                                 {partner.address && <div className="flex items-center gap-2 text-xs text-text-muted"><MapPin size={14} className="text-primary-start/50" /> {partner.address}</div>}
                                             </div>
-                                            {partner.tax_id && <div className="mt-4 pt-4 border-t border-border-main flex justify-between items-center"><span className="text-[10px] font-black uppercase tracking-widest text-text-muted">NIPT / TAX ID</span><span className="text-xs font-mono text-text-secondary">{partner.tax_id}</span></div>}
+                                            {partner.tax_id && <div className="mt-4 pt-4 border-t border-border-main flex justify-between items-center"><span className="text-xs font-black uppercase tracking-widest text-text-muted">NIPT / TAX ID</span><span className="text-xs font-mono text-text-secondary">{partner.tax_id}</span></div>}
                                         </motion.div>
                                     ))}
                                 </div>
@@ -375,7 +375,7 @@ export const FinanceTab: React.FC = () => {
 
             <AnimatePresence>
                 {kpiModalOpen && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas/50 backdrop-blur-sm">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="glass-panel w-full max-w-lg shadow-xl overflow-hidden relative border border-border-main">
                             <div className="p-6 border-b border-border-main bg-primary-start/20 flex justify-between items-center">
                                 <h3 className="text-xl font-bold text-text-primary flex items-center gap-2">
@@ -396,13 +396,13 @@ export const FinanceTab: React.FC = () => {
                                     <>
                                         {kpiAnalysis?.summary && (
                                             <div className="bg-primary-start/10 border border-primary-start/30 rounded-xl p-4">
-                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary-start mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4>
+                                                <h4 className="text-xs font-black uppercase tracking-widest text-primary-start mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4>
                                                 <p className="text-text-primary leading-relaxed">{kpiAnalysis?.summary}</p>
                                             </div>
                                         )}
                                         {kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (
                                             <div>
-                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-3">{t('finance.smartAnalyst.keyContributors')}</h4>
+                                                <h4 className="text-xs font-black uppercase tracking-widest text-text-muted mb-3">{t('finance.smartAnalyst.keyContributors')}</h4>
                                                 <div className="space-y-2">
                                                     {kpiAnalysis.contributors.map((c:any, i:any) => (
                                                         <div key={i} className="flex items-center gap-3 p-3 bg-surface rounded-lg border border-border-main">
@@ -426,7 +426,7 @@ export const FinanceTab: React.FC = () => {
             <ClientImportModal isOpen={showClientImportModal} onClose={() => setShowClientImportModal(false)} onSuccess={() => { refreshData(); if (activeTab === 'partners') { apiService.getPartners().then(setPartners); } }} />
             
             {showArchiveInvoiceModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="glass-panel w-full max-w-md p-6 shadow-xl border border-border-main">
                         <h2 className="text-xl font-bold text-text-primary mb-4">{t('finance.archiveInvoice')}</h2>
                         <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary rounded-xl" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
@@ -442,7 +442,7 @@ export const FinanceTab: React.FC = () => {
             )}
 
             {showArchiveExpenseModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="glass-panel w-full max-w-md p-6 shadow-xl border border-border-main">
                         <h2 className="text-xl font-bold text-text-primary mb-4">{t('finance.archiveExpenseTitle')}</h2>
                         <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary rounded-xl" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
