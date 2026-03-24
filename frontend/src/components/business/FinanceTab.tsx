@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V13.1 (FIXED BORDER & LINE ISSUES)
+// PHOENIX PROTOCOL - FINANCE TAB V13.2 (FIXED BORDERS & DOUBLE LINES)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -240,7 +240,6 @@ export const FinanceTab: React.FC = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
-            {/* Removed outer border to fix double border issue */}
             <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--primary-start); border-radius: 10px; opacity: 0.3; } 
@@ -262,13 +261,14 @@ export const FinanceTab: React.FC = () => {
             </div>
 
             <Panel className="p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-                {/* Header: removed border-b to eliminate the "stupid line" */}
+                {/* Header without bottom border */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 px-4 sm:px-6 pt-4 sm:pt-6">
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-2 sm:gap-3">
                         <Activity className="text-primary-start" size={20} />
                         {t('finance.activityAndReports')}
                     </h2>
-                    <div className="w-full sm:w-auto flex bg-surface/50 p-1 rounded-2xl border border-border-main gap-1 overflow-x-auto scrollbar-hide">
+                    {/* Tabs container without border */}
+                    <div className="w-full sm:w-auto flex bg-surface/50 p-1 rounded-2xl gap-1 overflow-x-auto scrollbar-hide">
                         <TabButton label={t('finance.tabTransactions')} icon={<Activity size={14} className="sm:w-4 sm:h-4" />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
                         <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={14} className="sm:w-4 sm:h-4" />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
                         <TabButton label={t('clients.title', 'Partnerët')} icon={<Users size={14} className="sm:w-4 sm:h-4" />} isActive={activeTab === 'partners'} onClick={() => setActiveTab('partners')} />
