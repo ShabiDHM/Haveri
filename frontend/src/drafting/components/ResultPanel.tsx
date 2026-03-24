@@ -1,6 +1,5 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V6.4 (EXECUTIVE DESIGN SYSTEM)
-// Fixed: added named export.
+// PHOENIX PROTOCOL - RESULT PANEL V6.3 (DARK THEME FIX + TYPOGRAPHY)
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,6 +21,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   onRetry,
   onClear,
 }) => {
+  
   const statusUI = useMemo(() => {
     switch (currentJob.status) {
       case 'COMPLETED':
@@ -38,9 +38,10 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   const actionButtonBase = "p-2.5 text-text-muted hover:text-primary-start hover:bg-surface/30 rounded-xl transition-all border border-transparent hover:border-border-main disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:border-transparent hover-lift shadow-sm";
 
   return (
-    <div className="flex flex-col h-auto lg:h-full w-full">
+    <div className="glass-panel border border-border-main shadow-sm p-0 flex flex-col h-auto lg:h-[700px] overflow-hidden shrink-0">
+      
       {/* Executive Header Toolbar */}
-      <div className="flex justify-between items-center px-6 py-4 bg-surface/30 backdrop-blur-sm border-b border-border-main flex-shrink-0 z-10 rounded-t-3xl">
+      <div className="flex justify-between items-center px-6 py-4 bg-surface/30 backdrop-blur-sm border-b border-border-main flex-shrink-0 z-10">
         <div className="flex items-center gap-4">
           <div className={`${statusUI.color} p-2.5 bg-surface/30 backdrop-blur-sm border border-border-main rounded-xl shadow-sm`}>
             {statusUI.icon}
@@ -114,8 +115,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         </div>
       </div>
 
-      {/* The Paper Reading Surface */}
-      <div className="flex-1 bg-card overflow-y-auto relative custom-scrollbar rounded-b-3xl shadow-[inset_0_2px_8px_rgba(0,0,0,0.02)]">
+      {/* The Paper Reading Surface - NOW THEME-AWARE */}
+      <div className="flex-1 bg-card overflow-y-auto relative custom-scrollbar shadow-[inset_0_2px_8px_rgba(0,0,0,0.02)]">
         <div className="min-h-full w-full flex justify-center p-4 sm:p-8">
           <AnimatePresence mode="wait">
             {currentJob.result ? (
