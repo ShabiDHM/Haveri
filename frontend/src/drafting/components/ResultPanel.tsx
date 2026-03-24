@@ -1,11 +1,11 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V7.5 (ABSOLUTE HOVER BORDER + Z-INDEX FORCE)
+// PHOENIX PROTOCOL - RESULT PANEL V7.6 (BRAINCIRCUIT ICON + Z-INDEX FORCE)
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RefreshCw, AlertCircle, CheckCircle, Clock,
-  FileText, Trash2, Archive, Scale, Copy, Download,
+  FileText, Trash2, Archive, Copy, Download,
   BrainCircuit
 } from 'lucide-react';
 import { ResultPanelProps } from '../types';
@@ -31,7 +31,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
       case 'PROCESSING':
         return { text: t('drafting.statusWorking'), color: 'text-warning-start', icon: <Clock className="h-5 w-5 animate-pulse" /> };
       default:
-        return { text: t('drafting.statusResult', 'Rezultati'), color: 'text-primary-start', icon: <Scale className="h-5 w-5" /> };
+        return { text: t('drafting.statusResult', 'Rezultati'), color: 'text-primary-start', icon: <BrainCircuit className="h-5 w-5" /> };
     }
   }, [currentJob.status, t]);
 
@@ -40,8 +40,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
   return (
     <div className="glass-panel border border-border-main rounded-3xl p-0 flex flex-col h-auto lg:h-[700px] shadow-sm relative group overflow-visible">
-      {/* Absolute hover border – sits above all content, never clipped */}
-      <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none z-[100]" />
+      {/* Absolute hover border – sits above everything, including toolbar background */}
+      <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none z-[200]" />
 
       {/* Executive Header Toolbar */}
       <div className="flex justify-between items-center px-6 py-4 bg-surface border-b border-border-main flex-shrink-0 relative z-50 pointer-events-auto">
