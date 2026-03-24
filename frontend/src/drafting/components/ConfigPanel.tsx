@@ -1,7 +1,5 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V6.5 (EXECUTIVE DESIGN + HOVER LIFT)
-
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw, ChevronDown } from 'lucide-react';
 import { ConfigPanelProps } from '../types';
 import { getTemplatePlaceholder } from '../utils/templateHelpers';
@@ -17,6 +15,45 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   onSubmit,
 }) => {
   const placeholder = useMemo(() => getTemplatePlaceholder(selectedTemplate), [selectedTemplate]);
+  const [isTemplateDropdownOpen, setIsTemplateDropdownOpen] = useState(false);
+
+  // Groups and options (simplified – you can keep the original groups)
+  const templateGroups = [
+    { label: t('drafting.groupLitigation'), options: ['padi', 'pergjigje', 'kunderpadi', 'ankese', 'prapësim'] },
+    { label: t('drafting.groupCorporate'), options: ['nda', 'mou', 'shareholders', 'sla'] },
+    { label: t('drafting.groupEmployment'), options: ['employment_contract', 'termination_notice', 'warning_letter'] },
+    { label: t('drafting.groupRealEstate'), options: ['lease_agreement', 'sales_purchase', 'power_of_attorney'] },
+    { label: t('drafting.groupCompliance'), options: ['terms_conditions', 'privacy_policy'] },
+  ];
+
+  const getOptionLabel = (value: string) => {
+    const map: Record<string, string> = {
+      generic: t('drafting.templateGeneric'),
+      padi: t('drafting.templatePadi'),
+      pergjigje: t('drafting.templatePergjigje'),
+      kunderpadi: t('drafting.templateKunderpadi'),
+      ankese: t('drafting.templateAnkese'),
+      prapësim: t('drafting.templatePrapesim'),
+      nda: t('drafting.templateNDA'),
+      mou: t('drafting.templateMoU'),
+      shareholders: t('drafting.templateShareholders'),
+      sla: t('drafting.templateSLA'),
+      employment_contract: t('drafting.templateKontrate'),
+      termination_notice: t('drafting.templateTermination'),
+      warning_letter: t('drafting.templateWarning'),
+      lease_agreement: t('drafting.templateLease'),
+      sales_purchase: t('drafting.templateSales'),
+      power_of_attorney: t('drafting.templatePoA'),
+      terms_conditions: t('drafting.templateTerms'),
+      privacy_policy: t('drafting.templatePrivacy'),
+    };
+    return map[value] || value;
+  };
+
+  const handleSelect = (value: string) => {
+    onSelectTemplate(value);
+    setIsTemplateDropdownOpen(false);
+  };
 
   return (
     <div className="glass-panel border border-border-main rounded-3xl p-6 sm:p-8 flex flex-col h-auto lg:h-[700px] shrink-0 shadow-sm hover:lift transition-all">
@@ -42,44 +79,48 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
               </span>
             )}
           </div>
+          
+          {/* Custom Dropdown */}
           <div className="relative group">
-            <LayoutTemplate className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-start opacity-70" />
-            <select
-              value={selectedTemplate}
-              onChange={(e) => onSelectTemplate(e.target.value)}
+            <LayoutTemplate className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-start opacity-70 pointer-events-none z-10" />
+            <button
+              type="button"
+              onClick={() => isPro && setIsTemplateDropdownOpen(!isTemplateDropdownOpen)}
               disabled={!isPro}
-              className="w-full pl-11 pr-10 py-3.5 bg-surface border border-border-main rounded-xl text-sm font-bold text-text-primary focus:border-primary-start outline-none transition-all appearance-none cursor-pointer disabled:opacity-50"
+              className="w-full pl-11 pr-10 py-3.5 bg-surface border border-border-main rounded-xl text-sm font-bold text-text-primary focus:border-primary-start outline-none transition-all appearance-none cursor-pointer disabled:opacity-50 flex items-center justify-between"
             >
-              <option value="generic" className="bg-surface">{t('drafting.templateGeneric')}</option>
-              <optgroup label={t('drafting.groupLitigation')} className="bg-surface text-text-primary italic">
-                <option value="padi" className="bg-surface not-italic">{t('drafting.templatePadi')}</option>
-                <option value="pergjigje" className="bg-surface not-italic">{t('drafting.templatePergjigje')}</option>
-                <option value="kunderpadi" className="bg-surface not-italic">{t('drafting.templateKunderpadi')}</option>
-                <option value="ankese" className="bg-surface not-italic">{t('drafting.templateAnkese')}</option>
-                <option value="prapësim" className="bg-surface not-italic">{t('drafting.templatePrapesim')}</option>
-              </optgroup>
-              <optgroup label={t('drafting.groupCorporate')} className="bg-surface text-text-primary italic">
-                <option value="nda" className="bg-surface not-italic">{t('drafting.templateNDA')}</option>
-                <option value="mou" className="bg-surface not-italic">{t('drafting.templateMoU')}</option>
-                <option value="shareholders" className="bg-surface not-italic">{t('drafting.templateShareholders')}</option>
-                <option value="sla" className="bg-surface not-italic">{t('drafting.templateSLA')}</option>
-              </optgroup>
-              <optgroup label={t('drafting.groupEmployment')} className="bg-surface text-text-primary italic">
-                <option value="employment_contract" className="bg-surface not-italic">{t('drafting.templateKontrate')}</option>
-                <option value="termination_notice" className="bg-surface not-italic">{t('drafting.templateTermination')}</option>
-                <option value="warning_letter" className="bg-surface not-italic">{t('drafting.templateWarning')}</option>
-              </optgroup>
-              <optgroup label={t('drafting.groupRealEstate')} className="bg-surface text-text-primary italic">
-                <option value="lease_agreement" className="bg-surface not-italic">{t('drafting.templateLease')}</option>
-                <option value="sales_purchase" className="bg-surface not-italic">{t('drafting.templateSales')}</option>
-                <option value="power_of_attorney" className="bg-surface not-italic">{t('drafting.templatePoA')}</option>
-              </optgroup>
-              <optgroup label={t('drafting.groupCompliance')} className="bg-surface text-text-primary italic">
-                <option value="terms_conditions" className="bg-surface not-italic">{t('drafting.templateTerms')}</option>
-                <option value="privacy_policy" className="bg-surface not-italic">{t('drafting.templatePrivacy')}</option>
-              </optgroup>
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted pointer-events-none" />
+              <span>{getOptionLabel(selectedTemplate)}</span>
+              <ChevronDown className={`h-4 w-4 text-text-muted transition-transform ${isTemplateDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {isTemplateDropdownOpen && isPro && (
+              <div className="absolute z-50 mt-1 w-full bg-surface border border-border-main rounded-xl shadow-lg max-h-60 overflow-y-auto custom-scrollbar">
+                {/* Generic option */}
+                <div
+                  onClick={() => handleSelect('generic')}
+                  className="px-4 py-2 hover:bg-hover cursor-pointer text-sm font-bold text-text-primary"
+                >
+                  {t('drafting.templateGeneric')}
+                </div>
+                
+                {templateGroups.map((group) => (
+                  <div key={group.label}>
+                    <div className="px-4 py-1 text-xs font-black uppercase tracking-widest text-text-muted bg-surface/50 sticky top-0">
+                      {group.label}
+                    </div>
+                    {group.options.map((opt) => (
+                      <div
+                        key={opt}
+                        onClick={() => handleSelect(opt)}
+                        className="px-4 py-2 hover:bg-hover cursor-pointer text-sm font-bold text-text-primary pl-6"
+                      >
+                        {getOptionLabel(opt)}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
