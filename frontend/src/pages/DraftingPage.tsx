@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.9 (HIGH CONTRAST & READABILITY)
+// PHOENIX PROTOCOL - DRAFTING PAGE V8.0 (HIGH CONTRAST FORCED)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,14 +16,18 @@ import { constructSmartPrompt } from '../drafting/utils/promptConstructor';
 const lawyerGradeStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
-  .legal-document {
+  .legal-document,
+  .legal-document * {
     font-family: 'Tinos', 'Times New Roman', serif;
     background: #ffffff !important;
     color: #000000 !important;
-    padding: 2.5cm 2cm;
     line-height: 1.5;
     font-size: 12pt;
     text-align: justify;
+  }
+
+  .legal-document {
+    padding: 2.5cm 2cm;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     margin: 0 auto;
     width: 21cm;
@@ -31,9 +35,6 @@ const lawyerGradeStyles = `
     box-sizing: border-box;
     min-height: 29.7cm;
     position: relative;
-    /* Force high contrast */
-    background-color: #ffffff !important;
-    color: #000000 !important;
   }
 
   @media print {
@@ -54,7 +55,6 @@ const lawyerGradeStyles = `
     margin-bottom: 24pt;
     border-bottom: 2px solid #000000;
     padding-bottom: 4pt;
-    color: #000000 !important;
   }
   .legal-content h2 {
     text-transform: uppercase;
@@ -63,7 +63,6 @@ const lawyerGradeStyles = `
     margin-top: 18pt;
     margin-bottom: 12pt;
     text-align: center;
-    color: #000000 !important;
   }
   .legal-content h3 {
     font-weight: 700;
@@ -72,15 +71,12 @@ const lawyerGradeStyles = `
     margin-bottom: 6pt;
     text-transform: uppercase;
     text-align: left;
-    color: #000000 !important;
   }
   .legal-content p {
     margin-bottom: 12pt;
-    color: #000000 !important;
   }
   .legal-content strong, .legal-content b {
     font-weight: 700 !important;
-    color: #000000 !important;
   }
   .legal-content blockquote {
     border: none;
@@ -89,13 +85,11 @@ const lawyerGradeStyles = `
     text-align: center;
     font-style: normal;
     font-weight: 700;
-    color: #000000 !important;
   }
   .legal-content li {
-    color: #000000 !important;
+    margin-bottom: 4pt;
   }
   .legal-content a {
-    color: #000000 !important;
     text-decoration: underline;
   }
 `;
