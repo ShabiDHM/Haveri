@@ -1,6 +1,6 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V30.0 (EXECUTIVE DESIGN SYSTEM)
-// Three‑tier layering: glass‑panel with bg-surface/30 for main container, bg-canvas for inputs.
+// PHOENIX PROTOCOL - PROFILE TAB V28.3 (EXECUTIVE DESIGN SYSTEM)
+// Three‑tier layering: glass-panel outer, bg-surface/30 panels, bg-canvas inputs.
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
@@ -198,291 +198,209 @@ export const ProfileTab: React.FC = () => {
       </div>
     );
 
-  const inputClasses =
-    'glass-input w-full bg-canvas border-border-main rounded-xl py-4 px-5 text-sm font-bold text-text-primary focus:border-primary-start placeholder:text-text-muted';
+  const inputClasses = 'glass-input w-full pl-11 text-sm border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-canvas';
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-5xl mx-auto space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="glass-panel bg-canvas border border-border-main shadow-sm rounded-3xl p-6 md:p-8"
     >
-      {/* Main form container – now uses glass-panel with bg-surface/30 */}
-      <form onSubmit={handleProfileSubmit} className="glass-panel bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl p-8 sm:p-10 shadow-sm relative overflow-hidden">
-        {/* Executive Top Accent */}
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary-start to-primary-hover" />
-
-        {/* --- HEADER SECTION --- */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 gap-6 border-b border-border-main/50 pb-8">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 bg-primary-start/10 text-primary-start rounded-2xl border border-primary-start/20 shadow-inner">
-              <Building2 size={28} />
-            </div>
-            <div>
-              <h3 className="text-2xl font-black text-text-primary tracking-tight uppercase">
-                {t('business.firmData', 'Të dhënat e Zyrës')}
-              </h3>
-              <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mt-1">
-                {t('business.firmDataSub', 'Konfigurimi i profilit të zyrës')}
-              </p>
-            </div>
-          </div>
-
-          {/* Logo Upload Section */}
-          <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-            <div className="w-20 h-20 rounded-full bg-canvas border border-border-main flex items-center justify-center overflow-hidden shadow-sm transition-all hover:border-primary-start/50 hover-lift">
-              {logoLoading ? (
-                <Loader2 className="animate-spin text-primary-start" />
-              ) : logoSrc ? (
-                <img src={logoSrc} className="w-full h-full object-contain p-2" alt="Logo" />
-              ) : (
-                <Upload className="text-text-muted" />
-              )}
-            </div>
-            <div className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <Camera size={20} className="text-white" />
-            </div>
-            <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
-          </div>
-        </div>
-
-        {/* --- FORM FIELDS --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Firm Name */}
-          <div className="col-span-1 md:col-span-2">
-            <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">
-              {t('business.firmNameLabel', 'Emri i Firmës / Zyrës')}
-            </label>
-            <input
-              type="text"
-              value={formData.firm_name}
-              onChange={(e) => setFormData({ ...formData, firm_name: e.target.value })}
-              className={inputClasses}
-            />
-          </div>
-
-          {/* Email & Phone */}
-          <div>
-            <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">
-              {t('business.emailPublicLabel', 'Email Publik')}
-            </label>
-            <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                type="email"
-                value={formData.email_public}
-                onChange={(e) => setFormData({ ...formData, email_public: e.target.value })}
-                className={inputClasses + ' pl-11'}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">
-              {t('business.phoneLabel', 'Telefoni')}
-            </label>
-            <div className="relative group">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                type="text"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className={inputClasses + ' pl-11'}
-              />
-            </div>
-          </div>
-
-          {/* Address & City */}
-          <div>
-            <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">
-              {t('business.addressLabel', 'Adresa')}
-            </label>
-            <div className="relative group">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className={inputClasses + ' pl-11'}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">
-              {t('business.cityLabel', 'Qyteti')}
-            </label>
-            <div className="relative group">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className={inputClasses + ' pl-11'}
-              />
-            </div>
-          </div>
-
-          {/* Website & Tax ID */}
-          <div>
-            <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">
-              {t('business.websiteLabel', 'Website')}
-            </label>
-            <div className="relative group">
-              <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                type="text"
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                className={inputClasses + ' pl-11'}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">
-              {t('business.taxIdLabel', 'Numri Fiskal')}
-            </label>
-            <div className="relative group">
-              <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-              <input
-                type="text"
-                value={formData.tax_id}
-                onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
-                className={inputClasses + ' pl-11'}
-              />
-            </div>
-          </div>
-
-          {/* Fiscal Parameters */}
-          <div className="col-span-1 md:col-span-2 pt-8 border-t border-border-main mt-4">
-            <SectionHeader icon={<Calculator size={18} />} title="Parametrat Fiskal" />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">
-                  {t('business.vatRateLabel', 'TVSH %')}
-                </label>
-                <input
-                  type="number"
-                  value={formData.vat_rate}
-                  onChange={(e) => setFormData({ ...formData, vat_rate: parseFloat(e.target.value) })}
-                  className={inputClasses}
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">
-                  {t('business.targetMarginLabel', 'Margjina %')}
-                </label>
-                <div className="relative group">
-                  <TrendingUp className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                  <input
-                    type="number"
-                    value={formData.target_margin}
-                    onChange={(e) => setFormData({ ...formData, target_margin: parseFloat(e.target.value) })}
-                    className={inputClasses + ' pl-11'}
-                  />
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="lg:col-span-4 space-y-6">
+            <Panel className="p-6 sm:p-8 flex flex-col items-center text-center border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
+              <div className="relative group mb-6" onClick={() => fileInputRef.current?.click()}>
+                <div className="w-24 h-24 rounded-2xl flex items-center justify-center border border-border-main bg-surface/30 backdrop-blur-sm hover-lift shadow-sm">
+                  {logoLoading ? (
+                    <Loader2 className="animate-spin text-primary-start" />
+                  ) : logoSrc ? (
+                    <img src={logoSrc} className="w-full h-full object-contain" alt="Logo" />
+                  ) : (
+                    <Upload className="text-text-muted" />
+                  )}
+                </div>
+                <div className="absolute inset-0 rounded-2xl bg-canvas/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                  <Camera className="text-text-inverse" size={20} />
                 </div>
               </div>
-              <div>
-                <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest mb-2 ml-1">
-                  {t('business.currencyLabel', 'Monedha')}
-                </label>
-                <div className="relative group">
-                  <Coins className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                  <select
-                    value={formData.currency}
-                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                    className={`${inputClasses} pl-11 appearance-none cursor-pointer`}
-                  >
-                    <option value="EUR">Euro (€)</option>
-                    <option value="LEK">Lek (ALL)</option>
-                    <option value="USD">Dollar ($)</option>
-                  </select>
+              <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
+              <h2 className="text-lg font-bold text-text-primary">{profile?.firm_name || 'Kompania'}</h2>
+            </Panel>
+
+            <Panel className="p-6 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-text-muted">Abonimi</h4>
+                <div className="px-2 py-0.5 bg-primary-start/10 rounded border border-primary-start/30 text-primary-start text-xs font-black uppercase tracking-widest flex items-center gap-1">
+                  <Crown size={10} /> {currentPlan}
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* --- FOOTER --- */}
-        <div className="pt-8 mt-8 border-t border-border-main/50 flex justify-end">
-          <button
-            type="submit"
-            disabled={saving}
-            className="btn-primary px-10 py-4 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg hover-lift"
-          >
-            {saving ? <Loader2 className="animate-spin" /> : <Save size={18} className="inline mr-2" />}
-            {t('general.save')}
-          </button>
-        </div>
-      </form>
-
-      {/* Additional panels (Subscription, Inbox, Team) – also use bg-surface/30 for consistency */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-4 space-y-6">
-          {/* Subscription Panel */}
-          <Panel className="p-6 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="text-xs font-black uppercase tracking-widest text-text-muted">Abonimi</h4>
-              <div className="px-2 py-0.5 bg-primary-start/10 rounded border border-primary-start/30 text-primary-start text-xs font-black uppercase tracking-widest flex items-center gap-1">
-                <Crown size={10} /> {currentPlan}
-              </div>
-            </div>
-          </Panel>
-
-          {/* Inbox Card */}
-          <div onClick={() => navigate('/business/inbox')} className="cursor-pointer">
-            <Panel className="p-6 hover:border-primary-start/30 transition-all shadow-sm border border-border-main bg-surface/30 backdrop-blur-sm hover-lift">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-primary-start/20 text-primary-start border border-border-main">
-                    <Mail size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-text-primary">Inbox</h3>
-                    <p className="text-sm text-text-muted">Mesazhe</p>
-                  </div>
-                </div>
-                <ArrowRight size={20} className="text-text-muted" />
               </div>
             </Panel>
+
+            <div onClick={() => navigate('/business/inbox')} className="cursor-pointer">
+              <Panel className="p-6 hover:border-primary-start/30 transition-all shadow-sm border border-border-main bg-surface/30 backdrop-blur-sm hover-lift">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-2xl bg-primary-start/20 text-primary-start border border-border-main">
+                      <Mail size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg text-text-primary">Inbox</h3>
+                      <p className="text-sm text-text-muted">Mesazhe</p>
+                    </div>
+                  </div>
+                  <ArrowRight size={20} className="text-text-muted" />
+                </div>
+              </Panel>
+            </div>
+
+            {user?.organization_role === 'OWNER' && (
+              <Panel className="p-6 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
+                <SectionHeader icon={<Users size={16} />} title="Ekipi" />
+                <form onSubmit={handleInviteUser} className="mb-6">
+                  <FormField label="Email" icon={<Mail size={16} />}>
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      disabled={isPlanFull}
+                      className="glass-input w-full pl-11 bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all text-sm"
+                      placeholder="email@ekipi.com"
+                    />
+                  </FormField>
+                  <button
+                    type="submit"
+                    disabled={inviting}
+                    className="w-full mt-4 py-2 btn-primary rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover-lift shadow-sm"
+                  >
+                    {inviting ? <Loader2 className="animate-spin" size={12} /> : <UserPlus size={12} />} FTO ANËTARIN
+                  </button>
+                </form>
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {teamMembers.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface/50 backdrop-blur-sm rounded-xl border border-border-main">
+                      <p className="text-xs text-text-secondary truncate max-w-[70%]">{member.email}</p>
+                      <button
+                        onClick={() => handleRemoveMember(member.id)}
+                        className="p-1.5 rounded-md text-text-muted hover:text-danger-start hover:bg-danger-start/10 transition-colors hover-lift"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            )}
           </div>
 
-          {/* Team Panel (if owner) */}
-          {user?.organization_role === 'OWNER' && (
-            <Panel className="p-6 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-              <SectionHeader icon={<Users size={16} />} title="Ekipi" />
-              <form onSubmit={handleInviteUser} className="mb-6">
-                <FormField label="Email" icon={<Mail size={16} />}>
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    disabled={isPlanFull}
-                    className="glass-input w-full pl-11 bg-canvas border-border-main rounded-xl py-3 text-sm text-text-primary placeholder:text-text-muted"
-                    placeholder="email@ekipi.com"
-                  />
-                </FormField>
-                <button
-                  type="submit"
-                  disabled={inviting}
-                  className="w-full mt-4 py-2 btn-primary rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover-lift shadow-sm"
-                >
-                  {inviting ? <Loader2 className="animate-spin" size={12} /> : <UserPlus size={12} />} FTO ANËTARIN
-                </button>
-              </form>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {teamMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface/50 backdrop-blur-sm rounded-xl border border-border-main">
-                    <p className="text-xs text-text-secondary truncate max-w-[70%]">{member.email}</p>
+          <div className="lg:col-span-8">
+            <form onSubmit={handleProfileSubmit}>
+              <Panel className="p-6 sm:p-10 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
+                <SectionHeader icon={<Building2 size={20} />} title="Konfigurimi" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField label="Emri" icon={<Building2 size={16} />}>
+                    <input
+                      type="text"
+                      value={formData.firm_name}
+                      onChange={(e) => setFormData({ ...formData, firm_name: e.target.value })}
+                      className={inputClasses}
+                    />
+                  </FormField>
+                  <FormField label="Email" icon={<Mail size={16} />}>
+                    <input
+                      type="email"
+                      value={formData.email_public}
+                      onChange={(e) => setFormData({ ...formData, email_public: e.target.value })}
+                      className={inputClasses}
+                    />
+                  </FormField>
+                  <FormField label="Telefon" icon={<Phone size={16} />}>
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className={inputClasses}
+                    />
+                  </FormField>
+                  <FormField label="Adresa" icon={<MapPin size={16} />}>
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className={inputClasses}
+                    />
+                  </FormField>
+                  <FormField label="Qyteti" icon={<MapPin size={16} />}>
+                    <input
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className={inputClasses}
+                    />
+                  </FormField>
+                  <FormField label="Website" icon={<Globe size={16} />}>
+                    <input
+                      type="text"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      className={inputClasses}
+                    />
+                  </FormField>
+                  <FormField label="Numri Fiskal" icon={<CreditCard size={16} />}>
+                    <input
+                      type="text"
+                      value={formData.tax_id}
+                      onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                      className={inputClasses}
+                    />
+                  </FormField>
+
+                  <div className="md:col-span-2 pt-8 border-t border-border-main mt-4">
+                    <SectionHeader icon={<Calculator size={18} />} title="Parametrat Fiskal" />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      <FormField label="TVSH %" icon={<span className="text-xs font-bold">%</span>}>
+                        <input
+                          type="number"
+                          value={formData.vat_rate}
+                          onChange={(e) => setFormData({ ...formData, vat_rate: parseFloat(e.target.value) })}
+                          className={inputClasses}
+                        />
+                      </FormField>
+                      <FormField label="Margjina %" icon={<TrendingUp size={16} />}>
+                        <input
+                          type="number"
+                          value={formData.target_margin}
+                          onChange={(e) => setFormData({ ...formData, target_margin: parseFloat(e.target.value) })}
+                          className={inputClasses}
+                        />
+                      </FormField>
+                      <FormField label="Monedha" icon={<Coins size={16} />}>
+                        <select
+                          value={formData.currency}
+                          onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                          className={`${inputClasses} appearance-none cursor-pointer`}
+                        >
+                          <option value="EUR">Euro (€)</option>
+                          <option value="LEK">Lek (ALL)</option>
+                          <option value="USD">Dollar ($)</option>
+                        </select>
+                      </FormField>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 mt-6">
                     <button
-                      onClick={() => handleRemoveMember(member.id)}
-                      className="p-1.5 rounded-md text-text-muted hover:text-danger-start hover:bg-danger-start/10 transition-colors hover-lift"
+                      type="submit"
+                      className="btn-primary w-full py-4 flex items-center justify-center gap-2 rounded-xl hover-lift shadow-sm"
+                      disabled={saving}
                     >
-                      <Trash2 size={14} />
+                      {saving ? <Loader2 className="animate-spin" /> : <Save size={18} />}RUHAJ
                     </button>
                   </div>
-                ))}
-              </div>
-            </Panel>
-          )}
+                </div>
+              </Panel>
+            </form>
+          </div>
         </div>
       </div>
     </motion.div>
