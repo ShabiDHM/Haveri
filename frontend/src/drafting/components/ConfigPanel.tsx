@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw, ChevronDown } from 'lucide-react';
 import { ConfigPanelProps } from '../types';
 import { getTemplatePlaceholder } from '../utils/templateHelpers';
@@ -15,9 +15,26 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   onSubmit,
 }) => {
   const placeholder = useMemo(() => getTemplatePlaceholder(selectedTemplate), [selectedTemplate]);
-  const [isTemplateDropdownOpen, setIsTemplateDropdownOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Groups and options (simplified – you can keep the original groups)
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const templateGroups = [
     { label: t('drafting.groupLitigation'), options: ['padi', 'pergjigje', 'kunderpadi', 'ankese', 'prapësim'] },
     { label: t('drafting.groupCorporate'), options: ['nda', 'mou', 'shareholders', 'sla'] },
@@ -52,7 +69,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
   const handleSelect = (value: string) => {
     onSelectTemplate(value);
-    setIsTemplateDropdownOpen(false);
+    setIsOpen(false);
   };
 
   return (
@@ -68,7 +85,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
       <div className="flex flex-col gap-6 flex-1 min-h-0 overflow-hidden">
         {/* Template Selector Only */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 relative z-20"> {/* Added relative z-20 to establish stacking context */}
           <div className="flex justify-between items-center mb-2">
             <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">
               {t('drafting.templateLabel')}
@@ -81,20 +98,25 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
           </div>
           
           {/* Custom Dropdown */}
-          <div className="relative group">
+          <div className="relative">
             <LayoutTemplate className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-start opacity-70 pointer-events-none z-10" />
             <button
+              ref={buttonRef}
               type="button"
-              onClick={() => isPro && setIsTemplateDropdownOpen(!isTemplateDropdownOpen)}
+              onClick={() => isPro && setIsOpen(!isOpen)}
               disabled={!isPro}
               className="w-full pl-11 pr-10 py-3.5 bg-surface border border-border-main rounded-xl text-sm font-bold text-text-primary focus:border-primary-start outline-none transition-all appearance-none cursor-pointer disabled:opacity-50 flex items-center justify-between"
             >
               <span>{getOptionLabel(selectedTemplate)}</span>
-              <ChevronDown className={`h-4 w-4 text-text-muted transition-transform ${isTemplateDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-4 w-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             
-            {isTemplateDropdownOpen && isPro && (
-              <div className="absolute z-50 mt-1 w-full bg-surface border border-border-main rounded-xl shadow-lg max-h-60 overflow-y-auto custom-scrollbar">
+            {isOpen && isPro && (
+              <div
+                ref={dropdownRef}
+                className="absolute z-[9999] mt-1 w-full bg-card border border-border-main rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar"
+                style={{ backgroundColor: 'var(--bg-card)' }} // Force solid background
+              >
                 {/* Generic option */}
                 <div
                   onClick={() => handleSelect('generic')}
