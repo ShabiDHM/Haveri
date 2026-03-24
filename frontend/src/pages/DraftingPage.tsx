@@ -1,6 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.4 (EXECUTIVE DESIGN SYSTEM)
-// Aligned with Law Search and Finance pages: bg-canvas, consistent spacing, glass panels.
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.5 (EXECUTIVE GLASS ARCHITECTURE)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -144,15 +143,15 @@ const DraftingPage: React.FC = () => {
   };
 
   return (
-    <motion.div 
-      className="w-full h-full overflow-hidden bg-canvas" 
-      initial={{ opacity: 0 }} 
+    <motion.div
+      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      className="w-full h-full overflow-hidden bg-canvas"
     >
       <div className="h-full flex flex-col overflow-hidden p-6 sm:p-8">
         <style>{lawyerGradeStyles}</style>
 
-        {/* Page Header - Consistent with Law Search */}
+        {/* Executive Header */}
         <div className="flex items-center gap-4 mb-8 flex-shrink-0">
           <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm">
             <PenTool size={24} />
@@ -165,34 +164,38 @@ const DraftingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Grid */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        {/* Outer glass panel – same as FinanceTab */}
+        <div className="glass-panel bg-canvas border border-border-main shadow-sm rounded-3xl p-6 sm:p-8 flex-1 min-h-0">
           <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
-            {/* Config Panel */}
+            {/* Config Panel – now uses bg-surface/30 (like FinanceTab stats cards) */}
             <div className="h-full overflow-y-auto custom-scrollbar pr-2">
-              <ConfigPanel
-                t={t}
-                isPro={isPro}
-                selectedTemplate={selectedTemplate}
-                context={context}
-                isSubmitting={isSubmitting}
-                onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
-                onChangeContext={setContext}
-                onSubmit={runDraftingStream}
-              />
+              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl p-6 sm:p-8 h-full">
+                <ConfigPanel
+                  t={t}
+                  isPro={isPro}
+                  selectedTemplate={selectedTemplate}
+                  context={context}
+                  isSubmitting={isSubmitting}
+                  onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
+                  onChangeContext={setContext}
+                  onSubmit={runDraftingStream}
+                />
+              </div>
             </div>
-            
-            {/* Result Panel */}
+
+            {/* Result Panel – same styling */}
             <div className="h-full overflow-y-auto custom-scrollbar pl-2">
-              <ResultPanel
-                t={t}
-                currentJob={currentJob}
-                saving={saving}
-                notification={notification}
-                onSave={handleSaveToArchive}
-                onRetry={retry}
-                onClear={clearJob}
-              />
+              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl p-6 sm:p-8 h-full">
+                <ResultPanel
+                  t={t}
+                  currentJob={currentJob}
+                  saving={saving}
+                  notification={notification}
+                  onSave={handleSaveToArchive}
+                  onRetry={retry}
+                  onClear={clearJob}
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V6.3 (EXECUTIVE DESIGN SYSTEM)
-// Three‑tier layering: glass-panel outer, inputs use bg-canvas for contrast.
+// PHOENIX PROTOCOL - CONFIG PANEL V6.4 (EXECUTIVE DESIGN SYSTEM)
+// Fixed: added named export.
 
 import React, { useMemo } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw } from 'lucide-react';
@@ -20,8 +20,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   const placeholder = useMemo(() => getTemplatePlaceholder(selectedTemplate), [selectedTemplate]);
 
   return (
-    <div className="glass-panel border border-border-main shadow-sm flex flex-col h-auto lg:h-[700px] p-6 sm:p-8 shrink-0 hover-lift">
-      
+    <div className="flex flex-col h-auto lg:h-full w-full">
       {/* Executive Header */}
       <div className="flex items-center gap-3 border-b border-border-main pb-5 mb-6 flex-shrink-0">
         <FileText className="text-primary-start" size={20} />
