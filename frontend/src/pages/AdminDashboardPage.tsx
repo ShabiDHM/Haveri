@@ -1,4 +1,4 @@
-// FILE: src/pages/AdminDashboardPage.tsx
+// FILE: src/pages/ AdminDashboardPage.tsx
 // PHOENIX PROTOCOL - ADMIN DASHBOARD V5.3 (EXECUTIVE DESIGN SYSTEM)
 // Aligned with FinanceTab: glass-panel outer, bg-surface/30 panels, bg-canvas inputs.
 
