@@ -1,7 +1,6 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR PAGE V7.2 (EXECUTIVE DESIGN SYSTEM)
-// Three‑tier layering: glass‑panel outer, bg‑surface cards, bg‑canvas inputs.
-// Full file, no truncation.
+// PHOENIX PROTOCOL - CALENDAR PAGE V7.3 (EXECUTIVE DESIGN SYSTEM)
+// Unified with FinanceTab: outer glass-panel, bg-canvas background, three‑tier layering.
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -525,164 +524,171 @@ const CalendarPage: React.FC = () => {
     <div className="min-h-screen bg-canvas font-sans text-text-primary">
       <div id="react-datepicker-portal"></div>
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-8">
-          <div>
-            <h1 className="text-4xl font-black text-text-primary flex items-center gap-4">
-              <CalendarIcon className="text-primary-start h-10 w-10" />
-              <span className="capitalize">{format(currentDate, 'LLLL yyyy', { locale: currentLocale })}</span>
-            </h1>
-            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mt-2 ml-14">{t('calendar.pageSubtitle')}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
-            <div className="flex items-center bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-2 shadow-sm">
-              <button onClick={() => navigateMonth('prev')} className="p-3 hover:bg-hover rounded-xl transition-colors hover-lift">
-                <ChevronLeft size={20} />
-              </button>
-              <button onClick={() => setCurrentDate(new Date())} className="px-6 py-2 text-sm font-bold hover:bg-hover rounded-xl transition-colors whitespace-nowrap hover-lift">
-                {t('calendar.today')}
-              </button>
-              <button onClick={() => navigateMonth('next')} className="p-3 hover:bg-hover rounded-xl transition-colors hover-lift">
-                <ChevronRight size={20} />
+        {/* Outer glass panel – matches FinanceTab structure */}
+        <div className="glass-panel p-6 md:p-8 space-y-6 border border-border-main shadow-sm">
+          {/* Header section */}
+          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+            <div>
+              <h1 className="text-4xl font-black text-text-primary flex items-center gap-4">
+                <CalendarIcon className="text-primary-start h-10 w-10" />
+                <span className="capitalize">{format(currentDate, 'LLLL yyyy', { locale: currentLocale })}</span>
+              </h1>
+              <p className="text-xs font-black uppercase tracking-widest text-text-muted mt-2 ml-14">{t('calendar.pageSubtitle')}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
+              <div className="flex items-center bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-2 shadow-sm">
+                <button onClick={() => navigateMonth('prev')} className="p-3 hover:bg-hover rounded-xl transition-colors hover-lift">
+                  <ChevronLeft size={20} />
+                </button>
+                <button onClick={() => setCurrentDate(new Date())} className="px-6 py-2 text-sm font-bold hover:bg-hover rounded-xl transition-colors whitespace-nowrap hover-lift">
+                  {t('calendar.today')}
+                </button>
+                <button onClick={() => navigateMonth('next')} className="p-3 hover:bg-hover rounded-xl transition-colors hover-lift">
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+              <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary flex items-center gap-3 px-5 py-3 rounded-xl whitespace-nowrap flex-shrink-0 hover-lift shadow-sm">
+                <Plus size={20} />
+                <span>{t('calendar.newEvent')}</span>
               </button>
             </div>
-            <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary flex items-center gap-3 px-5 py-3 rounded-xl whitespace-nowrap flex-shrink-0 hover-lift shadow-sm">
-              <Plus size={20} />
-              <span>{t('calendar.newEvent')}</span>
-            </button>
           </div>
-        </div>
 
-        {error && (
-          <div className="bg-danger-start/10 border border-danger-start/30 rounded-xl p-4 mb-6 flex items-center space-x-3">
-            <AlertCircle className="h-5 w-5 text-danger-start" />
-            <span className="text-danger-start text-sm">{error}</span>
-          </div>
-        )}
+          {error && (
+            <div className="bg-danger-start/10 border border-danger-start/30 rounded-xl p-4 flex items-center space-x-3">
+              <AlertCircle className="h-5 w-5 text-danger-start" />
+              <span className="text-danger-start text-sm">{error}</span>
+            </div>
+          )}
 
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-          <div className="xl:col-span-3 space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4 p-4 bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl shadow-sm">
-              <div className="relative flex-grow group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
-                <input
-                  type="text"
-                  placeholder={t('calendar.searchPlaceholder')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="glass-input w-full pl-12 bg-canvas border-border-main rounded-xl py-3 text-sm"
-                />
-              </div>
-              <div className="flex gap-3">
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="glass-input w-full sm:w-auto bg-canvas border-border-main rounded-xl py-3 text-sm"
-                >
-                  <option value="ALL">{t('calendar.allTypes')}</option>
-                  {Object.keys(t('calendar.types', { returnObjects: true })).map((key) => (
-                    <option key={key} value={key}>
-                      {t(`calendar.types.${key}`)}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value)}
-                  className="glass-input w-full sm:w-auto bg-canvas border-border-main rounded-xl py-3 text-sm"
-                >
-                  <option value="ALL">{t('calendar.allPriorities')}</option>
-                  <option value="LOW">LOW</option>
-                  <option value="MEDIUM">MEDIUM</option>
-                  <option value="HIGH">HIGH</option>
-                  <option value="CRITICAL">CRITICAL</option>
-                </select>
-                <div className="flex bg-surface/30 backdrop-blur-sm p-1.5 rounded-2xl border border-border-main">
-                  <button
-                    onClick={() => setViewMode('month')}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all hover-lift ${viewMode === 'month' ? 'bg-primary-start text-white shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+          {/* Main content grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+            <div className="xl:col-span-3 space-y-6">
+              {/* Search and filter bar */}
+              <div className="flex flex-col sm:flex-row gap-4 p-4 bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl shadow-sm">
+                <div className="relative flex-grow group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
+                  <input
+                    type="text"
+                    placeholder={t('calendar.searchPlaceholder')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="glass-input w-full pl-12 bg-canvas border-border-main rounded-xl py-3 text-sm"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="glass-input w-full sm:w-auto bg-canvas border-border-main rounded-xl py-3 text-sm"
                   >
-                    {t('calendar.month')}
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all hover-lift ${viewMode === 'list' ? 'bg-primary-start text-white shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                    <option value="ALL">{t('calendar.allTypes')}</option>
+                    {Object.keys(t('calendar.types', { returnObjects: true })).map((key) => (
+                      <option key={key} value={key}>
+                        {t(`calendar.types.${key}`)}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={filterPriority}
+                    onChange={(e) => setFilterPriority(e.target.value)}
+                    className="glass-input w-full sm:w-auto bg-canvas border-border-main rounded-xl py-3 text-sm"
                   >
-                    {t('calendar.list')}
-                  </button>
+                    <option value="ALL">{t('calendar.allPriorities')}</option>
+                    <option value="LOW">LOW</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="CRITICAL">CRITICAL</option>
+                  </select>
+                  <div className="flex bg-surface/30 backdrop-blur-sm p-1.5 rounded-2xl border border-border-main">
+                    <button
+                      onClick={() => setViewMode('month')}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all hover-lift ${viewMode === 'month' ? 'bg-primary-start text-white shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                    >
+                      {t('calendar.month')}
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all hover-lift ${viewMode === 'list' ? 'bg-primary-start text-white shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                    >
+                      {t('calendar.list')}
+                    </button>
+                  </div>
                 </div>
               </div>
+              {/* Calendar view */}
+              {viewMode === 'month' ? renderMonthView() : renderListView()}
             </div>
-            {viewMode === 'month' ? renderMonthView() : renderListView()}
-          </div>
-          <div className="xl:col-span-1 space-y-8">
-            {/* Alerts Panel */}
-            <Panel className="p-6 relative overflow-hidden border-t-4 border-t-warning-start border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-              <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-                <Bell size={80} />
-              </div>
-              <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-3">
-                <Bell className="text-warning-start" size={20} />
-                {t('calendar.upcomingAlerts')}
-              </h3>
-              <div className="space-y-4">
-                {upcomingAlerts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <div className="w-16 h-16 rounded-full bg-surface flex items-center justify-center mb-4 border border-border-main">
-                      <AlertTriangle size={28} className="text-text-muted" />
-                    </div>
-                    <p className="text-text-muted text-sm font-medium">{t('calendar.noUpcomingEvents')}</p>
-                    <p className="text-text-muted/60 text-xs mt-1">Asnjë pagesë ose taksë në 7 ditët e ardhshme</p>
-                  </div>
-                ) : (
-                  upcomingAlerts.map((ev) => {
-                    const style = getEventStyle(ev.event_type);
-                    return (
-                      <button
-                        key={getEventId(ev)}
-                        onClick={() => handleEventClick(ev)}
-                        className="w-full flex gap-4 items-start group text-left p-3 rounded-xl hover:bg-hover transition-colors hover-lift"
-                      >
-                        <div className={`mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${style.indicator}`} />
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-text-primary group-hover:text-primary-start transition-colors truncate">{ev.title}</h4>
-                          <p className="text-xs text-text-muted mt-1 flex items-center gap-3">
-                            {format(parseISO(ev.start_date), 'dd MMM')}
-                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${style.border} ${style.bg} ${style.text}`}>
-                              {t(`calendar.types.${ev.event_type}`, ev.event_type)}
-                            </span>
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </Panel>
-
-            {/* Legend Panel */}
-            <Panel className="p-6 border-t-4 border-t-primary-start border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-              <h3 className="text-xl font-bold text-text-primary mb-6">{t('calendar.eventTypes')}</h3>
-              <div className="space-y-3">
-                {Object.keys(t('calendar.types', { returnObjects: true })).map((key) => {
-                  const style = getEventStyle(key);
-                  return (
-                    <div
-                      key={key}
-                      className="flex items-center gap-4 p-3 rounded-xl hover:bg-hover transition-colors cursor-pointer hover-lift"
-                      onClick={() => setFilterType(filterType === key ? 'ALL' : key)}
-                    >
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${style.border} ${style.bg}`}>
-                        {style.icon}
+            <div className="xl:col-span-1 space-y-8">
+              {/* Alerts Panel */}
+              <Panel className="p-6 relative overflow-hidden border-t-4 border-t-warning-start border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
+                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                  <Bell size={80} />
+                </div>
+                <h3 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-3">
+                  <Bell className="text-warning-start" size={20} />
+                  {t('calendar.upcomingAlerts')}
+                </h3>
+                <div className="space-y-4">
+                  {upcomingAlerts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <div className="w-16 h-16 rounded-full bg-surface flex items-center justify-center mb-4 border border-border-main">
+                        <AlertTriangle size={28} className="text-text-muted" />
                       </div>
-                      <span className={`text-base font-bold ${filterType === key ? 'text-text-primary' : 'text-text-muted'}`}>
-                        {t(`calendar.types.${key}`)}
-                      </span>
-                      {filterType === key && <div className="ml-auto w-2 h-2 rounded-full bg-primary-start animate-pulse" />}
+                      <p className="text-text-muted text-sm font-medium">{t('calendar.noUpcomingEvents')}</p>
+                      <p className="text-text-muted/60 text-xs mt-1">Asnjë pagesë ose taksë në 7 ditët e ardhshme</p>
                     </div>
-                  );
-                })}
-              </div>
-            </Panel>
+                  ) : (
+                    upcomingAlerts.map((ev) => {
+                      const style = getEventStyle(ev.event_type);
+                      return (
+                        <button
+                          key={getEventId(ev)}
+                          onClick={() => handleEventClick(ev)}
+                          className="w-full flex gap-4 items-start group text-left p-3 rounded-xl hover:bg-hover transition-colors hover-lift"
+                        >
+                          <div className={`mt-1.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${style.indicator}`} />
+                          <div className="min-w-0">
+                            <h4 className="text-sm font-bold text-text-primary group-hover:text-primary-start transition-colors truncate">{ev.title}</h4>
+                            <p className="text-xs text-text-muted mt-1 flex items-center gap-3">
+                              {format(parseISO(ev.start_date), 'dd MMM')}
+                              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${style.border} ${style.bg} ${style.text}`}>
+                                {t(`calendar.types.${ev.event_type}`, ev.event_type)}
+                              </span>
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </Panel>
+
+              {/* Legend Panel */}
+              <Panel className="p-6 border-t-4 border-t-primary-start border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
+                <h3 className="text-xl font-bold text-text-primary mb-6">{t('calendar.eventTypes')}</h3>
+                <div className="space-y-3">
+                  {Object.keys(t('calendar.types', { returnObjects: true })).map((key) => {
+                    const style = getEventStyle(key);
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-hover transition-colors cursor-pointer hover-lift"
+                        onClick={() => setFilterType(filterType === key ? 'ALL' : key)}
+                      >
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center border ${style.border} ${style.bg}`}>
+                          {style.icon}
+                        </div>
+                        <span className={`text-base font-bold ${filterType === key ? 'text-text-primary' : 'text-text-muted'}`}>
+                          {t(`calendar.types.${key}`)}
+                        </span>
+                        {filterType === key && <div className="ml-auto w-2 h-2 rounded-full bg-primary-start animate-pulse" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Panel>
+            </div>
           </div>
         </div>
       </div>
