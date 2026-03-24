@@ -191,3 +191,11 @@ div[class*="rounded-2xl"], div[class*="rounded-3xl"] {
 .shadow-xl {
   box-shadow: var(--shadow-xl);
 }
+/* Add this inside @layer components */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}

@@ -1,55 +1,61 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        // Foundation - RGB enabled for opacity support
+        // Existing aliases...
         'canvas': 'var(--bg-base)',
         'surface': 'rgb(var(--bg-surface-rgb) / <alpha-value>)',
         'input-bg': 'var(--bg-input)',
-        
-        // Typography
         'primary': 'var(--accent-primary)',
         'primary-hover': 'var(--accent-hover)',
         'primary-start': 'var(--accent-primary)',
         'primary-end': 'var(--accent-hover)',
-        
         'text-primary': 'var(--text-primary)',
         'text-secondary': 'var(--text-secondary)',
         'text-muted': 'var(--text-muted)',
         'text-disabled': 'var(--text-disabled)',
         'text-inverse': '#FFFFFF',
-        
-        // Status with RGB support
         'success-start': 'rgb(var(--status-success-rgb) / <alpha-value>)',
         'warning-start': 'rgb(var(--status-warning-rgb) / <alpha-value>)',
         'danger-start': 'rgb(var(--status-danger-rgb) / <alpha-value>)',
-        
-        // Border Colors
         'border-main': 'var(--border-main)',
         'border-strong': 'var(--border-strong)',
+        // ADD THESE ALIASES to match the class names used in your components
+        'border-border-main': 'var(--border-main)',
+        'border-border-strong': 'var(--border-strong)',
+        'text-text-primary': 'var(--text-primary)',
+        'text-text-secondary': 'var(--text-secondary)',
+        'text-text-muted': 'var(--text-muted)',
+        'text-text-disabled': 'var(--text-disabled)',
+        'bg-canvas': 'var(--bg-base)',
+        'bg-surface': 'rgb(var(--bg-surface-rgb) / <alpha-value>)',
+        'bg-card': 'var(--bg-card)',
+        'bg-hover': 'var(--bg-hover)',
       },
       borderColor: {
         'main': 'var(--border-main)',
         'strong': 'var(--border-strong)',
-        'primary': 'var(--border-primary)',
-        'success': 'var(--status-success)',
-        'danger': 'var(--status-danger)',
+        'border-main': 'var(--border-main)',
+        'border-strong': 'var(--border-strong)',
       },
-      boxShadow: {
-        'lawyer-light': '0 4px 8px rgba(15, 22, 35, 0.08), 0 8px 24px rgba(15, 22, 35, 0.12), 0 0 0 1px rgba(99, 102, 241, 0.1)',
-        'accent-glow': '0 0 15px rgba(99, 102, 241, 0.3)',
-        'inner-trough': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
-      },
-      borderRadius: {
-        'panel': '1.5rem',
-      },
+      // ... rest of your config
     },
   },
-  plugins: [],
-}
+  plugins: [
+    // Add a plugin to generate the `hover-lift` utility
+    function({ addUtilities }) {
+      addUtilities({
+        '.hover-lift': {
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: 'var(--shadow-lg)',
+          },
+        },
+      });
+    },
+  ],
+};
