@@ -1,4 +1,6 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
+// Full working version with custom dropdown and generate button
+
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw, ChevronDown } from 'lucide-react';
 import { ConfigPanelProps } from '../types';
@@ -85,7 +87,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
       <div className="flex flex-col gap-6 flex-1 min-h-0 overflow-hidden">
         {/* Template Selector Only */}
-        <div className="flex-shrink-0 relative z-20"> {/* Added relative z-20 to establish stacking context */}
+        <div className="flex-shrink-0 relative z-20">
           <div className="flex justify-between items-center mb-2">
             <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">
               {t('drafting.templateLabel')}
@@ -115,7 +117,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
               <div
                 ref={dropdownRef}
                 className="absolute z-[9999] mt-1 w-full bg-card border border-border-main rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar"
-                style={{ backgroundColor: 'var(--bg-card)' }} // Force solid background
+                style={{ backgroundColor: 'var(--bg-card)' }}
               >
                 {/* Generic option */}
                 <div
@@ -161,7 +163,10 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
         {/* Primary Action Button */}
         <button
-          onClick={onSubmit}
+          onClick={() => {
+            console.log('Generate button clicked, context length:', context.trim().length);
+            onSubmit();
+          }}
           disabled={isSubmitting || !context.trim()}
           className="btn-primary w-full h-14 flex items-center justify-center gap-3 mt-2 flex-shrink-0 disabled:opacity-40 shadow-lg shadow-primary-start/20 hover-lift"
         >
