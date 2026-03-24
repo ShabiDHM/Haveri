@@ -1,6 +1,6 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V8.2 (EXECUTIVE DESIGN SYSTEM)
-// Three‑tier layering: glass‑panel outer, bg-surface/30 panels, bg-canvas inputs.
+// PHOENIX PROTOCOL - ARCHIVE TAB V8.3 (EXECUTIVE DESIGN SYSTEM)
+// Three‑tier layering: glass-panel outer, bg-surface/30 panels, bg-canvas inputs.
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -221,7 +221,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
     if (loading && filteredItems.length === 0) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary-start" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 h-full flex flex-col border border-border-main bg-canvas shadow-sm">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 h-full flex flex-col border border-border-main shadow-sm">
             {/* Search and Actions Panel */}
             <Panel className="p-4 sm:p-6 flex-shrink-0 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
                 <div className="flex flex-col xl:flex-row gap-4">
