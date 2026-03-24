@@ -1,10 +1,10 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V7.7 (MATCHING BRAIN ICON)
+// PHOENIX PROTOCOL - RESULT PANEL V7.9 (CLEANED IMPORTS, SINGLE BRAIN ICON)
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  RefreshCw, AlertCircle, CheckCircle, Clock,
+  RefreshCw, AlertCircle, CheckCircle,
   FileText, Trash2, Archive, Copy, Download,
   BrainCircuit
 } from 'lucide-react';
@@ -22,16 +22,16 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   onClear,
 }) => {
 
-  const statusUI = useMemo(() => {
+  const statusText = useMemo(() => {
     switch (currentJob.status) {
       case 'COMPLETED':
-        return { text: t('drafting.statusCompleted'), color: 'text-success-start', icon: <CheckCircle className="h-5 w-5" /> };
+        return t('drafting.statusCompleted');
       case 'FAILED':
-        return { text: t('drafting.statusFailed'), color: 'text-danger-start', icon: <AlertCircle className="h-5 w-5" /> };
+        return t('drafting.statusFailed');
       case 'PROCESSING':
-        return { text: t('drafting.statusWorking'), color: 'text-warning-start', icon: <Clock className="h-5 w-5 animate-pulse" /> };
+        return t('drafting.statusWorking');
       default:
-        return { text: t('drafting.statusResult', 'Rezultati'), color: 'text-primary-start', icon: <BrainCircuit className="h-5 w-5" /> };
+        return t('drafting.statusResult', 'Rezultati');
     }
   }, [currentJob.status, t]);
 
@@ -45,16 +45,12 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
       {/* Executive Header Toolbar */}
       <div className="flex justify-between items-center px-6 py-4 bg-surface border-b border-border-main flex-shrink-0 relative z-50 pointer-events-auto">
         <div className="flex items-center gap-4">
-          {/* Static brain icon – matches ConfigPanel header */}
+          {/* Brain icon – matches ConfigPanel exactly */}
           <div className="p-2 bg-primary-start/10 rounded-xl border border-primary-start/20">
             <BrainCircuit className="text-primary-start" size={20} />
           </div>
-          {/* Dynamic status indicator */}
-          <div className={`${statusUI.color} p-2 bg-canvas border border-border-main rounded-xl shadow-inner`}>
-            {statusUI.icon}
-          </div>
           <h3 className="text-text-primary text-xs font-black uppercase tracking-widest leading-none">
-            {statusUI.text}
+            {statusText}
           </h3>
         </div>
 
