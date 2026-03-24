@@ -1,7 +1,6 @@
 // FILE: src/components/business/insights/ForensicAccountantModal.tsx
-// PHOENIX PROTOCOL - FORENSIC MODAL V5.1 (EXECUTIVE DESIGN SYSTEM)
-// ADDED: shadow-sm, hover-lift, consistent border-border-main.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - FORENSIC MODAL V5.2 (EXECUTIVE DESIGN SYSTEM)
+// Fixed: Replaced text-[9px] with text-xs for consistency.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -158,7 +157,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-success-start"></span>
                                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-success-start"></span>
                                         </span>
-                                        <span className="text-[9px] uppercase font-black text-success-start tracking-widest leading-none">
+                                        <span className="text-xs uppercase font-black text-success-start tracking-widest leading-none">
                                             PRO AUDIT MODE
                                         </span>
                                     </div>
@@ -243,7 +242,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                         className="glass-input w-full pr-16 py-4 text-sm placeholder:text-text-muted border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
                                     />
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                        <span className="text-[9px] text-text-muted font-black px-2 py-1 rounded bg-surface/50 border border-border-main uppercase tracking-widest">
+                                        <span className="text-xs text-text-muted font-black px-2 py-1 rounded bg-surface/50 border border-border-main uppercase tracking-widest">
                                             ATK
                                         </span>
                                     </div>

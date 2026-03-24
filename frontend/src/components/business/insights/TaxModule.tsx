@@ -1,7 +1,6 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX MODULE V13.1 (EXECUTIVE DESIGN SYSTEM)
-// ADDED: shadow-sm, hover-lift, consistent border-border-main, semantic text classes.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - TAX MODULE V13.2 (EXECUTIVE DESIGN SYSTEM)
+// Fixed: Replaced text-[9px] with text-xs for consistency.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -65,7 +64,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                     {/* Secondary Values Grid */}
                     <div className="grid grid-cols-2 gap-4 mb-6 flex-shrink-0">
                         <div className="glass-input p-4 text-center group/item hover:border-success-start/30 transition-colors border border-border-main bg-surface/30 backdrop-blur-sm hover-lift">
-                            <div className="flex items-center justify-center gap-1.5 text-[9px] text-success-start uppercase font-black tracking-widest mb-2">
+                            <div className="flex items-center justify-center gap-1.5 text-xs text-success-start uppercase font-black tracking-widest mb-2">
                                 <TrendingUp size={12} /> TVSH Mbledhur
                             </div>
                             <p className="text-sm font-mono font-black text-text-primary">
@@ -73,7 +72,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                             </p>
                         </div>
                         <div className="glass-input p-4 text-center group/item hover:border-danger-start/30 transition-colors border border-border-main bg-surface/30 backdrop-blur-sm hover-lift">
-                            <div className="flex items-center justify-center gap-1.5 text-[9px] text-danger-start uppercase font-black tracking-widest mb-2">
+                            <div className="flex items-center justify-center gap-1.5 text-xs text-danger-start uppercase font-black tracking-widest mb-2">
                                 <TrendingDown size={12} /> TVSH Zbritshme
                             </div>
                             <p className="text-sm font-mono font-black text-text-primary">

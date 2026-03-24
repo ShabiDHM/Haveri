@@ -1,7 +1,6 @@
 // FILE: src/components/business/briefing/SmartAgendaCard.tsx
-// PHOENIX PROTOCOL - AGENDA CARD V11.1 (EXECUTIVE DESIGN SYSTEM)
-// ADDED: shadow-sm, hover-lift, consistent border-border-main, semantic text colors.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - AGENDA CARD V11.2 (EXECUTIVE DESIGN SYSTEM)
+// Fixed: Replaced text-[9px] with text-xs and text-[8px] with text-xs for consistency.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -65,7 +64,7 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
                 </div>
                 <button 
                     onClick={handleViewCalendar}
-                    className="text-[9px] text-text-muted hover:text-text-primary transition-colors flex items-center gap-1.5 uppercase font-black tracking-widest group/btn hover-lift"
+                    className="text-xs text-text-muted hover:text-text-primary transition-colors flex items-center gap-1.5 uppercase font-black tracking-widest group/btn hover-lift"
                 >
                     {t('dashboard.viewCalendar', 'Shiko Kalendarin')}
                     <ChevronRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform" />
@@ -98,11 +97,11 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
                                         {item.title}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1.5">
-                                        <span className="text-[9px] text-text-muted uppercase font-black tracking-widest leading-none">
+                                        <span className="text-xs text-text-muted uppercase font-black tracking-widest leading-none">
                                             {item.time}
                                         </span>
                                         {item.priority === 'CRITICAL' && (
-                                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-danger-start/10 text-danger-start uppercase font-black tracking-widest border border-danger-start/20 leading-none">
+                                            <span className="text-xs px-1.5 py-0.5 rounded bg-danger-start/10 text-danger-start uppercase font-black tracking-widest border border-danger-start/20 leading-none">
                                                 Urgjente
                                             </span>
                                         )}

@@ -1,7 +1,6 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - PROFIT MODULE V13.1 (EXECUTIVE DESIGN SYSTEM)
-// ADDED: shadow-sm, hover-lift, consistent border-border-main, semantic text classes.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - PROFIT MODULE V13.2 (EXECUTIVE DESIGN SYSTEM)
+// Fixed: Replaced text-[9px] with text-xs for consistency.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -112,7 +111,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                         <p className="text-2xl font-mono font-black text-text-primary">
                             €{totalStockValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
-                        <p className="text-[9px] text-text-muted mt-1 uppercase font-black tracking-widest">
+                        <p className="text-xs text-text-muted mt-1 uppercase font-black tracking-widest">
                             {t('insights.inventory.valueDesc', 'Para të bllokuara në rafte')}
                         </p>
                     </div>
@@ -125,7 +124,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                 {t('inventory.lowStock', 'Stoku Kritik')}
                             </h3>
                         </div>
-                        <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest border ${hasLowStock ? 'bg-warning-start/10 text-warning-start border-warning-start/20' : 'bg-success-start/10 text-success-start border-success-start/20'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded font-black uppercase tracking-widest border ${hasLowStock ? 'bg-warning-start/10 text-warning-start border-warning-start/20' : 'bg-success-start/10 text-success-start border-success-start/20'}`}>
                             {lowStockItems.length} {t('inventory.itemsCount', 'Artikuj')}
                         </span>
                     </div>
@@ -182,7 +181,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                 <div>
                                     <h3 className="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-3 mb-2">
                                         {selectedItem.name}
-                                        <span className="text-[9px] bg-danger-start/10 border border-danger-start/20 text-danger-start px-2 py-0.5 rounded uppercase font-black tracking-widest">
+                                        <span className="text-xs bg-danger-start/10 border border-danger-start/20 text-danger-start px-2 py-0.5 rounded uppercase font-black tracking-widest">
                                             {t('inventory.analysis.critical', 'Kritike')}
                                         </span>
                                     </h3>
@@ -232,7 +231,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             </p>
                                             {aiData.trend?.cross_sell_opportunities && (
                                                 <div className="mt-4 pt-4 border-t border-border-main">
-                                                    <p className="text-[9px] text-text-muted uppercase font-black tracking-widest mb-2">
+                                                    <p className="text-xs text-text-muted uppercase font-black tracking-widest mb-2">
                                                         {t('inventory.analysis.crossSell', 'Mundësi Cross-Sell')}
                                                     </p>
                                                     <p className="text-xs text-text-secondary font-medium leading-relaxed">

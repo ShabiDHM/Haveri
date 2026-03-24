@@ -1,7 +1,6 @@
 // FILE: src/components/business/insights/DebtModule.tsx
-// PHOENIX PROTOCOL - DEBT MODULE V9.1 (EXECUTIVE DESIGN SYSTEM)
-// ADDED: shadow-sm for depth, border-border-main consistency, hover-lift on interactive elements.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - DEBT MODULE V9.2 (EXECUTIVE DESIGN SYSTEM)
+// Fixed: Replaced text-[9px] with text-xs for consistency.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -62,7 +61,7 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
                     </div>
                     
                     {/* Legend */}
-                    <div className="flex justify-between text-[9px] uppercase font-black tracking-widest text-text-muted">
+                    <div className="flex justify-between text-xs uppercase font-black tracking-widest text-text-muted">
                         <span className="flex items-center gap-1.5">
                             <div className="w-1.5 h-1.5 rounded-full bg-success-start" /> 0-30
                         </span>
@@ -96,7 +95,7 @@ export const DebtModule: React.FC<DebtModuleProps> = ({ data }) => {
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <p className="text-xs font-bold text-text-primary truncate">{d.name}</p>
-                                        <p className="text-[9px] text-danger-start uppercase font-black tracking-widest mt-0.5">
+                                        <p className="text-xs text-danger-start uppercase font-black tracking-widest mt-0.5">
                                             {d.daysOverdue} {t('time.days', 'ditë vonesë')}
                                         </p>
                                     </div>

@@ -1,8 +1,6 @@
 // FILE: src/components/business/insights/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V11.1 (EXECUTIVE DESIGN SYSTEM)
-// ADDED: shadow-sm for depth.
-// ENSURED: All borders use border-border-main, text uses semantic tokens.
-// RETAINED: All functionality and logic.
+// PHOENIX PROTOCOL - PULSE CARD V11.2 (EXECUTIVE DESIGN SYSTEM)
+// Fixed: Replaced text-[9px] with text-xs for consistency.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -114,7 +112,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                         />
                     </div>
                     
-                    <p className="text-[9px] text-text-muted uppercase font-black tracking-widest flex items-center gap-2">
+                    <p className="text-xs text-text-muted uppercase font-black tracking-widest flex items-center gap-2">
                         <Zap size={12} className="text-warning-start" /> 
                         {isRestDay ? "Ritmi i ditëve të pushimit (Vikend)" : t('dashboard.pulse.basedOnVelocity', 'Bazuar në ritmin aktual')}
                     </p>
