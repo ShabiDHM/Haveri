@@ -1,5 +1,6 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.6 (RESTORED PANEL HEIGHTS)
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.4 (EXECUTIVE DESIGN SYSTEM)
+// Aligned with Law Search and Finance pages: bg-canvas, consistent spacing, glass panels.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -143,15 +144,15 @@ const DraftingPage: React.FC = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
+    <motion.div 
+      className="w-full h-full overflow-hidden bg-canvas" 
+      initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }}
-      className="w-full h-full overflow-hidden bg-canvas"
     >
       <div className="h-full flex flex-col overflow-hidden p-6 sm:p-8">
         <style>{lawyerGradeStyles}</style>
 
-        {/* Executive Header */}
+        {/* Page Header - Consistent with Law Search */}
         <div className="flex items-center gap-4 mb-8 flex-shrink-0">
           <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm">
             <PenTool size={24} />
@@ -164,38 +165,34 @@ const DraftingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Outer glass panel */}
-        <div className="glass-panel bg-canvas border border-border-main shadow-sm rounded-3xl p-6 sm:p-8 flex-1 min-h-0">
+        {/* Main Grid */}
+        <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
-            {/* Config Panel – no extra padding, no forced height */}
-            <div className="overflow-y-auto custom-scrollbar pr-2">
-              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl">
-                <ConfigPanel
-                  t={t}
-                  isPro={isPro}
-                  selectedTemplate={selectedTemplate}
-                  context={context}
-                  isSubmitting={isSubmitting}
-                  onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
-                  onChangeContext={setContext}
-                  onSubmit={runDraftingStream}
-                />
-              </div>
+            {/* Config Panel */}
+            <div className="h-full overflow-y-auto custom-scrollbar pr-2">
+              <ConfigPanel
+                t={t}
+                isPro={isPro}
+                selectedTemplate={selectedTemplate}
+                context={context}
+                isSubmitting={isSubmitting}
+                onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
+                onChangeContext={setContext}
+                onSubmit={runDraftingStream}
+              />
             </div>
-
-            {/* Result Panel – same */}
-            <div className="overflow-y-auto custom-scrollbar pl-2">
-              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl">
-                <ResultPanel
-                  t={t}
-                  currentJob={currentJob}
-                  saving={saving}
-                  notification={notification}
-                  onSave={handleSaveToArchive}
-                  onRetry={retry}
-                  onClear={clearJob}
-                />
-              </div>
+            
+            {/* Result Panel */}
+            <div className="h-full overflow-y-auto custom-scrollbar pl-2">
+              <ResultPanel
+                t={t}
+                currentJob={currentJob}
+                saving={saving}
+                notification={notification}
+                onSave={handleSaveToArchive}
+                onRetry={retry}
+                onClear={clearJob}
+              />
             </div>
           </div>
         </div>
