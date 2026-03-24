@@ -1,6 +1,4 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// Full working version with custom dropdown and generate button
-
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw, ChevronDown } from 'lucide-react';
 import { ConfigPanelProps } from '../types';
@@ -74,6 +72,22 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
     setIsOpen(false);
   };
 
+  const handleGenerateClick = () => {
+    console.log('Generate button clicked');
+    console.log('context:', context);
+    console.log('context.trim():', context.trim());
+    console.log('isSubmitting:', isSubmitting);
+    console.log('onSubmit function exists?', typeof onSubmit === 'function');
+    if (typeof onSubmit === 'function') {
+      onSubmit();
+    } else {
+      console.error('onSubmit is not a function!');
+    }
+  };
+
+  // Determine if button should be enabled
+  const isButtonDisabled = isSubmitting || !context.trim();
+
   return (
     <div className="glass-panel border border-border-main rounded-3xl p-6 sm:p-8 flex flex-col h-auto lg:h-[700px] shrink-0 shadow-sm hover:lift transition-all">
       
@@ -119,14 +133,12 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                 className="absolute z-[9999] mt-1 w-full bg-card border border-border-main rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar"
                 style={{ backgroundColor: 'var(--bg-card)' }}
               >
-                {/* Generic option */}
                 <div
                   onClick={() => handleSelect('generic')}
                   className="px-4 py-2 hover:bg-hover cursor-pointer text-sm font-bold text-text-primary"
                 >
                   {t('drafting.templateGeneric')}
                 </div>
-                
                 {templateGroups.map((group) => (
                   <div key={group.label}>
                     <div className="px-4 py-1 text-xs font-black uppercase tracking-widest text-text-muted bg-surface/50 sticky top-0">
@@ -163,11 +175,8 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
         {/* Primary Action Button */}
         <button
-          onClick={() => {
-            console.log('Generate button clicked, context length:', context.trim().length);
-            onSubmit();
-          }}
-          disabled={isSubmitting || !context.trim()}
+          onClick={handleGenerateClick}
+          disabled={isButtonDisabled}
           className="btn-primary w-full h-14 flex items-center justify-center gap-3 mt-2 flex-shrink-0 disabled:opacity-40 shadow-lg shadow-primary-start/20 hover-lift"
         >
           {isSubmitting ? <RefreshCw className="animate-spin" size={18} /> : <Send size={18} />}

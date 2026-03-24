@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.5 (EXECUTIVE GLASS ARCHITECTURE)
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.8 (EXECUTIVE DESIGN + HOVER LIFT)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -143,61 +143,41 @@ const DraftingPage: React.FC = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="w-full h-full overflow-hidden bg-canvas"
-    >
-      <div className="h-full flex flex-col overflow-hidden p-6 sm:p-8">
+    <motion.div className="w-full min-h-screen pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <div className="max-w-7xl w-full mx-auto px-6 sm:px-8 pt-24 pb-8 flex flex-col h-full">
         <style>{lawyerGradeStyles}</style>
 
-        {/* Page Header */}
-        <div className="flex items-center gap-4 mb-8 flex-shrink-0">
-          <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm">
-            <PenTool size={24} />
-          </div>
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tighter leading-none">
+        {/* Page Header: Executive Alignment (Matches Case View) */}
+        <div className="flex items-center gap-4 mb-8 ml-2 flex-shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-lawyer-light">
+                <PenTool size={24} />
+            </div>
+            <h1 className="text-4xl font-black text-text-primary tracking-tighter leading-none">
               {t('drafting.title')}
             </h1>
-            <p className="text-sm text-text-muted mt-1">{t('drafting.subtitle')}</p>
-          </div>
         </div>
 
-        {/* Outer glass panel */}
-        <div className="glass-panel bg-canvas border border-border-main shadow-sm rounded-3xl p-6 sm:p-8 flex-1 min-h-0">
-          <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
-            {/* Config Panel wrapper */}
-            <div className="h-full overflow-y-auto custom-scrollbar pr-2">
-              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl">
-                <ConfigPanel
-                  t={t}
-                  isPro={isPro}
-                  selectedTemplate={selectedTemplate}
-                  context={context}
-                  isSubmitting={isSubmitting}
-                  onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
-                  onChangeContext={setContext}
-                  onSubmit={runDraftingStream}
-                />
-              </div>
-            </div>
-
-            {/* Result Panel wrapper */}
-            <div className="h-full overflow-y-auto custom-scrollbar pl-2">
-              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl">
-                <ResultPanel
-                  t={t}
-                  currentJob={currentJob}
-                  saving={saving}
-                  notification={notification}
-                  onSave={handleSaveToArchive}
-                  onRetry={retry}
-                  onClear={clearJob}
-                />
-              </div>
-            </div>
-          </div>
+        {/* Main Grid: Symmetrical with Case View */}
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 flex-1 lg:h-[750px] min-h-0">
+          <ConfigPanel
+            t={t}
+            isPro={isPro}
+            selectedTemplate={selectedTemplate}
+            context={context}
+            isSubmitting={isSubmitting}
+            onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
+            onChangeContext={setContext}
+            onSubmit={runDraftingStream}
+          />
+          <ResultPanel
+            t={t}
+            currentJob={currentJob}
+            saving={saving}
+            notification={notification}
+            onSave={handleSaveToArchive}
+            onRetry={retry}
+            onClear={clearJob}
+          />
         </div>
       </div>
     </motion.div>
