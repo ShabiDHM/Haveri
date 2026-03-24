@@ -1,6 +1,5 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V7.3 (ADDED PROFILE TO DROPDOWN)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL – EXECUTIVE GLASS HEADER v8.1 (fixed unused variable)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -75,96 +74,142 @@ const Header: React.FC = () => {
     navigate(path);
   };
 
+  // Helper to check if a nav item is active
+  const isActive = (item: any) => {
+    if (item.exact) return location.pathname === item.path;
+    return location.pathname.startsWith(item.path);
+  };
+
   return (
-    <header className="glass-panel sticky top-0 z-50 h-16 flex items-center justify-between px-4 transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 md:px-8 py-3 bg-canvas/80 backdrop-blur-xl border-b border-border-main">
       
-      <div className="flex items-center gap-3">
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-text-primary lg:hidden hover:bg-hover rounded-lg">
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+      {/* Left: Brand */}
+      <div className="flex items-center gap-3 shrink-0">
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+          className="p-2 text-text-primary lg:hidden hover:bg-surface/20 rounded-lg"
+        >
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
-        <Link to="/business/briefing" className="flex items-center"><BrandLogo /></Link>
+        <Link to="/business/briefing" className="flex items-center">
+          <BrandLogo />
+        </Link>
       </div>
 
-      <nav className="hidden lg:flex items-center gap-1">
-          {navItems.map(item => {
-              const isActive = item.exact ? location.pathname === item.path : location.pathname.startsWith(item.path);
-              return (
-                  <NavLink key={item.path} to={item.path} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-base font-medium transition-all ${
-                      isActive ? 'text-primary bg-primary/10 border border-primary-start/30' : 'text-text-secondary hover:text-primary hover:bg-hover'
-                  }`}>
-                      <item.icon size={18} />
-                      <span>{item.label}</span>
-                  </NavLink>
-              )
-          })}
-      </nav>
+      {/* Center: Segmented Glass Bar – hidden on mobile */}
+      <div className="hidden lg:flex items-center bg-surface/50 p-1 rounded-2xl border border-border-main shadow-inner">
+        {navItems.map((item) => {
+          const active = isActive(item);
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-200
+                ${active 
+                  ? 'bg-canvas text-primary-start shadow-sm' 
+                  : 'text-text-muted hover:text-text-primary'
+                }
+              `}
+            >
+              <item.icon size={16} />
+              <span className="hidden xl:inline">{item.label}</span>
+            </NavLink>
+          );
+        })}
+      </div>
 
-      <div className="flex items-center gap-2">
-        <button onClick={toggleTheme} className="p-2 rounded-lg text-text-secondary hover:text-primary hover:bg-hover transition-colors">
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+      {/* Right: Actions */}
+      <div className="flex items-center gap-3">
+        {/* Theme toggle */}
+        <button 
+          onClick={toggleTheme} 
+          className="p-2 rounded-lg text-text-muted hover:text-text-primary transition-colors hover:bg-surface/20"
+          aria-label={theme === 'dark' ? t('theme.light') : t('theme.dark')}
+        >
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-        
-        <Link to="/calendar" className="p-2 text-text-secondary hover:text-primary hover:bg-hover rounded-lg relative">
-          <Bell size={20} />
-          {alertCount > 0 && (<span className="absolute top-2 right-2 w-2 h-2 bg-danger-start rounded-full animate-pulse"></span>)}
+
+        {/* Alert bell */}
+        <Link to="/calendar" className="p-2 text-text-muted hover:text-text-primary hover:bg-surface/20 rounded-lg relative">
+          <Bell size={18} />
+          {alertCount > 0 && (
+            <span className="absolute top-2 right-2 w-2 h-2 bg-danger-start rounded-full animate-pulse"></span>
+          )}
         </Link>
-        
-        <div className="relative">
-          <button ref={buttonRef} onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-2 p-1.5 rounded-xl border border-transparent hover:bg-hover hover:border-border-main">
-            <div className="hidden sm:block text-right">
-              <p className="text-xs font-bold text-primary">{user?.username || 'Përdorues'}</p>
-            </div>
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-inverse font-bold text-xs">
+
+        {/* User profile (desktop) */}
+        <div className="relative hidden sm:block">
+          <button
+            ref={buttonRef}
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="flex items-center gap-2 p-1 rounded-full bg-surface/30 border border-border-main hover:bg-surface/50 transition-colors"
+          >
+            <div className="h-8 w-8 rounded-full bg-primary-start text-white flex items-center justify-center text-xs font-black">
               {user?.username?.charAt(0).toUpperCase() || 'U'}
             </div>
           </button>
-          
+
           {isProfileOpen && (
-            <div ref={dropdownRef} className="absolute right-0 mt-2 w-56 bg-card border border-border-main rounded-xl shadow-xl py-2 z-50">
+            <div ref={dropdownRef} className="absolute right-0 mt-2 w-56 glass-panel border border-border-main rounded-xl shadow-xl py-2 z-50">
               <div className="px-4 py-2 border-b border-border-main mb-1">
-                  <p className="text-xs text-primary font-bold">{user?.username}</p>
+                <p className="text-xs font-bold text-primary">{user?.username}</p>
+                <p className="text-[10px] text-text-muted">{user?.email}</p>
               </div>
 
               {isAuthenticated && (
                 <div className="px-4 py-2 flex items-center justify-between hover:bg-hover">
-                    <span className="text-xs font-bold text-text-muted">{t('navigation.year', 'Viti Fiskal')}</span>
-                    <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="bg-transparent text-primary text-sm font-bold outline-none cursor-pointer">
-                        {[2026, 2025, 2024, 2023].map(y => <option key={y} value={y} className="bg-card">{y}</option>)}
-                    </select>
+                  <span className="text-xs font-bold text-text-muted">{t('navigation.year', 'Viti Fiskal')}</span>
+                  <select 
+                    value={selectedYear} 
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))} 
+                    className="bg-transparent text-primary text-sm font-bold outline-none cursor-pointer"
+                  >
+                    {[2026, 2025, 2024, 2023].map(y => <option key={y} value={y} className="bg-card">{y}</option>)}
+                  </select>
                 </div>
               )}
 
               <button onClick={() => handleDropdownNavigate('/account')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
-                  <UserIcon size={16} className="mr-3 text-primary" />{t('sidebar.account')}
+                <UserIcon size={16} className="mr-3 text-primary" />{t('sidebar.account')}
               </button>
               <button onClick={() => handleDropdownNavigate('/profile')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
-                  <Building2 size={16} className="mr-3 text-primary" />{t('business.profile', 'Profili')}
+                <Building2 size={16} className="mr-3 text-primary" />{t('business.profile', 'Profili')}
               </button>
               <button onClick={() => handleDropdownNavigate('/integrations')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
-                  <Share2 size={16} className="mr-3 text-primary" />{t('navigation.integrations', 'Integrimet')}
+                <Share2 size={16} className="mr-3 text-primary" />{t('navigation.integrations', 'Integrimet')}
               </button>
               <button onClick={() => handleDropdownNavigate('/support')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
-                  <MessageSquare size={16} className="mr-3 text-primary" />{t('sidebar.support')}
+                <MessageSquare size={16} className="mr-3 text-primary" />{t('sidebar.support')}
               </button>
               <div className="h-px bg-border-main my-1"></div>
-              <button onClick={() => { setIsProfileOpen(false); logout(); }} className="w-full flex items-center px-4 py-2.5 text-sm text-danger-start hover:bg-danger-start/10 transition-colors">
-                  <LogOut size={16} className="mr-3" />{t('header.logout')}
+              <button 
+                onClick={() => { setIsProfileOpen(false); logout(); }} 
+                className="w-full flex items-center px-4 py-2.5 text-sm text-danger-start hover:bg-danger-start/10 transition-colors"
+              >
+                <LogOut size={16} className="mr-3" />{t('header.logout')}
               </button>
             </div>
           )}
         </div>
       </div>
 
+      {/* Mobile Navigation Overlay */}
       {isMobileMenuOpen && (
         <div className="fixed inset-x-0 top-16 bg-card border-b border-border-main p-4 lg:hidden z-40 shadow-lg">
-            <div className="grid grid-cols-2 gap-3">
-                {navItems.map(item => (
-                    <Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)} className="flex flex-col items-center p-4 rounded-xl bg-surface border border-border-main text-text-secondary hover:text-primary hover:bg-hover transition-all">
-                        <item.icon size={24} className="mb-2" />
-                        <span className="text-xs font-bold">{item.label}</span>
-                    </Link>
-                ))}
-            </div>
+          <div className="grid grid-cols-2 gap-3">
+            {navItems.map(item => (
+              <Link 
+                key={item.path} 
+                to={item.path} 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className="flex flex-col items-center p-4 rounded-xl bg-surface border border-border-main text-text-secondary hover:text-primary hover:bg-hover transition-all"
+              >
+                <item.icon size={24} className="mb-2" />
+                <span className="text-xs font-bold">{item.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </header>
