@@ -1,7 +1,5 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V22.1 (EXECUTIVE DESIGN SYSTEM)
-// ADDED: hover-lift, shadow-sm, consistent border-border-main, semantic text.
-// RETAINED: All functionality and logic.
+// PHOENIX PROTOCOL - INVENTORY TAB V22.2 (FIXED DOUBLE BORDER)
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -86,8 +84,9 @@ export const InventoryTab: React.FC = () => {
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-success-start" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 border border-border-main">
-             <style>{`
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6">
+            {/* Removed outer border to prevent double border with inner Panel */}
+            <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
                 .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--status-success); border-radius: 10px; opacity: 0.3; } 
@@ -114,13 +113,15 @@ export const InventoryTab: React.FC = () => {
             {/* Main Content Panel */}
             <Panel className="p-4 sm:p-6 h-[700px] flex flex-col overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
                 
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 border-b border-border-main pb-4 sm:pb-6 shrink-0">
+                {/* Header – removed border-b to eliminate the extra line */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 pb-4 sm:pb-6 shrink-0">
                     <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
                         <Box className="text-success-start" />
                         {t('inventory.title')}
                     </h2>
                     
-                    <div className="w-full md:w-auto flex bg-surface p-1.5 rounded-2xl border border-border-main backdrop-blur-md gap-1">
+                    {/* Tabs container – removed border to avoid double line with panel border */}
+                    <div className="w-full md:w-auto flex bg-surface p-1.5 rounded-2xl backdrop-blur-md gap-1">
                         <TabButton label={t('inventory.tabItems', 'Artikujt')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
                         <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
                     </div>
