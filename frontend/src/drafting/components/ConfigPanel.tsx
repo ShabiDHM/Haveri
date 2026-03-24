@@ -1,4 +1,6 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
+// PHOENIX PROTOCOL - CONFIG PANEL V7.0 (IMPROVED CONTRAST & HOVER FIX)
+
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw, ChevronDown } from 'lucide-react';
 import { ConfigPanelProps } from '../types';
@@ -73,27 +75,19 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   };
 
   const handleGenerateClick = () => {
-    console.log('Generate button clicked');
-    console.log('context:', context);
-    console.log('context.trim():', context.trim());
-    console.log('isSubmitting:', isSubmitting);
-    console.log('onSubmit function exists?', typeof onSubmit === 'function');
     if (typeof onSubmit === 'function') {
       onSubmit();
-    } else {
-      console.error('onSubmit is not a function!');
     }
   };
 
-  // Determine if button should be enabled
   const isButtonDisabled = isSubmitting || !context.trim();
 
   return (
-    <div className="glass-panel border border-border-main rounded-3xl p-6 sm:p-8 flex flex-col h-auto lg:h-[700px] shrink-0 shadow-sm hover:lift transition-all">
+    <div className="glass-panel border border-border-main rounded-3xl p-6 sm:p-8 flex flex-col h-auto lg:h-[700px] shrink-0 shadow-sm hover:border-primary-start/50 transition-all duration-300">
       
       {/* Executive Header */}
       <div className="flex items-center gap-3 border-b border-border-main pb-5 mb-6 flex-shrink-0">
-        <FileText className="text-primary-start" size={20} />
+        <FileText className="text-accent-primary" size={20} />
         <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
           {t('drafting.configuration', 'Konfigurimi')}
         </h2>
@@ -115,7 +109,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
           
           {/* Custom Dropdown */}
           <div className="relative">
-            <LayoutTemplate className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-start opacity-70 pointer-events-none z-10" />
+            <LayoutTemplate className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-accent-primary pointer-events-none z-10" />
             <button
               ref={buttonRef}
               type="button"

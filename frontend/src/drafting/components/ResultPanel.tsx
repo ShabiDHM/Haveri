@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V6.6 (REMOVED THEME TEXT COLOR)
+// PHOENIX PROTOCOL - RESULT PANEL V6.7 (FIXED HOVER DEAD ZONE)
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,10 +38,10 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   const actionButtonBase = "p-3 bg-surface border border-border-main text-text-muted hover:text-primary-start hover:border-primary-start/50 rounded-xl transition-all shadow-sm hover:shadow-md hover-lift disabled:opacity-30 disabled:hover:shadow-none";
 
   return (
-    <div className="glass-panel border border-border-main p-0 flex flex-col h-auto lg:h-[700px] overflow-hidden shadow-sm hover-lift rounded-3xl">
+    <div className="glass-panel border border-border-main p-0 flex flex-col h-auto lg:h-[700px] overflow-hidden shadow-sm hover-lift rounded-3xl hover:border-primary-start/50 transition-all duration-300">
       
-      {/* Executive Header Toolbar */}
-      <div className="flex justify-between items-center px-6 py-4 bg-surface border-b border-border-main flex-shrink-0 z-10">
+      {/* Executive Header Toolbar - removed z-10 */}
+      <div className="flex justify-between items-center px-6 py-4 bg-surface border-b border-border-main flex-shrink-0 relative">
         <div className="flex items-center gap-4">
           <div className={`${statusUI.color} p-2 bg-canvas border border-border-main rounded-xl shadow-inner`}>
             {statusUI.icon}
@@ -136,7 +136,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                   </div>
                 )}
                 <div className="p-0 shadow-lg rounded-sm min-h-[29.7cm]">
-                  {/* Removed bg-card and text-text-primary to let document control its own colors */}
                   <DraftResultRenderer text={currentJob.result} t={t} />
                 </div>
               </motion.div>
