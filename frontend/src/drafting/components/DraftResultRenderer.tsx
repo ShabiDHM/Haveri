@@ -1,4 +1,7 @@
-// src/drafting/components/DraftResultRenderer.tsx
+// FILE: src/drafting/components/DraftResultRenderer.tsx
+// PHOENIX PROTOCOL - DRAFT RENDERER V2.1 (EXECUTIVE DESIGN SYSTEM)
+// Fixed: Replaced text-[9pt] with text-xs and border-black with border-border-main.
+
 import React from 'react';
 import { TFunction } from 'i18next';
 import ReactMarkdown from 'react-markdown';
@@ -41,7 +44,7 @@ export const DraftResultRenderer: React.FC<{ text: string; t: TFunction }> = Rea
               const content = String(props.children);
               if (content.includes('AI') || content.includes('referencë')) {
                 return (
-                  <p className="text-center italic mt-12 pt-4 border-t border-black text-[9pt] opacity-60">
+                  <p className="text-center italic mt-12 pt-4 border-t border-border-main text-xs text-text-muted">
                     {disclaimer}
                   </p>
                 );
