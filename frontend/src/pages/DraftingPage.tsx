@@ -1,5 +1,6 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.3 (EXECUTIVE DESIGN SYSTEM)
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.4 (EXECUTIVE DESIGN SYSTEM)
+// Aligned with Law Search and Finance pages: bg-canvas, consistent spacing, glass panels.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -151,20 +152,23 @@ const DraftingPage: React.FC = () => {
       <div className="h-full flex flex-col overflow-hidden p-6 sm:p-8">
         <style>{lawyerGradeStyles}</style>
 
-        {/* Page Header - Fixed */}
-        <div className="flex items-center gap-4 mb-6 flex-shrink-0">
+        {/* Page Header - Consistent with Law Search */}
+        <div className="flex items-center gap-4 mb-8 flex-shrink-0">
           <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm">
             <PenTool size={24} />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tighter leading-none">
-            {t('drafting.title')}
-          </h1>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tighter leading-none">
+              {t('drafting.title')}
+            </h1>
+            <p className="text-sm text-text-muted mt-1">{t('drafting.subtitle')}</p>
+          </div>
         </div>
 
-        {/* Main Grid - Scrollable content */}
+        {/* Main Grid */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
-            {/* Config Panel - Scrollable */}
+            {/* Config Panel */}
             <div className="h-full overflow-y-auto custom-scrollbar pr-2">
               <ConfigPanel
                 t={t}
@@ -178,7 +182,7 @@ const DraftingPage: React.FC = () => {
               />
             </div>
             
-            {/* Result Panel - Scrollable */}
+            {/* Result Panel */}
             <div className="h-full overflow-y-auto custom-scrollbar pl-2">
               <ResultPanel
                 t={t}
