@@ -1,5 +1,5 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V30.0 (COLLAPSIBLE FISCAL PARAMETERS)
+// PHOENIX PROTOCOL - PROFILE TAB V31.0 (HANDLE EMPTY FISCAL FIELDS)
 // STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -138,11 +138,33 @@ export const ProfileTab: React.FC = () => {
     }
   }, [profile?.logo_url]);
 
+  // Helper to safely parse number from input string, return undefined if invalid
+  const parseNumber = (value: string): number | undefined => {
+    const trimmed = value.trim();
+    if (trimmed === '') return undefined;
+    const num = Number(trimmed);
+    return isNaN(num) ? undefined : num;
+  };
+
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await apiService.updateBusinessProfile(formData);
+      // Create a sanitized copy: omit any fields that are undefined
+      const sanitized: BusinessProfileUpdate = {
+        firm_name: formData.firm_name,
+        email_public: formData.email_public,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        website: formData.website,
+        tax_id: formData.tax_id,
+        // Only include if defined
+        ...(formData.vat_rate !== undefined && { vat_rate: formData.vat_rate }),
+        ...(formData.target_margin !== undefined && { target_margin: formData.target_margin }),
+        ...(formData.currency && { currency: formData.currency }),
+      };
+      await apiService.updateBusinessProfile(sanitized);
       alert(t('saveSuccess'));
     } catch {
       alert(t('error.generic'));
@@ -392,25 +414,32 @@ export const ProfileTab: React.FC = () => {
                       <FormField label="TVSH %" icon={<span className="text-xs font-bold">%</span>}>
                         <input
                           type="number"
-                          value={formData.vat_rate}
-                          onChange={(e) => setFormData({ ...formData, vat_rate: parseFloat(e.target.value) })}
+                          value={formData.vat_rate !== undefined ? formData.vat_rate : ''}
+                          onChange={(e) => {
+                            const parsed = parseNumber(e.target.value);
+                            setFormData({ ...formData, vat_rate: parsed });
+                          }}
                           className={inputClasses}
                         />
                       </FormField>
                       <FormField label="Margjina %" icon={<TrendingUp size={16} />}>
                         <input
                           type="number"
-                          value={formData.target_margin}
-                          onChange={(e) => setFormData({ ...formData, target_margin: parseFloat(e.target.value) })}
+                          value={formData.target_margin !== undefined ? formData.target_margin : ''}
+                          onChange={(e) => {
+                            const parsed = parseNumber(e.target.value);
+                            setFormData({ ...formData, target_margin: parsed });
+                          }}
                           className={inputClasses}
                         />
                       </FormField>
                       <FormField label="Monedha" icon={<Coins size={16} />}>
                         <select
-                          value={formData.currency}
-                          onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                          value={formData.currency || ''}
+                          onChange={(e) => setFormData({ ...formData, currency: e.target.value || undefined })}
                           className={`${inputClasses} appearance-none cursor-pointer`}
                         >
+                          <option value="">Zgjidhni</option>
                           <option value="EUR">Euro (€)</option>
                           <option value="LEK">Lek (ALL)</option>
                           <option value="USD">Dollar ($)</option>

@@ -1,12 +1,12 @@
 # FILE: backend/app/models/business.py
-# PHOENIX PROTOCOL - BUSINESS ENTITY V17.0 (FISCAL UPGRADE)
-# 1. ADDED: vat_rate, target_margin, currency.
-# 2. RESULT: Database now natively stores fiscal intelligence settings.
+# PHOENIX PROTOCOL - BUSINESS ENTITY V18.0 (OPTIONAL FISCAL PARAMETERS)
+# 1. MADE vat_rate, target_margin, currency optional in update schema.
+# 2. Preserved defaults for creation.
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
-from .common import PyObjectId
+from ..models.common import PyObjectId
 
 class BusinessProfileBase(BaseModel):
     firm_name: str = "Zyra Ligjore"
@@ -23,11 +23,22 @@ class BusinessProfileBase(BaseModel):
     target_margin: float = 30.0
     currency: str = "EUR"
 
-class BusinessProfileUpdate(BusinessProfileBase):
+class BusinessProfileUpdate(BaseModel):
     """
     Schema for updating profile details.
+    All fields are optional to allow partial updates.
     """
-    pass
+    firm_name: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    phone: Optional[str] = None
+    email_public: Optional[str] = None
+    website: Optional[str] = None
+    tax_id: Optional[str] = None
+    branding_color: Optional[str] = None
+    vat_rate: Optional[float] = None
+    target_margin: Optional[float] = None
+    currency: Optional[str] = None
 
 class BusinessProfileInDB(BusinessProfileBase):
     """
