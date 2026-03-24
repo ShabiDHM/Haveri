@@ -1,11 +1,12 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V29.0 (ALIGNED WITH FINANCE TAB)
+// PHOENIX PROTOCOL - PROFILE TAB V30.0 (COLLAPSIBLE FISCAL PARAMETERS)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Building2, Mail, Phone, Save, Upload, Loader2, Camera, MapPin, Globe, CreditCard,
-  TrendingUp, Calculator, Coins, Users, UserPlus, Trash2, Crown, ArrowRight
+  TrendingUp, Calculator, Coins, Users, UserPlus, Trash2, Crown, ArrowRight, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { apiService, API_V1_URL } from '../../services/api';
 import { BusinessProfile, BusinessProfileUpdate, User } from '../../data/types';
@@ -53,6 +54,7 @@ export const ProfileTab: React.FC = () => {
   const [logoSrc, setLogoSrc] = useState<string | null>(null);
   const [logoLoading, setLogoLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showFiscalParams, setShowFiscalParams] = useState(false);
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
@@ -374,38 +376,48 @@ export const ProfileTab: React.FC = () => {
                   />
                 </FormField>
 
-                {/* Fiscal parameters */}
+                {/* Fiscal Parameters - Collapsible */}
                 <div className="md:col-span-2 pt-8 border-t border-border-main mt-4">
-                  <SectionHeader icon={<Calculator size={18} />} title="Parametrat Fiskal" />
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <FormField label="TVSH %" icon={<span className="text-xs font-bold">%</span>}>
-                      <input
-                        type="number"
-                        value={formData.vat_rate}
-                        onChange={(e) => setFormData({ ...formData, vat_rate: parseFloat(e.target.value) })}
-                        className={inputClasses}
-                      />
-                    </FormField>
-                    <FormField label="Margjina %" icon={<TrendingUp size={16} />}>
-                      <input
-                        type="number"
-                        value={formData.target_margin}
-                        onChange={(e) => setFormData({ ...formData, target_margin: parseFloat(e.target.value) })}
-                        className={inputClasses}
-                      />
-                    </FormField>
-                    <FormField label="Monedha" icon={<Coins size={16} />}>
-                      <select
-                        value={formData.currency}
-                        onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                        className={`${inputClasses} appearance-none cursor-pointer`}
-                      >
-                        <option value="EUR">Euro (€)</option>
-                        <option value="LEK">Lek (ALL)</option>
-                        <option value="USD">Dollar ($)</option>
-                      </select>
-                    </FormField>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowFiscalParams(!showFiscalParams)}
+                    className="flex items-center gap-2 text-text-primary hover:text-primary transition-colors w-full text-left mb-4"
+                  >
+                    <Calculator size={18} />
+                    <span className="font-bold text-sm uppercase tracking-wide">Parametrat Fiskal</span>
+                    {showFiscalParams ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                  {showFiscalParams && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
+                      <FormField label="TVSH %" icon={<span className="text-xs font-bold">%</span>}>
+                        <input
+                          type="number"
+                          value={formData.vat_rate}
+                          onChange={(e) => setFormData({ ...formData, vat_rate: parseFloat(e.target.value) })}
+                          className={inputClasses}
+                        />
+                      </FormField>
+                      <FormField label="Margjina %" icon={<TrendingUp size={16} />}>
+                        <input
+                          type="number"
+                          value={formData.target_margin}
+                          onChange={(e) => setFormData({ ...formData, target_margin: parseFloat(e.target.value) })}
+                          className={inputClasses}
+                        />
+                      </FormField>
+                      <FormField label="Monedha" icon={<Coins size={16} />}>
+                        <select
+                          value={formData.currency}
+                          onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                          className={`${inputClasses} appearance-none cursor-pointer`}
+                        >
+                          <option value="EUR">Euro (€)</option>
+                          <option value="LEK">Lek (ALL)</option>
+                          <option value="USD">Dollar ($)</option>
+                        </select>
+                      </FormField>
+                    </div>
+                  )}
                 </div>
 
                 <div className="md:col-span-2 mt-6">
