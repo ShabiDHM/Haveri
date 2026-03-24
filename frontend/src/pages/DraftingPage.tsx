@@ -1,5 +1,5 @@
-// FILE: src/pages/ DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.2 (FIXED PROPS)
+// FILE: src/pages/DraftingPage.tsx
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.3 (EXECUTIVE DESIGN SYSTEM)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -144,7 +144,7 @@ const DraftingPage: React.FC = () => {
 
   return (
     <motion.div 
-      className="w-full h-full overflow-hidden" 
+      className="w-full h-full overflow-hidden bg-canvas" 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }}
     >
@@ -153,7 +153,7 @@ const DraftingPage: React.FC = () => {
 
         {/* Page Header - Fixed */}
         <div className="flex items-center gap-4 mb-6 flex-shrink-0">
-          <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start">
+          <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm">
             <PenTool size={24} />
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tighter leading-none">
