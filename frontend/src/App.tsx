@@ -1,3 +1,7 @@
+// FILE: src/App.tsx
+// PHOENIX PROTOCOL - ROUTES V2.0 (REMOVED /business/profile)
+// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -64,7 +68,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/business/inventory" element={<BusinessPage view="inventory" />} />
         <Route path="/business/archive" element={<BusinessPage view="archive" />} />
         <Route path="/business/insights" element={<BusinessPage view="insights" />} />
-        <Route path="/business/profile" element={<BusinessPage view="profile" />} />
+        {/* /business/profile route removed – content now inside /account */}
         <Route path="/business/inbox" element={<BusinessPage view="inbox" />} />
         <Route path="/business" element={<Navigate to="/business/briefing" replace />} />
       </Route>

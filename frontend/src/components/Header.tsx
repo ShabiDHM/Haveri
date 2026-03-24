@@ -1,12 +1,12 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V7.0 (DESIGN SYSTEM STANDARDIZED)
+// PHOENIX PROTOCOL - HEADER V7.2 (REMOVED UNUSED IMPORT)
 // STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Bell, LogOut, User as UserIcon, LayoutDashboard, 
     MessageSquare, Menu, FileText, Package, FolderOpen, 
-    Sparkles, Building2, X, Shield, Share2, 
+    Sparkles, X, Shield, Share2, 
     Sun, Moon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -63,7 +63,6 @@ const Header: React.FC = () => {
       { label: t('inventory.tabItems_short', 'Stoku'), path: '/business/inventory', icon: Package },
       { label: t('business.archive', 'Arkiva'), path: '/business/archive', icon: FolderOpen },
       { label: t('business.insights', 'Inteligjenca'), path: '/business/insights', icon: Sparkles },
-      { label: t('business.profile', 'Profili'), path: '/business/profile', icon: Building2 },
       { label: t('sidebar.legal', 'Zyra Ligjore'), path: '/business/briefing', icon: LayoutDashboard, exact: true },
   ];
 
