@@ -1,6 +1,6 @@
 // FILE: src/components/SpreadsheetAnalysisPanel.tsx
-// PHOENIX PROTOCOL - ANALYST PANEL V26.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - ANALYST PANEL V26.2 (EXECUTIVE DESIGN SYSTEM)
+// FIXED: Removed conflicting border-danger-start/30 to avoid CSS conflict.
 
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -79,14 +79,14 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 1. IDLE STATE
     if (status === 'idle') {
         return (
-            <Panel className="p-0 overflow-hidden relative">
+            <Panel className="p-0 overflow-hidden relative shadow-sm border border-border-main bg-surface/30 backdrop-blur-sm">
                 {/* Colored top accent bar */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60 z-10" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-start to-primary-start/60 z-10" />
                 
                 {/* Header */}
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-primary-start/10 rounded-lg">
+                        <div className="p-2 bg-primary-start/10 rounded-lg border border-primary-start/20">
                             <FileText className="text-primary-start" size={18} />
                         </div>
                         <h3 className="text-lg font-bold text-text-primary">
@@ -102,7 +102,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                 <div className="p-6 flex flex-col items-center justify-center">
                     {/* Desktop Upload Zone */}
                     <div 
-                        className="hidden sm:flex w-full max-w-md flex-col items-center justify-center border-2 border-dashed border-border-main rounded-xl bg-surface/30 hover:bg-surface/50 transition-all cursor-pointer group py-8"
+                        className="hidden sm:flex w-full max-w-md flex-col items-center justify-center border-2 border-dashed border-border-main rounded-xl bg-surface/30 hover:bg-surface/50 transition-all cursor-pointer group py-8 hover-lift"
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleDrop}
                     >
@@ -115,7 +115,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                         <p className="text-text-muted text-xs mb-4 text-center px-4">
                             {t('analyst.dropDesc', 'Tërhiqni një skedar Excel, CSV, ose imazh.')}
                         </p>
-                        <button onClick={() => fileInputRef.current?.click()} className="btn-primary px-5 py-2 text-sm rounded-xl">
+                        <button onClick={() => fileInputRef.current?.click()} className="btn-primary px-5 py-2 text-sm rounded-xl shadow-sm hover-lift">
                             {t('analyst.selectButton', 'Zgjidh Skedarin')}
                         </button>
                     </div>
@@ -132,7 +132,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                             {t('analyst.mobileDesc', 'Ngarkoni një skedar nga telefoni juaj.')}
                         </p>
                         <div className="w-full space-y-2">
-                            <button onClick={() => fileInputRef.current?.click()} className="btn-primary w-full flex items-center justify-center gap-2 py-2 text-xs rounded-xl">
+                            <button onClick={() => fileInputRef.current?.click()} className="btn-primary w-full flex items-center justify-center gap-2 py-2 text-xs rounded-xl shadow-sm hover-lift">
                                 <FileUp size={14} /> {t('analyst.uploadButton', 'Ngarko Skedarin')}
                             </button>
                         </div>
@@ -148,13 +148,13 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 2. PROCESSING STATE
     if (status === 'uploading' || status === 'analyzing') {
         return (
-            <Panel className="p-0 overflow-hidden relative">
+            <Panel className="p-0 overflow-hidden relative shadow-sm border border-border-main bg-surface/30 backdrop-blur-sm">
                 {/* Colored top accent bar */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60 z-10" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-start to-primary-start/60 z-10" />
                 
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-primary-start/10 rounded-lg">
+                        <div className="p-2 bg-primary-start/10 rounded-lg border border-primary-start/20">
                             <FileSpreadsheet className="text-primary-start" size={18} />
                         </div>
                         <h3 className="text-lg font-bold text-text-primary">
@@ -176,13 +176,13 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     // 3. ERROR STATE
     if (status === 'error') {
         return (
-            <Panel className="p-0 overflow-hidden border-danger-start/30 relative">
+            <Panel className="p-0 overflow-hidden relative shadow-sm border border-border-main bg-surface/30 backdrop-blur-sm">
                 {/* Colored top accent bar */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-danger-start to-danger-start/60 z-10" />
                 
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-danger-start/5 to-transparent">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-danger-start/10 rounded-lg">
+                        <div className="p-2 bg-danger-start/10 rounded-lg border border-danger-start/20">
                             <AlertTriangle className="text-danger-start" size={18} />
                         </div>
                         <h3 className="text-lg font-bold text-text-primary">
@@ -196,7 +196,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                         {t('analyst.analysisErrorTitle', 'Gabim në Analizë')}
                     </p>
                     <p className="text-danger-start text-xs mb-4 text-center">{errorMsg}</p>
-                    <button onClick={reset} className="glass-input !bg-surface hover:bg-hover transition-colors text-xs px-5 py-2 rounded-xl">
+                    <button onClick={reset} className="glass-input !bg-surface hover:bg-hover transition-colors text-xs px-5 py-2 rounded-xl border border-border-main hover:border-primary-start/50 hover-lift shadow-sm">
                         {t('analyst.tryAgainButton', 'Provo Përsëri')}
                     </button>
                 </div>
@@ -208,7 +208,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
     if (status === 'complete' && result) {
         const maxVal = Math.max(...result.chart_data.map(d => d.value), 1);
         return (
-            <Panel className="p-0 overflow-hidden relative">
+            <Panel className="p-0 overflow-hidden relative shadow-sm border border-border-main bg-surface/30 backdrop-blur-sm">
                 {/* Colored top accent bar */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-success-start to-success-start/60 z-10" />
                 
@@ -216,14 +216,14 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                 <div className="px-5 pt-5 pb-3 border-b border-border-main bg-gradient-to-r from-primary-start/5 to-transparent">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <div className="p-2 bg-primary-start/10 rounded-lg">
+                            <div className="p-2 bg-primary-start/10 rounded-lg border border-primary-start/20">
                                 <FileSpreadsheet className="text-primary-start" size={18} />
                             </div>
                             <h3 className="text-lg font-bold text-text-primary">
                                 {t('analyst.reportTitle', 'Raporti i Analizës')}
                             </h3>
                         </div>
-                        <button onClick={reset} className="p-1.5 hover:bg-hover rounded-lg text-text-muted hover:text-text-primary transition-colors">
+                        <button onClick={reset} className="p-1.5 hover:bg-hover rounded-lg text-text-muted hover:text-text-primary transition-colors hover-lift">
                             <X size={16} />
                         </button>
                     </div>
@@ -236,7 +236,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                 <div className="p-5 space-y-5">
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="bg-surface p-4 rounded-xl border border-border-main">
+                        <div className="bg-surface/30 backdrop-blur-sm p-4 rounded-xl border border-border-main shadow-sm">
                             <div className="flex items-center gap-2 mb-2 text-text-muted text-[10px] font-black uppercase tracking-widest">
                                 <DollarSign size={14} /> {t('analyst.totalVolume', 'Total Volum')}
                             </div>
@@ -244,13 +244,13 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                                 €{result.stats.total_sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                         </div>
-                        <div className="bg-surface p-4 rounded-xl border border-border-main">
+                        <div className="bg-surface/30 backdrop-blur-sm p-4 rounded-xl border border-border-main shadow-sm">
                             <div className="flex items-center gap-2 mb-2 text-text-muted text-[10px] font-black uppercase tracking-widest">
                                 <Activity size={14} /> {t('analyst.transactions', 'Transaksione')}
                             </div>
                             <div className="text-2xl font-bold text-text-primary">{result.stats.transaction_count}</div>
                         </div>
-                        <div className="bg-surface p-4 rounded-xl border border-border-main">
+                        <div className="bg-surface/30 backdrop-blur-sm p-4 rounded-xl border border-border-main shadow-sm">
                             <div className="flex items-center gap-2 mb-2 text-text-muted text-[10px] font-black uppercase tracking-widest">
                                 <TrendingUp size={14} /> {t('analyst.average', 'Mesatarja')}
                             </div>
@@ -287,7 +287,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                     
                     {/* Charts */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                        <div className="bg-surface/30 p-4 rounded-xl border border-border-main">
+                        <div className="bg-surface/30 backdrop-blur-sm p-4 rounded-xl border border-border-main shadow-sm">
                             <h3 className="font-semibold text-text-primary mb-3 flex items-center gap-2 text-sm">
                                 <BarChart3 size={16} className="text-success-start"/> {t('analyst.expenseTrendTitle', 'Trendi i Shpenzimeve')}
                             </h3>
@@ -319,7 +319,7 @@ const SpreadsheetAnalysisPanel: React.FC = () => {
                             </div>
                         </div>
                         
-                        <div className="bg-surface/30 p-4 rounded-xl border border-border-main">
+                        <div className="bg-surface/30 backdrop-blur-sm p-4 rounded-xl border border-border-main shadow-sm">
                             <div className="flex justify-between items-center mb-3">
                                 <h3 className="font-semibold text-text-primary text-sm">
                                     {t('analyst.anomaliesTitle', 'Anomali & Të Dyshimta')}

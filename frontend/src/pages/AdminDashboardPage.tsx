@@ -1,6 +1,8 @@
 // FILE: src/pages/AdminDashboardPage.tsx
-// PHOENIX PROTOCOL - ADMIN DASHBOARD V5.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - ADMIN DASHBOARD V5.1 (EXECUTIVE DESIGN SYSTEM)
+// UPDATED: Semantic Tailwind classes (glass-panel, border-border-main, text-text-*, etc.)
+// ADDED: shadow-sm, hover-lift, consistent backdrop blur.
+// RETAINED: All logic and functionality.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -124,10 +126,10 @@ const AdminDashboardPage: React.FC = () => {
         return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-warning-start/10 text-warning-start border border-warning-start/30 text-[10px] font-black uppercase tracking-widest"><Clock className="w-3 h-3" /> {t('admin.statuses.INACTIVE', 'Në Pritje')}</span>;
     };
 
-    if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
+    if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-8 w-8 text-primary-start" /></div>;
 
     return (
-        <div className="glass-panel p-6 md:p-8 space-y-6">
+        <div className="glass-panel p-6 md:p-8 space-y-6 border border-border-main bg-canvas shadow-sm">
             <div>
                 <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-2">{t('admin.title', 'Paneli i Administratorit')}</h1>
                 <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('admin.subtitle', 'Menaxhimi i përdoruesve dhe sistemit.')}</p>
@@ -135,14 +137,14 @@ const AdminDashboardPage: React.FC = () => {
 
             {/* Stats Cards - Using Panel component */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Panel className="p-6 flex items-center justify-between">
+                <Panel className="p-6 flex items-center justify-between border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm hover-lift">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('admin.totalUsers', 'Total Përdorues')}</p>
                         <h3 className="text-3xl font-bold text-text-primary">{users.length}</h3>
                     </div>
-                    <div className="p-3 rounded-xl bg-primary/10 text-primary border border-border-main"><Users /></div>
+                    <div className="p-3 rounded-xl bg-primary-start/10 text-primary-start border border-border-main"><Users /></div>
                 </Panel>
-                <Panel className="p-6 flex items-center justify-between">
+                <Panel className="p-6 flex items-center justify-between border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm hover-lift">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">{t('admin.pendingApproval', 'Në Pritje')}</p>
                         <h3 className="text-3xl font-bold text-warning-start">{users.filter(u => u.status !== 'active').length}</h3>
@@ -152,18 +154,18 @@ const AdminDashboardPage: React.FC = () => {
             </div>
 
             {/* Users Table Panel */}
-            <Panel className="overflow-hidden">
+            <Panel className="overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
                 <div className="p-4 border-b border-border-main flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h3 className="text-lg font-semibold text-text-primary">{t('admin.registeredUsers', 'Përdoruesit e Regjistruar')}</h3>
                     <div className="relative w-full sm:w-auto">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                        <input type="text" placeholder={t('general.search', 'Kërko...')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="glass-input w-full sm:w-64 pl-9" />
+                        <input type="text" placeholder={t('general.search', 'Kërko...')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="glass-input w-full sm:w-64 pl-9 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" />
                     </div>
                 </div>
 
                 <div className="w-full overflow-x-auto">
                     <table className="w-full text-left text-sm text-text-secondary min-w-[1000px]">
-                        <thead className="bg-surface text-text-primary text-[10px] font-black uppercase tracking-widest">
+                        <thead className="bg-surface/30 backdrop-blur-sm text-text-primary text-[10px] font-black uppercase tracking-widest border-b border-border-main">
                             <tr>
                                 <th className="px-6 py-3 font-black tracking-widest">{t('admin.table.user', 'Përdoruesi')}</th>
                                 <th className="px-6 py-3 font-black tracking-widest">Organizata</th>
@@ -185,7 +187,7 @@ const AdminDashboardPage: React.FC = () => {
                                 <tr key={user.id} className="hover:bg-hover transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
-                                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold mr-3 border border-border-main shrink-0">
+                                            <div className="w-8 h-8 rounded-full bg-primary-start/20 flex items-center justify-center text-primary-start font-bold mr-3 border border-border-main shrink-0">
                                                 {user.username.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="min-w-0">
@@ -199,7 +201,7 @@ const AdminDashboardPage: React.FC = () => {
                                             {user.organization_role === 'OWNER' ? (
                                                 <Shield className="w-4 h-4 text-success-start" />
                                             ) : (
-                                                <Briefcase className="w-4 h-4 text-primary" />
+                                                <Briefcase className="w-4 h-4 text-primary-start" />
                                             )}
                                             <span className="text-xs font-medium text-text-secondary">{user.organization_role || 'OWNER'}</span>
                                         </div>
@@ -212,7 +214,7 @@ const AdminDashboardPage: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         {user.subscription_expiry_date ? (
-                                            <span className="text-xs font-mono text-text-secondary bg-surface px-2 py-1 rounded border border-border-main">
+                                            <span className="text-xs font-mono text-text-secondary bg-surface/30 backdrop-blur-sm px-2 py-1 rounded border border-border-main">
                                                 {new Date(user.subscription_expiry_date).toLocaleDateString()}
                                             </span>
                                         ) : (
@@ -220,15 +222,15 @@ const AdminDashboardPage: React.FC = () => {
                                         )}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${user.role.toUpperCase() === 'ADMIN' ? 'bg-danger-start/10 text-danger-start border-danger-start/30' : 'bg-surface text-text-muted border-border-main'}`}>
+                                        <span className={`inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${user.role.toUpperCase() === 'ADMIN' ? 'bg-danger-start/10 text-danger-start border-danger-start/30' : 'bg-surface/30 text-text-muted border-border-main'}`}>
                                             {user.role}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">{renderStatusBadge(user)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-xs">{new Date(user.created_at).toLocaleDateString()}</td>
                                     <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                                        <button onClick={() => handleEditClick(user)} className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors border border-border-main" title={t('general.edit', 'Ndrysho')}><Edit2 className="w-4 h-4" /></button>
-                                        <button onClick={() => handleDeleteUser(user.id)} className="p-2 rounded-lg bg-danger-start/10 hover:bg-danger-start/20 text-danger-start transition-colors border border-border-main" title={t('general.delete', 'Fshi')}><Trash2 className="w-4 h-4" /></button>
+                                        <button onClick={() => handleEditClick(user)} className="p-2 rounded-lg bg-primary-start/10 hover:bg-primary-start/20 text-primary-start transition-colors border border-border-main hover-lift shadow-sm" title={t('general.edit', 'Ndrysho')}><Edit2 className="w-4 h-4" /></button>
+                                        <button onClick={() => handleDeleteUser(user.id)} className="p-2 rounded-lg bg-danger-start/10 hover:bg-danger-start/20 text-danger-start transition-colors border border-border-main hover-lift shadow-sm" title={t('general.delete', 'Fshi')}><Trash2 className="w-4 h-4" /></button>
                                     </td>
                                 </tr>
                             ))}
@@ -243,7 +245,7 @@ const AdminDashboardPage: React.FC = () => {
                     <motion.div 
                         initial={{ scale: 0.95, opacity: 0 }} 
                         animate={{ scale: 1, opacity: 1 }} 
-                        className="glass-panel w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto"
+                        className="glass-panel w-full max-w-md shadow-sm border border-border-main max-h-[90vh] overflow-y-auto"
                     >
                         <div className="p-6 border-b border-border-main">
                             <h3 className="text-xl font-bold text-text-primary">{t('admin.editModal.title', 'Ndrysho Përdoruesin')}</h3>
@@ -251,16 +253,16 @@ const AdminDashboardPage: React.FC = () => {
                         <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.username', 'Emri i Përdoruesit')}</label>
-                                <input type="text" value={editForm.username || ''} onChange={e => setEditForm({ ...editForm, username: e.target.value })} className="glass-input w-full" />
+                                <input type="text" value={editForm.username || ''} onChange={e => setEditForm({ ...editForm, username: e.target.value })} className="glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" />
                             </div>
                             <div>
                                 <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.email', 'Email')}</label>
-                                <input type="email" value={editForm.email || ''} onChange={e => setEditForm({ ...editForm, email: e.target.value })} className="glass-input w-full" />
+                                <input type="email" value={editForm.email || ''} onChange={e => setEditForm({ ...editForm, email: e.target.value })} className="glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.role', 'Roli')}</label>
-                                    <select value={editForm.role || 'STANDARD'} onChange={e => setEditForm({ ...editForm, role: e.target.value })} className="glass-input w-full">
+                                    <select value={editForm.role || 'STANDARD'} onChange={e => setEditForm({ ...editForm, role: e.target.value })} className="glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all">
                                         <option value="STANDARD">{t('admin.roles.STANDARD', 'Përdorues')}</option>
                                         <option value="ADMIN">{t('admin.roles.ADMIN', 'Admin')}</option>
                                     </select>
@@ -270,7 +272,7 @@ const AdminDashboardPage: React.FC = () => {
                                     <select 
                                         value={editForm.subscription_status} 
                                         onChange={e => setEditForm({ ...editForm, subscription_status: e.target.value })} 
-                                        className="glass-input w-full"
+                                        className="glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                     >
                                         <option value="ACTIVE">{t('admin.statuses.ACTIVE', 'Aktive')}</option>
                                         <option value="INACTIVE">{t('admin.statuses.INACTIVE', 'Jo Aktive')}</option>
@@ -285,7 +287,7 @@ const AdminDashboardPage: React.FC = () => {
                                     <select 
                                         value={editForm.plan_tier || 'SOLO'} 
                                         onChange={e => setEditForm({ ...editForm, plan_tier: e.target.value })} 
-                                        className="glass-input w-full font-mono"
+                                        className="glass-input w-full font-mono border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                     >
                                         <option value="SOLO">SOLO</option>
                                         <option value="STARTUP">STARTUP</option>
@@ -303,7 +305,7 @@ const AdminDashboardPage: React.FC = () => {
                                             type="date" 
                                             value={editForm.subscription_expiry_date || ''} 
                                             onChange={e => setEditForm({ ...editForm, subscription_expiry_date: e.target.value })} 
-                                            className="glass-input w-full"
+                                            className="glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                 </div>
@@ -314,15 +316,15 @@ const AdminDashboardPage: React.FC = () => {
                                 <select 
                                     value={editForm.status} 
                                     onChange={e => setEditForm({ ...editForm, status: e.target.value as 'active' | 'inactive' })} 
-                                    className={`glass-input w-full font-bold ${editForm.status === 'active' ? 'text-success-start' : 'text-warning-start'}`}
+                                    className={`glass-input w-full font-bold border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all ${editForm.status === 'active' ? 'text-success-start' : 'text-warning-start'}`}
                                 >
                                     <option value="active">{t('admin.statuses.ACTIVE', 'Aktive')}</option>
                                     <option value="inactive">{t('admin.statuses.INACTIVE', 'Në Pritje')}</option>
                                 </select>
                             </div>
                             <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-border-main">
-                                <button type="button" onClick={() => setEditingUser(null)} className="glass-input !bg-surface hover:bg-hover transition-colors px-4 py-2 rounded-xl">{t('general.cancel', 'Anulo')}</button>
-                                <button type="submit" className="btn-primary px-6 py-2 rounded-xl">{t('general.save', 'Ruaj')}</button>
+                                <button type="button" onClick={() => setEditingUser(null)} className="glass-input !bg-surface hover:bg-hover transition-colors px-4 py-2 rounded-xl border border-border-main hover-lift shadow-sm">{t('general.cancel', 'Anulo')}</button>
+                                <button type="submit" className="btn-primary px-6 py-2 rounded-xl hover-lift shadow-sm">{t('general.save', 'Ruaj')}</button>
                             </div>
                         </form>
                     </motion.div>

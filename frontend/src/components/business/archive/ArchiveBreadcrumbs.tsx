@@ -1,7 +1,7 @@
 // FILE: src/components/business/archive/ArchiveBreadcrumbs.tsx
-// PHOENIX PROTOCOL - COMPONENT EXTRACTION V4.0 (DESIGN SYSTEM STANDARDIZED)
-// Handles breadcrumb navigation.
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - COMPONENT EXTRACTION V4.1 (EXECUTIVE DESIGN SYSTEM)
+// UPDATED: Semantic classes (bg-primary-start/20, text-primary-start, border-border-main, hover-lift)
+// RETAINED: All logic and functionality.
 
 import React from 'react';
 import { Home, Briefcase, FolderOpen, ChevronRight } from 'lucide-react';
@@ -23,7 +23,11 @@ export const ArchiveBreadcrumbs: React.FC<ArchiveBreadcrumbsProps> = ({ breadcru
                 <React.Fragment key={crumb.id || 'root'}>
                     <button 
                         onClick={() => onNavigate(index)} 
-                        className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${index === breadcrumbs.length - 1 ? 'bg-primary/20 text-primary font-bold border border-primary-start/30' : 'text-text-muted hover:text-text-primary hover:bg-hover'}`}
+                        className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all hover-lift shadow-sm ${
+                            index === breadcrumbs.length - 1 
+                                ? 'bg-primary-start/20 text-primary-start font-bold border border-primary-start/30' 
+                                : 'text-text-muted hover:text-text-primary hover:bg-hover border border-border-main'
+                        }`}
                     >
                         {crumb.type === 'ROOT' ? <Home size={14} /> : crumb.type === 'WORKSPACE' ? <Briefcase size={14} /> : <FolderOpen size={14} />}
                         {crumb.name}

@@ -1,5 +1,7 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V6.0 (NO CASE SELECTOR)
+// PHOENIX PROTOCOL - CONFIG PANEL V6.0 (EXECUTIVE DESIGN SYSTEM)
+// UPDATED: Added shadow-sm and hover-lift for consistency with the design system.
+// RETAINED: All logic and functionality.
 
 import React, { useMemo } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw } from 'lucide-react';
@@ -19,7 +21,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   const placeholder = useMemo(() => getTemplatePlaceholder(selectedTemplate), [selectedTemplate]);
 
   return (
-    <div className="glass-panel flex flex-col h-auto lg:h-[700px] p-6 sm:p-8 shrink-0 hover-lift">
+    <div className="glass-panel border border-border-main shadow-sm flex flex-col h-auto lg:h-[700px] p-6 sm:p-8 shrink-0 hover-lift">
       
       {/* Executive Header */}
       <div className="flex items-center gap-3 border-b border-border-main pb-5 mb-6 flex-shrink-0">
@@ -48,7 +50,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
               value={selectedTemplate}
               onChange={(e) => onSelectTemplate(e.target.value)}
               disabled={!isPro}
-              className="glass-input w-full pl-11 pr-10 py-3.5 text-sm font-bold appearance-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="glass-input w-full pl-11 pr-10 py-3.5 text-sm font-bold appearance-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 border-border-main"
             >
               <option value="generic" className="bg-surface">{t('drafting.templateGeneric')}</option>
               <optgroup label={t('drafting.groupLitigation')} className="bg-surface-secondary italic">
@@ -94,7 +96,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
             value={context}
             onChange={(e) => onChangeContext(e.target.value)}
             placeholder={placeholder}
-            className="glass-input w-full p-5 text-sm flex-1 resize-none custom-scrollbar font-mono leading-relaxed placeholder:text-text-disabled"
+            className="glass-input w-full p-5 text-sm flex-1 resize-none custom-scrollbar font-mono leading-relaxed placeholder:text-text-disabled border-border-main"
           />
         </div>
 
@@ -102,7 +104,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
         <button
           onClick={onSubmit}
           disabled={isSubmitting || !context.trim()}
-          className="btn-primary w-full h-14 flex items-center justify-center gap-3 mt-2 flex-shrink-0 disabled:opacity-40"
+          className="btn-primary w-full h-14 flex items-center justify-center gap-3 mt-2 flex-shrink-0 disabled:opacity-40 hover-lift shadow-sm"
         >
           {isSubmitting ? <RefreshCw className="animate-spin" size={18} /> : <Send size={18} />}
           <span className="uppercase tracking-widest font-black text-xs">

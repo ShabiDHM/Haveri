@@ -1,6 +1,8 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V6.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - INVENTORY LIST V6.1 (EXECUTIVE DESIGN SYSTEM)
+// UPDATED: Cards now use glass-panel with backdrop blur, consistent with other modules.
+// ADDED: hover-lift and shadow-sm to cards and buttons.
+// RETAINED: All functionality and sorting logic.
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -31,16 +33,16 @@ const ItemCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="group relative flex flex-col justify-between h-full min-h-[13rem] p-5 sm:p-6 rounded-3xl bg-surface/60 border border-border-main hover:border-success-start/30 transition-all duration-300 shadow-sm"
+            className="glass-panel border border-border-main rounded-3xl p-5 sm:p-6 hover-lift shadow-sm transition-all duration-300 group relative flex flex-col justify-between h-full min-h-[13rem]"
         >
             {/* Top Section */}
             <div>
                 <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
-                    <div className={`p-2.5 sm:p-3 rounded-2xl bg-surface border border-border-main ${isPos ? 'text-primary' : 'text-success-start'}`}>
+                    <div className={`p-2.5 sm:p-3 rounded-2xl bg-surface/30 backdrop-blur-sm border border-border-main ${isPos ? 'text-primary-start' : 'text-success-start'}`}>
                         {isPos ? <Layers size={18} /> : <Package size={18} />}
                     </div>
                     {isLowStock && (
-                        <div className="flex items-center gap-1.5 bg-danger-start/10 text-danger-start text-[10px] px-2 py-1 rounded-full uppercase tracking-wider font-bold animate-pulse">
+                        <div className="flex items-center gap-1.5 bg-danger-start/10 text-danger-start text-[10px] px-2 py-1 rounded-full uppercase tracking-wider font-bold animate-pulse border border-danger-start/20">
                             <AlertTriangle size={12} /> {t('inventory.lowStock', 'Stoku Kritik')}
                         </div>
                     )}
@@ -68,10 +70,18 @@ const ItemCard: React.FC<{
                 </div>
                 
                 <div className="flex items-center gap-1">
-                    <button onClick={() => onEdit(item)} className="p-2 hover:bg-hover rounded-lg text-warning-start hover:text-warning-start/80 transition-colors" title={t('general.edit')}>
+                    <button 
+                        onClick={() => onEdit(item)} 
+                        className="p-2 hover:bg-hover rounded-lg text-warning-start hover:text-warning-start/80 transition-colors hover-lift shadow-sm" 
+                        title={t('general.edit')}
+                    >
                         <Edit size={16} />
                     </button>
-                    <button onClick={() => onDelete(item._id)} className="p-2 hover:bg-hover rounded-lg text-danger-start hover:text-danger-start/80 transition-colors" title={t('general.delete')}>
+                    <button 
+                        onClick={() => onDelete(item._id)} 
+                        className="p-2 hover:bg-hover rounded-lg text-danger-start hover:text-danger-start/80 transition-colors hover-lift shadow-sm" 
+                        title={t('general.delete')}
+                    >
                         <Trash2 size={16} />
                     </button>
                 </div>

@@ -1,8 +1,9 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V11.1 (EXECUTIVE DESIGN SYSTEM)
-// UPDATED: Converted to semantic Tailwind classes: glass-panel, border-border-main, text-text-*, bg-surface, bg-canvas.
-// ADDED: hover-lift and shadow-sm to all interactive elements.
-// PRESERVED: All logic, hooks, and functionality.
+// PHOENIX PROTOCOL - FINANCE TAB V12.0 (EXECUTIVE DESIGN SYSTEM)
+// Fixed: Outer container now uses pure glass-panel without solid background.
+// Aligned: All inner cards use consistent border radius, typography, and hover-lift.
+// Unified: Buttons and tabs follow the same active/passive patterns as other modules.
+// Depth: Added shadow-sm and hover-lift throughout.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,7 +58,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
         <motion.div 
             whileHover={{ scale: 1.02, y: -2 }} 
             onClick={onClick} 
-            className={`relative overflow-hidden rounded-2xl border border-border-main ${borderTopClass} border-t-4 bg-surface p-5 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300 hover-lift`}
+            className={`relative overflow-hidden rounded-2xl border border-border-main ${borderTopClass} border-t-4 bg-surface/80 backdrop-blur-sm p-5 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300 hover-lift`}
         >
             <div className="flex justify-between items-start mb-3">
                 <div className={`p-2.5 rounded-xl ${iconBg} ${iconColor} border border-border-main`}>
@@ -70,7 +71,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
                 )}
             </div>
             <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">
+                <p className="text-[11px] font-black uppercase tracking-widest text-text-muted mb-1">
                     {title}
                 </p>
                 <h3 className={`text-2xl font-bold ${amountColor} tracking-tight`}>
@@ -87,7 +88,7 @@ const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
         className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group hover-lift shadow-sm ${
             primary 
                 ? 'btn-primary' 
-                : 'glass-input !bg-surface hover:bg-hover transition-colors cursor-pointer border border-border-main'
+                : 'bg-surface/80 backdrop-blur-sm border border-border-main hover:bg-hover hover:border-primary-start/50 text-text-secondary hover:text-text-primary'
         }`}
     >
         <span>{icon}</span>
@@ -242,7 +243,7 @@ export const FinanceTab: React.FC = () => {
     const handleArchiveExpense = (id: string) => { setSelectedExpenseId(id); setShowArchiveExpenseModal(true); };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 border border-border-main bg-canvas">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 border border-border-main">
             <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--primary-start); border-radius: 10px; opacity: 0.3; } 
@@ -256,20 +257,20 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-surface/40 p-4 rounded-2xl border border-border-main">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm">
                 <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
                 <ActionButton icon={<Users size={20} />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} />
                 <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
-            <Panel className="p-0 overflow-hidden h-[70vh] min-h-[600px] flex flex-col border border-border-main bg-surface shadow-sm">
+            <Panel className="p-0 overflow-hidden h-[70vh] min-h-[600px] flex flex-col border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-6 border-b border-border-main pb-6 px-6 pt-6">
                     <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
                         <Activity className="text-primary-start" />
                         {t('finance.activityAndReports')}
                     </h2>
-                    <div className="w-full sm:w-auto flex bg-surface p-1.5 rounded-2xl border border-border-main gap-1">
+                    <div className="w-full sm:w-auto flex bg-surface/50 p-1.5 rounded-2xl border border-border-main gap-1">
                         <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
                         <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
                         <TabButton label={t('clients.title', 'Partnerët')} icon={<Users size={16} />} isActive={activeTab === 'partners'} onClick={() => setActiveTab('partners')} />
@@ -283,7 +284,7 @@ export const FinanceTab: React.FC = () => {
                             <input 
                                 type="text" 
                                 placeholder={activeTab === 'partners' ? t('general.searchPartners', 'Kërko partnerë...') : t('header.searchPlaceholder')} 
-                                className="glass-input w-full pl-12 py-4 bg-surface focus:bg-canvas transition-all border border-border-main text-text-primary placeholder:text-text-muted" 
+                                className="glass-input w-full pl-12 py-4 bg-surface/80 backdrop-blur-sm focus:bg-surface transition-all border border-border-main text-text-primary placeholder:text-text-muted rounded-xl" 
                                 value={searchTerm} 
                                 onChange={(e) => setSearchTerm(e.target.value)} 
                             />
@@ -325,7 +326,7 @@ export const FinanceTab: React.FC = () => {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {filteredPartners.map((partner) => (
-                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface/30 border border-border-main rounded-2xl p-5 hover:border-primary-start/30 transition-all group relative hover-lift shadow-sm">
+                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-5 hover:border-primary-start/30 transition-all group relative hover-lift shadow-sm">
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="p-3 rounded-xl bg-primary-start/10 text-primary-start border border-border-main"><Users size={20} /></div>
                                                 <div className="flex flex-col items-end gap-2">
@@ -353,13 +354,13 @@ export const FinanceTab: React.FC = () => {
                         <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
                             {!analyticsData ? ( <div className="text-center text-text-muted py-10">{t('finance.reports.noData')}</div> ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="bg-surface/30 rounded-2xl p-6 border border-border-main shadow-sm">
+                                    <div className="bg-surface/30 backdrop-blur-sm rounded-2xl p-6 border border-border-main shadow-sm">
                                         <h4 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-primary-start" /> {t('finance.analytics.salesTrend')}</h4>
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%"><AreaChart data={analyticsData.sales_trend}><defs><linearGradient id="colorSales" x1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} /><YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} /><Tooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" /></AreaChart></ResponsiveContainer>
                                         </div>
                                     </div>
-                                    <div className="bg-surface/30 rounded-2xl p-6 border border-border-main shadow-sm">
+                                    <div className="bg-surface/30 backdrop-blur-sm rounded-2xl p-6 border border-border-main shadow-sm">
                                         <h4 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-success-start" /> {t('finance.analytics.topProducts')}</h4>
                                         <div className="h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%"><BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 10 }}><XAxis type="number" hide /><YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} /><Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>{analyticsData.top_products.map((_: any, index: number) => (<Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />))}</Bar></BarChart></ResponsiveContainer>
@@ -428,12 +429,12 @@ export const FinanceTab: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="glass-panel w-full max-w-md p-6 shadow-xl border border-border-main">
                         <h2 className="text-xl font-bold text-text-primary mb-4">{t('finance.archiveInvoice')}</h2>
-                        <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                        <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary rounded-xl" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowArchiveInvoiceModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-5 py-2.5 border border-border-main hover-lift shadow-sm">{t('general.cancel')}</button>
+                            <button onClick={() => setShowArchiveInvoiceModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-5 py-2.5 border border-border-main rounded-xl hover-lift shadow-sm">{t('general.cancel')}</button>
                             <button onClick={submitArchiveInvoice} className="btn-primary px-6 py-2.5 rounded-xl hover-lift shadow-sm">{t('general.save')}</button>
                         </div>
                     </div>
@@ -444,12 +445,12 @@ export const FinanceTab: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="glass-panel w-full max-w-md p-6 shadow-xl border border-border-main">
                         <h2 className="text-xl font-bold text-text-primary mb-4">{t('finance.archiveExpenseTitle')}</h2>
-                        <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                        <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary rounded-xl" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowArchiveExpenseModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-5 py-2.5 border border-border-main hover-lift shadow-sm">{t('general.cancel')}</button>
+                            <button onClick={() => setShowArchiveExpenseModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-5 py-2.5 border border-border-main rounded-xl hover-lift shadow-sm">{t('general.cancel')}</button>
                             <button onClick={submitArchiveExpense} className="btn-primary px-6 py-2.5 rounded-xl hover-lift shadow-sm">{t('general.save')}</button>
                         </div>
                     </div>

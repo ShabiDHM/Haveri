@@ -1,5 +1,7 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX MODULE V13.0 (GLASSMORPHISM ALIGNED)
+// PHOENIX PROTOCOL - TAX MODULE V13.1 (EXECUTIVE DESIGN SYSTEM)
+// ADDED: shadow-sm, hover-lift, consistent border-border-main, semantic text classes.
+// RETAINED: All logic and functionality.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,7 +32,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group">
+            <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group shadow-sm border border-border-main">
                 
                 {/* Executive Header */}
                 <div className="flex justify-between items-center border-b border-border-main pb-5 mb-6 flex-shrink-0">
@@ -42,7 +44,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                     </div>
                     <button 
                         onClick={() => setShowForensicChat(true)} 
-                        className="text-text-muted hover:text-primary-start transition-colors p-1" 
+                        className="text-text-muted hover:text-primary-start transition-colors p-1 hover-lift shadow-sm" 
                         title="Hap Auditorin Forenzik"
                     >
                         <HelpCircle size={16} />
@@ -51,18 +53,18 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
 
                 <div className="flex flex-col flex-1 min-h-0">
                     {/* Main Value Box */}
-                    <div className="glass-input p-6 mb-4 flex-shrink-0 text-center flex flex-col justify-center items-center relative overflow-hidden">
+                    <div className="glass-input p-6 mb-4 flex-shrink-0 text-center flex flex-col justify-center items-center relative overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm">
                         <p className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-2 relative z-10">
                             {t('insights.tax.toPay', 'Për të paguar (Vlerësim)')}
                         </p>
-                        <h2 className={`text-4xl font-mono font-black tracking-tight relative z-10 ${isPositive ? 'text-danger' : 'text-success-start'}`}>
+                        <h2 className={`text-4xl font-mono font-black tracking-tight relative z-10 ${isPositive ? 'text-danger-start' : 'text-success-start'}`}>
                             €{Math.abs(estimatedLiability).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </h2>
                     </div>
 
                     {/* Secondary Values Grid */}
                     <div className="grid grid-cols-2 gap-4 mb-6 flex-shrink-0">
-                        <div className="glass-input p-4 text-center group/item hover:border-success-start/30 transition-colors">
+                        <div className="glass-input p-4 text-center group/item hover:border-success-start/30 transition-colors border border-border-main bg-surface/30 backdrop-blur-sm hover-lift">
                             <div className="flex items-center justify-center gap-1.5 text-[9px] text-success-start uppercase font-black tracking-widest mb-2">
                                 <TrendingUp size={12} /> TVSH Mbledhur
                             </div>
@@ -70,8 +72,8 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                                 €{vatCollected.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
-                        <div className="glass-input p-4 text-center group/item hover:border-danger/30 transition-colors">
-                            <div className="flex items-center justify-center gap-1.5 text-[9px] text-danger uppercase font-black tracking-widest mb-2">
+                        <div className="glass-input p-4 text-center group/item hover:border-danger-start/30 transition-colors border border-border-main bg-surface/30 backdrop-blur-sm hover-lift">
+                            <div className="flex items-center justify-center gap-1.5 text-[9px] text-danger-start uppercase font-black tracking-widest mb-2">
                                 <TrendingDown size={12} /> TVSH Zbritshme
                             </div>
                             <p className="text-sm font-mono font-black text-text-primary">
@@ -84,7 +86,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                     <div className="mt-auto space-y-3 flex-shrink-0">
                         <button 
                             onClick={() => setShowForensicChat(true)}
-                            className="glass-input w-full h-12 flex items-center justify-center gap-2 hover:bg-white/5 transition-colors group/btn"
+                            className="glass-input w-full h-12 flex items-center justify-center gap-2 hover:bg-hover transition-colors group/btn border border-border-main hover:border-primary-start/50 rounded-xl hover-lift shadow-sm"
                         >
                             <span className="text-[10px] text-primary-start uppercase font-black tracking-widest group-hover/btn:scale-105 transition-transform">
                                 Audito me AI
@@ -93,7 +95,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
 
                         <button 
                             onClick={handleDirectClose} 
-                            className="btn-primary w-full h-12 flex items-center justify-center gap-3"
+                            className="btn-primary w-full h-12 flex items-center justify-center gap-3 hover-lift shadow-sm"
                         >
                             <Calculator size={16} />
                             <span className="text-[10px] uppercase font-black tracking-widest">

@@ -1,6 +1,8 @@
 // FILE: src/components/business/inventory/RecipeList.tsx
-// PHOENIX PROTOCOL - RECIPE LIST V5.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - RECIPE LIST V5.1 (EXECUTIVE DESIGN SYSTEM)
+// UPDATED: Cards now use glass-panel with backdrop blur, consistent with other modules.
+// ADDED: hover-lift and shadow-sm to cards and buttons.
+// RETAINED: All functionality and logic.
 
 import React from 'react';
 import { ChefHat, Edit, Trash2 } from 'lucide-react';
@@ -31,12 +33,12 @@ const RecipeCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="group relative flex flex-col justify-between h-full min-h-[13rem] p-5 sm:p-6 rounded-3xl bg-surface/60 border border-border-main hover:border-primary/30 transition-all duration-300 shadow-sm"
+            className="glass-panel border border-border-main rounded-3xl p-5 sm:p-6 hover-lift shadow-sm transition-all duration-300 group relative flex flex-col justify-between h-full min-h-[13rem]"
         >
             {/* Top Section */}
             <div>
                 <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
-                    <div className="p-2.5 sm:p-3 rounded-2xl bg-surface border border-border-main text-primary">
+                    <div className="p-2.5 sm:p-3 rounded-2xl bg-surface/30 backdrop-blur-sm border border-border-main text-primary-start">
                         <ChefHat size={18} />
                     </div>
                 </div>
@@ -66,10 +68,18 @@ const RecipeCard: React.FC<{
                 </div>
                 
                 <div className="flex items-center gap-1">
-                    <button onClick={() => onEdit(recipe)} className="p-2 hover:bg-hover rounded-lg text-warning-start hover:text-warning-start/80 transition-colors" title={t('general.edit')}>
+                    <button 
+                        onClick={() => onEdit(recipe)} 
+                        className="p-2 hover:bg-hover rounded-lg text-warning-start hover:text-warning-start/80 transition-colors hover-lift shadow-sm" 
+                        title={t('general.edit')}
+                    >
                         <Edit size={16} />
                     </button>
-                    <button onClick={() => onDelete(recipe._id)} className="p-2 hover:bg-hover rounded-lg text-danger-start hover:text-danger-start/80 transition-colors" title={t('general.delete')}>
+                    <button 
+                        onClick={() => onDelete(recipe._id)} 
+                        className="p-2 hover:bg-hover rounded-lg text-danger-start hover:text-danger-start/80 transition-colors hover-lift shadow-sm" 
+                        title={t('general.delete')}
+                    >
                         <Trash2 size={16} />
                     </button>
                 </div>

@@ -1,6 +1,8 @@
-// FILE: src/components/business/briefing/BusinessRhythmCard.tsx 
-// (or src/components/business/insights/BusinessRhythmCard.tsx depending on your exact folder structure)
-// PHOENIX PROTOCOL - RHYTHM CARD V12.0 (GLASSMORPHISM ALIGNED)
+// FILE: src/components/business/insights/BusinessRhythmCard.tsx
+// PHOENIX PROTOCOL - RHYTHM CARD V12.1 (EXECUTIVE DESIGN SYSTEM)
+// ADDED: shadow-sm for consistent depth.
+// ENSURED: All borders use border-border-main, text uses semantic tokens.
+// RETAINED: All logic and chart configuration.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -73,7 +75,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
             legend: { display: false },
             tooltip: {
                 enabled: true,
-                backgroundColor: 'rgba(19, 23, 34, 0.95)', // Matched to glass-panel dark theme
+                backgroundColor: 'rgba(19, 23, 34, 0.95)',
                 titleColor: '#ffffff',
                 bodyColor: '#e5e7eb',
                 borderColor: 'rgba(255,255,255,0.05)',
@@ -92,7 +94,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
                 beginAtZero: true,
                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                 ticks: { 
-                    color: '#6b7280', // text-text-muted
+                    color: '#6b7280',
                     font: { size: 10, weight: 'bold', family: 'monospace' },
                     callback: (value: any) => `€${value}`
                 },
@@ -113,7 +115,7 @@ export const BusinessRhythmCard: React.FC<BusinessRhythmCardProps> = ({
     };
 
     return (
-        <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group">
+        <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group shadow-sm border border-border-main">
             
             {/* Ambient Background Glow */}
             <div className="absolute top-0 left-0 w-32 h-32 bg-success-start/5 rounded-full blur-[60px] group-hover:bg-success-start/10 transition-colors pointer-events-none" />

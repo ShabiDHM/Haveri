@@ -1,5 +1,7 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V6.0 (NO CASE REFERENCES)
+// PHOENIX PROTOCOL - RESULT PANEL V6.1 (EXECUTIVE DESIGN SYSTEM)
+// ADDED: shadow-sm, border-border-main, hover-lift, backdrop blur.
+// RETAINED: All logic and functionality.
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,15 +37,16 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     }
   }, [currentJob.status, t]);
 
-  const actionButtonBase = "p-2.5 text-text-muted hover:text-primary-start hover:bg-surface-secondary rounded-xl transition-all border border-transparent hover:border-border-main disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:border-transparent";
+  // Executive Action Button Styling
+  const actionButtonBase = "p-2.5 text-text-muted hover:text-primary-start hover:bg-surface/30 rounded-xl transition-all border border-transparent hover:border-border-main disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:border-transparent hover-lift shadow-sm";
 
   return (
-    <div className="glass-panel p-0 flex flex-col h-auto lg:h-[700px] overflow-hidden shadow-lawyer-light shrink-0">
+    <div className="glass-panel border border-border-main shadow-sm p-0 flex flex-col h-auto lg:h-[700px] overflow-hidden shrink-0">
       
       {/* Executive Header Toolbar */}
-      <div className="flex justify-between items-center px-6 py-4 bg-canvas/30 border-b border-border-main flex-shrink-0 z-10">
+      <div className="flex justify-between items-center px-6 py-4 bg-surface/30 backdrop-blur-sm border-b border-border-main flex-shrink-0 z-10">
         <div className="flex items-center gap-4">
-          <div className={`${statusUI.color} p-2.5 bg-surface border border-border-main rounded-xl shadow-sm`}>
+          <div className={`${statusUI.color} p-2.5 bg-surface/30 backdrop-blur-sm border border-border-main rounded-xl shadow-sm`}>
             {statusUI.icon}
           </div>
           <h3 className="text-text-primary text-xs font-black uppercase tracking-widest leading-none">
@@ -82,6 +85,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                 a.href = url;
                 a.download = `draft-${Date.now()}.txt`;
                 a.click();
+                URL.revokeObjectURL(url);
               }
             }}
             title={t('drafting.download')}
@@ -95,7 +99,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
             <button
               onClick={onRetry}
               title="Riprovo"
-              className="p-2.5 text-warning-start hover:bg-warning-start/10 rounded-xl transition-all border border-transparent hover:border-warning-start/30"
+              className="p-2.5 text-warning-start hover:bg-warning-start/10 rounded-xl transition-all border border-transparent hover:border-warning-start/30 hover-lift shadow-sm"
             >
               <RefreshCw size={18} />
             </button>
@@ -107,7 +111,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
             onClick={onClear}
             title={t('drafting.clear')}
             disabled={!currentJob.result && currentJob.status !== 'FAILED'}
-            className="p-2.5 text-danger-start hover:bg-danger-start/10 rounded-xl transition-all border border-transparent hover:border-danger-start/30 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:border-transparent"
+            className="p-2.5 text-danger-start hover:bg-danger-start/10 rounded-xl transition-all border border-transparent hover:border-danger-start/30 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:border-transparent hover-lift shadow-sm"
           >
             <Trash2 size={18} />
           </button>
@@ -149,7 +153,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               >
                 {currentJob.status === 'PROCESSING' ? (
                   <div className="flex flex-col items-center">
-                    <div className="w-20 h-20 rounded-[1.5rem] bg-primary-start flex items-center justify-center shadow-accent-glow mb-8 animate-pulse">
+                    <div className="w-20 h-20 rounded-[1.5rem] bg-primary-start flex items-center justify-center shadow-sm mb-8 animate-pulse">
                       <BrainCircuit className="w-10 h-10 text-white" />
                     </div>
                     <p className="text-text-primary font-black uppercase tracking-widest text-sm flex items-center">

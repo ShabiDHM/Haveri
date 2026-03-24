@@ -1,6 +1,7 @@
 // FILE: src/components/business/archive/ArchiveCard.tsx
-// PHOENIX PROTOCOL - ARCHIVE CARD V4.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - ARCHIVE CARD V4.1 (EXECUTIVE DESIGN SYSTEM)
+// ADDED: hover-lift and ensured shadow-sm consistency.
+// RETAINED: All logic and functionality.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,20 +22,20 @@ interface ArchiveCardProps {
     onDelete?: () => void;
     onRename?: () => void;
     onShare?: () => void;
-    onAskAI?: () => void; // Document Assistant
+    onAskAI?: () => void;
     isShared?: boolean;
     isFolder?: boolean;
     isLoading?: boolean;
     indexingStatus?: string;
 }
 
-const getFileIcon = (fileType: string) => { 
+export const getFileIcon = (fileType: string) => { 
     const ft = fileType ? fileType.toUpperCase() : ""; 
     if (ft === 'PDF') return <FileText className="w-5 h-5 text-danger-start" />; 
     if (['CSV', 'XLSX', 'XLS'].includes(ft)) return <FileSpreadsheet className="w-5 h-5 text-success-start" />; 
-    if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-primary" />; 
+    if (['PNG', 'JPG', 'JPEG'].includes(ft)) return <FileImage className="w-5 h-5 text-primary-start" />; 
     if (['JSON', 'JS', 'TS'].includes(ft)) return <FileCode className="w-5 h-5 text-warning-start" />; 
-    return <FileIcon className="w-5 h-5 text-primary" />; 
+    return <FileIcon className="w-5 h-5 text-primary-start" />; 
 };
 
 export const ArchiveCard: React.FC<ArchiveCardProps> = ({ 
@@ -44,8 +45,11 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
     const { t } = useTranslation();
 
     return (
-        <div onClick={onClick} className={`group relative flex flex-col justify-between h-full min-h-[12rem] sm:min-h-[14rem] p-4 sm:p-6 rounded-2xl transition-all duration-300 cursor-pointer bg-surface/40 backdrop-blur-md border border-border-main shadow-sm hover:shadow-md hover:bg-surface/60 hover:-translate-y-1 hover:scale-[1.01]`}>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+        <div 
+            onClick={onClick} 
+            className={`group relative flex flex-col justify-between h-full min-h-[12rem] sm:min-h-[14rem] p-4 sm:p-6 rounded-2xl transition-all duration-300 cursor-pointer bg-surface/40 backdrop-blur-md border border-border-main shadow-sm hover:shadow-md hover-lift`}
+        >
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-start/5 to-primary-start/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             <div>
                 <div className="flex flex-col mb-3 sm:mb-4 relative z-10">
                     <div className="flex justify-between items-start gap-2">
@@ -59,7 +63,7 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                         )}
                     </div>
                     <div className="mt-3 sm:mt-4">
-                        <h2 className="text-lg sm:text-xl font-bold text-text-primary line-clamp-2 leading-tight tracking-tight group-hover:text-primary transition-colors break-words">{title}</h2>
+                        <h2 className="text-lg sm:text-xl font-bold text-text-primary line-clamp-2 leading-tight tracking-tight group-hover:text-primary-start transition-colors break-words">{title}</h2>
                         <div className="flex items-center gap-2 mt-2">
                             <Calendar className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-text-muted flex-shrink-0" />
                             <p className="text-[10px] font-black uppercase tracking-widest text-text-muted truncate">{date}</p>
@@ -68,7 +72,7 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                 </div>
                 <div className="flex flex-col mb-4 sm:mb-6 relative z-10">
                     <div className="flex items-center gap-2 mb-2 sm:mb-3 pb-2 border-b border-border-main">
-                        <Info className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-primary" />
+                        <Info className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-primary-start" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{isFolder ? t('archive.contents') : t('archive.details')}</span>
                     </div>
                     <div className="space-y-1.5 pl-1">
@@ -84,23 +88,61 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                 </div>
             </div>
             <div className="relative z-10 pt-3 sm:pt-4 border-t border-border-main flex items-center justify-between min-h-[2.5rem] sm:min-h-[3rem]">
-                <span className="text-xs sm:text-sm font-medium text-primary group-hover:text-primary/80 transition-colors flex items-center gap-1">{isFolder ? t('archive.openFolder') : ''}</span>
+                <span className="text-xs sm:text-sm font-medium text-primary-start group-hover:text-primary-start/80 transition-colors flex items-center gap-1">{isFolder ? t('archive.openFolder') : ''}</span>
                 
                 <div className="flex gap-1 items-center flex-wrap justify-end">
                     {/* Document Assistant only */}
                     {!isFolder && indexingStatus === 'READY' && onAskAI && (
-                         <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition-colors" title="Bisedo me Dokumentin"><MessageSquare size={16} /></button>
+                         <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-primary-start hover:bg-primary-start/10 transition-colors hover-lift" title="Bisedo me Dokumentin"><MessageSquare size={16} /></button>
                     )}
                     
-                    {!isFolder && onShare && (<button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-1.5 sm:p-2 rounded-lg transition-colors ${isShared ? 'bg-success-start/20 text-success-start hover:bg-success-start/30' : 'text-text-muted hover:text-text-primary hover:bg-hover'}`} title={isShared ? t('archive.unshare') : t('archive.share')}><Share2 className="h-4 w-4" /></button>)}
-                    {onRename && (<button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-hover transition-colors" title={t('general.edit')}><Pencil className="h-4 w-4" /></button>)}
-                    {!isFolder && <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition-colors" title={t('general.view')}>{isLoading ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Eye className="h-4 w-4" />}</button>}
-                    {!isFolder && onDownload && <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-success-start hover:bg-success-start/10 transition-colors" title={t('general.download')}><Download className="h-4 w-4" /></button>}
-                    {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-danger-start hover:bg-danger-start/10 transition-colors" title={t('general.delete')}><Trash2 className="h-4 w-4" /></button>}
+                    {!isFolder && onShare && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onShare(); }} 
+                            className={`p-1.5 sm:p-2 rounded-lg transition-colors hover-lift ${isShared ? 'bg-success-start/20 text-success-start hover:bg-success-start/30' : 'text-text-muted hover:text-text-primary hover:bg-hover'}`} 
+                            title={isShared ? t('archive.unshare') : t('archive.share')}
+                        >
+                            <Share2 className="h-4 w-4" />
+                        </button>
+                    )}
+                    {onRename && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onRename(); }} 
+                            className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-hover transition-colors hover-lift" 
+                            title={t('general.edit')}
+                        >
+                            <Pencil className="h-4 w-4" />
+                        </button>
+                    )}
+                    {!isFolder && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onClick(); }} 
+                            className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-primary-start hover:bg-primary-start/10 transition-colors hover-lift" 
+                            title={t('general.view')}
+                        >
+                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-primary-start" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                    )}
+                    {!isFolder && onDownload && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onDownload(); }} 
+                            className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-success-start hover:bg-success-start/10 transition-colors hover-lift" 
+                            title={t('general.download')}
+                        >
+                            <Download className="h-4 w-4" />
+                        </button>
+                    )}
+                    {onDelete && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onDelete(); }} 
+                            className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-danger-start hover:bg-danger-start/10 transition-colors hover-lift" 
+                            title={t('general.delete')}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
-
-export { getFileIcon };

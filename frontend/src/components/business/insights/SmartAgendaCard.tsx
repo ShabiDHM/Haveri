@@ -1,5 +1,7 @@
-// FILE: src/components/business/briefing/SmartAgendaCard.tsx 
-// PHOENIX PROTOCOL - AGENDA CARD V11.0 (GLASSMORPHISM ALIGNED)
+// FILE: src/components/business/briefing/SmartAgendaCard.tsx
+// PHOENIX PROTOCOL - AGENDA CARD V11.1 (EXECUTIVE DESIGN SYSTEM)
+// ADDED: shadow-sm, hover-lift, consistent border-border-main, semantic text colors.
+// RETAINED: All logic and functionality.
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,7 +33,7 @@ const getEventIcon = (type: string) => {
 
 const getEventColorClass = (type: string) => {
     switch (type) {
-        case 'TAX_DEADLINE': return 'text-danger';
+        case 'TAX_DEADLINE': return 'text-danger-start';
         case 'PAYMENT_DUE': return 'text-warning-start';
         case 'APPOINTMENT': return 'text-primary-start';
         case 'TASK': return 'text-success-start';
@@ -48,7 +50,7 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
     };
 
     return (
-        <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group">
+        <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group shadow-sm border border-border-main">
             
             {/* Ambient Background Glow (Subtle) */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-warning-start/5 rounded-full blur-[60px] group-hover:bg-warning-start/10 transition-colors pointer-events-none" />
@@ -63,7 +65,7 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
                 </div>
                 <button 
                     onClick={handleViewCalendar}
-                    className="text-[9px] text-text-muted hover:text-text-primary transition-colors flex items-center gap-1.5 uppercase font-black tracking-widest group/btn"
+                    className="text-[9px] text-text-muted hover:text-text-primary transition-colors flex items-center gap-1.5 uppercase font-black tracking-widest group/btn hover-lift"
                 >
                     {t('dashboard.viewCalendar', 'Shiko Kalendarin')}
                     <ChevronRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform" />
@@ -72,8 +74,8 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
 
             <div className="flex-1 flex flex-col min-h-0 relative z-10">
                 {agenda.length === 0 ? (
-                    <div className="glass-input flex-1 flex flex-col items-center justify-center text-center p-6">
-                        <div className="w-12 h-12 rounded-full bg-black/20 border border-white/5 flex items-center justify-center mb-4">
+                    <div className="glass-input flex-1 flex flex-col items-center justify-center text-center p-6 border border-border-main bg-surface/30 backdrop-blur-sm">
+                        <div className="w-12 h-12 rounded-full bg-surface/50 border border-border-main flex items-center justify-center mb-4">
                             <Calendar size={20} className="text-text-muted" />
                         </div>
                         <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
@@ -86,7 +88,7 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
                             <div 
                                 key={item.id}
                                 onClick={() => onEventClick?.(item)}
-                                className="glass-input p-4 flex items-center gap-4 group/item hover:border-warning-start/30 transition-all cursor-pointer"
+                                className="glass-input p-4 flex items-center gap-4 group/item hover:border-warning-start/30 transition-all cursor-pointer hover-lift border border-border-main bg-surface/30 backdrop-blur-sm"
                             >
                                 <div className={`shrink-0 ${getEventColorClass(item.type)}`}>
                                     {getEventIcon(item.type)}
@@ -100,7 +102,7 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
                                             {item.time}
                                         </span>
                                         {item.priority === 'CRITICAL' && (
-                                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-danger/10 text-danger uppercase font-black tracking-widest border border-danger/20 leading-none">
+                                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-danger-start/10 text-danger-start uppercase font-black tracking-widest border border-danger-start/20 leading-none">
                                                 Urgjente
                                             </span>
                                         )}

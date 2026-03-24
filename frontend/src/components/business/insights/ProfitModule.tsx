@@ -1,5 +1,7 @@
 // FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - PROFIT MODULE V13.0 (GLASSMORPHISM ALIGNED + CLEAN MODALS)
+// PHOENIX PROTOCOL - PROFIT MODULE V13.1 (EXECUTIVE DESIGN SYSTEM)
+// ADDED: shadow-sm, hover-lift, consistent border-border-main, semantic text classes.
+// RETAINED: All logic and functionality.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,7 +93,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group">
+            <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group shadow-sm border border-border-main">
                 
                 {/* Executive Header */}
                 <div className="flex items-center gap-3 border-b border-border-main pb-5 mb-6 flex-shrink-0">
@@ -103,7 +105,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                 
                 <div className="flex flex-col flex-1 min-h-0">
                     {/* Main Value Box */}
-                    <div className="glass-input p-5 mb-6 flex-shrink-0">
+                    <div className="glass-input p-5 mb-6 flex-shrink-0 border border-border-main bg-surface/30 backdrop-blur-sm">
                         <p className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-2">
                             {t('insights.inventory.value', 'Vlera Totale e Stokut')}
                         </p>
@@ -131,7 +133,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                     {/* List Area */}
                     <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
                         {lowStockItems.length === 0 ? (
-                            <div className="glass-input p-6 flex items-center justify-center text-center">
+                            <div className="glass-input p-6 flex items-center justify-center text-center border border-border-main bg-surface/30 backdrop-blur-sm">
                                 <p className="text-[10px] text-text-muted uppercase font-black tracking-widest">
                                     {t('general.allGood', 'Gjithçka në rregull!')}
                                 </p>
@@ -141,7 +143,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                 <div 
                                     key={idx} 
                                     onClick={() => handleItemClick(item)} 
-                                    className="glass-input p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer"
+                                    className="glass-input p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer hover-lift border border-border-main bg-surface/30 backdrop-blur-sm"
                                 >
                                     <div className="flex items-center gap-3 overflow-hidden flex-1">
                                         <div className="text-warning-start/70 group-hover:text-warning-start transition-colors shrink-0">
@@ -174,13 +176,13 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                             initial={{ scale: 0.98, y: 20 }} 
                             animate={{ scale: 1, y: 0 }} 
                             exit={{ scale: 0.98, y: 20 }} 
-                            className="glass-panel w-full max-w-lg shadow-2xl overflow-hidden relative"
+                            className="glass-panel w-full max-w-lg shadow-sm overflow-hidden relative border border-border-main"
                         >
                             <div className="p-6 sm:p-8 border-b border-border-main flex justify-between items-start">
                                 <div>
                                     <h3 className="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-3 mb-2">
                                         {selectedItem.name}
-                                        <span className="text-[9px] bg-danger/10 border border-danger/20 text-danger px-2 py-0.5 rounded uppercase font-black tracking-widest">
+                                        <span className="text-[9px] bg-danger-start/10 border border-danger-start/20 text-danger-start px-2 py-0.5 rounded uppercase font-black tracking-widest">
                                             {t('inventory.analysis.critical', 'Kritike')}
                                         </span>
                                     </h3>
@@ -188,7 +190,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                         {t('inventory.analysis.currentStock', 'Stoku Aktual')}: {selectedItem.current_stock} {selectedItem.unit}
                                     </p>
                                 </div>
-                                <button onClick={() => setSelectedItem(null)} className="p-2 hover:bg-white/5 rounded-lg text-text-muted transition-colors">
+                                <button onClick={() => setSelectedItem(null)} className="p-2 hover:bg-hover rounded-lg text-text-muted transition-colors hover-lift">
                                     <X size={20}/>
                                 </button>
                             </div>
@@ -203,7 +205,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
-                                        <div className="glass-input p-5 relative overflow-hidden">
+                                        <div className="glass-input p-5 relative overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-primary-start" />
                                             <h4 className="text-[10px] font-black text-primary-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <ShoppingCart size={14} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}
@@ -214,13 +216,13 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             <button 
                                                 onClick={handleOpenDraftModal} 
                                                 disabled={!aiData.prediction || aiData.prediction.suggested_quantity === 0} 
-                                                className="w-full h-12 btn-primary rounded-lg text-[10px] uppercase font-black tracking-widest flex items-center justify-center gap-2 disabled:opacity-40"
+                                                className="w-full h-12 btn-primary rounded-lg text-[10px] uppercase font-black tracking-widest flex items-center justify-center gap-2 disabled:opacity-40 hover-lift shadow-sm"
                                             >
                                                 {t('inventory.analysis.draftOrder', 'Drafto Porosinë')} <ArrowRight size={14} />
                                             </button>
                                         </div>
 
-                                        <div className="glass-input p-5 relative overflow-hidden">
+                                        <div className="glass-input p-5 relative overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-success-start" />
                                             <h4 className="text-[10px] font-black text-success-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <TrendingUp size={14} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}
@@ -260,7 +262,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                             initial={{ scale: 0.98, y: 20 }} 
                             animate={{ scale: 1, y: 0 }} 
                             exit={{ scale: 0.98, y: 20 }} 
-                            className="glass-panel w-full max-w-lg shadow-2xl overflow-hidden relative"
+                            className="glass-panel w-full max-w-lg shadow-sm overflow-hidden relative border border-border-main"
                         >
                             <div className="p-6 sm:p-8 border-b border-border-main">
                                 <h3 className="text-sm font-black text-text-primary uppercase tracking-widest mb-2">
@@ -279,7 +281,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                     <textarea 
                                         value={poSupplier} 
                                         onChange={(e) => setPoSupplier(e.target.value)}
-                                        className="glass-input w-full p-4 h-24 resize-none text-sm placeholder:text-text-disabled"
+                                        className="glass-input w-full p-4 h-24 resize-none text-sm placeholder:text-text-muted border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         placeholder={t('inventory.poModal.supplierPlaceholder', 'Shkruani emrin dhe adresën e furnitorit...')}
                                     />
                                 </div>
@@ -292,7 +294,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             type="number" 
                                             value={poQuantity} 
                                             onChange={(e) => setPoQuantity(parseFloat(e.target.value) || 0)} 
-                                            className="glass-input w-full p-4 text-sm"
+                                            className="glass-input w-full p-4 text-sm border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                     <div>
@@ -304,23 +306,23 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             value={manualCost !== "" ? manualCost : calculatedCost.toFixed(2)}
                                             onChange={(e) => setManualCost(e.target.value)}
                                             placeholder={`Calculated: €${calculatedCost.toFixed(2)}`}
-                                            className="glass-input w-full p-4 text-sm font-mono"
+                                            className="glass-input w-full p-4 text-sm font-mono border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="p-6 sm:p-8 border-t border-border-main flex justify-end gap-3 bg-black/20">
+                            <div className="p-6 sm:p-8 border-t border-border-main flex justify-end gap-3 bg-surface/20 backdrop-blur-sm">
                                 <button 
                                     onClick={() => setShowPOModal(false)} 
-                                    className="px-6 h-12 rounded-lg text-[10px] uppercase font-black tracking-widest text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors"
+                                    className="px-6 h-12 rounded-lg text-[10px] uppercase font-black tracking-widest text-text-muted hover:text-text-primary hover:bg-hover transition-colors hover-lift shadow-sm"
                                 >
                                     {t('general.cancel', 'Anulo')}
                                 </button>
                                 <button 
                                     onClick={handleConfirmAndGeneratePO} 
                                     disabled={drafting} 
-                                    className="btn-primary px-6 h-12 rounded-lg flex items-center justify-center gap-2 disabled:opacity-40"
+                                    className="btn-primary px-6 h-12 rounded-lg flex items-center justify-center gap-2 disabled:opacity-40 hover-lift shadow-sm"
                                 >
                                     {drafting ? <Loader2 size={16} className="animate-spin"/> : null}
                                     <span className="text-[10px] uppercase font-black tracking-widest">

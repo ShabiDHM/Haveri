@@ -1,5 +1,7 @@
 // FILE: src/components/business/insights/ForensicAccountantModal.tsx
-// PHOENIX PROTOCOL - FORENSIC MODAL V5.0 (GLASSMORPHISM ALIGNED)
+// PHOENIX PROTOCOL - FORENSIC MODAL V5.1 (EXECUTIVE DESIGN SYSTEM)
+// ADDED: shadow-sm, hover-lift, consistent border-border-main.
+// RETAINED: All logic and functionality.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -138,7 +140,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                         initial={{ scale: 0.98, y: 20 }} 
                         animate={{ scale: 1, y: 0 }} 
                         exit={{ scale: 0.98, y: 20 }} 
-                        className="glass-panel w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden relative shadow-2xl"
+                        className="glass-panel w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden relative shadow-sm border border-border-main"
                     >
                         
                         {/* Executive Header */}
@@ -168,7 +170,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                 <button 
                                     onClick={handleSaveToArchive} 
                                     disabled={!lastMessageIsCompleteAI || isSaving} 
-                                    className={`p-2 rounded-lg transition-all flex items-center justify-center ${saveSuccess ? 'text-success-start' : 'text-text-muted hover:text-text-primary hover:bg-white/5'} disabled:opacity-30 disabled:cursor-not-allowed`}
+                                    className={`p-2 rounded-lg transition-all flex items-center justify-center hover-lift shadow-sm ${saveSuccess ? 'text-success-start' : 'text-text-muted hover:text-text-primary hover:bg-hover'} disabled:opacity-30 disabled:cursor-not-allowed`}
                                     title={t('forensic.save_to_archive', 'Ruaj në Arkivë')}
                                 >
                                     {isSaving ? <Loader2 size={18} className="animate-spin" /> : saveSuccess ? <CheckCircle size={18} /> : <FolderInput size={18} />}
@@ -177,7 +179,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                 <button 
                                     onClick={clearChat} 
                                     disabled={isStreaming} 
-                                    className="p-2 rounded-lg text-text-muted hover:text-danger hover:bg-white/5 transition-all disabled:opacity-30" 
+                                    className="p-2 rounded-lg text-text-muted hover:text-danger-start hover:bg-hover transition-all hover-lift shadow-sm disabled:opacity-30" 
                                     title={t('general.clear')}
                                 >
                                     <Trash2 size={18} />
@@ -187,7 +189,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                 
                                 <button 
                                     onClick={onClose} 
-                                    className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-all"
+                                    className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-hover transition-all hover-lift shadow-sm"
                                 >
                                     <X size={20} />
                                 </button>
@@ -204,7 +206,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                         key={idx} 
                                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                                     >
-                                        <div className={`max-w-[85%] p-5 sm:p-6 text-sm shadow-sm ${
+                                        <div className={`max-w-[85%] p-5 sm:p-6 text-sm shadow-sm border border-border-main ${
                                             msg.role === 'user' 
                                             ? 'glass-input border-primary-start/30 rounded-2xl rounded-tr-sm text-text-primary' 
                                             : 'glass-input rounded-2xl rounded-tl-sm text-text-secondary'
@@ -217,7 +219,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                             
                             {isWaitingForFirstToken && (
                                 <div className="flex justify-start">
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-input px-5 py-4 rounded-2xl rounded-tl-sm flex items-center gap-3">
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-input px-5 py-4 rounded-2xl rounded-tl-sm flex items-center gap-3 border border-border-main">
                                         <Loader2 size={14} className="animate-spin text-primary-start" />
                                         <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">
                                             {t('forensic.analyzing', 'Duke analizuar...')}
@@ -238,10 +240,10 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                         value={input} 
                                         onChange={(e) => setInput(e.target.value)} 
                                         placeholder={t('forensic.placeholder')} 
-                                        className="glass-input w-full pr-16 py-4 text-sm placeholder:text-text-disabled" 
+                                        className="glass-input w-full pr-16 py-4 text-sm placeholder:text-text-muted border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
                                     />
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                        <span className="text-[9px] text-text-muted font-black px-2 py-1 rounded bg-black/20 border border-white/5 uppercase tracking-widest">
+                                        <span className="text-[9px] text-text-muted font-black px-2 py-1 rounded bg-surface/50 border border-border-main uppercase tracking-widest">
                                             ATK
                                         </span>
                                     </div>
@@ -249,7 +251,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                 <button 
                                     type="submit" 
                                     disabled={!input.trim() || isStreaming} 
-                                    className="btn-primary h-[54px] w-[54px] flex items-center justify-center shrink-0 disabled:opacity-40"
+                                    className="btn-primary h-[54px] w-[54px] flex items-center justify-center shrink-0 disabled:opacity-40 hover-lift shadow-sm"
                                 >
                                     <Send size={18} className="ml-1" />
                                 </button>

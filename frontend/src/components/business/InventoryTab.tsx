@@ -1,6 +1,7 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V22.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - INVENTORY TAB V22.1 (EXECUTIVE DESIGN SYSTEM)
+// ADDED: hover-lift, shadow-sm, consistent border-border-main, semantic text.
+// RETAINED: All functionality and logic.
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -22,10 +23,10 @@ const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.R
     <button 
         onClick={onClick} 
         className={`
-            flex items-center justify-center text-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl text-sm sm:text-base font-bold transition-all duration-300 group w-full sm:w-auto
+            flex items-center justify-center text-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl text-sm sm:text-base font-bold transition-all duration-300 group w-full sm:w-auto hover-lift shadow-sm
             ${primary 
                 ? 'btn-primary' 
-                : 'glass-input !bg-surface hover:bg-hover transition-colors cursor-pointer'
+                : 'glass-input !bg-surface hover:bg-hover transition-colors cursor-pointer border border-border-main'
             }
         `}
     >
@@ -38,7 +39,7 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
     <button 
         onClick={onClick} 
         className={`
-            flex-1 sm:flex-initial relative px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2
+            flex-1 sm:flex-initial relative px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 hover-lift shadow-sm
             ${isActive 
                 ? 'bg-success-start/20 text-success-start border border-success-start/30' 
                 : 'text-text-muted hover:text-text-primary hover:bg-hover border border-border-main hover:border-success-start/30'
@@ -85,7 +86,7 @@ export const InventoryTab: React.FC = () => {
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-success-start" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 border border-border-main">
              <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
@@ -94,7 +95,7 @@ export const InventoryTab: React.FC = () => {
             `}</style>
 
             {/* Action Buttons Panel */}
-            <Panel className="p-3 sm:p-4">
+            <Panel className="p-3 sm:p-4 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
                 <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-center gap-3 sm:gap-4">
                     {activeTab === 'items' ? (
                         <>
@@ -111,7 +112,7 @@ export const InventoryTab: React.FC = () => {
             </Panel>
 
             {/* Main Content Panel */}
-            <Panel className="p-4 sm:p-6 h-[700px] flex flex-col overflow-hidden">
+            <Panel className="p-4 sm:p-6 h-[700px] flex flex-col overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
                 
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 border-b border-border-main pb-4 sm:pb-6 shrink-0">
                     <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
@@ -131,7 +132,7 @@ export const InventoryTab: React.FC = () => {
                         <input 
                             type="text" 
                             placeholder={t('header.searchPlaceholder')} 
-                            className="glass-input w-full pl-12 py-3 sm:py-4 text-sm sm:text-base" 
+                            className="glass-input w-full pl-12 py-3 sm:py-4 text-sm sm:text-base border border-border-main focus:border-success-start focus:ring-1 focus:ring-success-start/40 transition-all" 
                             value={searchTerm} 
                             onChange={(e) => setSearchTerm(e.target.value)} 
                         />

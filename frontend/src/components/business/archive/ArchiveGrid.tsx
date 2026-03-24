@@ -1,6 +1,7 @@
 // FILE: src/components/business/archive/ArchiveGrid.tsx
-// PHOENIX PROTOCOL - ARCHIVE GRID V6.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - ARCHIVE GRID V6.1 (EXECUTIVE DESIGN SYSTEM)
+// UPDATED: Added shadow-sm and border-border-main for consistency.
+// RETAINED: All logic and functionality.
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,7 +43,7 @@ export const ArchiveGrid: React.FC<ArchiveGridProps> = ({
                                     subtitle={w.workspace_number || 'ID-001'} 
                                     type={t('archive.myWorkspace')} 
                                     date={new Date(w.created_at).toLocaleDateString()} 
-                                    icon={<Briefcase className="w-4 sm:w-5 h-4 sm:h-5 text-primary" />} 
+                                    icon={<Briefcase className="w-4 sm:w-5 h-4 sm:h-5 text-primary-start" />} 
                                     isFolder={true} 
                                     isShared={w.is_shared}
                                     onClick={() => onEnterFolder(w.id, w.title, 'WORKSPACE')} 

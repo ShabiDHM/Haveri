@@ -1,5 +1,8 @@
 // FILE: src/components/business/insights/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V11.0 (GLASSMORPHISM ALIGNED)
+// PHOENIX PROTOCOL - PULSE CARD V11.1 (EXECUTIVE DESIGN SYSTEM)
+// ADDED: shadow-sm for depth.
+// ENSURED: All borders use border-border-main, text uses semantic tokens.
+// RETAINED: All functionality and logic.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -71,7 +74,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
     const hotItem = useMemo(() => signals.find(s => s.type === 'bestseller'), [signals]);
 
     return (
-        <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group">
+        <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group shadow-sm border border-border-main">
             
             {/* Ambient Background Glow (Subtle) */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-start/5 rounded-full blur-[60px] group-hover:bg-primary-start/10 transition-colors pointer-events-none" />
@@ -118,7 +121,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
                 </div>
 
                 {/* Inner Insight Card */}
-                <div className="glass-input p-5 mb-6 flex-shrink-0">
+                <div className="glass-input p-5 mb-6 flex-shrink-0 border border-border-main bg-surface/30 backdrop-blur-sm">
                     {hotItem ? (
                         <div className="flex items-start gap-4">
                             <div className="text-danger shrink-0 mt-0.5"><TrendingUp size={16} /></div>
