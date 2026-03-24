@@ -1,7 +1,5 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V6.1 (EXECUTIVE DESIGN SYSTEM)
-// ADDED: shadow-sm, border-border-main, hover-lift, backdrop blur.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - RESULT PANEL V6.3 (DARK THEME FIX + TYPOGRAPHY)
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,7 +35,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     }
   }, [currentJob.status, t]);
 
-  // Executive Action Button Styling
   const actionButtonBase = "p-2.5 text-text-muted hover:text-primary-start hover:bg-surface/30 rounded-xl transition-all border border-transparent hover:border-border-main disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:border-transparent hover-lift shadow-sm";
 
   return (
@@ -80,12 +77,12 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
             onClick={() => {
               if (currentJob.result) {
                 const blob = new Blob([currentJob.result], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
+                const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `draft-${Date.now()}.txt`;
                 a.click();
-                URL.revokeObjectURL(url);
+                window.URL.revokeObjectURL(url);
               }
             }}
             title={t('drafting.download')}
@@ -118,8 +115,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         </div>
       </div>
 
-      {/* The Paper Reading Surface */}
-      <div className="flex-1 bg-paper overflow-y-auto relative custom-scrollbar shadow-[inset_0_2px_8px_rgba(0,0,0,0.02)]">
+      {/* The Paper Reading Surface - NOW THEME-AWARE */}
+      <div className="flex-1 bg-card overflow-y-auto relative custom-scrollbar shadow-[inset_0_2px_8px_rgba(0,0,0,0.02)]">
         <div className="min-h-full w-full flex justify-center p-4 sm:p-8">
           <AnimatePresence mode="wait">
             {currentJob.result ? (
@@ -132,7 +129,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               >
                 {notification && (
                   <div
-                    className={`mb-6 p-4 text-xs font-bold rounded-xl flex items-center gap-3 border shadow-sm w-full ${
+                    className={`mb-6 p-4 text-sm font-bold rounded-xl flex items-center gap-3 border shadow-sm w-full ${
                       notification.type === 'success'
                         ? 'bg-success-start/10 text-success-start border-success-start/20'
                         : 'bg-danger-start/10 text-danger-start border-danger-start/20'

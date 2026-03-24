@@ -1,7 +1,6 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V6.0 (EXECUTIVE DESIGN SYSTEM)
-// UPDATED: Added shadow-sm and hover-lift for consistency with the design system.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - CONFIG PANEL V6.2 (CONSISTENT TYPOGRAPHY)
+// Updated text sizes to match design system: text-xs for labels, text-sm for inputs, etc.
 
 import React, { useMemo } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw } from 'lucide-react';
@@ -35,11 +34,11 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
         {/* Template Selector Only */}
         <div className="flex-shrink-0">
           <div className="flex justify-between items-center mb-2">
-            <label className="text-[10px] text-text-muted uppercase font-black tracking-widest">
+            <label className="text-xs font-black text-text-muted uppercase tracking-widest">
               {t('drafting.templateLabel')}
             </label>
             {!isPro && (
-              <span className="text-[9px] text-warning-start font-black bg-warning-start/10 px-2 py-0.5 rounded border border-warning-start/20 flex items-center gap-1 uppercase tracking-widest">
+              <span className="text-[10px] text-warning-start font-black bg-warning-start/10 px-2 py-0.5 rounded border border-warning-start/20 flex items-center gap-1 uppercase tracking-widest">
                 <Lock size={10} /> PRO
               </span>
             )}
@@ -89,7 +88,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
         {/* Dynamic Context Textarea */}
         <div className="flex-1 flex flex-col min-h-0">
-          <label className="block text-[10px] text-text-muted uppercase font-black tracking-widest mb-2">
+          <label className="block text-xs font-black text-text-muted uppercase tracking-widest mb-2">
             {t('drafting.instructionsLabel')}
           </label>
           <textarea
