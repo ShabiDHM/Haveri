@@ -1,5 +1,5 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V7.2 (REMOVED UNUSED IMPORT)
+// PHOENIX PROTOCOL - HEADER V7.3 (ADDED PROFILE TO DROPDOWN)
 // STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -7,7 +7,7 @@ import {
     Bell, LogOut, User as UserIcon, LayoutDashboard, 
     MessageSquare, Menu, FileText, Package, FolderOpen, 
     Sparkles, X, Shield, Share2, 
-    Sun, Moon
+    Sun, Moon, Building2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -136,6 +136,9 @@ const Header: React.FC = () => {
 
               <button onClick={() => handleDropdownNavigate('/account')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
                   <UserIcon size={16} className="mr-3 text-primary" />{t('sidebar.account')}
+              </button>
+              <button onClick={() => handleDropdownNavigate('/profile')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
+                  <Building2 size={16} className="mr-3 text-primary" />{t('business.profile', 'Profili')}
               </button>
               <button onClick={() => handleDropdownNavigate('/integrations')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
                   <Share2 size={16} className="mr-3 text-primary" />{t('navigation.integrations', 'Integrimet')}

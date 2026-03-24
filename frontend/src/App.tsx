@@ -1,5 +1,5 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTES V2.0 (REMOVED /business/profile)
+// PHOENIX PROTOCOL - ROUTES V2.1 (ADDED /profile, REMOVED /business/profile)
 // STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
@@ -22,6 +22,7 @@ import FinanceWizardPage from './pages/FinanceWizardPage';
 import ClientPortalPage from './pages/ClientPortalPage';
 import { IntegrationsPage } from './pages/IntegrationsPage';
 import MobileUploadPage from './pages/MobileUploadPage';
+import { ProfileTab } from './components/business/ProfileTab'; // Import the ProfileTab component
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -60,6 +61,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/profile" element={<ProfileTab />} />  {/* New profile page */}
         <Route path="/integrations" element={<IntegrationsPage />} />
 
         {/* Business Workspace Sub-Routes */}
@@ -68,7 +70,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/business/inventory" element={<BusinessPage view="inventory" />} />
         <Route path="/business/archive" element={<BusinessPage view="archive" />} />
         <Route path="/business/insights" element={<BusinessPage view="insights" />} />
-        {/* /business/profile route removed – content now inside /account */}
+        {/* /business/profile route removed */}
         <Route path="/business/inbox" element={<BusinessPage view="inbox" />} />
         <Route path="/business" element={<Navigate to="/business/briefing" replace />} />
       </Route>
