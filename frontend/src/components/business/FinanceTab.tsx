@@ -1,8 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V13.0 (MOBILE OPTIMIZED)
-// Fixed: Responsive layout for all screen sizes.
-// Aligned: Consistent spacing and typography across devices.
-// Improved: Touch-friendly buttons and cards.
+// PHOENIX PROTOCOL - FINANCE TAB V13.1 (FIXED BORDER & LINE ISSUES)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -242,7 +239,8 @@ export const FinanceTab: React.FC = () => {
     const handleArchiveExpense = (id: string) => { setSelectedExpenseId(id); setShowArchiveExpenseModal(true); };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 border border-border-main">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
+            {/* Removed outer border to fix double border issue */}
             <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--primary-start); border-radius: 10px; opacity: 0.3; } 
@@ -264,7 +262,8 @@ export const FinanceTab: React.FC = () => {
             </div>
 
             <Panel className="p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 border-b border-border-main pb-4 sm:pb-6 px-4 sm:px-6 pt-4 sm:pt-6">
+                {/* Header: removed border-b to eliminate the "stupid line" */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 px-4 sm:px-6 pt-4 sm:pt-6">
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-2 sm:gap-3">
                         <Activity className="text-primary-start" size={20} />
                         {t('finance.activityAndReports')}
@@ -283,7 +282,7 @@ export const FinanceTab: React.FC = () => {
                             <input 
                                 type="text" 
                                 placeholder={activeTab === 'partners' ? t('general.searchPartners', 'Kërko partnerë...') : t('header.searchPlaceholder')} 
-                                className="glass-input w-full pl-9 sm:pl-12 py-2 sm:py-4 bg-surface/80 backdrop-blur-sm focus:bg-surface transition-all border border-border-main text-text-primary placeholder:text-text-muted rounded-xl text-sm sm:text-base" 
+                                className="glass-input w-full pl-9 sm:pl-12 py-2 sm:py-4 bg-surface/80 backdrop-blur-sm focus:bg-surface transition-all border border-border-main text-text-primary placeholder:text-text-muted rounded-xl text-sm sm:text-base focus:outline-none" 
                                 value={searchTerm} 
                                 onChange={(e) => setSearchTerm(e.target.value)} 
                             />
