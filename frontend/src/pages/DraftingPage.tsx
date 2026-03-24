@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.5 (EXECUTIVE GLASS ARCHITECTURE)
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.6 (RESTORED PANEL HEIGHTS)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -164,12 +164,12 @@ const DraftingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Outer glass panel – same as FinanceTab */}
+        {/* Outer glass panel */}
         <div className="glass-panel bg-canvas border border-border-main shadow-sm rounded-3xl p-6 sm:p-8 flex-1 min-h-0">
           <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
-            {/* Config Panel – now uses bg-surface/30 (like FinanceTab stats cards) */}
-            <div className="h-full overflow-y-auto custom-scrollbar pr-2">
-              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl p-6 sm:p-8 h-full">
+            {/* Config Panel – no extra padding, no forced height */}
+            <div className="overflow-y-auto custom-scrollbar pr-2">
+              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl">
                 <ConfigPanel
                   t={t}
                   isPro={isPro}
@@ -183,9 +183,9 @@ const DraftingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Result Panel – same styling */}
-            <div className="h-full overflow-y-auto custom-scrollbar pl-2">
-              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl p-6 sm:p-8 h-full">
+            {/* Result Panel – same */}
+            <div className="overflow-y-auto custom-scrollbar pl-2">
+              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-3xl">
                 <ResultPanel
                   t={t}
                   currentJob={currentJob}
