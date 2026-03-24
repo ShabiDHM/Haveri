@@ -1,5 +1,6 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V8.0 (HIGH CONTRAST FORCED)
+// PHOENIX PROTOCOL - DRAFTING PAGE V8.1 (FORCED HIGH CONTRAST)
+// Updated: lawyerGradeStyles now forces black text on white for all children.
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,19 +17,15 @@ import { constructSmartPrompt } from '../drafting/utils/promptConstructor';
 const lawyerGradeStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
-  .legal-document,
-  .legal-document * {
+  .legal-document {
     font-family: 'Tinos', 'Times New Roman', serif;
-    background: #ffffff !important;
+    background: white !important;
     color: #000000 !important;
+    padding: 2.5cm 2cm;
     line-height: 1.5;
     font-size: 12pt;
     text-align: justify;
-  }
-
-  .legal-document {
-    padding: 2.5cm 2cm;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     margin: 0 auto;
     width: 21cm;
     max-width: 100%;
@@ -37,14 +34,14 @@ const lawyerGradeStyles = `
     position: relative;
   }
 
-  @media print {
-    @page { margin: 2cm; size: A4; }
-    body * { visibility: hidden; }
-    .legal-document, .legal-document * { visibility: visible; }
-    .legal-document {
-      position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0;
-      box-shadow: none; border: none;
-    }
+  .legal-document * {
+    color: #000000 !important;
+    background: transparent !important;
+  }
+
+  .legal-document strong,
+  .legal-document b {
+    font-weight: 700 !important;
   }
 
   .legal-content h1 {
@@ -75,9 +72,6 @@ const lawyerGradeStyles = `
   .legal-content p {
     margin-bottom: 12pt;
   }
-  .legal-content strong, .legal-content b {
-    font-weight: 700 !important;
-  }
   .legal-content blockquote {
     border: none;
     margin: 3cm 0 0 50%;
@@ -91,6 +85,16 @@ const lawyerGradeStyles = `
   }
   .legal-content a {
     text-decoration: underline;
+  }
+
+  @media print {
+    @page { margin: 2cm; size: A4; }
+    body * { visibility: hidden; }
+    .legal-document, .legal-document * { visibility: visible; }
+    .legal-document {
+      position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0;
+      box-shadow: none; border: none;
+    }
   }
 `;
 
@@ -200,9 +204,8 @@ const DraftingPage: React.FC = () => {
           </h1>
         </div>
 
-        {/* Main Grid: Responsive – stacks on mobile, side-by-side on desktop */}
+        {/* Main Grid */}
         <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 flex-1 lg:h-[750px] min-h-0">
-          {/* Config Panel */}
           <div className="h-full overflow-y-auto custom-scrollbar">
             <ConfigPanel
               t={t}
@@ -215,8 +218,6 @@ const DraftingPage: React.FC = () => {
               onSubmit={runDraftingStream}
             />
           </div>
-
-          {/* Result Panel */}
           <div className="h-full overflow-y-auto custom-scrollbar">
             <ResultPanel
               t={t}

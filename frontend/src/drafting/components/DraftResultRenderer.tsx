@@ -1,6 +1,5 @@
 // FILE: src/drafting/components/DraftResultRenderer.tsx
-// PHOENIX PROTOCOL - DRAFT RENDERER V2.2 (HIGH CONTRAST)
-// Fixed: Force black text on white background regardless of theme.
+// PHOENIX PROTOCOL - DRAFT RENDERER V2.3 (ADDED CUSTOM SCROLLBAR)
 
 import React from 'react';
 import { TFunction } from 'i18next';
@@ -30,7 +29,7 @@ export const DraftResultRenderer: React.FC<{ text: string; t: TFunction }> = Rea
   const disclaimer = t('drafting.subtitle');
 
   return (
-    <div className="legal-document">
+    <div className="legal-document custom-scrollbar">
       <div className="legal-content">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
