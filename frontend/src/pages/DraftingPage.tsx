@@ -1,6 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V8.1 (FORCED HIGH CONTRAST)
-// Updated: lawyerGradeStyles now forces black text on white for all children.
+// PHOENIX PROTOCOL - DRAFTING PAGE V8.2 (POINTER-EVENTS-AUTO ON GRID)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -204,8 +203,8 @@ const DraftingPage: React.FC = () => {
           </h1>
         </div>
 
-        {/* Main Grid */}
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 flex-1 lg:h-[750px] min-h-0">
+        {/* Main Grid - Added pointer-events-auto */}
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 flex-1 lg:h-[750px] min-h-0 pointer-events-auto">
           <div className="h-full overflow-y-auto custom-scrollbar">
             <ConfigPanel
               t={t}
