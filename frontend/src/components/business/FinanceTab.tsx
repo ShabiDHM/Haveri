@@ -1,9 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V12.0 (EXECUTIVE DESIGN SYSTEM)
-// Fixed: Outer container now uses pure glass-panel without solid background.
-// Aligned: All inner cards use consistent border radius, typography, and hover-lift.
-// Unified: Buttons and tabs follow the same active/passive patterns as other modules.
-// Depth: Added shadow-sm and hover-lift throughout.
+// PHOENIX PROTOCOL - FINANCE TAB V13.0 (MOBILE OPTIMIZED)
+// Fixed: Responsive layout for all screen sizes.
+// Aligned: Consistent spacing and typography across devices.
+// Improved: Touch-friendly buttons and cards.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -58,23 +57,23 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
         <motion.div 
             whileHover={{ scale: 1.02, y: -2 }} 
             onClick={onClick} 
-            className={`relative overflow-hidden rounded-2xl border border-border-main ${borderTopClass} border-t-4 bg-surface/80 backdrop-blur-sm p-5 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300 hover-lift`}
+            className={`relative overflow-hidden rounded-2xl border border-border-main ${borderTopClass} border-t-4 bg-surface/80 backdrop-blur-sm p-3 sm:p-5 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300 hover-lift`}
         >
-            <div className="flex justify-between items-start mb-3">
-                <div className={`p-2.5 rounded-xl ${iconBg} ${iconColor} border border-border-main`}>
+            <div className="flex justify-between items-start mb-2 sm:mb-3">
+                <div className={`p-2 sm:p-2.5 rounded-xl ${iconBg} ${iconColor} border border-border-main`}>
                     {icon}
                 </div>
                 {trend && (
-                    <span className="text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-surface text-text-muted border border-border-main">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-surface text-text-muted border border-border-main">
                         {trend}
                     </span>
                 )}
             </div>
             <div>
-                <p className="text-xs font-black uppercase tracking-widest text-text-muted mb-1">
+                <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-text-muted mb-1">
                     {title}
                 </p>
-                <h3 className={`text-2xl font-bold ${amountColor} tracking-tight`}>
+                <h3 className={`text-lg sm:text-2xl font-bold ${amountColor} tracking-tight`}>
                     {amount}
                 </h3>
             </div>
@@ -85,13 +84,13 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
 const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
     <button 
         onClick={onClick} 
-        className={`flex items-center justify-center text-center gap-3 px-6 py-4 rounded-2xl text-base font-bold transition-all duration-300 group hover-lift shadow-sm ${
+        className={`flex items-center justify-center text-center gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-4 rounded-2xl text-sm sm:text-base font-bold transition-all duration-300 group hover-lift shadow-sm w-full ${
             primary 
                 ? 'btn-primary' 
                 : 'bg-surface/80 backdrop-blur-sm border border-border-main hover:bg-hover hover:border-primary-start/50 text-text-secondary hover:text-text-primary'
         }`}
     >
-        <span>{icon}</span>
+        <span className="text-base sm:text-lg">{icon}</span>
         <span>{label}</span>
     </button>
 );
@@ -99,13 +98,13 @@ const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
 const TabButton = ({ label, icon, isActive, onClick }: any) => (
     <button 
         onClick={onClick} 
-        className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 hover-lift shadow-sm ${
+        className={`flex-1 px-3 sm:px-6 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-1 sm:gap-2 hover-lift shadow-sm ${
             isActive 
                 ? 'bg-primary-start/20 text-primary-start border border-primary-start/30' 
                 : 'text-text-muted hover:text-text-primary hover:bg-hover border border-border-main hover:border-primary-start/30'
         }`}
     >
-        <span className="relative z-10">{icon}</span>
+        <span className="relative z-10 text-sm sm:text-base">{icon}</span>
         <span className="relative z-10">{label}</span>
     </button>
 );
@@ -243,48 +242,48 @@ export const FinanceTab: React.FC = () => {
     const handleArchiveExpense = (id: string) => { setSelectedExpenseId(id); setShowArchiveExpenseModal(true); };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 border border-border-main">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 border border-border-main">
             <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--primary-start); border-radius: 10px; opacity: 0.3; } 
                 select option { background-color: var(--bg-card); color: var(--text-primary); }
             `}</style>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={24} />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
-                <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={24} />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
-                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={24} />} type={displayProfit >= 0 ? 'income' : 'expense'} trend="+12%" onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} />
-                <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={24} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={20} className="sm:w-6 sm:h-6" />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
+                <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={20} className="sm:w-6 sm:h-6" />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
+                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={20} className="sm:w-6 sm:h-6" />} type={displayProfit >= 0 ? 'income' : 'expense'} trend="+12%" onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} />
+                <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} className="sm:w-6 sm:h-6" />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm">
-                <ActionButton primary icon={<Plus size={20} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
-                <ActionButton icon={<FileSpreadsheet size={20} />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
-                <ActionButton icon={<Users size={20} />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} />
-                <ActionButton icon={<MinusCircle size={20} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm">
+                <ActionButton primary icon={<Plus size={16} className="sm:w-5 sm:h-5" />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
+                <ActionButton icon={<FileSpreadsheet size={16} className="sm:w-5 sm:h-5" />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
+                <ActionButton icon={<Users size={16} className="sm:w-5 sm:h-5" />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} />
+                <ActionButton icon={<MinusCircle size={16} className="sm:w-5 sm:h-5" />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
-            <Panel className="p-0 overflow-hidden h-[70vh] min-h-[600px] flex flex-col border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 border-b border-border-main pb-6 px-6 pt-6">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-                        <Activity className="text-primary-start" />
+            <Panel className="p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 border-b border-border-main pb-4 sm:pb-6 px-4 sm:px-6 pt-4 sm:pt-6">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-2 sm:gap-3">
+                        <Activity className="text-primary-start" size={20} />
                         {t('finance.activityAndReports')}
                     </h2>
-                    <div className="w-full sm:w-auto flex bg-surface/50 p-1.5 rounded-2xl border border-border-main gap-1">
-                        <TabButton label={t('finance.tabTransactions')} icon={<Activity size={16} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
-                        <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={16} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
-                        <TabButton label={t('clients.title', 'Partnerët')} icon={<Users size={16} />} isActive={activeTab === 'partners'} onClick={() => setActiveTab('partners')} />
+                    <div className="w-full sm:w-auto flex bg-surface/50 p-1 rounded-2xl border border-border-main gap-1 overflow-x-auto scrollbar-hide">
+                        <TabButton label={t('finance.tabTransactions')} icon={<Activity size={14} className="sm:w-4 sm:h-4" />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
+                        <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={14} className="sm:w-4 sm:h-4" />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
+                        <TabButton label={t('clients.title', 'Partnerët')} icon={<Users size={14} className="sm:w-4 sm:h-4" />} isActive={activeTab === 'partners'} onClick={() => setActiveTab('partners')} />
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-hidden relative px-6 pb-6">
+                <div className="flex-1 overflow-hidden relative px-4 sm:px-6 pb-4 sm:pb-6">
                     {(activeTab === 'transactions' || activeTab === 'partners') && (
-                        <div className="mb-6 relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
+                        <div className="mb-4 sm:mb-6 relative group">
+                            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
                             <input 
                                 type="text" 
                                 placeholder={activeTab === 'partners' ? t('general.searchPartners', 'Kërko partnerë...') : t('header.searchPlaceholder')} 
-                                className="glass-input w-full pl-12 py-4 bg-surface/80 backdrop-blur-sm focus:bg-surface transition-all border border-border-main text-text-primary placeholder:text-text-muted rounded-xl" 
+                                className="glass-input w-full pl-9 sm:pl-12 py-2 sm:py-4 bg-surface/80 backdrop-blur-sm focus:bg-surface transition-all border border-border-main text-text-primary placeholder:text-text-muted rounded-xl text-sm sm:text-base" 
                                 value={searchTerm} 
                                 onChange={(e) => setSearchTerm(e.target.value)} 
                             />
@@ -292,9 +291,9 @@ export const FinanceTab: React.FC = () => {
                     )}
 
                     {activeTab === 'transactions' && (
-                        <div className="h-full overflow-y-auto custom-finance-scroll pr-2 space-y-3 pb-20">
+                        <div className="h-full overflow-y-auto custom-finance-scroll pr-1 sm:pr-2 space-y-3 pb-4 sm:pb-20">
                             {loading ? (
-                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary-start" /></div>
+                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-primary-start" /></div>
                             ) : (
                                 <TransactionList 
                                     allTransactions={allTransactions} 
@@ -318,31 +317,31 @@ export const FinanceTab: React.FC = () => {
                     )}
 
                     {activeTab === 'partners' && (
-                        <div className="h-full overflow-y-auto custom-finance-scroll pr-2 space-y-3 pb-20">
+                        <div className="h-full overflow-y-auto custom-finance-scroll pr-1 sm:pr-2 space-y-3 pb-4 sm:pb-20">
                             {partnersLoading ? (
-                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary-start" /></div>
+                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-primary-start" /></div>
                             ) : filteredPartners.length === 0 ? (
                                 <div className="text-center text-text-muted py-10">{t('general.noPartnersFound', 'Nuk u gjet asnjë partner.')}</div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                                     {filteredPartners.map((partner) => (
-                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-5 hover:border-primary-start/30 transition-all group relative hover-lift shadow-sm">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <div className="p-3 rounded-xl bg-primary-start/10 text-primary-start border border-border-main"><Users size={20} /></div>
+                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-3 sm:p-5 hover:border-primary-start/30 transition-all group relative hover-lift shadow-sm">
+                                            <div className="flex justify-between items-start mb-3 sm:mb-4">
+                                                <div className="p-2 sm:p-3 rounded-xl bg-primary-start/10 text-primary-start border border-border-main"><Users size={16} className="sm:w-5 sm:h-5" /></div>
                                                 <div className="flex flex-col items-end gap-2">
-                                                    <span className={`text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-success-start/20 text-success-start border border-success-start/30' : 'bg-warning-start/20 text-warning-start border border-warning-start/30'}`}>{partner.type}</span>
+                                                    <span className={`text-[10px] sm:text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-success-start/20 text-success-start border border-success-start/30' : 'bg-warning-start/20 text-warning-start border border-warning-start/30'}`}>{partner.type}</span>
                                                     <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-surface/50 text-danger-start hover:bg-danger-start hover:text-text-inverse transition-all border border-border-main" title={t('general.delete')}><Trash2 size={14}/></button>
+                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-surface/50 text-danger-start hover:bg-danger-start hover:text-text-inverse transition-all border border-border-main" title={t('general.delete')}><Trash2 size={12} className="sm:w-3.5 sm:h-3.5"/></button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <h4 className="text-lg font-bold text-text-primary mb-3 group-hover:text-primary-start transition-colors">{partner.name}</h4>
-                                            <div className="space-y-2">
-                                                {partner.email && <div className="flex items-center gap-2 text-xs text-text-muted"><Mail size={14} className="text-primary-start/50" /> {partner.email}</div>}
-                                                {partner.phone && <div className="flex items-center gap-2 text-xs text-text-muted"><Phone size={14} className="text-primary-start/50" /> {partner.phone}</div>}
-                                                {partner.address && <div className="flex items-center gap-2 text-xs text-text-muted"><MapPin size={14} className="text-primary-start/50" /> {partner.address}</div>}
+                                            <h4 className="text-base sm:text-lg font-bold text-text-primary mb-2 sm:mb-3 group-hover:text-primary-start transition-colors">{partner.name}</h4>
+                                            <div className="space-y-1 sm:space-y-2">
+                                                {partner.email && <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-text-muted"><Mail size={12} className="sm:w-3.5 sm:h-3.5 text-primary-start/50" /> {partner.email}</div>}
+                                                {partner.phone && <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-text-muted"><Phone size={12} className="sm:w-3.5 sm:h-3.5 text-primary-start/50" /> {partner.phone}</div>}
+                                                {partner.address && <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-text-muted"><MapPin size={12} className="sm:w-3.5 sm:h-3.5 text-primary-start/50" /> {partner.address}</div>}
                                             </div>
-                                            {partner.tax_id && <div className="mt-4 pt-4 border-t border-border-main flex justify-between items-center"><span className="text-xs font-black uppercase tracking-widest text-text-muted">NIPT / TAX ID</span><span className="text-xs font-mono text-text-secondary">{partner.tax_id}</span></div>}
+                                            {partner.tax_id && <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border-main flex justify-between items-center"><span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-text-muted">NIPT / TAX ID</span><span className="text-[10px] sm:text-xs font-mono text-text-secondary">{partner.tax_id}</span></div>}
                                         </motion.div>
                                     ))}
                                 </div>
@@ -351,19 +350,19 @@ export const FinanceTab: React.FC = () => {
                     )}
 
                     {activeTab === 'reports' && (
-                        <div className="h-full overflow-y-auto custom-finance-scroll pr-2">
+                        <div className="h-full overflow-y-auto custom-finance-scroll pr-1 sm:pr-2">
                             {!analyticsData ? ( <div className="text-center text-text-muted py-10">{t('finance.reports.noData')}</div> ) : (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="bg-surface/30 backdrop-blur-sm rounded-2xl p-6 border border-border-main shadow-sm">
-                                        <h4 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-3"><TrendingUp size={24} className="text-primary-start" /> {t('finance.analytics.salesTrend')}</h4>
-                                        <div className="h-[300px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%"><AreaChart data={analyticsData.sales_trend}><defs><linearGradient id="colorSales" x1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(str) => str.slice(5)} /><YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} /><Tooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={3} fill="url(#colorSales)" /></AreaChart></ResponsiveContainer>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+                                    <div className="bg-surface/30 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-border-main shadow-sm">
+                                        <h4 className="text-base sm:text-lg font-bold text-text-primary mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3"><TrendingUp size={20} className="sm:w-6 sm:h-6 text-primary-start" /> {t('finance.analytics.salesTrend')}</h4>
+                                        <div className="h-[250px] sm:h-[300px] w-full">
+                                            <ResponsiveContainer width="100%" height="100%"><AreaChart data={analyticsData.sales_trend}><defs><linearGradient id="colorSales" x1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/><stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} /><XAxis dataKey="date" stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(str) => str.slice(5)} /><YAxis stroke="#6b7280" fontSize={10} tickLine={false} axisLine={false} tickMargin={8} /><Tooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Area type="monotone" connectNulls={true} dataKey="amount" stroke="#3b82f6" strokeWidth={2} fill="url(#colorSales)" /></AreaChart></ResponsiveContainer>
                                         </div>
                                     </div>
-                                    <div className="bg-surface/30 backdrop-blur-sm rounded-2xl p-6 border border-border-main shadow-sm">
-                                        <h4 className="text-lg font-bold text-text-primary mb-6 flex items-center gap-3"><BarChart2 size={24} className="text-success-start" /> {t('finance.analytics.topProducts')}</h4>
-                                        <div className="h-[300px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%"><BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 10 }}><XAxis type="number" hide /><YAxis dataKey="product_name" type="category" width={150} stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} /><Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={28}>{analyticsData.top_products.map((_: any, index: number) => (<Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />))}</Bar></BarChart></ResponsiveContainer>
+                                    <div className="bg-surface/30 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-border-main shadow-sm">
+                                        <h4 className="text-base sm:text-lg font-bold text-text-primary mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3"><BarChart2 size={20} className="sm:w-6 sm:h-6 text-success-start" /> {t('finance.analytics.topProducts')}</h4>
+                                        <div className="h-[250px] sm:h-[300px] w-full">
+                                            <ResponsiveContainer width="100%" height="100%"><BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 10 }}><XAxis type="number" hide /><YAxis dataKey="product_name" type="category" width={100} stroke="#9ca3af" fontSize={10} tickLine={false} axisLine={false} /><Tooltip cursor={{fill: 'rgba(255,255,255,0.05)'}} contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '16px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name)]} /><Bar dataKey="total_revenue" radius={[0, 8, 8, 0]} barSize={24}>{analyticsData.top_products.map((_: any, index: number) => (<Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />))}</Bar></BarChart></ResponsiveContainer>
                                         </div>
                                     </div>
                                 </div>
@@ -377,37 +376,37 @@ export const FinanceTab: React.FC = () => {
                 {kpiModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas/50 backdrop-blur-sm">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="glass-panel w-full max-w-lg shadow-xl overflow-hidden relative border border-border-main">
-                            <div className="p-6 border-b border-border-main bg-primary-start/20 flex justify-between items-center">
-                                <h3 className="text-xl font-bold text-text-primary flex items-center gap-2">
-                                    <Sparkles size={20} className="text-warning-start" />
+                            <div className="p-4 sm:p-6 border-b border-border-main bg-primary-start/20 flex justify-between items-center">
+                                <h3 className="text-lg sm:text-xl font-bold text-text-primary flex items-center gap-2">
+                                    <Sparkles size={16} className="sm:w-5 sm:h-5 text-warning-start" />
                                     {kpiAnalysis?.type}
                                 </h3>
                                 <button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-hover rounded-lg text-text-muted transition-colors">
-                                    <X size={20}/>
+                                    <X size={18} className="sm:w-5 sm:h-5"/>
                                 </button>
                             </div>
-                            <div className="p-6 space-y-6">
+                            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                                 {kpiLoading ? (
-                                    <div className="flex flex-col items-center py-10 gap-4">
-                                        <Loader2 size={40} className="animate-spin text-primary-start" />
-                                        <p className="text-text-muted animate-pulse">{t('finance.smartAnalyst.analyzing')}</p>
+                                    <div className="flex flex-col items-center py-6 sm:py-10 gap-4">
+                                        <Loader2 size={32} className="sm:w-10 sm:h-10 animate-spin text-primary-start" />
+                                        <p className="text-text-muted animate-pulse text-sm sm:text-base">{t('finance.smartAnalyst.analyzing')}</p>
                                     </div>
                                 ) : (
                                     <>
                                         {kpiAnalysis?.summary && (
-                                            <div className="bg-primary-start/10 border border-primary-start/30 rounded-xl p-4">
-                                                <h4 className="text-xs font-black uppercase tracking-widest text-primary-start mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4>
-                                                <p className="text-text-primary leading-relaxed">{kpiAnalysis?.summary}</p>
+                                            <div className="bg-primary-start/10 border border-primary-start/30 rounded-xl p-3 sm:p-4">
+                                                <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-primary-start mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4>
+                                                <p className="text-text-primary leading-relaxed text-sm sm:text-base">{kpiAnalysis?.summary}</p>
                                             </div>
                                         )}
                                         {kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (
                                             <div>
-                                                <h4 className="text-xs font-black uppercase tracking-widest text-text-muted mb-3">{t('finance.smartAnalyst.keyContributors')}</h4>
+                                                <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-text-muted mb-3">{t('finance.smartAnalyst.keyContributors')}</h4>
                                                 <div className="space-y-2">
                                                     {kpiAnalysis.contributors.map((c:any, i:any) => (
-                                                        <div key={i} className="flex items-center gap-3 p-3 bg-surface rounded-lg border border-border-main">
+                                                        <div key={i} className="flex items-center gap-3 p-2 sm:p-3 bg-surface rounded-lg border border-border-main">
                                                             <div className="w-2 h-2 rounded-full bg-success-start" />
-                                                            <span className="text-sm text-text-secondary">{c}</span>
+                                                            <span className="text-xs sm:text-sm text-text-secondary">{c}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -427,15 +426,15 @@ export const FinanceTab: React.FC = () => {
             
             {showArchiveInvoiceModal && (
                 <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="glass-panel w-full max-w-md p-6 shadow-xl border border-border-main">
-                        <h2 className="text-xl font-bold text-text-primary mb-4">{t('finance.archiveInvoice')}</h2>
-                        <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary rounded-xl" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                    <div className="glass-panel w-full max-w-md p-4 sm:p-6 shadow-xl border border-border-main">
+                        <h2 className="text-lg sm:text-xl font-bold text-text-primary mb-4">{t('finance.archiveInvoice')}</h2>
+                        <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary rounded-xl text-sm sm:text-base" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowArchiveInvoiceModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-5 py-2.5 border border-border-main rounded-xl hover-lift shadow-sm">{t('general.cancel')}</button>
-                            <button onClick={submitArchiveInvoice} className="btn-primary px-6 py-2.5 rounded-xl hover-lift shadow-sm">{t('general.save')}</button>
+                            <button onClick={() => setShowArchiveInvoiceModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-4 sm:px-5 py-2 border border-border-main rounded-xl hover-lift shadow-sm text-sm sm:text-base">{t('general.cancel')}</button>
+                            <button onClick={submitArchiveInvoice} className="btn-primary px-5 sm:px-6 py-2 rounded-xl hover-lift shadow-sm text-sm sm:text-base">{t('general.save')}</button>
                         </div>
                     </div>
                 </div>
@@ -443,15 +442,15 @@ export const FinanceTab: React.FC = () => {
 
             {showArchiveExpenseModal && (
                 <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="glass-panel w-full max-w-md p-6 shadow-xl border border-border-main">
-                        <h2 className="text-xl font-bold text-text-primary mb-4">{t('finance.archiveExpenseTitle')}</h2>
-                        <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary rounded-xl" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                    <div className="glass-panel w-full max-w-md p-4 sm:p-6 shadow-xl border border-border-main">
+                        <h2 className="text-lg sm:text-xl font-bold text-text-primary mb-4">{t('finance.archiveExpenseTitle')}</h2>
+                        <select className="glass-input w-full mb-6 border border-border-main bg-surface text-text-primary rounded-xl text-sm sm:text-base" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowArchiveExpenseModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-5 py-2.5 border border-border-main rounded-xl hover-lift shadow-sm">{t('general.cancel')}</button>
-                            <button onClick={submitArchiveExpense} className="btn-primary px-6 py-2.5 rounded-xl hover-lift shadow-sm">{t('general.save')}</button>
+                            <button onClick={() => setShowArchiveExpenseModal(false)} className="glass-input !bg-surface hover:bg-hover transition-colors px-4 sm:px-5 py-2 border border-border-main rounded-xl hover-lift shadow-sm text-sm sm:text-base">{t('general.cancel')}</button>
+                            <button onClick={submitArchiveExpense} className="btn-primary px-5 sm:px-6 py-2 rounded-xl hover-lift shadow-sm text-sm sm:text-base">{t('general.save')}</button>
                         </div>
                     </div>
                 </div>
