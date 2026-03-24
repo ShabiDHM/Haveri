@@ -1,64 +1,102 @@
-# FILE: backend/app/models/business.py
-# PHOENIX PROTOCOL - BUSINESS ENTITY V18.0 (OPTIONAL FISCAL PARAMETERS)
-# 1. MADE vat_rate, target_margin, currency optional in update schema.
-# 2. PRESERVED defaults for creation.
-# 3. ENABLES partial updates for fiscal fields.
+# FILE: backend/app/services/business_service.py
+# PHOENIX PROTOCOL - BUSINESS SERVICE V2.1 (FIXED IMPORT & CLASS DEFINITION)
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
-from datetime import datetime
+import structlog
+import mimetypes
+from typing import Tuple, Any
+from datetime import datetime, timezone
+from bson import ObjectId
+from pymongo.database import Database
+from fastapi import UploadFile, HTTPException
+
+from ..models.business import BusinessProfileUpdate, BusinessProfileInDB
 from ..models.common import PyObjectId
+from ..services import storage_service
 
-class BusinessProfileBase(BaseModel):
-    firm_name: str = "Zyra Ligjore"
-    address: Optional[str] = None
-    city: Optional[str] = "Prishtina"
-    phone: Optional[str] = None
-    email_public: Optional[str] = None
-    website: Optional[str] = None
-    tax_id: Optional[str] = None 
-    branding_color: str = "#1f2937"
-    
-    # PHOENIX: Fiscal Configuration for BI Module
-    vat_rate: float = 18.0
-    target_margin: float = 30.0
-    currency: str = "EUR"
+logger = structlog.get_logger(__name__)
 
-class BusinessProfileUpdate(BaseModel):
-    """
-    Schema for updating profile details.
-    All fields are optional to allow partial updates.
-    """
-    firm_name: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    phone: Optional[str] = None
-    email_public: Optional[str] = None
-    website: Optional[str] = None
-    tax_id: Optional[str] = None
-    branding_color: Optional[str] = None
-    vat_rate: Optional[float] = None
-    target_margin: Optional[float] = None
-    currency: Optional[str] = None
+class BusinessService:
+    def __init__(self, db: Database):
+        self.db = db
 
-class BusinessProfileInDB(BusinessProfileBase):
-    """
-    Schema for the Database Record.
-    """
-    id: PyObjectId = Field(alias="_id")
-    user_id: PyObjectId
-    
-    logo_storage_key: Optional[str] = None
-    logo_url: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    def get_or_create_profile(self, user_id: str) -> BusinessProfileInDB:
+        profile = self.db.business_profiles.find_one({"user_id": ObjectId(user_id)})
+        
+        if not profile:
+            logger.info("business.profile_created", user_id=user_id)
+            new_profile = {
+                "user_id": ObjectId(user_id),
+                "firm_name": "Zyra Ligjore",
+                "branding_color": "#1f2937",
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc)
+            }
+            self.db.business_profiles.insert_one(new_profile)
+            return BusinessProfileInDB(**new_profile)
+        
+        return BusinessProfileInDB(**profile)
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-        arbitrary_types_allowed=True,
-    )
+    def update_profile(self, user_id: str, data: BusinessProfileUpdate) -> BusinessProfileInDB:
+        current_profile = self.get_or_create_profile(user_id)
+        
+        update_data = data.model_dump(exclude_unset=True)
+        update_data["updated_at"] = datetime.now(timezone.utc)
+        
+        result = self.db.business_profiles.find_one_and_update(
+            {"_id": ObjectId(current_profile.id)},
+            {"$set": update_data},
+            return_document=True
+        )
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Profile not found after update.")
+            
+        return BusinessProfileInDB(**result)
 
-class BusinessProfileOut(BusinessProfileBase):
-    id: str
-    logo_url: Optional[str] = None
-    is_complete: bool = False
+    def update_logo(self, user_id: str, file: UploadFile) -> BusinessProfileInDB:
+        current_profile = self.get_or_create_profile(user_id)
+        
+        if file.content_type not in ["image/jpeg", "image/png", "image/webp"]:
+            raise HTTPException(400, "Format i pavlefshëm. Lejohen vetëm PNG, JPG, WEBP.")
+        
+        try:
+            storage_key = storage_service.upload_file_raw(
+                file=file,
+                folder=f"{user_id}/branding"
+            )
+            
+            logo_url = f"business/logo/{user_id}?ts={int(datetime.now().timestamp())}"
+            
+            result = self.db.business_profiles.find_one_and_update(
+                {"_id": ObjectId(current_profile.id)},
+                {
+                    "$set": {
+                        "logo_storage_key": storage_key,
+                        "logo_url": logo_url,
+                        "updated_at": datetime.now(timezone.utc)
+                    }
+                },
+                return_document=True
+            )
+            
+            return BusinessProfileInDB(**result)
+            
+        except Exception as e:
+            logger.error("business.logo_upload_failed", error=str(e))
+            raise HTTPException(500, "Ngarkimi i logos dështoi.")
+
+    def get_logo_stream(self, user_id: str) -> Tuple[Any, str]:
+        profile = self.db.business_profiles.find_one({"user_id": ObjectId(user_id)})
+        
+        if not profile or "logo_storage_key" not in profile:
+            raise HTTPException(status_code=404, detail="Logo not found")
+        
+        key = profile["logo_storage_key"]
+        
+        try:
+            stream = storage_service.get_file_stream(key)
+            mime_type, _ = mimetypes.guess_type(key)
+            return stream, mime_type or "image/png"
+        except Exception as e:
+            logger.error(f"Failed to stream logo for {user_id}: {e}")
+            raise HTTPException(status_code=404, detail="Logo file missing")
