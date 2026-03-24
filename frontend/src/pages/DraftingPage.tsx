@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.8 (EXECUTIVE DESIGN + HOVER LIFT)
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.8 (EXECUTIVE DESIGN + HOVER LIFT + RESPONSIVE)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -144,40 +144,47 @@ const DraftingPage: React.FC = () => {
 
   return (
     <motion.div className="w-full min-h-screen pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="max-w-7xl w-full mx-auto px-6 sm:px-8 pt-24 pb-8 flex flex-col h-full">
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 flex flex-col h-full">
         <style>{lawyerGradeStyles}</style>
 
-        {/* Page Header: Executive Alignment (Matches Case View) */}
-        <div className="flex items-center gap-4 mb-8 ml-2 flex-shrink-0">
-            <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-lawyer-light">
-                <PenTool size={24} />
-            </div>
-            <h1 className="text-4xl font-black text-text-primary tracking-tighter leading-none">
-              {t('drafting.title')}
-            </h1>
+        {/* Page Header */}
+        <div className="flex items-center gap-4 mb-8 flex-shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm">
+            <PenTool size={24} />
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tighter leading-none">
+            {t('drafting.title')}
+          </h1>
         </div>
 
-        {/* Main Grid: Symmetrical with Case View */}
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 flex-1 lg:h-[750px] min-h-0">
-          <ConfigPanel
-            t={t}
-            isPro={isPro}
-            selectedTemplate={selectedTemplate}
-            context={context}
-            isSubmitting={isSubmitting}
-            onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
-            onChangeContext={setContext}
-            onSubmit={runDraftingStream}
-          />
-          <ResultPanel
-            t={t}
-            currentJob={currentJob}
-            saving={saving}
-            notification={notification}
-            onSave={handleSaveToArchive}
-            onRetry={retry}
-            onClear={clearJob}
-          />
+        {/* Main Grid: Responsive – stacks on mobile, side-by-side on desktop */}
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 flex-1 lg:h-[750px] min-h-0">
+          {/* Config Panel */}
+          <div className="h-full overflow-y-auto custom-scrollbar">
+            <ConfigPanel
+              t={t}
+              isPro={isPro}
+              selectedTemplate={selectedTemplate}
+              context={context}
+              isSubmitting={isSubmitting}
+              onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
+              onChangeContext={setContext}
+              onSubmit={runDraftingStream}
+            />
+          </div>
+
+          {/* Result Panel */}
+          <div className="h-full overflow-y-auto custom-scrollbar">
+            <ResultPanel
+              t={t}
+              currentJob={currentJob}
+              saving={saving}
+              notification={notification}
+              onSave={handleSaveToArchive}
+              onRetry={retry}
+              onClear={clearJob}
+            />
+          </div>
         </div>
       </div>
     </motion.div>
