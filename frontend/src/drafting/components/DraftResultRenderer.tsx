@@ -1,6 +1,6 @@
 // FILE: src/drafting/components/DraftResultRenderer.tsx
-// PHOENIX PROTOCOL - DRAFT RENDERER V2.1 (EXECUTIVE DESIGN SYSTEM)
-// Fixed: Replaced text-[9pt] with text-xs and border-black with border-border-main.
+// PHOENIX PROTOCOL - DRAFT RENDERER V2.2 (HIGH CONTRAST)
+// Fixed: Force black text on white background regardless of theme.
 
 import React from 'react';
 import { TFunction } from 'i18next';

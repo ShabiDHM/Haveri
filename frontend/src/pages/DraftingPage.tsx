@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.8 (EXECUTIVE DESIGN + HOVER LIFT + RESPONSIVE)
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.9 (HIGH CONTRAST & READABILITY)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,8 +18,8 @@ const lawyerGradeStyles = `
 
   .legal-document {
     font-family: 'Tinos', 'Times New Roman', serif;
-    background: white;
-    color: black;
+    background: #ffffff !important;
+    color: #000000 !important;
     padding: 2.5cm 2cm;
     line-height: 1.5;
     font-size: 12pt;
@@ -31,6 +31,9 @@ const lawyerGradeStyles = `
     box-sizing: border-box;
     min-height: 29.7cm;
     position: relative;
+    /* Force high contrast */
+    background-color: #ffffff !important;
+    color: #000000 !important;
   }
 
   @media print {
@@ -43,12 +46,58 @@ const lawyerGradeStyles = `
     }
   }
 
-  .legal-content h1 { text-align: center; text-transform: uppercase; font-weight: 700; font-size: 14pt; margin-bottom: 24pt; border-bottom: 2px solid #000; padding-bottom: 4pt; }
-  .legal-content h2 { text-transform: uppercase; font-weight: 700; font-size: 12pt; margin-top: 18pt; margin-bottom: 12pt; text-align: center; }
-  .legal-content h3 { font-weight: 700; font-size: 12pt; margin-top: 12pt; margin-bottom: 6pt; text-transform: uppercase; text-align: left; }
-  .legal-content p { margin-bottom: 12pt; }
-  .legal-content strong, .legal-content b { font-weight: 700 !important; }
-  .legal-content blockquote { border: none; margin: 3cm 0 0 50%; padding: 0; text-align: center; font-style: normal; font-weight: 700; }
+  .legal-content h1 {
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 14pt;
+    margin-bottom: 24pt;
+    border-bottom: 2px solid #000000;
+    padding-bottom: 4pt;
+    color: #000000 !important;
+  }
+  .legal-content h2 {
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 12pt;
+    margin-top: 18pt;
+    margin-bottom: 12pt;
+    text-align: center;
+    color: #000000 !important;
+  }
+  .legal-content h3 {
+    font-weight: 700;
+    font-size: 12pt;
+    margin-top: 12pt;
+    margin-bottom: 6pt;
+    text-transform: uppercase;
+    text-align: left;
+    color: #000000 !important;
+  }
+  .legal-content p {
+    margin-bottom: 12pt;
+    color: #000000 !important;
+  }
+  .legal-content strong, .legal-content b {
+    font-weight: 700 !important;
+    color: #000000 !important;
+  }
+  .legal-content blockquote {
+    border: none;
+    margin: 3cm 0 0 50%;
+    padding: 0;
+    text-align: center;
+    font-style: normal;
+    font-weight: 700;
+    color: #000000 !important;
+  }
+  .legal-content li {
+    color: #000000 !important;
+  }
+  .legal-content a {
+    color: #000000 !important;
+    text-decoration: underline;
+  }
 `;
 
 const DraftingPage: React.FC = () => {

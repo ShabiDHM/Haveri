@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V6.5 (EXECUTIVE DESIGN + HOVER LIFT)
+// PHOENIX PROTOCOL - RESULT PANEL V6.6 (REMOVED THEME TEXT COLOR)
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -135,7 +135,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                     {notification.msg}
                   </div>
                 )}
-                <div className="bg-card p-12 text-text-primary shadow-lg rounded-sm min-h-[29.7cm]">
+                <div className="p-0 shadow-lg rounded-sm min-h-[29.7cm]">
+                  {/* Removed bg-card and text-text-primary to let document control its own colors */}
                   <DraftResultRenderer text={currentJob.result} t={t} />
                 </div>
               </motion.div>
