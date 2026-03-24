@@ -1,11 +1,8 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V28.1 (EXECUTIVE DESIGN SYSTEM)
-// UPDATED: Converted to semantic Tailwind classes (glass-panel, border-border-main, text-text-*, etc.)
-// ADDED: hover-lift, shadow-sm, consistent backdrop blur.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - PROFILE TAB V28.2 (EXECUTIVE DESIGN SYSTEM)
+// Fixed: Removed outer glass‑panel to align with other tabs; used Panel for sections.
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { 
     Building2, Mail, Phone, Save, Upload, Loader2, Camera, MapPin, Globe, CreditCard,
     TrendingUp, Calculator, Coins, Users, UserPlus, Trash2, Crown, ArrowRight
@@ -151,7 +148,7 @@ export const ProfileTab: React.FC = () => {
     const inputClasses = "glass-input w-full pl-11 text-sm border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-surface/30 backdrop-blur-sm";
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 border border-border-main bg-canvas">
+        <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 <div className="lg:col-span-4 space-y-6">
                     <Panel className="p-6 sm:p-8 flex flex-col items-center text-center border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
@@ -230,6 +227,6 @@ export const ProfileTab: React.FC = () => {
                     </form>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 };
