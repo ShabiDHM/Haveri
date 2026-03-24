@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V6.3 (DARK THEME FIX + TYPOGRAPHY)
+// PHOENIX PROTOCOL - RESULT PANEL V6.5 (EXECUTIVE DESIGN + HOVER LIFT)
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,15 +35,15 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     }
   }, [currentJob.status, t]);
 
-  const actionButtonBase = "p-2.5 text-text-muted hover:text-primary-start hover:bg-surface/30 rounded-xl transition-all border border-transparent hover:border-border-main disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:border-transparent hover-lift shadow-sm";
+  const actionButtonBase = "p-3 bg-surface border border-border-main text-text-muted hover:text-primary-start hover:border-primary-start/50 rounded-xl transition-all shadow-sm hover:shadow-md hover-lift disabled:opacity-30 disabled:hover:shadow-none";
 
   return (
-    <div className="glass-panel border border-border-main shadow-sm p-0 flex flex-col h-auto lg:h-[700px] overflow-hidden shrink-0">
+    <div className="glass-panel border border-border-main p-0 flex flex-col h-auto lg:h-[700px] overflow-hidden shadow-sm hover-lift rounded-3xl">
       
       {/* Executive Header Toolbar */}
-      <div className="flex justify-between items-center px-6 py-4 bg-surface/30 backdrop-blur-sm border-b border-border-main flex-shrink-0 z-10">
+      <div className="flex justify-between items-center px-6 py-4 bg-surface border-b border-border-main flex-shrink-0 z-10">
         <div className="flex items-center gap-4">
-          <div className={`${statusUI.color} p-2.5 bg-surface/30 backdrop-blur-sm border border-border-main rounded-xl shadow-sm`}>
+          <div className={`${statusUI.color} p-2 bg-canvas border border-border-main rounded-xl shadow-inner`}>
             {statusUI.icon}
           </div>
           <h3 className="text-text-primary text-xs font-black uppercase tracking-widest leading-none">
@@ -52,14 +52,14 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         </div>
         
         {/* Action Button Cluster */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={onSave}
             title={t('drafting.saveToArchive')}
             disabled={!currentJob.result || saving}
             className={actionButtonBase}
           >
-            {saving ? <RefreshCw className="animate-spin" size={18} /> : <Archive size={18} />}
+            {saving ? <RefreshCw className="animate-spin" size={16} /> : <Archive size={16} />}
           </button>
           <button
             onClick={() => {
@@ -71,34 +71,30 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
             disabled={!currentJob.result}
             className={actionButtonBase}
           >
-            <Copy size={18} />
+            <Copy size={16} />
           </button>
           <button
             onClick={() => {
               if (currentJob.result) {
-                const blob = new Blob([currentJob.result], { type: 'text/plain' });
-                const url = window.URL.createObjectURL(blob);
+                const blob = new Blob([currentJob.result], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `draft-${Date.now()}.txt`;
                 a.click();
-                window.URL.revokeObjectURL(url);
+                URL.revokeObjectURL(url);
               }
             }}
             title={t('drafting.download')}
             disabled={!currentJob.result}
             className={actionButtonBase}
           >
-            <Download size={18} />
+            <Download size={16} />
           </button>
           
           {currentJob.status === 'FAILED' && (
-            <button
-              onClick={onRetry}
-              title="Riprovo"
-              className="p-2.5 text-warning-start hover:bg-warning-start/10 rounded-xl transition-all border border-transparent hover:border-warning-start/30 hover-lift shadow-sm"
-            >
-              <RefreshCw size={18} />
+            <button onClick={onRetry} title="Riprovo" className="p-3 text-warning-start bg-surface border border-border-main hover:border-warning-start/30 rounded-xl transition-all hover-lift">
+              <RefreshCw size={16} />
             </button>
           )}
           
@@ -108,28 +104,28 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
             onClick={onClear}
             title={t('drafting.clear')}
             disabled={!currentJob.result && currentJob.status !== 'FAILED'}
-            className="p-2.5 text-danger-start hover:bg-danger-start/10 rounded-xl transition-all border border-transparent hover:border-danger-start/30 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:border-transparent hover-lift shadow-sm"
+            className="p-3 text-danger-start bg-surface border border-border-main hover:border-danger-start/30 rounded-xl transition-all disabled:opacity-30 hover-lift"
           >
-            <Trash2 size={18} />
+            <Trash2 size={16} />
           </button>
         </div>
       </div>
 
-      {/* The Paper Reading Surface - NOW THEME-AWARE */}
-      <div className="flex-1 bg-card overflow-y-auto relative custom-scrollbar shadow-[inset_0_2px_8px_rgba(0,0,0,0.02)]">
-        <div className="min-h-full w-full flex justify-center p-4 sm:p-8">
+      {/* The Paper Reading Surface */}
+      <div className="flex-1 bg-card overflow-y-auto custom-scrollbar shadow-[inset_0_2px_8px_rgba(0,0,0,0.02)] p-6 sm:p-10">
+        <div className="min-h-full w-full flex justify-center">
           <AnimatePresence mode="wait">
             {currentJob.result ? (
               <motion.div
                 key="result"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="w-full max-w-[21cm]"
               >
                 {notification && (
                   <div
-                    className={`mb-6 p-4 text-sm font-bold rounded-xl flex items-center gap-3 border shadow-sm w-full ${
+                    className={`mb-6 p-4 text-xs font-black uppercase tracking-widest rounded-xl flex items-center gap-3 border shadow-sm w-full ${
                       notification.type === 'success'
                         ? 'bg-success-start/10 text-success-start border-success-start/20'
                         : 'bg-danger-start/10 text-danger-start border-danger-start/20'
@@ -139,27 +135,29 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                     {notification.msg}
                   </div>
                 )}
-                <DraftResultRenderer text={currentJob.result} t={t} />
+                <div className="bg-card p-12 text-text-primary shadow-lg rounded-sm min-h-[29.7cm]">
+                  <DraftResultRenderer text={currentJob.result} t={t} />
+                </div>
               </motion.div>
             ) : (
               <motion.div
                 key="empty"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center text-center mt-32 pointer-events-none"
+                className="flex flex-col items-center justify-center text-center mt-32 pointer-events-none opacity-40"
               >
                 {currentJob.status === 'PROCESSING' ? (
                   <div className="flex flex-col items-center">
-                    <div className="w-20 h-20 rounded-[1.5rem] bg-primary-start flex items-center justify-center shadow-sm mb-8 animate-pulse">
-                      <BrainCircuit className="w-10 h-10 text-text-inverse" />
+                    <div className="w-20 h-20 rounded-[1.5rem] bg-primary-start flex items-center justify-center shadow-accent-glow mb-8 animate-pulse">
+                      <BrainCircuit className="w-10 h-10 text-white" />
                     </div>
-                    <p className="text-text-primary font-black uppercase tracking-widest text-sm flex items-center">
-                      {t('drafting.statusWorking', 'Duke Gjeneruar')}
-                      <span className="ml-2 text-primary-start"><ThinkingDots /></span>
+                    <p className="text-text-primary font-black uppercase tracking-widest text-xs">
+                      {t('drafting.statusWorking', 'Duke Gjeneruar...')}
+                      <ThinkingDots />
                     </p>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center opacity-40">
+                  <div className="flex flex-col items-center">
                     <FileText size={64} className="text-text-muted mb-6" strokeWidth={1.5} />
                     <p className="text-text-muted font-black text-xs uppercase tracking-widest">
                       {t('drafting.emptyState', 'Rezultati do të shfaqet këtu')}

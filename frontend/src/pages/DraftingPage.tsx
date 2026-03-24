@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V7.3 (EXECUTIVE DESIGN SYSTEM)
+// PHOENIX PROTOCOL - DRAFTING PAGE V7.8 (EXECUTIVE DESIGN + HOVER LIFT)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -143,54 +143,41 @@ const DraftingPage: React.FC = () => {
   };
 
   return (
-    <motion.div 
-      className="w-full h-full overflow-hidden bg-canvas" 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }}
-    >
-      <div className="h-full flex flex-col overflow-hidden p-6 sm:p-8">
+    <motion.div className="w-full min-h-screen pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <div className="max-w-7xl w-full mx-auto px-6 sm:px-8 pt-24 pb-8 flex flex-col h-full">
         <style>{lawyerGradeStyles}</style>
 
-        {/* Page Header - Fixed */}
-        <div className="flex items-center gap-4 mb-6 flex-shrink-0">
-          <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm">
-            <PenTool size={24} />
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tighter leading-none">
-            {t('drafting.title')}
-          </h1>
+        {/* Page Header: Executive Alignment (Matches Case View) */}
+        <div className="flex items-center gap-4 mb-8 ml-2 flex-shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-lawyer-light">
+                <PenTool size={24} />
+            </div>
+            <h1 className="text-4xl font-black text-text-primary tracking-tighter leading-none">
+              {t('drafting.title')}
+            </h1>
         </div>
 
-        {/* Main Grid - Scrollable content */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-6 overflow-hidden">
-            {/* Config Panel - Scrollable */}
-            <div className="h-full overflow-y-auto custom-scrollbar pr-2">
-              <ConfigPanel
-                t={t}
-                isPro={isPro}
-                selectedTemplate={selectedTemplate}
-                context={context}
-                isSubmitting={isSubmitting}
-                onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
-                onChangeContext={setContext}
-                onSubmit={runDraftingStream}
-              />
-            </div>
-            
-            {/* Result Panel - Scrollable */}
-            <div className="h-full overflow-y-auto custom-scrollbar pl-2">
-              <ResultPanel
-                t={t}
-                currentJob={currentJob}
-                saving={saving}
-                notification={notification}
-                onSave={handleSaveToArchive}
-                onRetry={retry}
-                onClear={clearJob}
-              />
-            </div>
-          </div>
+        {/* Main Grid: Symmetrical with Case View */}
+        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 flex-1 lg:h-[750px] min-h-0">
+          <ConfigPanel
+            t={t}
+            isPro={isPro}
+            selectedTemplate={selectedTemplate}
+            context={context}
+            isSubmitting={isSubmitting}
+            onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
+            onChangeContext={setContext}
+            onSubmit={runDraftingStream}
+          />
+          <ResultPanel
+            t={t}
+            currentJob={currentJob}
+            saving={saving}
+            notification={notification}
+            onSave={handleSaveToArchive}
+            onRetry={retry}
+            onClear={clearJob}
+          />
         </div>
       </div>
     </motion.div>
