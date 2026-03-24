@@ -1,6 +1,6 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V6.2 (CONSISTENT TYPOGRAPHY)
-// Updated text sizes to match design system: text-xs for labels, text-sm for inputs, etc.
+// PHOENIX PROTOCOL - CONFIG PANEL V6.3 (EXECUTIVE DESIGN SYSTEM)
+// Three‑tier layering: glass-panel outer, inputs use bg-canvas for contrast.
 
 import React, { useMemo } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw } from 'lucide-react';
@@ -49,7 +49,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
               value={selectedTemplate}
               onChange={(e) => onSelectTemplate(e.target.value)}
               disabled={!isPro}
-              className="glass-input w-full pl-11 pr-10 py-3.5 text-sm font-bold appearance-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 border-border-main"
+              className="glass-input w-full pl-11 pr-10 py-3.5 text-sm font-bold appearance-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 bg-canvas border-border-main"
             >
               <option value="generic" className="bg-surface">{t('drafting.templateGeneric')}</option>
               <optgroup label={t('drafting.groupLitigation')} className="bg-surface-secondary italic">
@@ -95,7 +95,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
             value={context}
             onChange={(e) => onChangeContext(e.target.value)}
             placeholder={placeholder}
-            className="glass-input w-full p-5 text-sm flex-1 resize-none custom-scrollbar font-mono leading-relaxed placeholder:text-text-disabled border-border-main"
+            className="glass-input w-full p-5 text-sm flex-1 resize-none custom-scrollbar font-mono leading-relaxed placeholder:text-text-disabled bg-canvas border-border-main"
           />
         </div>
 
