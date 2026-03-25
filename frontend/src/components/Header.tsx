@@ -1,5 +1,5 @@
-// FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL – EXECUTIVE GLASS HEADER v8.1 (fixed unused variable)
+// FILE: src/components/Header.tsx (Haveri)
+// PHOENIX PROTOCOL – EXECUTIVE GLASS HEADER v8.2 (Consistent Typography)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -105,14 +105,14 @@ const Header: React.FC = () => {
               key={item.path}
               to={item.path}
               className={`
-                flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-200
+                flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all duration-200
                 ${active 
                   ? 'bg-canvas text-primary-start shadow-sm' 
                   : 'text-text-muted hover:text-text-primary'
                 }
               `}
             >
-              <item.icon size={16} />
+              <item.icon size={18} />
               <span className="hidden xl:inline">{item.label}</span>
             </NavLink>
           );
