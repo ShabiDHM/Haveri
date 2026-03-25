@@ -1,5 +1,4 @@
-// FILE: src/components/Header.tsx (Haveri)
-// PHOENIX PROTOCOL – EXECUTIVE GLASS HEADER v8.3 (Standardized Typography)
+// FILE: src/components/Header.tsx (First App – unified typography)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -74,7 +73,6 @@ const Header: React.FC = () => {
     navigate(path);
   };
 
-  // Helper to check if a nav item is active
   const isActive = (item: any) => {
     if (item.exact) return location.pathname === item.path;
     return location.pathname.startsWith(item.path);
@@ -96,7 +94,7 @@ const Header: React.FC = () => {
         </Link>
       </div>
 
-      {/* Center: Segmented Glass Bar – hidden on mobile */}
+      {/* Center: Segmented Glass Bar */}
       <div className="hidden lg:flex items-center bg-surface/50 p-1 rounded-2xl border border-border-main shadow-inner">
         {navItems.map((item) => {
           const active = isActive(item);
@@ -121,7 +119,6 @@ const Header: React.FC = () => {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
-        {/* Theme toggle */}
         <button 
           onClick={toggleTheme} 
           className="p-2 rounded-lg text-text-muted hover:text-text-primary transition-colors hover:bg-surface/20"
@@ -130,7 +127,6 @@ const Header: React.FC = () => {
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        {/* Alert bell */}
         <Link to="/calendar" className="p-2 text-text-muted hover:text-text-primary hover:bg-surface/20 rounded-lg relative">
           <Bell size={18} />
           {alertCount > 0 && (
@@ -138,7 +134,7 @@ const Header: React.FC = () => {
           )}
         </Link>
 
-        {/* User profile (desktop) */}
+        {/* User profile */}
         <div className="relative hidden sm:block">
           <button
             ref={buttonRef}
@@ -153,7 +149,7 @@ const Header: React.FC = () => {
           {isProfileOpen && (
             <div ref={dropdownRef} className="absolute right-0 mt-2 w-56 glass-panel border border-border-main rounded-xl shadow-xl py-2 z-50">
               <div className="px-4 py-2 border-b border-border-main mb-1">
-                <p className="text-xs font-bold text-primary">{user?.username}</p>
+                <p className="text-sm font-bold text-primary">{user?.username}</p>
                 <p className="text-xs text-text-muted">{user?.email}</p>
               </div>
 
