@@ -1,6 +1,5 @@
 // FILE: src/pages/MainLayout.tsx
-// PHOENIX PROTOCOL - TOP NAVIGATION LAYOUT V4.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - TOP NAVIGATION LAYOUT V4.1 (FIXED HEADER CLIPPING)
 
 import React from 'react';
 import { Outlet } from 'react-router-dom';
@@ -17,7 +16,7 @@ const MainLayout: React.FC = () => {
         {/* PHOENIX: A single, responsive header is now used for all screen sizes. */}
         <Header />
 
-        <main className="flex-1 overflow-y-auto p-0 bg-gradient-to-br from-base to-surface custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-0 pt-16 bg-gradient-to-br from-base to-surface custom-scrollbar">
           <Outlet />
         </main>
 
