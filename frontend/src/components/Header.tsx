@@ -1,5 +1,5 @@
 // FILE: src/components/Header.tsx (Haveri)
-// PHOENIX PROTOCOL – EXECUTIVE GLASS HEADER v8.2 (Consistent Typography)
+// PHOENIX PROTOCOL – EXECUTIVE GLASS HEADER v8.3 (Standardized Typography)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -154,7 +154,7 @@ const Header: React.FC = () => {
             <div ref={dropdownRef} className="absolute right-0 mt-2 w-56 glass-panel border border-border-main rounded-xl shadow-xl py-2 z-50">
               <div className="px-4 py-2 border-b border-border-main mb-1">
                 <p className="text-xs font-bold text-primary">{user?.username}</p>
-                <p className="text-[10px] text-text-muted">{user?.email}</p>
+                <p className="text-xs text-text-muted">{user?.email}</p>
               </div>
 
               {isAuthenticated && (
