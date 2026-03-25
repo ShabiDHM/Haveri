@@ -1,6 +1,5 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V21.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - INVOICE MODAL V21.1 (FULLY RESPONSIVE)
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2, Search } from 'lucide-react';
@@ -82,9 +81,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="glass-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 custom-finance-scroll shadow-xl">
-                <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold text-text-primary">{invoiceToEdit ? t('finance.editInvoice') : t('finance.createInvoice')}</h2><button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24} /></button></div>
+            <div className="glass-panel w-full max-w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 custom-finance-scroll shadow-xl">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-text-primary">{invoiceToEdit ? t('finance.editInvoice') : t('finance.createInvoice')}</h2>
+                    <button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24} /></button>
+                </div>
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Client Information */}
                     <div className="space-y-4">
                         <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><User size={14} /> {t('caseCard.client')}</h3>
                         <div className="relative">
@@ -95,14 +98,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                                 <datalist id="p-list">{partners.map(p => <option key={p.id} value={p.name} />)}</datalist>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.publicEmail')}</label>
-                                <input placeholder={t('business.publicEmail')} className="glass-input" value={formData.client_email} onChange={e => setFormData({...formData, client_email: e.target.value})} />
+                                <input placeholder={t('business.publicEmail')} className="glass-input w-full" value={formData.client_email} onChange={e => setFormData({...formData, client_email: e.target.value})} />
                             </div>
                             <div>
                                 <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.phone')}</label>
-                                <input placeholder={t('business.phone')} className="glass-input" value={formData.client_phone} onChange={e => setFormData({...formData, client_phone: e.target.value})} />
+                                <input placeholder={t('business.phone')} className="glass-input w-full" value={formData.client_phone} onChange={e => setFormData({...formData, client_phone: e.target.value})} />
                             </div>
                         </div>
                         <div>
@@ -110,17 +113,25 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                             <input placeholder={t('business.address')} className="w-full glass-input" value={formData.client_address} onChange={e => setFormData({...formData, client_address: e.target.value})} />
                         </div>
                     </div>
+
+                    {/* Line Items */}
                     <div className="space-y-3 pt-4 border-t border-border-main">
                         <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><FileText size={14} /> {t('finance.services')}</h3>
                         {lineItems.map((item, index) => (
-                            <div key={index} className="flex gap-2 items-center">
-                                <input required placeholder={t('finance.description')} className="flex-1 glass-input" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} />
-                                <input type="number" className="w-20 glass-input" value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))} />
-                                <input type="number" className="w-24 glass-input" value={item.unit_price} onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))} />
-                                <button type="button" onClick={() => setLineItems(lineItems.filter((_, idx) => idx !== index))} className="p-2 text-danger-start"><Trash2 size={18} /></button>
+                            <div key={index} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                <input required placeholder={t('finance.description')} className="flex-1 w-full glass-input" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} />
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <input type="number" placeholder="Qty" className="w-20 glass-input" value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))} />
+                                    <input type="number" placeholder="Price" className="w-24 glass-input" value={item.unit_price} onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))} />
+                                </div>
+                                <button type="button" onClick={() => setLineItems(lineItems.filter((_, idx) => idx !== index))} className="p-2 text-danger-start sm:mt-0 mt-2">
+                                    <Trash2 size={18} />
+                                </button>
                             </div>
                         ))}
-                        <button type="button" onClick={() => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0 }])} className="text-sm text-primary flex items-center gap-1"><Plus size={14} /> {t('finance.addLine')}</button>
+                        <button type="button" onClick={() => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0 }])} className="text-sm text-primary flex items-center gap-1">
+                            <Plus size={14} /> {t('finance.addLine')}
+                        </button>
                         
                         <div className="flex items-center gap-2 pt-2">
                             <input
@@ -135,11 +146,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                             </label>
                         </div>
                     </div>
-                    <div className="flex justify-end gap-3 pt-4">
-                        <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors">
+
+                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4">
+                        <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 rounded-xl text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors">
                             {t('general.cancel')}
                         </button>
-                        <button type="submit" className="btn-primary px-6 py-2 rounded-xl">
+                        <button type="submit" className="w-full sm:w-auto btn-primary px-6 py-2 rounded-xl">
                             {t('general.save')}
                         </button>
                     </div>

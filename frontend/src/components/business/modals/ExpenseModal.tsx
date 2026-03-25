@@ -1,11 +1,8 @@
 // FILE: src/components/business/modals/ExpenseModal.tsx
-// PHOENIX PROTOCOL - V6.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - V6.2 (Direct camera capture, no QR code)
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import QRCode from 'qrcode.react';
-import { X, MinusCircle, CheckCircle, Paperclip, Loader2, Smartphone, Search } from 'lucide-react';
+import { X, MinusCircle, CheckCircle, Paperclip, Loader2, Camera, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Expense, Partner } from '../../../data/types';
 import { apiService, API_V1_URL } from '../../../services/api';
@@ -29,6 +26,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
     const localeMap: { [key: string]: any } = { sq, al: sq, en: enUS };
     const currentLocale = localeMap[i18n.language] || enUS;
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
 
     const [partners, setPartners] = useState<Partner[]>([]);
     const [formData, setFormData] = useState({ category: '', amount: 0, description: '' });
@@ -37,10 +35,6 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
     const [extractionStatus, setExtractionStatus] = useState<ExtractionStatus>('IDLE');
     const [extractionError, setExtractionError] = useState<string | null>(null);
     const [sourceArchiveId, setSourceArchiveId] = useState<string | null>(null);
-    
-    const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-    const [handoffToken, setHandoffToken] = useState<string | null>(null);
-    const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -64,30 +58,11 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
         setExtractionStatus('IDLE');
         setExtractionError(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
+        if (cameraInputRef.current) cameraInputRef.current.value = "";
     };
 
     useEffect(() => { if (isOpen) { resetForm(expenseToEdit); } }, [isOpen, expenseToEdit]);
 
-    useEffect(() => {
-        if (isQrModalOpen && handoffToken) {
-            pollingIntervalRef.current = setInterval(async () => {
-                try {
-                    const { status, filename } = await apiService.getHandoffStatus(handoffToken);
-                    if (status === 'complete' && filename) {
-                        const fileData = await apiService.retrieveHandoffFile(handoffToken, filename);
-                        triggerExtraction(fileData);
-                        closeQrModal();
-                    }
-                } catch (error) {
-                    console.error("Handoff polling error:", error);
-                }
-            }, 3000);
-        }
-        return () => {
-            if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-        };
-    }, [isQrModalOpen, handoffToken]);
-    
     useEffect(() => {
         if (!isOpen || !sourceArchiveId) return;
         const abortController = new AbortController();
@@ -151,22 +126,6 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
         const file = e.target.files?.[0];
         if (file) triggerExtraction(file);
     };
-    
-    const startHandoff = async () => {
-        try {
-            const { token } = await apiService.createHandoffSession();
-            setHandoffToken(token);
-            setIsQrModalOpen(true);
-        } catch (error) {
-            alert("Dështoi krijimi i sesionit për celular.");
-        }
-    };
-
-    const closeQrModal = () => {
-        setIsQrModalOpen(false);
-        setHandoffToken(null);
-        if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -199,82 +158,67 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
     if (!isOpen) return null;
 
     return (
-        <>
-            <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="glass-panel w-full max-w-md p-4 sm:p-6 shadow-xl">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-text-primary flex items-center gap-2"><MinusCircle size={20} className="text-danger-start" />{expenseToEdit ? t('finance.editExpense') : t('finance.addExpense')}</h2>
-                        <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors"><X size={24} /></button>
-                    </div>
+        <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="glass-panel w-full max-w-md p-4 sm:p-6 shadow-xl">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-text-primary flex items-center gap-2"><MinusCircle size={20} className="text-danger-start" />{expenseToEdit ? t('finance.editExpense') : t('finance.addExpense')}</h2>
+                    <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors"><X size={24} /></button>
+                </div>
 
-                    <div className="mb-6 flex items-center gap-2">
-                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileSelected} />
-                        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'} className={`flex-1 py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${extractionStatus === 'COMPLETED' ? 'bg-primary/20 border-primary-start/30 text-primary' : 'bg-surface border-border-main text-text-muted hover:bg-hover'} disabled:opacity-50`}>
-                            {getButtonContent()}
-                        </button>
-                        <button type="button" title={t('finance.scanFromPhone')} onClick={startHandoff} className="p-3 border border-dashed rounded-xl bg-surface border-border-main text-text-muted hover:bg-hover hover:border-border-main transition-all">
-                            <Smartphone size={24} />
-                        </button>
-                    </div>
-                    {extractionError && <p className="text-xs text-danger-start -mt-4 mb-4">{extractionError}</p>}
+                <div className="mb-6 flex items-center gap-2">
+                    {/* File upload button */}
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileSelected} />
+                    <button type="button" onClick={() => fileInputRef.current?.click()} disabled={extractionStatus === 'UPLOADING' || extractionStatus === 'PROCESSING'} className={`flex-1 py-3 border border-dashed rounded-xl flex items-center justify-center gap-2 transition-all ${extractionStatus === 'COMPLETED' ? 'bg-primary/20 border-primary-start/30 text-primary' : 'bg-surface border-border-main text-text-muted hover:bg-hover'} disabled:opacity-50`}>
+                        {getButtonContent()}
+                    </button>
                     
-                    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                        <div>
-                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.expenseCategory')}</label>
-                            <input required type="text" className="glass-input w-full" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.amount')}</label>
-                            <input required type="number" step="0.01" className="glass-input w-full" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})} />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.date')}</label>
-                            <DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="glass-input w-full" required />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.description')}</label>
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
-                                <input 
-                                    list="suppliers-list"
-                                    type="text" 
-                                    className="glass-input w-full pl-9" 
-                                    value={formData.description} 
-                                    onChange={e => setFormData({...formData, description: e.target.value})} 
-                                />
-                                <datalist id="suppliers-list">
-                                    {partners.map(p => <option key={p.id} value={p.name} />)}
-                                </datalist>
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-3 pt-4">
-                            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors">
-                                {t('general.cancel')}
-                            </button>
-                            <button type="submit" className="btn-primary px-6 py-2 rounded-xl">
-                                {t('general.save')}
-                            </button>
-                        </div>
-                    </form>
+                    {/* Camera capture button (direct) */}
+                    <input type="file" ref={cameraInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleFileSelected} />
+                    <button type="button" title={t('finance.scanReceipt', 'Scan Receipt')} onClick={() => cameraInputRef.current?.click()} className="p-3 border border-dashed rounded-xl bg-surface border-border-main text-text-muted hover:bg-hover hover:border-border-main transition-all">
+                        <Camera size={24} />
+                    </button>
                 </div>
+                {extractionError && <p className="text-xs text-danger-start -mt-4 mb-4">{extractionError}</p>}
+                
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                    <div>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.expenseCategory')}</label>
+                        <input required type="text" className="glass-input w-full" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.amount')}</label>
+                        <input required type="number" step="0.01" className="glass-input w-full" value={formData.amount} onChange={e => setFormData({...formData, amount: parseFloat(e.target.value)})} />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.date')}</label>
+                        <DatePicker selected={expenseDate} onChange={(date: Date | null) => setExpenseDate(date)} locale={currentLocale} dateFormat="dd/MM/yyyy" className="glass-input w-full" required />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('finance.description')}</label>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
+                            <input 
+                                list="suppliers-list"
+                                type="text" 
+                                className="glass-input w-full pl-9" 
+                                value={formData.description} 
+                                onChange={e => setFormData({...formData, description: e.target.value})} 
+                            />
+                            <datalist id="suppliers-list">
+                                {partners.map(p => <option key={p.id} value={p.name} />)}
+                            </datalist>
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                        <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors">
+                            {t('general.cancel')}
+                        </button>
+                        <button type="submit" className="btn-primary px-6 py-2 rounded-xl">
+                            {t('general.save')}
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            {/* QR Handoff Modal */}
-            {isQrModalOpen && handoffToken && (
-                <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-panel p-8 w-full max-w-sm shadow-xl text-center relative">
-                        <button onClick={closeQrModal} className="absolute top-3 right-3 p-2 text-text-muted hover:text-text-primary hover:bg-hover rounded-full transition-colors"><X size={18} /></button>
-                        <h3 className="text-xl font-bold text-text-primary mb-2">Skano për të Ngarkuar</h3>
-                        <p className="text-text-muted mb-6 text-sm">Përdorni kamerën e celularit tuaj për të hapur linkun e sigurt të ngarkimit.</p>
-                        <div className="bg-card p-4 rounded-xl inline-block shadow-sm border border-border-main">
-                            <QRCode value={`${window.location.origin}/mobile-upload/${handoffToken}`} size={200} />
-                        </div>
-                        <div className="mt-6 flex items-center justify-center gap-2 text-text-muted animate-pulse text-sm">
-                           <Loader2 className="w-4 h-4 animate-spin"/> Duke pritur për skedarin...
-                        </div>
-                    </motion.div>
-                </div>
-            )}
-        </>
+        </div>
     );
 };

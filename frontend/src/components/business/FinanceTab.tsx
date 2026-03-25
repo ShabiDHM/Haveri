@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V13.2 (FIXED BORDERS & DOUBLE LINES)
+// PHOENIX PROTOCOL - FINANCE TAB V13.3 (MOBILE OPTIMIZED)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -244,6 +244,9 @@ export const FinanceTab: React.FC = () => {
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--primary-start); border-radius: 10px; opacity: 0.3; } 
                 select option { background-color: var(--bg-card); color: var(--text-primary); }
+                /* Ensure tabs scroll horizontally on mobile */
+                .scrollbar-hide::-webkit-scrollbar { display: none; }
+                .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -267,7 +270,7 @@ export const FinanceTab: React.FC = () => {
                         <Activity className="text-primary-start" size={20} />
                         {t('finance.activityAndReports')}
                     </h2>
-                    {/* Tabs container without border */}
+                    {/* Tabs container with horizontal scroll on mobile */}
                     <div className="w-full sm:w-auto flex bg-surface/50 p-1 rounded-2xl gap-1 overflow-x-auto scrollbar-hide">
                         <TabButton label={t('finance.tabTransactions')} icon={<Activity size={14} className="sm:w-4 sm:h-4" />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
                         <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={14} className="sm:w-4 sm:h-4" />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
