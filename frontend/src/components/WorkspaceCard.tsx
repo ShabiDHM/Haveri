@@ -1,5 +1,5 @@
 // FILE: src/components/WorkspaceCard.tsx
-// PHOENIX PROTOCOL – WORKSPACE CARD V1.1 (FIXED UNUSED IMPORT)
+// PHOENIX PROTOCOL – WORKSPACE CARD V1.2 (FIXED NAVIGATION)
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -21,7 +21,7 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
 
   const handleCardClick = async () => {
     await setCurrentWorkspace(workspace.id);
-    navigate('/business');
+    navigate('/business/briefing'); // Navigate to business briefing page
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
