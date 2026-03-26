@@ -1,4 +1,4 @@
-// FILE: src/components/business/archive/ArchiveBreadcrumbs.tsx
+// FILE: src/components/ business/archive/ArchiveBreadcrumbs.tsx
 // PHOENIX PROTOCOL - COMPONENT EXTRACTION V4.1 (EXECUTIVE DESIGN SYSTEM)
 // UPDATED: Semantic classes (bg-primary-start/20, text-primary-start, border-border-main, hover-lift)
 // RETAINED: All logic and functionality.
