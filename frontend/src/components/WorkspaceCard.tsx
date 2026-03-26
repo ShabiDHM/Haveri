@@ -1,5 +1,5 @@
 // FILE: src/components/WorkspaceCard.tsx
-// PHOENIX PROTOCOL – WORKSPACE CARD V1.3 (NAVIGATES TO INSIGHTS)
+// PHOENIX PROTOCOL – WORKSPACE CARD V1.6 (SAFE CLIENT DATA EXTRACTION)
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,27 @@ interface WorkspaceCardProps {
   onDelete: (workspaceId: string) => void;
 }
 
+const toTitleCase = (str: string): string => {
+  if (!str) return str;
+  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+};
+
+// Helper to safely extract client data from workspace (supports both nested and flat)
+const getClientData = (workspace: any) => {
+  if (workspace.client) {
+    return {
+      name: workspace.client.name,
+      email: workspace.client.email,
+      phone: workspace.client.phone,
+    };
+  }
+  return {
+    name: workspace.clientName,
+    email: workspace.clientEmail,
+    phone: workspace.clientPhone,
+  };
+};
+
 const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -21,7 +42,7 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
 
   const handleCardClick = async () => {
     await setCurrentWorkspace(workspace.id);
-    navigate('/business/insights'); // Navigate to Insights tab
+    navigate('/business/insights');
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -41,7 +62,10 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
   }).replace(/\//g, '.');
 
   const hasTitle = workspace.title && workspace.title.trim() !== '';
-  const displayTitle = hasTitle ? workspace.title : (t('workspace.unnamedWorkspace') || 'Projekt pa Emër');
+  const displayTitle = hasTitle ? toTitleCase(workspace.title) : (t('workspace.unnamedWorkspace') || 'Projekt pa Emër');
+
+  const clientData = getClientData(workspace);
+  const hasClient = clientData.name || clientData.email || clientData.phone;
 
   return (
     <motion.div 
@@ -68,7 +92,7 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
         </div>
         
         {/* Client Details Section */}
-        {workspace.client && (
+        {hasClient && (
           <div className="flex flex-col mb-6 relative z-10">
             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-main">
               <User className="w-3.5 h-3.5 text-primary-start" />
@@ -78,20 +102,21 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
             </div>
             
             <div className="space-y-1.5 pl-1">
-              <p className="text-base font-medium text-text-primary truncate">
-                {workspace.client.name || t('general.notAvailable', 'N/A')}
-              </p>
-              
-              {workspace.client.email && (
+              {clientData.name && (
+                <p className="text-base font-medium text-text-primary truncate">
+                  {toTitleCase(clientData.name)}
+                </p>
+              )}
+              {clientData.email && (
                 <div className="flex items-center gap-2 text-sm text-text-secondary">
                   <Mail className="w-3.5 h-3.5" />
-                  <span className="truncate">{workspace.client.email}</span>
+                  <span className="truncate">{clientData.email}</span>
                 </div>
               )}
-              {workspace.client.phone && (
+              {clientData.phone && (
                 <div className="flex items-center gap-2 text-sm text-text-secondary">
                   <Phone className="w-3.5 h-3.5" />
-                  <span className="truncate">{workspace.client.phone}</span>
+                  <span className="truncate">{clientData.phone}</span>
                 </div>
               )}
             </div>
