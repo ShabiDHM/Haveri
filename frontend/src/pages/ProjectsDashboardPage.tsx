@@ -1,5 +1,5 @@
 // FILE: src/pages/ProjectsDashboardPage.tsx
-// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.1 (TYPE FIX)
+// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.2 (WITH DEBUG LOGS)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +25,19 @@ const ProjectsDashboardPage: React.FC = () => {
   const [workspaceToDelete, setWorkspaceToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Debug: log workspaces to see client fields
+  useEffect(() => {
+    if (workspaces.length > 0) {
+      console.log('Workspaces data:', workspaces);
+      console.log('First workspace clientName:', workspaces[0].clientName);
+      console.log('First workspace clientEmail:', workspaces[0].clientEmail);
+      console.log('First workspace clientPhone:', workspaces[0].clientPhone);
+      console.log('First workspace client object:', workspaces[0].client);
+    } else {
+      console.log('No workspaces yet');
+    }
+  }, [workspaces]);
+
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
@@ -38,7 +51,6 @@ const ProjectsDashboardPage: React.FC = () => {
     e.preventDefault();
     setIsCreating(true);
     try {
-      // Generate a simple workspace number (e.g., WS-20250326-123456)
       const workspaceNumber = `WS-${Date.now().toString().slice(-8)}`;
       const payload = {
         workspace_number: workspaceNumber,
