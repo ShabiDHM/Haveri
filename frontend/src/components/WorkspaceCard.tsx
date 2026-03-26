@@ -1,5 +1,5 @@
 // FILE: src/components/WorkspaceCard.tsx
-// PHOENIX PROTOCOL – WORKSPACE CARD V1.6 (SAFE CLIENT DATA EXTRACTION)
+// PHOENIX PROTOCOL – WORKSPACE CARD V1.6 (ROBUST CLIENT DATA)
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,25 +14,31 @@ interface WorkspaceCardProps {
   onDelete: (workspaceId: string) => void;
 }
 
+// Helper to convert string to title case (each word capitalized)
 const toTitleCase = (str: string): string => {
   if (!str) return str;
   return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
 };
 
-// Helper to safely extract client data from workspace (supports both nested and flat)
-const getClientData = (workspace: any) => {
-  if (workspace.client) {
-    return {
-      name: workspace.client.name,
-      email: workspace.client.email,
-      phone: workspace.client.phone,
-    };
-  }
-  return {
-    name: workspace.clientName,
-    email: workspace.clientEmail,
-    phone: workspace.clientPhone,
-  };
+// Helper to get client name from either nested or flat fields
+const getClientName = (workspace: Workspace): string | null => {
+  if (workspace.client?.name) return toTitleCase(workspace.client.name);
+  if (workspace.clientName) return toTitleCase(workspace.clientName);
+  return null;
+};
+
+// Helper to get client email
+const getClientEmail = (workspace: Workspace): string | null => {
+  if (workspace.client?.email) return workspace.client.email;
+  if (workspace.clientEmail) return workspace.clientEmail;
+  return null;
+};
+
+// Helper to get client phone
+const getClientPhone = (workspace: Workspace): string | null => {
+  if (workspace.client?.phone) return workspace.client.phone;
+  if (workspace.clientPhone) return workspace.clientPhone;
+  return null;
 };
 
 const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) => {
@@ -64,8 +70,10 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
   const hasTitle = workspace.title && workspace.title.trim() !== '';
   const displayTitle = hasTitle ? toTitleCase(workspace.title) : (t('workspace.unnamedWorkspace') || 'Projekt pa Emër');
 
-  const clientData = getClientData(workspace);
-  const hasClient = clientData.name || clientData.email || clientData.phone;
+  const clientName = getClientName(workspace);
+  const clientEmail = getClientEmail(workspace);
+  const clientPhone = getClientPhone(workspace);
+  const hasClient = clientName || clientEmail || clientPhone;
 
   return (
     <motion.div 
@@ -102,21 +110,21 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
             </div>
             
             <div className="space-y-1.5 pl-1">
-              {clientData.name && (
+              {clientName && (
                 <p className="text-base font-medium text-text-primary truncate">
-                  {toTitleCase(clientData.name)}
+                  {clientName}
                 </p>
               )}
-              {clientData.email && (
+              {clientEmail && (
                 <div className="flex items-center gap-2 text-sm text-text-secondary">
                   <Mail className="w-3.5 h-3.5" />
-                  <span className="truncate">{clientData.email}</span>
+                  <span className="truncate">{clientEmail}</span>
                 </div>
               )}
-              {clientData.phone && (
+              {clientPhone && (
                 <div className="flex items-center gap-2 text-sm text-text-secondary">
                   <Phone className="w-3.5 h-3.5" />
-                  <span className="truncate">{clientData.phone}</span>
+                  <span className="truncate">{clientPhone}</span>
                 </div>
               )}
             </div>

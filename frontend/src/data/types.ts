@@ -1,6 +1,6 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V4.4 (COGS DATA CONTRACT SYNC)
-// 1. FIXED: Added 'total_cogs_period' to AnalyticsDashboardData to match backend models.
+// PHOENIX PROTOCOL - TYPES V4.5 (WORKSPACE TYPE ENHANCED)
+// 1. ADDED: clientName, clientEmail, clientPhone, alert_count, event_count to Workspace.
 // 2. STATUS: Fully synchronized.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
@@ -9,7 +9,25 @@ export type EventPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 export interface User { id: string; email: string; username: string; role: 'ADMIN' | 'LAWYER' | 'CLIENT'; status: 'active' | 'inactive'; created_at: string; token?: string; subscription_status?: string; business_profile?: BusinessProfile; organization_id?: string; organization_role?: 'OWNER' | 'MEMBER' | 'VIEWER'; organization_name?: string; logo?: string; plan_tier?: 'SOLO' | 'STARTUP' | 'GROWTH' | 'ENTERPRISE'; subscription_expiry_date?: string; }
 export type AdminUser = User;
 export interface Partner { id: string; name: string; email?: string; phone?: string; address?: string; tax_id?: string; type: 'CLIENT' | 'SUPPLIER'; created_at: string; }
-export interface Workspace { id: string; workspace_number: string; workspace_name: string; title: string; status: 'ACTIVE' | 'ARCHIVED' | 'PENDING'; client?: { name: string; phone: string; email: string; }; description: string; created_at: string; updated_at: string; tags: string[]; document_count?: number; alert_count?: number; event_count?: number; is_shared?: boolean; }
+export interface Workspace {
+  id: string;
+  workspace_number: string;
+  workspace_name: string;
+  title: string;
+  status: 'ACTIVE' | 'ARCHIVED' | 'PENDING';
+  client?: { name: string; phone: string; email: string; };
+  clientName?: string;   // legacy flat fields
+  clientEmail?: string;
+  clientPhone?: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  tags: string[];
+  document_count?: number;
+  alert_count?: number;   // added for card
+  event_count?: number;   // added for card
+  is_shared?: boolean;
+}
 export interface Document { id: string; file_name: string; file_type: string; mime_type?: string; storage_key: string; uploaded_by: string; created_at: string; status: 'UPLOADING' | 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED'; summary?: string; risk_score?: number; ocr_status?: string; processed_text_storage_key?: string; preview_storage_key?: string; error_message?: string; progress_percent?: number; progress_message?: string; is_shared?: boolean; }
 export interface CalendarEvent { id: string; title: string; description?: string; start_date: string; end_date: string; is_all_day: boolean; event_type: 'APPOINTMENT' | 'TASK' | 'PAYMENT_DUE' | 'TAX_DEADLINE' | 'PERSONAL' | 'OTHER'; status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE' | 'ARCHIVED'; workspace_id?: string; document_id?: string; location?: string; notes?: string; priority?: EventPriority; attendees?: string[]; is_public?: boolean; }
 export interface UIAgendaItem { id: string; title: string; description?: string; start_date: string; end_date: string; is_all_day: boolean; status: CalendarEvent['status']; type: CalendarEvent['event_type']; attendees?: string[]; location?: string; notes?: string; workspace_id?: string; time: string; priority: EventPriority; isCompleted: boolean; kind: 'event' | 'alert' | 'task'; raw: any; }
@@ -30,7 +48,7 @@ export interface TopProductItem { product_name: string; total_quantity: number; 
 export interface AnalyticsDashboardData { 
     total_revenue_period: number; 
     total_transactions_period: number; 
-    total_cogs_period?: number; // PHOENIX: Added to match backend
+    total_cogs_period?: number;
     sales_trend: SalesTrendPoint[]; 
     top_products: TopProductItem[]; 
     total_profit_period?: number; 
