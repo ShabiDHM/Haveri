@@ -1,6 +1,5 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - WORKSPACE HUB V24.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - WORKSPACE HUB V24.2 (FIXED IMPORT)
 
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -8,7 +7,7 @@ import { ProfileTab } from '../components/business/ProfileTab';
 import { FinanceTab } from '../components/business/FinanceTab';
 import { ArchiveTab } from '../components/business/ArchiveTab';
 import { InventoryTab } from '../components/business/InventoryTab';
-import { DailyBriefingTab } from '../components/business/DailyBriefingTab';
+import LegalDraftingTab from '../components/business/LegalDraftingTab';  // default import
 import { InsightsTab } from '../components/business/InsightsTab';
 import { InboxTab } from '../components/business/InboxTab';
 
@@ -26,7 +25,7 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
 
     switch (view) {
       case 'briefing': 
-        return <DailyBriefingTab />;
+        return <LegalDraftingTab />;
       case 'finance': 
         return <FinanceTab />;
       case 'inventory': 
@@ -40,7 +39,7 @@ const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
       case 'inbox': 
         return <InboxTab />;
       default: 
-        return <DailyBriefingTab />;
+        return <LegalDraftingTab />;
     }
   };
 
