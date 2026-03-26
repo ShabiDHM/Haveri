@@ -1,5 +1,5 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTES V2.1 (ADDED /profile, REMOVED /business/profile)
+// PHOENIX PROTOCOL - ROUTES V2.2 (ADDED PROJECTS DASHBOARD)
 // STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
@@ -22,7 +22,8 @@ import FinanceWizardPage from './pages/FinanceWizardPage';
 import ClientPortalPage from './pages/ClientPortalPage';
 import { IntegrationsPage } from './pages/IntegrationsPage';
 import MobileUploadPage from './pages/MobileUploadPage';
-import { ProfileTab } from './components/business/ProfileTab'; // Import the ProfileTab component
+import { ProfileTab } from './components/business/ProfileTab';
+import ProjectsDashboardPage from './pages/ProjectsDashboardPage'; // NEW
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -45,9 +46,9 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={isAuthenticated ? <Navigate to="/business/briefing" /> : <LandingPage />} />
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/business/briefing" /> : <LoginPage />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/business/briefing" /> : <RegisterPage />} />
+      <Route path="/" element={isAuthenticated ? <Navigate to="/projects" /> : <LandingPage />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/projects" /> : <LoginPage />} />
+      <Route path="/register" element={isAuthenticated ? <Navigate to="/projects" /> : <RegisterPage />} />
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
       
       <Route path="/portal/:workspaceId" element={<ClientPortalPage />} />
@@ -58,10 +59,11 @@ const AppRoutes: React.FC = () => {
 
       {/* Standard Protected Routes (With Sidebar) */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+        <Route path="/projects" element={<ProjectsDashboardPage />} /> {/* NEW */}
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/account" element={<AccountPage />} />
-        <Route path="/profile" element={<ProfileTab />} />  {/* New profile page */}
+        <Route path="/profile" element={<ProfileTab />} />
         <Route path="/integrations" element={<IntegrationsPage />} />
 
         {/* Business Workspace Sub-Routes */}
@@ -70,7 +72,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/business/inventory" element={<BusinessPage view="inventory" />} />
         <Route path="/business/archive" element={<BusinessPage view="archive" />} />
         <Route path="/business/insights" element={<BusinessPage view="insights" />} />
-        {/* /business/profile route removed */}
         <Route path="/business/inbox" element={<BusinessPage view="inbox" />} />
         <Route path="/business" element={<Navigate to="/business/briefing" replace />} />
       </Route>
@@ -80,7 +81,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/admin" element={<AdminDashboardPage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route path="*" element={<Navigate to="/projects" />} />
     </Routes>
   );
 };

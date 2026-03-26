@@ -1,4 +1,5 @@
-// FILE: src/components/Header.tsx (First App – unified typography)
+// FILE: src/components/Header.tsx
+// PHOENIX PROTOCOL - TOP NAVIGATION LAYOUT V4.2 (ADDED PROJECTS LINK)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -56,7 +57,9 @@ const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProfileOpen]);
   
+  // PHOENIX: Added Projects as first item
   const navItems = [
+      { label: t('projectsDashboard.title', 'Projektet'), path: '/projects', icon: FolderOpen, exact: true },
       { label: t('business.finance', 'Financat'), path: '/business/finance', icon: FileText },
       { label: t('inventory.tabItems_short', 'Stoku'), path: '/business/inventory', icon: Package },
       { label: t('business.archive', 'Arkiva'), path: '/business/archive', icon: FolderOpen },
@@ -89,7 +92,8 @@ const Header: React.FC = () => {
         >
           {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
-        <Link to="/business/briefing" className="flex items-center">
+        {/* PHOENIX: Logo now links to Projects dashboard */}
+        <Link to="/projects" className="flex items-center">
           <BrandLogo />
         </Link>
       </div>

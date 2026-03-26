@@ -1,7 +1,8 @@
 # FILE: backend/app/models/workspace.py
-# PHOENIX PROTOCOL - WORKSPACE MODEL V4.1 (CONFIG FIX)
-# 1. FIXED: Enabled 'populate_by_name' to allow initialization using Python field names.
-# 2. STATUS: Build-ready.
+# PHOENIX PROTOCOL - WORKSPACE MODEL V5.0 (ORG_ID ADDED)
+# 1. ADDED: org_id field for multi-tenant project isolation (mirrors legal app's CaseBase).
+# 2. COMPATIBILITY: org_id is optional; existing workspaces remain unchanged.
+# 3. STATUS: Ready for replacement.
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Dict, Any
@@ -21,9 +22,12 @@ class WorkspaceBase(BaseModel):
     description: Optional[str] = None
     status: str = "ACTIVE"
     client_id: Optional[PyObjectId] = None 
+    
+    # NEW: Multi-tenant ownership (mirrors legal app's org_id)
+    org_id: Optional[PyObjectId] = None
 
     model_config = ConfigDict(
-        populate_by_name=True, # PHOENIX: This is the fix for line 80
+        populate_by_name=True,
         arbitrary_types_allowed=True
     )
 
@@ -37,6 +41,7 @@ class WorkspaceUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None
     client: Optional[WorkspaceClientData] = None
+    org_id: Optional[PyObjectId] = None
 
 class WorkspaceInDB(WorkspaceBase):
     id: PyObjectId = Field(alias="_id", default=None)
