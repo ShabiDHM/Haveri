@@ -1,7 +1,7 @@
 # FILE: backend/app/models/workspace.py
-# PHOENIX PROTOCOL - WORKSPACE MODEL V5.0 (ORG_ID ADDED)
-# 1. ADDED: org_id field for multi-tenant project isolation (mirrors legal app's CaseBase).
-# 2. COMPATIBILITY: org_id is optional; existing workspaces remain unchanged.
+# PHOENIX PROTOCOL - WORKSPACE MODEL V5.1 (FLAT CLIENT FIELDS IN OUTPUT)
+# 1. ADDED: clientName, clientEmail, clientPhone to WorkspaceOut for frontend compatibility.
+# 2. KEEPS: org_id and all previous fields.
 # 3. STATUS: Ready for replacement.
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -63,6 +63,10 @@ class WorkspaceOut(WorkspaceBase):
     document_count: int = 0
     alert_count: int = 0
     event_count: int = 0
+    # PHOENIX: Flat client fields for frontend compatibility
+    clientName: Optional[str] = None
+    clientEmail: Optional[str] = None
+    clientPhone: Optional[str] = None
 
     model_config = ConfigDict(
         populate_by_name=True,
