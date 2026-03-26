@@ -1,5 +1,5 @@
 // FILE: src/components/WorkspaceCard.tsx
-// PHOENIX PROTOCOL – WORKSPACE CARD V1.6 (ROBUST CLIENT DATA)
+// PHOENIX PROTOCOL – WORKSPACE CARD V1.7 (DIRECT CLIENT OBJECT)
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,31 +14,10 @@ interface WorkspaceCardProps {
   onDelete: (workspaceId: string) => void;
 }
 
-// Helper to convert string to title case (each word capitalized)
+// Helper to convert string to title case
 const toTitleCase = (str: string): string => {
   if (!str) return str;
   return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
-};
-
-// Helper to get client name from either nested or flat fields
-const getClientName = (workspace: Workspace): string | null => {
-  if (workspace.client?.name) return toTitleCase(workspace.client.name);
-  if (workspace.clientName) return toTitleCase(workspace.clientName);
-  return null;
-};
-
-// Helper to get client email
-const getClientEmail = (workspace: Workspace): string | null => {
-  if (workspace.client?.email) return workspace.client.email;
-  if (workspace.clientEmail) return workspace.clientEmail;
-  return null;
-};
-
-// Helper to get client phone
-const getClientPhone = (workspace: Workspace): string | null => {
-  if (workspace.client?.phone) return workspace.client.phone;
-  if (workspace.clientPhone) return workspace.clientPhone;
-  return null;
 };
 
 const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) => {
@@ -70,10 +49,12 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
   const hasTitle = workspace.title && workspace.title.trim() !== '';
   const displayTitle = hasTitle ? toTitleCase(workspace.title) : (t('workspace.unnamedWorkspace') || 'Projekt pa Emër');
 
-  const clientName = getClientName(workspace);
-  const clientEmail = getClientEmail(workspace);
-  const clientPhone = getClientPhone(workspace);
-  const hasClient = clientName || clientEmail || clientPhone;
+  // Use the nested client object directly (available from backend)
+  const client = workspace.client;
+  const hasClient = client && (client.name || client.email || client.phone);
+  const clientName = client?.name ? toTitleCase(client.name) : null;
+  const clientEmail = client?.email || null;
+  const clientPhone = client?.phone || null;
 
   return (
     <motion.div 
