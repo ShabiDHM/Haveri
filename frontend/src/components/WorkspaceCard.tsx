@@ -1,12 +1,12 @@
 // FILE: src/components/WorkspaceCard.tsx
-// PHOENIX PROTOCOL – WORKSPACE CARD V1.9 (COMPACT)
+// PHOENIX PROTOCOL – WORKSPACE CARD V2.0 (NO STATISTICS)
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Workspace } from '../data/types';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Trash2, FileText, AlertTriangle, CalendarDays, User, Mail, Phone } from 'lucide-react';
+import { Trash2, User, Mail, Phone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface WorkspaceCardProps {
@@ -32,11 +32,6 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete(workspace.id);
-  };
-
-  const handleCalendarNav = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate('/calendar');
   };
 
   const formattedDate = new Date(workspace.created_at).toLocaleDateString('en-GB', {
@@ -111,39 +106,8 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
       </div>
       
       <div className="relative z-10">
-        {/* Statistics Section */}
-        <div className="pt-3 border-t border-border-main flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            {/* Documents */}
-            <div className="flex items-center gap-1" title={`${workspace.document_count || 0} Dokumente`}>
-              <FileText className="h-3.5 w-3.5 text-primary-start" />
-              <span className="text-xs font-medium text-text-secondary">{workspace.document_count || 0}</span>
-            </div>
-
-            {/* Alerts */}
-            <button 
-              onClick={handleCalendarNav}
-              className="flex items-center gap-1 group/icon hover:bg-hover px-1.5 py-0.5 rounded transition-colors" 
-              title={`${workspace.alert_count || 0} Afate`}
-            >
-              <AlertTriangle className="h-3.5 w-3.5 text-status-warning group-hover/icon:text-warning-start/80 transition-colors" />
-              <span className="text-xs font-medium text-text-secondary group-hover/icon:text-text-primary">{workspace.alert_count || 0}</span>
-            </button>
-
-            {/* Events */}
-            <button 
-              onClick={handleCalendarNav}
-              className="flex items-center gap-1 group/icon hover:bg-hover px-1.5 py-0.5 rounded transition-colors" 
-              title={`${workspace.event_count || 0} Ngjarje`}
-            >
-              <CalendarDays className="h-3.5 w-3.5 text-secondary-start group-hover/icon:text-secondary-start/80 transition-colors" />
-              <span className="text-xs font-medium text-text-secondary group-hover/icon:text-text-primary">{workspace.event_count || 0}</span>
-            </button>
-          </div>
-        </div>
-
         {/* Footer: Actions */}
-        <div className="mt-3 pt-3 border-t border-border-main flex items-center justify-between">
+        <div className="mt-4 pt-4 border-t border-border-main flex items-center justify-between">
           <span className="text-xs font-bold text-primary-start group-hover:text-primary-end transition-colors flex items-center gap-1">
             {t('general.view', 'Shiko')} {t('workspace.details', 'Detajet')}
           </span>
