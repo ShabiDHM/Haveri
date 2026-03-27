@@ -1,8 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V13.4 (WORKSPACE FILTERING)
-// 1. ADDED: useAuth to get current workspace.
-// 2. PASSED workspaceId to useFinanceData hook.
-// 3. STATUS: Complete file replacement.
+// PHOENIX PROTOCOL - FINANCE TAB V13.6 (FIXED DATE FALLBACKS)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,7 +24,7 @@ import { ExpenseModal } from './modals/ExpenseModal';
 import { ClientImportModal } from './modals/ClientImportModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 import { Panel } from '../ui/Panel';
-import { useAuth } from '../../context/AuthContext'; // NEW: import useAuth
+import { useAuth } from '../../context/AuthContext';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     let borderTopClass = 'border-t-primary-start';
@@ -112,8 +109,7 @@ const TabButton = ({ label, icon, isActive, onClick }: any) => (
 
 export const FinanceTab: React.FC = () => {
     const { t, i18n } = useTranslation();
-    const { workspace } = useAuth(); // NEW: get current workspace
-    // Pass workspaceId to the hook
+    const { workspace } = useAuth();
     const financeData = useFinanceData({ workspaceId: workspace?.id });
     const { 
         loading, invoices, expenses, workspaces, posTransactions, analyticsData,
@@ -174,13 +170,36 @@ export const FinanceTab: React.FC = () => {
         }
     };
 
+    // --- FIXED: Use only existing date fields with fallback to current date ---
     const allTransactions: TransactionItem[] = useMemo(() => {
         const combined: TransactionItem[] = [
-            ...invoices.map(i => ({ id: i.id, type: 'invoice' as const, date: i.issue_date, amount: i.total_amount, label: i.client_name, raw: i })),
-            ...expenses.map(e => ({ id: e.id, type: 'expense' as const, date: e.date, amount: e.amount, label: e.category, raw: e })),
-            ...posTransactions.map(p => ({ id: (p as any).id || (p as any)._id, type: 'pos' as const, date: p.transaction_date || (p as any).date || new Date().toISOString(), amount: p.total_price ?? (p as any).amount ?? 0, label: p.product_name || (p as any).description || t('finance.posSale'), raw: p })),
+            ...invoices.map(i => ({ 
+                id: i.id, 
+                type: 'invoice' as const, 
+                date: i.issue_date || new Date().toISOString(), 
+                amount: i.total_amount, 
+                label: i.client_name || 'Faturë pa emër', 
+                raw: i 
+            })),
+            ...expenses.map(e => ({ 
+                id: e.id, 
+                type: 'expense' as const, 
+                date: e.date || new Date().toISOString(), 
+                amount: e.amount, 
+                label: e.category, 
+                raw: e 
+            })),
+            ...posTransactions.map(p => ({ 
+                id: (p as any).id || (p as any)._id, 
+                type: 'pos' as const, 
+                date: p.transaction_date || (p as any).date_time || (p as any).date || new Date().toISOString(), 
+                amount: p.total_price ?? (p as any).amount ?? 0, 
+                label: p.product_name || (p as any).description || t('finance.posSale'), 
+                raw: p 
+            })),
         ];
-        return combined.filter(tx => !searchTerm || tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || tx.amount.toString().includes(searchTerm)).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return combined.filter(tx => !searchTerm || tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || tx.amount.toString().includes(searchTerm))
+                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [invoices, expenses, posTransactions, searchTerm, t]);
 
     const filteredPartners = useMemo(() => {

@@ -1,7 +1,7 @@
 // FILE: src/hooks/useFinanceData.ts
-// PHOENIX PROTOCOL - HOOK V4.1 (STABLE FETCH)
+// PHOENIX PROTOCOL - HOOK V4.2 (CLEAN FETCH)
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Invoice, Expense, Workspace, AnalyticsDashboardData, PosTransaction } from '../data/types';
@@ -18,42 +18,36 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [posTransactions, setPosTransactions] = useState<PosTransaction[]>([]);
     const [analyticsData, setAnalyticsData] = useState<AnalyticsDashboardData | null>(null);
-    const hasFetched = useRef(false);
     const workspaceId = options?.workspaceId;
 
-    const loadData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const [inv, exp, ws, pos, analytics] = await Promise.all([
-                apiService.getInvoices(workspaceId),
-                apiService.getExpenses(workspaceId),
-                apiService.getWorkspaces(),
-                apiService.getPosTransactions(workspaceId),
-                apiService.getAnalyticsDashboard(undefined, selectedYear, workspaceId)
-            ]);
-            setInvoices(inv);
-            setExpenses(exp);
-            setWorkspaces(ws);
-            setPosTransactions(pos);
-            setAnalyticsData(analytics);
-        } catch (e) {
-            console.error("[Finance Hook] Data load failed:", e);
-        } finally {
-            setLoading(false);
-        }
-    }, [selectedYear, workspaceId]);
 
-    // Run only once on mount, and again when workspaceId or selectedYear changes
     useEffect(() => {
-        if (!hasFetched.current) {
-            hasFetched.current = true;
-            loadData();
-        }
-    }, [loadData]);
-
-    // Reset the flag when dependencies change so next mount will fetch
-    useEffect(() => {
-        hasFetched.current = false;
+        let isMounted = true;
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const [inv, exp, ws, pos, analytics] = await Promise.all([
+                    apiService.getInvoices(workspaceId),
+                    apiService.getExpenses(workspaceId),
+                    apiService.getWorkspaces(),
+                    apiService.getPosTransactions(workspaceId),
+                    apiService.getAnalyticsDashboard(undefined, selectedYear, workspaceId)
+                ]);
+                if (isMounted) {
+                    setInvoices(inv);
+                    setExpenses(exp);
+                    setWorkspaces(ws);
+                    setPosTransactions(pos);
+                    setAnalyticsData(analytics);
+                }
+            } catch (e) {
+                if (isMounted) console.error("[Finance Hook] Data load failed:", e);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+        fetchData();
+        return () => { isMounted = false; };
     }, [workspaceId, selectedYear]);
 
     const refreshData = useCallback(async () => {
