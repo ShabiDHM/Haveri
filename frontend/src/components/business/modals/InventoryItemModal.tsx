@@ -1,12 +1,12 @@
 // FILE: src/components/business/modals/InventoryItemModal.tsx
-// PHOENIX PROTOCOL - INVENTORY INTELLIGENCE V6.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - INVENTORY INTELLIGENCE V6.1 (WORKSPACE AWARE)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InventoryItem, InventoryItemCreate, RestockPrediction, SalesTrendAnalysis } from '../../../data/types';
 import { apiService } from '../../../services/api';
 import { Trash2, ShoppingCart, TrendingUp, Loader2, ArrowRight, X } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
 
 interface InventoryItemModalProps {
     isOpen: boolean;
@@ -18,6 +18,7 @@ interface InventoryItemModalProps {
 
 export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({ isOpen, onClose, onSuccess, itemToEdit, onDelete }) => {
     const { t } = useTranslation();
+    const { workspace } = useAuth();
     
     const [formData, setFormData] = useState<InventoryItemCreate>({ 
         name: '', 
@@ -72,7 +73,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({ isOpen, 
             if (itemToEdit) {
                 await apiService.updateInventoryItem(itemToEdit._id, formData);
             } else {
-                await apiService.createInventoryItem(formData);
+                await apiService.createInventoryItem(formData, workspace?.id);
             }
             onSuccess();
             onClose();

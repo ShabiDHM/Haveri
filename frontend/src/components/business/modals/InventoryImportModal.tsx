@@ -1,11 +1,11 @@
 // FILE: src/components/business/modals/InventoryImportModal.tsx
-// PHOENIX PROTOCOL - CONTEXTUAL UI V5.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - CONTEXTUAL UI V5.1 (WORKSPACE AWARE)
 
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Upload, CheckCircle, Loader2, FileSpreadsheet, Info } from 'lucide-react';
 import { apiService } from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 
 interface InventoryImportModalProps {
     isOpen: boolean;
@@ -18,6 +18,7 @@ interface InventoryImportModalProps {
 
 export const InventoryImportModal: React.FC<InventoryImportModalProps> = ({ isOpen, onClose, onSuccess, target, title, requiredColumns }) => {
     const { t } = useTranslation();
+    const { workspace } = useAuth();
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -27,10 +28,10 @@ export const InventoryImportModal: React.FC<InventoryImportModalProps> = ({ isOp
         setLoading(true);
         try {
             if (target === 'recipes') {
-                const data = await apiService.importRecipes(file);
+                const data = await apiService.importRecipes(file, workspace?.id);
                 alert(`${t('inventory.recipes.importedCount')}: ${data.recipes_created}`);
             } else {
-                const data = await apiService.importInventoryItems(file);
+                const data = await apiService.importInventoryItems(file, workspace?.id);
                 alert(`${t('inventory.items.importedCount', 'Items Imported')}: ${data.items_created || data.count || 'Success'}`);
             }
             onSuccess();

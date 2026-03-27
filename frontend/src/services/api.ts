@@ -1,8 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V14.1 (STRATEGIC BRIEFING WORKSPACE FILTER)
-// 1. ADDED: getStrategicBriefing accepts optional workspaceId.
-// 2. PRESERVED: All existing interceptors and methods.
-// 3. STATUS: Complete file replacement.
+// PHOENIX PROTOCOL - API V14.5 (FORENSIC ACCOUNTANT WORKSPACE FILTER)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -148,16 +145,35 @@ class ApiService {
     public async analyzeTaxAnomalies(month: number, year: number): Promise<TaxAuditResult> { try { const response = await this.axiosInstance.post<TaxAuditResult>('/analysis/tax/audit', { month, year }); return response.data; } catch (e) { return { anomalies: ["Sistemi nuk mund të kryejë analizën për momentin."], status: 'WARNING', net_obligation: 0 }; } }
     public async chatWithTaxBot(message: string): Promise<string> { try { const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message }); return response.data.response; } catch (e) { return "Më falni, shërbimi i asistencës tatimore është përkohësisht jashtë funksionit."; } }
 
-    public async chatWithAccountant(query: string): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+    public async chatWithAccountant(query: string, workspaceId?: string): Promise<ReadableStreamDefaultReader<Uint8Array>> {
         const token = tokenManager.get();
         if (!token) await this.refreshToken();
-        const response = await fetch(`${API_V1_URL}/accountant/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tokenManager.get()}` }, body: JSON.stringify({ query }) });
+        const url = new URL(`${API_V1_URL}/accountant/chat`);
+        if (workspaceId) url.searchParams.append('case_id', workspaceId);
+        const response = await fetch(url.toString(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenManager.get()}`
+            },
+            body: JSON.stringify({ query })
+        });
         if (!response.ok || !response.body) throw new Error("Failed to connect to Accountant Agent.");
         return response.body.getReader();
     }
 
-    public async downloadAuditReport(content: string): Promise<Blob> { const response = await this.axiosInstance.post('/accountant/export-audit', { content }, { responseType: 'blob' }); return response.data; }
-    public async saveAuditReportToArchive(content: string): Promise<{ message: string, document_id: string }> { const response = await this.axiosInstance.post('/accountant/save-report', { content }); return response.data; }
+    public async downloadAuditReport(content: string, workspaceId?: string): Promise<Blob> {
+        const params = workspaceId ? { case_id: workspaceId } : {};
+        const response = await this.axiosInstance.post('/accountant/export-audit', { content }, { params, responseType: 'blob' });
+        return response.data;
+    }
+
+    public async saveAuditReportToArchive(content: string, workspaceId?: string): Promise<{ message: string, document_id: string }> {
+        const params = workspaceId ? { case_id: workspaceId } : {};
+        const response = await this.axiosInstance.post('/accountant/save-report', { content }, { params });
+        return response.data;
+    }
+
     public async askDocumentQuestion(documentId: string, question: string): Promise<{ answer: string }> { const response = await this.axiosInstance.post<{ answer: string }>(`/archive/items/${documentId}/chat`, { question }); return response.data; }
     public async predictRestock(itemId: string): Promise<RestockPrediction> { try { const response = await this.axiosInstance.post<RestockPrediction>('/analysis/inventory/predict', { item_id: itemId }); return response.data; } catch (e) { return { suggested_quantity: 0, reason: "Analiza e padisponueshme për momentin.", estimated_cost: 0 }; } }
     public async analyzeSalesTrend(itemId: string): Promise<SalesTrendAnalysis> { try { const response = await this.axiosInstance.post<SalesTrendAnalysis>('/analysis/inventory/trend', { item_id: itemId }); return response.data; } catch (e) { return { trend_analysis: "E padisponueshme", cross_sell_opportunities: "E padisponueshme" }; } }
@@ -171,7 +187,16 @@ class ApiService {
         }
     }
 
-    public async getProactiveInsight(): Promise<GeneralInsightResponse> { try { const response = await this.axiosInstance.get<GeneralInsightResponse>('/analysis/finance/proactive-insight'); return response.data; } catch (e) { return { insight: "Shtoni transaksione për të parë analizat e AI.", sentiment: "neutral" }; } }
+    public async getProactiveInsight(workspaceId?: string): Promise<GeneralInsightResponse> {
+        const params = workspaceId ? { case_id: workspaceId } : {};
+        try {
+            const response = await this.axiosInstance.get<GeneralInsightResponse>('/analysis/finance/proactive-insight', { params });
+            return response.data;
+        } catch (e) {
+            return { insight: "Shtoni transaksione për të parë analizat e AI.", sentiment: "neutral" };
+        }
+    }
+
     public async analyzeDocument(file: File): Promise<AnalysisResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<AnalysisResult>(`/analysis/analyze-spreadsheet`, formData); return response.data; }
 
     public async createPurchaseOrder(data: { item_id: string; item_name: string; unit: string; quantity: number; estimated_cost: number; supplier_name: string; }): Promise<any> { const response = await this.axiosInstance.post('/drafting/purchase-order', data); return response.data; }
@@ -194,7 +219,12 @@ class ApiService {
         return Array.isArray(response.data) ? response.data : (response.data?.invoices || []);
     }
 
-    public async createInvoice(data: InvoiceCreateRequest): Promise<Invoice> { const response = await this.axiosInstance.post<Invoice>('/finance/invoices', data); return response.data; }
+    public async createInvoice(data: InvoiceCreateRequest, workspaceId?: string): Promise<Invoice> {
+        const params = workspaceId ? { case_id: workspaceId } : {};
+        const response = await this.axiosInstance.post<Invoice>('/finance/invoices', data, { params });
+        return response.data;
+    }
+
     public async updateInvoice(invoiceId: string, data: InvoiceUpdate): Promise<Invoice> { const response = await this.axiosInstance.put<Invoice>(`/finance/invoices/${invoiceId}`, data); return response.data; }
     public async deleteInvoice(invoiceId: string): Promise<void> { await this.axiosInstance.delete(`/finance/invoices/${invoiceId}`); }
     public async getInvoicePdfBlob(invoiceId: string, lang: string = 'sq'): Promise<Blob> { const response = await this.axiosInstance.get(`/finance/invoices/${invoiceId}/pdf`, { params: { lang }, responseType: 'blob' }); return response.data; }
@@ -212,7 +242,13 @@ class ApiService {
         const response = await this.axiosInstance.get<any>('/finance/expenses', { params });
         return Array.isArray(response.data) ? response.data : (response.data?.expenses || []);
     }
-    public async createExpense(data: ExpenseCreateRequest): Promise<Expense> { const response = await this.axiosInstance.post<Expense>('/finance/expenses', data); return response.data; }
+
+    public async createExpense(data: ExpenseCreateRequest, workspaceId?: string): Promise<Expense> {
+        const params = workspaceId ? { case_id: workspaceId } : {};
+        const response = await this.axiosInstance.post<Expense>('/finance/expenses', data, { params });
+        return response.data;
+    }
+
     public async updateExpense(expenseId: string, data: ExpenseUpdate): Promise<Expense> { const response = await this.axiosInstance.put<Expense>(`/finance/expenses/${expenseId}`, data); return response.data; }
     public async deleteExpense(expenseId: string): Promise<void> { await this.axiosInstance.delete(`/finance/expenses/${expenseId}`); }
     public async uploadExpenseReceipt(expenseId: string, file: File): Promise<void> { const formData = new FormData(); formData.append('file', file); await this.axiosInstance.put(`/finance/expenses/${expenseId}/receipt`, formData); }
@@ -227,8 +263,28 @@ class ApiService {
     }
     public async deletePosTransaction(transactionId: string): Promise<void> { await this.axiosInstance.delete(`/finance/transactions/${transactionId}`); }
     public async bulkDeleteTransactions(ids: { invoice_ids?: string[], expense_ids?: string[], pos_ids?: string[] }): Promise<any> { const response = await this.axiosInstance.post('/finance/transactions/bulk-delete', ids); return response.data; }
-    public async getWizardState(month: number, year: number): Promise<WizardState> { const response = await this.axiosInstance.get<WizardState>('/finance/wizard/state', { params: { month, year } }); return response.data; }
-    public async downloadMonthlyReport(month: number, year: number): Promise<void> { const response = await this.axiosInstance.get('/finance/wizard/report/pdf', { params: { month, year }, responseType: 'blob' }); const url = window.URL.createObjectURL(new Blob([response.data])); const link = document.createElement('a'); link.href = url; link.setAttribute('download', `Raporti_${month}_${year}.pdf`); document.body.appendChild(link); link.click(); link.parentNode?.removeChild(link); window.URL.revokeObjectURL(url); }
+
+    // --- WIZARD (workspace filtered) ---
+    public async getWizardState(month: number, year: number, workspaceId?: string): Promise<WizardState> {
+        const params: any = { month, year };
+        if (workspaceId) params.case_id = workspaceId;
+        const response = await this.axiosInstance.get<WizardState>('/finance/wizard/state', { params });
+        return response.data;
+    }
+
+    public async downloadMonthlyReport(month: number, year: number, workspaceId?: string): Promise<void> {
+        const params: any = { month, year };
+        if (workspaceId) params.case_id = workspaceId;
+        const response = await this.axiosInstance.get('/finance/wizard/report/pdf', { params, responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Raporti_${month}_${year}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    }
 
     // --- IMPORTS ---
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }

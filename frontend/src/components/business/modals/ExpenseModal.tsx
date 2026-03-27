@@ -1,5 +1,5 @@
 // FILE: src/components/business/modals/ExpenseModal.tsx
-// PHOENIX PROTOCOL - V6.2 (Direct camera capture, no QR code)
+// PHOENIX PROTOCOL - V6.3 (WORKSPACE AWARE)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, MinusCircle, CheckCircle, Paperclip, Loader2, Camera, Search } from 'lucide-react';
@@ -9,6 +9,7 @@ import { apiService, API_V1_URL } from '../../../services/api';
 import * as ReactDatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { sq, enUS } from 'date-fns/locale';
+import { useAuth } from '../../../context/AuthContext';
 
 const DatePicker = (ReactDatePicker as any).default;
 
@@ -23,6 +24,7 @@ type ExtractionStatus = 'IDLE' | 'UPLOADING' | 'PROCESSING' | 'COMPLETED' | 'FAI
 
 export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onSuccess, expenseToEdit }) => {
     const { t, i18n } = useTranslation();
+    const { workspace } = useAuth();
     const localeMap: { [key: string]: any } = { sq, al: sq, en: enUS };
     const currentLocale = localeMap[i18n.language] || enUS;
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -135,7 +137,7 @@ export const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose, onS
             if (expenseToEdit) {
                 await apiService.updateExpense(expenseToEdit.id, { ...formData, date: dateStr, source_archive_id: source_id || expenseToEdit.source_archive_id });
             } else {
-                await apiService.createExpense({ ...formData, date: dateStr, source_archive_id: source_id });
+                await apiService.createExpense({ ...formData, date: dateStr, source_archive_id: source_id }, workspace?.id);
             }
             onSuccess();
             onClose();

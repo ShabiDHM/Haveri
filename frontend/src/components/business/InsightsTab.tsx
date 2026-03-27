@@ -1,5 +1,5 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V5.3 (WORKSPACE FILTER)
+// PHOENIX PROTOCOL - INSIGHTS UI V5.4 (WORKSPACE AWARE FORENSIC MODAL)
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,7 @@ import { BusinessRhythmCard, DailySalesData } from './insights/BusinessRhythmCar
 import { BusinessPulseCard } from './insights/BusinessPulseCard';
 import { SmartAgendaCard } from './insights/SmartAgendaCard';
 import SpreadsheetAnalysisPanel from '../SpreadsheetAnalysisPanel';
+import { ForensicAccountantModal } from './insights/ForensicAccountantModal';
 
 export const InsightsTab: React.FC = () => {
     const { t } = useTranslation();
@@ -27,6 +28,7 @@ export const InsightsTab: React.FC = () => {
     const { data: briefingData, loading: briefingLoading } = useStrategicBriefing(workspace?.id);
 
     const [showAnalystPanel, setShowAnalystPanel] = useState(false);
+    const [showForensicModal, setShowForensicModal] = useState(false);
 
     const salesHistory: DailySalesData = useMemo(() => {
         if (!analyticsData?.sales_trend) return { labels: [], data: [] };
@@ -57,16 +59,24 @@ export const InsightsTab: React.FC = () => {
                             {t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}
                         </h2>
                     </div>
-                    <button
-                        onClick={() => setShowAnalystPanel(!showAnalystPanel)}
-                        className="glass-input px-4 py-2.5 flex items-center gap-2 text-xs uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
-                    >
-                        {showAnalystPanel ? (
-                            <><ChevronUp size={14} /> {t('insights.hideAnalysis', 'Fshih Analizën')}</>
-                        ) : (
-                            <><ChevronDown size={14} /> {t('insights.showAnalysis', 'Hap Analizën')}</>
-                        )}
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setShowForensicModal(true)}
+                            className="glass-input px-4 py-2.5 flex items-center gap-2 text-xs uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
+                        >
+                            {t('forensic.title', 'Auditori Forenzik')}
+                        </button>
+                        <button
+                            onClick={() => setShowAnalystPanel(!showAnalystPanel)}
+                            className="glass-input px-4 py-2.5 flex items-center gap-2 text-xs uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
+                        >
+                            {showAnalystPanel ? (
+                                <><ChevronUp size={14} /> {t('insights.hideAnalysis', 'Fshih Analizën')}</>
+                            ) : (
+                                <><ChevronDown size={14} /> {t('insights.showAnalysis', 'Hap Analizën')}</>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 <AnimatePresence>
@@ -86,12 +96,18 @@ export const InsightsTab: React.FC = () => {
             {/* Dashboard Metrics Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <BusinessRhythmCard currentSales={displayIncome} salesHistory={salesHistory} />
-                <BusinessPulseCard currentSales={displayIncome} />
+                <BusinessPulseCard currentSales={displayIncome} workspaceId={workspace?.id} />
                 {briefingData && <SmartAgendaCard agenda={briefingData.agenda} />}
                 <DebtModule data={debtAnalytics} />
                 <TaxModule data={taxAnalytics} />
                 <ProfitModule data={profitAnalytics} />
             </div>
+
+            <ForensicAccountantModal
+                isOpen={showForensicModal}
+                onClose={() => setShowForensicModal(false)}
+                workspaceId={workspace?.id}
+            />
         </div>
     );
 };

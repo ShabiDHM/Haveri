@@ -1,11 +1,12 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V21.1 (FULLY RESPONSIVE)
+// PHOENIX PROTOCOL - INVOICE MODAL V21.2 (WORKSPACE AWARE)
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Invoice, InvoiceItem, Partner } from '../../../data/types';
 import { apiService } from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 
 interface InvoiceModalProps {
     isOpen: boolean;
@@ -16,6 +17,7 @@ interface InvoiceModalProps {
 
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onSuccess, invoiceToEdit }) => {
     const { t } = useTranslation();
+    const { workspace } = useAuth();
     const [partners, setPartners] = useState<Partner[]>([]);
     const [formData, setFormData] = useState({ 
         client_name: '', client_email: '', client_phone: '', client_address: '', 
@@ -72,8 +74,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
         e.preventDefault();
         try {
             const payload = { ...formData, items: lineItems, tax_rate: includeVat ? formData.tax_rate : 0 };
-            if (invoiceToEdit) await apiService.updateInvoice(invoiceToEdit.id, payload);
-            else await apiService.createInvoice(payload);
+            if (invoiceToEdit) {
+                await apiService.updateInvoice(invoiceToEdit.id, payload);
+            } else {
+                await apiService.createInvoice(payload, workspace?.id);
+            }
             onSuccess(); onClose();
         } catch { alert(t('error.generic')); }
     };

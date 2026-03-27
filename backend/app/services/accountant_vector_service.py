@@ -1,8 +1,5 @@
 # FILE: backend/app/services/accountant_vector_service.py
-# PHOENIX PROTOCOL - ACCOUNTANT VECTOR V2.7 (LINGUISTIC STEMMING FIX)
-# 1. FEATURE: Implemented Albanian Suffix Stemming (handles ipkos -> ipko).
-# 2. FIXED: AI now bridges linguistic variations in user queries to find DB records.
-# 3. STATUS: 100% Pylance Clean & Production Ready.
+# PHOENIX PROTOCOL - ACCOUNTANT VECTOR V2.8 (WORKSPACE FILTERING)
 
 from __future__ import annotations
 import logging
@@ -22,7 +19,6 @@ def _normalize(text: str) -> str:
 
 def _stem_albanian(word: str) -> str:
     """Strips common Albanian genitive/definite suffixes to find the root name."""
-    # Common suffixes: 's', 'se', 'it', 'te', 'in'
     suffixes = ['os', 'as', 'es', 'is', 'it', 'te', 'in', 's']
     stemmed = word
     for suffix in suffixes:
@@ -51,23 +47,26 @@ def _format_mongo_docs_for_ai(docs: List[Any], title: str) -> str:
         formatted_str += "---\n"
     return formatted_str
 
-async def get_combined_context(context_id: str, query: str) -> str:
+async def get_combined_context(context_id: str, query: str, case_id: Optional[str] = None) -> str:
     if db.db_instance is None: db.connect_to_mongo()
     active_db = db.db_instance
     if active_db is None: return "GABIM: Baza e të dhënave nuk është e disponueshme."
 
     query_norm = _normalize(query)
-    # Extract roots of words to handle 'Ipkos' -> 'Ipko'
     raw_words = [w for w in query_norm.split() if len(w) > 2 and w not in {"cilat", "jane", "faturat", "shpenzimet"}]
     stemmed_words = [_stem_albanian(w) for w in raw_words]
     all_search_terms = list(set(raw_words + stemmed_words))
     
     resilient_filter = _get_resilient_filter(context_id)
+    # Add case_id filter if provided
+    if case_id:
+        # Ensure case_id is stored as string or ObjectId? Usually stored as string in these collections.
+        resilient_filter["case_id"] = case_id
+
     structured_data_context = ""
     
     entity_filter = None
     if all_search_terms:
-        # PHOENIX: Substring match for any stemmed root
         regex_pattern = "|".join([re.escape(w) for w in all_search_terms])
         entity_filter = {
             "$and": [
@@ -83,7 +82,6 @@ async def get_combined_context(context_id: str, query: str) -> str:
         }
 
     try:
-        # Search collections
         f = entity_filter if entity_filter else resilient_filter
         
         # 1. Invoices

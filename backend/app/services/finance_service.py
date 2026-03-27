@@ -1,8 +1,5 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V7.5 (WORKSPACE FILTERING)
-# 1. ADDED: optional case_id parameter to get_invoices and get_expenses.
-# 2. FILTER: invoices/expenses now respect workspace isolation.
-# 3. STATUS: Complete replacement.
+# PHOENIX PROTOCOL - FINANCE SERVICE V7.6 (WORKSPACE FILTERING FOR POS)
 
 import logging
 import csv
@@ -84,14 +81,16 @@ class FinanceService:
 
     # --- POS / TRANSACTION LOGIC ---
 
-    async def get_monthly_pos_revenue(self, async_db: Any, user_id: str, month: int, year: int) -> float:
-        """Aggregates POS revenue for a specific month using async Motor (Wizard Engine)."""
+    async def get_monthly_pos_revenue(self, async_db: Any, user_id: str, month: int, year: int, case_id: Optional[str] = None) -> float:
+        """Aggregates POS revenue for a specific month, optionally filtered by workspace."""
         try:
             start_date = datetime(year, month, 1)
             end_date = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
-            # Match strictly by user_id string to align with POS import logic
+            match_filter = {"user_id": str(user_id), "date_time": {"$gte": start_date, "$lt": end_date}}
+            if case_id:
+                match_filter["case_id"] = case_id
             pipeline = [
-                {"$match": {"user_id": str(user_id), "date_time": {"$gte": start_date, "$lt": end_date}}},
+                {"$match": match_filter},
                 {"$group": {"_id": None, "total_revenue": {"$sum": "$total_amount"}}}
             ]
             result = await async_db["transactions"].aggregate(pipeline).to_list(length=1)
@@ -125,7 +124,7 @@ class FinanceService:
         count = self.db.invoices.count_documents({"user_id": ObjectId(user_id)})
         return f"F-{datetime.now().year}-{count + 1:04d}"
 
-    def create_invoice(self, user_id: str, data: InvoiceCreate) -> InvoiceInDB:
+    def create_invoice(self, user_id: str, data: InvoiceCreate, case_id: Optional[str] = None) -> InvoiceInDB:
         subtotal = sum(item.quantity * item.unit_price for item in data.items)
         invoice_doc = data.model_dump()
         invoice_doc.update({
@@ -135,14 +134,15 @@ class FinanceService:
             "total_amount": subtotal + (subtotal * data.tax_rate / 100), 
             "created_at": datetime.now(timezone.utc)
         })
+        if case_id:
+            invoice_doc["case_id"] = case_id
         res = self.db.invoices.insert_one(invoice_doc); invoice_doc["_id"] = res.inserted_id
         return InvoiceInDB(**invoice_doc)
 
     def get_invoices(self, context_id: str, case_id: Optional[str] = None) -> list[InvoiceInDB]:
-        """Fetch invoices, optionally filtered by workspace (case_id)."""
         query = self._get_resilient_filter(context_id)
         if case_id:
-            query["case_id"] = ObjectId(case_id)
+            query["case_id"] = case_id
         cursor = self.db.invoices.find(query).sort("created_at", -1)
         return [InvoiceInDB(**doc) for doc in cursor]
 
@@ -169,16 +169,17 @@ class FinanceService:
 
     # --- EXPENSE LOGIC ---
 
-    def create_expense(self, user_id: str, data: ExpenseCreate) -> ExpenseInDB:
+    def create_expense(self, user_id: str, data: ExpenseCreate, case_id: Optional[str] = None) -> ExpenseInDB:
         doc = data.model_dump(); doc.update({"user_id": ObjectId(user_id), "created_at": datetime.now(timezone.utc)})
+        if case_id:
+            doc["case_id"] = case_id
         res = self.db.expenses.insert_one(doc); doc["_id"] = res.inserted_id
         return ExpenseInDB(**doc)
 
     def get_expenses(self, context_id: str, case_id: Optional[str] = None) -> list[ExpenseInDB]:
-        """Fetch expenses, optionally filtered by workspace (case_id)."""
         query = self._get_resilient_filter(context_id)
         if case_id:
-            query["case_id"] = ObjectId(case_id)
+            query["case_id"] = case_id
         cursor = self.db.expenses.find(query).sort("date", -1)
         return [ExpenseInDB(**doc) for doc in cursor]
 

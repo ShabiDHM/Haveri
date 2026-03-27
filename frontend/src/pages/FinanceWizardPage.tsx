@@ -1,8 +1,5 @@
 // FILE: src/pages/FinanceWizardPage.tsx
-// PHOENIX PROTOCOL - FINANCE WIZARD V16.1 (EXECUTIVE DESIGN SYSTEM)
-// UPDATED: Semantic Tailwind classes (glass-panel, border-border-main, text-text-*, etc.)
-// ADDED: shadow-sm, hover-lift, consistent backdrop blur.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - FINANCE WIZARD V16.3 (WORKSPACE AWARE, FULL IMPLEMENTATION)
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { apiService, WizardState, AuditIssue, TaxCalculation } from '../services/api';
 import { format } from 'date-fns';
 import { sq, enUS } from 'date-fns/locale';
+import { useAuth } from '../context/AuthContext';
 
 // --- TACTICAL COMPONENTS ---
 
@@ -152,6 +150,7 @@ const TaxStep = ({ data }: { data: TaxCalculation }) => {
 const FinanceWizardPage = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
+    const { workspace } = useAuth(); // Get current workspace
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -165,13 +164,13 @@ const FinanceWizardPage = () => {
     const localeMap: { [key: string]: any } = { sq, al: sq, en: enUS };
     const currentLocale = localeMap[i18n.language] || enUS;
 
-    useEffect(() => { fetchData(); }, [selectedMonth, selectedYear]);
+    useEffect(() => { fetchData(); }, [selectedMonth, selectedYear, workspace?.id]);
 
     const fetchData = async () => { 
         setLoading(true); 
         setErrorMsg(null); 
         try { 
-            const data = await apiService.getWizardState(selectedMonth, selectedYear); 
+            const data = await apiService.getWizardState(selectedMonth, selectedYear, workspace?.id); 
             setState(data); 
         } catch (e) { 
             setErrorMsg(t('error.generic')); 
@@ -182,7 +181,7 @@ const FinanceWizardPage = () => {
 
     const handleDownloadReport = async () => { 
         setDownloading(true); 
-        try { await apiService.downloadMonthlyReport(selectedMonth, selectedYear); } 
+        try { await apiService.downloadMonthlyReport(selectedMonth, selectedYear, workspace?.id); } 
         finally { setDownloading(false); } 
     };
 

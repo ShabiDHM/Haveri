@@ -1,5 +1,5 @@
 // FILE: src/components/WorkspaceCard.tsx
-// PHOENIX PROTOCOL – WORKSPACE CARD V1.7 (DIRECT CLIENT OBJECT)
+// PHOENIX PROTOCOL – WORKSPACE CARD V1.7 (VISUAL UNIFICATION)
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +14,6 @@ interface WorkspaceCardProps {
   onDelete: (workspaceId: string) => void;
 }
 
-// Helper to convert string to title case
 const toTitleCase = (str: string): string => {
   if (!str) return str;
   return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
@@ -49,17 +48,15 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
   const hasTitle = workspace.title && workspace.title.trim() !== '';
   const displayTitle = hasTitle ? toTitleCase(workspace.title) : (t('workspace.unnamedWorkspace') || 'Projekt pa Emër');
 
-  // Use the nested client object directly (available from backend)
-  const client = workspace.client;
-  const hasClient = client && (client.name || client.email || client.phone);
-  const clientName = client?.name ? toTitleCase(client.name) : null;
-  const clientEmail = client?.email || null;
-  const clientPhone = client?.phone || null;
+  const clientName = workspace.client?.name ? toTitleCase(workspace.client.name) : null;
+  const clientEmail = workspace.client?.email || null;
+  const clientPhone = workspace.client?.phone || null;
+  const hasClient = clientName || clientEmail || clientPhone;
 
   return (
     <motion.div 
       onClick={handleCardClick}
-      className="glass-panel group relative flex flex-col justify-between h-full p-6 rounded-2xl hover-lift cursor-pointer border-border-main"
+      className="glass-panel group relative flex flex-col justify-between h-full p-6 rounded-2xl hover-lift cursor-pointer border-border-main shadow-sm transition-all duration-300"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}

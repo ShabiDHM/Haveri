@@ -1,6 +1,5 @@
 // FILE: src/components/business/insights/ForensicAccountantModal.tsx
-// PHOENIX PROTOCOL - FORENSIC MODAL V5.2 (EXECUTIVE DESIGN SYSTEM)
-// Fixed: Replaced text-[9px] with text-xs for consistency.
+// PHOENIX PROTOCOL - FORENSIC MODAL V5.3 (WORKSPACE AWARE)
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -46,9 +45,10 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
 interface ForensicAccountantModalProps {
     isOpen: boolean;
     onClose: () => void;
+    workspaceId?: string; // NEW: for filtering
 }
 
-export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = ({ isOpen, onClose }) => {
+export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = ({ isOpen, onClose, workspaceId }) => {
     const { t } = useTranslation();
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState<{ role: 'user' | 'ai'; content: string }[]>([
@@ -81,7 +81,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
         setMessages(prev => [...prev, { role: 'ai', content: '' }]);
 
         try {
-            const reader = await apiService.chatWithAccountant(userQuery);
+            const reader = await apiService.chatWithAccountant(userQuery, workspaceId);
             const decoder = new TextDecoder();
 
             while (true) {
@@ -108,7 +108,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
         
         setIsSaving(true);
         try {
-            await apiService.saveAuditReportToArchive(lastAiMessage.content);
+            await apiService.saveAuditReportToArchive(lastAiMessage.content, workspaceId);
             setSaveSuccess(true);
         } catch (error) {
             alert(t('forensic.save_failed', 'Dështoi ruajtja në arkivë.'));

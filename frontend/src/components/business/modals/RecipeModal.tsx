@@ -1,12 +1,12 @@
 // FILE: src/components/business/modals/RecipeModal.tsx
-// PHOENIX PROTOCOL - RECIPE MODAL V18.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - RECIPE MODAL V18.1 (WORKSPACE AWARE)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2, Plus } from 'lucide-react';
 import { Recipe, Ingredient, InventoryItem, RecipeCreate } from '../../../data/types';
 import { apiService } from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 
 interface RecipeModalProps {
     isOpen: boolean;
@@ -21,6 +21,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
     isOpen, onClose, onSuccess, recipeToEdit, inventoryItems, calculateCost 
 }) => {
     const { t } = useTranslation();
+    const { workspace } = useAuth();
     const [formData, setFormData] = useState<RecipeCreate>({ product_name: '', ingredients: [] });
 
     useEffect(() => {
@@ -56,7 +57,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({
             if (recipeToEdit) {
                 await apiService.updateRecipe(recipeToEdit._id, formData);
             } else {
-                await apiService.createRecipe(formData);
+                await apiService.createRecipe(formData, workspace?.id);
             }
             onSuccess();
             onClose();

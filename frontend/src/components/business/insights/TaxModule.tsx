@@ -1,6 +1,5 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX MODULE V13.2 (EXECUTIVE DESIGN SYSTEM)
-// Fixed: Replaced text-[9px] with text-xs for consistency.
+// PHOENIX PROTOCOL - TAX MODULE V13.3 (WORKSPACE AWARE)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,9 +13,10 @@ interface TaxModuleProps {
         vatDeductible: number;
         estimatedLiability: number;
     };
+    workspaceId?: string; // NEW
 }
 
-export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
+export const TaxModule: React.FC<TaxModuleProps> = ({ data, workspaceId }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { vatCollected, vatDeductible, estimatedLiability } = data;
@@ -25,7 +25,6 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
     const isPositive = estimatedLiability > 0;
 
     const handleDirectClose = () => {
-        // Bypass audit modal, go straight to the wizard
         navigate('/finance/wizard');
     };
 
@@ -105,7 +104,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data }) => {
                 </div>
             </div>
 
-            <ForensicAccountantModal isOpen={showForensicChat} onClose={() => setShowForensicChat(false)} />
+            <ForensicAccountantModal isOpen={showForensicChat} onClose={() => setShowForensicChat(false)} workspaceId={workspaceId} />
         </>
     );
 };

@@ -1,6 +1,5 @@
 // FILE: src/components/business/insights/BusinessPulseCard.tsx
-// PHOENIX PROTOCOL - PULSE CARD V11.2 (EXECUTIVE DESIGN SYSTEM)
-// Fixed: Replaced text-[9px] with text-xs for consistency.
+// PHOENIX PROTOCOL - PULSE CARD V11.3 (WORKSPACE AWARE)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,12 +19,14 @@ interface BusinessPulseCardProps {
     signals?: Signal[];
     currentSales?: number;
     peakTime?: string | null;
+    workspaceId?: string; // NEW: for filtering insight
 }
 
 export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({ 
     signals = [], 
     currentSales = 0,
-    peakTime = null
+    peakTime = null,
+    workspaceId
 }) => {
     const { t } = useTranslation();
     const [insight, setInsight] = useState<string>("");
@@ -52,7 +53,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
     useEffect(() => {
         const fetchInsight = async () => {
             try {
-                const data = await apiService.getProactiveInsight();
+                const data = await apiService.getProactiveInsight(workspaceId);
                 if (data.insight === "Sistemi aktiv dhe i monitoruar në kohë reale.") {
                     setInsight("");
                 } else {
@@ -67,7 +68,7 @@ export const BusinessPulseCard: React.FC<BusinessPulseCardProps> = ({
             }
         };
         fetchInsight();
-    }, [t, isRestDay]);
+    }, [t, isRestDay, workspaceId]);
 
     const hotItem = useMemo(() => signals.find(s => s.type === 'bestseller'), [signals]);
 

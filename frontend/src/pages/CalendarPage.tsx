@@ -1,6 +1,5 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR PAGE V8.0 (MOBILE OPTIMIZED)
-// Responsive layout, collapsible sidebar, touch-friendly controls.
+// PHOENIX PROTOCOL - CALENDAR PAGE V8.1 (WORKSPACE PRESELECT)
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -24,6 +23,7 @@ import '../styles/DatePicker.css';
 import DayEventsModal from '../components/DayEventsModal';
 import { EventDetailModal, UIAgendaItem } from '../components/modals/EventDetailModal';
 import { Panel } from '../components/ui/Panel';
+import { useAuth } from '../context/AuthContext';
 
 const DatePicker = (ReactDatePicker as any).default;
 const localeMap: { [key: string]: Locale } = { sq: sq, al: sq, en: enUS };
@@ -61,17 +61,18 @@ const transformToUIAgendaItem = (event: CalendarEvent): UIAgendaItem => {
   };
 };
 
-// ---------- CreateEventModal (mobile-friendly) ----------
+// ---------- CreateEventModal (mobile-friendly, with workspace preselection) ----------
 interface CreateEventModalProps {
   workspaces: Workspace[];
   existingEvents: CalendarEvent[];
   onClose: () => void;
   onCreate: () => void;
+  initialWorkspaceId?: string; // NEW
 }
 
 type ViewMode = 'month' | 'list';
 
-const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existingEvents, onClose, onCreate }) => {
+const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existingEvents, onClose, onCreate, initialWorkspaceId }) => {
   const { t, i18n } = useTranslation();
   const currentLocale = localeMap[i18n.language] || enUS;
   const [isCreating, setIsCreating] = useState(false);
@@ -86,7 +87,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existin
       is_public: boolean;
     }
   >({
-    workspace_id: '',
+    workspace_id: initialWorkspaceId || '', // PRESELECT current workspace if provided
     title: '',
     description: '',
     event_type: 'TASK',
@@ -284,6 +285,7 @@ const CalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const { workspace } = useAuth(); // Get current workspace
 
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -299,7 +301,7 @@ const CalendarPage: React.FC = () => {
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
   const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
   const [isDayModalOpen, setIsDayModalOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // for mobile sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const currentLocale = localeMap[i18n.language] || enUS;
 
   const loadData = async () => {
@@ -420,7 +422,6 @@ const CalendarPage: React.FC = () => {
     const weekStartsOn = currentLocale?.options?.weekStartsOn ?? 1;
     const firstDayOfMonth = getDay(monthStart);
     const startingDayIndex = (firstDayOfMonth - weekStartsOn + 7) % 7;
-    // Reduced min-height for mobile: 100px -> 80px
     const cellClass = 'min-h-[80px] sm:min-h-[120px] border-r border-b border-border-main relative group transition-colors hover:bg-hover flex flex-col p-1 sm:p-2';
     const days = Array.from({ length: startingDayIndex }, (_, i) => <div key={`empty-${i}`} className={`${cellClass} bg-surface/20 backdrop-blur-sm`} />);
     for (let day = 1; day <= daysInMonth; day++) {
@@ -710,7 +711,7 @@ const CalendarPage: React.FC = () => {
       <AnimatePresence>
         {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onUpdate={loadData} workspaces={workspaces} />}
       </AnimatePresence>
-      {isCreateModalOpen && <CreateEventModal workspaces={workspaces} existingEvents={events} onClose={() => setIsCreateModalOpen(false)} onCreate={loadData} />}
+      {isCreateModalOpen && <CreateEventModal workspaces={workspaces} existingEvents={events} onClose={() => setIsCreateModalOpen(false)} onCreate={loadData} initialWorkspaceId={workspace?.id} />}
       <DayEventsModal
         isOpen={isDayModalOpen}
         onClose={() => setIsDayModalOpen(false)}

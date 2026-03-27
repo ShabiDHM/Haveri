@@ -1,12 +1,10 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V6.7 (FINAL CLEANUP)
-# 1. CLEANUP: Removed GET /finance/analytics/dashboard route definition, as it has been correctly placed within the finance_router per client request path verification.
-# 2. STATUS: 100% Complete & Production Ready.
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V6.8 (PROACTIVE INSIGHT WORKSPACE FILTER)
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timedelta
 from pymongo.database import Database
 from bson import ObjectId
 import re
@@ -22,7 +20,7 @@ from app.services.finance_service import FinanceService
 from app.services import llm_service
 from app.services import spreadsheet_service
 from app.services.analytics_service import AnalyticsService
-from app.models.finance import AnalyticsDashboardData # Keep this import if used elsewhere
+from app.models.finance import AnalyticsDashboardData
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -242,8 +240,56 @@ async def analyze_sales_trend(request: PredictionRequest, current_user: UserInDB
     except: return SalesTrendAnalysis(trend_analysis="Gabim.", cross_sell_opportunities="N/A")
 
 @router.get("/finance/proactive-insight", response_model=GeneralInsightResponse)
-async def get_proactive_insight(): 
-    return GeneralInsightResponse(insight="Sistemi aktiv dhe i monitoruar në kohë reale.", sentiment="neutral")
+async def get_proactive_insight(
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None)
+):
+    """Returns a proactive business insight for the user's recent activity, optionally filtered by workspace."""
+    # Build filter: either by case_id (workspace) or user/organization
+    if case_id:
+        filter_dict = {"case_id": case_id}
+    else:
+        context_id = str(current_user.organization_id) if current_user.organization_id else str(current_user.id)
+        filter_dict = _get_resilient_filter(context_id)
+    
+    # Look at last 7 days of transactions
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    recent_transactions = list(db.transactions.find({
+        **filter_dict,
+        "date_time": {"$gte": seven_days_ago}
+    }))
+    
+    if not recent_transactions:
+        return GeneralInsightResponse(
+            insight="Aktivitet i kufizuar në 7 ditët e fundit. Shfaqni transaksione për analizë më të thellë.",
+            sentiment="neutral"
+        )
+    
+    total_sales = sum(t.get("total_amount", t.get("amount", 0)) for t in recent_transactions)
+    
+    # Identify top product by sales value
+    product_sales = {}
+    for t in recent_transactions:
+        name = t.get("product_name") or t.get("description") or "Unknown"
+        amount = t.get("total_amount", t.get("amount", 0))
+        product_sales[name] = product_sales.get(name, 0) + amount
+    top_product = max(product_sales.items(), key=lambda x: x[1]) if product_sales else (None, 0)
+    
+    # Use LLM for a short insight if possible
+    try:
+        prompt = (f"Generate a short proactive business insight (in Albanian) based on the last 7 days: "
+                  f"total sales €{total_sales:.2f}, top product '{top_product[0]}' with €{top_product[1]:.2f}. "
+                  f"Suggest one actionable recommendation.")
+        insight = await llm_service.ask_business_consultant(str(current_user.id), prompt)
+        sentiment = "positive" if total_sales > 0 else "neutral"
+        return GeneralInsightResponse(insight=insight, sentiment=sentiment)
+    except Exception as e:
+        logger.error(f"Proactive insight LLM failed: {e}")
+        return GeneralInsightResponse(
+            insight=f"€{total_sales:.2f} shitje në 7 ditët e fundit. Produkti kryesor: {top_product[0]}.",
+            sentiment="neutral"
+        )
 
 @router.post("/tax/audit", response_model=TaxAuditResult)
 async def analyze_tax_anomalies(): 
