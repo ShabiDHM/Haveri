@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V8.2 (POINTER-EVENTS-AUTO ON GRID)
+// PHOENIX PROTOCOL - DRAFTING PAGE V8.3 (INTEGRATED COMPACT HEADER)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -190,17 +190,15 @@ const DraftingPage: React.FC = () => {
 
   return (
     <motion.div className="w-full min-h-screen pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 flex flex-col h-full">
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 flex flex-col h-full">
         <style>{lawyerGradeStyles}</style>
 
-        {/* Page Header */}
-        <div className="flex items-center gap-4 mb-8 flex-shrink-0">
-          <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm">
-            <PenTool size={24} />
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tighter leading-none">
+        {/* Phoenix Fix: Integrated Compact Header */}
+        <div className="flex items-center gap-3 mb-6 ml-2 shrink-0">
+          <PenTool className="text-primary-start" size={24} />
+          <h2 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tighter uppercase leading-none">
             {t('drafting.title')}
-          </h1>
+          </h2>
         </div>
 
         {/* Main Grid - Added pointer-events-auto */}
