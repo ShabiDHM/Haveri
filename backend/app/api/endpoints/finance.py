@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.16 (WORKSPACE FILTER)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.17 (ANALYTICS FIX)
 
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
@@ -251,14 +251,14 @@ def delete_expense(
     except:
         pass
 
-# --- ANALYTICS ENDPOINT (FISCAL YEAR SUPPORTED, WORKSPACE FILTER) ---
+# --- ANALYTICS ENDPOINT (FIXED) ---
 @router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
 async def get_dashboard_data(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
-    db: Any = Depends(get_async_db),
+    sync_db: Database = Depends(get_db),
     days: int = 365,
     year: Optional[int] = Query(None),
     case_id: Optional[str] = Query(None)
 ):
-    analytics_service = AnalyticsService(db)
+    analytics_service = AnalyticsService(sync_db)
     return await analytics_service.get_dashboard_data(user_id=str(current_user.id), days=days, year=year, case_id=case_id)
