@@ -1,8 +1,5 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V11.6 (SCHEMA REPAIR)
-# 1. FIXED: Added 'notes', 'client_city', 'client_phone' to InvoiceBase to prevent AttributeError in ReportService.
-# 2. UPDATE: Synced InvoiceUpdate to allow modifying these new fields.
-# 3. STATUS: 100% Complete.
+# PHOENIX PROTOCOL - FINANCE MODELS V11.7 (CASE_ID ADDED)
 
 from pydantic import BaseModel, Field, ConfigDict, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -82,13 +79,14 @@ class InvoiceItem(BaseModel):
 
 class InvoiceBase(BaseModel):
     invoice_number: Optional[str] = None
+    case_id: Optional[str] = None          # <-- ADDED
     client_name: str
     client_email: Optional[str] = None
-    client_phone: Optional[str] = None # Added for PDF Report
+    client_phone: Optional[str] = None
     client_address: Optional[str] = None
-    client_city: Optional[str] = None # Added for PDF Report
+    client_city: Optional[str] = None
     client_tax_id: Optional[str] = None
-    notes: Optional[str] = None # Added for PDF Report (Fixes AttributeError)
+    notes: Optional[str] = None
     issue_date: datetime = Field(default_factory=datetime.utcnow)
     due_date: datetime = Field(default_factory=datetime.utcnow)
     items: List[InvoiceItem] = []
@@ -102,6 +100,7 @@ class InvoiceBase(BaseModel):
 class InvoiceCreate(InvoiceBase): pass
 
 class InvoiceUpdate(BaseModel):
+    case_id: Optional[str] = None           # <-- ADDED
     client_name: Optional[str] = None
     client_email: Optional[str] = None
     client_phone: Optional[str] = None
@@ -128,6 +127,7 @@ class InvoiceOut(InvoiceInDB):
 
 # --- EXPENSE MODELS ---
 class ExpenseBase(BaseModel):
+    case_id: Optional[str] = None          # <-- ADDED
     category: str
     amount: float
     description: Optional[str] = None
@@ -136,7 +136,9 @@ class ExpenseBase(BaseModel):
     is_locked: bool = False
 
 class ExpenseCreate(ExpenseBase): pass
+
 class ExpenseUpdate(BaseModel):
+    case_id: Optional[str] = None          # <-- ADDED
     category: Optional[str] = None
     amount: Optional[float] = None
     is_locked: Optional[bool] = None
