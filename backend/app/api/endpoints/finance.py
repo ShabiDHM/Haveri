@@ -1,7 +1,7 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.13 (FISCAL CONTEXT ENABLED)
-# 1. FIXED: get_dashboard_data now accepts 'year' to support 2026 filtering.
-# 2. STATUS: API Route Context-Aware.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.14 (WORKSPACE FILTERING)
+# 1. ADDED: case_id query parameter to /invoices and /expenses for workspace isolation.
+# 2. STATUS: Complete file replacement.
 
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
@@ -149,8 +149,12 @@ def bulk_delete_transactions(
 # --- INVOICES (Sales Management) ---
 
 @router.get("/invoices", response_model=List[InvoiceOut])
-def get_invoices(current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
-    return FinanceService(db).get_invoices(str(current_user.id))
+def get_invoices(
+    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
+):
+    return FinanceService(db).get_invoices(str(current_user.id), case_id)
 
 @router.post("/invoices", response_model=InvoiceOut, status_code=status.HTTP_201_CREATED)
 def create_invoice(
@@ -240,8 +244,12 @@ def create_expense(
     return FinanceService(db).create_expense(str(current_user.id), expense_in)
 
 @router.get("/expenses", response_model=List[ExpenseOut])
-def get_expenses(current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
-    return FinanceService(db).get_expenses(str(current_user.id))
+def get_expenses(
+    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
+):
+    return FinanceService(db).get_expenses(str(current_user.id), case_id)
 
 @router.delete("/expenses/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_expense(

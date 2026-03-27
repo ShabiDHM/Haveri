@@ -1,5 +1,5 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V22.2 (FIXED DOUBLE BORDER)
+// PHOENIX PROTOCOL - INVENTORY TAB V22.3 (WORKSPACE FILTERING + COST CALC FIX)
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -14,6 +14,7 @@ import { InventoryItemModal } from './modals/InventoryItemModal';
 import { RecipeModal } from './modals/RecipeModal';
 import { InventoryImportModal } from './modals/InventoryImportModal';
 import { Panel } from '../ui/Panel';
+import { useAuth } from '../../context/AuthContext'; // ADDED
 
 // --- TACTICAL UI COMPONENTS ---
 
@@ -51,14 +52,17 @@ const TabButton = ({ label, icon, isActive, onClick }: { label: string, icon: Re
 
 export const InventoryTab: React.FC = () => {
     const { t } = useTranslation();
+    const { workspace } = useAuth(); // ADDED: get current workspace
+    // Pass workspaceId to the hook
+    const { 
+        loading, items, recipes, manualItems, posItems, 
+        loadData, deleteItem, deleteRecipe, 
+        calculateIngredientCost   // use this for cost calculations
+    } = useInventoryData(workspace?.id);
+
     const [activeTab, setActiveTab] = useState<'items' | 'recipes'>('items');
     const [searchTerm, setSearchTerm] = useState('');
     
-    const { 
-        loading, items, recipes, manualItems, posItems, 
-        loadData, deleteItem, deleteRecipe, calculateRecipeCost 
-    } = useInventoryData();
-
     const [showItemModal, setShowItemModal] = useState(false);
     const [showRecipeModal, setShowRecipeModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false); 
@@ -85,7 +89,6 @@ export const InventoryTab: React.FC = () => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6">
-            {/* Removed outer border to prevent double border with inner Panel */}
             <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
@@ -113,14 +116,14 @@ export const InventoryTab: React.FC = () => {
             {/* Main Content Panel */}
             <Panel className="p-4 sm:p-6 h-[700px] flex flex-col overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
                 
-                {/* Header – removed border-b to eliminate the extra line */}
+                {/* Header */}
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 mb-6 pb-4 sm:pb-6 shrink-0">
                     <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
                         <Box className="text-success-start" />
                         {t('inventory.title')}
                     </h2>
                     
-                    {/* Tabs container – removed border to avoid double line with panel border */}
+                    {/* Tabs container */}
                     <div className="w-full md:w-auto flex bg-surface p-1.5 rounded-2xl backdrop-blur-md gap-1">
                         <TabButton label={t('inventory.tabItems', 'Artikujt')} icon={<Package size={16} />} isActive={activeTab === 'items'} onClick={() => setActiveTab('items')} />
                         <TabButton label={t('inventory.tabRecipes')} icon={<ChefHat size={16} />} isActive={activeTab === 'recipes'} onClick={() => setActiveTab('recipes')} />
@@ -153,7 +156,7 @@ export const InventoryTab: React.FC = () => {
                             <RecipeList 
                                 recipes={filteredRecipes}
                                 inventoryItems={items} 
-                                calculateCost={calculateRecipeCost}
+                                calculateCost={calculateIngredientCost}   // FIXED: use calculateIngredientCost
                                 onEdit={openEditRecipe}
                                 onDelete={handleDeleteRecipe}
                             />
@@ -170,7 +173,14 @@ export const InventoryTab: React.FC = () => {
                 onDelete={handleDeleteItem} 
             />
             
-            <RecipeModal isOpen={showRecipeModal} onClose={() => setShowRecipeModal(false)} onSuccess={loadData} recipeToEdit={editingRecipe} inventoryItems={items} calculateCost={calculateRecipeCost} />
+            <RecipeModal 
+                isOpen={showRecipeModal} 
+                onClose={() => setShowRecipeModal(false)} 
+                onSuccess={loadData} 
+                recipeToEdit={editingRecipe} 
+                inventoryItems={items} 
+                calculateCost={calculateIngredientCost}   // FIXED: use calculateIngredientCost
+            />
             
             <InventoryImportModal 
                 isOpen={showImportModal} 

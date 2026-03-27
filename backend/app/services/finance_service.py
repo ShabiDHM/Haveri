@@ -1,8 +1,8 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V7.4 (MASTER SYNC)
-# 1. FIXED: Restored 'get_monthly_pos_revenue' to resolve Finance Wizard Pylance error.
-# 2. FIXED: Maintained all Partner CRUD, Invoice, and Expense logic.
-# 3. STATUS: 100% Complete & Unabridged. Resolves all architectural gaps.
+# PHOENIX PROTOCOL - FINANCE SERVICE V7.5 (WORKSPACE FILTERING)
+# 1. ADDED: optional case_id parameter to get_invoices and get_expenses.
+# 2. FILTER: invoices/expenses now respect workspace isolation.
+# 3. STATUS: Complete replacement.
 
 import logging
 import csv
@@ -138,8 +138,13 @@ class FinanceService:
         res = self.db.invoices.insert_one(invoice_doc); invoice_doc["_id"] = res.inserted_id
         return InvoiceInDB(**invoice_doc)
 
-    def get_invoices(self, context_id: str) -> list[InvoiceInDB]:
-        return [InvoiceInDB(**doc) for doc in self.db.invoices.find(self._get_resilient_filter(context_id)).sort("created_at", -1)]
+    def get_invoices(self, context_id: str, case_id: Optional[str] = None) -> list[InvoiceInDB]:
+        """Fetch invoices, optionally filtered by workspace (case_id)."""
+        query = self._get_resilient_filter(context_id)
+        if case_id:
+            query["case_id"] = ObjectId(case_id)
+        cursor = self.db.invoices.find(query).sort("created_at", -1)
+        return [InvoiceInDB(**doc) for doc in cursor]
 
     def get_invoice(self, context_id: str, invoice_id: str) -> InvoiceInDB:
         oid = ObjectId(invoice_id)
@@ -169,8 +174,13 @@ class FinanceService:
         res = self.db.expenses.insert_one(doc); doc["_id"] = res.inserted_id
         return ExpenseInDB(**doc)
 
-    def get_expenses(self, context_id: str) -> list[ExpenseInDB]:
-        return [ExpenseInDB(**doc) for doc in self.db.expenses.find(self._get_resilient_filter(context_id)).sort("date", -1)]
+    def get_expenses(self, context_id: str, case_id: Optional[str] = None) -> list[ExpenseInDB]:
+        """Fetch expenses, optionally filtered by workspace (case_id)."""
+        query = self._get_resilient_filter(context_id)
+        if case_id:
+            query["case_id"] = ObjectId(case_id)
+        cursor = self.db.expenses.find(query).sort("date", -1)
+        return [ExpenseInDB(**doc) for doc in cursor]
 
     def delete_expense(self, user_id: str, expense_id: str) -> None:
         oid = ObjectId(expense_id); existing = self.db.expenses.find_one({"_id": oid, **self._get_resilient_filter(user_id)})

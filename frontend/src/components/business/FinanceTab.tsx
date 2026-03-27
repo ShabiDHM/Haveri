@@ -1,5 +1,8 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V13.3 (MOBILE OPTIMIZED)
+// PHOENIX PROTOCOL - FINANCE TAB V13.4 (WORKSPACE FILTERING)
+// 1. ADDED: useAuth to get current workspace.
+// 2. PASSED workspaceId to useFinanceData hook.
+// 3. STATUS: Complete file replacement.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,6 +27,7 @@ import { ExpenseModal } from './modals/ExpenseModal';
 import { ClientImportModal } from './modals/ClientImportModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 import { Panel } from '../ui/Panel';
+import { useAuth } from '../../context/AuthContext'; // NEW: import useAuth
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     let borderTopClass = 'border-t-primary-start';
@@ -108,7 +112,15 @@ const TabButton = ({ label, icon, isActive, onClick }: any) => (
 
 export const FinanceTab: React.FC = () => {
     const { t, i18n } = useTranslation();
-    const { loading, invoices, expenses, workspaces, posTransactions, analyticsData, totalExpenses, displayIncome, displayProfit, costOfGoodsSold, refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense, deletePosTransaction: hookDeletePos, selectedYear } = useFinanceData();
+    const { workspace } = useAuth(); // NEW: get current workspace
+    // Pass workspaceId to the hook
+    const financeData = useFinanceData({ workspaceId: workspace?.id });
+    const { 
+        loading, invoices, expenses, workspaces, posTransactions, analyticsData,
+        totalExpenses, displayIncome, displayProfit, costOfGoodsSold,
+        refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense,
+        deletePosTransaction: hookDeletePos, selectedYear 
+    } = financeData;
 
     const [activeTab, setActiveTab] = useState<'transactions' | 'reports' | 'partners'>('transactions');
     const [partners, setPartners] = useState<any[]>([]);
@@ -244,7 +256,6 @@ export const FinanceTab: React.FC = () => {
                 .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
                 .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--primary-start); border-radius: 10px; opacity: 0.3; } 
                 select option { background-color: var(--bg-card); color: var(--text-primary); }
-                /* Ensure tabs scroll horizontally on mobile */
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
                 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
@@ -264,13 +275,11 @@ export const FinanceTab: React.FC = () => {
             </div>
 
             <Panel className="p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-                {/* Header without bottom border */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 px-4 sm:px-6 pt-4 sm:pt-6">
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-2 sm:gap-3">
                         <Activity className="text-primary-start" size={20} />
                         {t('finance.activityAndReports')}
                     </h2>
-                    {/* Tabs container with horizontal scroll on mobile */}
                     <div className="w-full sm:w-auto flex bg-surface/50 p-1 rounded-2xl gap-1 overflow-x-auto scrollbar-hide">
                         <TabButton label={t('finance.tabTransactions')} icon={<Activity size={14} className="sm:w-4 sm:h-4" />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
                         <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={14} className="sm:w-4 sm:h-4" />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />

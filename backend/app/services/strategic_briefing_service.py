@@ -1,8 +1,5 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.0 (DEFINITIVE FIX)
-# 1. CRITICAL FIX: All queries to 'transactions' and 'inventory_items' now correctly use a STRING for user_id, resolving the "€0.00" data bug.
-# 2. CRITICAL FIX: Revenue calculation for transactions now correctly sums the 'amount' field, aligning with the data model.
-# 3. ROBUSTNESS: Date queries handle both datetime objects and ISO strings.
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.4 (TYPE FIX)
 
 import logging
 import asyncio
@@ -18,11 +15,11 @@ def map_api_priority(priority: Optional[str]) -> str:
     return 'low'
 
 class StrategicBriefingService:
-    def __init__(self, db, user_id: str):
+    def __init__(self, db, user_id: str, case_id: Optional[str] = None):
         self.db = db
-        # PHOENIX: Standardize on STRING user_id for all services.
         self.user_id_str = user_id
         self.user_id_obj = ObjectId(user_id)
+        self.case_id = case_id
 
     async def generate_strategic_briefing(self) -> Dict[str, Any]:
         staff_data, market_data, agenda_data = await asyncio.gather(
@@ -36,9 +33,7 @@ class StrategicBriefingService:
         now = datetime.utcnow()
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
-        # Invoices use ObjectId
         invoice_filter = {"user_id": self.user_id_obj}
-        # Transactions use string
         transaction_filter = {"user_id": self.user_id_str}
 
         invoices_pipeline = [
@@ -46,10 +41,9 @@ class StrategicBriefingService:
             {"$group": {"_id": None, "total_revenue": {"$sum": "$total_amount"}, "transaction_count": {"$sum": 1}}}
         ]
         
-        # PHOENIX FIX: Use correct field 'amount' and handle string dates
         transactions_pipeline = [
             {"$match": {
-                **transaction_filter, 
+                **transaction_filter,
                 "$or": [
                     {"date": {"$gte": month_start}},
                     {"transaction_date": {"$gte": month_start}},
@@ -86,7 +80,7 @@ class StrategicBriefingService:
     async def _analyze_market_pulse(self) -> Dict[str, Any]:
         invoice_filter = {"user_id": self.user_id_obj}
         transaction_filter = {"user_id": self.user_id_str}
-        inventory_filter = {"user_id": self.user_id_str} # Inventory also uses string user_id
+        inventory_filter = {"user_id": self.user_id_str}
         
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         today_start_iso = today_start.isoformat()
@@ -118,11 +112,18 @@ class StrategicBriefingService:
         return {"signals": signals}
 
     async def _compile_tactical_agenda(self) -> List[Dict]:
-        user_filter = {"user_id": self.user_id_obj} # Calendar uses ObjectId
+        user_filter = {"user_id": self.user_id_obj}
+        if self.case_id:
+            # Use string for workspace_id; ignore type because field may be string
+            user_filter["workspace_id"] = str(self.case_id)  # type: ignore[assignment]
+
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = today_start + timedelta(days=1)
         
-        cursor = self.db.calendar_events.find({**user_filter, "start_date": {"$gte": today_start, "$lt": today_end}}).sort("start_date", 1)
+        cursor = self.db.calendar_events.find({
+            **user_filter,
+            "start_date": {"$gte": today_start, "$lt": today_end}
+        }).sort("start_date", 1)
         
         events = await cursor.to_list(length=50)
         agenda_items = []
@@ -138,7 +139,7 @@ class StrategicBriefingService:
                 "id": str(event.get('_id')), "title": event.get('title', 'Pa titull'),
                 "time": event_date.strftime("%H:%M"), "priority": map_api_priority(event.get('priority')),
                 "isCompleted": hours_diff < -1, "kind": 'alert' if is_alert else 'event',
-                "raw": event 
+                "raw": event
             }
             agenda_items.append(agenda_item)
             

@@ -1,8 +1,8 @@
 # FILE: backend/app/api/endpoints/briefing.py
-# PHOENIX PROTOCOL - STRATEGIC BRIEFING ROUTER V1.0
+# PHOENIX PROTOCOL - STRATEGIC BRIEFING ROUTER V1.1 (WORKSPACE FILTER)
 
-from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Any, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from app.core.db import get_async_db
 from app.services.strategic_briefing_service import StrategicBriefingService
 from app.api.endpoints.dependencies import get_current_user
@@ -13,7 +13,8 @@ router = APIRouter()
 @router.get("/strategic", status_code=status.HTTP_200_OK)
 async def get_strategic_briefing(
     current_user: UserInDB = Depends(get_current_user),
-    db: Any = Depends(get_async_db)
+    db: Any = Depends(get_async_db),
+    case_id: Optional[str] = Query(None)  # Add optional workspace filter
 ):
     """
     Get the AI-generated Strategic Daily Briefing.
@@ -25,7 +26,7 @@ async def get_strategic_briefing(
         )
 
     try:
-        service = StrategicBriefingService(db, str(current_user.id))
+        service = StrategicBriefingService(db, str(current_user.id), case_id)
         report = await service.generate_strategic_briefing()
         return report
     except Exception as e:

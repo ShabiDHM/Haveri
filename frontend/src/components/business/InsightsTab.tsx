@@ -1,8 +1,5 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V5.1 (EXECUTIVE DESIGN SYSTEM)
-// UPDATED: Converted to semantic Tailwind classes: glass-panel, border-border-main, text-text-*, etc.
-// ADDED: hover-lift and shadow-sm to interactive elements.
-// PRESERVED: All hooks, logic, and sub-components.
+// PHOENIX PROTOCOL - INSIGHTS UI V5.3 (WORKSPACE FILTER)
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,7 +10,6 @@ import { useFinanceData } from '../../hooks/useFinanceData';
 import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 import { useAuth } from '../../context/AuthContext';
 
-// Modules
 import { DebtModule } from './insights/DebtModule';
 import { TaxModule } from './insights/TaxModule';
 import { ProfitModule } from './insights/ProfitModule';
@@ -24,12 +20,12 @@ import SpreadsheetAnalysisPanel from '../SpreadsheetAnalysisPanel';
 
 export const InsightsTab: React.FC = () => {
     const { t } = useTranslation();
-    useAuth();
-    
-    const { loading: intelLoading, debtAnalytics, profitAnalytics, taxAnalytics } = useBusinessIntelligence();
-    const { displayIncome, analyticsData, loading: financeLoading } = useFinanceData();
-    const { data: briefingData, loading: briefingLoading } = useStrategicBriefing();
-    
+    const { workspace } = useAuth();
+
+    const { loading: intelLoading, debtAnalytics, profitAnalytics, taxAnalytics } = useBusinessIntelligence(workspace?.id);
+    const { displayIncome, analyticsData, loading: financeLoading } = useFinanceData({ workspaceId: workspace?.id });
+    const { data: briefingData, loading: briefingLoading } = useStrategicBriefing(workspace?.id);
+
     const [showAnalystPanel, setShowAnalystPanel] = useState(false);
 
     const salesHistory: DailySalesData = useMemo(() => {
@@ -52,7 +48,7 @@ export const InsightsTab: React.FC = () => {
 
     return (
         <div className="space-y-8">
-            {/* Top Analysis Header - Aligned to Drafting Style */}
+            {/* Top Analysis Header */}
             <div className="glass-panel p-6 sm:p-8 border border-border-main shadow-sm">
                 <div className="flex items-center justify-between border-b border-border-main pb-5 flex-wrap gap-4">
                     <div className="flex items-center gap-3">
@@ -61,8 +57,8 @@ export const InsightsTab: React.FC = () => {
                             {t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}
                         </h2>
                     </div>
-                    <button 
-                        onClick={() => setShowAnalystPanel(!showAnalystPanel)} 
+                    <button
+                        onClick={() => setShowAnalystPanel(!showAnalystPanel)}
                         className="glass-input px-4 py-2.5 flex items-center gap-2 text-xs uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
                     >
                         {showAnalystPanel ? (
@@ -75,10 +71,10 @@ export const InsightsTab: React.FC = () => {
 
                 <AnimatePresence>
                     {showAnalystPanel && (
-                        <motion.div 
-                            initial={{ opacity: 0, height: 0 }} 
-                            animate={{ opacity: 1, height: 'auto' }} 
-                            exit={{ opacity: 0, height: 0 }} 
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden pt-6"
                         >
                             <SpreadsheetAnalysisPanel />

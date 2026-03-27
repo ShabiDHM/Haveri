@@ -1,16 +1,19 @@
 // FILE: src/hooks/useFinanceData.ts
-// PHOENIX PROTOCOL - HOOK V3.8 (TEMPORAL SYNC & FISCAL AWARENESS)
-// 1. FIXED: loadData now reacts to selectedYear changes to re-fetch contextually accurate analytics.
-// 2. FIXED: getAnalyticsDashboard now passes selectedYear to the backend to resolve the 2026 void.
-// 3. FIXED: Aligned POS date field checks to ensure all imported transactions are captured.
-// 4. STATUS: Frontend Hook Fully Synchronized.
+// PHOENIX PROTOCOL - HOOK V4.0 (WORKSPACE FILTERING)
+// 1. ADDED: workspaceId parameter to all API calls.
+// 2. DEPENDENCY: refreshes when workspaceId or selectedYear changes.
+// 3. STATUS: Complete file replacement.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Invoice, Expense, Workspace, AnalyticsDashboardData, PosTransaction } from '../data/types';
 
-export const useFinanceData = () => {
+interface UseFinanceDataOptions {
+    workspaceId?: string;
+}
+
+export const useFinanceData = (options?: UseFinanceDataOptions) => {
     const { selectedYear, setSelectedYear } = useAuth();
     const [loading, setLoading] = useState(true);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -19,12 +22,13 @@ export const useFinanceData = () => {
     const [posTransactions, setPosTransactions] = useState<PosTransaction[]>([]);
     const [analyticsData, setAnalyticsData] = useState<AnalyticsDashboardData | null>(null);
 
+    const workspaceId = options?.workspaceId;
+
     const availableYears = useMemo(() => {
         const years = new Set<number>([new Date().getFullYear()]);
         invoices.forEach(i => { if (i.issue_date) years.add(new Date(i.issue_date).getFullYear()); });
         expenses.forEach(e => { if (e.date) years.add(new Date(e.date).getFullYear()); });
         posTransactions.forEach(p => { 
-            // PHOENIX: Check all possible date field names for resilience
             const d = p.transaction_date || (p as any).date_time || (p as any).date;
             if (d) years.add(new Date(d).getFullYear()); 
         });
@@ -34,13 +38,12 @@ export const useFinanceData = () => {
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
-            // PHOENIX: We pass undefined for days and the selectedYear to trigger fiscal-year analytics
             const [inv, exp, ws, pos, analytics] = await Promise.all([
-                apiService.getInvoices().catch(() => []),
-                apiService.getExpenses().catch(() => []),
-                apiService.getWorkspaces().catch(() => []),
-                apiService.getPosTransactions().catch(() => []),
-                apiService.getAnalyticsDashboard(undefined, selectedYear).catch(() => null)
+                apiService.getInvoices(workspaceId),
+                apiService.getExpenses(workspaceId),
+                apiService.getWorkspaces(),
+                apiService.getPosTransactions(workspaceId),
+                apiService.getAnalyticsDashboard(undefined, selectedYear, workspaceId)
             ]);
             setInvoices(inv);
             setExpenses(exp);
@@ -52,22 +55,22 @@ export const useFinanceData = () => {
         } finally { 
             setLoading(false); 
         }
-    }, [selectedYear]); // PHOENIX: Triggered whenever user switches fiscal year context
+    }, [selectedYear, workspaceId]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
     const refreshData = useCallback(async () => {
         const [inv, exp, pos, analytics] = await Promise.all([
-            apiService.getInvoices(), 
-            apiService.getExpenses(), 
-            apiService.getPosTransactions(), 
-            apiService.getAnalyticsDashboard(undefined, selectedYear)
+            apiService.getInvoices(workspaceId),
+            apiService.getExpenses(workspaceId),
+            apiService.getPosTransactions(workspaceId),
+            apiService.getAnalyticsDashboard(undefined, selectedYear, workspaceId)
         ]);
         setInvoices(inv); 
         setExpenses(exp); 
         setPosTransactions(pos); 
         setAnalyticsData(analytics);
-    }, [selectedYear]);
+    }, [selectedYear, workspaceId]);
 
     const totalExpenses = useMemo(() => 
         expenses.filter(e => new Date(e.date).getFullYear() === selectedYear)
@@ -84,9 +87,7 @@ export const useFinanceData = () => {
         return invInc + posInc;
     }, [invoices, posTransactions, selectedYear]);
 
-    // PHOENIX: costOfGoodsSold now pulls from the year-synchronized server calculation
     const costOfGoodsSold = analyticsData?.total_cogs_period ?? 0;
-
     const displayProfit = displayIncome - costOfGoodsSold - totalExpenses;
 
     return {

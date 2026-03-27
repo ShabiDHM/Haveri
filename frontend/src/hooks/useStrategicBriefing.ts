@@ -1,14 +1,11 @@
 // FILE: src/hooks/useStrategicBriefing.ts
-// PHOENIX PROTOCOL - STRATEGIC HOOK V3.0 (TYPE UNIFICATION)
-// 1. FIX: Removed local 'UIAgendaItem' definition to resolve TS2352/TS2322.
-// 2. SYNC: Now strictly imports types from 'src/data/types.ts'.
-// 3. STATUS: Unblocks Vercel build by removing type shadowing.
+// PHOENIX PROTOCOL - STRATEGIC HOOK V3.2 (WORKSPACE FILTER)
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/api';
 import { StrategicBriefingResponse } from '../data/types';
 
-export const useStrategicBriefing = () => {
+export const useStrategicBriefing = (workspaceId?: string) => {
     const [data, setData] = useState<StrategicBriefingResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -16,22 +13,18 @@ export const useStrategicBriefing = () => {
     const fetchData = useCallback(async () => {
         setLoading(true);
         setError(false);
-        setData(null); // PHOENIX: Prevent stale data display during refresh
-        
+        setData(null);
         try {
-            // The backend returns StrategicBriefingResponse which already 
-            // contains the unified UIAgendaItem[] array.
-            const briefingResult = await apiService.getStrategicBriefing();
+            const briefingResult = await apiService.getStrategicBriefing(workspaceId);
             setData(briefingResult);
-
         } catch (e) {
             console.error("Failed to load strategic briefing:", e);
             setError(true);
-            setData(null); // Clear data on error for safety
+            setData(null);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [workspaceId]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 

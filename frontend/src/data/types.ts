@@ -1,6 +1,6 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V4.5 (WORKSPACE TYPE ENHANCED)
-// 1. ADDED: clientName, clientEmail, clientPhone, alert_count, event_count to Workspace.
+// PHOENIX PROTOCOL - TYPES V4.6 (INVENTORY SOURCE FIELD ADDED)
+// 1. ADDED: source?: string to InventoryItem.
 // 2. STATUS: Fully synchronized.
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
@@ -55,7 +55,15 @@ export interface AnalyticsDashboardData {
 }
 export interface ArchiveItemOut { id: string; title: string; file_type: string; category: string; storage_key: string; file_size: number; created_at: string; workspace_id?: string; parent_id?: string; item_type?: 'FILE' | 'FOLDER'; is_shared?: boolean; indexing_status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED'; }
 export interface PosTransaction { id: string; product_name: string; quantity: number; total_price: number; transaction_date: string; payment_method: string; }
-export interface InventoryItem { _id: string; name: string; unit: string; current_stock: number; cost_per_unit: number; low_stock_threshold: number; }
+export interface InventoryItem {
+  _id: string;
+  name: string;
+  unit: string;
+  current_stock: number;
+  cost_per_unit: number;
+  low_stock_threshold: number;
+  source?: string; // NEW: 'MANUAL' or 'POS'
+}
 export interface InventoryItemCreate { name: string; unit: string; current_stock: number; cost_per_unit: number; low_stock_threshold?: number; }
 export interface Ingredient { inventory_item_id: string; quantity_required: number; }
 export interface Recipe { _id: string; product_name: string; ingredients: Ingredient[]; }

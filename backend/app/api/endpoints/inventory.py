@@ -1,11 +1,8 @@
 # FILE: backend/app/api/endpoints/inventory.py
-# PHOENIX PROTOCOL - INVENTORY ENDPOINTS V5.5 (DEFINITIVE CSV PARSING FIX)
-# 1. CRITICAL FIX: The 'import_recipes' endpoint now intelligently handles headerless CSV files.
-# 2. LOGIC: It checks if pandas has inferred integer column names (a sign of a headerless file) and manually assigns the correct headers if so.
-# 3. RESULT: This ensures that recipe data is always parsed correctly, resolving the root cause of the "No Cost Identified" error in the Analyst.
+# PHOENIX PROTOCOL - INVENTORY ENDPOINTS V5.6 (WORKSPACE FILTERING)
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from typing import List, Dict, Any, cast
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
+from typing import List, Dict, Any, cast, Optional
 from pydantic import BaseModel
 from pymongo.database import Database
 import pandas as pd
@@ -40,19 +37,21 @@ class RecipeCreate(BaseModel):
 @router.get("/items", response_model=List[InventoryItem])
 def get_inventory_items(
     current_user: UserInDB = Depends(get_current_user),
-    db: Database = Depends(get_db)
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
 ):
     service = InventoryService(db)
-    return service.get_items(str(current_user.id))
+    return service.get_items(str(current_user.id), case_id)
 
 @router.post("/items", response_model=InventoryItem, status_code=status.HTTP_201_CREATED)
 def create_inventory_item(
     item_in: InventoryItemCreate,
     current_user: UserInDB = Depends(get_current_user),
-    db: Database = Depends(get_db)
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
 ):
     service = InventoryService(db)
-    return service.create_item(str(current_user.id), item_in.model_dump())
+    return service.create_item(str(current_user.id), item_in.model_dump(), case_id)
 
 @router.put("/items/{item_id}", response_model=InventoryItem)
 def update_inventory_item(
@@ -80,8 +79,12 @@ def delete_inventory_item(
 async def import_inventory_items(
     file: UploadFile = File(...),
     current_user: UserInDB = Depends(get_current_user),
-    db: Database = Depends(get_db)
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
 ):
+    # ... (existing import logic unchanged)
+    # At the end, call service.import_items_bulk with case_id
+    # (we'll integrate case_id in the service call)
     content = await file.read()
     filename = file.filename or "unknown.csv"
     
@@ -140,7 +143,7 @@ async def import_inventory_items(
 
     if items_to_create:
         service = InventoryService(db)
-        count = service.import_items_bulk(str(current_user.id), items_to_create)
+        count = service.import_items_bulk(str(current_user.id), items_to_create, case_id)
         return { "items_created": count }
     
     return {"items_created": 0}
@@ -150,19 +153,21 @@ async def import_inventory_items(
 @router.get("/recipes", response_model=List[Recipe])
 def get_recipes(
     current_user: UserInDB = Depends(get_current_user),
-    db: Database = Depends(get_db)
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
 ):
     service = InventoryService(db)
-    return service.get_recipes(str(current_user.id))
+    return service.get_recipes(str(current_user.id), case_id)
 
 @router.post("/recipes", response_model=Recipe, status_code=status.HTTP_201_CREATED)
 def create_recipe(
     recipe_in: RecipeCreate,
     current_user: UserInDB = Depends(get_current_user),
-    db: Database = Depends(get_db)
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
 ):
     service = InventoryService(db)
-    return service.create_recipe(str(current_user.id), recipe_in.model_dump())
+    return service.create_recipe(str(current_user.id), recipe_in.model_dump(), case_id)
 
 @router.put("/recipes/{recipe_id}", response_model=Recipe)
 def update_recipe(
@@ -188,17 +193,15 @@ def delete_recipe(
 async def import_recipes(
     file: UploadFile = File(...),
     current_user: UserInDB = Depends(get_current_user),
-    db: Database = Depends(get_db)
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
 ):
-    """
-    Import Recipes from a CSV file (Product, Ingredient, Quantity).
-    Handles both headered and headerless files.
-    """
+    # ... (existing import logic unchanged)
+    # At the end, call service.import_recipes_bulk with case_id
     content = await file.read()
     filename = file.filename or "unknown.csv"
     
     try:
-        # PHOENIX FIX: Read without assuming headers first
         if filename.endswith('.xlsx'):
             df = pd.read_excel(io.BytesIO(content), header=None)
         else:
@@ -210,17 +213,15 @@ async def import_recipes(
     if df.empty or len(df.columns) < 3:
         raise HTTPException(status_code=400, detail="CSV must have at least 3 columns: Product, Ingredient, Quantity")
         
-    # PHOENIX FIX: Manually assign headers to ensure consistency
     df.columns = ['product_name', 'ingredient_name', 'quantity_required'] + [f'extra_{i}' for i in range(len(df.columns) - 3)]
 
-    # Explicitly create a list of dicts with the correct types to pass to the service
     recipes_data_raw = df.to_dict(orient='records')
     recipes_data: List[Dict[str, Any]] = [
         {str(k): v for k, v in row.items()} for row in recipes_data_raw
     ]
     
     service = InventoryService(db)
-    result = service.import_recipes_bulk(str(current_user.id), recipes_data)
+    result = service.import_recipes_bulk(str(current_user.id), recipes_data, case_id)
     
     return {
         "status": "success",
