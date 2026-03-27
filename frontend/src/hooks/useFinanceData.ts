@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// PHOENIX PROTOCOL - HOOK V4.2 (CLEAN FETCH)
+// PHOENIX PROTOCOL - HOOK V4.3 (RESILIENT FETCH)
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -26,7 +26,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const [inv, exp, ws, pos, analytics] = await Promise.all([
+                const results = await Promise.allSettled([
                     apiService.getInvoices(workspaceId),
                     apiService.getExpenses(workspaceId),
                     apiService.getWorkspaces(),
@@ -34,11 +34,11 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
                     apiService.getAnalyticsDashboard(undefined, selectedYear, workspaceId)
                 ]);
                 if (isMounted) {
-                    setInvoices(inv);
-                    setExpenses(exp);
-                    setWorkspaces(ws);
-                    setPosTransactions(pos);
-                    setAnalyticsData(analytics);
+                    if (results[0].status === 'fulfilled') setInvoices(results[0].value);
+                    if (results[1].status === 'fulfilled') setExpenses(results[1].value);
+                    if (results[2].status === 'fulfilled') setWorkspaces(results[2].value);
+                    if (results[3].status === 'fulfilled') setPosTransactions(results[3].value);
+                    if (results[4].status === 'fulfilled') setAnalyticsData(results[4].value);
                 }
             } catch (e) {
                 if (isMounted) console.error("[Finance Hook] Data load failed:", e);
@@ -63,6 +63,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         setAnalyticsData(analytics);
     }, [selectedYear, workspaceId]);
 
+    // ... rest of the hook (totalExpenses, displayIncome, etc.) unchanged
     const totalExpenses = useMemo(() => 
         expenses.filter(e => new Date(e.date).getFullYear() === selectedYear)
                 .reduce((sum, exp) => sum + exp.amount, 0), 

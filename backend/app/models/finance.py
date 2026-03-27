@@ -1,5 +1,5 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V11.7 (CASE_ID ADDED)
+# PHOENIX PROTOCOL - FINANCE MODELS V11.8 (TOP PRODUCT ITEM DEFAULT)
 
 from pydantic import BaseModel, Field, ConfigDict, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -79,7 +79,7 @@ class InvoiceItem(BaseModel):
 
 class InvoiceBase(BaseModel):
     invoice_number: Optional[str] = None
-    case_id: Optional[str] = None          # <-- ADDED
+    case_id: Optional[str] = None
     client_name: str
     client_email: Optional[str] = None
     client_phone: Optional[str] = None
@@ -100,7 +100,7 @@ class InvoiceBase(BaseModel):
 class InvoiceCreate(InvoiceBase): pass
 
 class InvoiceUpdate(BaseModel):
-    case_id: Optional[str] = None           # <-- ADDED
+    case_id: Optional[str] = None
     client_name: Optional[str] = None
     client_email: Optional[str] = None
     client_phone: Optional[str] = None
@@ -127,7 +127,7 @@ class InvoiceOut(InvoiceInDB):
 
 # --- EXPENSE MODELS ---
 class ExpenseBase(BaseModel):
-    case_id: Optional[str] = None          # <-- ADDED
+    case_id: Optional[str] = None
     category: str
     amount: float
     description: Optional[str] = None
@@ -138,7 +138,7 @@ class ExpenseBase(BaseModel):
 class ExpenseCreate(ExpenseBase): pass
 
 class ExpenseUpdate(BaseModel):
-    case_id: Optional[str] = None          # <-- ADDED
+    case_id: Optional[str] = None
     category: Optional[str] = None
     amount: Optional[float] = None
     is_locked: Optional[bool] = None
@@ -161,7 +161,7 @@ class SalesTrendPoint(BaseModel):
 
 class TopProductItem(BaseModel):
     product_name: str
-    total_quantity: float
+    total_quantity: float = 0.0  # PHOENIX: Default added
     total_revenue: float
 
 class AnalyticsDashboardData(BaseModel):

@@ -1,5 +1,5 @@
 # FILE: backend/app/services/analytics_service.py
-# PHOENIX PROTOCOL - ANALYTICS SERVICE V2.3 (SYNC DB)
+# PHOENIX PROTOCOL - ANALYTICS SERVICE V2.4 (PRODUCT STATS FIX)
 
 from typing import Optional, Any, Dict, List
 from datetime import datetime, timedelta
@@ -16,7 +16,6 @@ class AnalyticsService:
         self.sync_db = sync_db
 
     async def get_dashboard_data(self, user_id: str, days: int = 365, year: Optional[int] = None, case_id: Optional[str] = None) -> Dict[str, Any]:
-        # Use a thread to run the sync finance service
         finance_service = FinanceService(self.sync_db)
 
         invoices = await asyncio.to_thread(finance_service.get_invoices, user_id, case_id)
@@ -44,19 +43,30 @@ class AnalyticsService:
         sorted_dates = sorted(sales_trend.keys())
         trend_data = [{"date": d, "amount": sales_trend[d]} for d in sorted_dates]
 
-        product_revenue = {}
+        # PHOENIX: Aggregate both revenue and quantity
+        product_stats = {}
         for inv in period_invoices:
             for item in inv.items:
                 desc = item.description or "Unknown"
-                product_revenue[desc] = product_revenue.get(desc, 0) + item.total
+                if desc not in product_stats:
+                    product_stats[desc] = {"revenue": 0.0, "quantity": 0.0}
+                product_stats[desc]["revenue"] += item.total
+                product_stats[desc]["quantity"] += item.quantity
 
         top_products = sorted(
-            [{"product_name": k, "total_revenue": v} for k, v in product_revenue.items()],
+            [
+                {
+                    "product_name": k,
+                    "total_revenue": v["revenue"],
+                    "total_quantity": v["quantity"]   # Now provided
+                }
+                for k, v in product_stats.items()
+            ],
             key=lambda x: x["total_revenue"],
             reverse=True
         )[:10]
 
-        total_cogs = 0
+        total_cogs = 0  # Placeholder
 
         return {
             "total_revenue_period": total_revenue,
