@@ -1,5 +1,5 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V21.2 (WORKSPACE AWARE)
+// PHOENIX PROTOCOL - INVOICE MODAL V21.3 (WORKSPACE AWARE)
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2, Search } from 'lucide-react';
@@ -77,7 +77,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
             if (invoiceToEdit) {
                 await apiService.updateInvoice(invoiceToEdit.id, payload);
             } else {
-                await apiService.createInvoice(payload, workspace?.id);
+                await apiService.createInvoice(payload, workspace?.id);  // <-- passes workspace ID
             }
             onSuccess(); onClose();
         } catch { alert(t('error.generic')); }
