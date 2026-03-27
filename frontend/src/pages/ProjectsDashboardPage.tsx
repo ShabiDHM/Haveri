@@ -1,9 +1,9 @@
 // FILE: src/pages/ProjectsDashboardPage.tsx
-// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.2 (VISUAL UNIFICATION)
+// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.3 (VISUAL UNIFICATION)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Loader2, FolderOpen, Trash2 } from 'lucide-react';
+import { Plus, Loader2, FolderOpen, Trash2, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -78,51 +78,55 @@ const ProjectsDashboardPage: React.FC = () => {
   const labelClasses = "block text-[11px] font-bold text-primary-start uppercase tracking-widest mb-2 ml-1";
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8 h-full flex flex-col relative bg-canvas">
-      {/* Header */}
-      <div className="flex flex-row justify-between items-end mb-8 gap-4 px-2">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">
-            {t('projectsDashboard.title', 'Projektet e Mia')}
-          </h1>
-          <p className="text-xs sm:text-sm text-text-secondary font-bold mt-1 uppercase tracking-widest opacity-60">
-            {t('projectsDashboard.subtitle', 'Menaxhimi i Projekteve Aktive')}
-          </p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn-primary flex items-center gap-3 px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-[0.1em] active:scale-[0.98] shrink-0 hover-lift shadow-sm"
-        >
-          <Plus size={18} strokeWidth={4} />
-          <span className="hidden sm:inline">{t('projectsDashboard.newProject', 'Projekt i Ri')}</span>
-        </button>
-      </div>
-
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="animate-spin h-12 w-12 text-primary-start" />
-        </div>
-      ) : workspaces.length === 0 ? (
-        <div className="glass-panel flex flex-col items-center justify-center py-24 border border-border-main">
-          <div className="w-20 h-20 bg-surface/50 rounded-3xl flex items-center justify-center mb-6 border border-border-main">
-            <FolderOpen size={40} className="opacity-20 text-text-secondary" />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+      <div className="glass-panel p-6 sm:p-8 md:p-10 space-y-10 border border-border-main shadow-sm">
+        {/* Header Unification */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-8 border-b border-border-main pb-8">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-3xl font-black text-text-primary tracking-tighter uppercase leading-none flex items-center gap-3">
+              <Activity className="text-primary-start" size={28} />
+              {t('projectsDashboard.title', 'Projektet e Mia')}
+            </h2>
+            <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mt-1 ml-10">
+              {t('projectsDashboard.subtitle', 'Menaxhimi i Projekteve Aktive')}
+            </p>
           </div>
-          <p className="font-black uppercase tracking-widest text-xs italic text-text-secondary">
-            {t('projectsDashboard.noProjects', 'Nuk u gjetën projekte aktive.')}
-          </p>
+          
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="btn-primary flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-[0.98] shrink-0 hover-lift shadow-sm"
+          >
+            <Plus size={18} strokeWidth={4} />
+            <span className="hidden sm:inline">{t('projectsDashboard.newProject', 'Projekt i Ri')}</span>
+          </button>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {workspaces.map((workspace: Workspace) => (
-            <WorkspaceCard
-              key={workspace.id}
-              workspace={workspace}
-              onDelete={(id) => setWorkspaceToDelete(id)}
-            />
-          ))}
-        </div>
-      )}
+
+        {/* Content */}
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="animate-spin h-12 w-12 text-primary-start" />
+          </div>
+        ) : workspaces.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-20 h-20 bg-surface/50 rounded-3xl flex items-center justify-center mb-6 border border-border-main">
+              <FolderOpen size={40} className="opacity-20 text-text-secondary" />
+            </div>
+            <p className="font-black uppercase tracking-widest text-xs italic text-text-secondary">
+              {t('projectsDashboard.noProjects', 'Nuk u gjetën projekte aktive.')}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {workspaces.map((workspace: Workspace) => (
+              <WorkspaceCard
+                key={workspace.id}
+                workspace={workspace}
+                onDelete={(id) => setWorkspaceToDelete(id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Create Project Modal */}
       <AnimatePresence>

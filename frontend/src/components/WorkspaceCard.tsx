@@ -1,5 +1,5 @@
 // FILE: src/components/WorkspaceCard.tsx
-// PHOENIX PROTOCOL – WORKSPACE CARD V1.7 (VISUAL UNIFICATION)
+// PHOENIX PROTOCOL – WORKSPACE CARD V1.8 (VISUAL UNIFICATION)
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -56,7 +56,7 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
   return (
     <motion.div 
       onClick={handleCardClick}
-      className="glass-panel group relative flex flex-col justify-between h-full p-6 rounded-2xl hover-lift cursor-pointer border-border-main shadow-sm transition-all duration-300"
+      className="bg-surface/30 backdrop-blur-sm group relative flex flex-col justify-between h-full p-6 rounded-2xl hover-lift cursor-pointer border border-border-main shadow-sm transition-all duration-300"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
