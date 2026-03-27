@@ -1,27 +1,25 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.14 (WORKSPACE FILTERING)
-# 1. ADDED: case_id query parameter to /invoices and /expenses for workspace isolation.
-# 2. STATUS: Complete file replacement.
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.16 (WORKSPACE FILTER)
 
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from typing import List, Annotated, Optional, Any
 from pymongo.database import Database
-import pymongo 
+import pymongo
 from pydantic import BaseModel
 
 from app.models.user import UserInDB
 from app.models.finance import (
-    InvoiceCreate, InvoiceOut, InvoiceUpdate, 
+    InvoiceCreate, InvoiceOut, InvoiceUpdate,
     ExpenseCreate, ExpenseOut, ExpenseUpdate,
-    AnalyticsDashboardData, CaseFinancialSummary, PosTransactionOut, 
+    AnalyticsDashboardData, CaseFinancialSummary, PosTransactionOut,
     InvoiceInDB, PartnerOut, PartnerUpdate
 )
-from app.models.archive import ArchiveItemOut 
+from app.models.archive import ArchiveItemOut
 from app.services.finance_service import FinanceService
 from app.services.archive_service import ArchiveService
-from app.services.parsing_service import ParsingService 
+from app.services.parsing_service import ParsingService
 from app.services.graph_service import GraphService
 from app.services import report_service
 from app.services.analytics_service import AnalyticsService
@@ -38,7 +36,6 @@ class BulkDeleteRequest(BaseModel):
 
 @router.get("/partners", response_model=List[PartnerOut])
 def get_partners(current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db)):
-    """Fetches all clients and suppliers for the current context."""
     return FinanceService(db).get_partners(str(current_user.id))
 
 @router.put("/partners/{partner_id}", response_model=PartnerOut)
@@ -48,7 +45,6 @@ def update_partner(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db)
 ):
-    """Updates specific partner details (name, NIPT, contact info)."""
     return FinanceService(db).update_partner(str(current_user.id), partner_id, partner_update)
 
 @router.delete("/partners/{partner_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -57,31 +53,27 @@ def delete_partner(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db)
 ):
-    """Removes a partner from the database."""
     FinanceService(db).delete_partner(str(current_user.id), partner_id)
 
 # --- DATA IMPORT & POS ENDPOINTS ---
 
 @router.post("/import/preview")
 async def preview_import_file(file: UploadFile = File(...), db: Database = Depends(get_db)):
-    """Provides a JSON preview of CSV/Excel data before processing."""
     service = ParsingService(db)
     return await service.preview_file(file)
 
 @router.post("/import/confirm")
 async def confirm_import(
-    current_user: Annotated[UserInDB, Depends(get_current_user)], 
-    file: UploadFile = File(...), 
-    mapping: str = Form(...), 
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    file: UploadFile = File(...),
+    mapping: str = Form(...),
     importType: str = Form('pos'),
     db: Database = Depends(get_db)
 ):
-    """Finalizes data import using user-defined column mapping."""
-    try: 
+    try:
         mapping_dict = json.loads(mapping)
-    except Exception: 
+    except Exception:
         raise HTTPException(status_code=400, detail="Invalid mapping format")
-    
     service = ParsingService(db)
     return await service.process_import(file, str(current_user.id), mapping_dict, import_type=importType)
 
@@ -91,18 +83,20 @@ async def import_clients(
     file: UploadFile = File(...),
     db: Database = Depends(get_db)
 ):
-    """Specialized bulk importer for Partners."""
     return await FinanceService(db).import_partners(str(current_user.id), file)
 
 @router.get("/import/transactions", response_model=List[PosTransactionOut])
 async def get_imported_transactions(
     current_user: Annotated[UserInDB, Depends(get_current_active_user)],
-    db: Any = Depends(get_async_db)
+    db: Any = Depends(get_async_db),
+    case_id: Optional[str] = Query(None)
 ):
-    """Retrieves raw transactions stored in the operational collection."""
     user_id_str = str(current_user.id)
-    cursor = db["transactions"].find({"user_id": user_id_str}).sort("date", pymongo.DESCENDING)
-    transactions = await cursor.to_list(length=None) 
+    filter = {"user_id": user_id_str}
+    if case_id:
+        filter["case_id"] = case_id
+    cursor = db["transactions"].find(filter).sort("date", pymongo.DESCENDING)
+    transactions = await cursor.to_list(length=None)
     return transactions
 
 @router.delete("/transactions/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -112,10 +106,9 @@ def delete_transaction(
     db: Database = Depends(get_db),
     graph_service: GraphService = Depends()
 ):
-    """Deletes a single POS/Bank transaction and syncs with the Graph DB."""
     FinanceService(db).delete_pos_transaction(str(current_user.id), transaction_id)
     try:
-        graph_service.delete_node(transaction_id) 
+        graph_service.delete_node(transaction_id)
     except:
         pass
 
@@ -126,15 +119,13 @@ def bulk_delete_transactions(
     db: Database = Depends(get_db),
     graph_service: GraphService = Depends()
 ):
-    """Performs massive cleanup of invoices, expenses, or POS records."""
     service = FinanceService(db)
     deleted_count = service.bulk_delete_transactions(
-        user_id=str(current_user.id), 
+        user_id=str(current_user.id),
         invoice_ids=request.invoice_ids or [],
         expense_ids=request.expense_ids or [],
         pos_ids=request.pos_ids or []
     )
-    
     try:
         if request.invoice_ids:
             for iid in request.invoice_ids: graph_service.delete_node(iid)
@@ -142,28 +133,27 @@ def bulk_delete_transactions(
             for eid in request.expense_ids: graph_service.delete_node(eid)
     except:
         pass
-
     return {"status": "success", "deleted_count": deleted_count}
-
 
 # --- INVOICES (Sales Management) ---
 
 @router.get("/invoices", response_model=List[InvoiceOut])
 def get_invoices(
-    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db),
-    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
+    case_id: Optional[str] = Query(None)
 ):
     return FinanceService(db).get_invoices(str(current_user.id), case_id)
 
 @router.post("/invoices", response_model=InvoiceOut, status_code=status.HTTP_201_CREATED)
 def create_invoice(
-    invoice_in: InvoiceCreate, 
-    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    invoice_in: InvoiceCreate,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db),
-    graph_service: GraphService = Depends()
+    graph_service: GraphService = Depends(),
+    case_id: Optional[str] = Query(None)
 ):
-    new_invoice_db: InvoiceInDB = FinanceService(db).create_invoice(str(current_user.id), invoice_in)
+    new_invoice_db: InvoiceInDB = FinanceService(db).create_invoice(str(current_user.id), invoice_in, case_id)
     try:
         graph_service.add_or_update_client_and_invoice(new_invoice_db)
     except:
@@ -176,9 +166,9 @@ def get_invoice_details(invoice_id: str, current_user: Annotated[UserInDB, Depen
 
 @router.put("/invoices/{invoice_id}", response_model=InvoiceOut)
 def update_invoice(
-    invoice_id: str, 
-    invoice_update: InvoiceUpdate, 
-    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    invoice_id: str,
+    invoice_update: InvoiceUpdate,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db),
     graph_service: GraphService = Depends()
 ):
@@ -191,8 +181,8 @@ def update_invoice(
 
 @router.delete("/invoices/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_invoice(
-    invoice_id: str, 
-    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    invoice_id: str,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db),
     graph_service: GraphService = Depends()
 ):
@@ -204,7 +194,6 @@ def delete_invoice(
 
 @router.get("/invoices/{invoice_id}/pdf")
 def download_invoice_pdf(invoice_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db), lang: Optional[str] = Query("sq")):
-    """Generates and streams a PDF for download."""
     service = FinanceService(db)
     invoice = service.get_invoice(str(current_user.id), invoice_id)
     pdf_buffer = report_service.generate_invoice_pdf(invoice, db, str(current_user.id), lang=lang or "sq")
@@ -214,47 +203,45 @@ def download_invoice_pdf(invoice_id: str, current_user: Annotated[UserInDB, Depe
 
 @router.post("/invoices/{invoice_id}/archive", response_model=ArchiveItemOut)
 async def archive_invoice(invoice_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db), case_id: Optional[str] = Query(None), lang: Optional[str] = Query("sq")):
-    """Converts invoice to PDF and saves it to the Archive / Workspace."""
     finance_service = FinanceService(db)
     archive_service_instance = ArchiveService(db)
     invoice = finance_service.get_invoice(str(current_user.id), invoice_id)
     pdf_buffer = report_service.generate_invoice_pdf(invoice, db, str(current_user.id), lang=lang or "sq")
     pdf_content = pdf_buffer.getvalue()
-    
     archived_item = await archive_service_instance.save_generated_file(
-        user_id=str(current_user.id), 
-        filename=f"Fatura_{invoice.invoice_number}.pdf", 
-        file_content=pdf_content, 
-        category="INVOICE", 
-        title=f"Fatura #{invoice.invoice_number} - {invoice.client_name}", 
+        user_id=str(current_user.id),
+        filename=f"Fatura_{invoice.invoice_number}.pdf",
+        file_content=pdf_content,
+        category="INVOICE",
+        title=f"Fatura #{invoice.invoice_number} - {invoice.client_name}",
         case_id=case_id
     )
     return archived_item
-
 
 # --- EXPENSES (Accounts Payable) ---
 
 @router.post("/expenses", response_model=ExpenseOut, status_code=status.HTTP_201_CREATED)
 def create_expense(
-    expense_in: ExpenseCreate, 
-    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    expense_in: ExpenseCreate,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db),
-    graph_service: GraphService = Depends()
+    graph_service: GraphService = Depends(),
+    case_id: Optional[str] = Query(None)
 ):
-    return FinanceService(db).create_expense(str(current_user.id), expense_in)
+    return FinanceService(db).create_expense(str(current_user.id), expense_in, case_id)
 
 @router.get("/expenses", response_model=List[ExpenseOut])
 def get_expenses(
-    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db),
-    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
+    case_id: Optional[str] = Query(None)
 ):
     return FinanceService(db).get_expenses(str(current_user.id), case_id)
 
 @router.delete("/expenses/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_expense(
-    expense_id: str, 
-    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    expense_id: str,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db),
     graph_service: GraphService = Depends()
 ):
@@ -264,14 +251,14 @@ def delete_expense(
     except:
         pass
 
-# --- ANALYTICS ENDPOINT (PHOENIX: FISCAL YEAR SUPPORTED) ---
+# --- ANALYTICS ENDPOINT (FISCAL YEAR SUPPORTED, WORKSPACE FILTER) ---
 @router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
 async def get_dashboard_data(
-    current_user: Annotated[UserInDB, Depends(get_current_user)], 
-    db: Any = Depends(get_async_db), 
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    db: Any = Depends(get_async_db),
     days: int = 365,
-    year: Optional[int] = Query(None) # PHOENIX: Support for explicit fiscal year
+    year: Optional[int] = Query(None),
+    case_id: Optional[str] = Query(None)
 ):
-    """Handles context-aware dashboard data."""
     analytics_service = AnalyticsService(db)
-    return await analytics_service.get_dashboard_data(user_id=str(current_user.id), days=days, year=year)
+    return await analytics_service.get_dashboard_data(user_id=str(current_user.id), days=days, year=year, case_id=case_id)

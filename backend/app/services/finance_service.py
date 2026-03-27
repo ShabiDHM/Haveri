@@ -1,5 +1,5 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V7.6 (WORKSPACE FILTERING FOR POS)
+# PHOENIX PROTOCOL - FINANCE SERVICE V7.8 (CASE_ID IN CREATE)
 
 import logging
 import csv
@@ -11,7 +11,7 @@ from fastapi import HTTPException, UploadFile
 from typing import Any, List, Dict, Optional
 
 from app.models.finance import (
-    InvoiceCreate, InvoiceInDB, InvoiceUpdate, InvoiceItem, 
+    InvoiceCreate, InvoiceInDB, InvoiceUpdate, InvoiceItem,
     ExpenseCreate, ExpenseInDB, ExpenseUpdate, PartnerInDB, PartnerUpdate
 )
 
@@ -22,18 +22,17 @@ class FinanceService:
         self.db = db
 
     def _get_resilient_filter(self, context_id: str) -> Dict:
-        """Matches data belonging to either the specific User or the Organization ID."""
         try:
             oid = ObjectId(context_id)
             return {"$or": [
-                {"user_id": context_id}, 
-                {"user_id": oid}, 
-                {"organization_id": context_id}, 
+                {"user_id": context_id},
+                {"user_id": oid},
+                {"organization_id": context_id},
                 {"organization_id": oid}
             ]}
         except:
             return {"$or": [
-                {"user_id": context_id}, 
+                {"user_id": context_id},
                 {"organization_id": context_id}
             ]}
 
@@ -82,7 +81,6 @@ class FinanceService:
     # --- POS / TRANSACTION LOGIC ---
 
     async def get_monthly_pos_revenue(self, async_db: Any, user_id: str, month: int, year: int, case_id: Optional[str] = None) -> float:
-        """Aggregates POS revenue for a specific month, optionally filtered by workspace."""
         try:
             start_date = datetime(year, month, 1)
             end_date = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
@@ -128,15 +126,16 @@ class FinanceService:
         subtotal = sum(item.quantity * item.unit_price for item in data.items)
         invoice_doc = data.model_dump()
         invoice_doc.update({
-            "user_id": ObjectId(user_id), 
-            "invoice_number": self._generate_invoice_number(user_id), 
-            "subtotal": subtotal, 
-            "total_amount": subtotal + (subtotal * data.tax_rate / 100), 
+            "user_id": ObjectId(user_id),
+            "invoice_number": self._generate_invoice_number(user_id),
+            "subtotal": subtotal,
+            "total_amount": subtotal + (subtotal * data.tax_rate / 100),
             "created_at": datetime.now(timezone.utc)
         })
         if case_id:
             invoice_doc["case_id"] = case_id
-        res = self.db.invoices.insert_one(invoice_doc); invoice_doc["_id"] = res.inserted_id
+        res = self.db.invoices.insert_one(invoice_doc)
+        invoice_doc["_id"] = res.inserted_id
         return InvoiceInDB(**invoice_doc)
 
     def get_invoices(self, context_id: str, case_id: Optional[str] = None) -> list[InvoiceInDB]:
