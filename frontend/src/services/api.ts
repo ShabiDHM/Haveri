@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V14.6 (ADDED LAW LIBRARY METHODS)
+// PHOENIX PROTOCOL - API V14.7 (PUBLIC LAW ENDPOINTS)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -464,64 +464,62 @@ class ApiService {
         } as AsyncIterable<string>;
     }
 
-    // ========== LAW LIBRARY METHODS ==========
+    // ========== LAW LIBRARY METHODS (PUBLIC ENDPOINTS) ==========
 
     /**
-     * Search laws by query
+     * Search laws by query (public endpoint)
      */
     public async searchLaws(query: string, jurisdiction?: string, limit: number = 50): Promise<LawSearchResult[]> {
         const params: any = { q: query, limit };
         if (jurisdiction) params.jurisdiction = jurisdiction;
-        const response = await this.axiosInstance.get('/laws/search', { params });
+        const response = await this.axiosInstance.get('/legal/public/laws/search', { params });
         return response.data;
     }
 
     /**
-     * Get law by chunk ID
+     * Get law by chunk ID (public endpoint)
      */
     public async getLawByChunkId(chunkId: string): Promise<LawArticle> {
-        const response = await this.axiosInstance.get(`/laws/${chunkId}`);
+        const response = await this.axiosInstance.get(`/legal/public/laws/${chunkId}`);
         return response.data;
     }
 
     /**
-     * Get law article by title and article number
+     * Get law article by title and article number (public endpoint)
      */
     public async getLawArticle(lawTitle: string, articleNumber: string): Promise<LawArticle> {
-        const response = await this.axiosInstance.get('/laws/article', {
+        const response = await this.axiosInstance.get('/legal/public/laws/article', {
             params: { law_title: lawTitle, article_number: articleNumber }
         });
         return response.data;
     }
 
     /**
-     * Get all articles for a law title
+     * Get all articles for a law title (public endpoint)
      */
     public async getLawArticlesByTitle(lawTitle: string): Promise<LawOverview> {
-        const response = await this.axiosInstance.get('/laws/by-title', {
+        const response = await this.axiosInstance.get('/legal/public/laws/by-title', {
             params: { law_title: lawTitle }
         });
         return response.data;
     }
 
     /**
-     * Get all law titles (list of unique law names)
+     * Get all law titles (public endpoint)
      */
     public async getLawTitles(): Promise<string[]> {
-        const response = await this.axiosInstance.get('/laws/titles');
+        const response = await this.axiosInstance.get('/legal/public/laws/titles');
         return response.data;
     }
 
     /**
-     * Stream AI explanation for a law article
+     * Stream AI explanation for a law article (public endpoint)
      */
     public async *explainLawStream(lawTitle: string, articleNumber: string, articleText: string): AsyncGenerator<string, void, unknown> {
-        const token = tokenManager.get();
-        if (!token) await this.refreshToken();
-
+        const token = tokenManager.get(); // optional for public, but may be needed for rate limiting
         const prompt = `Ligji: "${lawTitle}"\nNeni: ${articleNumber}\n\nPërmbajtja e Nenit:\n${articleText}`;
 
-        const response = await fetch(`${API_V1_URL}/laws/explain`, {
+        const response = await fetch(`${API_V1_URL}/legal/public/laws/explain`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
