@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - UNIFIED EXECUTIVE PANEL V2 (with Library container)
+// PHOENIX PROTOCOL - CLEAN LAYOUT (Header only glass, content on canvas)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -119,8 +119,8 @@ const DraftingPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 flex flex-col h-full">
         <style>{lawyerGradeStyles}</style>
 
-        {/* PHOENIX DIRECTIVE: Unified Executive Header & Toggle */}
-        <div className="glass-panel p-6 sm:p-8 mb-8 border border-border-main flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
+        {/* PHOENIX DIRECTIVE: Unified Executive Header (glass-panel) */}
+        <div className="glass-panel p-6 sm:p-8 mb-6 border border-border-main flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm border border-primary-start/20">
               {activeMode === 'drafting' ? <PenTool size={24} /> : <BookOpen size={24} />}
@@ -160,7 +160,7 @@ const DraftingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Conditional Content */}
+        {/* Conditional Content - no extra glass-panel wrapper */}
         {activeMode === 'drafting' ? (
           <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 flex-1 lg:h-[750px] min-h-0 pointer-events-auto">
             <div className="h-full overflow-y-auto custom-scrollbar">
@@ -189,10 +189,7 @@ const DraftingPage: React.FC = () => {
           </div>
         ) : (
           <div className="flex-1 lg:h-[750px] overflow-hidden">
-            {/* PHOENIX DIRECTIVE: This glass-panel creates the unified 'Tray' look */}
-            <div className="glass-panel w-full h-full overflow-hidden border border-border-main shadow-sm">
-              <LawSearchPage />
-            </div>
+            <LawSearchPage />
           </div>
         )}
       </div>
