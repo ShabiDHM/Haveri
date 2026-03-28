@@ -1,8 +1,6 @@
 // FILE: src/components/business/finance/TransactionList.tsx
 // PHOENIX PROTOCOL - UNIFIED BULK DELETE V11.1 (EXECUTIVE DESIGN SYSTEM)
-// UPDATED: Converted to semantic Tailwind classes (glass-panel, border-border-main, text-text-*, etc.)
-// ADDED: hover-lift, shadow-sm, consistent backdrop blur.
-// RETAINED: All logic and functionality.
+// FIXED: Argument type error on onViewExpense
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -142,7 +140,6 @@ const DrillDownCardWithDelete: React.FC<{ title: string, total: number, count: n
         </motion.div>
     );
 };
-
 
 export const TransactionList: React.FC<TransactionListProps> = (props) => {
     const { allTransactions, onBulkDelete } = props;
