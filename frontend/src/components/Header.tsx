@@ -1,5 +1,5 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - TOP NAVIGATION LAYOUT V4.2 (ADDED PROJECTS LINK)
+// PHOENIX PROTOCOL - FORTIFIED HEADER OPACITY V2
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -82,7 +82,8 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 md:px-8 py-3 bg-canvas/80 backdrop-blur-xl border-b border-border-main">
+    // PHOENIX DIRECTIVE: Increased opacity from /80 to /95 to prevent text bleed-through
+    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 md:px-8 py-3 bg-canvas/95 backdrop-blur-xl border-b border-border-main">
       
       {/* Left: Brand */}
       <div className="flex items-center gap-3 shrink-0">

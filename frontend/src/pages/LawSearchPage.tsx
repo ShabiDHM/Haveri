@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - EMBEDDED SEARCH PANEL V1
+// PHOENIX PROTOCOL - TYPOGRAPHY STANDARDIZED V1
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -225,10 +225,8 @@ export default function LawSearchPage() {
 
   return (
     <motion.div className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      {/* PHOENIX DIRECTIVE: Glass panel wrapper – no standalone header, no pt-28 */}
       <div className="glass-panel p-6 sm:p-8 border border-border-main shadow-sm flex flex-col gap-8 min-h-[600px]">
         
-        {/* Search Container (no longer floating) */}
         <div className="flex flex-col gap-4 relative isolate z-40">
           <div className="relative z-[60]">
             <button
@@ -326,7 +324,7 @@ export default function LawSearchPage() {
 
         {!loading && groupedResults.length > 0 && (
           <div className="space-y-6">
-            <p className="text-[11px] text-text-muted font-black uppercase tracking-widest ml-2">
+            <p className="text-xs text-text-muted font-black uppercase tracking-widest ml-2">
               {groupedResults.length} {groupedResults.length === 1 ? 'Rezultat i gjetur' : 'Rezultate të gjetura'}
             </p>
             
@@ -335,17 +333,17 @@ export default function LawSearchPage() {
                 <div className="glass-panel p-8 rounded-[1.5rem] hover:shadow-md transition-all group border border-border-main hover:border-primary-start/50 bg-surface hover-lift">
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center flex-wrap gap-2 mb-1">
-                      <span className="bg-primary-start/10 text-primary-start border border-primary-start/20 px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="bg-primary-start/10 text-primary-start border border-primary-start/20 px-3 py-1 rounded-md text-xs font-black uppercase tracking-widest flex items-center gap-1.5">
                         <Scale size={12} /> Referencë Ligjore
                       </span>
-                      <span className="bg-canvas text-text-primary border border-border-main px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest">
+                      <span className="bg-canvas text-text-primary border border-border-main px-3 py-1 rounded-md text-xs font-black uppercase tracking-widest">
                         Neni {article.article_number}
                       </span>
                     </div>
 
                     <button
                       onClick={() => handleViewArticle(article.law_title, article.article_number)}
-                      className="text-xl sm:text-2xl font-black text-text-primary group-hover:text-primary-start transition-colors leading-tight text-left"
+                      className="text-lg sm:text-xl font-black text-text-primary group-hover:text-primary-start transition-colors leading-tight text-left"
                     >
                       {article.law_title}
                     </button>
@@ -360,7 +358,7 @@ export default function LawSearchPage() {
                           {article.source}
                         </span>
                         {article.chunkCount > 1 && (
-                          <span className="px-3 py-1.5 bg-primary-start/10 text-primary-start rounded-lg font-black uppercase tracking-widest">
+                          <span className="px-3 py-1.5 bg-primary-start/10 text-primary-start rounded-lg font-black uppercase tracking-widest text-xs">
                             {article.chunkCount} Pjesë
                           </span>
                         )}
@@ -369,7 +367,7 @@ export default function LawSearchPage() {
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() => handleViewArticle(article.law_title, article.article_number)}
-                          className="text-[11px] font-black uppercase tracking-widest text-primary-start hover:text-white hover:bg-primary-start px-4 py-2 rounded-lg border border-primary-start/30 hover:border-primary-start transition-all flex items-center gap-1.5 hover-lift shadow-sm"
+                          className="text-xs font-black uppercase tracking-widest text-primary-start hover:text-white hover:bg-primary-start px-4 py-2 rounded-lg border border-primary-start/30 hover:border-primary-start transition-all flex items-center gap-1.5 hover-lift shadow-sm"
                         >
                           {t('lawSearch.viewDetails', 'Lexo Nenin')} <ChevronRight size={14} />
                         </button>
