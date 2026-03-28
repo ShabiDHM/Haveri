@@ -14,6 +14,19 @@ interface ArticleData {
   text: string;
 }
 
+// ========== PHOENIX: NORMALIZE TEXT FOR PROFESSIONAL READING ==========
+// Replaces single newlines with spaces while preserving paragraphs (double newlines)
+const normalizeText = (raw: string): string => {
+  // First, replace all instances of \n\n with a placeholder to protect them
+  const paragraphs = raw.split(/\n\n+/);
+  // Within each paragraph, replace single newlines with a space
+  const normalizedParagraphs = paragraphs.map(para =>
+    para.replace(/\n/g, ' ').trim()
+  );
+  // Join paragraphs with double newline for proper spacing
+  return normalizedParagraphs.filter(p => p.length > 0).join('\n\n');
+};
+
 // ========== PHOENIX: LIGHTWEIGHT MARKDOWN RENDERER ==========
 const renderMarkdown = (text: string) => {
     if (!text) return null;
@@ -85,12 +98,13 @@ export default function LawArticlePage() {
     }
     apiService.getLawArticle(lawTitle, articleNumber)
       .then((data: LawArticle) => {
-        // Map API response to ensure article_number is a string
+        // Normalize the article text to remove unwanted line breaks
+        const normalizedText = normalizeText(data.text);
         setArticle({
           law_title: data.law_title,
           article_number: data.article_number || '',
           source: data.source,
-          text: data.text,
+          text: normalizedText,
         });
       })
       .catch((err) => {
@@ -205,16 +219,16 @@ export default function LawArticlePage() {
               </div>
             </div>
 
-            {/* PHOENIX DIRECTIVE: Optimized Reading Surface */}
+            {/* PHOENIX: Optimized Reading Surface – normalized text, justified, continuous flow */}
             <div className="bg-surface/50 px-8 sm:px-12 py-12 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
               <div className="max-w-[75ch] mx-auto">
-                <div className="text-base sm:text-lg text-text-primary leading-relaxed font-medium whitespace-pre-line text-justify">
+                <div className="text-base sm:text-lg text-text-primary leading-relaxed font-medium whitespace-pre-wrap text-justify">
                   {article.text}
                 </div>
               </div>
             </div>
 
-            {/* AI PERSPECTIVE AREA */}
+            {/* AI PERSPECTIVE AREA (unchanged) */}
             <AnimatePresence>
               {(rawExplanation || isExplaining || aiError) && (
                 <motion.div
