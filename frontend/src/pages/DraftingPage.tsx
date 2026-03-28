@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V9.6 (UPDATED TOGGLE TEXT)
+// PHOENIX PROTOCOL - UNIFIED EXECUTIVE PANEL V1
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -115,41 +115,47 @@ const DraftingPage: React.FC = () => {
   };
 
   return (
-    <motion.div className="w-full min-h-screen pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 flex flex-col h-full">
+    <motion.div className="w-full min-h-screen pb-12 bg-canvas" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 flex flex-col h-full">
         <style>{lawyerGradeStyles}</style>
 
-        {/* Header with Toggle */}
-        <div className="flex items-center justify-between mb-6 ml-2 shrink-0">
-          <div className="flex items-center gap-3">
-            <PenTool className="text-primary-start" size={24} />
-            <h2 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tighter uppercase leading-none">
-              {t('drafting.title')}
-            </h2>
+        {/* PHOENIX DIRECTIVE: Unified Executive Header & Toggle */}
+        <div className="glass-panel p-6 sm:p-8 mb-8 border border-border-main flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm border border-primary-start/20">
+              {activeMode === 'drafting' ? <PenTool size={24} /> : <BookOpen size={24} />}
+            </div>
+            <div className="flex flex-col gap-1">
+              <h2 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tighter uppercase leading-none">
+                {activeMode === 'drafting' ? t('drafting.title', 'Hartimi Ligjor') : 'Biblioteka e Ligjeve'}
+              </h2>
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mt-1 ml-1">
+                {activeMode === 'drafting' ? 'Gjenerim Inteligjent i Dokumenteve' : 'Hulumtim në bazën ligjore të Kosovës'}
+              </p>
+            </div>
           </div>
-          <div className="flex bg-surface p-1 rounded-xl border border-border-main shadow-sm">
+
+          {/* Toggle matches FinanceTab style */}
+          <div className="w-full sm:w-auto flex bg-surface/50 p-1.5 rounded-2xl gap-1 border border-border-main shadow-inner">
             <button
               onClick={() => handleModeSwitch('drafting')}
-              className={`px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${
+              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
                 activeMode === 'drafting'
-                  ? 'bg-primary-start text-white shadow-sm'
-                  : 'text-text-muted hover:text-text-primary hover:bg-canvas'
+                  ? 'bg-primary-start text-white shadow-md'
+                  : 'text-text-muted hover:text-text-primary hover:bg-hover'
               }`}
             >
-              Hartim
+              <span className="flex items-center justify-center gap-2"><PenTool size={14} /> Hartim</span>
             </button>
             <button
               onClick={() => handleModeSwitch('library')}
-              className={`px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${
+              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
                 activeMode === 'library'
-                  ? 'bg-primary-start text-white shadow-sm'
-                  : 'text-text-muted hover:text-text-primary hover:bg-canvas'
+                  ? 'bg-primary-start text-white shadow-md'
+                  : 'text-text-muted hover:text-text-primary hover:bg-hover'
               }`}
             >
-              <span className="flex items-center gap-1">
-                <BookOpen size={16} />
-                Biblioteka e Ligjeve
-              </span>
+              <span className="flex items-center justify-center gap-2"><BookOpen size={14} /> Biblioteka</span>
             </button>
           </div>
         </div>
