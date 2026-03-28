@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V8.0 (Solid background, no glass)
+// PHOENIX PROTOCOL - RESULT PANEL V7.9 (CLEANED IMPORTS, SINGLE BRAIN ICON)
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,7 +38,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   const actionButtonBase = "p-3 bg-surface border border-border-main text-text-primary hover:text-primary-start hover:border-primary-start/50 rounded-xl transition-all shadow-sm hover:shadow-md hover-lift disabled:opacity-30 disabled:hover:shadow-none pointer-events-auto";
 
   return (
-    <div className="bg-card border border-border-main rounded-3xl p-0 flex flex-col h-auto lg:h-[700px] shadow-sm relative group overflow-visible">
+    <div className="glass-panel border border-border-main rounded-3xl p-0 flex flex-col h-auto lg:h-[700px] shadow-sm relative group overflow-visible">
       {/* Absolute hover border – sits above everything */}
       <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none z-[200]" />
 

@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V7.7 (Solid background, no glass)
+// PHOENIX PROTOCOL - CONFIG PANEL V7.6 (Fixed dropdown opacity)
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw, ChevronDown } from 'lucide-react';
@@ -80,7 +80,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   const isButtonDisabled = isSubmitting || !context.trim();
 
   return (
-    <div className="bg-card border border-border-main rounded-3xl p-6 sm:p-8 flex flex-col h-auto lg:h-[700px] shrink-0 shadow-sm transition-all duration-300 relative group pointer-events-auto z-10">
+    <div className="glass-panel border border-border-main rounded-3xl p-6 sm:p-8 flex flex-col h-auto lg:h-[700px] shrink-0 shadow-sm transition-all duration-300 relative group pointer-events-auto z-10">
       {/* Absolute hover border – never clipped */}
       <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none" />
 
@@ -126,6 +126,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
             {isOpen && isPro && (
               <div
                 ref={dropdownRef}
+                // FIX: replaced bg-card with solid light/dark background
                 className="absolute z-[9999] mt-1 w-full bg-white dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar"
               >
                 <div
@@ -136,6 +137,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                 </div>
                 {templateGroups.map((group) => (
                   <div key={group.label}>
+                    {/* FIX: solid background for sticky header */}
                     <div className="px-4 py-1.5 text-xs font-black uppercase tracking-widest text-text-muted bg-gray-50 dark:bg-gray-800 sticky top-0 z-10 border-y border-border-main/50">
                       {group.label}
                     </div>
