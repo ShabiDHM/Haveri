@@ -1,7 +1,9 @@
 # FILE: backend/app/api/endpoints/finance.py
 # PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.17 (ANALYTICS FIX)
+# ADDED DEBUG LOGGING FOR get_imported_transactions
 
 import json
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from typing import List, Annotated, Optional, Any
@@ -92,9 +94,23 @@ async def get_imported_transactions(
     case_id: Optional[str] = Query(None)
 ):
     user_id_str = str(current_user.id)
+    
+    # --- DEBUG LOGGING START ---
+    logger = logging.getLogger(__name__)
+    logger.info(f"[DEBUG] get_imported_transactions: user_id={user_id_str}, case_id={case_id}")
+    # Count total POS transactions for this user (no case filter)
+    total_user_transactions = await db["transactions"].count_documents({"user_id": user_id_str})
+    logger.info(f"[DEBUG] Total POS transactions for user (no case filter): {total_user_transactions}")
+    # --- END DEBUG LOGGING ---
+    
     filter = {"user_id": user_id_str}
     if case_id:
         filter["case_id"] = case_id
+        logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
+    
+    filtered_count = await db["transactions"].count_documents(filter)
+    logger.info(f"[DEBUG] POS transactions after filter: {filtered_count}")
+    
     cursor = db["transactions"].find(filter).sort("date", pymongo.DESCENDING)
     transactions = await cursor.to_list(length=None)
     return transactions

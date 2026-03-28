@@ -1,5 +1,6 @@
 # FILE: backend/app/services/finance_service.py
 # PHOENIX PROTOCOL - FINANCE SERVICE V7.8 (CASE_ID IN CREATE)
+# ADDED DEBUG LOGGING FOR get_invoices & get_expenses
 
 import logging
 import csv
@@ -139,9 +140,22 @@ class FinanceService:
         return InvoiceInDB(**invoice_doc)
 
     def get_invoices(self, context_id: str, case_id: Optional[str] = None) -> list[InvoiceInDB]:
+        # --- DEBUG LOGGING START ---
+        logger.info(f"[DEBUG] get_invoices called with context_id={context_id}, case_id={case_id}")
+        # Count total documents for this user (without case filter)
+        total_user_invoices = self.db.invoices.count_documents(self._get_resilient_filter(context_id))
+        logger.info(f"[DEBUG] Total invoices for user (no case filter): {total_user_invoices}")
+        # --- END DEBUG LOGGING ---
+
         query = self._get_resilient_filter(context_id)
         if case_id:
             query["case_id"] = case_id
+            logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
+
+        # Count after filter
+        filtered_count = self.db.invoices.count_documents(query)
+        logger.info(f"[DEBUG] Invoices after filter: {filtered_count}")
+
         cursor = self.db.invoices.find(query).sort("created_at", -1)
         return [InvoiceInDB(**doc) for doc in cursor]
 
@@ -176,9 +190,20 @@ class FinanceService:
         return ExpenseInDB(**doc)
 
     def get_expenses(self, context_id: str, case_id: Optional[str] = None) -> list[ExpenseInDB]:
+        # --- DEBUG LOGGING START ---
+        logger.info(f"[DEBUG] get_expenses called with context_id={context_id}, case_id={case_id}")
+        total_user_expenses = self.db.expenses.count_documents(self._get_resilient_filter(context_id))
+        logger.info(f"[DEBUG] Total expenses for user (no case filter): {total_user_expenses}")
+        # --- END DEBUG LOGGING ---
+
         query = self._get_resilient_filter(context_id)
         if case_id:
             query["case_id"] = case_id
+            logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
+
+        filtered_count = self.db.expenses.count_documents(query)
+        logger.info(f"[DEBUG] Expenses after filter: {filtered_count}")
+
         cursor = self.db.expenses.find(query).sort("date", -1)
         return [ExpenseInDB(**doc) for doc in cursor]
 
