@@ -1,6 +1,5 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTES V2.2 (ADDED PROJECTS DASHBOARD)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - ROUTES V2.3 (ADDED LAW ARTICLE ROUTE)
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -23,7 +22,8 @@ import ClientPortalPage from './pages/ClientPortalPage';
 import { IntegrationsPage } from './pages/IntegrationsPage';
 import MobileUploadPage from './pages/MobileUploadPage';
 import { ProfileTab } from './components/business/ProfileTab';
-import ProjectsDashboardPage from './pages/ProjectsDashboardPage'; // NEW
+import ProjectsDashboardPage from './pages/ProjectsDashboardPage';
+import LawArticlePage from './pages/LawArticlePage'; // NEW
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -57,9 +57,14 @@ const AppRoutes: React.FC = () => {
       <Route path="/finance/wizard" element={<ProtectedRoute><FinanceWizardPage /></ProtectedRoute>} />
       <Route path="/mobile-upload/:token" element={<MobileUploadPage />} />
 
+      {/* Law article route - standalone but with sidebar (inside MainLayout) */}
+      <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+        <Route path="/law-article" element={<LawArticlePage />} />
+      </Route>
+
       {/* Standard Protected Routes (With Sidebar) */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-        <Route path="/projects" element={<ProjectsDashboardPage />} /> {/* NEW */}
+        <Route path="/projects" element={<ProjectsDashboardPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/account" element={<AccountPage />} />

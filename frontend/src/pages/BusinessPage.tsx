@@ -7,7 +7,7 @@ import { ProfileTab } from '../components/business/ProfileTab';
 import { FinanceTab } from '../components/business/FinanceTab';
 import { ArchiveTab } from '../components/business/ArchiveTab';
 import { InventoryTab } from '../components/business/InventoryTab';
-import LegalDraftingTab from '../components/business/LegalDraftingTab';  // default import
+import LegalDraftingTab from '../components/business/LegalDraftingTab';
 import { InsightsTab } from '../components/business/InsightsTab';
 import { InboxTab } from '../components/business/InboxTab';
 

@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V14.5 (FORENSIC ACCOUNTANT WORKSPACE FILTER)
+// PHOENIX PROTOCOL - API V14.6 (ADDED LAW LIBRARY METHODS)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -32,6 +32,30 @@ interface DocumentContentResponse { text: string; }
 export interface TaxAuditResult { anomalies: string[]; status: 'CLEAR' | 'WARNING' | 'CRITICAL'; net_obligation: number; }
 export interface KpiInsightResponse { summary: string; key_contributors: string[]; }
 export interface GeneralInsightResponse { insight: string; sentiment: 'positive' | 'negative' | 'neutral'; }
+
+// Law-related types
+export interface LawArticle {
+  law_title: string;
+  article_number?: string;
+  source: string;
+  text: string;
+  chunk_id?: string;
+}
+
+export interface LawOverview {
+  law_title: string;
+  source: string;
+  article_count: number;
+  articles: string[];
+}
+
+export interface LawSearchResult {
+  law_title: string;
+  article_number?: string;
+  source: string;
+  text: string;
+  chunk_id: string;
+}
 
 export const AUTH_TOKEN_KEY = 'haveri_access_token';
 
@@ -438,6 +462,88 @@ class ApiService {
                 };
             }
         } as AsyncIterable<string>;
+    }
+
+    // ========== LAW LIBRARY METHODS ==========
+
+    /**
+     * Search laws by query
+     */
+    public async searchLaws(query: string, jurisdiction?: string, limit: number = 50): Promise<LawSearchResult[]> {
+        const params: any = { q: query, limit };
+        if (jurisdiction) params.jurisdiction = jurisdiction;
+        const response = await this.axiosInstance.get('/laws/search', { params });
+        return response.data;
+    }
+
+    /**
+     * Get law by chunk ID
+     */
+    public async getLawByChunkId(chunkId: string): Promise<LawArticle> {
+        const response = await this.axiosInstance.get(`/laws/${chunkId}`);
+        return response.data;
+    }
+
+    /**
+     * Get law article by title and article number
+     */
+    public async getLawArticle(lawTitle: string, articleNumber: string): Promise<LawArticle> {
+        const response = await this.axiosInstance.get('/laws/article', {
+            params: { law_title: lawTitle, article_number: articleNumber }
+        });
+        return response.data;
+    }
+
+    /**
+     * Get all articles for a law title
+     */
+    public async getLawArticlesByTitle(lawTitle: string): Promise<LawOverview> {
+        const response = await this.axiosInstance.get('/laws/by-title', {
+            params: { law_title: lawTitle }
+        });
+        return response.data;
+    }
+
+    /**
+     * Get all law titles (list of unique law names)
+     */
+    public async getLawTitles(): Promise<string[]> {
+        const response = await this.axiosInstance.get('/laws/titles');
+        return response.data;
+    }
+
+    /**
+     * Stream AI explanation for a law article
+     */
+    public async *explainLawStream(lawTitle: string, articleNumber: string, articleText: string): AsyncGenerator<string, void, unknown> {
+        const token = tokenManager.get();
+        if (!token) await this.refreshToken();
+
+        const prompt = `Ligji: "${lawTitle}"\nNeni: ${articleNumber}\n\nPërmbajtja e Nenit:\n${articleText}`;
+
+        const response = await fetch(`${API_V1_URL}/laws/explain`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ prompt, law_title: lawTitle, article_number: articleNumber })
+        });
+
+        if (!response.ok) throw new Error("AI Explanation request failed.");
+        if (!response.body) return;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                yield decoder.decode(value, { stream: true });
+            }
+        } finally {
+            reader.releaseLock();
+        }
     }
 }
 
