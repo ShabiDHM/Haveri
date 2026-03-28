@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V9.0 (INTEGRATED LAW LIBRARY TOGGLE)
+// PHOENIX PROTOCOL - DRAFTING PAGE V9.1 (VISIBLE TOGGLE, DEFAULT DRAFTING)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -107,7 +107,7 @@ const DraftingPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Determine initial mode from location state (when returning from law article)
+  // Determine initial mode: default to 'drafting' unless explicitly set to 'library' in state
   const initialMode = (location.state as any)?.activeMode === 'library' ? 'library' : 'drafting';
   const [activeMode, setActiveMode] = useState<Mode>(initialMode);
 
