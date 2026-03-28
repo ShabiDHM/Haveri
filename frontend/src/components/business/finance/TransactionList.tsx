@@ -1,5 +1,5 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// REFACTORED: Flat list only, safe date parsing, all callbacks preserved
+// FLAT LIST VERSION – no hierarchy, just a simple scrollable list
 
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,13 +43,13 @@ interface TransactionListProps {
 // Helpers
 // -----------------------------------------------------------------------------
 
-/**
- * Safely parses a date string.
- * Returns a valid Date object, falling back to the current date/time if invalid.
- */
-const safeDate = (d: string): Date => {
-    const date = new Date(d);
-    return isNaN(date.getTime()) ? new Date() : date;
+const safeDate = (dateStr: string): Date => {
+    try {
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? new Date() : d;
+    } catch {
+        return new Date();
+    }
 };
 
 const getCategoryIcon = (category: string) => {
@@ -66,7 +66,7 @@ const getCategoryIcon = (category: string) => {
 };
 
 // -----------------------------------------------------------------------------
-// TransactionCard Component (unchanged, fully functional)
+// TransactionCard Component (unchanged)
 // -----------------------------------------------------------------------------
 
 const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListProps }> = ({ tx, props }) => {
@@ -133,14 +133,14 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
 };
 
 // -----------------------------------------------------------------------------
-// Main TransactionList Component – Flat List, No Drill‑Down
+// Main TransactionList – Flat List
 // -----------------------------------------------------------------------------
 
 export const TransactionList: React.FC<TransactionListProps> = (props) => {
     const { allTransactions } = props;
     const { t } = useTranslation();
 
-    // Sort transactions by date (newest first) using safeDate
+    // Optional: sort by date (newest first) using safeDate
     const sortedTransactions = useMemo(() => {
         return [...allTransactions].sort((a, b) => {
             const dateA = safeDate(a.date);
@@ -149,7 +149,6 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         });
     }, [allTransactions]);
 
-    // Empty state
     if (allTransactions.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-64 text-text-muted">
