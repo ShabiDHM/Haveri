@@ -1,4 +1,4 @@
-// FILE: src/pages/LawArticlePage.tsx (Second App – Final with TypeScript fix)
+// FILE: src/pages/LawArticlePage.tsx
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -147,8 +147,6 @@ export default function LawArticlePage() {
     );
   }
 
-  const paragraphs = article.text.split('\n\n').filter(p => p.trim() !== '');
-
   return (
     <motion.div
       className="w-full min-h-screen pt-24 pb-12 bg-canvas flex flex-col"
@@ -207,14 +205,12 @@ export default function LawArticlePage() {
               </div>
             </div>
 
-            {/* Reading Surface */}
+            {/* PHOENIX DIRECTIVE: Optimized Reading Surface */}
             <div className="bg-surface/50 px-8 sm:px-12 py-12 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
               <div className="max-w-[75ch] mx-auto">
-                {paragraphs.map((para, idx) => (
-                  <p key={idx} className="mb-6 text-base sm:text-lg text-text-primary leading-relaxed font-medium whitespace-pre-wrap">
-                    {para}
-                  </p>
-                ))}
+                <div className="text-base sm:text-lg text-text-primary leading-relaxed font-medium whitespace-pre-line text-justify">
+                  {article.text}
+                </div>
               </div>
             </div>
 

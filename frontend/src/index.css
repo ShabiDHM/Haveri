@@ -706,4 +706,9 @@
     color: var(--accent-primary);
   }
 
+  /* PHOENIX DIRECTIVE: Professional legal text justification */
+  .text-justify {
+    text-align: justify;
+    text-justify: inter-word;
+  }
 }
