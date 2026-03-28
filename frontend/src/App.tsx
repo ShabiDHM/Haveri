@@ -1,5 +1,5 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTES V2.5 (ADDED LAW OVERVIEW AND VIEWER)
+// PHOENIX PROTOCOL - ROUTES V2.5 (FINAL)
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -24,8 +24,8 @@ import MobileUploadPage from './pages/MobileUploadPage';
 import { ProfileTab } from './components/business/ProfileTab';
 import ProjectsDashboardPage from './pages/ProjectsDashboardPage';
 import LawArticlePage from './pages/LawArticlePage';
-import LawOverviewPage from './pages/LawOverviewPage';   // NEW
-import LawViewerPage from './pages/LawViewerPage';       // NEW
+import LawOverviewPage from './pages/LawOverviewPage';
+import LawViewerPage from './pages/LawViewerPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -52,7 +52,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={isAuthenticated ? <Navigate to="/projects" /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/projects" /> : <RegisterPage />} />
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
-      
       <Route path="/portal/:workspaceId" element={<ClientPortalPage />} />
 
       {/* Standalone Protected Routes (No Sidebar) */}

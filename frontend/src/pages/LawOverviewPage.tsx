@@ -1,5 +1,5 @@
 // FILE: src/pages/LawOverviewPage.tsx
-// PHOENIX PROTOCOL - LAW OVERVIEW V4.1 (ADAPTED FOR SECOND APP)
+// PHOENIX PROTOCOL - LAW OVERVIEW V4.2 (REDIRECT ON MISSING PARAM)
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -29,7 +29,11 @@ export default function LawOverviewPage() {
     if (!lawTitle) {
       setError(t('lawOverview.missingTitle', 'Titulli i ligjit mungon.'));
       setLoading(false);
-      return;
+      // Redirect back to law library after a short delay
+      const timeout = setTimeout(() => {
+        navigate('/business/briefing', { state: { activeMode: 'library' } });
+      }, 2000);
+      return () => clearTimeout(timeout);
     }
     apiService.getLawArticlesByTitle(lawTitle)
       .then((lawData) => {
@@ -45,7 +49,7 @@ export default function LawOverviewPage() {
         setError(err.message || t('lawOverview.fetchError', 'Dështoi ngarkimi i ligjit.'));
       })
       .finally(() => setLoading(false));
-  }, [lawTitle, t]);
+  }, [lawTitle, t, navigate]);
 
   const handleBack = () => {
     navigate('/business/briefing', { state: { activeMode: 'library' } });
