@@ -115,7 +115,7 @@ const DraftingPage: React.FC = () => {
   };
 
   return (
-    <motion.div className="w-full min-h-screen pb-12 bg-canvas" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div className="w-full pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 flex flex-col h-full">
         <style>{lawyerGradeStyles}</style>
 
