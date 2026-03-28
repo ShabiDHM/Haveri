@@ -1,5 +1,5 @@
 // FILE: src/pages/LawArticlePage.tsx
-// PHOENIX PROTOCOL - TYPOGRAPHY STANDARDIZED V1
+// PHOENIX PROTOCOL - ROBUST AI PARSING & MARKDOWN RENDERING V2
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -9,6 +9,33 @@ import { ArrowLeft, Scale, Calendar, AlertCircle, BookOpen, Sparkles, Loader2, X
 import { motion, AnimatePresence } from 'framer-motion';
 
 type ArticleData = LawArticle;
+
+// ========== PHOENIX: LIGHTWEIGHT MARKDOWN RENDERER ==========
+const renderMarkdown = (text: string) => {
+    if (!text) return null;
+    return text.split('\n').map((line, i) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={i} className="h-4" />;
+        
+        // Strip out any redundant LLM headers that may leak into the citizen view
+        if (trimmed.toUpperCase().includes('### NIVELI')) return null;
+        if (trimmed === '---') return null;
+
+        // Parse bold (**text**) and regular text
+        const parts = trimmed.split(/(\*\*.*?\*\*)/g);
+        
+        return (
+            <p key={i} className="mb-4 text-base sm:text-lg text-text-primary leading-relaxed font-medium">
+                {parts.map((part, j) => {
+                    if (part.startsWith('**') && part.endsWith('**')) {
+                        return <strong key={j} className="font-black text-text-primary">{part.slice(2, -2)}</strong>;
+                    }
+                    return <span key={j}>{part}</span>;
+                })}
+            </p>
+        );
+    });
+};
 
 export default function LawArticlePage() {
   const [searchParams] = useSearchParams();
@@ -27,9 +54,18 @@ export default function LawArticlePage() {
   const lawTitle = searchParams.get('lawTitle');
   const articleNumber = searchParams.get('articleNumber');
 
+  // PHOENIX: Robust split logic with fallback for hallucinated separators
   const perspectives = useMemo(() => {
-    const cleanText = rawExplanation.replace(/\n\n---\n\*Kjo përgjigje është gjeneruar nga AI, vetëm për referencë\.\*/g, '');
-    const parts = cleanText.split('[NDARJA]');
+    let cleanText = rawExplanation.replace(/\n\n---\n\*Kjo përgjigje është gjeneruar nga AI, vetëm për referencë\.\*/g, '');
+    
+    // Attempt standard split first
+    let parts = cleanText.split('[NDARJA]');
+    
+    // Fallback: If AI ignored the tag, try splitting by "---" or "### NIVELI 2"
+    if (parts.length < 2) {
+        parts = cleanText.split(/(?:\n---\n|\n### NIVELI 2.*?\n)/i);
+    }
+
     return {
         senior: parts[0] ? parts[0].trim() : '',
         citizen: parts[1] ? parts[1].trim() : ''
@@ -224,15 +260,18 @@ export default function LawArticlePage() {
                       </div>
                     )}
 
+                    {/* PHOENIX: Replaced raw text with markdown renderer */}
                     {rawExplanation && (
-                      <div className="prose prose-sm max-w-none prose-slate min-h-[150px]">
-                        <div className="whitespace-pre-wrap text-text-secondary leading-loose font-medium text-base space-y-4">
-                          {activePerspective === 'senior' 
-                            ? perspectives.senior 
-                            : perspectives.citizen || (isExplaining ? "Duke përgatitur shpjegimin e thjeshtësuar..." : "")
-                          }
-                          {isExplaining && <span className="inline-block w-2 h-5 bg-primary-start animate-pulse ml-1 align-middle" />}
-                        </div>
+                      <div className="min-h-[150px] mt-4">
+                        {activePerspective === 'senior' && renderMarkdown(perspectives.senior)}
+                        
+                        {activePerspective === 'citizen' && (
+                          perspectives.citizen 
+                            ? renderMarkdown(perspectives.citizen) 
+                            : (isExplaining ? <p className="text-text-muted font-bold animate-pulse">Duke përgatitur shpjegimin e thjeshtësuar...</p> : null)
+                        )}
+                        
+                        {isExplaining && <span className="inline-block w-2 h-5 bg-primary-start animate-pulse ml-1 align-middle" />}
                       </div>
                     )}
                     
