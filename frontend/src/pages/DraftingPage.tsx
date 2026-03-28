@@ -1,17 +1,18 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - DRAFTING PAGE V8.3 (INTEGRATED COMPACT HEADER)
+// PHOENIX PROTOCOL - DRAFTING PAGE V9.4 (FIXED UNUSED NAVIGATE)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { PenTool } from 'lucide-react';
+import { PenTool, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { TemplateType, DraftingJobState, NotificationState } from '../drafting/types';
 import { ConfigPanel } from '../drafting/components/ConfigPanel';
 import { ResultPanel } from '../drafting/components/ResultPanel';
 import { constructSmartPrompt } from '../drafting/utils/promptConstructor';
+import LawSearchPage from './LawSearchPage';
 
 const lawyerGradeStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap');
@@ -97,9 +98,15 @@ const lawyerGradeStyles = `
   }
 `;
 
+type Mode = 'drafting' | 'library';
+
 const DraftingPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+
+  const [activeMode, setActiveMode] = useState<Mode>('drafting');
+
+  // Drafting state
   const [context, setContext] = useState(() => localStorage.getItem('drafting_context') || '');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('generic');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -188,45 +195,82 @@ const DraftingPage: React.FC = () => {
     runDraftingStream();
   };
 
+  const handleModeSwitch = (mode: Mode) => {
+    setActiveMode(mode);
+  };
+
   return (
     <motion.div className="w-full min-h-screen pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 flex flex-col h-full">
         <style>{lawyerGradeStyles}</style>
 
-        {/* Phoenix Fix: Integrated Compact Header */}
-        <div className="flex items-center gap-3 mb-6 ml-2 shrink-0">
-          <PenTool className="text-primary-start" size={24} />
-          <h2 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tighter uppercase leading-none">
-            {t('drafting.title')}
-          </h2>
+        {/* Header with Toggle */}
+        <div className="flex items-center justify-between mb-6 ml-2 shrink-0">
+          <div className="flex items-center gap-3">
+            <PenTool className="text-primary-start" size={24} />
+            <h2 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tighter uppercase leading-none">
+              {t('drafting.title')}
+            </h2>
+          </div>
+          <div className="flex bg-surface p-1 rounded-xl border border-border-main shadow-sm">
+            <button
+              onClick={() => handleModeSwitch('drafting')}
+              className={`px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${
+                activeMode === 'drafting'
+                  ? 'bg-primary-start text-white shadow-sm'
+                  : 'text-text-muted hover:text-text-primary hover:bg-canvas'
+              }`}
+            >
+              Hartim
+            </button>
+            <button
+              onClick={() => handleModeSwitch('library')}
+              className={`px-4 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${
+                activeMode === 'library'
+                  ? 'bg-primary-start text-white shadow-sm'
+                  : 'text-text-muted hover:text-text-primary hover:bg-canvas'
+              }`}
+            >
+              <span className="flex items-center gap-1">
+                <BookOpen size={16} />
+                Biblioteka
+              </span>
+            </button>
+          </div>
         </div>
 
-        {/* Main Grid - Added pointer-events-auto */}
-        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 flex-1 lg:h-[750px] min-h-0 pointer-events-auto">
-          <div className="h-full overflow-y-auto custom-scrollbar">
-            <ConfigPanel
-              t={t}
-              isPro={isPro}
-              selectedTemplate={selectedTemplate}
-              context={context}
-              isSubmitting={isSubmitting}
-              onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
-              onChangeContext={setContext}
-              onSubmit={runDraftingStream}
-            />
+        {/* Conditional Content */}
+        {activeMode === 'drafting' ? (
+          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 flex-1 lg:h-[750px] min-h-0 pointer-events-auto">
+            <div className="h-full overflow-y-auto custom-scrollbar">
+              <ConfigPanel
+                t={t}
+                isPro={isPro}
+                selectedTemplate={selectedTemplate}
+                context={context}
+                isSubmitting={isSubmitting}
+                onSelectTemplate={(val: string) => setSelectedTemplate(val as TemplateType)}
+                onChangeContext={setContext}
+                onSubmit={runDraftingStream}
+              />
+            </div>
+            <div className="h-full overflow-y-auto custom-scrollbar">
+              <ResultPanel
+                t={t}
+                currentJob={currentJob}
+                saving={saving}
+                notification={notification}
+                onSave={handleSaveToArchive}
+                onRetry={retry}
+                onClear={clearJob}
+              />
+            </div>
           </div>
-          <div className="h-full overflow-y-auto custom-scrollbar">
-            <ResultPanel
-              t={t}
-              currentJob={currentJob}
-              saving={saving}
-              notification={notification}
-              onSave={handleSaveToArchive}
-              onRetry={retry}
-              onClear={clearJob}
-            />
+        ) : (
+          <div className="w-full">
+            <LawSearchPage />
           </div>
-        </div>
+        )}
       </div>
     </motion.div>
   );
