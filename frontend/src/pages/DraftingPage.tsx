@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - UNIFIED EXECUTIVE PANEL V1
+// PHOENIX PROTOCOL - UNIFIED EXECUTIVE PANEL V2 (with Library container)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -188,8 +188,11 @@ const DraftingPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="w-full">
-            <LawSearchPage />
+          <div className="flex-1 lg:h-[750px] overflow-hidden">
+            {/* PHOENIX DIRECTIVE: This glass-panel creates the unified 'Tray' look */}
+            <div className="glass-panel w-full h-full overflow-hidden border border-border-main shadow-sm">
+              <LawSearchPage />
+            </div>
           </div>
         )}
       </div>

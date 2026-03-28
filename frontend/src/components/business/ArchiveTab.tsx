@@ -1,6 +1,5 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - ARCHIVE TAB V8.3 (EXECUTIVE DESIGN SYSTEM)
-// Three‑tier layering: glass-panel outer, bg-surface/30 panels, bg-canvas inputs.
+// PHOENIX PROTOCOL - UNIFIED SEARCH BAR & GLASS STYLING V1
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -94,7 +93,7 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
                     {loading && <div className="flex justify-start p-4"><Loader2 className="animate-spin text-primary-start" /></div>}
                 </div>
                 <form onSubmit={handleSend} className="p-6 bg-surface/30 backdrop-blur-sm border-t border-border-main flex gap-2">
-                    <input autoFocus type="text" value={input} onChange={(e) => setInput(e.target.value)} className="glass-input flex-1 text-sm border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-canvas" placeholder={t('ai.ask_placeholder')} />
+                    <input autoFocus type="text" value={input} onChange={(e) => setInput(e.target.value)} className="glass-input flex-1 text-sm border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" placeholder={t('ai.ask_placeholder')} />
                     <button type="submit" disabled={loading} className="p-3 bg-primary-start text-white rounded-xl hover-lift shadow-sm"><Send size={20}/></button>
                 </form>
             </motion.div>
@@ -227,12 +226,13 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                 <div className="flex flex-col xl:flex-row gap-4">
                     <div className="flex-1 relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
+                        {/* PHOENIX DIRECTIVE: Removed bg-canvas override to let glass-input use standard bg-surface */}
                         <input 
                             type="text" 
                             placeholder={t('header.searchPlaceholder')} 
                             value={searchTerm} 
                             onChange={(e) => setSearchTerm(e.target.value)} 
-                            className="glass-input w-full pl-12 bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
+                            className="glass-input w-full pl-12 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
                         />
                     </div>
                     
@@ -310,7 +310,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                                     value={newFolderName} 
                                     onChange={(e) => setNewFolderName(e.target.value)} 
                                     placeholder={t('archive.folderNamePlaceholder')} 
-                                    className="glass-input w-full bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
+                                    className="glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
                                 />
                                 <div className="flex gap-3 justify-end">
                                     <button type="button" onClick={() => setShowFolderModal(false)} className="glass-input !bg-surface/30 backdrop-blur-sm hover:bg-hover transition-colors px-4 py-2 rounded-xl hover-lift shadow-sm border border-border-main">{t('general.cancel')}</button>
@@ -339,7 +339,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                                     value={renameValue} 
                                     onChange={(e) => setRenameValue(e.target.value)} 
                                     placeholder={t('general.name')} 
-                                    className="glass-input w-full bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
+                                    className="glass-input w-full border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
                                 />
                                 <div className="flex gap-3 justify-end">
                                     <button type="button" onClick={() => setShowRenameModal(false)} className="glass-input !bg-surface/30 backdrop-blur-sm hover:bg-hover transition-colors px-4 py-2 rounded-xl hover-lift shadow-sm border border-border-main">{t('general.cancel')}</button>

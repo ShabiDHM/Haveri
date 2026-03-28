@@ -1,5 +1,4 @@
-// FILE: src/pages/LawArticlePage.tsx
-// PHOENIX PROTOCOL - ROBUST AI PARSING & MARKDOWN RENDERING V2
+// FILE: src/pages/LawArticlePage.tsx (Second App – Final with TypeScript fix)
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -8,7 +7,12 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Scale, Calendar, AlertCircle, BookOpen, Sparkles, Loader2, X, BrainCircuit, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type ArticleData = LawArticle;
+interface ArticleData {
+  law_title: string;
+  article_number: string;
+  source: string;
+  text: string;
+}
 
 // ========== PHOENIX: LIGHTWEIGHT MARKDOWN RENDERER ==========
 const renderMarkdown = (text: string) => {
@@ -45,6 +49,7 @@ export default function LawArticlePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // --- AI STATE ---
   const [isExplaining, setIsExplaining] = useState(false);
   const [rawExplanation, setRawExplanation] = useState('');
   const [activePerspective, setActivePerspective] = useState<'senior' | 'citizen'>('senior');
@@ -54,7 +59,7 @@ export default function LawArticlePage() {
   const lawTitle = searchParams.get('lawTitle');
   const articleNumber = searchParams.get('articleNumber');
 
-  // PHOENIX: Robust split logic with fallback for hallucinated separators
+  // --- PHOENIX: ROBUST DUAL PERSPECTIVE PARSING WITH FALLBACK ---
   const perspectives = useMemo(() => {
     let cleanText = rawExplanation.replace(/\n\n---\n\*Kjo përgjigje është gjeneruar nga AI, vetëm për referencë\.\*/g, '');
     
@@ -80,9 +85,15 @@ export default function LawArticlePage() {
     }
     apiService.getLawArticle(lawTitle, articleNumber)
       .then((data: LawArticle) => {
-        setArticle(data);
+        // Map API response to ensure article_number is a string
+        setArticle({
+          law_title: data.law_title,
+          article_number: data.article_number || '',
+          source: data.source,
+          text: data.text,
+        });
       })
-      .catch((err: Error) => {
+      .catch((err) => {
         setError(err.message || t('lawArticle.fetchError', 'Dështoi ngarkimi i artikullit.'));
       })
       .finally(() => setLoading(false));
@@ -97,7 +108,7 @@ export default function LawArticlePage() {
     setActivePerspective('senior');
     
     try {
-        const stream = apiService.explainLawStream(article.law_title, article.article_number || '', article.text);
+        const stream = apiService.explainLawStream(article.law_title, article.article_number, article.text);
         setTimeout(() => aiSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), 300);
 
         for await (const chunk of stream) {
@@ -160,6 +171,7 @@ export default function LawArticlePage() {
 
           <div className="p-0 flex flex-col overflow-hidden shadow-sm border border-border-main rounded-2xl">
             
+            {/* Header */}
             <div className="bg-surface px-8 py-10 border-b border-border-main relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary-start/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
               <div className="relative z-10 flex flex-col gap-6">
@@ -195,6 +207,7 @@ export default function LawArticlePage() {
               </div>
             </div>
 
+            {/* Reading Surface */}
             <div className="bg-surface/50 px-8 sm:px-12 py-12 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
               <div className="max-w-[75ch] mx-auto">
                 {paragraphs.map((para, idx) => (
@@ -205,6 +218,7 @@ export default function LawArticlePage() {
               </div>
             </div>
 
+            {/* AI PERSPECTIVE AREA */}
             <AnimatePresence>
               {(rawExplanation || isExplaining || aiError) && (
                 <motion.div
@@ -215,6 +229,8 @@ export default function LawArticlePage() {
                   className="border-t border-primary-start/30 bg-primary-start/[0.02] overflow-hidden"
                 >
                   <div className="p-8 sm:p-12 relative">
+                    
+                    {/* Switcher */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-6 border-b border-border-main/50 pb-6">
                       <div className="flex bg-surface p-1.5 rounded-2xl border border-border-main shadow-inner w-full sm:w-auto">
                         <button
@@ -246,12 +262,14 @@ export default function LawArticlePage() {
                       </button>
                     </div>
 
+                    {/* Error State */}
                     {aiError && (
                       <div className="bg-danger-start/5 border border-danger-start/20 rounded-xl p-6 text-danger-start text-sm font-medium flex items-center gap-3">
                         <AlertCircle size={18} /> {aiError}
                       </div>
                     )}
 
+                    {/* Shimmer */}
                     {isExplaining && !rawExplanation && (
                       <div className="space-y-4">
                         <div className="h-4 bg-primary-start/10 rounded w-full animate-pulse" />
@@ -260,7 +278,7 @@ export default function LawArticlePage() {
                       </div>
                     )}
 
-                    {/* PHOENIX: Replaced raw text with markdown renderer */}
+                    {/* Result – using markdown renderer and fallback split */}
                     {rawExplanation && (
                       <div className="min-h-[150px] mt-4">
                         {activePerspective === 'senior' && renderMarkdown(perspectives.senior)}
@@ -275,6 +293,7 @@ export default function LawArticlePage() {
                       </div>
                     )}
                     
+                    {/* Footer Disclaimer */}
                     <div className="mt-8 pt-6 border-t border-border-main/30 flex items-center gap-2 text-[10px] text-text-muted font-black uppercase tracking-widest">
                       <Sparkles size={12} className="text-primary-start" /> {t('lawArticle.aiDisclaimer', 'Rezultati i gjeneruar nga modeli juridik i AI')}
                     </div>
@@ -283,6 +302,7 @@ export default function LawArticlePage() {
               )}
             </AnimatePresence>
 
+            {/* Footer Actions */}
             <div className="bg-surface px-8 py-6 flex justify-between items-center border-t border-border-main">
               <button
                 onClick={handleBack}
