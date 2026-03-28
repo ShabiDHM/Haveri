@@ -1,5 +1,5 @@
 // FILE: src/pages/LawOverviewPage.tsx
-// PHOENIX PROTOCOL - LAW OVERVIEW V4.3 (AUTO-REDIRECT)
+// PHOENIX PROTOCOL - CORRECTED LAYOUT V1
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -83,83 +83,86 @@ export default function LawOverviewPage() {
   if (!data) return null;
 
   return (
-    <motion.div 
-        className="w-full min-h-screen pb-16 bg-canvas"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+    <motion.div
+      className="w-full min-h-screen pt-24 pb-12 bg-canvas flex flex-col"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
     >
-      <div className="max-w-5xl mx-auto px-6 sm:px-8 pt-28">
-        
-        <button
-          onClick={handleBack}
-          className="group mb-8 flex items-center gap-3 text-text-muted hover:text-text-primary transition-colors font-bold text-sm uppercase tracking-widest hover-lift"
-        >
-          <div className="p-2 rounded-lg bg-surface border border-border-main group-hover:border-primary-start transition-colors">
-            <ArrowLeft size={16} className="text-primary-start" />
-          </div>
-          {t('general.back', 'Kthehu Mbrapa')}
-        </button>
-
-        <div className="glass-panel p-0 flex flex-col overflow-hidden shadow-sm border border-border-main">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col">
+        {/* PHOENIX DIRECTIVE: Wrap the entire overview in the Executive Tray */}
+        <div className="glass-panel p-6 sm:p-8 md:p-10 flex flex-col flex-1 shadow-lawyer-dark border border-border-main">
           
-          <div className="bg-surface px-8 py-10 sm:px-12 sm:py-12 border-b border-border-main relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary-start/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-            <div className="relative z-10 flex flex-col gap-6">
+          <button
+            onClick={handleBack}
+            className="group mb-8 flex items-center gap-3 text-text-muted hover:text-text-primary transition-colors font-bold text-sm uppercase tracking-widest hover-lift w-max"
+          >
+            <div className="p-2 rounded-lg bg-surface border border-border-main group-hover:border-primary-start transition-colors">
+              <ArrowLeft size={16} className="text-primary-start" />
+            </div>
+            {t('general.back', 'Kthehu Mbrapa')}
+          </button>
+
+          {/* Original content, now inside the glass-panel */}
+          <div className="p-0 flex flex-col overflow-hidden shadow-sm border border-border-main rounded-2xl">
+            <div className="bg-surface px-8 py-10 sm:px-12 sm:py-12 border-b border-border-main relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary-start/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+              <div className="relative z-10 flex flex-col gap-6">
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 bg-primary-start/10 text-primary-start border border-primary-start/20 px-3 py-1.5 rounded-lg">
-                        <Scale size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">
-                        {t('lawOverview.lawTitle', 'KODI LIGJOR')}
-                        </span>
-                    </div>
+                  <div className="flex items-center gap-2 bg-primary-start/10 text-primary-start border border-primary-start/20 px-3 py-1.5 rounded-lg">
+                    <Scale size={14} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      {t('lawOverview.lawTitle', 'KODI LIGJOR')}
+                    </span>
+                  </div>
                 </div>
                 <h1 className="text-3xl sm:text-5xl font-black text-text-primary leading-tight tracking-tighter">
-                {data.law_title}
+                  {data.law_title}
                 </h1>
                 <div className="flex flex-wrap items-center gap-4 border-t border-border-main/50 pt-6 mt-2">
-                    <div className="flex items-center gap-2 bg-canvas text-text-secondary border border-border-main px-4 py-2 rounded-xl">
-                        <Calendar size={16} className="text-primary-start" />
-                        <span className="text-[11px] font-black uppercase tracking-widest truncate max-w-[200px]">
-                        {t('lawOverview.source', 'Burimi')}: {data.source}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-canvas text-text-secondary border border-border-main px-4 py-2 rounded-xl">
-                        <FileText size={16} className="text-primary-start" />
-                        <span className="text-[11px] font-black uppercase tracking-widest truncate">
-                        {data.article_count} {t('lawOverview.articles', 'Nene Gjithsej')}
-                        </span>
-                    </div>
+                  <div className="flex items-center gap-2 bg-canvas text-text-secondary border border-border-main px-4 py-2 rounded-xl">
+                    <Calendar size={16} className="text-primary-start" />
+                    <span className="text-[11px] font-black uppercase tracking-widest truncate max-w-[200px]">
+                      {t('lawOverview.source', 'Burimi')}: {data.source}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-canvas text-text-secondary border border-border-main px-4 py-2 rounded-xl">
+                    <FileText size={16} className="text-primary-start" />
+                    <span className="text-[11px] font-black uppercase tracking-widest truncate">
+                      {data.article_count} {t('lawOverview.articles', 'Nene Gjithsej')}
+                    </span>
+                  </div>
                 </div>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-canvas/30 px-8 sm:px-12 py-10 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
-            <h2 className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-6 flex items-center gap-2">
+            <div className="bg-canvas/30 px-8 sm:px-12 py-10 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+              <h2 className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-6 flex items-center gap-2">
                 <BookOpen size={16} className="text-primary-start" />
                 {t('lawOverview.tableOfContents', 'Përmbajtja e Ligjit (Nenet)')}
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {data.articles.map((article) => (
-                <button
-                  key={article}
-                  onClick={() => handleArticleClick(article)}
-                  className="flex items-center justify-center px-4 py-4 bg-surface border border-border-main rounded-xl transition-all text-sm font-black text-text-primary hover:text-primary-start hover:border-primary-start hover:shadow-sm hover-lift"
-                >
-                  Neni {article.replace(/\.$/, '')}
-                </button>
-              ))}
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {data.articles.map((article) => (
+                  <button
+                    key={article}
+                    onClick={() => handleArticleClick(article)}
+                    className="flex items-center justify-center px-4 py-4 bg-surface border border-border-main rounded-xl transition-all text-sm font-black text-text-primary hover:text-primary-start hover:border-primary-start hover:shadow-sm hover-lift"
+                  >
+                    Neni {article.replace(/\.$/, '')}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="bg-surface px-8 sm:px-12 py-6 flex justify-between items-center border-t border-border-main">
-            <button
-              onClick={handleBack}
-              className="text-[11px] font-black uppercase tracking-widest text-text-muted hover:text-primary-start transition-colors flex items-center gap-2 hover-lift"
-            >
-              <ArrowLeft size={14} />
-              {t('lawOverview.backToSearch', 'Kthehu te kërkimi')}
-            </button>
+            <div className="bg-surface px-8 sm:px-12 py-6 flex justify-between items-center border-t border-border-main">
+              <button
+                onClick={handleBack}
+                className="text-[11px] font-black uppercase tracking-widest text-text-muted hover:text-primary-start transition-colors flex items-center gap-2 hover-lift"
+              >
+                <ArrowLeft size={14} />
+                {t('lawOverview.backToSearch', 'Kthehu te kërkimi')}
+              </button>
+            </div>
           </div>
 
         </div>
