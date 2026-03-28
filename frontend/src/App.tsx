@@ -1,5 +1,5 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTES V2.3 (ADDED LAW ARTICLE ROUTE)
+// PHOENIX PROTOCOL - ROUTES V2.4 (ADDED LAW ARTICLE ROUTE)
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -23,7 +23,7 @@ import { IntegrationsPage } from './pages/IntegrationsPage';
 import MobileUploadPage from './pages/MobileUploadPage';
 import { ProfileTab } from './components/business/ProfileTab';
 import ProjectsDashboardPage from './pages/ProjectsDashboardPage';
-import LawArticlePage from './pages/LawArticlePage'; // NEW
+import LawArticlePage from './pages/LawArticlePage'; // <-- import
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
