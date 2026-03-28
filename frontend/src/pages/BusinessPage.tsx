@@ -1,5 +1,5 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - WORKSPACE HUB V24.2 (FIXED IMPORT)
+// Original – no law tab
 
 import React from 'react';
 import { useAuth } from '../context/AuthContext';

@@ -1,15 +1,17 @@
-// FILE: src/components/business/LawLibraryTab.tsx
-// PHOENIX PROTOCOL - LAW LIBRARY TAB V1.0
+// FILE: src/components/business/LegalDraftingTab.tsx
+// PHOENIX PROTOCOL - LEGAL DRAFTING TAB WRAPPER
 
 import React from 'react';
-import LawSearchPage from '../../pages/LawSearchPage';
+import DraftingPage from '../../pages/DraftingPage';
 
-export const LawLibraryTab: React.FC = () => {
+export const LegalDraftingTab: React.FC = () => {
+    console.log("LegalDraftingTab rendering - Zyra Ligjore is rendering DraftingPage");
+    
     return (
         <div className="w-full h-full">
-            <LawSearchPage />
+            <DraftingPage />
         </div>
     );
 };
 
-export default LawLibraryTab;
+export default LegalDraftingTab;
