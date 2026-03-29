@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V10 – Optimised COGS with exact match, then fuzzy, and duplicate‑log prevention
+// V11 – Full file: item‑based COGS, exact/fuzzy matching, duplicate‑log prevention
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -200,16 +200,16 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return total;
     }, [invoices, posTransactions, selectedYear, getLatestYear]);
 
-    // Cost of Goods Sold (COGS) – optimised with exact match first, then fuzzy, and duplicate log prevention
+    // Cost of Goods Sold (COGS) – iterates over invoice line items and POS product_name
     const costOfGoodsSold = useMemo(() => {
-        // 1. Build an exact‑match map (fastest)
+        // 1. Build exact‑match map (fast)
         const exactMap = new Map<string, number>();
         inventoryItems.forEach(item => {
             const key = (item.name || '').toLowerCase().trim();
             if (key) exactMap.set(key, item.cost_per_unit);
         });
 
-        // 2. Pre‑compute fuzzy search array (inventory names, trimmed and lowercased)
+        // 2. Pre‑compute fuzzy search array
         const fuzzyItems = inventoryItems
             .map(item => ({
                 name: (item.name || '').toLowerCase().trim(),
@@ -217,60 +217,61 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             }))
             .filter(item => item.name !== '');
 
-        // 3. Keep track of already logged product names to avoid duplicate logs
+        // 3. Track already logged missing product names
         const loggedMissing = new Set<string>();
 
         const getCost = (productName: string): number => {
             const normalized = productName.toLowerCase().trim();
             if (!normalized) return 0;
 
-            // Priority 1: Exact match
+            // Exact match (Priority 1)
             if (exactMap.has(normalized)) return exactMap.get(normalized)!;
 
-            // Priority 2: Fuzzy (substring) match – find any inventory name that is contained in the product name
+            // Fuzzy match: any inventory name contained in product name (Priority 2)
             const match = fuzzyItems.find(inv => normalized.includes(inv.name));
             if (match) return match.cost;
 
-            // Priority 3: No match – log only once per unique product name
+            // No match – log once per unique product name
             if (!loggedMissing.has(normalized)) {
                 loggedMissing.add(normalized);
-                console.log(`[DEBUG COGS] No inventory match for: ${productName}`);
+                console.log(`[DEBUG COGS] No inventory match for product: ${productName}`);
             }
             return 0;
         };
 
         let totalCogs = 0;
 
-        // Process invoices
+        // --- Invoices: iterate over line items ---
         invoices.forEach(invoice => {
+            if (!invoice.items || invoice.items.length === 0) return;
             invoice.items.forEach(item => {
-                const productName = (item.description || '').toLowerCase().trim();
+                const productName = (item.description || '').trim();
                 if (!productName) {
-                    console.warn(`[DEBUG COGS] Invoice ${invoice.invoice_number} has empty product description, skipping.`);
+                    console.warn(`[DEBUG COGS] Invoice ${invoice.invoice_number} has an empty line item description, skipping.`);
                     return;
                 }
                 const quantity = item.quantity || 1;
                 const cost = getCost(productName);
                 const itemCogs = quantity * cost;
                 if (cost > 0) {
-                    console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - ${productName}: ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
+                    console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - line item "${productName}": ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
                 }
                 totalCogs += itemCogs;
             });
         });
 
-        // Process POS transactions
+        // --- POS Transactions: use product_name directly ---
         posTransactions.forEach(pos => {
-            const productName = (pos.product_name || (pos as any).description || '').toLowerCase().trim();
+            const productName = (pos.product_name || (pos as any).description || '').trim();
             if (!productName) {
-                console.warn(`[DEBUG COGS] POS transaction ${pos.id} has no product name or description, skipping.`);
+                // Some POS transactions might not have a product name – skip silently
                 return;
             }
             const quantity = pos.quantity ?? 1;
             const cost = getCost(productName);
             const itemCogs = quantity * cost;
             if (cost > 0) {
-                console.log(`[DEBUG COGS] POS ${pos.id} - ${productName}: ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
+                console.log(`[DEBUG COGS] POS ${pos.id} - "${productName}": ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
             }
             totalCogs += itemCogs;
         });
