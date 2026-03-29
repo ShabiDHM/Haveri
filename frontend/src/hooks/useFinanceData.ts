@@ -1,5 +1,6 @@
 // FILE: src/hooks/useFinanceData.ts
-// V7 – Added COGS calculation using inventory
+// V8 – Full feature set: year sync, COGS with sanitised product matching
+// FIX: TypeScript error for PosTransaction.description resolved with type assertion
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -36,7 +37,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
     const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const workspaceId = options?.workspaceId;
 
-    // Helper to get latest year from transactions
+    // Helper to get the latest year from all transaction data
     const getLatestYear = useCallback(() => {
         const years = new Set<number>();
         invoices.forEach(i => { if (i.issue_date) years.add(safeDate(i.issue_date).getFullYear()); });
@@ -46,7 +47,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return yearArray.length ? Math.max(...yearArray) : new Date().getFullYear();
     }, [invoices, expenses, posTransactions]);
 
-    // Sync selectedYear to the latest available year
+    // Sync selectedYear to the latest available year if it's not set or invalid
     useEffect(() => {
         if (!loading && invoices.length + expenses.length + posTransactions.length > 0) {
             const latestYear = getLatestYear();
@@ -56,7 +57,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         }
     }, [loading, invoices, expenses, posTransactions, selectedYear, setSelectedYear, getLatestYear]);
 
-    // ---- Compute allTransactions (unchanged) ----
+    // Compute allTransactions (combined, sorted)
     const allTransactions = useMemo<TransactionItem[]>(() => {
         const invoiceItems: TransactionItem[] = invoices.map(inv => ({
             id: inv.id,
@@ -89,7 +90,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         });
     }, [invoices, expenses, posTransactions]);
 
-    // ---- Mock transactions (unchanged) ----
+    // Mock transactions (for development / empty state)
     const mockTransactions: TransactionItem[] = [
         {
             id: 'mock-1',
@@ -109,7 +110,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         },
     ];
 
-    // ---- Fetch all data including inventory ----
+    // Fetch all data (including inventory)
     useEffect(() => {
         let isMounted = true;
         const fetchData = async () => {
@@ -121,7 +122,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
                     apiService.getWorkspaces(),
                     apiService.getPosTransactions(workspaceId),
                     apiService.getAnalyticsDashboard(undefined, selectedYear, workspaceId),
-                    apiService.getInventoryItems(workspaceId), // NEW: fetch inventory
+                    apiService.getInventoryItems(workspaceId),
                 ]);
                 console.log('[useFinanceData] Raw API responses:');
                 if (results[0].status === 'fulfilled') {
@@ -174,7 +175,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         setInventoryItems(inventory);
     }, [selectedYear, workspaceId]);
 
-    // ---- Fixed: totalExpenses with robust year comparison ----
+    // Total Expenses (yearly)
     const totalExpenses = useMemo(() => {
         const yearToUse = selectedYear ?? getLatestYear();
         console.log(`[DEBUG] totalExpenses using year: ${yearToUse}`);
@@ -185,7 +186,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return total;
     }, [expenses, selectedYear, getLatestYear]);
 
-    // ---- Fixed: displayIncome with robust year comparison ----
+    // Total Income (Invoices + POS) – yearly
     const displayIncome = useMemo(() => {
         const yearToUse = selectedYear ?? getLatestYear();
         console.log(`[DEBUG] displayIncome using year: ${yearToUse}`);
@@ -200,42 +201,54 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return total;
     }, [invoices, posTransactions, selectedYear, getLatestYear]);
 
-    // ---- NEW: COGS Calculation ----
+    // Cost of Goods Sold (COGS) – matching inventory by sanitised product name
     const costOfGoodsSold = useMemo(() => {
-        // Create a map of product name -> cost per unit from inventory
+        // Build inventory map: product name (lowercase, trimmed) -> cost per unit
         const inventoryMap = new Map<string, number>();
         inventoryItems.forEach(item => {
-            inventoryMap.set(item.name.toLowerCase(), item.cost_per_unit);
+            const key = (item.name || '').toLowerCase().trim();
+            if (key) inventoryMap.set(key, item.cost_per_unit);
         });
 
         let totalCogs = 0;
 
-        // 1. Process invoices
+        // Process invoices
         invoices.forEach(invoice => {
             invoice.items.forEach(item => {
-                const productName = item.description?.toLowerCase() || '';
-                const quantity = item.quantity;
+                const productName = (item.description || '').toLowerCase().trim();
+                if (!productName) {
+                    console.warn(`[DEBUG COGS] Invoice ${invoice.invoice_number} has empty product description, skipping.`);
+                    return;
+                }
+                const quantity = item.quantity || 1;
                 const cost = inventoryMap.get(productName) ?? 0;
                 const itemCogs = quantity * cost;
+
                 if (cost > 0) {
                     console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - ${item.description}: ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
                 } else {
-                    console.warn(`[DEBUG COGS] No inventory match for product: ${item.description} (cost set to 0)`);
+                    console.log(`[DEBUG COGS] Manual override needed for: ${productName} (cost = 0)`);
                 }
                 totalCogs += itemCogs;
             });
         });
 
-        // 2. Process POS transactions
+        // Process POS transactions
         posTransactions.forEach(pos => {
-            const productName = pos.product_name?.toLowerCase() || '';
-            const quantity = pos.quantity ?? 1; // fallback to 1 if quantity missing
+            // Use product_name or fallback to description (if present, via type assertion)
+            const productName = (pos.product_name || (pos as any).description || '').toLowerCase().trim();
+            if (!productName) {
+                console.warn(`[DEBUG COGS] POS transaction ${pos.id} has no product name or description, skipping.`);
+                return;
+            }
+            const quantity = pos.quantity ?? 1; // default to 1 if missing
             const cost = inventoryMap.get(productName) ?? 0;
             const itemCogs = quantity * cost;
+
             if (cost > 0) {
-                console.log(`[DEBUG COGS] POS ${pos.id} - ${pos.product_name}: ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
+                console.log(`[DEBUG COGS] POS ${pos.id} - ${productName}: ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
             } else {
-                console.warn(`[DEBUG COGS] No inventory match for POS product: ${pos.product_name} (cost set to 0)`);
+                console.log(`[DEBUG COGS] Manual override needed for: ${productName} (cost = 0)`);
             }
             totalCogs += itemCogs;
         });
@@ -246,7 +259,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
 
     const displayProfit = displayIncome - costOfGoodsSold - totalExpenses;
 
-    // ---- Available years (unchanged, but type-safe) ----
+    // Available years (from all transactions)
     const availableYears = useMemo(() => {
         const years = new Set<number>();
         invoices.forEach(i => { if (i.issue_date) years.add(safeDate(i.issue_date).getFullYear()); });
