@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V13.6 (FIXED DATE FALLBACKS)
+// PHOENIX PROTOCOL - FINANCE TAB V14.0 (ADDED POS MODAL)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,7 +7,7 @@ import {
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
     Sparkles, X, Users, Phone, Mail, MapPin,
-    Trash2
+    Trash2, ShoppingCart
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { Invoice, Expense, Document } from '../../data/types';
@@ -22,6 +22,7 @@ import { useFinanceData } from '../../hooks/useFinanceData';
 import { InvoiceModal } from './modals/InvoiceModal';
 import { ExpenseModal } from './modals/ExpenseModal';
 import { ClientImportModal } from './modals/ClientImportModal';
+import { PosModal } from './modals/PosModal';
 import { TransactionList, TransactionItem } from './finance/TransactionList';
 import { Panel } from '../ui/Panel';
 import { useAuth } from '../../context/AuthContext';
@@ -127,6 +128,7 @@ export const FinanceTab: React.FC = () => {
     const [showExpenseModal, setShowExpenseModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false); 
     const [showClientImportModal, setShowClientImportModal] = useState(false);
+    const [showPosModal, setShowPosModal] = useState(false); // NEW
     const [showArchiveInvoiceModal, setShowArchiveInvoiceModal] = useState(false);
     const [showArchiveExpenseModal, setShowArchiveExpenseModal] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -286,8 +288,9 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} className="sm:w-6 sm:h-6" />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm">
                 <ActionButton primary icon={<Plus size={16} className="sm:w-5 sm:h-5" />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
+                <ActionButton icon={<ShoppingCart size={16} className="sm:w-5 sm:h-5" />} label={t('pos.addSale')} onClick={() => setShowPosModal(true)} />
                 <ActionButton icon={<FileSpreadsheet size={16} className="sm:w-5 sm:h-5" />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
                 <ActionButton icon={<Users size={16} className="sm:w-5 sm:h-5" />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} />
                 <ActionButton icon={<MinusCircle size={16} className="sm:w-5 sm:h-5" />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
@@ -453,6 +456,7 @@ export const FinanceTab: React.FC = () => {
             <InvoiceModal isOpen={showInvoiceModal} onClose={() => { setShowInvoiceModal(false); setSelectedInvoice(null); }} invoiceToEdit={selectedInvoice} onSuccess={refreshData} />
             <ExpenseModal isOpen={showExpenseModal} onClose={() => { setShowExpenseModal(false); setSelectedExpense(null); }} expenseToEdit={selectedExpense} onSuccess={refreshData} />
             <ClientImportModal isOpen={showClientImportModal} onClose={() => setShowClientImportModal(false)} onSuccess={() => { refreshData(); if (activeTab === 'partners') { apiService.getPartners().then(setPartners); } }} />
+            <PosModal isOpen={showPosModal} onClose={() => setShowPosModal(false)} onSuccess={refreshData} />
             
             {showArchiveInvoiceModal && (
                 <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">

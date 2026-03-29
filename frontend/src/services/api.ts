@@ -1,6 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V14.8 (SOURCE APP PUBLIC LAW ENDPOINTS)
-// MODIFIED: confirmImport now accepts optional workspaceId and adds case_id query param
+// PHOENIX PROTOCOL - API V14.9 (ADDED createPosTransaction)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -287,6 +286,14 @@ class ApiService {
         if (response.data && Array.isArray(response.data.transactions)) { return response.data.transactions; }
         return [];
     }
+
+    // NEW: Create a single POS transaction linked to inventory
+    public async createPosTransaction(data: { inventory_item_id: string; quantity: number; total_price: number; transaction_date?: string; notes?: string }, workspaceId?: string): Promise<any> {
+        const params = workspaceId ? { case_id: workspaceId } : {};
+        const response = await this.axiosInstance.post('/finance/transactions', data, { params });
+        return response.data;
+    }
+
     public async deletePosTransaction(transactionId: string): Promise<void> { await this.axiosInstance.delete(`/finance/transactions/${transactionId}`); }
     public async bulkDeleteTransactions(ids: { invoice_ids?: string[], expense_ids?: string[], pos_ids?: string[] }): Promise<any> { const response = await this.axiosInstance.post('/finance/transactions/bulk-delete', ids); return response.data; }
 

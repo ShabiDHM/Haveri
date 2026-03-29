@@ -1,6 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V16.17 (ANALYTICS FIX)
-# ADDED DEBUG LOGGING FOR get_imported_transactions
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.0 (POS CREATION WITH INVENTORY)
 
 import json
 import logging
@@ -10,6 +9,7 @@ from typing import List, Annotated, Optional, Any
 from pymongo.database import Database
 import pymongo
 from pydantic import BaseModel
+from datetime import datetime
 
 from app.models.user import UserInDB
 from app.models.finance import (
@@ -33,6 +33,14 @@ class BulkDeleteRequest(BaseModel):
     invoice_ids: Optional[List[str]] = []
     expense_ids: Optional[List[str]] = []
     pos_ids: Optional[List[str]] = []
+
+# --- NEW: POS Transaction Creation Request Model ---
+class PosTransactionCreate(BaseModel):
+    inventory_item_id: str
+    quantity: float = 1.0
+    total_price: float
+    transaction_date: Optional[datetime] = None
+    notes: Optional[str] = None
 
 # --- PARTNER / CLIENT ENDPOINTS ---
 
@@ -114,6 +122,28 @@ async def get_imported_transactions(
     cursor = db["transactions"].find(filter).sort("date", pymongo.DESCENDING)
     transactions = await cursor.to_list(length=None)
     return transactions
+
+@router.post("/transactions", response_model=PosTransactionOut, status_code=status.HTTP_201_CREATED)
+def create_pos_transaction(
+    transaction_data: PosTransactionCreate,
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None)
+):
+    """
+    Create a POS transaction linked to an inventory item.
+    Automatically deducts stock and calculates COGS.
+    """
+    service = FinanceService(db)
+    # Convert Pydantic model to dict
+    data = transaction_data.model_dump()
+    # Add optional fields
+    result = service.create_pos_transaction(
+        user_id=str(current_user.id),
+        data=data,
+        case_id=case_id
+    )
+    return result
 
 @router.delete("/transactions/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_transaction(
