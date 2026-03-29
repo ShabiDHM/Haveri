@@ -1,5 +1,5 @@
 // FILE: src/pages/FinanceWizardPage.tsx
-// PHOENIX PROTOCOL - FINANCE WIZARD V16.3 (WORKSPACE AWARE, FULL IMPLEMENTATION)
+// PHOENIX PROTOCOL - FINANCE WIZARD V17.0 (GLASS‑PANEL UNIFICATION)
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -64,11 +64,21 @@ const StepIndicator = ({ currentStep }: { currentStep: number }) => {
         <div className="flex items-center justify-center space-x-2 sm:space-x-4 mb-12">
             {steps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
-                    <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-sm ${currentStep >= step.id ? 'bg-primary-start text-text-inverse border-primary-start shadow-primary-start/30' : 'bg-surface/30 backdrop-blur-sm border-border-main text-text-muted'}`}>
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-sm ${
+                        currentStep >= step.id 
+                            ? 'bg-primary-start text-text-inverse border-primary-start shadow-primary-start/30' 
+                            : 'bg-surface/50 backdrop-blur-sm border-border-main text-text-muted'
+                    }`}>
                         <step.icon size={20} />
                     </div>
-                    <span className={`ml-3 text-sm font-bold hidden md:block ${currentStep >= step.id ? 'text-text-primary' : 'text-text-muted'}`}>{step.label}</span>
-                    {index < steps.length - 1 && <div className={`w-16 h-1 mx-4 rounded-full ${currentStep > step.id ? 'bg-primary-start' : 'bg-border-main'}`} />}
+                    <span className={`ml-3 text-sm font-bold hidden md:block ${
+                        currentStep >= step.id ? 'text-text-primary' : 'text-text-muted'
+                    }`}>{step.label}</span>
+                    {index < steps.length - 1 && (
+                        <div className={`w-16 h-1 mx-4 rounded-full ${
+                            currentStep > step.id ? 'bg-primary-start' : 'bg-border-main'
+                        }`} />
+                    )}
                 </div>
             ))}
         </div>
@@ -94,14 +104,34 @@ const AuditStep = ({ issues }: { issues: AuditIssue[] }) => {
         <div className="space-y-6">
             {critical.length > 0 && (
                 <div className="bg-danger-start/10 border border-danger-start/30 rounded-2xl p-6 shadow-sm">
-                    <h3 className="flex items-center text-danger-start font-bold mb-4 text-base"><ShieldAlert className="mr-3" size={24} />{t('finance.wizard.criticalIssues')} ({critical.length})</h3>
-                    <div className="space-y-3">{critical.map(issue => <div key={issue.id} className="bg-surface/30 backdrop-blur-sm p-3 rounded-lg flex items-start gap-3 border border-border-main"><span className="w-2 h-2 bg-danger-start rounded-full mt-1.5" /><p className="text-sm text-text-secondary">{issue.message}</p></div>)}</div>
+                    <h3 className="flex items-center text-danger-start font-bold mb-4 text-base">
+                        <ShieldAlert className="mr-3" size={24} />
+                        {t('finance.wizard.criticalIssues')} ({critical.length})
+                    </h3>
+                    <div className="space-y-3">
+                        {critical.map(issue => (
+                            <div key={issue.id} className="bg-surface/30 backdrop-blur-sm p-3 rounded-lg flex items-start gap-3 border border-border-main">
+                                <span className="w-2 h-2 bg-danger-start rounded-full mt-1.5" />
+                                <p className="text-sm text-text-secondary">{issue.message}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
             {warnings.length > 0 && (
                 <div className="bg-warning-start/10 border border-warning-start/30 rounded-2xl p-6 shadow-sm">
-                    <h3 className="flex items-center text-warning-start font-bold mb-4 text-base"><AlertTriangle className="mr-3" size={24} />{t('finance.wizard.warnings')} ({warnings.length})</h3>
-                    <div className="space-y-3">{warnings.map(issue => <div key={issue.id} className="bg-surface/30 backdrop-blur-sm p-3 rounded-lg flex items-start gap-3 border border-border-main"><span className="w-2 h-2 bg-warning-start rounded-full mt-1.5" /><p className="text-sm text-text-secondary">{issue.message}</p></div>)}</div>
+                    <h3 className="flex items-center text-warning-start font-bold mb-4 text-base">
+                        <AlertTriangle className="mr-3" size={24} />
+                        {t('finance.wizard.warnings')} ({warnings.length})
+                    </h3>
+                    <div className="space-y-3">
+                        {warnings.map(issue => (
+                            <div key={issue.id} className="bg-surface/30 backdrop-blur-sm p-3 rounded-lg flex items-start gap-3 border border-border-main">
+                                <span className="w-2 h-2 bg-warning-start rounded-full mt-1.5" />
+                                <p className="text-sm text-text-secondary">{issue.message}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
@@ -150,7 +180,7 @@ const TaxStep = ({ data }: { data: TaxCalculation }) => {
 const FinanceWizardPage = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const { workspace } = useAuth(); // Get current workspace
+    const { workspace } = useAuth();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -188,120 +218,125 @@ const FinanceWizardPage = () => {
     const handleOpenATK = () => { window.open('https://edeklarimi.atk-ks.org/', '_blank'); };
 
     return (
-        <div className="flex h-screen bg-canvas text-text-primary overflow-hidden font-sans">
-            <div className="flex-1 flex flex-col overflow-hidden relative">
-                <div className="p-6 border-b border-border-main flex items-center justify-between bg-glass backdrop-blur-md z-10 shadow-sm">
-                    <button 
-                        onClick={() => navigate('/business')} 
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface/30 backdrop-blur-sm text-text-secondary hover:text-text-primary transition-colors hover-lift shadow-sm border border-border-main"
-                    >
-                        <ArrowLeft size={20} />
-                    </button>
-                    <h1 className="text-xl font-bold text-text-primary">{t('finance.monthlyClose')}</h1>
-                    <div className="w-24" />
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 sm:p-12">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="flex justify-center mb-10 gap-4">
-                            <select 
-                                value={selectedMonth} 
-                                onChange={(e) => setSelectedMonth(Number(e.target.value))} 
-                                className="glass-input capitalize border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-surface/30 backdrop-blur-sm"
-                            >
-                                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                    <option key={m} value={m}>
-                                        {format(new Date(2024, m - 1, 1), 'MMMM', { locale: currentLocale })}
-                                    </option>
-                                ))}
-                            </select>
-                            <select 
-                                value={selectedYear} 
-                                onChange={(e) => setSelectedYear(Number(e.target.value))} 
-                                className="glass-input border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-surface/30 backdrop-blur-sm"
-                            >
-                                {Array.from({ length: 5 }, (_, i) => today.getFullYear() - i).map(y => (
-                                    <option key={y} value={y}>{y}</option>
-                                ))}
-                            </select>
-                        </div>
-                        
-                        {errorMsg && (
-                            <div className="bg-danger-start/10 border border-danger-start/30 text-danger-start p-4 rounded-xl mb-6 text-center shadow-sm">
-                                {errorMsg}
-                            </div>
-                        )}
+        <div className="flex flex-col h-full bg-gradient-to-br from-base to-surface text-text-primary overflow-hidden">
+            {/* Header */}
+            <div className="p-6 border-b border-border-main flex items-center justify-between bg-glass backdrop-blur-md z-10 shadow-sm">
+                <button 
+                    onClick={() => navigate('/business')} 
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface/30 backdrop-blur-sm text-text-secondary hover:text-text-primary transition-colors hover-lift shadow-sm border border-border-main"
+                >
+                    <ArrowLeft size={20} />
+                </button>
+                <h1 className="text-xl font-bold text-text-primary">{t('finance.monthlyClose')}</h1>
+                <div className="w-24" />
+            </div>
 
-                        <StepIndicator currentStep={step} />
-                        {loading ? 
-                            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-start w-16 h-16" /></div> 
-                            : state && (
-                            <AnimatePresence mode="wait">
-                                <motion.div 
-                                    key={step} 
-                                    className="glass-panel border border-border-main rounded-3xl p-10 shadow-sm bg-surface/30 backdrop-blur-sm"
-                                >
-                                    {step === 1 && <AuditStep issues={state.issues} />}
-                                    {step === 2 && <TaxStep data={state.calculation} />}
-                                    {step === 3 && (
-                                        <div>
-                                            <div className="flex justify-between items-center mb-8">
-                                                <h2 className="text-2xl font-bold text-text-primary">{t('finance.wizard.readyToFile')}</h2>
-                                                <button 
-                                                    onClick={handleOpenATK} 
-                                                    className="btn-primary px-6 py-3 rounded-xl flex items-center gap-2 hover-lift shadow-sm"
-                                                >
-                                                    <ExternalLink size={16} />
-                                                    {t('finance.wizard.atk.openEdi')}
-                                                </button>
-                                            </div>
-                                            <div className="space-y-4 mb-8">
-                                                {state.calculation.regime === 'SMALL_BUSINESS' ? (
-                                                    <>
-                                                        <ATKBox number="9" label={t('finance.wizard.atk.box9')} value={state.calculation.total_sales_gross} currency={state.calculation.currency} />
-                                                        <ATKBox number="11" label={t('finance.wizard.atk.box11')} value={state.calculation.net_obligation} currency={state.calculation.currency} />
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <ATKBox number="10" label={t('finance.wizard.atk.box10')} value={state.calculation.total_sales_gross} currency={state.calculation.currency} />
-                                                        <ATKBox number="23" label={t('finance.wizard.atk.box23')} value={state.calculation.total_purchases_gross} currency={state.calculation.currency} />
-                                                        <ATKBox number="48" label={t('finance.wizard.atk.box48')} value={state.calculation.net_obligation} currency={state.calculation.currency} />
-                                                    </>
-                                                )}
-                                            </div>
+            {/* Main Content Area */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-12">
+                <div className="max-w-4xl mx-auto">
+                    {/* Month/Year Selectors */}
+                    <div className="flex justify-center mb-10 gap-4">
+                        <select 
+                            value={selectedMonth} 
+                            onChange={(e) => setSelectedMonth(Number(e.target.value))} 
+                            className="glass-input capitalize border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-surface/30 backdrop-blur-sm"
+                        >
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                <option key={m} value={m}>
+                                    {format(new Date(2024, m - 1, 1), 'MMMM', { locale: currentLocale })}
+                                </option>
+                            ))}
+                        </select>
+                        <select 
+                            value={selectedYear} 
+                            onChange={(e) => setSelectedYear(Number(e.target.value))} 
+                            className="glass-input border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-surface/30 backdrop-blur-sm"
+                        >
+                            {Array.from({ length: 5 }, (_, i) => today.getFullYear() - i).map(y => (
+                                <option key={y} value={y}>{y}</option>
+                            ))}
+                        </select>
+                    </div>
+                    
+                    {errorMsg && (
+                        <div className="bg-danger-start/10 border border-danger-start/30 text-danger-start p-4 rounded-xl mb-6 text-center shadow-sm">
+                            {errorMsg}
+                        </div>
+                    )}
+
+                    <StepIndicator currentStep={step} />
+                    
+                    {loading ? (
+                        <div className="flex justify-center py-20">
+                            <Loader2 className="animate-spin text-primary-start w-16 h-16" />
+                        </div>
+                    ) : state && (
+                        <AnimatePresence mode="wait">
+                            <motion.div 
+                                key={step} 
+                                className="glass-panel border border-border-main rounded-3xl p-6 md:p-8 shadow-sm bg-surface/30 backdrop-blur-sm"
+                            >
+                                {step === 1 && <AuditStep issues={state.issues} />}
+                                {step === 2 && <TaxStep data={state.calculation} />}
+                                {step === 3 && (
+                                    <div>
+                                        <div className="flex justify-between items-center mb-8">
+                                            <h2 className="text-2xl font-bold text-text-primary">{t('finance.wizard.readyToFile')}</h2>
                                             <button 
-                                                onClick={handleDownloadReport} 
-                                                disabled={downloading} 
-                                                className="w-full glass-input !bg-surface/30 backdrop-blur-sm hover:bg-surface/50 transition-colors py-4 rounded-xl flex items-center justify-center gap-2 border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
+                                                onClick={handleOpenATK} 
+                                                className="btn-primary px-6 py-3 rounded-xl flex items-center gap-2 hover-lift shadow-sm"
                                             >
-                                                {downloading ? <Loader2 className="animate-spin" /> : <><Download size={20} />{t('finance.wizard.downloadReport')}</>}
+                                                <ExternalLink size={16} />
+                                                {t('finance.wizard.atk.openEdi')}
                                             </button>
                                         </div>
-                                    )}
-                                    <div className="flex justify-between mt-12 pt-8 border-t border-border-main">
+                                        <div className="space-y-4 mb-8">
+                                            {state.calculation.regime === 'SMALL_BUSINESS' ? (
+                                                <>
+                                                    <ATKBox number="9" label={t('finance.wizard.atk.box9')} value={state.calculation.total_sales_gross} currency={state.calculation.currency} />
+                                                    <ATKBox number="11" label={t('finance.wizard.atk.box11')} value={state.calculation.net_obligation} currency={state.calculation.currency} />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <ATKBox number="10" label={t('finance.wizard.atk.box10')} value={state.calculation.total_sales_gross} currency={state.calculation.currency} />
+                                                    <ATKBox number="23" label={t('finance.wizard.atk.box23')} value={state.calculation.total_purchases_gross} currency={state.calculation.currency} />
+                                                    <ATKBox number="48" label={t('finance.wizard.atk.box48')} value={state.calculation.net_obligation} currency={state.calculation.currency} />
+                                                </>
+                                            )}
+                                        </div>
                                         <button 
-                                            onClick={() => setStep(Math.max(1, step - 1))} 
-                                            disabled={step === 1} 
-                                            className={`px-8 py-3 rounded-xl transition-colors hover-lift shadow-sm ${
-                                                step === 1 
-                                                    ? 'text-text-muted cursor-not-allowed' 
-                                                    : 'bg-surface/30 backdrop-blur-sm text-text-secondary hover:text-text-primary border border-border-main hover:border-primary-start/50'
-                                            }`}
+                                            onClick={handleDownloadReport} 
+                                            disabled={downloading} 
+                                            className="w-full glass-input !bg-surface/30 backdrop-blur-sm hover:bg-surface/50 transition-colors py-4 rounded-xl flex items-center justify-center gap-2 border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
                                         >
-                                            Kthehu
+                                            {downloading ? <Loader2 className="animate-spin" /> : <><Download size={20} />{t('finance.wizard.downloadReport')}</>}
                                         </button>
-                                        {step < 3 && (
-                                            <button 
-                                                onClick={() => setStep(Math.min(3, step + 1))} 
-                                                className="btn-primary px-8 py-3 rounded-xl flex items-center gap-2 hover-lift shadow-sm"
-                                            >
-                                                Vazhdo <ChevronRight size={16} />
-                                            </button>
-                                        )}
                                     </div>
-                                </motion.div>
-                            </AnimatePresence>
-                        )}
-                    </div>
+                                )}
+                                <div className="flex justify-between mt-12 pt-8 border-t border-border-main">
+                                    <button 
+                                        onClick={() => setStep(Math.max(1, step - 1))} 
+                                        disabled={step === 1} 
+                                        className={`px-8 py-3 rounded-xl transition-colors hover-lift shadow-sm ${
+                                            step === 1 
+                                                ? 'text-text-muted cursor-not-allowed' 
+                                                : 'bg-surface/30 backdrop-blur-sm text-text-secondary hover:text-text-primary border border-border-main hover:border-primary-start/50'
+                                        }`}
+                                    >
+                                        {t('general.back')}
+                                    </button>
+                                    {step < 3 && (
+                                        <button 
+                                            onClick={() => setStep(Math.min(3, step + 1))} 
+                                            className="btn-primary px-8 py-3 rounded-xl flex items-center gap-2 hover-lift shadow-sm"
+                                        >
+                                            {t('general.next')} <ChevronRight size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </AnimatePresence>
+                    )}
                 </div>
             </div>
         </div>
