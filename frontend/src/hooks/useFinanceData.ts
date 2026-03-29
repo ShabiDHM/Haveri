@@ -1,6 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V8 – Full feature set: year sync, COGS with sanitised product matching
-// FIX: TypeScript error for PosTransaction.description resolved with type assertion
+// V9 – Full feature set: year sync, COGS with partial matching
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -201,16 +200,37 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return total;
     }, [invoices, posTransactions, selectedYear, getLatestYear]);
 
-    // Cost of Goods Sold (COGS) – matching inventory by sanitised product name
+    // Cost of Goods Sold (COGS) – partial matching
     const costOfGoodsSold = useMemo(() => {
-        // Build inventory map: product name (lowercase, trimmed) -> cost per unit
-        const inventoryMap = new Map<string, number>();
-        inventoryItems.forEach(item => {
-            const key = (item.name || '').toLowerCase().trim();
-            if (key) inventoryMap.set(key, item.cost_per_unit);
-        });
+        // Normalize inventory items: trim, lowercase, store original name and cost
+        const inventoryList = inventoryItems.map(item => ({
+            name: (item.name || '').toLowerCase().trim(),
+            cost: item.cost_per_unit,
+        })).filter(item => item.name !== '');
 
         let totalCogs = 0;
+
+        // Helper: find best matching inventory item for a given product name
+        const findCostForProduct = (productName: string): number => {
+            const normalized = productName.toLowerCase().trim();
+            if (!normalized) return 0;
+
+            // Try exact match first (fast)
+            const exact = inventoryList.find(inv => inv.name === normalized);
+            if (exact) return exact.cost;
+
+            // Partial match: find any inventory name that is a substring of the product name
+            const matches = inventoryList.filter(inv => normalized.includes(inv.name));
+            if (matches.length > 0) {
+                // Prefer the longest match (more specific)
+                matches.sort((a, b) => b.name.length - a.name.length);
+                return matches[0].cost;
+            }
+
+            // No match found
+            console.log(`[DEBUG COGS] No inventory match for: ${productName}`);
+            return 0;
+        };
 
         // Process invoices
         invoices.forEach(invoice => {
@@ -221,13 +241,13 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
                     return;
                 }
                 const quantity = item.quantity || 1;
-                const cost = inventoryMap.get(productName) ?? 0;
+                const cost = findCostForProduct(productName);
                 const itemCogs = quantity * cost;
 
                 if (cost > 0) {
-                    console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - ${item.description}: ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
+                    console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - ${productName}: ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
                 } else {
-                    console.log(`[DEBUG COGS] Manual override needed for: ${productName} (cost = 0)`);
+                    console.log(`[DEBUG COGS] No match for invoice product: ${productName} (cost = 0)`);
                 }
                 totalCogs += itemCogs;
             });
@@ -235,20 +255,19 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
 
         // Process POS transactions
         posTransactions.forEach(pos => {
-            // Use product_name or fallback to description (if present, via type assertion)
             const productName = (pos.product_name || (pos as any).description || '').toLowerCase().trim();
             if (!productName) {
                 console.warn(`[DEBUG COGS] POS transaction ${pos.id} has no product name or description, skipping.`);
                 return;
             }
-            const quantity = pos.quantity ?? 1; // default to 1 if missing
-            const cost = inventoryMap.get(productName) ?? 0;
+            const quantity = pos.quantity ?? 1;
+            const cost = findCostForProduct(productName);
             const itemCogs = quantity * cost;
 
             if (cost > 0) {
                 console.log(`[DEBUG COGS] POS ${pos.id} - ${productName}: ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
             } else {
-                console.log(`[DEBUG COGS] Manual override needed for: ${productName} (cost = 0)`);
+                console.log(`[DEBUG COGS] No match for POS product: ${productName} (cost = 0)`);
             }
             totalCogs += itemCogs;
         });
