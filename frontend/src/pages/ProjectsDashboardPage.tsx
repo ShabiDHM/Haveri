@@ -1,5 +1,5 @@
 // FILE: src/pages/ProjectsDashboardPage.tsx
-// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.5 (COMPACT DENSITY)
+// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.6 (MOBILE RESPONSIVE FIX)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -88,68 +88,69 @@ const ProjectsDashboardPage: React.FC = () => {
   const labelClasses = "block text-[11px] font-bold text-primary-start uppercase tracking-widest mb-2 ml-1";
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 h-[calc(100vh-2rem)] flex flex-col">
-      <div className="glass-panel p-5 sm:p-6 md:p-8 flex flex-col flex-1 min-h-0 overflow-hidden border border-border-main shadow-sm">
-        
-        {/* PINNED HEADER (COMPACT) */}
-        <div className="shrink-0 space-y-5 mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-b border-border-main pb-6">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-2xl font-black text-text-primary tracking-tighter uppercase leading-none flex items-center gap-2">
-                <Activity className="text-primary-start" size={24} />
-                {t('projectsDashboard.title', 'Projektet e Mia')}
-              </h2>
-              <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mt-1 ml-8">
-                {t('projectsDashboard.subtitle', 'Menaxhimi i Projekteve Aktive')}
-              </p>
+    <div className="flex flex-col min-h-screen bg-base text-text-primary">
+      <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 pb-24">
+        <div className="glass-panel p-5 sm:p-6 md:p-8 flex flex-col min-h-[70vh] border border-border-main shadow-sm">
+          
+          {/* PINNED HEADER (COMPACT) */}
+          <div className="shrink-0 space-y-5 mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-b border-border-main pb-6">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-black text-text-primary tracking-tighter uppercase leading-none flex items-center gap-2">
+                  <Activity className="text-primary-start" size={24} />
+                  {t('projectsDashboard.title', 'Projektet e Mia')}
+                </h2>
+                <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mt-1 ml-8">
+                  {t('projectsDashboard.subtitle', 'Menaxhimi i Projekteve Aktive')}
+                </p>
+              </div>
+              
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="btn-primary flex items-center gap-3 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-[0.98] shrink-0 hover-lift shadow-sm"
+              >
+                <Plus size={16} strokeWidth={4} />
+                <span className="hidden sm:inline">{t('projectsDashboard.newProject', 'Projekt i Ri')}</span>
+              </button>
             </div>
-            
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="btn-primary flex items-center gap-3 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-[0.98] shrink-0 hover-lift shadow-sm"
-            >
-              <Plus size={16} strokeWidth={4} />
-              <span className="hidden sm:inline">{t('projectsDashboard.newProject', 'Projekt i Ri')}</span>
-            </button>
+
+            {/* PINNED SEARCH BAR */}
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted group-focus-within:text-primary-start transition-colors" />
+              <input 
+                type="text" 
+                placeholder={t('header.searchPlaceholder', 'Kërko projekte ose klientë...')} 
+                className="glass-input w-full pl-10 py-3 bg-surface/80 backdrop-blur-sm focus:bg-surface transition-all border border-border-main text-text-primary placeholder:text-text-muted rounded-xl text-sm focus:outline-none" 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)} 
+              />
+            </div>
           </div>
 
-          {/* PINNED SEARCH BAR */}
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted group-focus-within:text-primary-start transition-colors" />
-            <input 
-              type="text" 
-              placeholder={t('header.searchPlaceholder', 'Kërko projekte ose klientë...')} 
-              className="glass-input w-full pl-10 py-3 bg-surface/80 backdrop-blur-sm focus:bg-surface transition-all border border-border-main text-text-primary placeholder:text-text-muted rounded-xl text-sm focus:outline-none" 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
-            />
+          {/* SCROLLABLE GRID (DENSER) */}
+          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin h-10 w-10 text-primary-start" />
+              </div>
+            ) : filteredWorkspaces.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 opacity-40">
+                <FolderOpen size={40} />
+                <p className="mt-3 font-bold uppercase tracking-widest text-xs">{t('projectsDashboard.noProjects', 'Nuk u gjet asgjë')}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                {filteredWorkspaces.map((workspace: Workspace) => (
+                  <WorkspaceCard
+                    key={workspace.id}
+                    workspace={workspace}
+                    onDelete={(id) => setWorkspaceToDelete(id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-
-        {/* SCROLLABLE GRID (DENSER) */}
-        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-6">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="animate-spin h-10 w-10 text-primary-start" />
-            </div>
-          ) : filteredWorkspaces.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 opacity-40">
-              <FolderOpen size={40} />
-              <p className="mt-3 font-bold uppercase tracking-widest text-xs">{t('projectsDashboard.noProjects', 'Nuk u gjet asgjë')}</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredWorkspaces.map((workspace: Workspace) => (
-                <WorkspaceCard
-                  key={workspace.id}
-                  workspace={workspace}
-                  onDelete={(id) => setWorkspaceToDelete(id)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
       </div>
 
       {/* Create Project Modal */}
