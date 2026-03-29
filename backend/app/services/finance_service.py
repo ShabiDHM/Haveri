@@ -1,6 +1,5 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V7.8 (CASE_ID IN CREATE)
-# ADDED DEBUG LOGGING FOR get_invoices & get_expenses
+# PHOENIX PROTOCOL - FINANCE SERVICE V8.0 (INVENTORY_ITEM_ID SUPPORT)
 
 import logging
 import csv
@@ -36,6 +35,20 @@ class FinanceService:
                 {"user_id": context_id},
                 {"organization_id": context_id}
             ]}
+
+    # --- HELPER: find inventory item by name (case-insensitive) ---
+    def _find_inventory_item_by_name(self, user_id: str, name: str) -> Optional[ObjectId]:
+        """Find an inventory item by name (case-insensitive) for a given user."""
+        if not name:
+            return None
+        # Normalize name
+        name_norm = name.strip().lower()
+        # Find in inventory_items collection
+        item = self.db.inventory_items.find_one({
+            "user_id": ObjectId(user_id),
+            "name": {"$regex": f"^{name_norm}$", "$options": "i"}
+        })
+        return item["_id"] if item else None
 
     # --- PARTNER LOGIC ---
 
@@ -98,6 +111,39 @@ class FinanceService:
             logger.error(f"Error calculating POS revenue: {e}")
             return 0.0
 
+    def create_pos_transaction(self, user_id: str, data: Dict[str, Any], case_id: Optional[str] = None) -> Dict[str, Any]:
+        """Create a single POS transaction with optional inventory_item_id."""
+        try:
+            user_oid = ObjectId(user_id)
+        except:
+            user_oid = user_id
+
+        # Prepare document
+        doc = {
+            "user_id": str(user_oid),
+            "product_name": data.get("product_name"),
+            "description": data.get("description"),
+            "category": data.get("category", "Shitje"),
+            "amount": data.get("total_price", 0.0),
+            "total_amount": data.get("total_price", 0.0),
+            "date_time": data.get("date", datetime.now(timezone.utc)),
+            "source": "MANUAL",
+            "status": "PAID",
+        }
+        # Handle inventory_item_id
+        inv_id = data.get("inventory_item_id")
+        if inv_id:
+            try:
+                doc["inventory_item_id"] = ObjectId(inv_id)
+            except:
+                pass
+        if case_id:
+            doc["case_id"] = case_id
+        # Insert
+        res = self.db.transactions.insert_one(doc)
+        doc["_id"] = res.inserted_id
+        return doc
+
     def delete_pos_transaction(self, user_id: str, transaction_id: str) -> None:
         try: oid = ObjectId(transaction_id)
         except: raise HTTPException(status_code=400, detail="Invalid Transaction ID")
@@ -124,6 +170,7 @@ class FinanceService:
         return f"F-{datetime.now().year}-{count + 1:04d}"
 
     def create_invoice(self, user_id: str, data: InvoiceCreate, case_id: Optional[str] = None) -> InvoiceInDB:
+        # Compute subtotal from items (handles inventory_item_id automatically)
         subtotal = sum(item.quantity * item.unit_price for item in data.items)
         invoice_doc = data.model_dump()
         invoice_doc.update({
@@ -135,24 +182,21 @@ class FinanceService:
         })
         if case_id:
             invoice_doc["case_id"] = case_id
+        # Insert
         res = self.db.invoices.insert_one(invoice_doc)
         invoice_doc["_id"] = res.inserted_id
         return InvoiceInDB(**invoice_doc)
 
     def get_invoices(self, context_id: str, case_id: Optional[str] = None) -> list[InvoiceInDB]:
-        # --- DEBUG LOGGING START ---
         logger.info(f"[DEBUG] get_invoices called with context_id={context_id}, case_id={case_id}")
-        # Count total documents for this user (without case filter)
         total_user_invoices = self.db.invoices.count_documents(self._get_resilient_filter(context_id))
         logger.info(f"[DEBUG] Total invoices for user (no case filter): {total_user_invoices}")
-        # --- END DEBUG LOGGING ---
 
         query = self._get_resilient_filter(context_id)
         if case_id:
             query["case_id"] = case_id
             logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
 
-        # Count after filter
         filtered_count = self.db.invoices.count_documents(query)
         logger.info(f"[DEBUG] Invoices after filter: {filtered_count}")
 
@@ -186,15 +230,14 @@ class FinanceService:
         doc = data.model_dump(); doc.update({"user_id": ObjectId(user_id), "created_at": datetime.now(timezone.utc)})
         if case_id:
             doc["case_id"] = case_id
+        # If inventory_item_id is present, store it (the Expense model now has it)
         res = self.db.expenses.insert_one(doc); doc["_id"] = res.inserted_id
         return ExpenseInDB(**doc)
 
     def get_expenses(self, context_id: str, case_id: Optional[str] = None) -> list[ExpenseInDB]:
-        # --- DEBUG LOGGING START ---
         logger.info(f"[DEBUG] get_expenses called with context_id={context_id}, case_id={case_id}")
         total_user_expenses = self.db.expenses.count_documents(self._get_resilient_filter(context_id))
         logger.info(f"[DEBUG] Total expenses for user (no case filter): {total_user_expenses}")
-        # --- END DEBUG LOGGING ---
 
         query = self._get_resilient_filter(context_id)
         if case_id:
@@ -212,22 +255,59 @@ class FinanceService:
         if existing and existing.get("is_locked"): raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
         self.db.expenses.delete_one({"_id": oid})
 
-    # --- UNIFIED IMPORT ---
+    # --- UNIFIED IMPORT (with inventory_item_id support) ---
 
     def import_unified_transactions(self, user_id: str, transactions: List[Dict[str, Any]]) -> Dict[str, int]:
         counts = {"INVOICE": 0, "EXPENSE": 0, "POS": 0, "UNKNOWN": 0}
         user = self.db.users.find_one({"_id": ObjectId(user_id)}); org_id = user.get("organization_id") if user else None
         for row in transactions:
             try:
-                row_type = str(row.get("Tipi", "POS")).upper().strip(); date_str = str(row.get("Data", datetime.now().strftime("%Y-%m-%d")))
-                try: dt = datetime.strptime(date_str, "%Y-%m-%d")
-                except: dt = datetime.now()
-                p_name = str(row.get("Produkti") or "").strip(); desc = str(row.get("Përshkrimi") or "Imported").strip(); amt = float(row.get("Shuma", 0.0))
+                row_type = str(row.get("Tipi", "POS")).upper().strip()
+                date_str = str(row.get("Data", datetime.now().strftime("%Y-%m-%d")))
+                try:
+                    dt = datetime.strptime(date_str, "%Y-%m-%d")
+                except:
+                    dt = datetime.now()
+                p_name = str(row.get("Produkti") or "").strip()
+                desc = str(row.get("Përshkrimi") or "Imported").strip()
+                amt = float(row.get("Shuma", 0.0))
+
                 if row_type == "POS":
-                    pos_doc = {"user_id": str(user_id), "product_name": p_name, "description": desc, "category": "Shitje", "amount": amt, "total_amount": amt, "date_time": dt, "source": "IMPORT", "status": "PAID"}
-                    if org_id: pos_doc["organization_id"] = ObjectId(str(org_id))
-                    self.db.transactions.insert_one(pos_doc); counts["POS"] += 1
+                    # Try to get inventory_item_id from row (e.g., from a separate column)
+                    inv_id_str = str(row.get("inventory_item_id") or "").strip()
+                    inv_id = ObjectId(inv_id_str) if inv_id_str else None
+                    # If not provided, attempt to match by product name
+                    if not inv_id and p_name:
+                        inv_id = self._find_inventory_item_by_name(user_id, p_name)
+
+                    pos_doc = {
+                        "user_id": str(user_id),
+                        "product_name": p_name,
+                        "description": desc,
+                        "category": "Shitje",
+                        "amount": amt,
+                        "total_amount": amt,
+                        "date_time": dt,
+                        "source": "IMPORT",
+                        "status": "PAID",
+                        "inventory_item_id": inv_id
+                    }
+                    if org_id:
+                        pos_doc["organization_id"] = ObjectId(str(org_id))
+                    self.db.transactions.insert_one(pos_doc)
+                    counts["POS"] += 1
+
                 elif row_type == "EXPENSE":
-                    self.create_expense(user_id, ExpenseCreate(category=str(row.get("Kategoria", "Shpenzim")), amount=abs(amt), description=desc, date=dt)); counts["EXPENSE"] += 1
-            except: continue
+                    # For expenses, we could also link inventory items if needed
+                    self.create_expense(user_id, ExpenseCreate(
+                        category=str(row.get("Kategoria", "Shpenzim")),
+                        amount=abs(amt),
+                        description=desc,
+                        date=dt
+                    ))
+                    counts["EXPENSE"] += 1
+
+            except Exception as e:
+                logger.warning(f"Error processing import row: {row} - {e}")
+                continue
         return counts

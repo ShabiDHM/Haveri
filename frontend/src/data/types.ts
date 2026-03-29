@@ -1,7 +1,5 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V4.6 (INVENTORY SOURCE FIELD ADDED)
-// 1. ADDED: source?: string to InventoryItem.
-// 2. STATUS: Fully synchronized.
+// PHOENIX PROTOCOL - TYPES V4.7 (INVENTORY ITEM ID ADDED TO INVOICE & POS)
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 export type EventPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -36,7 +34,13 @@ export interface BusinessProfileUpdate { firm_name?: string; address?: string; c
 export interface StrategicBriefingResponse { staffPerformance: { efficiencyStatus: 'sleep' | 'stable' | 'fire'; efficiencyScore: number; mvpName: string; mvpTotal: number; mvpInsight: { key: string; values?: Record<string, string | number>; }; actionBravo: boolean; }; market: { signals: Array<{ id: number; type: 'bestseller' | 'low_stock' | 'diaspora' | 'weather' | 'competitor' | 'holiday'; label: string; impact: 'high' | 'medium' | 'low'; message: string; action: string; }>; }; agenda: UIAgendaItem[]; }
 export interface RestockPrediction { suggested_quantity: number; reason: string; supplier_name?: string; estimated_cost?: number; }
 export interface SalesTrendAnalysis { trend_analysis: string; cross_sell_opportunities: string; }
-export interface InvoiceItem { description: string; quantity: number; unit_price: number; total: number; }
+export interface InvoiceItem { 
+    description: string; 
+    quantity: number; 
+    unit_price: number; 
+    total: number; 
+    inventory_item_id?: string;  // <-- NEW: link to inventory item
+}
 export interface Invoice { id: string; invoice_number: string; client_name: string; client_email?: string; client_address?: string; issue_date: string; due_date: string; items: InvoiceItem[]; subtotal: number; tax_rate: number; tax_amount: number; total_amount: number; currency: string; status: 'DRAFT' | 'SENT' | 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED'; notes?: string; related_workspace_id?: string; }
 export interface InvoiceCreateRequest { client_name: string; client_email?: string; client_address?: string; items: InvoiceItem[]; tax_rate: number; due_date?: string; notes?: string; related_workspace_id?: string; status?: string; }
 export interface Expense { id: string; category: string; amount: number; description?: string; date: string; currency: string; receipt_url?: string; related_workspace_id?: string; source_archive_id?: string; }
@@ -54,15 +58,23 @@ export interface AnalyticsDashboardData {
     total_profit_period?: number; 
 }
 export interface ArchiveItemOut { id: string; title: string; file_type: string; category: string; storage_key: string; file_size: number; created_at: string; workspace_id?: string; parent_id?: string; item_type?: 'FILE' | 'FOLDER'; is_shared?: boolean; indexing_status?: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED'; }
-export interface PosTransaction { id: string; product_name: string; quantity: number; total_price: number; transaction_date: string; payment_method: string; }
+export interface PosTransaction { 
+    id: string; 
+    product_name: string; 
+    quantity: number; 
+    total_price: number; 
+    transaction_date: string; 
+    payment_method: string;
+    inventory_item_id?: string;  // <-- NEW: link to inventory item
+}
 export interface InventoryItem {
-  _id: string;
+  _id: string;  // note: the field is _id, not id
   name: string;
   unit: string;
   current_stock: number;
   cost_per_unit: number;
   low_stock_threshold: number;
-  source?: string; // NEW: 'MANUAL' or 'POS'
+  source?: string; // 'MANUAL' or 'POS'
 }
 export interface InventoryItemCreate { name: string; unit: string; current_stock: number; cost_per_unit: number; low_stock_threshold?: number; }
 export interface Ingredient { inventory_item_id: string; quantity_required: number; }

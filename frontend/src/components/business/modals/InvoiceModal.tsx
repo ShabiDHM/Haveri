@@ -1,10 +1,10 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V21.3 (WORKSPACE AWARE)
+// PHOENIX PROTOCOL - INVOICE MODAL V22.1 (INVENTORY ID FIX)
 
 import React, { useState, useEffect } from 'react';
-import { X, User, FileText, Plus, Trash2, Search } from 'lucide-react';
+import { X, User, FileText, Plus, Trash2, Search, Package } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Invoice, InvoiceItem, Partner } from '../../../data/types';
+import { Invoice, InvoiceItem, Partner, InventoryItem } from '../../../data/types';
 import { apiService } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -19,6 +19,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
     const { t } = useTranslation();
     const { workspace } = useAuth();
     const [partners, setPartners] = useState<Partner[]>([]);
+    const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const [formData, setFormData] = useState({ 
         client_name: '', client_email: '', client_phone: '', client_address: '', 
         client_city: '', client_tax_id: '', client_website: '', 
@@ -27,12 +28,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
     const [includeVat, setIncludeVat] = useState(true);
     const [lineItems, setLineItems] = useState<InvoiceItem[]>([{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
 
+    // Fetch partners and inventory when modal opens
     useEffect(() => {
         if (isOpen) {
-            apiService.getPartners().then(data => { setPartners(data.filter(p => p.type === 'CLIENT')); });
+            apiService.getPartners().then(data => setPartners(data.filter(p => p.type === 'CLIENT')));
+            apiService.getInventoryItems(workspace?.id).then(data => setInventoryItems(data));
         }
-    }, [isOpen]);
+    }, [isOpen, workspace?.id]);
 
+    // Load editing data
     useEffect(() => {
         if (isOpen) {
             if (invoiceToEdit) {
@@ -49,11 +53,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                     status: invoiceToEdit.status
                 });
                 setIncludeVat(invoiceToEdit.tax_rate > 0);
-                setLineItems(invoiceToEdit.items || [{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
+                const items = invoiceToEdit.items || [{ description: '', quantity: 1, unit_price: 0, total: 0 }];
+                setLineItems(items);
             } else {
                 setFormData({ client_name: '', client_email: '', client_phone: '', client_address: '', client_city: '', client_tax_id: '', client_website: '', tax_rate: 18, notes: '', status: 'PAID' });
                 setIncludeVat(true);
-                setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
+                setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0, inventory_item_id: undefined }]);
             }
         }
     }, [isOpen, invoiceToEdit]);
@@ -66,7 +71,25 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
 
     const updateLineItem = (i: number, field: keyof InvoiceItem, value: any) => {
         const newItems = [...lineItems];
-        newItems[i] = { ...newItems[i], [field]: value, total: (field === 'quantity' ? value : newItems[i].quantity) * (field === 'unit_price' ? value : newItems[i].unit_price) };
+        if (field === 'inventory_item_id') {
+            // When inventory item changes, optionally auto-fill description and unit_price?
+            const selectedItem = inventoryItems.find(item => item._id === value);
+            if (selectedItem) {
+                newItems[i] = {
+                    ...newItems[i],
+                    inventory_item_id: value,
+                    description: selectedItem.name,
+                    // Optionally set unit_price to cost (or leave as is)
+                    // unit_price: selectedItem.cost_per_unit,
+                };
+            } else {
+                newItems[i] = { ...newItems[i], inventory_item_id: value };
+            }
+        } else if (field === 'description' || field === 'quantity' || field === 'unit_price') {
+            newItems[i] = { ...newItems[i], [field]: value };
+        }
+        // Recalculate total
+        newItems[i].total = (newItems[i].quantity || 0) * (newItems[i].unit_price || 0);
         setLineItems(newItems);
     };
 
@@ -77,13 +100,17 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
             if (invoiceToEdit) {
                 await apiService.updateInvoice(invoiceToEdit.id, payload);
             } else {
-                await apiService.createInvoice(payload, workspace?.id);  // <-- passes workspace ID
+                await apiService.createInvoice(payload, workspace?.id);
             }
             onSuccess(); onClose();
-        } catch { alert(t('error.generic')); }
+        } catch (err) {
+            console.error(err);
+            alert(t('error.generic'));
+        }
     };
 
     if (!isOpen) return null;
+
     return (
         <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="glass-panel w-full max-w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 custom-finance-scroll shadow-xl">
@@ -92,7 +119,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                     <button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24} /></button>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Client Information */}
+                    {/* Client Information – unchanged */}
                     <div className="space-y-4">
                         <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><User size={14} /> {t('caseCard.client')}</h3>
                         <div className="relative">
@@ -119,25 +146,72 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                         </div>
                     </div>
 
-                    {/* Line Items */}
+                    {/* Line Items with inventory dropdown */}
                     <div className="space-y-3 pt-4 border-t border-border-main">
                         <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><FileText size={14} /> {t('finance.services')}</h3>
                         {lineItems.map((item, index) => (
-                            <div key={index} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-                                <input required placeholder={t('finance.description')} className="flex-1 w-full glass-input" value={item.description} onChange={e => updateLineItem(index, 'description', e.target.value)} />
-                                <div className="flex gap-2 w-full sm:w-auto">
-                                    <input type="number" placeholder="Qty" className="w-20 glass-input" value={item.quantity} onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))} />
-                                    <input type="number" placeholder="Price" className="w-24 glass-input" value={item.unit_price} onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))} />
+                            <div key={index} className="flex flex-col gap-2 border border-border-main rounded-xl p-3 bg-surface/20">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {/* Inventory dropdown */}
+                                    <div className="flex-1 min-w-[150px]">
+                                        <select
+                                            className="glass-input w-full"
+                                            value={item.inventory_item_id || ''}
+                                            onChange={e => updateLineItem(index, 'inventory_item_id', e.target.value)}
+                                        >
+                                            <option value="">{t('finance.selectProduct')}</option>
+                                            {inventoryItems.map(inv => (
+                                                <option key={inv._id} value={inv._id}>{inv.name} (€{inv.cost_per_unit})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <input
+                                        required
+                                        placeholder={t('finance.description')}
+                                        className="flex-1 glass-input"
+                                        value={item.description}
+                                        onChange={e => updateLineItem(index, 'description', e.target.value)}
+                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="number"
+                                            placeholder="Qty"
+                                            className="w-20 glass-input"
+                                            value={item.quantity}
+                                            onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Price"
+                                            className="w-24 glass-input"
+                                            value={item.unit_price}
+                                            onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))}
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setLineItems(lineItems.filter((_, idx) => idx !== index))}
+                                        className="p-2 text-danger-start hover:bg-danger-start/10 rounded-md transition-colors"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
                                 </div>
-                                <button type="button" onClick={() => setLineItems(lineItems.filter((_, idx) => idx !== index))} className="p-2 text-danger-start sm:mt-0 mt-2">
-                                    <Trash2 size={18} />
-                                </button>
+                                {item.inventory_item_id && (
+                                    <div className="text-xs text-text-muted flex items-center gap-1">
+                                        <Package size={12} />
+                                        {t('finance.linkedInventory')}
+                                    </div>
+                                )}
                             </div>
                         ))}
-                        <button type="button" onClick={() => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0 }])} className="text-sm text-primary flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={() => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0, inventory_item_id: undefined }])}
+                            className="text-sm text-primary flex items-center gap-1"
+                        >
                             <Plus size={14} /> {t('finance.addLine')}
                         </button>
-                        
+
                         <div className="flex items-center gap-2 pt-2">
                             <input
                                 id="includeVat"

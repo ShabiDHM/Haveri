@@ -1,5 +1,5 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V11.8 (TOP PRODUCT ITEM DEFAULT)
+# PHOENIX PROTOCOL - FINANCE MODELS V11.9 (ADDED INVENTORY_ITEM_ID)
 
 from pydantic import BaseModel, Field, ConfigDict, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -60,6 +60,7 @@ class Transaction(BaseModel):
     category: str = "Uncategorized"
     status: str = "PAID"
     source: str = "IMPORT"
+    inventory_item_id: Optional[PyObjectId] = None   # <-- NEW
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
 class PosTransactionOut(BaseModel):
@@ -68,6 +69,7 @@ class PosTransactionOut(BaseModel):
     quantity: Optional[float] = Field(default=1.0)
     total_price: Optional[float] = Field(alias="amount", default=0.0)
     transaction_date: datetime = Field(alias="date")
+    inventory_item_id: Optional[PyObjectId] = None   # <-- NEW
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
 # --- INVOICE MODELS ---
@@ -76,6 +78,7 @@ class InvoiceItem(BaseModel):
     quantity: float = 1.0
     unit_price: float = 0.0
     total: float = 0.0
+    inventory_item_id: Optional[PyObjectId] = None   # <-- NEW
 
 class InvoiceBase(BaseModel):
     invoice_number: Optional[str] = None
@@ -134,6 +137,7 @@ class ExpenseBase(BaseModel):
     date: datetime = Field(default_factory=datetime.utcnow)
     receipt_url: Optional[str] = None
     is_locked: bool = False
+    inventory_item_id: Optional[PyObjectId] = None   # <-- NEW (optional for expenses)
 
 class ExpenseCreate(ExpenseBase): pass
 
@@ -142,6 +146,7 @@ class ExpenseUpdate(BaseModel):
     category: Optional[str] = None
     amount: Optional[float] = None
     is_locked: Optional[bool] = None
+    inventory_item_id: Optional[PyObjectId] = None   # <-- NEW
 
 class ExpenseInDB(ExpenseBase):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)

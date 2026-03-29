@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V12 – Added debug logs to inspect invoice items and POS product_name
+// V14 – COGS uses inventory_item_id first, falls back to fuzzy name match
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -200,46 +200,45 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return total;
     }, [invoices, posTransactions, selectedYear, getLatestYear]);
 
-    // Cost of Goods Sold (COGS) – with debug logs to inspect invoice items and POS product_name
+    // Cost of Goods Sold (COGS) – uses inventory_item_id if present, else fuzzy name match
     const costOfGoodsSold = useMemo(() => {
-        // --- DEBUG: Log the structure of first invoice and first POS transaction ---
-        if (invoices.length > 0) {
-            console.log('[DEBUG] First invoice object:', JSON.stringify(invoices[0], null, 2));
-            console.log('[DEBUG] First invoice items:', invoices[0].items);
-        }
-        if (posTransactions.length > 0) {
-            console.log('[DEBUG] First POS transaction object:', JSON.stringify(posTransactions[0], null, 2));
-            console.log('[DEBUG] First POS product_name:', posTransactions[0].product_name);
-        }
-
-        // Build exact‑match map (fast)
-        const exactMap = new Map<string, number>();
+        // Build maps for fast lookup
+        const idMap = new Map<string, number>();
+        const nameMap = new Map<string, number>();
         inventoryItems.forEach(item => {
-            const key = (item.name || '').toLowerCase().trim();
-            if (key) exactMap.set(key, item.cost_per_unit);
+            const id = item._id;
+            if (id) idMap.set(id, item.cost_per_unit);
+            const name = (item.name || '').toLowerCase().trim();
+            if (name) nameMap.set(name, item.cost_per_unit);
         });
-
-        // Pre‑compute fuzzy search array
-        const fuzzyItems = inventoryItems
-            .map(item => ({
-                name: (item.name || '').toLowerCase().trim(),
-                cost: item.cost_per_unit,
-            }))
-            .filter(item => item.name !== '');
 
         const loggedMissing = new Set<string>();
 
-        const getCost = (productName: string): number => {
-            const normalized = productName.toLowerCase().trim();
+        const getCostById = (id: string | undefined): number | null => {
+            if (!id) return null;
+            const cost = idMap.get(id);
+            if (cost !== undefined) return cost;
+            return null;
+        };
+
+        const getCostByName = (name: string): number => {
+            const normalized = name.toLowerCase().trim();
             if (!normalized) return 0;
 
-            if (exactMap.has(normalized)) return exactMap.get(normalized)!;
-            const match = fuzzyItems.find(inv => normalized.includes(inv.name));
-            if (match) return match.cost;
+            // Exact match
+            if (nameMap.has(normalized)) return nameMap.get(normalized)!;
 
+            // Fuzzy match (substring)
+            const match = inventoryItems.find(inv => {
+                const invName = (inv.name || '').toLowerCase().trim();
+                return normalized.includes(invName);
+            });
+            if (match) return match.cost_per_unit;
+
+            // Log missing once
             if (!loggedMissing.has(normalized)) {
                 loggedMissing.add(normalized);
-                console.log(`[DEBUG COGS] No inventory match for product: ${productName}`);
+                console.log(`[DEBUG COGS] No inventory match for product: ${name}`);
             }
             return 0;
         };
@@ -248,21 +247,22 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
 
         // Process invoices
         invoices.forEach(invoice => {
-            if (!invoice.items || invoice.items.length === 0) {
-                console.warn(`[DEBUG COGS] Invoice ${invoice.id} has no items array or it's empty.`);
-                return;
-            }
+            if (!invoice.items || invoice.items.length === 0) return;
             invoice.items.forEach(item => {
-                const productName = (item.description || '').trim();
-                if (!productName) {
-                    console.warn(`[DEBUG COGS] Invoice ${invoice.invoice_number} has empty line item description, skipping.`);
-                    return;
+                let cost = 0;
+                // Priority 1: use inventory_item_id if present
+                if (item.inventory_item_id) {
+                    const c = getCostById(item.inventory_item_id);
+                    if (c !== null) cost = c;
+                }
+                // Fallback: use description (name) matching
+                if (cost === 0 && item.description) {
+                    cost = getCostByName(item.description);
                 }
                 const quantity = item.quantity || 1;
-                const cost = getCost(productName);
                 const itemCogs = quantity * cost;
                 if (cost > 0) {
-                    console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - line item "${productName}": ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
+                    console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - line item "${item.description}": ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
                 }
                 totalCogs += itemCogs;
             });
@@ -270,16 +270,23 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
 
         // Process POS transactions
         posTransactions.forEach(pos => {
-            const productName = (pos.product_name || (pos as any).description || '').trim();
-            if (!productName) {
-                // Some POS transactions might not have a product name – skip silently
-                return;
+            let cost = 0;
+            // Priority 1: use inventory_item_id if present
+            if ((pos as any).inventory_item_id) {
+                const c = getCostById((pos as any).inventory_item_id);
+                if (c !== null) cost = c;
+            }
+            // Fallback: use product_name (or description)
+            if (cost === 0) {
+                const productName = (pos.product_name || (pos as any).description || '').trim();
+                if (productName) {
+                    cost = getCostByName(productName);
+                }
             }
             const quantity = pos.quantity ?? 1;
-            const cost = getCost(productName);
             const itemCogs = quantity * cost;
             if (cost > 0) {
-                console.log(`[DEBUG COGS] POS ${pos.id} - "${productName}": ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
+                console.log(`[DEBUG COGS] POS ${pos.id} - "${pos.product_name}": ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
             }
             totalCogs += itemCogs;
         });
