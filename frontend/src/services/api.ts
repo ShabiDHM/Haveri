@@ -1,5 +1,6 @@
 // FILE: src/services/api.ts
 // PHOENIX PROTOCOL - API V14.8 (SOURCE APP PUBLIC LAW ENDPOINTS)
+// MODIFIED: confirmImport now accepts optional workspaceId and adds case_id query param
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -313,7 +314,17 @@ class ApiService {
 
     // --- IMPORTS ---
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
-    public async confirmImport(file: File, mapping: Record<string, string>, importType: 'pos' | 'bank'): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); formData.append('mapping', JSON.stringify(mapping)); formData.append('importType', importType); const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData); return response.data; }
+
+    // UPDATED: confirmImport now accepts workspaceId and adds case_id query param
+    public async confirmImport(file: File, mapping: Record<string, string>, importType: 'pos' | 'bank', workspaceId?: string): Promise<ImportResult> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('mapping', JSON.stringify(mapping));
+        formData.append('importType', importType);
+        const params = workspaceId ? { case_id: workspaceId } : {};
+        const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData, { params });
+        return response.data;
+    }
 
     // --- INVENTORY ---
     public async getInventoryItems(workspaceId?: string): Promise<InventoryItem[]> {

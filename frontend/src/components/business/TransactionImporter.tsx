@@ -1,10 +1,11 @@
 // FILE: src/components/business/TransactionImporter.tsx
 // PHOENIX PROTOCOL - I18N V24.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// MODIFIED: Added useAuth to get workspace.id and pass it to confirmImport
 
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2, ShoppingCart, Landmark } from 'lucide-react';
 import { apiService, ImportPreviewResponse } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 interface TransactionImporterProps {
     onClose: () => void;
@@ -15,6 +16,7 @@ interface TransactionImporterProps {
 type ImportType = 'pos' | 'bank';
 
 export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClose, onSuccess, t }) => {
+    const { workspace } = useAuth();
     const [step, setStep] = useState<'selection' | 'upload' | 'mapping' | 'processing'>('selection');
     const [importType, setImportType] = useState<ImportType>('pos');
     const [file, setFile] = useState<File | null>(null);
@@ -92,7 +94,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
         setStep('processing');
         
         try {
-            await apiService.confirmImport(file, mapping, importType);
+            await apiService.confirmImport(file, mapping, importType, workspace?.id);  // <-- passes workspace ID
             onSuccess();
             onClose();
         } catch (error) {
