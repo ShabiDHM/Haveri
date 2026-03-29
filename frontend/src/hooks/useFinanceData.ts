@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V11 – Full file: item‑based COGS, exact/fuzzy matching, duplicate‑log prevention
+// V12 – Added debug logs to inspect invoice items and POS product_name
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -200,16 +200,26 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return total;
     }, [invoices, posTransactions, selectedYear, getLatestYear]);
 
-    // Cost of Goods Sold (COGS) – iterates over invoice line items and POS product_name
+    // Cost of Goods Sold (COGS) – with debug logs to inspect invoice items and POS product_name
     const costOfGoodsSold = useMemo(() => {
-        // 1. Build exact‑match map (fast)
+        // --- DEBUG: Log the structure of first invoice and first POS transaction ---
+        if (invoices.length > 0) {
+            console.log('[DEBUG] First invoice object:', JSON.stringify(invoices[0], null, 2));
+            console.log('[DEBUG] First invoice items:', invoices[0].items);
+        }
+        if (posTransactions.length > 0) {
+            console.log('[DEBUG] First POS transaction object:', JSON.stringify(posTransactions[0], null, 2));
+            console.log('[DEBUG] First POS product_name:', posTransactions[0].product_name);
+        }
+
+        // Build exact‑match map (fast)
         const exactMap = new Map<string, number>();
         inventoryItems.forEach(item => {
             const key = (item.name || '').toLowerCase().trim();
             if (key) exactMap.set(key, item.cost_per_unit);
         });
 
-        // 2. Pre‑compute fuzzy search array
+        // Pre‑compute fuzzy search array
         const fuzzyItems = inventoryItems
             .map(item => ({
                 name: (item.name || '').toLowerCase().trim(),
@@ -217,21 +227,16 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             }))
             .filter(item => item.name !== '');
 
-        // 3. Track already logged missing product names
         const loggedMissing = new Set<string>();
 
         const getCost = (productName: string): number => {
             const normalized = productName.toLowerCase().trim();
             if (!normalized) return 0;
 
-            // Exact match (Priority 1)
             if (exactMap.has(normalized)) return exactMap.get(normalized)!;
-
-            // Fuzzy match: any inventory name contained in product name (Priority 2)
             const match = fuzzyItems.find(inv => normalized.includes(inv.name));
             if (match) return match.cost;
 
-            // No match – log once per unique product name
             if (!loggedMissing.has(normalized)) {
                 loggedMissing.add(normalized);
                 console.log(`[DEBUG COGS] No inventory match for product: ${productName}`);
@@ -241,13 +246,16 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
 
         let totalCogs = 0;
 
-        // --- Invoices: iterate over line items ---
+        // Process invoices
         invoices.forEach(invoice => {
-            if (!invoice.items || invoice.items.length === 0) return;
+            if (!invoice.items || invoice.items.length === 0) {
+                console.warn(`[DEBUG COGS] Invoice ${invoice.id} has no items array or it's empty.`);
+                return;
+            }
             invoice.items.forEach(item => {
                 const productName = (item.description || '').trim();
                 if (!productName) {
-                    console.warn(`[DEBUG COGS] Invoice ${invoice.invoice_number} has an empty line item description, skipping.`);
+                    console.warn(`[DEBUG COGS] Invoice ${invoice.invoice_number} has empty line item description, skipping.`);
                     return;
                 }
                 const quantity = item.quantity || 1;
@@ -260,7 +268,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             });
         });
 
-        // --- POS Transactions: use product_name directly ---
+        // Process POS transactions
         posTransactions.forEach(pos => {
             const productName = (pos.product_name || (pos as any).description || '').trim();
             if (!productName) {
