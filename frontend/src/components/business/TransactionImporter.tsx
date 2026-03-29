@@ -1,6 +1,6 @@
 // FILE: src/components/business/TransactionImporter.tsx
 // PHOENIX PROTOCOL - I18N V24.0 (DESIGN SYSTEM STANDARDIZED)
-// MODIFIED: Added useAuth to get workspace.id and pass it to confirmImport
+// MODIFIED: product_name is now required for POS imports
 
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2, ShoppingCart, Landmark } from 'lucide-react';
@@ -27,9 +27,9 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
 
     const posRequiredFields = [
         { key: 'amount', label: t('finance.amount'), required: true },
+        { key: 'product_name', label: t('finance.import.productName'), required: true }, // NOW REQUIRED
         { key: 'date', label: t('finance.date'), required: false },
         { key: 'description', label: t('finance.description'), required: false },
-        { key: 'product_name', label: t('finance.import.productName'), required: false }, 
         { key: 'category', label: t('finance.expenseCategory'), required: false },
         { key: 'Tipi', label: t('finance.import.typeLabel'), required: false },
         { key: 'status', label: t('finance.import.statusLabel'), required: false }
@@ -71,7 +71,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                     if (h.includes('shum') || h.includes('amount') || h.includes('price')) initialMapping[header] = 'amount';
                     else if (h.includes('dat') || h.includes('date')) initialMapping[header] = 'date';
                     else if (h.includes('përshkrim') || h.includes('desc')) initialMapping[header] = 'description';
-                    else if (h.includes('produkt') || h.includes('product')) initialMapping[header] = 'product_name';
+                    else if (h.includes('produkt') || h.includes('product') || h.includes('emri i produktit')) initialMapping[header] = 'product_name';
                     else if (h.includes('kategori') || h.includes('cat')) initialMapping[header] = 'category';
                     else if (h.includes('tipi') || h.includes('type')) initialMapping[header] = 'Tipi';
                     else if (h.includes('status')) initialMapping[header] = 'status';
@@ -94,7 +94,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
         setStep('processing');
         
         try {
-            await apiService.confirmImport(file, mapping, importType, workspace?.id);  // <-- passes workspace ID
+            await apiService.confirmImport(file, mapping, importType, workspace?.id);
             onSuccess();
             onClose();
         } catch (error) {
@@ -121,7 +121,8 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
         if (importType === 'bank') {
             return getMappedHeader('description') && getMappedHeader('date') && (getMappedHeader('debit') || getMappedHeader('credit'));
         }
-        return getMappedHeader('amount');
+        // POS: require amount and product_name
+        return getMappedHeader('amount') && getMappedHeader('product_name');
     };
 
     return (
