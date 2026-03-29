@@ -1,10 +1,10 @@
 // FILE: src/hooks/useFinanceData.ts
-// V6 – Robust calculations with year sync
+// V7 – Added COGS calculation using inventory
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Invoice, Expense, Workspace, AnalyticsDashboardData, PosTransaction } from '../data/types';
+import { Invoice, Expense, Workspace, AnalyticsDashboardData, PosTransaction, InventoryItem } from '../data/types';
 
 export type TransactionItem = {
     id: string;
@@ -33,9 +33,10 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
     const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
     const [posTransactions, setPosTransactions] = useState<PosTransaction[]>([]);
     const [analyticsData, setAnalyticsData] = useState<AnalyticsDashboardData | null>(null);
+    const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const workspaceId = options?.workspaceId;
 
-    // ---- Helper: get the latest year from data ----
+    // Helper to get latest year from transactions
     const getLatestYear = useCallback(() => {
         const years = new Set<number>();
         invoices.forEach(i => { if (i.issue_date) years.add(safeDate(i.issue_date).getFullYear()); });
@@ -45,7 +46,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return yearArray.length ? Math.max(...yearArray) : new Date().getFullYear();
     }, [invoices, expenses, posTransactions]);
 
-    // ---- Effect: sync selectedYear to latest available year if it's not set or invalid ----
+    // Sync selectedYear to the latest available year
     useEffect(() => {
         if (!loading && invoices.length + expenses.length + posTransactions.length > 0) {
             const latestYear = getLatestYear();
@@ -108,7 +109,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         },
     ];
 
-    // ---- Fetch data (unchanged) ----
+    // ---- Fetch all data including inventory ----
     useEffect(() => {
         let isMounted = true;
         const fetchData = async () => {
@@ -120,6 +121,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
                     apiService.getWorkspaces(),
                     apiService.getPosTransactions(workspaceId),
                     apiService.getAnalyticsDashboard(undefined, selectedYear, workspaceId),
+                    apiService.getInventoryItems(workspaceId), // NEW: fetch inventory
                 ]);
                 console.log('[useFinanceData] Raw API responses:');
                 if (results[0].status === 'fulfilled') {
@@ -142,6 +144,10 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
                     console.log('  Analytics:', results[4].value);
                     setAnalyticsData(results[4].value);
                 } else console.error('  Analytics fetch failed:', results[4].reason);
+                if (results[5].status === 'fulfilled') {
+                    console.log('  Inventory Items:', results[5].value);
+                    setInventoryItems(results[5].value);
+                } else console.error('  Inventory fetch failed:', results[5].reason);
                 if (isMounted) {}
             } catch (e) {
                 console.error('[useFinanceData] Unexpected error:', e);
@@ -154,16 +160,18 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
     }, [workspaceId, selectedYear]);
 
     const refreshData = useCallback(async () => {
-        const [inv, exp, pos, analytics] = await Promise.all([
+        const [inv, exp, pos, analytics, inventory] = await Promise.all([
             apiService.getInvoices(workspaceId),
             apiService.getExpenses(workspaceId),
             apiService.getPosTransactions(workspaceId),
             apiService.getAnalyticsDashboard(undefined, selectedYear, workspaceId),
+            apiService.getInventoryItems(workspaceId),
         ]);
         setInvoices(inv);
         setExpenses(exp);
         setPosTransactions(pos);
         setAnalyticsData(analytics);
+        setInventoryItems(inventory);
     }, [selectedYear, workspaceId]);
 
     // ---- Fixed: totalExpenses with robust year comparison ----
@@ -192,7 +200,50 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return total;
     }, [invoices, posTransactions, selectedYear, getLatestYear]);
 
-    const costOfGoodsSold = analyticsData?.total_cogs_period ?? 0;
+    // ---- NEW: COGS Calculation ----
+    const costOfGoodsSold = useMemo(() => {
+        // Create a map of product name -> cost per unit from inventory
+        const inventoryMap = new Map<string, number>();
+        inventoryItems.forEach(item => {
+            inventoryMap.set(item.name.toLowerCase(), item.cost_per_unit);
+        });
+
+        let totalCogs = 0;
+
+        // 1. Process invoices
+        invoices.forEach(invoice => {
+            invoice.items.forEach(item => {
+                const productName = item.description?.toLowerCase() || '';
+                const quantity = item.quantity;
+                const cost = inventoryMap.get(productName) ?? 0;
+                const itemCogs = quantity * cost;
+                if (cost > 0) {
+                    console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - ${item.description}: ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
+                } else {
+                    console.warn(`[DEBUG COGS] No inventory match for product: ${item.description} (cost set to 0)`);
+                }
+                totalCogs += itemCogs;
+            });
+        });
+
+        // 2. Process POS transactions
+        posTransactions.forEach(pos => {
+            const productName = pos.product_name?.toLowerCase() || '';
+            const quantity = pos.quantity ?? 1; // fallback to 1 if quantity missing
+            const cost = inventoryMap.get(productName) ?? 0;
+            const itemCogs = quantity * cost;
+            if (cost > 0) {
+                console.log(`[DEBUG COGS] POS ${pos.id} - ${pos.product_name}: ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
+            } else {
+                console.warn(`[DEBUG COGS] No inventory match for POS product: ${pos.product_name} (cost set to 0)`);
+            }
+            totalCogs += itemCogs;
+        });
+
+        console.log(`[DEBUG COGS] Total COGS = €${totalCogs.toFixed(2)}`);
+        return totalCogs;
+    }, [invoices, posTransactions, inventoryItems]);
+
     const displayProfit = displayIncome - costOfGoodsSold - totalExpenses;
 
     // ---- Available years (unchanged, but type-safe) ----
