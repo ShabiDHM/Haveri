@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/inventory.py
-# PHOENIX PROTOCOL - INVENTORY ENDPOINTS V5.6 (WORKSPACE FILTERING)
+# PHOENIX PROTOCOL - INVENTORY ENDPOINTS V6.1 (FIXED RECIPE IMPORT TYPE)
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from typing import List, Dict, Any, cast, Optional
@@ -38,7 +38,7 @@ class RecipeCreate(BaseModel):
 def get_inventory_items(
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db),
-    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
+    case_id: Optional[str] = Query(None)
 ):
     service = InventoryService(db)
     return service.get_items(str(current_user.id), case_id)
@@ -48,7 +48,7 @@ def create_inventory_item(
     item_in: InventoryItemCreate,
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db),
-    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
+    case_id: Optional[str] = Query(None)
 ):
     service = InventoryService(db)
     return service.create_item(str(current_user.id), item_in.model_dump(), case_id)
@@ -80,11 +80,8 @@ async def import_inventory_items(
     file: UploadFile = File(...),
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db),
-    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
+    case_id: Optional[str] = Query(None)
 ):
-    # ... (existing import logic unchanged)
-    # At the end, call service.import_items_bulk with case_id
-    # (we'll integrate case_id in the service call)
     content = await file.read()
     filename = file.filename or "unknown.csv"
     
@@ -92,8 +89,10 @@ async def import_inventory_items(
         if filename.endswith('.xlsx'):
             df = pd.read_excel(io.BytesIO(content))
         else:
-            try: df = pd.read_csv(io.BytesIO(content), encoding='utf-8')
-            except: df = pd.read_csv(io.BytesIO(content), encoding='cp1252')
+            try:
+                df = pd.read_csv(io.BytesIO(content), encoding='utf-8')
+            except:
+                df = pd.read_csv(io.BytesIO(content), encoding='cp1252')
     except Exception as e:
         raise HTTPException(400, f"Invalid file format: {str(e)}")
 
@@ -101,35 +100,44 @@ async def import_inventory_items(
     
     col_map = {}
     for c in df.columns:
-        if any(x in c for x in ['emri', 'name', 'produkt', 'product']): col_map['name'] = c
-        elif any(x in c for x in ['sasia', 'stok', 'qty', 'stock']): col_map['stock'] = c
-        elif any(x in c for x in ['kosto', 'cost', 'price', 'cmimi']): col_map['cost'] = c
-        elif any(x in c for x in ['njesi', 'unit']): col_map['unit'] = c
+        if any(x in c for x in ['emri', 'name', 'produkt', 'product']):
+            col_map['name'] = c
+        elif any(x in c for x in ['sasia', 'stok', 'qty', 'stock']):
+            col_map['stock'] = c
+        elif any(x in c for x in ['kosto', 'cost', 'price', 'cmimi']):
+            col_map['cost'] = c
+        elif any(x in c for x in ['njesi', 'unit']):
+            col_map['unit'] = c
 
     if 'name' not in col_map:
         raise HTTPException(400, "CSV must contain a 'Name' or 'Emri' column.")
 
     items_to_create = []
-    
     for _, row in df.iterrows():
         try:
             name = str(row[col_map['name']]).strip()
-            if not name: continue
+            if not name:
+                continue
             
             stock = 0.0
             if 'stock' in col_map:
-                try: stock = float(str(row[col_map['stock']]).replace(',', '.'))
-                except: stock = 0.0
+                try:
+                    stock = float(str(row[col_map['stock']]).replace(',', '.'))
+                except:
+                    stock = 0.0
                 
             cost = 0.0
             if 'cost' in col_map:
-                try: cost = float(str(row[col_map['cost']]).replace(',', '.'))
-                except: cost = 0.0
+                try:
+                    cost = float(str(row[col_map['cost']]).replace(',', '.'))
+                except:
+                    cost = 0.0
             
             unit = "kg"
             if 'unit' in col_map:
                 val = str(row[col_map['unit']]).strip().lower()
-                if val: unit = val
+                if val:
+                    unit = val
             
             items_to_create.append({
                 "name": name,
@@ -137,14 +145,13 @@ async def import_inventory_items(
                 "current_stock": stock,
                 "cost_per_unit": cost
             })
-            
         except Exception:
             continue
 
     if items_to_create:
         service = InventoryService(db)
         count = service.import_items_bulk(str(current_user.id), items_to_create, case_id)
-        return { "items_created": count }
+        return {"items_created": count}
     
     return {"items_created": 0}
 
@@ -154,7 +161,7 @@ async def import_inventory_items(
 def get_recipes(
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db),
-    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
+    case_id: Optional[str] = Query(None)
 ):
     service = InventoryService(db)
     return service.get_recipes(str(current_user.id), case_id)
@@ -164,7 +171,7 @@ def create_recipe(
     recipe_in: RecipeCreate,
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db),
-    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
+    case_id: Optional[str] = Query(None)
 ):
     service = InventoryService(db)
     return service.create_recipe(str(current_user.id), recipe_in.model_dump(), case_id)
@@ -194,31 +201,75 @@ async def import_recipes(
     file: UploadFile = File(...),
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db),
-    case_id: Optional[str] = Query(None)  # PHOENIX: optional workspace filter
+    case_id: Optional[str] = Query(None)
 ):
-    # ... (existing import logic unchanged)
-    # At the end, call service.import_recipes_bulk with case_id
+    """
+    Import recipes from CSV/Excel file.
+    Expected format:
+    - Either no header: columns = Product Name, Ingredient Name, Quantity
+    - Or with header: any column names (will be auto‑detected)
+    """
     content = await file.read()
     filename = file.filename or "unknown.csv"
     
     try:
         if filename.endswith('.xlsx'):
-            df = pd.read_excel(io.BytesIO(content), header=None)
+            try:
+                df = pd.read_excel(io.BytesIO(content))
+            except:
+                df = pd.read_excel(io.BytesIO(content), header=None)
         else:
-            try: df = pd.read_csv(io.BytesIO(content), encoding='utf-8', header=None)
-            except: df = pd.read_csv(io.BytesIO(content), encoding='cp1252', header=None)
+            try:
+                df = pd.read_csv(io.BytesIO(content), encoding='utf-8')
+            except:
+                try:
+                    df = pd.read_csv(io.BytesIO(content), encoding='cp1252')
+                except:
+                    df = pd.read_csv(io.BytesIO(content), encoding='utf-8', header=None)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid file format: {str(e)}")
 
-    if df.empty or len(df.columns) < 3:
-        raise HTTPException(status_code=400, detail="CSV must have at least 3 columns: Product, Ingredient, Quantity")
-        
-    df.columns = ['product_name', 'ingredient_name', 'quantity_required'] + [f'extra_{i}' for i in range(len(df.columns) - 3)]
+    # Determine if the first row looks like a header
+    first_row = df.iloc[0].astype(str).str.lower().str.strip()
+    is_header = any(
+        any(keyword in cell for keyword in ['product', 'emri', 'name', 'ingredient', 'përbërës', 'quantity', 'sasi', 'qty'])
+        for cell in first_row
+    )
+    
+    if is_header:
+        # Use first row as header
+        df.columns = df.iloc[0]
+        df = df[1:].reset_index(drop=True)
+        # Rename columns to standard names
+        col_map = {}
+        for col in df.columns:
+            col_lower = str(col).lower().strip()
+            if any(x in col_lower for x in ['product', 'emri', 'name', 'produkt']):
+                col_map['product_name'] = col
+            elif any(x in col_lower for x in ['ingredient', 'përbërës', 'material']):
+                col_map['ingredient_name'] = col
+            elif any(x in col_lower for x in ['quantity', 'sasi', 'qty']):
+                col_map['quantity_required'] = col
+        if 'product_name' not in col_map or 'ingredient_name' not in col_map or 'quantity_required' not in col_map:
+            raise HTTPException(400, "Header must contain columns for product name, ingredient name, and quantity.")
+        df['product_name'] = df[col_map['product_name']]
+        df['ingredient_name'] = df[col_map['ingredient_name']]
+        df['quantity_required'] = df[col_map['quantity_required']]
+    else:
+        # No header: assume columns are product, ingredient, quantity
+        if df.shape[1] < 3:
+            raise HTTPException(400, "CSV must have at least 3 columns: Product, Ingredient, Quantity")
+        df.columns = ['product_name', 'ingredient_name', 'quantity_required'] + [f'extra_{i}' for i in range(df.shape[1] - 3)]
 
-    recipes_data_raw = df.to_dict(orient='records')
-    recipes_data: List[Dict[str, Any]] = [
-        {str(k): v for k, v in row.items()} for row in recipes_data_raw
-    ]
+    # Convert to list of dicts with proper types (fixes Pylance error)
+    raw_recipes = df[['product_name', 'ingredient_name', 'quantity_required']].to_dict(orient='records')
+    recipes_data: List[Dict[str, Any]] = []
+    for row in raw_recipes:
+        recipes_data.append({
+            "product_name": str(row.get('product_name', '')),
+            "ingredient_name": str(row.get('ingredient_name', '')),
+            "quantity_required": float(row.get('quantity_required', 0))
+        })
     
     service = InventoryService(db)
     result = service.import_recipes_bulk(str(current_user.id), recipes_data, case_id)
