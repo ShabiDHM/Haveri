@@ -234,7 +234,9 @@
       "draft": "Draft",
       "sent": "Sent",
       "paid": "Paid",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "clients.typeClient": "Client",
+      "clients.typeSupplier": "Supplier"
     },
     "wizard": {
       "back": "Back to Finance",

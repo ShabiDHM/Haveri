@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.0 (ADDED POS MODAL)
+// PHOENIX PROTOCOL - FINANCE TAB V14.1 (HARDCODED PARTNER LABELS)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -362,7 +362,9 @@ export const FinanceTab: React.FC = () => {
                                             <div className="flex justify-between items-start mb-3 sm:mb-4">
                                                 <div className="p-2 sm:p-3 rounded-xl bg-primary-start/10 text-primary-start border border-border-main"><Users size={16} className="sm:w-5 sm:h-5" /></div>
                                                 <div className="flex flex-col items-end gap-2">
-                                                    <span className={`text-[10px] sm:text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-success-start/20 text-success-start border border-success-start/30' : 'bg-warning-start/20 text-warning-start border border-warning-start/30'}`}>{partner.type}</span>
+                                                    <span className={`text-[10px] sm:text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-success-start/20 text-success-start border border-success-start/30' : 'bg-warning-start/20 text-warning-start border border-warning-start/30'}`}>
+                                                        {partner.type === 'CLIENT' ? 'Klient' : 'Furnitor'}
+                                                    </span>
                                                     <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
                                                         <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-surface/50 text-danger-start hover:bg-danger-start hover:text-text-inverse transition-all border border-border-main" title={t('general.delete')}><Trash2 size={12} className="sm:w-3.5 sm:h-3.5"/></button>
                                                     </div>
