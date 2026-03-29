@@ -621,5 +621,14 @@
   "templateTerms": "Kushte të Përgjithshme",
   "templatePrivacy": "Politika e Privatësisë",
   "systemDisclaimer": "Ky dokument është gjeneruar nga AI për qëllime referimi. Rishikimi ligjor profesional rekomandohet."
+  },
+  "pos": {
+    "addSale": "Shto Shitje POS",
+    "product": "Produkti",
+    "selectProduct": "Zgjidh një produkt",
+    "quantity": "Sasia",
+    "totalPrice": "Çmimi Total",
+    "suggestedPrice": "Çmimi i sugjeruar",
+    "positiveQuantity": "Sasia duhet të jetë pozitive"
   }
 }
