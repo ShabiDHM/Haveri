@@ -1,8 +1,5 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V6.1 (EXECUTIVE DESIGN SYSTEM)
-// UPDATED: Cards now use glass-panel with backdrop blur, consistent with other modules.
-// ADDED: hover-lift and shadow-sm to cards and buttons.
-// RETAINED: All functionality and sorting logic.
+// PHOENIX PROTOCOL - INVENTORY LIST V6.2 (TRANSLATED EMPTY STATE)
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -35,7 +32,6 @@ const ItemCard: React.FC<{
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             className="glass-panel border border-border-main rounded-3xl p-5 sm:p-6 hover-lift shadow-sm transition-all duration-300 group relative flex flex-col justify-between h-full min-h-[13rem]"
         >
-            {/* Top Section */}
             <div>
                 <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
                     <div className={`p-2.5 sm:p-3 rounded-2xl bg-surface/30 backdrop-blur-sm border border-border-main ${isPos ? 'text-primary-start' : 'text-success-start'}`}>
@@ -58,7 +54,6 @@ const ItemCard: React.FC<{
                 </div>
             </div>
             
-            {/* Bottom Section */}
             <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-border-main flex justify-between items-end">
                 <div>
                     <span className="block text-xs sm:text-xs text-text-muted uppercase tracking-wider font-bold">
@@ -98,8 +93,6 @@ export const InventoryList: React.FC<InventoryListProps> = ({ manualItems, posIt
             ...manualItems.map(item => ({...item, isPos: false})), 
             ...posItems.map(item => ({...item, isPos: true}))
         ];
-        
-        // Sort by Current Stock (Ascending) - Lowest stock first
         return combined.sort((a, b) => Number(a.current_stock) - Number(b.current_stock));
     }, [manualItems, posItems]);
     
@@ -107,7 +100,9 @@ export const InventoryList: React.FC<InventoryListProps> = ({ manualItems, posIt
         return (
             <div className="flex flex-col items-center justify-center h-48 text-text-muted">
                 <Box size={40} className="mb-4 opacity-20" />
-                <p className="text-sm sm:text-base">{t('inventory.items.noItems', 'No items found')}</p>
+                <p className="text-sm sm:text-base">
+                    {t('inventory.items.noItemsFound', 'Nuk u gjet asnjë artikull.')}
+                </p>
             </div>
         );
     }
