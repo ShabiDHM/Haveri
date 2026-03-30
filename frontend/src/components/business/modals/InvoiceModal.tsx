@@ -1,5 +1,5 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V22.1 (INVENTORY ID FIX)
+// PHOENIX PROTOCOL - INVOICE MODAL V22.1 (INVENTORY ID FIX + UI SIZING/I18N FIX)
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2, Search, Package } from 'lucide-react';
@@ -72,15 +72,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
     const updateLineItem = (i: number, field: keyof InvoiceItem, value: any) => {
         const newItems = [...lineItems];
         if (field === 'inventory_item_id') {
-            // When inventory item changes, optionally auto-fill description and unit_price?
             const selectedItem = inventoryItems.find(item => item._id === value);
             if (selectedItem) {
                 newItems[i] = {
                     ...newItems[i],
                     inventory_item_id: value,
                     description: selectedItem.name,
-                    // Optionally set unit_price to cost (or leave as is)
-                    // unit_price: selectedItem.cost_per_unit,
                 };
             } else {
                 newItems[i] = { ...newItems[i], inventory_item_id: value };
@@ -113,15 +110,18 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
 
     return (
         <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="glass-panel w-full max-w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 custom-finance-scroll shadow-xl">
+            {/* Changed from sm:max-w-2xl to sm:max-w-xl to make the form more compact and user friendly */}
+            <div className="glass-panel w-full max-w-full sm:max-w-xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 custom-finance-scroll shadow-xl">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-text-primary">{invoiceToEdit ? t('finance.editInvoice') : t('finance.createInvoice')}</h2>
                     <button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24} /></button>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Client Information – unchanged */}
                     <div className="space-y-4">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><User size={14} /> {t('caseCard.client')}</h3>
+                        {/* Added direct fallback string for Client Information */}
+                        <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                            <User size={14} /> {t('finance.clientInfo', 'Informacioni i Klientit')}
+                        </h3>
                         <div className="relative">
                             <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.clientName')}</label>
                             <div className="relative">
@@ -146,20 +146,19 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                         </div>
                     </div>
 
-                    {/* Line Items with inventory dropdown */}
                     <div className="space-y-3 pt-4 border-t border-border-main">
                         <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><FileText size={14} /> {t('finance.services')}</h3>
                         {lineItems.map((item, index) => (
                             <div key={index} className="flex flex-col gap-2 border border-border-main rounded-xl p-3 bg-surface/20">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    {/* Inventory dropdown */}
                                     <div className="flex-1 min-w-[150px]">
                                         <select
                                             className="glass-input w-full"
                                             value={item.inventory_item_id || ''}
                                             onChange={e => updateLineItem(index, 'inventory_item_id', e.target.value)}
                                         >
-                                            <option value="">{t('finance.selectProduct')}</option>
+                                            {/* Added direct fallback string for Select Product */}
+                                            <option value="">{t('finance.selectProduct', 'Zgjidh Produktin')}</option>
                                             {inventoryItems.map(inv => (
                                                 <option key={inv._id} value={inv._id}>{inv.name} (€{inv.cost_per_unit})</option>
                                             ))}
