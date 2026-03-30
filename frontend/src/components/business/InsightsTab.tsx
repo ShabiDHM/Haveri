@@ -1,5 +1,5 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V5.5 (REMOVED DEBT, PULSE, AND RHYTHM CARDS)
+// PHOENIX PROTOCOL - INSIGHTS UI V5.7 (FINAL CLEANUP - REMOVED FORENSIC UI, RENAMED ANALYZER)
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,11 +20,12 @@ export const InsightsTab: React.FC = () => {
     const { t } = useTranslation();
     const { workspace } = useAuth();
 
-    // Removed debtAnalytics as it's no longer used
+    // Data fetching hooks
     const { loading: intelLoading, profitAnalytics, taxAnalytics } = useBusinessIntelligence(workspace?.id);
     const { loading: financeLoading } = useFinanceData({ workspaceId: workspace?.id });
     const { data: briefingData, loading: briefingLoading } = useStrategicBriefing(workspace?.id);
 
+    // UI State
     const [showAnalystPanel, setShowAnalystPanel] = useState(false);
     const [showForensicModal, setShowForensicModal] = useState(false);
 
@@ -51,19 +52,13 @@ export const InsightsTab: React.FC = () => {
                     </div>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => setShowForensicModal(true)}
-                            className="glass-input px-4 py-2.5 flex items-center gap-2 text-xs uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
-                        >
-                            {t('forensic.title', 'Auditori Forenzik')}
-                        </button>
-                        <button
                             onClick={() => setShowAnalystPanel(!showAnalystPanel)}
                             className="glass-input px-4 py-2.5 flex items-center gap-2 text-xs uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
                         >
                             {showAnalystPanel ? (
                                 <><ChevronUp size={14} /> {t('insights.hideAnalysis', 'Fshih Analizën')}</>
                             ) : (
-                                <><ChevronDown size={14} /> {t('insights.showAnalysis', 'Hap Analizën')}</>
+                                <><ChevronDown size={14} /> {t('insights.showAnalysis', 'Analizo Excel/CSV')}</>
                             )}
                         </button>
                     </div>
@@ -90,6 +85,7 @@ export const InsightsTab: React.FC = () => {
                 <ProfitModule data={profitAnalytics} />
             </div>
 
+            {/* Forensic Modal logic preserved for backend functionality, just hidden from UI header */}
             <ForensicAccountantModal
                 isOpen={showForensicModal}
                 onClose={() => setShowForensicModal(false)}
