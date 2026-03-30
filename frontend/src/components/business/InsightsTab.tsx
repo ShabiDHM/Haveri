@@ -1,7 +1,7 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V5.4 (WORKSPACE AWARE FORENSIC MODAL)
+// PHOENIX PROTOCOL - INSIGHTS UI V5.5 (REMOVED DEBT, PULSE, AND RHYTHM CARDS)
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Loader2, FileSpreadsheet, ChevronDown, ChevronUp } from 'lucide-react';
@@ -10,11 +10,8 @@ import { useFinanceData } from '../../hooks/useFinanceData';
 import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 import { useAuth } from '../../context/AuthContext';
 
-import { DebtModule } from './insights/DebtModule';
 import { TaxModule } from './insights/TaxModule';
 import { ProfitModule } from './insights/ProfitModule';
-import { BusinessRhythmCard, DailySalesData } from './insights/BusinessRhythmCard';
-import { BusinessPulseCard } from './insights/BusinessPulseCard';
 import { SmartAgendaCard } from './insights/SmartAgendaCard';
 import SpreadsheetAnalysisPanel from '../SpreadsheetAnalysisPanel';
 import { ForensicAccountantModal } from './insights/ForensicAccountantModal';
@@ -23,20 +20,13 @@ export const InsightsTab: React.FC = () => {
     const { t } = useTranslation();
     const { workspace } = useAuth();
 
-    const { loading: intelLoading, debtAnalytics, profitAnalytics, taxAnalytics } = useBusinessIntelligence(workspace?.id);
-    const { displayIncome, analyticsData, loading: financeLoading } = useFinanceData({ workspaceId: workspace?.id });
+    // Removed debtAnalytics as it's no longer used
+    const { loading: intelLoading, profitAnalytics, taxAnalytics } = useBusinessIntelligence(workspace?.id);
+    const { loading: financeLoading } = useFinanceData({ workspaceId: workspace?.id });
     const { data: briefingData, loading: briefingLoading } = useStrategicBriefing(workspace?.id);
 
     const [showAnalystPanel, setShowAnalystPanel] = useState(false);
     const [showForensicModal, setShowForensicModal] = useState(false);
-
-    const salesHistory: DailySalesData = useMemo(() => {
-        if (!analyticsData?.sales_trend) return { labels: [], data: [] };
-        return {
-            labels: analyticsData.sales_trend.map((p: any) => p.date),
-            data: analyticsData.sales_trend.map((p: any) => p.amount)
-        };
-    }, [analyticsData]);
 
     const loading = intelLoading || financeLoading || briefingLoading;
 
@@ -95,10 +85,7 @@ export const InsightsTab: React.FC = () => {
 
             {/* Dashboard Metrics Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <BusinessRhythmCard currentSales={displayIncome} salesHistory={salesHistory} />
-                <BusinessPulseCard currentSales={displayIncome} workspaceId={workspace?.id} />
                 {briefingData && <SmartAgendaCard agenda={briefingData.agenda} />}
-                <DebtModule data={debtAnalytics} />
                 <TaxModule data={taxAnalytics} />
                 <ProfitModule data={profitAnalytics} />
             </div>
