@@ -1,5 +1,5 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// FIXED: Robust date parsing for hierarchy grouping
+// FIXED: Robust date parsing and explicit Month translations for sq locale
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -72,6 +72,21 @@ const getCategoryIcon = (category: string) => {
     if (cat.includes('rrym')) return <Zap size={16} />;
     if (cat.includes('internet')) return <Wifi size={16} />;
     return <ArrowUpRight size={16} />;
+};
+
+/**
+ * Explicitly translates the month to bypass browser locale limitations
+ */
+const getTranslatedMonth = (dateObj: Date, lang: string, t: any) => {
+    const monthIndex = dateObj.getMonth();
+    const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const sqMonths = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
+    
+    const monthKey = enMonths[monthIndex].toLowerCase();
+    // Use explicit array fallback based on the active language
+    const fallback = lang.toLowerCase().startsWith('sq') ? sqMonths[monthIndex] : enMonths[monthIndex];
+    
+    return t(`months.${monthKey}`, fallback);
 };
 
 // -----------------------------------------------------------------------------
@@ -210,16 +225,15 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
     const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
     const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-    // Build hierarchy with robust date parsing
+    // Build hierarchy with robust date parsing and manual month translation
     const hierarchy = useMemo(() => {
         const tree: Record<string, Record<string, Record<string, TransactionItem[]>>> = {};
 
         allTransactions.forEach(tx => {
             const dateObj = parseDate(tx.date);
-            // Even if the original date was invalid, parseDate returns a valid date (current date).
-            // This ensures the transaction is grouped somewhere (e.g., today's date).
             const year = dateObj.getFullYear().toString();
-            const month = dateObj.toLocaleString(i18n.language, { month: 'long' });
+            // Use explicitly translated month instead of browser toLocaleString
+            const month = getTranslatedMonth(dateObj, i18n.language, t);
             const dayKey = dateObj.toISOString().slice(0, 10); // YYYY-MM-DD
 
             if (!tree[year]) tree[year] = {};
@@ -229,11 +243,8 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
             tree[year][month][dayKey].push(tx);
         });
 
-        // Debug log – shows the built hierarchy for verification
-        console.log('Hierarchy Tree:', tree);
-
         return tree;
-    }, [allTransactions, i18n.language]);
+    }, [allTransactions, i18n.language, t]);
 
     const handleBack = () => {
         if (view === 'transactions') setView('days');
@@ -250,10 +261,10 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         const totalCount = idsToProcess.invoice_ids.length + idsToProcess.expense_ids.length + idsToProcess.pos_ids.length;
 
         if (totalCount === 0) {
-            alert(t('finance.bulkDelete.noItems', 'No transactions to delete in this period.'));
+            alert(t('finance.bulkDelete.noItems', 'Nuk ka transaksione për t\'u fshirë në këtë periudhë.'));
             return;
         }
-        if (window.confirm(t('finance.bulkDelete.confirm', `Are you sure you want to delete all {{count}} transactions for '{{scope}}'? This cannot be undone.`, { count: totalCount, scope }))) {
+        if (window.confirm(t('finance.bulkDelete.confirm', `A jeni i sigurt që dëshironi të fshini të gjitha {{count}} transaksionet për '{{scope}}'? Ky veprim nuk mund të kthehet.`, { count: totalCount, scope }))) {
             onBulkDelete(idsToProcess);
         }
     };
@@ -366,9 +377,9 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                         <button onClick={handleBack} className="flex items-center gap-2 text-sm font-bold text-text-muted hover:text-text-primary transition-colors group hover-lift shadow-sm">
                             <div className="p-2 rounded-full bg-surface/50 backdrop-blur-sm group-hover:bg-hover border border-border-main"><ArrowLeft size={16} /></div>
                             <span>
-                                {view === 'months' && t('general.backToYears', 'Back to Years')}
-                                {view === 'days' && `${t('general.backTo', 'Back to')} ${selectedYear}`}
-                                {view === 'transactions' && `${t('general.backTo', 'Back to')} ${selectedMonth}`}
+                                {view === 'months' && t('general.backToYears', 'Kthehu te Vitet')}
+                                {view === 'days' && `${t('general.backTo', 'Kthehu te')} ${selectedYear}`}
+                                {view === 'transactions' && `${t('general.backTo', 'Kthehu te')} ${selectedMonth}`}
                             </span>
                         </button>
                     </motion.div>
