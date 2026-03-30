@@ -1,5 +1,5 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V22.1 (INVENTORY ID FIX + UI SIZING/I18N FIX)
+// PHOENIX PROTOCOL - INVOICE MODAL V22.2 (COMPACT UI SIZING & I18N FIX)
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2, Search, Package } from 'lucide-react';
@@ -110,54 +110,51 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
 
     return (
         <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            {/* Changed from sm:max-w-2xl to sm:max-w-xl to make the form more compact and user friendly */}
-            <div className="glass-panel w-full max-w-full sm:max-w-xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 custom-finance-scroll shadow-xl">
-                <div className="flex justify-between items-center mb-6">
+            <div className="glass-panel w-full max-w-full sm:max-w-xl max-h-[90vh] overflow-y-auto p-4 sm:p-5 custom-finance-scroll shadow-xl">
+                <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-text-primary">{invoiceToEdit ? t('finance.editInvoice') : t('finance.createInvoice')}</h2>
-                    <button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={24} /></button>
+                    <button onClick={onClose} className="text-text-muted hover:text-text-primary"><X size={20} /></button>
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-4">
-                        {/* Added direct fallback string for Client Information */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2.5">
                         <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                             <User size={14} /> {t('finance.clientInfo', 'Informacioni i Klientit')}
                         </h3>
                         <div className="relative">
-                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.clientName')}</label>
+                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-0.5">{t('business.clientName')}</label>
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={14} />
                                 <input list="p-list" required className="glass-input w-full pl-9" value={formData.client_name} onChange={e => handleClientChange(e.target.value)} />
                                 <datalist id="p-list">{partners.map(p => <option key={p.id} value={p.name} />)}</datalist>
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.publicEmail')}</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-0.5">{t('business.publicEmail')}</label>
                                 <input placeholder={t('business.publicEmail')} className="glass-input w-full" value={formData.client_email} onChange={e => setFormData({...formData, client_email: e.target.value})} />
                             </div>
                             <div>
-                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.phone')}</label>
+                                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-0.5">{t('business.phone')}</label>
                                 <input placeholder={t('business.phone')} className="glass-input w-full" value={formData.client_phone} onChange={e => setFormData({...formData, client_phone: e.target.value})} />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('business.address')}</label>
+                            <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-0.5">{t('business.address')}</label>
                             <input placeholder={t('business.address')} className="w-full glass-input" value={formData.client_address} onChange={e => setFormData({...formData, client_address: e.target.value})} />
                         </div>
                     </div>
 
-                    <div className="space-y-3 pt-4 border-t border-border-main">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><FileText size={14} /> {t('finance.services')}</h3>
+                    <div className="space-y-2 pt-3 border-t border-border-main">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 mb-1"><FileText size={14} /> {t('finance.services')}</h3>
                         {lineItems.map((item, index) => (
-                            <div key={index} className="flex flex-col gap-2 border border-border-main rounded-xl p-3 bg-surface/20">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <div className="flex-1 min-w-[150px]">
+                            <div key={index} className="flex flex-col gap-1.5 border border-border-main rounded-xl p-2 bg-surface/20">
+                                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                                    <div className="flex-1 min-w-[120px]">
                                         <select
                                             className="glass-input w-full"
                                             value={item.inventory_item_id || ''}
                                             onChange={e => updateLineItem(index, 'inventory_item_id', e.target.value)}
                                         >
-                                            {/* Added direct fallback string for Select Product */}
                                             <option value="">{t('finance.selectProduct', 'Zgjidh Produktin')}</option>
                                             {inventoryItems.map(inv => (
                                                 <option key={inv._id} value={inv._id}>{inv.name} (€{inv.cost_per_unit})</option>
@@ -167,7 +164,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                                     <input
                                         required
                                         placeholder={t('finance.description')}
-                                        className="flex-1 glass-input"
+                                        className="flex-1 glass-input min-w-[120px]"
                                         value={item.description}
                                         onChange={e => updateLineItem(index, 'description', e.target.value)}
                                     />
@@ -175,14 +172,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                                         <input
                                             type="number"
                                             placeholder="Qty"
-                                            className="w-20 glass-input"
+                                            className="w-16 glass-input text-center px-2"
                                             value={item.quantity}
                                             onChange={e => updateLineItem(index, 'quantity', parseFloat(e.target.value))}
                                         />
                                         <input
                                             type="number"
                                             placeholder="Price"
-                                            className="w-24 glass-input"
+                                            className="w-20 glass-input text-center px-2"
                                             value={item.unit_price}
                                             onChange={e => updateLineItem(index, 'unit_price', parseFloat(e.target.value))}
                                         />
@@ -190,14 +187,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                                     <button
                                         type="button"
                                         onClick={() => setLineItems(lineItems.filter((_, idx) => idx !== index))}
-                                        className="p-2 text-danger-start hover:bg-danger-start/10 rounded-md transition-colors"
+                                        className="p-1.5 text-danger-start hover:bg-danger-start/10 rounded-md transition-colors"
                                     >
-                                        <Trash2 size={18} />
+                                        <Trash2 size={16} />
                                     </button>
                                 </div>
                                 {item.inventory_item_id && (
-                                    <div className="text-xs text-text-muted flex items-center gap-1">
-                                        <Package size={12} />
+                                    <div className="text-[10px] text-text-muted flex items-center gap-1 mt-0.5">
+                                        <Package size={10} />
                                         {t('finance.linkedInventory')}
                                     </div>
                                 )}
@@ -206,30 +203,30 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                         <button
                             type="button"
                             onClick={() => setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0, total: 0, inventory_item_id: undefined }])}
-                            className="text-sm text-primary flex items-center gap-1"
+                            className="text-xs text-primary flex items-center gap-1 pt-1"
                         >
                             <Plus size={14} /> {t('finance.addLine')}
                         </button>
 
-                        <div className="flex items-center gap-2 pt-2">
+                        <div className="flex items-center gap-2 pt-1">
                             <input
                                 id="includeVat"
                                 type="checkbox"
-                                className="form-checkbox h-4 w-4 text-primary bg-surface border-border-main rounded focus:ring-primary"
+                                className="form-checkbox h-3.5 w-3.5 text-primary bg-surface border-border-main rounded focus:ring-primary"
                                 checked={includeVat}
                                 onChange={(e) => setIncludeVat(e.target.checked)}
                             />
-                            <label htmlFor="includeVat" className="text-sm text-text-secondary cursor-pointer">
+                            <label htmlFor="includeVat" className="text-xs text-text-secondary cursor-pointer">
                                 {t('finance.applyVat', 'Apliko TVSH (18%)')}
                             </label>
                         </div>
                     </div>
 
-                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4">
-                        <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2 rounded-xl text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors">
+                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3">
+                        <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-1.5 rounded-xl text-sm text-text-muted hover:text-text-primary glass-input !bg-surface hover:bg-hover transition-colors">
                             {t('general.cancel')}
                         </button>
-                        <button type="submit" className="w-full sm:w-auto btn-primary px-6 py-2 rounded-xl">
+                        <button type="submit" className="w-full sm:w-auto btn-primary px-6 py-1.5 text-sm rounded-xl">
                             {t('general.save')}
                         </button>
                     </div>
