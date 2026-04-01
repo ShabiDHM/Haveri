@@ -1,56 +1,43 @@
-// src/drafting/templates/compliance/privacy_policy.ts
+// FILE: src/drafting/templates/compliance/privacy_policy.ts
+// ARCHITECTURE: KOSOVO COMPLIANCE STANDARD (AIP) & MARKDOWN ENFORCEMENT
+
 import { TemplateConfig } from '../../types';
 
 export const privacyPolicyTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Privacy Policy (Politika e Privatësisë) for a website, application, or service under Kosovo law. Use formal Albanian legal language.
+FORMATI: Politika e Privatësisë për faqe interneti / aplikacion.
+GJUHA: Shqip (Formale, Juridike).
 
-MANDATORY SECTIONS (in order):
-1. **HEADER:** \`POLITIKA E PRIVATËSISË\` centered, bold.
+SEKSIONET E DETYRUESHME (Përdor saktësisht formatimin Markdown me '#' për titullin kryesor dhe '##' për nëntitujt):
 
-2. **DATA E FUQIZIMIT:** \`[DATA E FUQIZIMIT]\`
+# POLITIKA E PRIVATËSISË DHE MBROJTJA E TË DHËNAVE
 
-3. **HYRJE:** Introduction explaining the purpose of the policy and the identity of the data controller.
+## 1. Hyrje dhe Identifikimi i Kontrolluesit
+- Përcakto qartë se kush i mbledh të dhënat (Përdor [EMRI_I_KOMPANISË] nëse nuk është dhënë).
 
-4. **KONTROLLUESI I TË DHËNAVE:** 
-   \`\`\`
-   Emri i kontrolluesit: [EMRI I KOMPANISË / PERSONIT]
-   Adresa: [ADRESA]
-   Kontakt: [EMAIL, TELEFONI]
-   \`\`\`
+## 2. Kategoritë e të Dhënave Personale që Mblidhen
+- Listo qartë çfarë të dhënash mblidhen (psh. Emri, Emaili, IP Adresa, etj.).
 
-5. **LLOJET E TË DHËNAVE TË MBLEDHURA:** Categories of personal data collected, e.g.,:
-   - Të dhënat identifikuese: [EMRI, MBIEMRI, ADRESA, etc.]
-   - Të dhënat e kontaktit: [EMAIL, TELEFONI]
-   - Të dhënat e përdorimit: [IP ADRESA, COOKIES, etc.]
+## 3. Qëllimi dhe Baza Ligjore e Përpunimit
+- Cito pëlqimin, detyrimin kontraktual, ose interesin legjitim sipas ligjit.
 
-6. **BAZA LIGJORE PËR PËRPUNIM:** This section must cite the Kosovo Law on Personal Data Protection (Ligji Nr. 06/L-082). Use exact law title and number. For article references:
-   - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni [X] i Ligjit Nr. 06/L-082 për Mbrojtjen e të Dhënave Personale").
-   - If an article is needed but not listed, output the placeholder: \`[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]\`.
-   - **DO NOT** invent article numbers.
+## 4. Ndarja e të Dhënave me Palët e Treta
+- Specifiko nëse të dhënat ndahen me procesorë pagesash, shërbime postare, apo autoritete shtetërore.
 
-7. **QËLLIMET E PËRPUNIMIT:** List purposes (e.g., përmbushja e kontratës, interes legjitim, pëlqim).
+## 5. Të Drejtat e Subjektit të të Dhënave
+- Përfshi detyrimisht: E drejta për qasje, korrigjim, fshirje (E drejta për t'u harruar), dhe kufizim të përpunimit.
 
-8. **KOHËZGJATJA E RUJTJES:** \`[PERIUDHA] ose deri në tërheqjen e pëlqimit\`.
+## 6. E Drejta e Ankesës në AIP
+- KLAUZOLË E DETYRUESHME: Subjektet kanë të drejtë të paraqesin ankesë pranë Agjencisë për Informim dhe Privatësi (AIP) të Republikës së Kosovës, nëse vlerësojnë se u janë shkelur të drejtat.
 
-9. **NDARJA ME PALËT E TRETA:** Conditions and recipients of data sharing. Use placeholders for third parties.
+## 7. Masat e Sigurisë dhe Kohëzgjatja e Ruajtjes
+- Si mbrohen të dhënat dhe sa gjatë ruhen ato.
 
-10. **TË DREJTAT E PËRDORUESVE:** List of rights under Kosovo law: e drejta e qasjes, korrigjimit, fshirjes ("të harrohet"), kufizimit të përpunimit, portabilitetit, kundërshtimit, tërheqjes së pëlqimit.
+## 8. Të Dhënat e Kontaktit
+- Emaili dhe adresa e Zyrtarit për Mbrojtjen e Të Dhënave (DPO) ose kompanisë.
 
-11. **MASAT E SIGURISË:** General description of security measures (e.g., masat teknike dhe organizative).
-
-12. **NDRYSHIMET NË POLITIKË:** How users will be informed of changes.
-
-13. **KONTAKTI PËR ÇËSHTJE TË MBROJTJES SË TË DHËNAVE:**
-    \`\`\`
-    Për pyetje ose ushtrim të të drejtave, kontaktoni: [EMAIL I PËRGJEGJËSIT]
-    \`\`\`
-
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- Maintain formal tone.
+BAZA LIGJORE E DETYRUESHME: Përmend shprehimisht "Ligjin për Mbrojtjen e të Dhënave Personale (Nr. 06/L-082) të Republikës së Kosovës".
   `,
-  placeholder: "Shembull: Krijo një politikë privatësie për faqen time të internetit që shet produkte.",
+  placeholder: "Shembull: Krijo një Politikë Privatësie për një platformë e-commerce (shitje rrobash online) me bazë në Prishtinë. Ne mbledhim emrin, emailin, numrin e telefonit dhe adresën për dërgesa. Përdorim bankat lokale për procesimin e pagesave dhe Postën e Kosovës për dërgesa...",
   label: "Politika e Privatësisë",
 };

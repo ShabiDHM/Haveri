@@ -1,47 +1,46 @@
-// src/drafting/templates/litigation/kunderpadi.ts
+// FILE: src/drafting/templates/litigation/kunderpadi.ts
+// ARCHITECTURE: KOSOVO PROCEDURAL LITIGATION (LCP - NENI 160)
+
 import { TemplateConfig } from '../../types';
 
 export const kunderpadiTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Standard Kosovo court pleading for a counterclaim (Kundërpadi). Use formal Albanian legal language.
+FORMATI: Parashtresë për Kundërpadi (Counterclaim).
+GJUHA: Shqip (Formale, procedurale, juridike).
 
-MANDATORY SECTIONS (in order):
-1. **GJYKATA THEMELORE NË [QYTETI]** – centered, bold. Replace [QYTETI] with the appropriate city. If unknown, use [QYTETI].
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **PALËT:**
-   - **Paditësi (në padinë kryesore):** [EMRI I PADITËSIT], [ADRESA E PADITËSIT]
-   - **I Padituri (në padinë kryesore) / Paditësi në kundërpadi:** [EMRI I TË PADITURIT], [ADRESA E TË PADITURIT]
-   - **I Padituri në kundërpadi:** [EMRI I PADITËSIT] (ose sipas rastit)
+# GJYKATA THEMELORE NË [EMRI_I_GJYKATËS]
+## DEPARTAMENTI I PËRGJITHSHËM / EKONOMIK
 
-3. **OBJEKTI I KUNDËRPADISË:** [PËRSHKRIM I SHKURTËR I KËRKESËS SË KUNDËRTPADISË] – e.g., "Kundërpadi për kompensim të dëmit për shkak të padisë së pabazuar".
+## 1. PALËT
+- Paditësi (në padinë kryesore) / I Padituri (në kundërpadi): [EMRI_I_PALËS_A]
+- I Padituri (në padinë kryesore) / Kundërpaditësi: [EMRI_I_PALËS_B]
 
-4. **BAZA LIGJORE:** This section must cite only the Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references:
-   - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni 182 i Ligjit për Procedurën Kontestimore (Nr. 03/L-006)").
-   - If an article is needed but not listed in the taxonomy, output the placeholder: "[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]".
-   - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
+## 2. OBJEKTI I KUNDËRPADISË
+- Përshkrimi i shkurtër i kërkesës (psh. dëmshpërblim, konfirmim pronësie, kompensim).
 
-5. **ARSYETIMI:** A reasoned argument supporting the counterclaim. Structure with numbered paragraphs. Use placeholders for any missing facts or evidence.
+## 3. LIDHSHMËRIA (KLAUZOLË E DETYRUESHME)
+- Shpjego lidhjen juridike ndërmjet padisë kryesore dhe kundërpadisë (sipas nenit 160 të LCP-së), përse këto duhet të gjykohen së bashku.
 
-6. **PROVA:** List evidence that supports the counterclaim. Use placeholders for documents or witnesses not specified.
+## 4. BAZA LIGJORE
+- Cito dispozitat materiale të 'Ligjit për Marrëdhëniet e Detyrimeve' ose ligjit tjetër përkatës që mbështesin kërkesën tuaj.
 
-7. **KËRKESAT / PËRFUNDIMI:** The specific requests to the court regarding the counterclaim, each numbered. Typical requests may include:
-   - Të obligohet paditësi në padinë kryesore të paguajë [SHUMA] në emër të dëmshpërblimit;
-   - Të vërtetohet e drejta e kundërpaditësit në pronën [PËRSHKRIMI];
-   - Të shpallet e pavlefshme kontrata [DATA/KONTRAKTA].
+## 5. ARSYETIMI I KUNDËRPADISË
+- Paraqitja e fakteve: Përse kërkesa e palës kundërshtare është e pabazuar dhe përse kërkesa juaj është e bazuar. 
+- Analizo provat që do t'i paraqisni.
 
-8. **NËNSHKRIMI:**
-   \`\`\`
-   Data: [DATA E DORËZIMIT]
-   Përfaqësuesi i kundërpaditësit: [EMRI I AVOKATIT]
-   \`\`\`
+## 6. KËRKESË-PËRFUNDIMI (PETITUMI)
+- Kërkesa 1: Të refuzohet padia kryesore e Paditësit si e pabazuar.
+- Kërkesa 2: Të aprovohet kundërpadia jonë si e bazuar dhe të obligohet Pala kundërshtare të [PËRSHKRIMI_I_VEPRIMIT].
+- Kërkesa 3: Shpenzimet e procedurës të paguhen nga pala humbëse.
 
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- This document is part of the same lawsuit; reference the original case number if known: \`[NR. I LËNDËS]\`.
-- Do not include commercial agreement sections; this is a court document.
-- Keep the tone formal and concise.
+## 7. NËNSHKRIMI
+- I Padituri / Kundërpaditësi (përfaqësuar nga avokati): [EMRI_MBIEMRI_AVOKATIT]
+- Vula dhe nënshkrimi.
+
+UDHËZIM: Kundërpadia duhet të jetë në përputhje me dispozitat e 'Ligjit për Procedurën Kontestimore' (LCP). Shkruaj në gjuhë të pastër juridike.
   `,
-  placeholder: "Shembull: Pasi fqinji më paditi për cënim të pronës, unë dua të parashtroj kundërpadi për shpifje dhe ngacmim.",
+  placeholder: "Shembull: Paditësi më ka paditur për 'dëmtim të pronës'. Në realitet, ai ka uzurpuar 2 metra të tokës sime. Unë po parashtroj kundërpadi për ta detyruar atë të kthejë tokën në gjendjen e mëparshme dhe për të paguar dëmin e shkaktuar nga ndërtimi i paligjshëm.",
   label: "Kundërpadi",
 };

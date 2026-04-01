@@ -1,62 +1,48 @@
-// src/drafting/templates/employment/employment_contract.ts
+// FILE: src/drafting/templates/employment/employment_contract.ts
+// ARCHITECTURE: KOSOVO LABOR LAW COMPLIANCE (LIGJI I PUNËS)
+
 import { TemplateConfig } from '../../types';
 
 export const employmentContractTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Professional employment contract (Kontratë Pune) under Kosovo law. Use formal Albanian legal language.
+FORMATI: Kontratë Pune (Employment Contract).
+GJUHA: Shqip (Formale, Juridike).
 
-MANDATORY SECTIONS (in order):
-1. **HEADER:** \`KONTRATË PUNE\` centered, bold.
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **DATA DHE PALËT:**
-   \`\`\`
-   Kontrata lidhet sot, më [DATA E LIDHJES], ndërmjet:
-   1. [EMRI I PUNËDHËNËSIT], me adresë [ADRESA], i/e përfaqësuar nga [PËRFAQËSUESI] (në tekstin e mëtejmë "Punëdhënësi"), dhe
-   2. [EMRI I PUNËMARRËSIT], me adresë [ADRESA], numri personal [NUMRI I PERSONALITETIT] (në tekstin e mëtejmë "Punëmarrësi").
-   \`\`\`
+# KONTRATË PUNE
 
-3. **PREAMBULA (DUKE PASUR PARASYSH):** Recitals explaining the need for employment and the legal framework.
+## 1. Palët Kontraktuese
+- Punëdhënësi ([EMRI_I_KOMPANISË_OSE_PRONARIT]) dhe Punëmarrësi ([EMRI_I_PUNONJËSIT]).
 
-4. **OBJEKTI I KONTRATËS:** The position, job description, and place of work. Use placeholders:
-   - \`[POZITA: Titulli i vendit të punës]\`
-   - \`[PËRSHKRIMI I PUNËS]\`
-   - \`[VENDI I PUNËS]\`
+## 2. Pozita dhe Detyrat e Punës
+- Përshkrimi i detajuar i pozitës dhe vendit të punës.
 
-5. **DATA E FILLIMIT:** \`[DATA E FILLIMIT]\`
+## 3. Kohëzgjatja dhe Periudha e Provës
+- Data e fillimit dhe kohëzgjatja (kohë e caktuar ose e pacaktuar).
+- KLAUZOLË E DETYRUESHME: Periudha e provës (psh. 6 muaj) sipas 'Ligjit të Punës së Kosovës'.
 
-6. **AFATI:** \`[PËR NJË PERIUDHË TË PACAKTUAR / PËR NJË PERIUDHË TË CAKTUAR deri më [DATA MBARIMIT]]\`
+## 4. Orari i Punës dhe Pushimet
+- Orari javor (psh. 40 orë), pushimi ditor, javor dhe vjetor (min. 20 ditë pune sipas ligjit).
 
-7. **ORARI I PUNËS:** \`[NUMRI I ORËVE] orë në javë, nga [ORA FILLIM] deri në [ORA MBARIM]\`
+## 5. Paga dhe Benefitet (Shto tabelë)
+- Paga bruto, neto, mënyra e pagesës.
+- Kontributet pensionale (Trusti) dhe tatimi në të ardhurat personale (TAP) sipas legjislacionit të Kosovës.
 
-8. **PAGA DHE PËRFITIMET:**
-   - Paga mujore: \`[SHUMA NË EURO]\` euro (bruto/neto)
-   - Pagesa shtesë (puna jashtë orarit, pushime): \`[KUSHTET]\`
+## 6. Detyrimet dhe Përgjegjësitë
+- Respektimi i rregulloreve të brendshme dhe masave të sigurisë në punë.
 
-9. **LEJA VJETORE:** \`[NUMRI I DITËVE] ditë pune në vit\`
+## 7. Ndërprerja e Kontratës
+- Kushtet për ndërprerje, afatet e njoftimit (sipas Ligjit të Punës) dhe rastet e shkëputjes së menjëhershme.
 
-10. **KUSHTET E PËRFUNDIMIT:** Notice periods, grounds for termination. Reference relevant articles of the Labour Law if applicable.
+## 8. Zgjidhja e Kontesteve
+- Zgjidhja e mosmarrëveshjeve në Gjykatën Themelore (Departamenti i Përgjithshëm/Çështje Ekonomike).
 
-11. **DISPOZITAT LIGJORE (BAZA LIGJORE):** This section must cite only Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references:
-    - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni [X] i Ligjit Nr. 03/L-212 të Punës").
-    - If an article is needed but not listed in the taxonomy, output the placeholder: \`[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]\`.
-    - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
-    - Include a governing law clause: \`Kjo kontratë rregullohet nga ligji i Republikës së Kosovës.\`
+## 9. Nënshkrimet
+- Nënshkrimi i Punëdhënësit dhe Punëmarrësit.
 
-12. **ZGJIDHJA E MOSMARRËVESHJEVE:** \`[METODA: negocim / gjykata kompetente në [QYTETI]]\`
-
-13. **NËNSHKRIMET:**
-    \`\`\`
-    Për Punëdhënësin: ____________________
-    (Emri dhe nënshkrimi)
-    Për Punëmarrësin: ____________________
-    (Emri dhe nënshkrimi)
-    \`\`\`
-
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- Maintain formal tone.
+BAZA LIGJORE: Çdo dispozitë duhet të jetë në përputhje me "Ligjin e Punës (Nr. 03/L-212) të Republikës së Kosovës".
   `,
-  placeholder: "Shembull: Punësoj një punonjës, Blerta Rexhepi, si asistente administrative. Paga mujore 500 euro, fillon më 1 prill.",
+  placeholder: "Shembull: Blerta Rexhepi do të punësohet si Asistente Administrative në 'Prishtina-Consulting Sh.P.K.'. Paga bruto 500 EUR, kontratë me kohë të pacaktuar, me 3 muaj periudhë prove. Fillon me 1 prill.",
   label: "Kontratë Pune",
 };

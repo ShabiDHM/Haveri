@@ -1,62 +1,49 @@
-// src/drafting/templates/real_estate/sales_purchase.ts
+// FILE: src/drafting/templates/real_estate/sales_purchase.ts
+// ARCHITECTURE: KOSOVO PROPERTY TRANSFER & CADASTRAL COMPLIANCE
+
 import { TemplateConfig } from '../../types';
 
 export const salesPurchaseTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Sale and purchase agreement (Kontratë Shitblerje) for immovable property under Kosovo law. Use formal Albanian legal language.
+FORMATI: Kontratë Shitblerje (Sale & Purchase Agreement) për Patundshmëri.
+GJUHA: Shqip (Formale, Juridike).
 
-MANDATORY SECTIONS (in order):
-1. **HEADER:** \`KONTRATË SHITBLERJE PËR PRONË TË PALUAJTSHME\` centered, bold.
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **DATA DHE PALËT:**
-   \`\`\`
-   Kontrata lidhet sot, më [DATA E LIDHJES], ndërmjet:
-   1. **Shitësi:** [EMRI I SHITËSIT], me adresë [ADRESA], numri personal [NUMRI I PERSONALITETIT] (në tekstin e mëtejmë "Shitësi"), dhe
-   2. **Blerësi:** [EMRI I BLERËSIT], me adresë [ADRESA], numri personal [NUMRI I PERSONALITETIT] (në tekstin e mëtejmë "Blerësi").
-   \`\`\`
+# KONTRATË SHITBLERJE PËR PATUNDSHMËRI
 
-3. **PËRSHKRIMI I PRONËS:**
-   - Adresa e plotë: \`[ADRESA E PRONËS]\`
-   - Përshkrimi fizik: \`[PËRSHKRIMI, sipërfaqja, kufijtë, etj.]\`
-   - Numri kadastral: \`[NUMRI KADASTRAL]\`
-   - Zona kadastrale: \`[ZONA KADASTRALE]\`
+## 1. Palët Kontraktuese
+- Shitësi: [EMRI_MBIEMRI], nr. personal [NR_PERSONAL], me adresë [ADRESA].
+- Blerësi: [EMRI_MBIEMRI], nr. personal [NR_PERSONAL], me adresë [ADRESA].
 
-4. **ÇMIMI DHE PAGESA:**
-   - Çmimi total: \`[SHUMA NË EURO]\` euro
-   - Mënyra e pagesës: \`[PARA / TRANSFERË BANKE / KËSTET]\`
-   - Afati i pagesës: \`[DATA E PAGESËS]\`
+## 2. Përshkrimi i Patundshmërisë
+- KLAUZOLË E DETYRUESHME: Identifikimi i plotë nga Fleta Poseduese:
+  - Zona Kadastrale: [ZK_ZONA_KADASTRALE]
+  - Nr. i Parcelës: [NR_PARCELËS]
+  - Nr. i Fletës Poseduese: [NR_FLETA_POSEDUESE]
+  - Sipërfaqja: [SIPËRFAQJA_M2]
 
-5. **DORËZIMI I PRONËS:** Data e dorëzimit: \`[DATA E DORËZIMIT]\`. Gjendja në të cilën dorëzohet prona.
+## 3. Çmimi dhe Mënyra e Pagesës
+- Çmimi total: [SHUMA_EURO].
+- Mënyra e pagesës (transfer bankar/transaksion noterësor).
+- Konfirmimi se Shitësi ka pranuar pagesën në tërësi (ose planin e pagesës).
 
-6. **KALIMI I PRONËSISË:** The transfer of ownership takes effect with the signing of this contract and is subject to registration in the cadaster. Notarization is required.
+## 4. Garantimi i Pronësisë (Eviksioni)
+- Shitësi garanton se prona është e lirë nga barrët (hipoteka, shënime kadastrale, ose të drejta të palëve të treta).
 
-7. **DEKLARIMET DHE GARANCITË E SHITËSIT:** 
-   - Shitësi është pronar i vetëm dhe prona është e lirë nga barrët.
-   - Nëse ekzistojnë barrë, përdorni vendmbajtëse: \`[PËRSHKRIMI I BARRËVE]\`.
+## 5. Transferi i Pronësisë dhe Dorëzimi
+- Dorëzimi i pronës në posedim të Blerësit. 
+- Obligimi për bartjen e pronësisë në librat kadastralë pas notarizimit.
 
-8. **SHPENZIMET:** Shpenzimet e noterit, taksat, dhe regjistrimi në kadastër paguhen nga: \`[PALA]\`.
+## 6. Baza Ligjore (Detyruese)
+- Cito: "Ligji Nr. 03/L-154 për Pronësinë dhe të Drejtat Tjera Sendore" dhe "Ligji për Marrëdhëniet e Detyrimeve (LMD)".
 
-9. **DISPOZITAT LIGJORE (BAZA LIGJORE):** This section must cite only Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references:
-    - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni [X] i Ligjit Nr. 03/L-154 për Pronësinë dhe të Drejtat Tjera Sendore").
-    - If an article is needed but not listed in the taxonomy, output the placeholder: \`[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]\`.
-    - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
-    - Include a governing law clause: \`Kjo kontratë rregullohet nga ligji i Republikës së Kosovës.\`
+## 7. Noterizimi dhe Taksat
+- Kontrata duhet të noterizohet. Taksat e transferit dhe shpenzimet e noterit ndahen sipas marrëveshjes (psh. secila palë paguan pjesën e saj).
 
-10. **ZGJIDHJA E MOSMARRËVESHJEVE:** \`[METODA: negocim / gjykata kompetente në [QYTETI]]\`
-
-11. **NËNSHKRIMET:**
-    \`\`\`
-    Shitësi: ____________________
-    (Emri dhe nënshkrimi)
-    Blerësi: ____________________
-    (Emri dhe nënshkrimi)
-    \`\`\`
-
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- Maintain formal tone.
+## 8. Nënshkrimet
+- Nënshkrimi i Shitësit dhe Blerësit para Noterit publik.
   `,
-  placeholder: "Shembull: Dua të shes një shtëpi në Prishtinë për 100,000 euro. Blerësi është Agim Krasniqi.",
+  placeholder: "Shembull: Shitësi Ilir Shala shet banesën (ZK Prishtina, parcela 123/4, FP 555) për 100,000 euro blerësit Agim Krasniqi. Pagesa bëhet përmes bankës brenda 5 ditësh. Prona është pa barrë hipotekore.",
   label: "Kontratë Shitblerje",
 };

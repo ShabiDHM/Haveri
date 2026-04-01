@@ -1,51 +1,48 @@
-// src/drafting/templates/litigation/padi.ts
+// FILE: src/drafting/templates/litigation/padi.ts
+// ARCHITECTURE: KOSOVO COURT FILING (LCP - NENI 83)
+
 import { TemplateConfig } from '../../types';
 
 export const padiTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Standard Kosovo court pleading (Padisë). Use formal Albanian legal language.
+FORMATI: Padi (Lawsuit) sipas Ligjit për Procedurën Kontestimore (LCP).
+GJUHA: Shqip (Formale, procedurale, juridike).
 
-MANDATORY SECTIONS (in order):
-1. **GJYKATA THEMELORE NË [QYTETI]** – centered, bold. Replace [QYTETI] with the appropriate city (e.g., Prishtinë, Prizren). If unknown, use [QYTETI].
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **PALËT:**
-   - **Paditësi:** [EMRI I PADITËSIT], [ADRESA E PADITËSIT]
-   - **I Padituri:** [EMRI I TË PADITURIT], [ADRESA E TË PADITURIT]
+# GJYKATA THEMELORE NË [EMRI_I_GJYKATËS]
+## DEPARTAMENTI I PËRGJITHSHËM / EKONOMIK
 
-3. **OBJEKTI I PADISË:** [PËRSHKRIM I SHKURTËR I KËRKESËS] – e.g., "Kërkohet vërtetimi i të drejtës së pronësisë", "Kërkohet shpallja e kontratës së pavlefshme", etc.
+## 1. PALËT
+- Paditësi: [EMRI_MBIEMRI], me adresë [ADRESA], nr. personal [NR_PERSONAL].
+- I Padituri: [EMRI_I_PALËS_TJETER], me adresë [ADRESA].
 
-4. **BAZA LIGJORE:** This section must cite only the Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references, you must use one of the following:
-   - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni 182 i Ligjit për Procedurën Kontestimore (Nr. 03/L-006)").
-   - If an article is needed but not listed in the taxonomy, output the placeholder: "[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]".
-   - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
+## 2. OBJEKTI I PADISË
+- Përshkrimi i shkurtër i kërkesëpadisë (psh. Konfirmim pronësie, Borxh, Dëmshpërblim).
 
-   Example:
-   \`\`\`
-   BAZA LIGJORE:
-   - Ligji për Procedurën Kontestimore (Nr. 03/L-006), nenet 182, 183, 184.
-   \`\`\`
+## 3. BAZA LIGJORE
+- Cito dispozitat materiale të aplikueshme në Republikën e Kosovës.
+- Baza procedurale: 'Ligji për Procedurën Kontestimore (LCP)'.
+- Përdor placeholder nëse neni nuk është i sigurt: "[Neni përkatës i Ligjit...]".
 
-5. **ARSYETIMI:** A reasoned narrative based on the user input. Use placeholders for any missing facts. Structure with numbered paragraphs if needed.
+## 4. ARSYETIMI I PADISË
+- Paraqitja faktike: Përshkruaj kronologjikisht ngjarjen dhe dëmin e shkaktuar.
+- Argumentimi ligjor: Lidh faktet me obligimet ligjore të të Paditurit.
 
-6. **PROVA:** List evidence that supports the claim. Use placeholders for documents or witnesses not specified.
+## 5. PROVAT
+- Listo të gjitha provat: (psh. Kontratat, dëshmitë, ekspertiza, fletëkthesat). "I propozoj gjykatës të marrë si provë: [LISTA_E_PROVAVE]".
 
-7. **PETITUMI / PËRFUNDIMI:** The specific requests to the court, each numbered. Example:
-   - Të vërtetohet se ...;
-   - Të detyrohet i padituri të ...;
-   - Të ngarkohet i padituri me shpenzimet e procedurës.
+## 6. PETITUMI (Kërkesë-Padia)
+- Kërkesa 1: Të konfirmohet se [PËRSHKRIMI_I_TË_DREJTËS].
+- Kërkesa 2: Të obligohet i Padituri që [VEPRIMI_I_KËRKUAR_OSE_SHUMA].
+- Kërkesa 3: Të obligohet i Padituri që t'i kompensojë shpenzimet e procedurës (taksat gjyqësore dhe shpenzimet e avokatit).
 
-8. **NËNSHKRIMI:** 
-   \`\`\`
-   Data: [DATA E DORËZIMIT]
-   Përfaqësuesi i paditësit: [EMRI I AVOKATIT]
-   \`\`\`
+## 7. NËNSHKRIMI
+- Paditësi / Përfaqësuesi i autorizuar (Avokati): [EMRI_MBIEMRI_AVOKATIT]
+- Vula dhe nënshkrimi.
 
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- Do not include commercial agreement sections; this is a court document.
-- Keep the tone formal and concise.
+UDHËZIM: Strukturoje dokumentin si një padi zyrtare drejtuar gjykatës. Shmang gjuhën emotive. Fokusohu në fakte, prova dhe dispozita ligjore.
   `,
-  placeholder: "Shembull: Klienti im, Agim Krasniqi, ka një mosmarrëveshje me fqinjin për kufirin e pronës. Fqinji ka ndërtuar gardh 50 cm në tokën tonë. Dëshiroj të parashtroj një padi për cënim të pronës.",
+  placeholder: "Shembull: Agim Krasniqi kërkon që fqinji i tij të largojë gardhin e ndërtuar 50cm në pronën e tij. Fqinji refuzon, pavarësisht matjeve gjeodezike. Agimi ka në dorë planin gjeodezik si provë kryesore.",
   label: "Padi",
 };

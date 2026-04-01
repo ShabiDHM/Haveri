@@ -1,34 +1,26 @@
-// src/drafting/templates/generic.ts
+// FILE: src/drafting/templates/generic.ts
+// ARCHITECTURE: INTELLIGENT DOCUMENT CLASSIFICATION & STRUCTURE
+
 import { TemplateConfig } from '../types';
 
 export const genericTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: A professional legal document in Albanian, appropriate to the context provided by the user. Use clear headings (### for sections).
+FORMATI: Dokument ligjor profesional në gjuhën shqipe (Gjuhë zyrtare).
+DETYRA: Analizo inputin e përdoruesit dhe zgjidh strukturën më të përshtatshme.
 
-**STRUCTURE GUIDELINES:**
-- If the user describes a legal dispute (e.g., "problem", "mosmarrëveshje", "kërkesë"), structure the document with sections typical for a court pleading:
-  * PALËT (parties)
-  * OBJEKTI (subject)
-  * BAZA LIGJORE (legal basis – see citation rules below)
-  * ARSYETIMI (reasoning)
-  * KËRKESAT / PËRFUNDIMI (requests)
-  * NËNSHKRIMI (signature)
+UDHËZIMET E KLASIFIKIMIT:
+1. KONFLIKT/MOSMARRËVESHJE: Përdor formatin e SHKRESËS SË GJYKATËS.
+   - Seksionet: # GJYKATA THEMELORE, ## PALËT, ## OBJEKTI, ## ARSYETIMI, ## KËRKESË-PËRFUNDIMI, ## NËNSHKRIMI.
+2. MARRËVESHJE/BIZNES: Përdor formatin e KONTRATËS.
+   - Seksionet: # TITULLI I KONTRATËS, ## PALËT, ## OBJEKTI, ## DETYRIMET, ## ZGJIDHJA E KONTESTEVE, ## NËNSHKRIMET.
+3. KËRKESË INFORMACIONI/LAVDËRIMI: Përdor formatin e KËRKESËS FORMALE.
 
-- If the user describes a business arrangement or a new agreement, structure as a contract:
-  * Parties, recitals, substantive articles, signatures.
-
-- If the user describes an employment matter, adapt accordingly.
-
-**CRITICAL RULES (anti‑hallucination):**
-1. **Placeholders:** Use uppercase placeholders with underscores for any missing information: \`[PLACEHOLDER_NAME]\`. Never invent or infer missing facts.
-2. **Legal citations:** You MUST NOT cite any specific Kosovo law, article number, or legal provision unless it is explicitly provided in the taxonomy section of the system prompt. If you need a legal reference but none is available, output the placeholder: \`[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]\`.
-3. **No guessing:** Do not invent law names, numbers, or principles. Base your document solely on the user input and the taxonomy sources provided.
-4. **No meta‑commentary:** Output only the final document.
-
-**FORMATTING:**
-- Use markdown headings (###) for sections.
-- Maintain formal Albanian legal language.
+UDHËZIME TË PËRGJITHSHME (ZERO HALLUCINATION):
+- **CILËSIMET LIGJORE**: Nëse përmend ligje, përdor vetëm placeholderët: [LIGJI_PËRKATËS_I_REPUBLIKËS_SË_KOSOVËS]. **MOS SHPIK NUMRA LIGJESH.**
+- **PLACEHOLDERS**: Përdor formatin [EMRI_MBIEMRI], [DATA], [SHUMA_E_PAGESËS], [ADRESA]. Kjo është e detyrueshme për çdo të dhënë që nuk është dhënë nga përdoruesi.
+- **TONI**: Formal, objektiv, i prerë.
+- **NDALOJNË PARATHËNIET**: Fillo direkt me titullin e dokumentit.
   `,
-  placeholder: "Përshkruani situatën tuaj ligjore...",
-  label: "Generic",
+  placeholder: "Përshkruani situatën tuaj: p.sh. 'Kam një problem me qiradhënësin sepse nuk po më kthen depozitën' ose 'Dua të bëj një marrëveshje me një partner për të shitur produkte'.",
+  label: "Dokument i Përgjithshëm (Generic)",
 };

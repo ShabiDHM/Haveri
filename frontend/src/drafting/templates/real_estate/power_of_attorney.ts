@@ -1,49 +1,42 @@
-// src/drafting/templates/real_estate/power_of_attorney.ts
+// FILE: src/drafting/templates/real_estate/power_of_attorney.ts
+// ARCHITECTURE: KOSOVO NOTARIAL COMPLIANCE (LIGJI PËR NOTERINË)
+
 import { TemplateConfig } from '../../types';
 
 export const powerOfAttorneyTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Power of attorney (Autorizim / Prokurë) authorizing a person to act on behalf of another under Kosovo law. Use formal Albanian legal language.
+FORMATI: Autorizim / Prokurë (Power of Attorney).
+GJUHA: Shqip (Formale, Juridike).
 
-MANDATORY SECTIONS (in order):
-1. **HEADER:** \`AUTORIZIM / PROKURË\` centered, bold.
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **DATA DHE PALËT:**
-   \`\`\`
-   Ky autorizim jepet sot, më [DATA E LËSHIMIT], nga:
-   **Autorizuesi:** [EMRI I AUTORIZUESIT], me adresë [ADRESA], numri personal [NUMRI I PERSONALITETIT],
-   për të autorizuar:
-   **I autorizuari:** [EMRI I TË AUTORIZUARIT], me adresë [ADRESA], numri personal [NUMRI I PERSONALITETIT],
-   që të më përfaqësojë dhe të veprojë në emrin tim në çështjet e përshkruara më poshtë.
-   \`\`\`
+# AUTORIZIM (PROKURË)
 
-3. **QËLLIMI DHE FUSHËVEPRIMI:** Detailed description of the actions the authorized person may take. Use placeholders for specifics.
+## 1. Dhënësi i Autorizimit (Pali)
+- Emri, Mbiemri, nr. personal, adresa e banimit dhe data e lindjes.
 
-4. **AFATI:** \`[DATA FILLIMIT]\` deri më \`[DATA MBARIMIT]\` (ose pa afat, ose deri në revokim).
+## 2. Pranuesi i Autorizimit (I Autorizuari)
+- Emri, Mbiemri, nr. personal, adresa e banimit.
 
-5. **REVOKIMI:** Statement that the principal may revoke the power of attorney at any time in writing.
+## 3. Qëllimi dhe Fusha e Autorizimit (Seksioni më i rëndësishëm)
+- Përshkrimi i saktë i veprimeve (psh. "Të nënshkruajë kontratën e shitjes së paluajtshmërisë me nr. parcele..."). 
+- Specifiko nëse ka të drejtë të pranojë pagesa apo vetëm të nënshkruajë.
 
-6. **FORMALITETET E NOTERIT:** If notarization is required (e.g., for real estate transactions), note: \`Ky autorizim duhet të vërtetohet nga noteri për vlefshmëri ndaj palëve të treta.\`
+## 4. Kohëzgjatja
+- Data e fillimit dhe data e skadimit (ose klauzola "deri në përfundim të punës").
 
-7. **DISPOZITAT LIGJORE (BAZA LIGJORE):** This section must cite only Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references:
-    - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni [X] i Ligjit Nr. 04/L-077 për Marrëdhëniet e Detyrimeve").
-    - If an article is needed but not listed in the taxonomy, output the placeholder: \`[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]\`.
-    - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
-    - Include a governing law clause: \`Ky autorizim rregullohet nga ligji i Republikës së Kosovës.\`
+## 5. Kufizimet dhe Revokimi
+- E drejta e dhënësit për të revokuar (shfuqizuar) autorizimin në çdo kohë.
 
-8. **NËNSHKRIMET:**
-    \`\`\`
-    Autorizuesi: ____________________
-    (Emri dhe nënshkrimi)
-    I autorizuari: ____________________
-    (Emri dhe nënshkrimi)
-    \`\`\`
+## 6. Baza Ligjore (Detyruese)
+- "Ky autorizim bëhet në përputhje me dispozitat e 'Ligjit për Marrëdhëniet e Detyrimeve' dhe 'Kodi Civil' të Republikës së Kosovës."
 
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- Maintain formal tone.
+## 7. Noterizimi (Detyruese)
+- KLAUZOLË E DETYRUESHME: "Ky autorizim është i vlefshëm vetëm pasi të jetë vërtetuar (noterizuar) nga Noteri publik në përputhje me 'Ligjin për Noterinë (Nr. 03/L-010)'."
+
+## 8. Nënshkrimi
+- Nënshkrimi i Dhënësit të Autorizimit.
   `,
-  placeholder: "Shembull: Dua të autorizoj avokatin tim për të përfaqësuar mua në shitjen e pronës time.",
+  placeholder: "Shembull: Unë, [EMRI], autorizoj avokatin [EMRI_AVOKATIT] që në emrin tim të shesë banesën në Prishtinë, të nënshkruajë para noterit dhe të pranojë çmimin e shitjes në xhirollogarinë time.",
   label: "Autorizim / Prokurë",
 };

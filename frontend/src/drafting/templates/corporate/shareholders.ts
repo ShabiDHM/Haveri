@@ -1,61 +1,45 @@
-// src/drafting/templates/corporate/shareholders.ts
+// FILE: src/drafting/templates/corporate/shareholders.ts
+// ARCHITECTURE: KOSOVO CORPORATE GOVERNANCE & SHAREHOLDER PROTECTION
+
 import { TemplateConfig } from '../../types';
 
 export const shareholdersTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Standard shareholders' agreement (Marrëveshje e Ortakëve) under Kosovo law. Use formal Albanian legal language.
+FORMATI: Marrëveshje e Ortakëve (Shareholders' Agreement) për Sh.P.K.
+GJUHA: Shqip (Formale, Juridike, Komerciale).
 
-MANDATORY SECTIONS (in order):
-1. **HEADER:** \`MARRËVESHJE E ORTAKËVE\` centered, bold.
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **DATE AND PARTIES:**
-   \`\`\`
-   Kjo marrëveshje lidhet sot, më [DATA E LIDHJES], ndërmjet:
-   1. [EMRI I ORTAKUT 1], me adresë [ADRESA], i/e përfaqësuar nga [PËRFAQËSUESI], dhe
-   2. [EMRI I ORTAKUT 2], me adresë [ADRESA], i/e përfaqësuar nga [PËRFAQËSUESI],
-   (në tekstin e mëtejmë të quajtur "Ortakët").
-   \`\`\`
+# MARRËVESHJE E ORTAKËVE
 
-3. **PREAMBULA (DUKE PASUR PARASYSH):** Recitals explaining the context and objectives of the agreement. Use placeholders as needed.
+## 1. Hyrje dhe Palët
+- "Kjo marrëveshje lidhet sot, më [DATA], ndërmjet: [EMRI_I_ORTAKUT_A]... dhe [EMRI_I_ORTAKUT_B]... në cilësinë e themeluesve të shoqërisë [EMRI_I_SHOQËRISË]."
 
-4. **PËRKUFIZIMET:** Define key terms if necessary (e.g., "Shoqëria", "Kapitali", "Asambleja").
+## 2. Përkufizime dhe Interpretimi
+- Defino kapitalin themeltar, pjesët e kapitalit (aksionet), dhe organet e shoqërisë.
 
-5. **KAPITALI DHE AKSIONET:** Specify share capital, number of shares, classes, and ownership percentages. Use placeholders:
-   - \`[Shoqëria: Emri i shoqërisë]\`
-   - \`[Kapitali total: SHUMA NË EURO]\`
-   - \`[Ortaku 1: [NUMRI] aksione, [PËRQINDJA]%]\`
-   - \`[Ortaku 2: [NUMRI] aksione, [PËRQINDJA]%]\`
+## 3. Menaxhimi dhe Vendimmarrja
+- Përcakto kompetencat e Kuvendit të Ortakëve dhe Drejtorit. Cito se si merren vendimet (shumicë e thjeshtë vs. shumicë e kualifikuar).
 
-6. **MENAXHIMI DHE VENDIMMARRJA:** Structure of management, board composition, decision‑making thresholds, reserved matters.
+## 4. Transferimi i Pjesëve të Kapitalit
+- Klauzolat "Right of First Refusal" (E drejta e parablerjes). 
+- KLAUZOLË E DETYRUESHME: "Drag-Along" (Detyrimi për shitje) dhe "Tag-Along" (E drejta për të shitur bashkërisht).
 
-7. **POLITIKA E DIVIDENDIT:** Conditions for distribution of profits, frequency, and approval process.
+## 5. Ndarja e Fitimit dhe Politika e Dividendit
+- Mënyra dhe afatet e ndarjes së fitimit pas shlyerjes së obligimeve tatimore.
 
-8. **TRANSFERIMI I AKSIONEVE:** Restrictions on transfer, right of first refusal, tag‑along, drag‑along (if applicable).
+## 6. Zgjidhja e Ngërçit (Deadlock)
+- Procedura për zgjidhjen e situatave ku ortakët nuk pajtohen (psh. shitja, likuidimi ose ndërmjetësimi).
 
-9. **ZGJIDHJA E MOSMARRËVESHJEVE:** \`[METODA: negocim / arbitrazh / gjykata kompetente në [QYTETI]]\`
+## 7. Ligji i Zbatueshëm dhe Gjykata Kompetente
+- Baza Ligjore: 'Ligji Nr. 06/L-016 për Shoqëritë Tregtare' i Republikës së Kosovës.
+- Gjykata: Gjykata Themelore në Prishtinë - Departamenti për Çështje Ekonomike.
 
-10. **BAZA LIGJORE:** This section must cite only Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references:
-    - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni [X] i Ligjit Nr. 06/L-016 për Shoqëritë Tregtare").
-    - If an article is needed but not listed in the taxonomy, output the placeholder: \`[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]\`.
-    - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
-    - Include a governing law clause: \`Kjo marrëveshje rregullohet nga ligji i Republikës së Kosovës.\`
+## 8. Nënshkrimet
+- Nënshkrimi i të gjithë ortakëve, dëshmitarëve (nëse ka), dhe vula e shoqërisë.
 
-11. **AFATI DHE PËRFUNDIMI:** Duration of the agreement, termination conditions.
-
-12. **NËNSHKRIMET:**
-    \`\`\`
-    Për Ortakun 1: ____________________
-    (Emri dhe nënshkrimi)
-    Për Ortakun 2: ____________________
-    (Emri dhe nënshkrimi)
-    \`\`\`
-
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- **Do not use court styling** (no "GJYKATA", "PADITËSI", "PETITUMI").
-- Maintain formal tone.
+UDHËZIM: Mos përdor gjuhë procesuale gjyqësore (nuk është padi). Përqendrohu në qeverisjen korporative.
   `,
-  placeholder: "Shembull: Dua të krijoj një marrëveshje ortakërie për një biznes të ri me dy partnerë: unë, Fatmir Berisha, dhe shoku im Labinot Gashi. Do të kemi 50% secili, dhe dua të përcaktojmë menaxhimin dhe ndarjen e fitimit.",
+  placeholder: "Shembull: Fatmir Berisha dhe Labinot Gashi do të themelojnë 'Tech-Solutions Sh.P.K.'. Fatmiri do të kontribuojë me kapital në para, ndërsa Labinoti me ekspertizë teknike. Duam të dimë si ndahet fitimi dhe çfarë ndodh nëse njëri do të largohet nga biznesi.",
   label: "Marrëveshje e Ortakëve",
 };

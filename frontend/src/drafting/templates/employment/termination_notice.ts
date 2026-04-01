@@ -1,44 +1,42 @@
-// src/drafting/templates/employment/termination_notice.ts
+// FILE: src/drafting/templates/employment/termination_notice.ts
+// ARCHITECTURE: KOSOVO LABOR LAW COMPLIANCE - TERMINATION (RISK MITIGATION)
+
 import { TemplateConfig } from '../../types';
 
 export const terminationNoticeTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Termination notice (Lajmërim për Ndërprerje të Marrëdhënies së Punës) under Kosovo law. Use formal Albanian legal language.
+FORMATI: Vendim për Ndërprerje të Marrëdhënies së Punës (Termination Notice).
+GJUHA: Shqip (Formale, Juridike, Teknike).
 
-MANDATORY SECTIONS (in order):
-1. **HEADER:** \`LAJMËRIM PËR NDËRPRERJE TË MARRËDHËNIES SË PUNËS\` centered, bold.
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **DATA E LËSHIMIT:** \`[DATA E DORËZIMIT]\`
+# VENDIM PËR NDËRPRERJE TË MARRËDHËNIES SË PUNËS
 
-3. **PALËT:**
-   - **Punëdhënësi:** \`[EMRI I PUNËDHËNËSIT]\`, adresa: \`[ADRESA]\`
-   - **Punëmarrësi:** \`[EMRI I PUNËMARRËSIT]\`, pozita: \`[POZITA]\`
+## 1. Të Dhënat e Punëmarrësit
+- Emri, Mbiemri dhe Pozita që mban aktualisht.
 
-4. **DATA E NDËRPRERJES:** \`[DATA E PËRFUNDIMIT TË MARRËDHËNIES]\`
+## 2. Baza Ligjore
+- Cito shprehimisht 'Ligjin e Punës (Nr. 03/L-212)'.
+- Cito nenin përkatës (psh. Neni 70/71/72) që justifikon shkëputjen (psh. shkelje e detyrave, performancë, ose nevoja ekonomike).
 
-5. **ARSYEJA PËR NDËRPRERJE:** Clearly state the reason, referencing the applicable provisions of the Labour Law if relevant. Use placeholders for specifics.
+## 3. Arsyetimi i Vendimit
+- Përshkrimi faktik dhe objektiv i arsyeve të ndërprerjes. (Detyruese: duhet të jetë i qartë dhe i provueshëm).
 
-6. **PERIUDHA E NJOFTIMIT:** \`[PERIUDHA E NJOFTIMIT] ditë/javë/muaj\` (or immediate termination if justified).
+## 4. Afati i Njoftimit (Notice Period)
+- Data e fundit e punës dhe përshkrimi i periudhës së njoftimit (nëse punonjësi duhet të punojë gjatë kësaj kohe ose shkëputje e menjëhershme).
 
-7. **PAGESA PËRFUNDIMTARE:** Obligation to pay outstanding salary, unused annual leave, and any severance. Use placeholders for amounts.
+## 5. Llogaritja e Pushimeve dhe Kompensimeve
+- Kompensimi për pushimin vjetor të pashfrytëzuar dhe pagat e pashlyera deri në datën e ndërprerjes.
 
-8. **DISPOZITAT LIGJORE (BAZA LIGJORE):** This section must cite only Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references:
-    - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni [X] i Ligjit Nr. 03/L-212 të Punës").
-    - If an article is needed but not listed in the taxonomy, output the placeholder: \`[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]\`.
-    - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
-    - Include a statement: \`Ky lajmërim bazohet në dispozitat e Ligjit të Punës të Republikës së Kosovës.\`
+## 6. E Drejta e Ankesës (KLAUZOLË E DETYRUESHME)
+- Punonjësi ka të drejtë të parashtrojë ankesë pranë komisionit disiplinor të Punëdhënësit ose drejtpërdrejt në Gjykatën Themelore brenda afateve ligjore.
 
-9. **NËNSHKRIMI:**
-    \`\`\`
-    Punëdhënësi: ____________________
-    (Emri dhe nënshkrimi)
-    \`\`\`
+## 7. Dorëzimi i Mjeteve të Punës
+- Detyrimi i punonjësit për dorëzimin e laptopit, çelësave, ID-së apo pasurive tjera të shoqërisë.
 
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- Maintain formal tone.
+## 8. Nënshkrimi
+- Nënshkrimi i Punëdhënësit / Përfaqësuesit të autorizuar.
   `,
-  placeholder: "Shembull: Punonjësi ka shkelur rregullat e brendshme dhe duhet të ndërpresim kontratën me të.",
-  label: "Lajmërim për Ndërprerje",
+  placeholder: "Shembull: Punonjësi 'Artan Hoxha' ka dështuar të përmbushë detyrat e tij për 3 muaj me radhë, përkundër vërejtjeve me shkrim. Kontrata do të ndërpritet pas 30 ditësh njoftim, siç kërkohet me ligj.",
+  label: "Vendim për Ndërprerje",
 };

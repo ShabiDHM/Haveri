@@ -1,50 +1,47 @@
-// src/drafting/templates/litigation/ankese.ts
+// FILE: src/drafting/templates/litigation/ankese.ts
+// ARCHITECTURE: KOSOVO APPELLATE LITIGATION ENGINE (LCP COMPLIANCE)
+
 import { TemplateConfig } from '../../types';
 
 export const ankeseTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Standard Kosovo court pleading for an appeal (Ankesë). Use formal Albanian legal language.
+FORMATI: Ankesë kundër aktgjykimit/vendimit të shkallës së parë.
+GJUHA: Shqip (Formale, procedurale, juridike).
 
-MANDATORY SECTIONS (in order):
-1. **GJYKATA E APELIT E KOSOVËS** (or appropriate appellate court) – centered, bold.  
-   If the specific appellate body is unknown, use: \`[GJYKATA E APELIT / DEPARTAMENTI PËRKATËS]\`.
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **PALËT:**
-   - **Ankuesi:** [EMRI I ANKUESIT], [ADRESA E ANKUESIT]
-   - **Kundër-ankuesi / Palë tjetër:** [EMRI I PALËS TJETËR], [ADRESA]
+# GJYKATA E APELIT NË PRISHTINË
 
-3. **VENDIMI I ANKUAR:** Reference the decision being appealed:
-   - Gjykata që ka dhënë vendimin: \`[GJYKATA THEMELORE NË QYTETI]\`
-   - Numri i lëndës: \`[NR. I LËNDËS]\`
-   - Data e vendimit: \`[DATA E VENDIMIT]\`
-   - Lloji i vendimit (aktgjykim, vendim, etc.): \`[LLOJI I AKTIT]\`
+## 1. Palët në Procedurë (PALËT)
+- Paditësi: [EMRI_I_PADITËSIT], me adresë: [ADRESA].
+- I Padituri: [EMRI_I_PADITURIT], me adresë: [ADRESA].
 
-4. **BAZA LIGJORE:** This section must cite only the Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references:
-   - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni 194 i Ligjit për Procedurën Kontestimore (Nr. 03/L-006)").
-   - If an article is needed but not listed in the taxonomy, output the placeholder: \`[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]\`.
-   - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
+## 2. VENDIMI I ANKUAR
+- Përdor tabelë për të listuar:
+  | Përshkrimi | Detajet |
+  | :--- | :--- |
+  | Gjykata e Shkallës së Parë | [EMRI_I_GJYKATËS] |
+  | Numri i Lëndës | [NR_I_LËNDËS] |
+  | Data e Vendimit | [DATA_E_VENDIMIT] |
 
-5. **ARSYETIMI:** A detailed argument explaining the grounds for appeal. Structure with numbered paragraphs. Include references to errors of law, factual errors, or procedural violations. Use placeholders for any missing facts or evidence.
+## 3. BAZA E ANKESËS (LCP - Neni 187)
+- Përcakto qartë bazën (zgjidh një ose më shumë):
+  - Shkelje thelbësore e dispozitave të procedurës kontestimore.
+  - Vërtetim i gabuar apo jo i plotë i gjendjes faktike.
+  - Zbatim i gabuar i së drejtës materiale.
 
-6. **PROVA:** List evidence that supports the appeal, if any. Use placeholders for documents or witnesses not specified.
+## 4. ARSYETIMI
+- Paraqitja kronologjike e fakteve dhe kundërshtimi i argumenteve të gjykatës së shkallës së parë. Analizo ku ka gabuar gjyqtari në vlerësimin e provave.
 
-7. **KËRKESAT / PËRFUNDIMI:** The specific requests to the appellate court, each numbered. Typical requests may include:
-   - Të ndryshohet aktgjykimi i ankuar duke e aprovuar kërkesën e ankuesit;
-   - Të prishët aktgjykimi dhe lënda të kthehet në rigjykim;
-   - Të detyrohet kundër-ankuesi në shpenzimet e procedurës së ankesës.
+## 5. KËRKESË-PËRFUNDIMI (PETITUMI)
+- Kërkesë specifike: "I propozojmë Gjykatës së Apelit që ankesën ta aprovojë si të bazuar, ta ndryshojë aktgjykimin e shkallës së parë ose ta kthejë lëndën në rigjykim."
 
-8. **NËNSHKRIMI:**
-   \`\`\`
-   Data: [DATA E DORËZIMIT]
-   Përfaqësuesi i ankuesit: [EMRI I AVOKATIT]
-   \`\`\`
+## 6. NËNSHKRIMI
+- Përfaqësuesi i autorizuar: [EMRI_MBIEMRI_AVOKATIT]
+- Vula dhe nënshkrimi.
 
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- This is a court document; maintain formal tone and precise language.
-- Do not include commercial agreement sections.
+UDHËZIM: Përdor terminologji strikte të 'Ligjit për Procedurën Kontestimore'. Mos përdor gjuhë emocionale.
   `,
-  placeholder: "Shembull: Klienti im ka marrë një vendim të padrejtë nga Gjykata Themelore në Prishtinë dhe dëshiron të apelojë.",
+  placeholder: "Shembull: Gjykata Themelore në Prishtinë ka marrë vendim për borxhin. Klienti im pretendon se prova e shkresës së borxhit është e falsifikuar dhe se gjyqtari ka injoruar dëshminë e ekspertit grafolog. Kërkojmë anulimin e vendimit.",
   label: "Ankesë",
 };

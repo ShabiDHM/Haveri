@@ -1,42 +1,39 @@
-// src/drafting/templates/employment/warning_letter.ts
+// FILE: src/drafting/templates/employment/warning_letter.ts
+// ARCHITECTURE: KOSOVO LABOR LAW COMPLIANCE - DISCIPLINARY RECORD
+
 import { TemplateConfig } from '../../types';
 
 export const warningLetterTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Written warning (Vërejtje me Shkrim) to an employee under Kosovo law. Use formal Albanian legal language.
+FORMATI: Vërejtje me Shkrim (Warning Letter).
+GJUHA: Shqip (Formale, Disiplinore).
 
-MANDATORY SECTIONS (in order):
-1. **HEADER:** \`VËREJTJE ME SHRKIM\` centered, bold.
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **DATA:** \`[DATA E LËSHIMIT]\`
+# VËREJTJE ME SHKRIM (MASË DISIPLINORE)
 
-3. **PALËT:**
-   - **Punëdhënësi:** \`[EMRI I PUNËDHËNËSIT]\`
-   - **Punëmarrësi:** \`[EMRI I PUNËMARRËSIT]\`, pozita: \`[POZITA]\`
+## 1. Të Dhënat e Punëmarrësit
+- Emri, Mbiemri dhe Pozita e Punës.
 
-4. **PËRSHKRIMI I SHKELJES:** Detailed description of the violation or performance issue. Use placeholders for specifics.
+## 2. Përshkrimi i Shkeljes
+- Detajimi faktik i shkeljes (psh. vonesat, mosrespektimi i detyrave, sjellja jo-profesionale).
+- Referenca në Rregulloren e Brendshme të Punës ose 'Ligjin e Punës (Nr. 03/L-212)'.
 
-5. **DISCUSSIONS PREVIOUS (nëse ka):** Reference any prior verbal warnings or meetings.
+## 3. Përmirësimi i Kërkuar
+- Çfarë pritet nga punonjësi për të korrigjuar sjelljen dhe afati kohor për përmirësim.
 
-6. **PASOJAT NËSE NUK KORRIGJOHET:** Consequences for continued non‑compliance, up to and including termination of employment.
+## 4. Diskutimet e Mëparshme
+- Përmendja e vërejtjeve verbale ose takimeve të mëparshme ku është diskutuar kjo çështje.
 
-7. **DISPOZITAT LIGJORE (BAZA LIGJORE):** This section must cite only Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references:
-    - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni [X] i Ligjit Nr. 03/L-212 të Punës").
-    - If an article is needed but not listed in the taxonomy, output the placeholder: \`[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]\`.
-    - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
-    - Include a statement: \`Kjo vërejtje bazohet në dispozitat e Ligjit të Punës të Republikës së Kosovës.\`
+## 5. Pasojat e Vazhdimit të Shkeljes
+- KLAUZOLË E DETYRUESHME: "Nëse sjellja/performanca nuk përmirësohet brenda afatit të caktuar, Punëdhënësi rezervon të drejtën e ndërprerjes së marrëdhënies së punës sipas nenit përkatës të Ligjit të Punës."
 
-8. **NËNSHKRIMI:**
-    \`\`\`
-    Punëdhënësi: ____________________
-    (Emri dhe nënshkrimi)
-    \`\`\`
+## 6. E Drejta për Përgjigje
+- Punonjësi ka të drejtë të japë deklaratën e tij/saj në lidhje me këtë vërejtje brenda një afati të arsyeshëm (psh. 3 ditë).
 
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- Maintain formal tone.
+## 7. Nënshkrimet
+- Nënshkrimi i Punëdhënësit dhe hapësira për nënshkrimin e Punonjësit (si dëshmi e pranimit të vërejtjes).
   `,
-  placeholder: "Shembull: Punonjësi vazhdimisht vonohet në punë dhe nuk përmbush detyrat.",
+  placeholder: "Shembull: Artan Hoxha vjen me vonesë 30 minuta çdo mëngjes prej 2 javësh, pavarësisht vërejtjeve verbale të menaxherit më 10 dhe 15 mars. Kjo është shkelje e rregullores së brendshme të punës.",
   label: "Vërejtje me Shkrim",
 };

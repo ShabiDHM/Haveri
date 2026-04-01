@@ -1,63 +1,52 @@
-// src/drafting/templates/real_estate/lease_agreement.ts
+// FILE: src/drafting/templates/real_estate/lease_agreement.ts
+// ARCHITECTURE: KOSOVO PROPERTY LAW & UTILITY COMPLIANCE (LMD)
+
 import { TemplateConfig } from '../../types';
 
 export const leaseAgreementTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Residential or commercial lease agreement (Kontratë Qiraje) under Kosovo law. Use formal Albanian legal language.
+FORMATI: Kontratë Qiraje (Residential/Commercial).
+GJUHA: Shqip (Formale, Juridike).
 
-MANDATORY SECTIONS (in order):
-1. **HEADER:** \`KONTRATË QIRAJEPËR [PËRDORIM BANESOR / AFARIST]\` centered, bold.
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **DATA DHE PALËT:**
-   \`\`\`
-   Kontrata lidhet sot, më [DATA E LIDHJES], ndërmjet:
-   1. [EMRI I QIRADHËNËSIT], me adresë [ADRESA], numri personal [NUMRI I PERSONALITETIT] (në tekstin e mëtejmë "Qiradhënësi"), dhe
-   2. [EMRI I QIRAMARRËSIT], me adresë [ADRESA], numri personal [NUMRI I PERSONALITETIT] (në tekstin e mëtejmë "Qirapërfituesi").
-   \`\`\`
+# KONTRATË QIRAJE
 
-3. **PËRSHKRIMI I PRONËS:** 
-   - Adresa e plotë: \`[ADRESA E PRONËS]\`
-   - Përshkrimi fizik: \`[PËRSHKRIMI, sipërfaqja, numri i dhomave, etj.]\`
-   - Numri kadastral (nëse ekziston): \`[NUMRI KADASTRAL]\`
+## 1. Palët Kontraktuese
+- Qiradhënësi: [EMRI_I_QIRADHËNËSIT], me adresë [ADRESA].
+- Qiramarrësi: [EMRI_I_QIRAMARRËSIT], me adresë [ADRESA].
 
-4. **QËLLIMI:** \`[PËRDORIM BANESOR / AFARIST / TIETËR]\`
+## 2. Objekti i Qiradhënies
+- Përshkrimi i detajuar i pronës (banesë, zyre, lokal), lokacioni dhe sipërfaqja.
 
-5. **AFATI:** \`[DATA FILLIMIT]\` deri më \`[DATA MBARIMIT]\` (ose pa afat). Periudha e njoftimit për shkëputje: \`[PERIUDHA]\`.
+## 3. Qiraja dhe Mënyra e Pagesës
+- Shuma e qirasë (Bruto/Neto).
+- Data e pagesës (psh. deri më datën 5 të muajit për muajin vijues).
+- Mënyra e pagesës (Transfer bankar ose para në dorë).
 
-6. **QIRAJA DHE PAGESA:**
-   - Shuma mujore: \`[SHUMA NË EURO]\` euro
-   - Dita e pagesës: çdo datë \`[DATA]\` të muajit
-   - Mënyra e pagesës: \`[PARA / TRANSFERË BANKE]\`
+## 4. Shpenzimet e Shërbimeve (Utility Bills)
+- Specifikimi: Kush paguan për rrymën, ujin, mbeturinat, ngrohjen dhe mirëmbajtjen e hyrjes.
 
-7. **DEPOZITA:** \`[SHUMA NË EURO]\` euro (zakonisht një qira), e cila kthehet pas lirimit të pronës në gjendje të mirë.
+## 5. Depozita e Sigurisë
+- Shuma e depozitës (psh. një qira mujore) dhe kushtet e kthimit të saj pas përfundimit të kontratës.
 
-8. **SHPENZIMET:** Shpërndarja e shpenzimeve (rryma, uji, ngrohja, pastrimi, administrimi). Përdorni vendmbajtëse sipas rastit.
+## 6. Detyrimet dhe Mirëmbajtja
+- Qiramarrësi obligohet ta ruajë pronën si "boni pater familias".
+- Qiradhënësi obligohet për riparimet e mëdha strukturore (sipas LMD).
 
-9. **OBLIGIMET E QIRADHËNËSIT:** Dorëzimi i pronës në gjendje funksionale, mirëmbajtja e pjesëve strukturore.
+## 7. Kohëzgjatja dhe Ndërprerja
+- Afati i kontratës.
+- Kushtet e shkëputjes (psh. paralajmërimi 30 ditë më parë).
 
-10. **OBLIGIMET E QIRAPËRFITUESIT:** Përdorimi i pronës sipas qëllimit, pagesa e qirasë në kohë, kujdesi për pronën.
+## 8. Baza Ligjore
+- Cito: "Ligji për Marrëdhëniet e Detyrimeve (Nr. 04/L-077) i Republikës së Kosovës".
 
-11. **DISPOZITAT LIGJORE (BAZA LIGJORE):** This section must cite only Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references:
-    - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni [X] i Ligjit Nr. 04/L-077 për Marrëdhëniet e Detyrimeve").
-    - If an article is needed but not listed in the taxonomy, output the placeholder: \`[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]\`.
-    - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
-    - Include a governing law clause: \`Kjo kontratë rregullohet nga ligji i Republikës së Kosovës.\`
+## 9. Inventari i Pronës (Shto tabelë)
+- Listo mobiljet dhe gjendjen e pajisjeve (psh. frigorifer, kondicioner, etj.).
 
-12. **ZGJIDHJA E MOSMARRËVESHJEVE:** \`[METODA: negocim / gjykata kompetente në [QYTETI]]\`
-
-13. **NËNSHKRIMET:**
-    \`\`\`
-    Qiradhënësi: ____________________
-    (Emri dhe nënshkrimi)
-    Qirapërfituesi: ____________________
-    (Emri dhe nënshkrimi)
-    \`\`\`
-
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- Maintain formal tone.
+## 10. Nënshkrimet
+- Nënshkrimi i Qiradhënësit dhe Qiramarrësit.
   `,
-  placeholder: "Shembull: Marr me qira një banesë në Prishtinë, te rruga 'Bill Clinton'. Qiradhënësi: Ilir Shala. Qiraja mujore 300 euro.",
+  placeholder: "Shembull: Qiradhënës Ilir Shala. Qiramarrës: [EMRI]. Objekti: Banesë në Prishtinë, rruga 'Bill Clinton'. Qiraja 300 euro. Depozita 300 euro. Qiramarrësi paguan rrymën, ujin dhe mbeturinat.",
   label: "Kontratë Qiraje",
 };

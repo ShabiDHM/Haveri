@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - CLEAN LAYOUT (Header only glass, content on canvas)
+// PHOENIX PROTOCOL - CLEAN LAYOUT V2 (Fixed prompt arguments)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,12 @@ import { ResultPanel } from '../drafting/components/ResultPanel';
 import { constructSmartPrompt } from '../drafting/utils/promptConstructor';
 import LawSearchPage from './LawSearchPage';
 
-const lawyerGradeStyles = `...`; // keep your existing styles
+const lawyerGradeStyles = `
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 10px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--primary-start); }
+`;
 
 type Mode = 'drafting' | 'library';
 
@@ -23,7 +28,7 @@ const DraftingPage: React.FC = () => {
   const { user } = useAuth();
   const [activeMode, setActiveMode] = useState<Mode>('drafting');
 
-  // Drafting state (unchanged)
+  // Drafting state
   const [context, setContext] = useState(() => localStorage.getItem('drafting_context') || '');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('generic');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,7 +74,8 @@ const DraftingPage: React.FC = () => {
     let acc = '';
     try {
       const stream = await apiService.draftLegalDocumentStream({
-        user_prompt: constructSmartPrompt(context.trim(), selectedTemplate, t),
+        // SURGICAL FIX: Removed 't' argument to match the new promptConstructor signature
+        user_prompt: constructSmartPrompt(context.trim(), selectedTemplate),
         document_type: isPro ? selectedTemplate : 'generic',
       });
       for await (const chunk of stream) {
@@ -135,7 +141,6 @@ const DraftingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Toggle matches FinanceTab style */}
           <div className="w-full sm:w-auto flex bg-surface/50 p-1.5 rounded-2xl gap-1 border border-border-main shadow-inner">
             <button
               onClick={() => handleModeSwitch('drafting')}
@@ -160,7 +165,6 @@ const DraftingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Conditional Content - no extra glass-panel wrapper */}
         {activeMode === 'drafting' ? (
           <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 flex-1 lg:h-[750px] min-h-0 pointer-events-auto">
             <div className="h-full overflow-y-auto custom-scrollbar">

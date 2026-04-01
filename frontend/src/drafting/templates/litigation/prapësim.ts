@@ -1,43 +1,46 @@
-// src/drafting/templates/litigation/prapësim.ts
+// FILE: src/drafting/templates/litigation/prapesim.ts
+// ARCHITECTURE: KOSOVO LITIGATION - PROCEDURAL OBJECTION & EXECUTION DEFENSE
+
 import { TemplateConfig } from '../../types';
 
 export const prapesimTemplate: TemplateConfig = {
   structureInstructions: `
-FORMAT: Standard Kosovo court pleading for an objection (Prapësim). Use formal Albanian legal language.
+FORMATI: Prapësim (Objection/Opposition) kundër Urdhëresës/Vendimit ose Provës.
+GJUHA: Shqip (Formale, Procedurale).
 
-MANDATORY SECTIONS (in order):
-1. **GJYKATA THEMELORE NË [QYTETI]** – centered, bold. Replace [QYTETI] with the appropriate city. If unknown, use [QYTETI].
+SEKSIONET E DETYRUESHME (Përdor formatimin Markdown '#' dhe '##'):
 
-2. **PALËT:**
-   - **Paditësi:** [EMRI I PADITËSIT], [ADRESA E PADITËSIT]
-   - **I Padituri:** [EMRI I TË PADITURIT], [ADRESA E TË PADITURIT]
+# GJYKATA THEMELORE NË [EMRI_I_GJYKATËS]
+## DEPARTAMENTI PËR ÇËSHTJE EKONOMIKE / TË PËRGJITHSHME
 
-3. **OBJEKTI I PRAPËSIMIT:** [PËRSHKRIM I SHKURTËR I ASAJ QË KUNDËRSHTOHET] – e.g., "Prapësim kundër provës së propozuar", "Prapësim ndaj aktit procedural", etc.
+## 1. PALËT
+- Pala kundërshtuese (Debitori): [EMRI_MBIEMRI]
+- Pala përballë (Kreditori): [EMRI_MBIEMRI]
 
-4. **BAZA LIGJORE:** This section must cite only the Kosovo laws provided in the taxonomy above. Use the exact law titles and numbers. For article references:
-   - If the taxonomy lists specific articles, cite them exactly (e.g., "Neni 182 i Ligjit për Procedurën Kontestimore (Nr. 03/L-006)").
-   - If an article is needed but not listed in the taxonomy, output the placeholder: "[REFERENCA LIGJORE E NEVOJSHME – NUK GJENDET NË TAKSONOMINË]".
-   - **DO NOT** invent article numbers or use vague phrases like "Neni përkatës".
+## 2. OBJEKTI
+- Prapësim kundër [PËRSHKRIMI_I_VEPRIMIT_PROCEDURAL] (psh. Urdhrit Përmbarimor, Vendimit për caktimin e masës, apo Provës së paraqitur).
 
-5. **ARSYETIMI:** A reasoned argument explaining why the objection is justified. Structure with numbered paragraphs. Use placeholders for any missing facts or evidence.
+## 3. AFATI LIGJOR
+- "Prapësimi është parashtruar brenda afatit ligjor prej [NR_DITËSH] ditësh nga dita e pranimit të vendimit/urdhëresës."
 
-6. **KËRKESAT / PËRFUNDIMI:** The specific request to the court, each numbered. Typical requests may include:
-   - Të refuzohet provanca e propozuar nga pala kundërshtare;
-   - Të shpallet i palejuar akti procedural [PËRSHKRIMI];
-   - Të procedohet sipas dispozitave ligjore duke mos marrë parasysh provën/kundërshtimin.
+## 4. BAZA LIGJORE
+- Cito dispozitat përkatëse të 'Ligjit për Procedurën Kontestimore (LCP)' ose 'Ligjit për Procedurën Përmbarimore (LPP)'.
+- Argumento përse veprimi i palës tjetër ose i gjykatës është në kundërshtim me këto dispozita.
 
-7. **NËNSHKRIMI:**
-   \`\`\`
-   Data: [DATA E DORËZIMIT]
-   Përfaqësuesi i palës: [EMRI I AVOKATIT]
-   \`\`\`
+## 5. ARSYETIMI (Shkaqet e Prapësimit)
+- Detajimi i shkeljeve:
+  - Nëse është kundër provës: "Provë e marrë në mënyrë të paligjshme / e parëndësishme."
+  - Nëse është kundër urdhrit përmbarimor: "Borxhi është shlyer / Obligimi nuk ekziston / Parashkrimi i borxhit."
 
-IMPORTANT RULES:
-- Use uppercase placeholders with underscores: \`[PLACEHOLDER_NAME]\`.
-- Never replace a placeholder with invented data.
-- This is a court document; maintain formal tone and precise language.
-- Do not include commercial agreement sections.
+## 6. KËRKESË-PËRFUNDIMI (PETITUMI)
+- Kërkesë: "I propozojmë Gjykatës që prapësimin ta aprovojë si të bazuar dhe ta anulojë [VEPRIMIN_PROCEDURAL_OSE_URDHËRESËN]."
+
+## 7. NËNSHKRIMI
+- I Padituri / Debitori (përfaqësuar nga avokati): [EMRI_MBIEMRI_AVOKATIT]
+- Vula dhe nënshkrimi.
+
+UDHËZIM: Përdor ton të prerë dhe procedural. Ky dokument është për të ndalur një veprim të paligjshëm ose të pasaktë procedural.
   `,
-  placeholder: "Shembull: Dëshiroj të kundërshtoj provën e paraqitur nga pala tjetër për shkak se është e parregullt.",
+  placeholder: "Shembull: Kundërshtoj Urdhrin Përmbarimor të datës 10.03.2024. Borxhi për të cilin jam paditur është shlyer plotësisht më 05.02.2024, siç dëshmohet me vërtetimin e pagesës në aneksin e kësaj shkrese.",
   label: "Prapësim",
 };
