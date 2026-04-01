@@ -1,115 +1,61 @@
 // FILE: src/drafting/components/DraftResultRenderer.tsx
-// PHOENIX PROTOCOL - DRAFT RENDERER V8.0 (PROFESSIONAL LEGAL FORMATTING)
+// PHOENIX PROTOCOL - LEGAL PARITY ENGINE (SYNCED WITH LEGAL APP)
 
 import React from 'react';
 import { TFunction } from 'i18next';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-interface DraftResultRendererProps {
-  text: string;
-  t: TFunction;
-}
+// Matches the exact pre-processing logic from the Legal App
+const preprocessLegalText = (text: string): string => {
+  let processed = text.replace(/(?<!\!)\[([^\]]+)\](?!\()/g, '`[$1]`');
+  processed = processed.replace(/(PËR PALËN|NËNSHKRIMI|PËR PËRFAQËSUESIN):/gi, '\n\n**$1:**');
+  return processed;
+};
 
-export const DraftResultRenderer: React.FC<DraftResultRendererProps> = ({ text }) => {
-  if (!text) return null;
-
-  // Split the raw text into lines to process headers, lists, and paragraphs
-  const lines = text.split('\n');
-
-  // Helper to parse placeholders [LIKE_THIS] and bold **like this**
-  const renderFormattedText = (content: string) => {
-    // 1. Split by Placeholders [...]
-    const placeholderRegex = /(\[[^\]]+\])/g;
-    const parts = content.split(placeholderRegex);
-
-    return parts.map((part, index) => {
-      if (part.match(placeholderRegex)) {
-        // Render beautiful gray placeholder box
-        const innerText = part.substring(1, part.length - 1);
-        return (
-          <span 
-            key={index} 
-            className="inline-block bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md border border-gray-200 font-mono text-[11px] font-bold tracking-wider mx-1 align-baseline shadow-inner"
-          >
-            {innerText}
-          </span>
-        );
-      }
-
-      // 2. Parse basic Markdown Bold (**text**) within the normal text
-      const boldRegex = /(\*\*[^*]+\*\*)/g;
-      const boldParts = part.split(boldRegex);
-
-      return boldParts.map((bPart, bIndex) => {
-        if (bPart.match(boldRegex)) {
-          return (
-            <strong key={`${index}-${bIndex}`} className="font-bold text-black">
-              {bPart.substring(2, bPart.length - 2)}
-            </strong>
-          );
-        }
-        return <span key={`${index}-${bIndex}`}>{bPart}</span>;
-      });
-    });
-  };
-
-  const renderLine = (line: string, index: number) => {
-    const trimmedLine = line.trim();
-
-    // Empty lines become spacing
-    if (!trimmedLine) {
-      return <div key={index} className="h-4" />;
-    }
-
-    // Main Headers (e.g., # GJYKATA THEMELORE)
-    if (trimmedLine.startsWith('# ')) {
-      return (
-        <h1 key={index} className="text-2xl font-black text-center uppercase tracking-widest mb-6 mt-4">
-          {renderFormattedText(trimmedLine.substring(2))}
-        </h1>
-      );
-    }
-
-    // Sub Headers (e.g., ## 1. PALËT)
-    if (trimmedLine.startsWith('## ')) {
-      return (
-        <h2 key={index} className="text-lg font-bold text-center uppercase tracking-wider mb-4 mt-6">
-          {renderFormattedText(trimmedLine.substring(3))}
-        </h2>
-      );
-    }
-
-    // Section Headers (e.g., ### ARSYETIMI)
-    if (trimmedLine.startsWith('### ')) {
-      return (
-        <h3 key={index} className="text-base font-bold text-left uppercase mb-2 mt-4">
-          {renderFormattedText(trimmedLine.substring(4))}
-        </h3>
-      );
-    }
-
-    // Bullet Points
-    if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-      return (
-        <div key={index} className="flex items-start mb-2 ml-4">
-          <span className="mr-2 text-black">•</span>
-          <p className="leading-relaxed text-justify">
-            {renderFormattedText(trimmedLine.substring(2))}
-          </p>
-        </div>
-      );
-    }
-
-    // Standard Paragraphs
-    return (
-      <p key={index} className="mb-3 leading-relaxed text-justify">
-        {renderFormattedText(trimmedLine)}
-      </p>
-    );
-  };
+export const DraftResultRenderer: React.FC<{ text: string; t: TFunction }> = React.memo(({ text, t }) => {
+  const processedText = preprocessLegalText(text);
+  const disclaimer = t('drafting.subtitle', 'Ky dokument është gjeneruar nga inteligjenca artificiale. Ju lutemi rishikojeni me kujdes para përdorimit zyrtar.');
 
   return (
-    <div className="font-serif text-black max-w-none text-sm sm:text-base">
-      {lines.map((line, index) => renderLine(line, index))}
+    <div className="legal-document flex flex-col h-full bg-white text-black p-12 shadow-lg">
+      <div className="legal-content flex-1">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            h1: ({ node, ...props }) => <h1 {...props} className="text-black font-black uppercase text-center mb-8 text-xl tracking-wide" />,
+            h2: ({ node, ...props }) => <h2 {...props} className="text-black font-bold uppercase text-center mt-8 mb-4 text-lg" />,
+            h3: ({ node, ...props }) => <h3 {...props} className="text-black font-bold uppercase mt-6 mb-3 text-base" />,
+            strong: ({ node, ...props }) => <strong {...props} className="text-black font-black" />,
+            p: ({ node, ...props }) => <p {...props} className="text-black mb-4 leading-relaxed text-justify" />,
+            ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-8 mb-4 space-y-2 text-black text-justify" />,
+            ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-8 mb-4 space-y-2 text-black text-justify" />,
+            li: ({ node, ...props }) => <li {...props} className="text-black leading-relaxed pl-2" />,
+            code: ({ node, inline, ...props }: any) => {
+              if (inline) {
+                return (
+                  <code 
+                    {...props} 
+                    className="bg-warning-start/20 text-warning-start border border-warning-start/30 px-1.5 py-0.5 rounded font-bold font-mono text-[0.9em] shadow-sm" 
+                  />
+                );
+              }
+              return <code {...props} className="block bg-gray-100 p-4 rounded-lg my-4 font-mono text-sm text-black" />;
+            },
+            blockquote: ({ node, ...props }) => (
+              <blockquote {...props} className="border-l-4 border-gray-400 pl-4 py-1 my-4 text-gray-800 italic bg-gray-50" />
+            )
+          }}
+        >
+          {processedText}
+        </ReactMarkdown>
+      </div>
+      
+      <div className="mt-16 pt-4 border-t border-gray-300 text-center shrink-0">
+        <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+          {disclaimer}
+        </p>
+      </div>
     </div>
   );
-};
+});
