@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/DraftResultRenderer.tsx
-// PHOENIX PROTOCOL - DRAFT RENDERER V2.5 (FORCE BLACK TEXT)
+// PHOENIX PROTOCOL - DRAFT RENDERER V2.6 (PLACEHOLDER PRESERVATION)
 
 import React from 'react';
 import { TFunction } from 'i18next';
@@ -12,6 +12,10 @@ const preprocessHeadings = (text: string): string => {
   return lines.map(line => {
     const trimmed = line.trim();
     if (trimmed.length === 0) return line;
+    
+    // Skip placeholder lines – they should not become headings
+    if (trimmed.includes('[') && trimmed.includes(']')) return line;
+    
     if (trimmed.toUpperCase().startsWith('NËNSHKRIMI') || trimmed.toUpperCase().startsWith('NENSHKRIMI')) return `> ${trimmed}`;
     const isUppercase = /^[A-ZËÇÜÖÄ\s\d\.,\-–—:]+$/.test(trimmed);
     if (!isUppercase) return line;
