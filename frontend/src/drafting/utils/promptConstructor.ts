@@ -1,4 +1,4 @@
-// FILE: src/drafting/utils/promptConstructor.ts
+// FILE: src/drafting/ utils/promptConstructor.ts
 // PHOENIX PROTOCOL - PROMPT CONSTRUCTOR V8.0 (FULL TAXONOMY & NO UNUSED VARS)
 
 import { TemplateType } from '../types';
