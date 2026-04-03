@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V8.1 (COPY RENDERED TEXT)
+// PHOENIX PROTOCOL - RESULT PANEL V8.2 (RICH TEXT COPY ENABLED)
 
 import React, { useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,11 +24,11 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   const statusText = useMemo(() => {
     switch (currentJob.status) {
       case 'COMPLETED':
-        return t('drafting.statusCompleted');
+        return t('drafting.statusCompleted', 'Përfunduar');
       case 'FAILED':
-        return t('drafting.statusFailed');
+        return t('drafting.statusFailed', 'Dështoi');
       case 'PROCESSING':
-        return t('drafting.statusWorking');
+        return t('drafting.statusWorking', 'Duke Gjeneruar...');
       default:
         return t('drafting.statusResult', 'Rezultati');
     }
@@ -36,11 +36,28 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
   const actionButtonBase = "p-3 bg-surface border border-border-main text-text-primary hover:text-primary-start hover:border-primary-start/50 rounded-xl transition-all shadow-sm hover:shadow-md hover-lift disabled:opacity-30 disabled:hover:shadow-none pointer-events-auto";
 
-  const handleCopy = () => {
-    if (!currentJob.result || !documentRef.current) return;
-    // Get the rendered text exactly as displayed (preserves line breaks)
-    const renderedText = documentRef.current.innerText;
-    navigator.clipboard.writeText(renderedText);
+  const handleCopy = async () => {
+    if (!documentRef.current) return;
+
+    // We clone the inner HTML to ensure we capture the rendered styles (bold, headers)
+    const htmlContent = documentRef.current.innerHTML;
+    const plainText = documentRef.current.innerText;
+
+    const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+    const blobText = new Blob([plainText], { type: 'text/plain' });
+
+    try {
+      const data = [new ClipboardItem({ 
+        'text/html': blobHtml,
+        'text/plain': blobText 
+      })];
+      await navigator.clipboard.write(data);
+      // Optional: Add a subtle "Copied!" feedback here
+    } catch (err) {
+      console.error("Clipboard write failed:", err);
+      // Fallback for older browsers
+      navigator.clipboard.writeText(plainText);
+    }
   };
 
   return (
@@ -58,11 +75,10 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </h3>
         </div>
 
-        {/* Action Button Cluster */}
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopy}
-            title={t('drafting.copy')}
+            title={t('drafting.copy', 'Kopjo')}
             disabled={!currentJob.result}
             className={actionButtonBase}
           >
@@ -79,7 +95,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
           <button
             onClick={onClear}
-            title={t('drafting.clear')}
+            title={t('drafting.clear', 'Pastro')}
             disabled={!currentJob.result && currentJob.status !== 'FAILED'}
             className="p-3 bg-surface border border-border-main text-danger-start hover:text-danger-start/80 hover:border-danger-start/30 rounded-xl transition-all disabled:opacity-30 hover-lift pointer-events-auto"
           >
@@ -101,17 +117,12 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                 className="w-full max-w-[21cm]"
               >
                 {notification && (
-                  <div
-                    className={`mb-6 p-4 text-xs font-black uppercase tracking-widest rounded-xl flex items-center gap-3 border shadow-sm w-full ${
-                      notification.type === 'success'
-                        ? 'bg-success-start/10 text-success-start border-success-start/20'
-                        : 'bg-danger-start/10 text-danger-start border-danger-start/20'
-                    }`}
-                  >
+                  <div className={`mb-6 p-4 text-xs font-black uppercase tracking-widest rounded-xl flex items-center gap-3 border shadow-sm w-full ${notification.type === 'success' ? 'bg-success-start/10 text-success-start border-success-start/20' : 'bg-danger-start/10 text-danger-start border-danger-start/20'}`}>
                     {notification.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
                     {notification.msg}
                   </div>
                 )}
+                {/* Captured Ref for HTML Extraction */}
                 <div
                   ref={documentRef}
                   className="bg-white p-12 text-black shadow-lg rounded-sm min-h-[29.7cm] border border-gray-200"
