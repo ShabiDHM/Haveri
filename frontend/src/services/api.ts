@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V14.9 (ADDED createPosTransaction)
+// PHOENIX PROTOCOL - API V15.0 (LAW METHODS NOW USE BUSINESS BACKEND)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -63,7 +63,8 @@ const getBaseUrl = (): string => { if (typeof window !== 'undefined') { const ho
 const normalizedUrl = getBaseUrl();
 export const API_BASE_URL = normalizedUrl;
 export const API_V1_URL = `${API_BASE_URL}/api/v1`;
-export const SOURCE_API_V1_URL = 'https://api.juristi.tech/api/v1'; // NEW: source app URL
+// SOURCE_API_V1_URL is no longer needed for law search; we keep it for backward compatibility if any other feature uses it.
+export const SOURCE_API_V1_URL = 'https://api.juristi.tech/api/v1';
 
 class TokenManager {
     private accessToken: string | null = null;
@@ -483,53 +484,51 @@ class ApiService {
         } as AsyncIterable<string>;
     }
 
-    // ========== LAW LIBRARY METHODS (source app) ==========
+    // ========== LAW LIBRARY METHODS (NOW USING BUSINESS BACKEND) ==========
 
     public async searchLaws(query: string, jurisdiction?: string, limit: number = 50): Promise<LawSearchResult[]> {
         const params: any = { q: query, limit };
         if (jurisdiction) params.jurisdiction = jurisdiction;
-        const response = await axios.get(`${SOURCE_API_V1_URL}/legal/public/laws/search`, { params });
+        const response = await this.axiosInstance.get(`/laws/search`, { params });
         return response.data;
     }
 
     public async getLawByChunkId(chunkId: string): Promise<LawArticle> {
-        const response = await axios.get(`${SOURCE_API_V1_URL}/legal/public/laws/${chunkId}`);
+        const response = await this.axiosInstance.get(`/laws/${chunkId}`);
         return response.data;
     }
 
     public async getLawArticle(lawTitle: string, articleNumber: string): Promise<LawArticle> {
-        const response = await axios.get(`${SOURCE_API_V1_URL}/legal/public/laws/article`, {
+        const response = await this.axiosInstance.get(`/laws/article`, {
             params: { law_title: lawTitle, article_number: articleNumber }
         });
         return response.data;
     }
 
     public async getLawArticlesByTitle(lawTitle: string): Promise<LawOverview> {
-        const response = await axios.get(`${SOURCE_API_V1_URL}/legal/public/laws/by-title`, {
+        const response = await this.axiosInstance.get(`/laws/by-title`, {
             params: { law_title: lawTitle }
         });
         return response.data;
     }
 
     public async getLawTitles(): Promise<string[]> {
-        const response = await axios.get(`${SOURCE_API_V1_URL}/legal/public/laws/titles`);
+        const response = await this.axiosInstance.get(`/laws/titles`);
         return response.data;
     }
 
     public async *explainLawStream(lawTitle: string, articleNumber: string, articleText: string): AsyncGenerator<string, void, unknown> {
         const prompt = `Ligji: "${lawTitle}"\nNeni: ${articleNumber}\n\nPërmbajtja e Nenit:\n${articleText}`;
-
-        const response = await fetch(`${SOURCE_API_V1_URL}/legal/public/laws/explain`, {
+        const response = await fetch(`${API_V1_URL}/laws/explain`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenManager.get()}`
             },
-            body: JSON.stringify({ prompt, law_title: lawTitle, article_number: articleNumber })
+            body: JSON.stringify({ law_title: lawTitle, article_number: articleNumber, prompt })
         });
-
         if (!response.ok) throw new Error("AI Explanation request failed.");
         if (!response.body) return;
-
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         try {
