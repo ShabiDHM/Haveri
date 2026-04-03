@@ -1,8 +1,9 @@
-# FILE: backend/requirements.txt (UNIFIED & PINNED - V5.2)
+# FILE: backend/requirements.txt (UNIFIED & PINNED - V5.3)
 # PHOENIX PROTOCOL - DEPENDENCY UPDATE
 # 1. ADDED: 'beautifulsoup4' (Required for OAK/Web Scraping Engine).
-# 2. VERIFIED: 'holidays', 'pandas', 'requests' are present.
-# 3. STATUS: Ready for Data Engineering tasks.
+# 2. ADDED: 'onnxruntime' (Required for embedding and OCR models).
+# 3. VERIFIED: 'holidays', 'pandas', 'requests' are present.
+# 4. STATUS: Ready for Data Engineering tasks.
 
 # --- Core Web Framework & Async ---
 fastapi==0.109.2
@@ -73,6 +74,8 @@ langchain-openai
 langchain-text-splitters
 langdetect==1.0.9
 numpy<2,>=1.26.4
+# PHOENIX ADDITION: Required for embedding and OCR models
+onnxruntime>=1.19.0
 # PHOENIX ADDITION: OpenAI SDK for DeepSeek/OpenRouter
 openai>=1.0.0
 
