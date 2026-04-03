@@ -1,11 +1,11 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V7.9 (CLEANED IMPORTS, SINGLE BRAIN ICON)
+// PHOENIX PROTOCOL - RESULT PANEL V8.1 (COPY RENDERED TEXT)
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   RefreshCw, AlertCircle, CheckCircle,
-  FileText, Trash2, Archive, Copy, Download,
+  FileText, Trash2, Copy,
   BrainCircuit
 } from 'lucide-react';
 import { ResultPanelProps } from '../types';
@@ -15,12 +15,11 @@ import { DraftResultRenderer } from './DraftResultRenderer';
 export const ResultPanel: React.FC<ResultPanelProps> = ({
   t,
   currentJob,
-  saving,
   notification,
-  onSave,
   onRetry,
   onClear,
 }) => {
+  const documentRef = useRef<HTMLDivElement>(null);
 
   const statusText = useMemo(() => {
     switch (currentJob.status) {
@@ -37,15 +36,20 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
   const actionButtonBase = "p-3 bg-surface border border-border-main text-text-primary hover:text-primary-start hover:border-primary-start/50 rounded-xl transition-all shadow-sm hover:shadow-md hover-lift disabled:opacity-30 disabled:hover:shadow-none pointer-events-auto";
 
+  const handleCopy = () => {
+    if (!currentJob.result || !documentRef.current) return;
+    // Get the rendered text exactly as displayed (preserves line breaks)
+    const renderedText = documentRef.current.innerText;
+    navigator.clipboard.writeText(renderedText);
+  };
+
   return (
     <div className="glass-panel border border-border-main rounded-3xl p-0 flex flex-col h-auto lg:h-[700px] shadow-sm relative group overflow-visible">
-      {/* Absolute hover border – sits above everything */}
       <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none z-[200]" />
 
       {/* Executive Header Toolbar */}
       <div className="flex justify-between items-center px-6 py-4 bg-surface border-b border-border-main flex-shrink-0 relative z-50 pointer-events-auto">
         <div className="flex items-center gap-4">
-          {/* Brain icon – matches ConfigPanel exactly */}
           <div className="p-2 bg-primary-start/10 rounded-xl border border-primary-start/20">
             <BrainCircuit className="text-primary-start" size={20} />
           </div>
@@ -57,42 +61,12 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         {/* Action Button Cluster */}
         <div className="flex items-center gap-2">
           <button
-            onClick={onSave}
-            title={t('drafting.saveToArchive')}
-            disabled={!currentJob.result || saving}
-            className={actionButtonBase}
-          >
-            {saving ? <RefreshCw className="animate-spin" size={18} /> : <Archive size={18} className="stroke-[2.5px] text-text-primary" />}
-          </button>
-          <button
-            onClick={() => {
-              if (currentJob.result) {
-                navigator.clipboard.writeText(currentJob.result);
-              }
-            }}
+            onClick={handleCopy}
             title={t('drafting.copy')}
             disabled={!currentJob.result}
             className={actionButtonBase}
           >
             <Copy size={18} className="stroke-[2.5px] text-text-primary" />
-          </button>
-          <button
-            onClick={() => {
-              if (currentJob.result) {
-                const blob = new Blob([currentJob.result], { type: 'text/plain;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `draft-${Date.now()}.txt`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }
-            }}
-            title={t('drafting.download')}
-            disabled={!currentJob.result}
-            className={actionButtonBase}
-          >
-            <Download size={18} className="stroke-[2.5px] text-text-primary" />
           </button>
 
           {currentJob.status === 'FAILED' && (
@@ -138,7 +112,10 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                     {notification.msg}
                   </div>
                 )}
-                <div className="bg-white p-12 text-black shadow-lg rounded-sm min-h-[29.7cm] border border-gray-200">
+                <div
+                  ref={documentRef}
+                  className="bg-white p-12 text-black shadow-lg rounded-sm min-h-[29.7cm] border border-gray-200"
+                >
                   <DraftResultRenderer text={currentJob.result} t={t} />
                 </div>
               </motion.div>
