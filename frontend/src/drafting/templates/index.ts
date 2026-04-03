@@ -1,12 +1,15 @@
 // FILE: src/drafting/templates/index.ts
+// PHOENIX PROTOCOL - TEMPLATE INDEX (BUSINESS ONLY)
+
 import { TemplateConfig, TemplateType } from '../types';
 
 import { genericTemplate } from './generic';
-import { padiTemplate } from './litigation/padi';
-import { pergjigjeTemplate } from './litigation/pergjigje';
-import { kunderpadiTemplate } from './litigation/kunderpadi';
-import { ankeseTemplate } from './litigation/ankese';
-import { prapesimTemplate } from './litigation/prapësim';
+// Removed litigation imports
+// import { padiTemplate } from './litigation/padi';
+// import { pergjigjeTemplate } from './litigation/pergjigje';
+// import { kunderpadiTemplate } from './litigation/kunderpadi';
+// import { ankeseTemplate } from './litigation/ankese';
+// import { prapesimTemplate } from './litigation/prapësim';
 import { ndaTemplate } from './corporate/nda';
 import { mouTemplate } from './corporate/mou';
 import { shareholdersTemplate } from './corporate/shareholders';
@@ -16,48 +19,31 @@ import { terminationNoticeTemplate } from './employment/termination_notice';
 import { warningLetterTemplate } from './employment/warning_letter';
 import { leaseAgreementTemplate } from './real_estate/lease_agreement';
 import { salesPurchaseTemplate } from './real_estate/sales_purchase';
-import { powerOfAttorneyTemplate } from './real_estate/power_of_attorney';
+// Removed power_of_attorney import
+// import { powerOfAttorneyTemplate } from './real_estate/power_of_attorney';
 import { termsConditionsTemplate } from './compliance/terms_conditions';
 import { privacyPolicyTemplate } from './compliance/privacy_policy';
 
-const withCompliance = (config: TemplateConfig, domain: 'FAMILY' | 'CORPORATE' | 'CIVIL' | 'LABOR'): TemplateConfig => ({
-  ...config,
-  structureInstructions: `
-[STRICT LEGAL SCHEMA]
-DOMAIN: ${domain}
-MANDATORY CITATIONS: 
-${domain === 'FAMILY' ? '- Ligji i Familjes së Kosovës (Nr. 2004/25)' : ''}
-${domain === 'CORPORATE' ? '- Ligji Nr. 06/L-016 për Shoqëritë Tregtare' : ''}
-${domain === 'LABOR' ? '- Ligji i Punës Nr. 03/L-212' : ''}
-${domain === 'CIVIL' ? '- Kodi Civil i Republikës së Kosovës' : ''}
-
-RULES:
-1. NEVER cite laws from other domains.
-2. If the user input is a family dispute, you are forbidden from mentioning commercial or corporate statutes.
-3. If data (names, dates, IDs) is missing, use exactly this placeholder: [_____].
-
-[INSTRUCTIONS]
-${config.structureInstructions}
-  `.trim()
-});
-
+// No wrapper – each template is fully self‑contained (wrapper removed as per previous changes)
 export const templateConfigs: Record<TemplateType, TemplateConfig> = {
-  generic: withCompliance(genericTemplate, 'CIVIL'),
-  padi: withCompliance(padiTemplate, 'FAMILY'),
-  pergjigje: withCompliance(pergjigjeTemplate, 'FAMILY'),
-  kunderpadi: withCompliance(kunderpadiTemplate, 'FAMILY'),
-  ankese: withCompliance(ankeseTemplate, 'CIVIL'),
-  prapësim: withCompliance(prapesimTemplate, 'CIVIL'),
-  nda: withCompliance(ndaTemplate, 'CORPORATE'),
-  mou: withCompliance(mouTemplate, 'CORPORATE'),
-  shareholders: withCompliance(shareholdersTemplate, 'CORPORATE'),
-  sla: withCompliance(slaTemplate, 'CORPORATE'),
-  employment_contract: withCompliance(employmentContractTemplate, 'LABOR'),
-  termination_notice: withCompliance(terminationNoticeTemplate, 'LABOR'),
-  warning_letter: withCompliance(warningLetterTemplate, 'LABOR'),
-  lease_agreement: withCompliance(leaseAgreementTemplate, 'CIVIL'),
-  sales_purchase: withCompliance(salesPurchaseTemplate, 'CIVIL'),
-  power_of_attorney: withCompliance(powerOfAttorneyTemplate, 'CIVIL'),
-  terms_conditions: withCompliance(termsConditionsTemplate, 'CIVIL'),
-  privacy_policy: withCompliance(privacyPolicyTemplate, 'CIVIL'),
+  generic: genericTemplate,
+  // Removed litigation templates
+  // padi: padiTemplate,
+  // pergjigje: pergjigjeTemplate,
+  // kunderpadi: kunderpadiTemplate,
+  // ankese: ankeseTemplate,
+  // prapësim: prapesimTemplate,
+  nda: ndaTemplate,
+  mou: mouTemplate,
+  shareholders: shareholdersTemplate,
+  sla: slaTemplate,
+  employment_contract: employmentContractTemplate,
+  termination_notice: terminationNoticeTemplate,
+  warning_letter: warningLetterTemplate,
+  lease_agreement: leaseAgreementTemplate,
+  sales_purchase: salesPurchaseTemplate,
+  // Removed power_of_attorney
+  // power_of_attorney: powerOfAttorneyTemplate,
+  terms_conditions: termsConditionsTemplate,
+  privacy_policy: privacyPolicyTemplate,
 };

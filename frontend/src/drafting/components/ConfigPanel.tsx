@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V7.6 (Fixed dropdown opacity)
+// PHOENIX PROTOCOL - CONFIG PANEL V7.7 (REMOVED LITIGATION & POWER OF ATTORNEY)
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Lock, Send, RefreshCw, ChevronDown } from 'lucide-react';
@@ -36,22 +36,18 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Removed litigation group and power_of_attorney from real estate
   const templateGroups = [
-    { label: t('drafting.groupLitigation'), options: ['padi', 'pergjigje', 'kunderpadi', 'ankese', 'prapësim'] },
     { label: t('drafting.groupCorporate'), options: ['nda', 'mou', 'shareholders', 'sla'] },
     { label: t('drafting.groupEmployment'), options: ['employment_contract', 'termination_notice', 'warning_letter'] },
-    { label: t('drafting.groupRealEstate'), options: ['lease_agreement', 'sales_purchase', 'power_of_attorney'] },
+    { label: t('drafting.groupRealEstate'), options: ['lease_agreement', 'sales_purchase'] }, // removed power_of_attorney
     { label: t('drafting.groupCompliance'), options: ['terms_conditions', 'privacy_policy'] },
   ];
 
   const getOptionLabel = (value: string) => {
     const map: Record<string, string> = {
       generic: t('drafting.templateGeneric'),
-      padi: t('drafting.templatePadi'),
-      pergjigje: t('drafting.templatePergjigje'),
-      kunderpadi: t('drafting.templateKunderpadi'),
-      ankese: t('drafting.templateAnkese'),
-      prapësim: t('drafting.templatePrapesim'),
+      // removed litigation: padi, pergjigje, kunderpadi, ankese, prapësim
       nda: t('drafting.templateNDA'),
       mou: t('drafting.templateMoU'),
       shareholders: t('drafting.templateShareholders'),
@@ -61,7 +57,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
       warning_letter: t('drafting.templateWarning'),
       lease_agreement: t('drafting.templateLease'),
       sales_purchase: t('drafting.templateSales'),
-      power_of_attorney: t('drafting.templatePoA'),
+      // removed power_of_attorney: t('drafting.templatePoA'),
       terms_conditions: t('drafting.templateTerms'),
       privacy_policy: t('drafting.templatePrivacy'),
     };
@@ -126,7 +122,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
             {isOpen && isPro && (
               <div
                 ref={dropdownRef}
-                // FIX: replaced bg-card with solid light/dark background
                 className="absolute z-[9999] mt-1 w-full bg-white dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar"
               >
                 <div
@@ -137,7 +132,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                 </div>
                 {templateGroups.map((group) => (
                   <div key={group.label}>
-                    {/* FIX: solid background for sticky header */}
                     <div className="px-4 py-1.5 text-xs font-black uppercase tracking-widest text-text-muted bg-gray-50 dark:bg-gray-800 sticky top-0 z-10 border-y border-border-main/50">
                       {group.label}
                     </div>

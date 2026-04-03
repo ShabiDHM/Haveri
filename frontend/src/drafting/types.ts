@@ -1,5 +1,5 @@
 // src/drafting/types.ts
-// PHOENIX PROTOCOL - DRAFTING TYPES V7.0 (NO CASE REFERENCES)
+// PHOENIX PROTOCOL - DRAFTING TYPES V7.1 (REMOVED LITIGATION & POWER OF ATTORNEY)
 
 import { TFunction } from 'i18next';
 
@@ -7,11 +7,7 @@ export type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 export type TemplateType =
   | 'generic' 
-  | 'padi' 
-  | 'pergjigje' 
-  | 'kunderpadi' 
-  | 'ankese' 
-  | 'prapësim'
+  // Removed litigation: 'padi', 'pergjigje', 'kunderpadi', 'ankese', 'prapësim'
   | 'nda' 
   | 'mou' 
   | 'shareholders' 
@@ -22,8 +18,8 @@ export type TemplateType =
   | 'terms_conditions' 
   | 'privacy_policy'
   | 'lease_agreement' 
-  | 'sales_purchase'
-  | 'power_of_attorney';
+  | 'sales_purchase';
+  // Removed 'power_of_attorney'
 
 export interface DraftingJobState {
   status: JobStatus | null;
