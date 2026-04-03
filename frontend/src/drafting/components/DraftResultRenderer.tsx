@@ -1,4 +1,4 @@
-// FILE: src/drafting/components/DraftResultRenderer.tsx
+// FILE: src/drafting/ components/DraftResultRenderer.tsx
 // PHOENIX PROTOCOL - RENDERER V8.4 (CLEAN FORMATTING & RICH PLACEHOLDERS)
 
 import React from 'react';
