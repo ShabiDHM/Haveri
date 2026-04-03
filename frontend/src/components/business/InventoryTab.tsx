@@ -1,5 +1,5 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V22.4 (RECIPE FEATURE EXTRACTED)
+// PHOENIX PROTOCOL - INVENTORY TAB V22.5 (TRANSLATED LowStockThreshold)
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -114,7 +114,7 @@ export const InventoryTab: React.FC = () => {
                 onSuccess={loadData} 
                 target="items"
                 title={t('inventory.items.importTitle', 'Importo Artikujt e Inventarit')}
-                requiredColumns="Emri, Njesia, Kosto, Stoku, LowStockThreshold"
+                requiredColumns="Emri, Njësia, Kosto, Stoku, Kufiri i Stokut të Ulët"
             />
         </motion.div>
     );
