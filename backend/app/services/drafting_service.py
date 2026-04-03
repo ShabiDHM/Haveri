@@ -1,5 +1,5 @@
 # FILE: backend/app/services/drafting_service.py
-# PHOENIX PROTOCOL - DRAFTING SERVICE V1.8 (REMOVED SECRETSTR IMPORT)
+# PHOENIX PROTOCOL - DRAFTING SERVICE V1.8 (ADDED DISCLAIMER)
 
 import os
 import logging
@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODEL = "deepseek/deepseek-chat"
+
+# Disclaimer to be appended to every generated document
+DISCLAIMER = "\n\n---\n*Kjo përgjigje është gjeneruar nga Haveri AI, vetëm për referencë.*"
 
 class DraftingService:
     def __init__(self):
@@ -49,7 +52,7 @@ class DraftingService:
             llm = ChatOpenAI(
                 model=OPENROUTER_MODEL,
                 base_url=OPENROUTER_BASE_URL,
-                api_key=DEEPSEEK_API_KEY,  # type: ignore[arg-type]
+                api_key=DEEPSEEK_API_KEY,  # type: ignore
                 temperature=0.3,
                 streaming=True,
                 timeout=120
@@ -63,6 +66,9 @@ class DraftingService:
             async for chunk in llm.astream(messages):
                 if chunk.content:
                     yield str(chunk.content)
+            
+            # Append disclaimer after the document content
+            yield DISCLAIMER
             
         except Exception as e:
             logger.error(f"Draft generation failed: {e}")

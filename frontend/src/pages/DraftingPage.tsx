@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - CLEAN LAYOUT V2 (Fixed prompt arguments)
+// PHOENIX PROTOCOL - MOBILE-FRIENDLY DRAFTING PAGE
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -74,7 +74,6 @@ const DraftingPage: React.FC = () => {
     let acc = '';
     try {
       const stream = await apiService.draftLegalDocumentStream({
-        // SURGICAL FIX: Removed 't' argument to match the new promptConstructor signature
         user_prompt: constructSmartPrompt(context.trim(), selectedTemplate),
         document_type: isPro ? selectedTemplate : 'generic',
       });
@@ -122,51 +121,51 @@ const DraftingPage: React.FC = () => {
 
   return (
     <motion.div className="w-full pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 flex flex-col h-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-8 flex flex-col h-full">
         <style>{lawyerGradeStyles}</style>
 
-        {/* PHOENIX DIRECTIVE: Unified Executive Header (glass-panel) */}
-        <div className="glass-panel p-6 sm:p-8 mb-6 border border-border-main flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm border border-primary-start/20">
-              {activeMode === 'drafting' ? <PenTool size={24} /> : <BookOpen size={24} />}
+        {/* Unified Executive Header - responsive spacing */}
+        <div className="glass-panel p-4 sm:p-6 mb-6 border border-border-main flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary-start/10 flex items-center justify-center text-primary-start shadow-sm border border-primary-start/20">
+              {activeMode === 'drafting' ? <PenTool size={20} className="sm:w-6 sm:h-6" /> : <BookOpen size={20} className="sm:w-6 sm:h-6" />}
             </div>
-            <div className="flex flex-col gap-1">
-              <h2 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tighter uppercase leading-none">
+            <div className="flex flex-col gap-0.5">
+              <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tighter uppercase leading-tight">
                 {activeMode === 'drafting' ? t('drafting.title', 'Hartimi Ligjor') : 'Biblioteka e Ligjeve'}
               </h2>
-              <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mt-1 ml-1">
+              <p className="text-[9px] sm:text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">
                 {activeMode === 'drafting' ? 'Gjenerim Inteligjent i Dokumenteve' : 'Hulumtim në bazën ligjore të Kosovës'}
               </p>
             </div>
           </div>
 
-          <div className="w-full sm:w-auto flex bg-surface/50 p-1.5 rounded-2xl gap-1 border border-border-main shadow-inner">
+          <div className="w-full sm:w-auto flex bg-surface/50 p-1 rounded-2xl gap-1 border border-border-main shadow-inner">
             <button
               onClick={() => handleModeSwitch('drafting')}
-              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${
                 activeMode === 'drafting'
                   ? 'bg-primary-start text-white shadow-md'
                   : 'text-text-muted hover:text-text-primary hover:bg-hover'
               }`}
             >
-              <span className="flex items-center justify-center gap-2"><PenTool size={14} /> Hartim</span>
+              <span className="flex items-center justify-center gap-1 sm:gap-2"><PenTool size={12} className="sm:w-3.5 sm:h-3.5" /> Hartim</span>
             </button>
             <button
               onClick={() => handleModeSwitch('library')}
-              className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${
                 activeMode === 'library'
                   ? 'bg-primary-start text-white shadow-md'
                   : 'text-text-muted hover:text-text-primary hover:bg-hover'
               }`}
             >
-              <span className="flex items-center justify-center gap-2"><BookOpen size={14} /> Biblioteka</span>
+              <span className="flex items-center justify-center gap-1 sm:gap-2"><BookOpen size={12} className="sm:w-3.5 sm:h-3.5" /> Biblioteka</span>
             </button>
           </div>
         </div>
 
         {activeMode === 'drafting' ? (
-          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 flex-1 lg:h-[750px] min-h-0 pointer-events-auto">
+          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 flex-1 min-h-0 pointer-events-auto">
             <div className="h-full overflow-y-auto custom-scrollbar">
               <ConfigPanel
                 t={t}
