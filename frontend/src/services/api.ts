@@ -63,7 +63,7 @@ const getBaseUrl = (): string => { if (typeof window !== 'undefined') { const ho
 const normalizedUrl = getBaseUrl();
 export const API_BASE_URL = normalizedUrl;
 export const API_V1_URL = `${API_BASE_URL}/api/v1`;
-// SOURCE_API_V1_URL is no longer needed for law search; we keep it for backward compatibility if any other feature uses it.
+// SOURCE_API_V1_URL is kept for reference but no longer used for law methods
 export const SOURCE_API_V1_URL = 'https://api.juristi.tech/api/v1';
 
 class TokenManager {
@@ -484,7 +484,7 @@ class ApiService {
         } as AsyncIterable<string>;
     }
 
-    // ========== LAW LIBRARY METHODS (NOW USING BUSINESS BACKEND) ==========
+    // ========== LAW LIBRARY METHODS (now using business backend) ==========
 
     public async searchLaws(query: string, jurisdiction?: string, limit: number = 50): Promise<LawSearchResult[]> {
         const params: any = { q: query, limit };
@@ -519,16 +519,19 @@ class ApiService {
 
     public async *explainLawStream(lawTitle: string, articleNumber: string, articleText: string): AsyncGenerator<string, void, unknown> {
         const prompt = `Ligji: "${lawTitle}"\nNeni: ${articleNumber}\n\nPërmbajtja e Nenit:\n${articleText}`;
+
         const response = await fetch(`${API_V1_URL}/laws/explain`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${tokenManager.get()}`
             },
-            body: JSON.stringify({ law_title: lawTitle, article_number: articleNumber, prompt })
+            body: JSON.stringify({ prompt, law_title: lawTitle, article_number: articleNumber })
         });
+
         if (!response.ok) throw new Error("AI Explanation request failed.");
         if (!response.body) return;
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         try {

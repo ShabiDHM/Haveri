@@ -1,8 +1,5 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V12.7 (DRAFTING INTEGRATION)
-# 1. ADDED: drafting router for legal document generation
-# 2. REMOVED: graph_router import and its inclusion under /graph.
-# 3. STATUS: Protocol Compliant.
+# PHOENIX PROTOCOL - MAIN APPLICATION V12.8 (ADDED LAWS ROUTER)
 
 from fastapi import FastAPI, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,8 +26,9 @@ from app.api.endpoints.analysis import router as analysis_router
 from app.api.endpoints.inbound import router as inbound_router
 from app.api.endpoints.mobile_handoff import router as mobile_handoff_router
 from app.api.endpoints.accountant import router as accountant_router
-# NEW: Drafting router for legal document generation
 from app.api.endpoints.drafting import router as drafting_router
+# NEW: Laws router for private law search
+from app.api.endpoints.laws import router as laws_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -64,8 +62,9 @@ api_v1_router.include_router(analysis_router, prefix="/analysis", tags=["Smart A
 api_v1_router.include_router(inbound_router, prefix="/inbound", tags=["Inbound Data"])
 api_v1_router.include_router(mobile_handoff_router, prefix="/mobile-handoff", tags=["Mobile Handoff"])
 api_v1_router.include_router(accountant_router, prefix="/accountant", tags=["Forensic Accountant"])
-# NEW: Drafting router for legal document generation
 api_v1_router.include_router(drafting_router, prefix="/drafting", tags=["Legal Drafting"])
+# NEW: Laws router for private law search
+api_v1_router.include_router(laws_router, tags=["Laws"])  # laws.py already has prefix="/laws"
 
 app.include_router(api_v1_router)
 
