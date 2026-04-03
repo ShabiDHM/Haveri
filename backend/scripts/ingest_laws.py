@@ -1,6 +1,5 @@
 # FILE: backend/scripts/ingest_business_laws.py
-# PHOENIX PROTOCOL - ENHANCED BUSINESS LAWS INGESTION V1.0
-# Ingests Kosovo business laws into ChromaDB's business_knowledge_base.
+# PHOENIX PROTOCOL - ENHANCED BUSINESS LAWS INGESTION V1.1 (FIXED EMBEDDING CONFLICT)
 
 import os
 import sys
@@ -26,7 +25,7 @@ except ImportError as e:
 # --- CONFIGURATION ---
 CHROMA_HOST = os.getenv("CHROMA_HOST", "chroma")
 CHROMA_PORT = int(os.getenv("CHROMA_PORT", 8000))
-COLLECTION_NAME = "business_knowledge_base"  # Matches the business app's public collection
+COLLECTION_NAME = "business_knowledge_base"
 TARGET_JURISDICTION = 'ks'
 
 print(f"⚙️  CONFIG: Chroma={CHROMA_HOST}:{CHROMA_PORT}, Collection={COLLECTION_NAME}")
@@ -133,9 +132,26 @@ def infer_category(filename: str, text_sample: str) -> str:
     return "general_business"
 
 # ----------------------------------------------------------------------
+# CONNECTION HELPER (fixes embedding conflict)
+# ----------------------------------------------------------------------
+def get_or_create_collection(client, collection_name):
+    try:
+        # Try to get existing collection (no embedding function needed)
+        collection = client.get_collection(name=collection_name)
+        print(f"✅ Using existing collection '{collection_name}'.")
+        return collection
+    except Exception:
+        # Collection doesn't exist, create it with embedding function
+        collection = client.create_collection(
+            name=collection_name,
+            embedding_function=HaveriEmbeddingFunction()
+        )
+        print(f"✅ Created new collection '{collection_name}'.")
+        return collection
+
+# ----------------------------------------------------------------------
 # MAIN INGESTION FUNCTION
 # ----------------------------------------------------------------------
-
 def ingest_business_laws(directory_path: str, force_reingest: bool = False, chunk_size: int = 1000):
     abs_path = os.path.abspath(directory_path)
     print(f"📂 Scanning Directory: {abs_path}")
@@ -147,11 +163,7 @@ def ingest_business_laws(directory_path: str, force_reingest: bool = False, chun
     print(f"🔌 Connecting to ChromaDB...")
     try:
         client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
-        collection = client.get_or_create_collection(
-            name=COLLECTION_NAME,
-            embedding_function=HaveriEmbeddingFunction()
-        )
-        print(f"✅ Connected to '{COLLECTION_NAME}' collection.")
+        collection = get_or_create_collection(client, COLLECTION_NAME)
     except Exception as e:
         print(f"❌ DB Connection Failed: {e}")
         return
