@@ -59,7 +59,7 @@ export const DraftResultRenderer: React.FC<{ text: string; t: TFunction }> = Rea
       {/* Footer Disclaimer - Strictly the requested string */}
       <div className="mt-16 pt-4 border-t border-gray-300 text-center shrink-0">
         <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
-          Kjo përgjigje është gjeneruar nga AI, vetëm për referencë.
+          Kjo përgjigje është gjeneruar nga Haveri AI, vetëm për referencë.
         </p>
       </div>
     </div>
