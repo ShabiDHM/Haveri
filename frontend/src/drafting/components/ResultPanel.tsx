@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V8.3 (RICH TEXT INLINER ENABLED)
+// PHOENIX PROTOCOL - RESULT PANEL V8.4 (SMALLER BRAIN ICON & LOADING STATE)
 
 import React, { useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -146,8 +146,9 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center text-center mt-32 pointer-events-none opacity-40">
                 {currentJob.status === 'PROCESSING' ? (
                   <div className="flex flex-col items-center">
-                    <div className="w-20 h-20 rounded-[1.5rem] bg-primary-start flex items-center justify-center shadow-accent-glow mb-8 animate-pulse">
-                      <BrainCircuit className="w-10 h-10 text-white" />
+                    {/* SMALLER BRAIN ICON CONTAINER AND ICON */}
+                    <div className="w-12 h-12 rounded-[1rem] bg-primary-start flex items-center justify-center shadow-accent-glow mb-4 animate-pulse">
+                      <BrainCircuit className="w-6 h-6 text-white" />
                     </div>
                     <p className="text-text-primary font-black uppercase tracking-widest text-xs">
                       {t('drafting.statusWorking', 'Duke Gjeneruar...')}
@@ -156,7 +157,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                   </div>
                 ) : (
                   <div className="flex flex-col items-center">
-                    <FileText size={64} className="text-text-muted mb-6" strokeWidth={1.5} />
+                    <FileText size={48} className="text-text-muted mb-4" strokeWidth={1.5} />
                     <p className="text-text-muted font-black text-xs uppercase tracking-widest">
                       {t('drafting.emptyState', 'Rezultati do të shfaqet këtu')}
                     </p>
