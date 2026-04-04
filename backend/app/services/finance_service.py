@@ -1,5 +1,5 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V8.0 (INVENTORY_ITEM_ID SUPPORT)
+# PHOENIX PROTOCOL - FINANCE SERVICE V8.2 (AUTO-INVOICE ON POS SALE)
 
 import logging
 import csv
@@ -38,12 +38,9 @@ class FinanceService:
 
     # --- HELPER: find inventory item by name (case-insensitive) ---
     def _find_inventory_item_by_name(self, user_id: str, name: str) -> Optional[ObjectId]:
-        """Find an inventory item by name (case-insensitive) for a given user."""
         if not name:
             return None
-        # Normalize name
         name_norm = name.strip().lower()
-        # Find in inventory_items collection
         item = self.db.inventory_items.find_one({
             "user_id": ObjectId(user_id),
             "name": {"$regex": f"^{name_norm}$", "$options": "i"}
@@ -51,7 +48,6 @@ class FinanceService:
         return item["_id"] if item else None
 
     # --- PARTNER LOGIC ---
-
     def get_partners(self, context_id: str) -> List[PartnerInDB]:
         query = self._get_resilient_filter(context_id)
         cursor = self.db.partners.find(query).sort("name", 1)
@@ -62,38 +58,50 @@ class FinanceService:
         query = {"_id": oid, **self._get_resilient_filter(context_id)}
         update_dict = data.model_dump(exclude_unset=True)
         res = self.db.partners.find_one_and_update(query, {"$set": update_dict}, return_document=True)
-        if not res: raise HTTPException(status_code=404, detail="Partner not found")
+        if not res:
+            raise HTTPException(status_code=404, detail="Partner not found")
         return PartnerInDB(**res)
 
     def delete_partner(self, context_id: str, partner_id: str):
         oid = ObjectId(partner_id)
         query = {"_id": oid, **self._get_resilient_filter(context_id)}
         res = self.db.partners.delete_one(query)
-        if res.deleted_count == 0: raise HTTPException(status_code=404, detail="Partner not found")
+        if res.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Partner not found")
 
     async def import_partners(self, user_id: str, file: UploadFile) -> Dict[str, Any]:
         user = self.db.users.find_one({"_id": ObjectId(user_id)})
         org_id = user.get("organization_id") if user else None
-        content = await file.read(); reader = csv.DictReader(io.StringIO(content.decode("utf-8")))
-        imported_count, partners_to_insert = 0, []
+        content = await file.read()
+        reader = csv.DictReader(io.StringIO(content.decode("utf-8")))
+        imported_count = 0
+        partners_to_insert = []
         for row in reader:
             try:
                 name = row.get("Emri") or row.get("Name")
-                if not name: continue
+                if not name:
+                    continue
                 partner_doc = {
-                    "user_id": ObjectId(user_id), "name": name, "email": row.get("Email"),
-                    "phone": row.get("Telefon") or row.get("Phone"), "address": row.get("Adresa") or row.get("Address"),
-                    "tax_id": row.get("NIPT") or row.get("TaxID"), "type": str(row.get("Tipi") or row.get("Type", "CLIENT")).upper(),
+                    "user_id": ObjectId(user_id),
+                    "name": name,
+                    "email": row.get("Email"),
+                    "phone": row.get("Telefon") or row.get("Phone"),
+                    "address": row.get("Adresa") or row.get("Address"),
+                    "tax_id": row.get("NIPT") or row.get("TaxID"),
+                    "type": str(row.get("Tipi") or row.get("Type", "CLIENT")).upper(),
                     "created_at": datetime.now(timezone.utc)
                 }
-                if org_id: partner_doc["organization_id"] = ObjectId(str(org_id))
-                partners_to_insert.append(partner_doc); imported_count += 1
-            except: continue
-        if partners_to_insert: self.db.partners.insert_many(partners_to_insert)
+                if org_id:
+                    partner_doc["organization_id"] = ObjectId(str(org_id))
+                partners_to_insert.append(partner_doc)
+                imported_count += 1
+            except Exception:
+                continue
+        if partners_to_insert:
+            self.db.partners.insert_many(partners_to_insert)
         return {"status": "success", "imported_count": imported_count}
 
     # --- POS / TRANSACTION LOGIC ---
-
     async def get_monthly_pos_revenue(self, async_db: Any, user_id: str, month: int, year: int, case_id: Optional[str] = None) -> float:
         try:
             start_date = datetime(year, month, 1)
@@ -111,14 +119,20 @@ class FinanceService:
             logger.error(f"Error calculating POS revenue: {e}")
             return 0.0
 
+    def _generate_pos_invoice_number(self, user_id: str) -> str:
+        today = datetime.now().strftime("%Y%m%d")
+        count = self.db.invoices.count_documents({
+            "user_id": ObjectId(user_id),
+            "invoice_number": {"$regex": f"^POS-{today}"}
+        })
+        return f"POS-{today}-{count + 1:03d}"
+
     def create_pos_transaction(self, user_id: str, data: Dict[str, Any], case_id: Optional[str] = None) -> Dict[str, Any]:
-        """Create a single POS transaction with optional inventory_item_id."""
         try:
             user_oid = ObjectId(user_id)
         except:
             user_oid = user_id
 
-        # Prepare document
         doc = {
             "user_id": str(user_oid),
             "product_name": data.get("product_name"),
@@ -130,7 +144,6 @@ class FinanceService:
             "source": "MANUAL",
             "status": "PAID",
         }
-        # Handle inventory_item_id
         inv_id = data.get("inventory_item_id")
         if inv_id:
             try:
@@ -139,16 +152,59 @@ class FinanceService:
                 pass
         if case_id:
             doc["case_id"] = case_id
-        # Insert
+
         res = self.db.transactions.insert_one(doc)
         doc["_id"] = res.inserted_id
+
+        # --- Auto-create invoice ---
+        item_name = data.get("product_name") or data.get("description") or "Produkt POS"
+        quantity = data.get("quantity", 1.0)
+        unit_price = data.get("total_price", 0.0) / quantity if quantity > 0 else data.get("total_price", 0.0)
+        invoice_item = InvoiceItem(
+            description=item_name,
+            quantity=quantity,
+            unit_price=unit_price,
+            inventory_item_id=inv_id
+        )
+        invoice_data = InvoiceCreate(
+            client_name="Klient POS",
+            client_email=None,
+            client_address=None,
+            client_tax_id=None,
+            items=[invoice_item],
+            tax_rate=0.0,
+            notes=f"Krijuar automatikisht nga shitja POS (ID: {doc['_id']})",
+            status="PAID",
+            issue_date=doc["date_time"],
+            due_date=doc["date_time"]
+        )
+        try:
+            created_invoice = self.create_invoice(user_id, invoice_data, case_id)
+            logger.info(f"Auto-created invoice {created_invoice.invoice_number} for POS transaction {doc['_id']}")
+            self.db.transactions.update_one(
+                {"_id": doc["_id"]},
+                {"$set": {"generated_invoice_id": str(created_invoice.id)}}
+            )
+        except Exception as e:
+            logger.error(f"Failed to auto-create invoice for POS transaction {doc['_id']}: {e}")
+        # --- End auto-invoice ---
+
         return doc
 
     def delete_pos_transaction(self, user_id: str, transaction_id: str) -> None:
-        try: oid = ObjectId(transaction_id)
-        except: raise HTTPException(status_code=400, detail="Invalid Transaction ID")
+        try:
+            oid = ObjectId(transaction_id)
+        except:
+            raise HTTPException(status_code=400, detail="Invalid Transaction ID")
+        trans = self.db.transactions.find_one({"_id": oid, "user_id": str(user_id)})
+        if trans and trans.get("generated_invoice_id"):
+            try:
+                self.db.invoices.delete_one({"_id": ObjectId(trans["generated_invoice_id"]), "user_id": ObjectId(user_id)})
+            except:
+                pass
         result = self.db.transactions.delete_one({"_id": oid, "user_id": str(user_id)})
-        if result.deleted_count == 0: raise HTTPException(status_code=404, detail="Transaction not found")
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Transaction not found")
 
     def bulk_delete_transactions(self, user_id: str, invoice_ids: List[str] = [], expense_ids: List[str] = [], pos_ids: List[str] = []) -> int:
         total_deleted = 0
@@ -160,17 +216,16 @@ class FinanceService:
                 total_deleted += self.db.expenses.delete_many({"_id": {"$in": [ObjectId(tid) for tid in expense_ids]}, "user_id": user_oid, "is_locked": {"$ne": True}}).deleted_count
             if pos_ids:
                 total_deleted += self.db.transactions.delete_many({"_id": {"$in": [ObjectId(tid) for tid in pos_ids]}, "user_id": str(user_id)}).deleted_count
-        except: raise HTTPException(status_code=400, detail="Invalid ID provided in bulk delete.")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid ID provided in bulk delete.")
         return total_deleted
 
     # --- INVOICE LOGIC ---
-
     def _generate_invoice_number(self, user_id: str) -> str:
         count = self.db.invoices.count_documents({"user_id": ObjectId(user_id)})
         return f"F-{datetime.now().year}-{count + 1:04d}"
 
     def create_invoice(self, user_id: str, data: InvoiceCreate, case_id: Optional[str] = None) -> InvoiceInDB:
-        # Compute subtotal from items (handles inventory_item_id automatically)
         subtotal = sum(item.quantity * item.unit_price for item in data.items)
         invoice_doc = data.model_dump()
         invoice_doc.update({
@@ -182,84 +237,84 @@ class FinanceService:
         })
         if case_id:
             invoice_doc["case_id"] = case_id
-        # Insert
         res = self.db.invoices.insert_one(invoice_doc)
         invoice_doc["_id"] = res.inserted_id
         return InvoiceInDB(**invoice_doc)
 
-    def get_invoices(self, context_id: str, case_id: Optional[str] = None) -> list[InvoiceInDB]:
+    def get_invoices(self, context_id: str, case_id: Optional[str] = None) -> List[InvoiceInDB]:
         logger.info(f"[DEBUG] get_invoices called with context_id={context_id}, case_id={case_id}")
         total_user_invoices = self.db.invoices.count_documents(self._get_resilient_filter(context_id))
         logger.info(f"[DEBUG] Total invoices for user (no case filter): {total_user_invoices}")
-
         query = self._get_resilient_filter(context_id)
         if case_id:
             query["case_id"] = case_id
             logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
-
         filtered_count = self.db.invoices.count_documents(query)
         logger.info(f"[DEBUG] Invoices after filter: {filtered_count}")
-
         cursor = self.db.invoices.find(query).sort("created_at", -1)
         return [InvoiceInDB(**doc) for doc in cursor]
 
     def get_invoice(self, context_id: str, invoice_id: str) -> InvoiceInDB:
         oid = ObjectId(invoice_id)
         doc = self.db.invoices.find_one({"_id": oid, **self._get_resilient_filter(context_id)})
-        if not doc: raise HTTPException(status_code=404, detail="Invoice not found")
+        if not doc:
+            raise HTTPException(status_code=404, detail="Invoice not found")
         return InvoiceInDB(**doc)
 
     def update_invoice(self, context_id: str, invoice_id: str, update_data: InvoiceUpdate) -> InvoiceInDB:
         oid = ObjectId(invoice_id)
         existing = self.db.invoices.find_one({"_id": oid, **self._get_resilient_filter(context_id)})
-        if not existing: raise HTTPException(status_code=404, detail="Invoice not found")
-        if existing.get("is_locked"): raise HTTPException(status_code=403, detail="Locked records cannot be edited.")
+        if not existing:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        if existing.get("is_locked"):
+            raise HTTPException(status_code=403, detail="Locked records cannot be edited.")
         update_dict = update_data.model_dump(exclude_unset=True)
         update_dict["updated_at"] = datetime.now(timezone.utc)
         result = self.db.invoices.find_one_and_update({"_id": oid}, {"$set": update_dict}, return_document=True)
         return InvoiceInDB(**result)
 
     def delete_invoice(self, user_id: str, invoice_id: str) -> None:
-        oid = ObjectId(invoice_id); existing = self.db.invoices.find_one({"_id": oid, **self._get_resilient_filter(user_id)})
-        if existing and existing.get("is_locked"): raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
+        oid = ObjectId(invoice_id)
+        existing = self.db.invoices.find_one({"_id": oid, **self._get_resilient_filter(user_id)})
+        if existing and existing.get("is_locked"):
+            raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
         self.db.invoices.delete_one({"_id": oid})
 
     # --- EXPENSE LOGIC ---
-
     def create_expense(self, user_id: str, data: ExpenseCreate, case_id: Optional[str] = None) -> ExpenseInDB:
-        doc = data.model_dump(); doc.update({"user_id": ObjectId(user_id), "created_at": datetime.now(timezone.utc)})
+        doc = data.model_dump()
+        doc.update({"user_id": ObjectId(user_id), "created_at": datetime.now(timezone.utc)})
         if case_id:
             doc["case_id"] = case_id
-        # If inventory_item_id is present, store it (the Expense model now has it)
-        res = self.db.expenses.insert_one(doc); doc["_id"] = res.inserted_id
+        res = self.db.expenses.insert_one(doc)
+        doc["_id"] = res.inserted_id
         return ExpenseInDB(**doc)
 
-    def get_expenses(self, context_id: str, case_id: Optional[str] = None) -> list[ExpenseInDB]:
+    def get_expenses(self, context_id: str, case_id: Optional[str] = None) -> List[ExpenseInDB]:
         logger.info(f"[DEBUG] get_expenses called with context_id={context_id}, case_id={case_id}")
         total_user_expenses = self.db.expenses.count_documents(self._get_resilient_filter(context_id))
         logger.info(f"[DEBUG] Total expenses for user (no case filter): {total_user_expenses}")
-
         query = self._get_resilient_filter(context_id)
         if case_id:
             query["case_id"] = case_id
             logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
-
         filtered_count = self.db.expenses.count_documents(query)
         logger.info(f"[DEBUG] Expenses after filter: {filtered_count}")
-
         cursor = self.db.expenses.find(query).sort("date", -1)
         return [ExpenseInDB(**doc) for doc in cursor]
 
     def delete_expense(self, user_id: str, expense_id: str) -> None:
-        oid = ObjectId(expense_id); existing = self.db.expenses.find_one({"_id": oid, **self._get_resilient_filter(user_id)})
-        if existing and existing.get("is_locked"): raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
+        oid = ObjectId(expense_id)
+        existing = self.db.expenses.find_one({"_id": oid, **self._get_resilient_filter(user_id)})
+        if existing and existing.get("is_locked"):
+            raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
         self.db.expenses.delete_one({"_id": oid})
 
-    # --- UNIFIED IMPORT (with inventory_item_id support) ---
-
+    # --- UNIFIED IMPORT ---
     def import_unified_transactions(self, user_id: str, transactions: List[Dict[str, Any]]) -> Dict[str, int]:
         counts = {"INVOICE": 0, "EXPENSE": 0, "POS": 0, "UNKNOWN": 0}
-        user = self.db.users.find_one({"_id": ObjectId(user_id)}); org_id = user.get("organization_id") if user else None
+        user = self.db.users.find_one({"_id": ObjectId(user_id)})
+        org_id = user.get("organization_id") if user else None
         for row in transactions:
             try:
                 row_type = str(row.get("Tipi", "POS")).upper().strip()
@@ -273,13 +328,10 @@ class FinanceService:
                 amt = float(row.get("Shuma", 0.0))
 
                 if row_type == "POS":
-                    # Try to get inventory_item_id from row (e.g., from a separate column)
                     inv_id_str = str(row.get("inventory_item_id") or "").strip()
                     inv_id = ObjectId(inv_id_str) if inv_id_str else None
-                    # If not provided, attempt to match by product name
                     if not inv_id and p_name:
                         inv_id = self._find_inventory_item_by_name(user_id, p_name)
-
                     pos_doc = {
                         "user_id": str(user_id),
                         "product_name": p_name,
@@ -296,9 +348,7 @@ class FinanceService:
                         pos_doc["organization_id"] = ObjectId(str(org_id))
                     self.db.transactions.insert_one(pos_doc)
                     counts["POS"] += 1
-
                 elif row_type == "EXPENSE":
-                    # For expenses, we could also link inventory items if needed
                     self.create_expense(user_id, ExpenseCreate(
                         category=str(row.get("Kategoria", "Shpenzim")),
                         amount=abs(amt),
@@ -306,7 +356,6 @@ class FinanceService:
                         date=dt
                     ))
                     counts["EXPENSE"] += 1
-
             except Exception as e:
                 logger.warning(f"Error processing import row: {row} - {e}")
                 continue
