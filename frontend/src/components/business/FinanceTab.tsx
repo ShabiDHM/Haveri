@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.1 (HARDCODED PARTNER LABELS)
+// PHOENIX PROTOCOL - FINANCE TAB V14.3 (EXCLUDE POS TRANSACTIONS)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -113,7 +113,7 @@ export const FinanceTab: React.FC = () => {
     const { workspace } = useAuth();
     const financeData = useFinanceData({ workspaceId: workspace?.id });
     const { 
-        loading, invoices, expenses, workspaces, posTransactions, analyticsData,
+        loading, invoices, expenses, workspaces, analyticsData,
         totalExpenses, displayIncome, displayProfit, costOfGoodsSold,
         refreshData, deleteInvoice: hookDeleteInvoice, deleteExpense: hookDeleteExpense,
         deletePosTransaction: hookDeletePos, selectedYear 
@@ -128,7 +128,7 @@ export const FinanceTab: React.FC = () => {
     const [showExpenseModal, setShowExpenseModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false); 
     const [showClientImportModal, setShowClientImportModal] = useState(false);
-    const [showPosModal, setShowPosModal] = useState(false); // NEW
+    const [showPosModal, setShowPosModal] = useState(false);
     const [showArchiveInvoiceModal, setShowArchiveInvoiceModal] = useState(false);
     const [showArchiveExpenseModal, setShowArchiveExpenseModal] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -172,7 +172,7 @@ export const FinanceTab: React.FC = () => {
         }
     };
 
-    // --- FIXED: Use only existing date fields with fallback to current date ---
+    // --- EXCLUDE POS TRANSACTIONS: they are already represented by invoices ---
     const allTransactions: TransactionItem[] = useMemo(() => {
         const combined: TransactionItem[] = [
             ...invoices.map(i => ({ 
@@ -191,18 +191,11 @@ export const FinanceTab: React.FC = () => {
                 label: e.category, 
                 raw: e 
             })),
-            ...posTransactions.map(p => ({ 
-                id: (p as any).id || (p as any)._id, 
-                type: 'pos' as const, 
-                date: p.transaction_date || (p as any).date_time || (p as any).date || new Date().toISOString(), 
-                amount: p.total_price ?? (p as any).amount ?? 0, 
-                label: p.product_name || (p as any).description || t('finance.posSale'), 
-                raw: p 
-            })),
+            // POS transactions removed to avoid duplication (each POS creates an invoice)
         ];
         return combined.filter(tx => !searchTerm || tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || tx.amount.toString().includes(searchTerm))
                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [invoices, expenses, posTransactions, searchTerm, t]);
+    }, [invoices, expenses, searchTerm, t]); // posTransactions removed from dependencies
 
     const filteredPartners = useMemo(() => {
         return partners.filter(p => !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.email?.toLowerCase().includes(searchTerm.toLowerCase()));
