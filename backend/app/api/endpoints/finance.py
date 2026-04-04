@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.0 (POS CREATION WITH INVENTORY)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.1 (FIX POS TRANSACTION DATE FIELD)
 
 import json
 import logging
@@ -143,6 +143,17 @@ def create_pos_transaction(
         data=data,
         case_id=case_id
     )
+    # Fix: Ensure the response contains 'date' field (PosTransactionOut expects 'date', not 'date_time')
+    if isinstance(result, dict):
+        # If result has 'date_time' but no 'date', map it
+        if 'date_time' in result and 'date' not in result:
+            result['date'] = result['date_time']
+        # Also ensure 'date' is a datetime object (not string)
+        if 'date' in result and isinstance(result['date'], str):
+            try:
+                result['date'] = datetime.fromisoformat(result['date'].replace('Z', '+00:00'))
+            except:
+                pass
     return result
 
 @router.delete("/transactions/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
