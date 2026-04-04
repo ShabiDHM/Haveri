@@ -1,5 +1,5 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// FIXED: Label "Shitjet", Export passes year/month/day
+// FIXED: Card label "Libri i shitjeve"
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,7 +41,7 @@ interface TransactionListProps {
 }
 
 // -----------------------------------------------------------------------------
-// Helpers
+// Helpers (unchanged)
 // -----------------------------------------------------------------------------
 
 const parseDate = (dateStr: string): Date => {
@@ -72,7 +72,6 @@ const getTranslatedMonth = (dateObj: Date, lang: string, t: any) => {
     const monthIndex = dateObj.getMonth();
     const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const sqMonths = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
-    
     const monthKey = enMonths[monthIndex].toLowerCase();
     const fallback = lang.toLowerCase().startsWith('sq') ? sqMonths[monthIndex] : enMonths[monthIndex];
     return t(`months.${monthKey}`, fallback);
@@ -146,7 +145,7 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
 };
 
 // -----------------------------------------------------------------------------
-// Drill‑Down Card Component with Export Button (Label changed to "Shitjet")
+// Drill‑Down Card Component (Label changed to "Libri i shitjeve")
 // -----------------------------------------------------------------------------
 
 const DrillDownCardWithDelete: React.FC<{
@@ -183,7 +182,7 @@ const DrillDownCardWithDelete: React.FC<{
                 <span className={`text-3xl font-mono font-bold ${isPositive ? 'text-success-start' : 'text-danger-start'}`}>
                     {isPositive ? '+' : ''}€{total.toFixed(2)}
                 </span>
-                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('finance.sales', 'Shitjet')}</p>
+                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('finance.salesBook', 'Libri i shitjeve')}</p>
             </div>
             <hr className="border-border-main" />
             <div className="flex justify-between items-center">
@@ -212,7 +211,7 @@ const DrillDownCardWithDelete: React.FC<{
 };
 
 // -----------------------------------------------------------------------------
-// Main TransactionList Component – Hierarchical Drill‑Down with Export Parameters
+// Main TransactionList Component (unchanged except for the label above)
 // -----------------------------------------------------------------------------
 
 export const TransactionList: React.FC<TransactionListProps> = (props) => {

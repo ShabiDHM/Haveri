@@ -1,5 +1,5 @@
 // FILE: src/components/business/modals/PosModal.tsx
-// POS Modal with inventory dropdown and stock validation
+// POS Modal with inventory dropdown and stock validation (Title changed)
 
 import React, { useState, useEffect } from 'react';
 import { X, ShoppingCart, AlertCircle } from 'lucide-react';
@@ -70,7 +70,7 @@ export const PosModal: React.FC<PosModalProps> = ({ isOpen, onClose, onSuccess }
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
                         <ShoppingCart className="text-success-start" size={20} />
-                        {t('pos.addSale')}
+                        Krijo shitje   {/* Changed from {t('pos.addSale')} */}
                     </h2>
                     <button onClick={onClose} className="text-text-muted hover:text-text-primary">
                         <X size={24} />
