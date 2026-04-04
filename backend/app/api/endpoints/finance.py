@@ -1,8 +1,10 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.2 (FIX POS TRANSACTION DATE FIELD IN GET)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.4 (EXCEL EXPORT WITH ALBANIAN HEADERS)
 
 import json
 import logging
+import io
+import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from typing import List, Annotated, Optional, Any
@@ -10,6 +12,7 @@ from pymongo.database import Database
 import pymongo
 from pydantic import BaseModel
 from datetime import datetime
+from bson import ObjectId
 
 from app.models.user import UserInDB
 from app.models.finance import (
@@ -277,6 +280,81 @@ async def archive_invoice(invoice_id: str, current_user: Annotated[UserInDB, Dep
         case_id=case_id
     )
     return archived_item
+
+# --- EXPORT INVOICES TO EXCEL (Albanian Headers) ---
+@router.get("/invoices/export/excel")
+async def export_invoices_excel(
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None),
+    invoice_ids: Optional[List[str]] = Query(None),  # comma-separated list
+    lang: Optional[str] = Query("sq")  # language for headers (default Albanian)
+):
+    """
+    Export invoices to Excel file.
+    If invoice_ids provided, export only those.
+    Otherwise export all invoices (optionally filtered by case_id).
+    Headers are in Albanian.
+    """
+    user_id_str = str(current_user.id)
+    
+    if invoice_ids:
+        # Convert to ObjectId list
+        oids = []
+        for id_str in invoice_ids:
+            try:
+                oids.append(ObjectId(id_str))
+            except:
+                pass
+        invoices = list(db.invoices.find({"_id": {"$in": oids}, "user_id": user_id_str}))
+    else:
+        query = {"user_id": user_id_str}
+        if case_id:
+            query["case_id"] = case_id
+        invoices = list(db.invoices.find(query).sort("issue_date", -1))
+    
+    if not invoices:
+        raise HTTPException(status_code=404, detail="Nuk u gjet asnjë faturë për eksport.")
+    
+    # Prepare data for Excel
+    data = []
+    for inv in invoices:
+        # Build items string
+        items_list = []
+        for item in inv.get('items', []):
+            desc = item.get('description', '')
+            qty = item.get('quantity', 1)
+            price = item.get('unit_price', 0)
+            items_list.append(f"{desc} x{qty} @ {price}")
+        items_str = ", ".join(items_list)
+        
+        data.append({
+            "Numri i Faturës": inv.get("invoice_number", ""),
+            "Klienti": inv.get("client_name", ""),
+            "NIPT i Klientit": inv.get("client_tax_id", ""),
+            "Data e Lëshimit": inv.get("issue_date", ""),
+            "Data e Pagesës": inv.get("due_date", ""),
+            "Nëntotali": inv.get("subtotal", 0),
+            "Norma e Tatimit (%)": inv.get("tax_rate", 0),
+            "Shuma Totale": inv.get("total_amount", 0),
+            "Statusi": inv.get("status", ""),
+            "Artikujt": items_str,
+            "Shënime": inv.get("notes", ""),
+        })
+    
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name="Faturat", index=False)
+    output.seek(0)
+    
+    filename = f"faturat_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers
+    )
 
 # --- EXPENSES (Accounts Payable) ---
 
