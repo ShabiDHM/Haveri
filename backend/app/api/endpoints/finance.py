@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.1 (FIX POS TRANSACTION DATE FIELD)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.2 (FIX POS TRANSACTION DATE FIELD IN GET)
 
 import json
 import logging
@@ -106,7 +106,6 @@ async def get_imported_transactions(
     # --- DEBUG LOGGING START ---
     logger = logging.getLogger(__name__)
     logger.info(f"[DEBUG] get_imported_transactions: user_id={user_id_str}, case_id={case_id}")
-    # Count total POS transactions for this user (no case filter)
     total_user_transactions = await db["transactions"].count_documents({"user_id": user_id_str})
     logger.info(f"[DEBUG] Total POS transactions for user (no case filter): {total_user_transactions}")
     # --- END DEBUG LOGGING ---
@@ -119,8 +118,16 @@ async def get_imported_transactions(
     filtered_count = await db["transactions"].count_documents(filter)
     logger.info(f"[DEBUG] POS transactions after filter: {filtered_count}")
     
-    cursor = db["transactions"].find(filter).sort("date", pymongo.DESCENDING)
+    cursor = db["transactions"].find(filter).sort("date_time", pymongo.DESCENDING)
     transactions = await cursor.to_list(length=None)
+    
+    # --- FIX: Add 'date' field from 'date_time' for each transaction ---
+    for tx in transactions:
+        if "date_time" in tx and "date" not in tx:
+            tx["date"] = tx["date_time"]
+        elif "date" not in tx:
+            tx["date"] = None  # fallback
+    
     return transactions
 
 @router.post("/transactions", response_model=PosTransactionOut, status_code=status.HTTP_201_CREATED)
@@ -135,9 +142,7 @@ def create_pos_transaction(
     Automatically deducts stock and calculates COGS.
     """
     service = FinanceService(db)
-    # Convert Pydantic model to dict
     data = transaction_data.model_dump()
-    # Add optional fields
     result = service.create_pos_transaction(
         user_id=str(current_user.id),
         data=data,
@@ -145,10 +150,8 @@ def create_pos_transaction(
     )
     # Fix: Ensure the response contains 'date' field (PosTransactionOut expects 'date', not 'date_time')
     if isinstance(result, dict):
-        # If result has 'date_time' but no 'date', map it
         if 'date_time' in result and 'date' not in result:
             result['date'] = result['date_time']
-        # Also ensure 'date' is a datetime object (not string)
         if 'date' in result and isinstance(result['date'], str):
             try:
                 result['date'] = datetime.fromisoformat(result['date'].replace('Z', '+00:00'))
