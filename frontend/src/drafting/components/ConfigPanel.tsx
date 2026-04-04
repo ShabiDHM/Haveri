@@ -1,14 +1,13 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V7.7 (REMOVED LITIGATION & POWER OF ATTORNEY)
+// PHOENIX PROTOCOL - CONFIG PANEL V7.8 (REMOVED PRO RESTRICTIONS)
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { FileText, LayoutTemplate, Lock, Send, RefreshCw, ChevronDown } from 'lucide-react';
+import { FileText, LayoutTemplate, Send, RefreshCw, ChevronDown } from 'lucide-react';
 import { ConfigPanelProps } from '../types';
 import { getTemplatePlaceholder } from '../utils/templateHelpers';
 
 export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   t,
-  isPro,
   selectedTemplate,
   context,
   isSubmitting,
@@ -40,14 +39,13 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   const templateGroups = [
     { label: t('drafting.groupCorporate'), options: ['nda', 'mou', 'shareholders', 'sla'] },
     { label: t('drafting.groupEmployment'), options: ['employment_contract', 'termination_notice', 'warning_letter'] },
-    { label: t('drafting.groupRealEstate'), options: ['lease_agreement', 'sales_purchase'] }, // removed power_of_attorney
+    { label: t('drafting.groupRealEstate'), options: ['lease_agreement', 'sales_purchase'] },
     { label: t('drafting.groupCompliance'), options: ['terms_conditions', 'privacy_policy'] },
   ];
 
   const getOptionLabel = (value: string) => {
     const map: Record<string, string> = {
       generic: t('drafting.templateGeneric'),
-      // removed litigation: padi, pergjigje, kunderpadi, ankese, prapësim
       nda: t('drafting.templateNDA'),
       mou: t('drafting.templateMoU'),
       shareholders: t('drafting.templateShareholders'),
@@ -57,7 +55,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
       warning_letter: t('drafting.templateWarning'),
       lease_agreement: t('drafting.templateLease'),
       sales_purchase: t('drafting.templateSales'),
-      // removed power_of_attorney: t('drafting.templatePoA'),
       terms_conditions: t('drafting.templateTerms'),
       privacy_policy: t('drafting.templatePrivacy'),
     };
@@ -97,11 +94,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
             <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">
               {t('drafting.templateLabel')}
             </label>
-            {!isPro && (
-              <span className="text-[9px] text-warning-start font-black bg-warning-start/10 px-2 py-0.5 rounded border border-warning-start/20 flex items-center gap-1 uppercase tracking-widest">
-                <Lock size={10} /> PRO
-              </span>
-            )}
+            {/* PRO badge removed */}
           </div>
 
           <div className="relative">
@@ -111,15 +104,14 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
             <button
               ref={buttonRef}
               type="button"
-              onClick={() => isPro && setIsOpen(!isOpen)}
-              disabled={!isPro}
-              className="w-full pl-11 pr-10 py-3.5 bg-surface border border-border-main rounded-xl text-sm font-bold text-text-primary focus:border-primary-start outline-none transition-all appearance-none cursor-pointer disabled:opacity-50 flex items-center justify-between pointer-events-auto"
+              onClick={() => setIsOpen(!isOpen)}
+              className="w-full pl-11 pr-10 py-3.5 bg-surface border border-border-main rounded-xl text-sm font-bold text-text-primary focus:border-primary-start outline-none transition-all appearance-none cursor-pointer flex items-center justify-between pointer-events-auto"
             >
               <span>{getOptionLabel(selectedTemplate)}</span>
               <ChevronDown className={`h-4 w-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {isOpen && isPro && (
+            {isOpen && (
               <div
                 ref={dropdownRef}
                 className="absolute z-[9999] mt-1 w-full bg-white dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar"
