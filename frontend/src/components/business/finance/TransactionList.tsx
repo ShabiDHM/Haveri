@@ -1,5 +1,5 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// FIXED: Added Export to Excel button to drill-down cards
+// FIXED: Label "Shitjet", Export passes year/month/day
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,7 +37,7 @@ interface TransactionListProps {
     onDeletePos: (id: string) => void;
     onViewSourceDocument: (archiveId: string, title: string) => void;
     onBulkDelete: (ids: { invoice_ids: string[]; expense_ids: string[]; pos_ids: string[] }) => void;
-    onExportExcel: (periodLabel: string) => void;  // NEW
+    onExportExcel: (params: { year?: number; month?: number; day?: number; label: string }) => void;
 }
 
 // -----------------------------------------------------------------------------
@@ -146,7 +146,7 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
 };
 
 // -----------------------------------------------------------------------------
-// Drill‑Down Card Component with Export Button
+// Drill‑Down Card Component with Export Button (Label changed to "Shitjet")
 // -----------------------------------------------------------------------------
 
 const DrillDownCardWithDelete: React.FC<{
@@ -155,7 +155,7 @@ const DrillDownCardWithDelete: React.FC<{
     count: number;
     onDrillDown: () => void;
     onDelete: () => void;
-    onExport: () => void;   // NEW
+    onExport: () => void;
 }> = ({ title, total, count, onDrillDown, onDelete, onExport }) => {
     const { t } = useTranslation();
     const isPositive = total >= 0;
@@ -183,7 +183,7 @@ const DrillDownCardWithDelete: React.FC<{
                 <span className={`text-3xl font-mono font-bold ${isPositive ? 'text-success-start' : 'text-danger-start'}`}>
                     {isPositive ? '+' : ''}€{total.toFixed(2)}
                 </span>
-                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('finance.netBalance', 'Balansi Neto')}</p>
+                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('finance.sales', 'Shitjet')}</p>
             </div>
             <hr className="border-border-main" />
             <div className="flex justify-between items-center">
@@ -212,7 +212,7 @@ const DrillDownCardWithDelete: React.FC<{
 };
 
 // -----------------------------------------------------------------------------
-// Main TransactionList Component – Hierarchical Drill‑Down with Robust Dates
+// Main TransactionList Component – Hierarchical Drill‑Down with Export Parameters
 // -----------------------------------------------------------------------------
 
 export const TransactionList: React.FC<TransactionListProps> = (props) => {
@@ -224,21 +224,22 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
     const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
     const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-    // Build hierarchy
+    // Build hierarchy with month number
     const hierarchy = useMemo(() => {
-        const tree: Record<string, Record<string, Record<string, TransactionItem[]>>> = {};
+        const tree: Record<string, Record<string, { monthNumber: number; days: Record<string, TransactionItem[]> }>> = {};
 
         allTransactions.forEach(tx => {
             const dateObj = parseDate(tx.date);
             const year = dateObj.getFullYear().toString();
-            const month = getTranslatedMonth(dateObj, i18n.language, t);
+            const monthName = getTranslatedMonth(dateObj, i18n.language, t);
+            const monthNumber = dateObj.getMonth() + 1;
             const dayKey = dateObj.toISOString().slice(0, 10);
 
             if (!tree[year]) tree[year] = {};
-            if (!tree[year][month]) tree[year][month] = {};
-            if (!tree[year][month][dayKey]) tree[year][month][dayKey] = [];
+            if (!tree[year][monthName]) tree[year][monthName] = { monthNumber, days: {} };
+            if (!tree[year][monthName].days[dayKey]) tree[year][monthName].days[dayKey] = [];
 
-            tree[year][month][dayKey].push(tx);
+            tree[year][monthName].days[dayKey].push(tx);
         });
 
         return tree;
@@ -271,9 +272,9 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         switch (view) {
             case 'years':
                 const yearData = Object.entries(hierarchy).map(([year, months]) => {
-                    const allTxs = Object.values(months).flatMap(m => Object.values(m).flat());
+                    const allTxs = Object.values(months).flatMap(m => Object.values(m.days).flat());
                     return {
-                        year,
+                        year: parseInt(year),
                         total: allTxs.reduce((acc, tx) => tx.type === 'expense' ? acc - tx.amount : acc + tx.amount, 0),
                         txCount: allTxs.length,
                         allTxs,
@@ -281,25 +282,26 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {yearData.sort((a, b) => parseInt(b.year) - parseInt(a.year)).map(({ year, total, txCount, allTxs }) => (
+                        {yearData.sort((a, b) => b.year - a.year).map(({ year, total, txCount, allTxs }) => (
                             <DrillDownCardWithDelete
                                 key={year}
-                                title={year}
+                                title={year.toString()}
                                 total={total}
                                 count={txCount}
-                                onDrillDown={() => { setSelectedYear(year); setView('months'); }}
-                                onDelete={() => handleBulkDelete(allTxs, year)}
-                                onExport={() => onExportExcel(year)}
+                                onDrillDown={() => { setSelectedYear(year.toString()); setView('months'); }}
+                                onDelete={() => handleBulkDelete(allTxs, year.toString())}
+                                onExport={() => onExportExcel({ year, label: year.toString() })}
                             />
                         ))}
                     </div>
                 );
             case 'months':
                 if (!selectedYear || !hierarchy[selectedYear]) return null;
-                const monthData = Object.entries(hierarchy[selectedYear]).map(([month, days]) => {
+                const monthData = Object.entries(hierarchy[selectedYear]).map(([monthName, { monthNumber, days }]) => {
                     const allTxs = Object.values(days).flat();
                     return {
-                        month,
+                        monthName,
+                        monthNumber,
                         total: allTxs.reduce((acc, tx) => tx.type === 'expense' ? acc - tx.amount : acc + tx.amount, 0),
                         txCount: allTxs.length,
                         allTxs,
@@ -307,22 +309,22 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {monthData.map(({ month, total, txCount, allTxs }) => (
+                        {monthData.map(({ monthName, monthNumber, total, txCount, allTxs }) => (
                             <DrillDownCardWithDelete
-                                key={month}
-                                title={month}
+                                key={monthName}
+                                title={monthName}
                                 total={total}
                                 count={txCount}
-                                onDrillDown={() => { setSelectedMonth(month); setView('days'); }}
-                                onDelete={() => handleBulkDelete(allTxs, `${month} ${selectedYear}`)}
-                                onExport={() => onExportExcel(`${month} ${selectedYear}`)}
+                                onDrillDown={() => { setSelectedMonth(monthName); setView('days'); }}
+                                onDelete={() => handleBulkDelete(allTxs, `${monthName} ${selectedYear}`)}
+                                onExport={() => onExportExcel({ year: parseInt(selectedYear), month: monthNumber, label: `${monthName} ${selectedYear}` })}
                             />
                         ))}
                     </div>
                 );
             case 'days':
                 if (!selectedYear || !selectedMonth || !hierarchy[selectedYear]?.[selectedMonth]) return null;
-                const dayData = Object.entries(hierarchy[selectedYear][selectedMonth]).map(([dayKey, txs]) => {
+                const dayData = Object.entries(hierarchy[selectedYear][selectedMonth].days).map(([dayKey, txs]) => {
                     const dateObj = parseDate(dayKey);
                     const displayDay = dateObj.toLocaleDateString(i18n.language, { year: 'numeric', month: '2-digit', day: '2-digit' });
                     return {
@@ -335,22 +337,30 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {dayData.sort((a, b) => getSortableDate(b.dayKey).getTime() - getSortableDate(a.dayKey).getTime()).map(({ day, dayKey, total, txCount, allTxs }) => (
-                            <DrillDownCardWithDelete
-                                key={dayKey}
-                                title={day}
-                                total={total}
-                                count={txCount}
-                                onDrillDown={() => { setSelectedDay(dayKey); setView('transactions'); }}
-                                onDelete={() => handleBulkDelete(allTxs, day)}
-                                onExport={() => onExportExcel(day)}
-                            />
-                        ))}
+                        {dayData.sort((a, b) => getSortableDate(b.dayKey).getTime() - getSortableDate(a.dayKey).getTime()).map(({ day, dayKey, total, txCount, allTxs }) => {
+                            const dateObj = parseDate(dayKey);
+                            return (
+                                <DrillDownCardWithDelete
+                                    key={dayKey}
+                                    title={day}
+                                    total={total}
+                                    count={txCount}
+                                    onDrillDown={() => { setSelectedDay(dayKey); setView('transactions'); }}
+                                    onDelete={() => handleBulkDelete(allTxs, day)}
+                                    onExport={() => onExportExcel({
+                                        year: dateObj.getFullYear(),
+                                        month: dateObj.getMonth() + 1,
+                                        day: dateObj.getDate(),
+                                        label: day
+                                    })}
+                                />
+                            );
+                        })}
                     </div>
                 );
             case 'transactions':
-                if (!selectedYear || !selectedMonth || !selectedDay || !hierarchy[selectedYear]?.[selectedMonth]?.[selectedDay]) return null;
-                const transactions = hierarchy[selectedYear][selectedMonth][selectedDay];
+                if (!selectedYear || !selectedMonth || !selectedDay || !hierarchy[selectedYear]?.[selectedMonth]?.days[selectedDay]) return null;
+                const transactions = hierarchy[selectedYear][selectedMonth].days[selectedDay];
                 return (
                     <div className="space-y-2">
                         {transactions.map(tx => <TransactionCard key={tx.id} tx={tx} props={props} />)}

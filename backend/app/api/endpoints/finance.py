@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.4 (EXCEL EXPORT WITH ALBANIAN HEADERS)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.5 (FIX EXPORT DATE FILTER TYPING)
 
 import json
 import logging
@@ -11,7 +11,7 @@ from typing import List, Annotated, Optional, Any
 from pymongo.database import Database
 import pymongo
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timedelta
 from bson import ObjectId
 
 from app.models.user import UserInDB
@@ -287,19 +287,20 @@ async def export_invoices_excel(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db),
     case_id: Optional[str] = Query(None),
-    invoice_ids: Optional[List[str]] = Query(None),  # comma-separated list
-    lang: Optional[str] = Query("sq")  # language for headers (default Albanian)
+    invoice_ids: Optional[List[str]] = Query(None),
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    day: Optional[int] = Query(None),
+    lang: Optional[str] = Query("sq")
 ):
     """
     Export invoices to Excel file.
     If invoice_ids provided, export only those.
-    Otherwise export all invoices (optionally filtered by case_id).
-    Headers are in Albanian.
+    Otherwise export all invoices (optionally filtered by case_id and date).
     """
     user_id_str = str(current_user.id)
     
     if invoice_ids:
-        # Convert to ObjectId list
         oids = []
         for id_str in invoice_ids:
             try:
@@ -308,9 +309,31 @@ async def export_invoices_excel(
                 pass
         invoices = list(db.invoices.find({"_id": {"$in": oids}, "user_id": user_id_str}))
     else:
-        query = {"user_id": user_id_str}
+        query: dict = {"user_id": user_id_str}
         if case_id:
             query["case_id"] = case_id
+        
+        # Apply date filters
+        if year:
+            start_date = datetime(year, 1, 1)
+            end_date = None
+            if month:
+                start_date = datetime(year, month, 1)
+                if day:
+                    start_date = datetime(year, month, day)
+                    end_date = start_date + timedelta(days=1)
+                else:
+                    if month == 12:
+                        end_date = datetime(year + 1, 1, 1)
+                    else:
+                        end_date = datetime(year, month + 1, 1)
+            else:
+                end_date = datetime(year + 1, 1, 1)
+            
+            query["issue_date"] = {"$gte": start_date}
+            if end_date:
+                query["issue_date"]["$lt"] = end_date
+        
         invoices = list(db.invoices.find(query).sort("issue_date", -1))
     
     if not invoices:
@@ -319,7 +342,6 @@ async def export_invoices_excel(
     # Prepare data for Excel
     data = []
     for inv in invoices:
-        # Build items string
         items_list = []
         for item in inv.get('items', []):
             desc = item.get('description', '')

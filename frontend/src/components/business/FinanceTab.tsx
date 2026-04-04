@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.6 (EXPORT BUTTON MOVED TO TRANSACTION LIST)
+// PHOENIX PROTOCOL - FINANCE TAB V14.7 (EXPORT WITH DATE FILTERS)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -172,8 +172,8 @@ export const FinanceTab: React.FC = () => {
         }
     };
 
-    // --- EXCEL EXPORT HANDLER (called from TransactionList) ---
-    const handleExportExcel = async (periodLabel: string) => {
+    // --- EXCEL EXPORT HANDLER (with date filters) ---
+    const handleExportExcel = async (params: { year?: number; month?: number; day?: number; label: string }) => {
         try {
             const token = localStorage.getItem('accessToken');
             if (!token) {
@@ -181,20 +181,20 @@ export const FinanceTab: React.FC = () => {
                 return;
             }
             const caseId = workspace?.id || '';
-            const url = `${process.env.REACT_APP_API_URL || '/api/v1'}/finance/invoices/export/excel?case_id=${caseId}`;
+            let url = `${process.env.REACT_APP_API_URL || '/api/v1'}/finance/invoices/export/excel?case_id=${caseId}`;
+            if (params.year) url += `&year=${params.year}`;
+            if (params.month) url += `&month=${params.month}`;
+            if (params.day) url += `&day=${params.day}`;
+            
             const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (!response.ok) {
-                throw new Error('Export failed');
-            }
+            if (!response.ok) throw new Error('Export failed');
             const blob = await response.blob();
             const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = downloadUrl;
-            a.download = `faturat_${periodLabel.replace(/\s/g, '_')}_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`;
+            a.download = `faturat_${params.label.replace(/\s/g, '_')}_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
