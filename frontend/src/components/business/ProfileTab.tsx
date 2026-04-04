@@ -1,5 +1,5 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V31.0 (HANDLE EMPTY FISCAL FIELDS)
+// PHOENIX PROTOCOL - PROFILE TAB V31.1 (ROBUST FISCAL PARAMS)
 // STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -150,26 +150,26 @@ export const ProfileTab: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      // Create a sanitized copy: omit any fields that are undefined
-      const sanitized: BusinessProfileUpdate = {
-        firm_name: formData.firm_name,
-        email_public: formData.email_public,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        website: formData.website,
-        tax_id: formData.tax_id,
-        // Only include if defined
-        ...(formData.vat_rate !== undefined && { vat_rate: formData.vat_rate }),
-        ...(formData.target_margin !== undefined && { target_margin: formData.target_margin }),
-        ...(formData.currency && { currency: formData.currency }),
+      // Prepare payload – ensure numbers are numbers, strings are strings
+      const payload: BusinessProfileUpdate = {
+        firm_name: formData.firm_name || undefined,
+        email_public: formData.email_public || undefined,
+        phone: formData.phone || undefined,
+        address: formData.address || undefined,
+        city: formData.city || undefined,
+        website: formData.website || undefined,
+        tax_id: formData.tax_id || undefined,
+        vat_rate: formData.vat_rate !== undefined && !isNaN(formData.vat_rate) ? formData.vat_rate : undefined,
+        target_margin: formData.target_margin !== undefined && !isNaN(formData.target_margin) ? formData.target_margin : undefined,
+        currency: formData.currency || 'EUR',
       };
-      await apiService.updateBusinessProfile(sanitized);
+      await apiService.updateBusinessProfile(payload);
       alert(t('saveSuccess'));
-    } catch {
+      await refreshBusinessProfile(); // ensure context updates
+    } catch (err) {
+      console.error(err);
       alert(t('error.generic'));
     } finally {
-      await refreshBusinessProfile();
       setSaving(false);
     }
   };
@@ -441,7 +441,7 @@ export const ProfileTab: React.FC = () => {
                         >
                           <option value="">Zgjidhni</option>
                           <option value="EUR">Euro (€)</option>
-                          <option value="LEK">Lek (ALL)</option>
+                          <option value="ALL">Lek (ALL)</option>
                           <option value="USD">Dollar ($)</option>
                         </select>
                       </FormField>
