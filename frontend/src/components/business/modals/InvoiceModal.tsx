@@ -1,8 +1,8 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V22.2 (COMPACT UI SIZING & I18N FIX)
+// PHOENIX PROTOCOL - INVOICE MODAL V22.3 (ALLOW NON‑INVENTORY SERVICES)
 
 import React, { useState, useEffect } from 'react';
-import { X, User, FileText, Plus, Trash2, Search, Package } from 'lucide-react';
+import { X, User, FileText, Plus, Trash2, Search, Package, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Invoice, InvoiceItem, Partner, InventoryItem } from '../../../data/types';
 import { apiService } from '../../../services/api';
@@ -155,15 +155,19 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                                             value={item.inventory_item_id || ''}
                                             onChange={e => updateLineItem(index, 'inventory_item_id', e.target.value)}
                                         >
-                                            <option value="">{t('finance.selectProduct', 'Zgjidh Produktin')}</option>
+                                            <option value="">{t('finance.selectProduct', 'Zgjidh Produktin (ose lëre bosh për shërbim)')}</option>
                                             {inventoryItems.map(inv => (
                                                 <option key={inv._id} value={inv._id}>{inv.name} (€{inv.cost_per_unit})</option>
                                             ))}
                                         </select>
+                                        <div className="text-[10px] text-text-muted flex items-center gap-1 mt-0.5">
+                                            <Info size={10} />
+                                            {t('finance.customServiceHint', 'Mund të lini bosh dhe të shkruani manualisht përshkrimin më poshtë')}
+                                        </div>
                                     </div>
                                     <input
                                         required
-                                        placeholder={t('finance.description')}
+                                        placeholder={t('finance.description', 'Përshkrimi i shërbimit/produktit')}
                                         className="flex-1 glass-input min-w-[120px]"
                                         value={item.description}
                                         onChange={e => updateLineItem(index, 'description', e.target.value)}

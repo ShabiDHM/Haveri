@@ -1,8 +1,5 @@
 # FILE: backend/app/services/report_service.py
-# PHOENIX PROTOCOL - REPORT SERVICE V7.3 (DEFENSIVE HARDENING)
-# 1. CRITICAL FIX: Implemented defensive 'getattr' access for invoice.notes to prevent 500 AttributeError.
-# 2. STABILITY: Ensures PDF generation continues even if Model Schema is out of sync.
-# 3. STATUS: 100% Complete, unabridged replacement.
+# PHOENIX PROTOCOL - REPORT SERVICE V7.4 (FIX VAT CALCULATION IN PDF)
 
 import io
 import os
@@ -187,14 +184,12 @@ def generate_forensic_audit_pdf(text: str, user_id: str, db: Database, lang: str
         
         # Parse Bullets (Matches ■, -, or *)
         elif cleaned.startswith('■') or cleaned.startswith('-') or cleaned.startswith('*'):
-            # Check for bold within bullet
             bullet_text = cleaned[1:].strip()
             bullet_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', escape(bullet_text))
             Story.append(Paragraph(f"<bullet>•</bullet> {bullet_text}", STYLES['AuditListItem']))
         
         # Standard Body Text
         else:
-            # Check for bold text
             body_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', escape(cleaned))
             Story.append(Paragraph(body_text, STYLES['AuditBody']))
 
@@ -310,7 +305,20 @@ def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang:
     t_items.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,0), brand_color), ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LINEBELOW', (0,-1), (-1,-1), 1, COLOR_BORDER), ('TOPPADDING', (0,0), (-1,-1), 8), ('BOTTOMPADDING', (0,0), (-1,-1), 8), ('ROWBACKGROUNDS', (0,1), (-1,-1), [HexColor("#FFFFFF"), HexColor("#F9FAFB")])]))
     Story.append(t_items)
 
-    totals_data = [[Paragraph(_get_text('subtotal', lang), STYLES['TotalLabel']), Paragraph(f"€{invoice.subtotal:,.2f}", STYLES['TotalLabel'])], [Paragraph(_get_text('tax', lang), STYLES['TotalLabel']), Paragraph(f"€{invoice.tax_amount:,.2f}", STYLES['TotalLabel'])], [Paragraph(f"<b>{_get_text('total', lang)}</b>", STYLES['TotalValue']), Paragraph(f"<b>€{invoice.total_amount:,.2f}</b>", STYLES['TotalValue'])]]
+    # --- FIX: Compute tax_amount if not present, using tax_rate ---
+    tax_rate = getattr(invoice, 'tax_rate', 0.0)
+    subtotal = invoice.subtotal
+    tax_amount = subtotal * tax_rate / 100
+    total_amount = invoice.total_amount  # already computed, but ensure consistency
+    # Optionally, recompute total to be safe
+    if abs(total_amount - (subtotal + tax_amount)) > 0.01:
+        total_amount = subtotal + tax_amount
+
+    totals_data = [
+        [Paragraph(_get_text('subtotal', lang), STYLES['TotalLabel']), Paragraph(f"€{subtotal:,.2f}", STYLES['TotalLabel'])],
+        [Paragraph(_get_text('tax', lang), STYLES['TotalLabel']), Paragraph(f"€{tax_amount:,.2f}", STYLES['TotalLabel'])],
+        [Paragraph(f"<b>{_get_text('total', lang)}</b>", STYLES['TotalValue']), Paragraph(f"<b>€{total_amount:,.2f}</b>", STYLES['TotalValue'])]
+    ]
     t_totals = Table(totals_data, colWidths=[40*mm, 35*mm], style=[('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LINEABOVE', (0, 2), (1, 2), 1.5, COLOR_PRIMARY_TEXT), ('TOPPADDING', (0, 2), (1, 2), 6)])
     Story.append(Table([["", t_totals]], colWidths=[110*mm, 75*mm], style=[('ALIGN', (1,0), (1,0), 'RIGHT')]))
 
