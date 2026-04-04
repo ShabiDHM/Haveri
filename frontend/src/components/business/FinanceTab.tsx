@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.5 (RENAME POS BUTTON)
+// PHOENIX PROTOCOL - FINANCE TAB V14.6 (EXPORT BUTTON MOVED TO TRANSACTION LIST)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,7 +7,7 @@ import {
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
     BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
     Sparkles, X, Users, Phone, Mail, MapPin,
-    Trash2, ShoppingCart, Download
+    Trash2, ShoppingCart
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { Invoice, Expense, Document } from '../../data/types';
@@ -172,10 +172,10 @@ export const FinanceTab: React.FC = () => {
         }
     };
 
-    // --- EXCEL EXPORT HANDLER ---
-    const handleExportExcel = async () => {
+    // --- EXCEL EXPORT HANDLER (called from TransactionList) ---
+    const handleExportExcel = async (periodLabel: string) => {
         try {
-            const token = localStorage.getItem('access_token');
+            const token = localStorage.getItem('accessToken');
             if (!token) {
                 alert(t('error.unauthorized'));
                 return;
@@ -194,7 +194,7 @@ export const FinanceTab: React.FC = () => {
             const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = downloadUrl;
-            a.download = `faturat_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`;
+            a.download = `faturat_${periodLabel.replace(/\s/g, '_')}_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -314,13 +314,12 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} className="sm:w-6 sm:h-6" />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm">
                 <ActionButton primary icon={<Plus size={16} className="sm:w-5 sm:h-5" />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <ActionButton icon={<ShoppingCart size={16} className="sm:w-5 sm:h-5" />} label="Libri i shitjeve" onClick={() => setShowPosModal(true)} />
                 <ActionButton icon={<FileSpreadsheet size={16} className="sm:w-5 sm:h-5" />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
                 <ActionButton icon={<Users size={16} className="sm:w-5 sm:h-5" />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} />
                 <ActionButton icon={<MinusCircle size={16} className="sm:w-5 sm:h-5" />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
-                <ActionButton icon={<Download size={16} className="sm:w-5 sm:h-5" />} label={t('finance.exportExcel', 'Eksporto në Excel')} onClick={handleExportExcel} />
             </div>
 
             <Panel className="p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
@@ -370,7 +369,8 @@ export const FinanceTab: React.FC = () => {
                                     onDeleteExpense={(id:any) => hookDeleteExpense(id)} 
                                     onDeletePos={(id:any) => hookDeletePos(id)} 
                                     onViewSourceDocument={() => {}} 
-                                    onBulkDelete={handleUnifiedBulkDelete} 
+                                    onBulkDelete={handleUnifiedBulkDelete}
+                                    onExportExcel={handleExportExcel}
                                 />
                             )}
                         </div>

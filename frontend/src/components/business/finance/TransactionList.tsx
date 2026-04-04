@@ -1,5 +1,5 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// FIXED: Robust date parsing and explicit Month translations for sq locale
+// FIXED: Added Export to Excel button to drill-down cards
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,25 +37,19 @@ interface TransactionListProps {
     onDeletePos: (id: string) => void;
     onViewSourceDocument: (archiveId: string, title: string) => void;
     onBulkDelete: (ids: { invoice_ids: string[]; expense_ids: string[]; pos_ids: string[] }) => void;
+    onExportExcel: (periodLabel: string) => void;  // NEW
 }
 
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
 
-/**
- * Robust date parser: returns a valid Date object for any string,
- * falling back to the current date if the input is invalid.
- */
 const parseDate = (dateStr: string): Date => {
     if (!dateStr) return new Date();
     const date = new Date(dateStr);
     return isNaN(date.getTime()) ? new Date() : date;
 };
 
-/**
- * Returns a Date object for sorting; invalid dates become epoch.
- */
 const getSortableDate = (dateStr: string): Date => {
     const date = parseDate(dateStr);
     return isNaN(date.getTime()) ? new Date(0) : date;
@@ -74,23 +68,18 @@ const getCategoryIcon = (category: string) => {
     return <ArrowUpRight size={16} />;
 };
 
-/**
- * Explicitly translates the month to bypass browser locale limitations
- */
 const getTranslatedMonth = (dateObj: Date, lang: string, t: any) => {
     const monthIndex = dateObj.getMonth();
     const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const sqMonths = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor', 'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
     
     const monthKey = enMonths[monthIndex].toLowerCase();
-    // Use explicit array fallback based on the active language
     const fallback = lang.toLowerCase().startsWith('sq') ? sqMonths[monthIndex] : enMonths[monthIndex];
-    
     return t(`months.${monthKey}`, fallback);
 };
 
 // -----------------------------------------------------------------------------
-// TransactionCard Component
+// TransactionCard Component (unchanged)
 // -----------------------------------------------------------------------------
 
 const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListProps }> = ({ tx, props }) => {
@@ -157,7 +146,7 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
 };
 
 // -----------------------------------------------------------------------------
-// Drill‑Down Card Component
+// Drill‑Down Card Component with Export Button
 // -----------------------------------------------------------------------------
 
 const DrillDownCardWithDelete: React.FC<{
@@ -166,7 +155,8 @@ const DrillDownCardWithDelete: React.FC<{
     count: number;
     onDrillDown: () => void;
     onDelete: () => void;
-}> = ({ title, total, count, onDrillDown, onDelete }) => {
+    onExport: () => void;   // NEW
+}> = ({ title, total, count, onDrillDown, onDelete, onExport }) => {
     const { t } = useTranslation();
     const isPositive = total >= 0;
 
@@ -201,12 +191,21 @@ const DrillDownCardWithDelete: React.FC<{
                     <Hash size={14} />
                     <span className="font-bold">{count}</span> {t('finance.transactions', 'transaksione')}
                 </div>
-                <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                    className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-danger-start/10 hover:text-danger-start transition-colors hover-lift shadow-sm"
-                >
-                    <Trash2 size={16} />
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onExport(); }}
+                        className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-primary-start/10 hover:text-primary-start transition-colors hover-lift shadow-sm"
+                        title={t('finance.exportExcel', 'Eksporto në Excel')}
+                    >
+                        <Download size={16} />
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                        className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-danger-start/10 hover:text-danger-start transition-colors hover-lift shadow-sm"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
             </div>
         </motion.div>
     );
@@ -217,7 +216,7 @@ const DrillDownCardWithDelete: React.FC<{
 // -----------------------------------------------------------------------------
 
 export const TransactionList: React.FC<TransactionListProps> = (props) => {
-    const { allTransactions, onBulkDelete } = props;
+    const { allTransactions, onBulkDelete, onExportExcel } = props;
     const { t, i18n } = useTranslation();
 
     const [view, setView] = useState<'years' | 'months' | 'days' | 'transactions'>('years');
@@ -225,16 +224,15 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
     const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
     const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
-    // Build hierarchy with robust date parsing and manual month translation
+    // Build hierarchy
     const hierarchy = useMemo(() => {
         const tree: Record<string, Record<string, Record<string, TransactionItem[]>>> = {};
 
         allTransactions.forEach(tx => {
             const dateObj = parseDate(tx.date);
             const year = dateObj.getFullYear().toString();
-            // Use explicitly translated month instead of browser toLocaleString
             const month = getTranslatedMonth(dateObj, i18n.language, t);
-            const dayKey = dateObj.toISOString().slice(0, 10); // YYYY-MM-DD
+            const dayKey = dateObj.toISOString().slice(0, 10);
 
             if (!tree[year]) tree[year] = {};
             if (!tree[year][month]) tree[year][month] = {};
@@ -291,6 +289,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                 count={txCount}
                                 onDrillDown={() => { setSelectedYear(year); setView('months'); }}
                                 onDelete={() => handleBulkDelete(allTxs, year)}
+                                onExport={() => onExportExcel(year)}
                             />
                         ))}
                     </div>
@@ -316,6 +315,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                 count={txCount}
                                 onDrillDown={() => { setSelectedMonth(month); setView('days'); }}
                                 onDelete={() => handleBulkDelete(allTxs, `${month} ${selectedYear}`)}
+                                onExport={() => onExportExcel(`${month} ${selectedYear}`)}
                             />
                         ))}
                     </div>
@@ -343,6 +343,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                 count={txCount}
                                 onDrillDown={() => { setSelectedDay(dayKey); setView('transactions'); }}
                                 onDelete={() => handleBulkDelete(allTxs, day)}
+                                onExport={() => onExportExcel(day)}
                             />
                         ))}
                     </div>
