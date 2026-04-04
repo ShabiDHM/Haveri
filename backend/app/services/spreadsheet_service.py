@@ -1,8 +1,6 @@
 # FILE: backend/app/services/spreadsheet_service.py
-# PHOENIX PROTOCOL - REVISION V10 (STRUCTURED AI INSIGHT)
-# 1. AI ENHANCEMENT: Re-engineered the LLM prompt to request a structured JSON output with distinct fields for a summary, primary risk, and key recommendation.
-# 2. DATA STRUCTURE: The function now returns a nested `ai_summary` object, providing the frontend with richer, more actionable intelligence.
-# 3. ROBUSTNESS: Added JSON parsing with a fallback to the old method to ensure the system remains stable even if the LLM fails to return valid JSON.
+# PHOENIX PROTOCOL - REVISION V11.1 (SAFE INT CONVERSION)
+# FIXED: Pylance type errors on int(idx) by adding isinstance check.
 
 import pandas as pd
 import io
@@ -97,10 +95,48 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
         # 2. SMART COLUMN DETECTION
         date_col, amount_col = smart_detect_columns(df)
 
-        if not amount_col:
-            return {"error": "Nuk u gjet asnjë kolonë për 'Vlerën' ose 'Shumën'. Ju lutemi kontrolloni titujt e skedarit."}
+        # 3. VALIDATE AND ENSURE AMOUNT COLUMN IS NUMERIC
+        if amount_col is None:
+            # Fallback: find first numeric column
+            for col in df.columns:
+                try:
+                    numeric_series = pd.to_numeric(df[col].astype(str).str.replace(r'[^\d,.-]', '', regex=True).str.replace(',', '.'), errors='coerce')
+                    if numeric_series.notna().mean() > 0.5:
+                        amount_col = col
+                        break
+                except:
+                    continue
+        
+        if amount_col is None:
+            return {"error": "Nuk u gjet asnjë kolonë numerike për shumat. Sigurohuni që skedari përmban të dhëna financiare."}
+        
+        # Check if amount_col is actually numeric; if not, try to convert
+        if not pd.api.types.is_numeric_dtype(df[amount_col]):
+            try:
+                df[amount_col] = pd.to_numeric(df[amount_col].astype(str).str.replace(r'[^\d,.-]', '', regex=True).str.replace(',', '.'), errors='coerce')
+            except:
+                pass
+        
+        # If after conversion still not numeric, attempt to find another numeric column
+        if not pd.api.types.is_numeric_dtype(df[amount_col]):
+            numeric_col = None
+            for col in df.columns:
+                if col == amount_col:
+                    continue
+                try:
+                    test_series = pd.to_numeric(df[col].astype(str).str.replace(r'[^\d,.-]', '', regex=True).str.replace(',', '.'), errors='coerce')
+                    if test_series.notna().mean() > 0.5:
+                        numeric_col = col
+                        break
+                except:
+                    continue
+            if numeric_col is not None:
+                amount_col = numeric_col
+                df[amount_col] = pd.to_numeric(df[amount_col].astype(str).str.replace(r'[^\d,.-]', '', regex=True).str.replace(',', '.'), errors='coerce')
+            else:
+                return {"error": "Nuk u gjet asnjë kolonë numerike për shumat. Ju lutemi kontrolloni titujt e skedarit."}
 
-        # 3. NORMALIZE DATA
+        # 4. NORMALIZE DATA (already done, but ensure clean)
         def clean_currency(val):
             val = str(val)
             val = re.sub(r'[^\d.,-]', '', val) 
@@ -119,19 +155,23 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
             df[date_col] = pd.to_datetime(df[date_col], dayfirst=True, errors='coerce')
             has_dates = True
 
-        # 4. STATISTICS
+        # 5. STATISTICS
         total_sum = float(df[amount_col].sum())
         avg_transaction = float(df[amount_col].mean())
         transaction_count = int(len(df))
 
-        # 5. ANOMALY DETECTION
+        # Helper to safely convert index to int
+        def safe_int_idx(idx):
+            return int(idx) if isinstance(idx, (int, float)) else 0
+
+        # 6. ANOMALY DETECTION
         anomalies: List[Dict[str, Any]] = []
         suspicious_round = df[(df[amount_col] > 50) & (df[amount_col] % 50 == 0) & (df[amount_col] != 0)]
         for idx, row in suspicious_round.head(3).iterrows():
             anomalies.append({
                 "type": "Numër i Rrumbullakët", "severity": "medium",
                 "description": f"Rreshti {idx}: Shumë e plotë prej {row[amount_col]:.2f} (Dyshim për vlerësim/manipulim)",
-                "row_id": int(idx)
+                "row_id": safe_int_idx(idx)
             })
         if has_dates and date_col:
             weekend_tx = df[df[date_col].dt.dayofweek >= 5]
@@ -140,7 +180,7 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
                     anomalies.append({
                         "type": "Aktivitet në Fundjavë", "severity": "low",
                         "description": f"Rreshti {idx}: Transaksion i kryer në fundjavë ({row[date_col].strftime('%Y-%m-%d')})",
-                        "row_id": int(idx)
+                        "row_id": safe_int_idx(idx)
                     })
                 except: continue
         if transaction_count > 5:
@@ -150,10 +190,10 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
                  anomalies.append({
                     "type": "Vlerë e Jashtëzakonshme", "severity": "high",
                     "description": f"Rreshti {idx}: Shuma {row[amount_col]:.2f} është jashtëzakonisht e lartë krahasuar me mesataren.",
-                    "row_id": int(idx)
+                    "row_id": safe_int_idx(idx)
                 })
 
-        # 6. CHART DATA
+        # 7. CHART DATA
         chart_data = []
         if has_dates and date_col:
             df['month_year'] = df[date_col].dt.to_period('M')
@@ -168,7 +208,7 @@ def analyze_financial_spreadsheet(file_contents: bytes, filename: str) -> Dict[s
                 counts = df['category'].value_counts()
                 chart_data = [{"label": str(label), "value": int(counts.get(label, 0))} for label in labels]
         
-        # 7. STRUCTURED AI NARRATIVE
+        # 8. STRUCTURED AI NARRATIVE
         system_prompt = """
         You are a Financial Forensics Expert AI. Analyze the provided data and return a JSON object in Albanian.
         The JSON object must have three keys: "summary", "primary_risk", and "key_recommendation".
