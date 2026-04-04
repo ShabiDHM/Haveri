@@ -1,11 +1,11 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.8 (KRIJO SHITJE BUTTON)
+// PHOENIX PROTOCOL - FINANCE TAB V14.10 (REMOVE UNUSED IMPORT)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     TrendingUp, TrendingDown, Calculator, MinusCircle, Plus, 
-    BarChart2, Search, PiggyBank, FileSpreadsheet, Activity, Loader2,
+    BarChart2, Search, PiggyBank, Activity, Loader2,
     Sparkles, X, Users, Phone, Mail, MapPin,
     Trash2, ShoppingCart
 } from 'lucide-react';
@@ -314,11 +314,9 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} className="sm:w-6 sm:h-6" />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm">
                 <ActionButton primary icon={<Plus size={16} className="sm:w-5 sm:h-5" />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <ActionButton icon={<ShoppingCart size={16} className="sm:w-5 sm:h-5" />} label="Krijo shitje" onClick={() => setShowPosModal(true)} />
-                <ActionButton icon={<FileSpreadsheet size={16} className="sm:w-5 sm:h-5" />} label={t('finance.import.title')} onClick={() => setShowImportModal(true)} />
-                <ActionButton icon={<Users size={16} className="sm:w-5 sm:h-5" />} label={t('clients.importButton')} onClick={() => setShowClientImportModal(true)} />
                 <ActionButton icon={<MinusCircle size={16} className="sm:w-5 sm:h-5" />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
