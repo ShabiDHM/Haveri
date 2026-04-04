@@ -1,4 +1,4 @@
-// FILE: src/components/business/FinanceTab.tsx
+// FILE: src/components/ business/FinanceTab.tsx
 // PHOENIX PROTOCOL - FINANCE TAB V14.1 (HARDCODED PARTNER LABELS)
 
 import React, { useState, useMemo, useEffect } from 'react';
