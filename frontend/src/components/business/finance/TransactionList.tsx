@@ -1,5 +1,5 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// FIXED: Card label "Libri i shitjeve"
+// IMPROVED DRILL-DOWN with breadcrumbs and better UX
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,7 +7,7 @@ import {
     ShoppingCart, Edit2, Eye, Download,
     Archive, Trash2, Loader2,
     Car, Utensils, Coffee, Building, Users, Landmark, Zap, Wifi, ArrowUpRight, ArrowDownRight,
-    FileText, ArrowLeft, Hash, TrendingUp, TrendingDown
+    FileText, ArrowLeft, Hash, TrendingUp, TrendingDown, ChevronRight
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Invoice, Expense } from '../../../data/types';
@@ -41,7 +41,7 @@ interface TransactionListProps {
 }
 
 // -----------------------------------------------------------------------------
-// Helpers (unchanged)
+// Helpers
 // -----------------------------------------------------------------------------
 
 const parseDate = (dateStr: string): Date => {
@@ -145,7 +145,7 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
 };
 
 // -----------------------------------------------------------------------------
-// Drill‑Down Card Component (Label changed to "Libri i shitjeve")
+// Drill‑Down Card Component (with ChevronRight)
 // -----------------------------------------------------------------------------
 
 const DrillDownCardWithDelete: React.FC<{
@@ -158,6 +158,9 @@ const DrillDownCardWithDelete: React.FC<{
 }> = ({ title, total, count, onDrillDown, onDelete, onExport }) => {
     const { t } = useTranslation();
     const isPositive = total >= 0;
+    const cardLabel = isPositive 
+        ? (t('finance.salesBook', 'Libri i shitjeve'))
+        : (t('finance.expensesBook', 'Libri i shpenzimeve'));
 
     return (
         <motion.div
@@ -173,7 +176,10 @@ const DrillDownCardWithDelete: React.FC<{
             onClick={onDrillDown}
         >
             <div className="flex items-start justify-between">
-                <h3 className="text-2xl font-bold text-text-primary">{title}</h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-2xl font-bold text-text-primary">{title}</h3>
+                    <ChevronRight className="text-text-muted group-hover:text-primary-start transition-colors" size={18} />
+                </div>
                 <div className={`p-3 rounded-xl ${isPositive ? 'bg-success-start/10 text-success-start' : 'bg-danger-start/10 text-danger-start'}`}>
                     {isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
                 </div>
@@ -182,7 +188,7 @@ const DrillDownCardWithDelete: React.FC<{
                 <span className={`text-3xl font-mono font-bold ${isPositive ? 'text-success-start' : 'text-danger-start'}`}>
                     {isPositive ? '+' : ''}€{total.toFixed(2)}
                 </span>
-                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('finance.salesBook', 'Libri i shitjeve')}</p>
+                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{cardLabel}</p>
             </div>
             <hr className="border-border-main" />
             <div className="flex justify-between items-center">
@@ -211,7 +217,7 @@ const DrillDownCardWithDelete: React.FC<{
 };
 
 // -----------------------------------------------------------------------------
-// Main TransactionList Component (unchanged except for the label above)
+// Main TransactionList Component with Breadcrumbs
 // -----------------------------------------------------------------------------
 
 export const TransactionList: React.FC<TransactionListProps> = (props) => {
@@ -250,6 +256,25 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         else if (view === 'months') setView('years');
     };
 
+    const handleBreadcrumbClick = (targetView: 'years' | 'months' | 'days', year?: string, month?: string) => {
+        if (targetView === 'years') {
+            setView('years');
+            setSelectedYear(null);
+            setSelectedMonth(null);
+            setSelectedDay(null);
+        } else if (targetView === 'months' && year) {
+            setView('months');
+            setSelectedYear(year);
+            setSelectedMonth(null);
+            setSelectedDay(null);
+        } else if (targetView === 'days' && year && month) {
+            setView('days');
+            setSelectedYear(year);
+            setSelectedMonth(month);
+            setSelectedDay(null);
+        }
+    };
+
     const handleBulkDelete = (transactions: TransactionItem[], scope: string) => {
         const idsToProcess = {
             invoice_ids: transactions.filter(tx => tx.type === 'invoice').map(tx => tx.id),
@@ -265,6 +290,37 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         if (window.confirm(t('finance.bulkDelete.confirm', `A jeni i sigurt që dëshironi të fshini të gjitha {{count}} transaksionet për '{{scope}}'? Ky veprim nuk mund të kthehet.`, { count: totalCount, scope }))) {
             onBulkDelete(idsToProcess);
         }
+    };
+
+    const renderBreadcrumb = () => {
+        if (view === 'years') return null;
+        const items = [];
+        items.push({ label: t('general.years', 'Vitet'), onClick: () => handleBreadcrumbClick('years') });
+        if (view === 'months' || view === 'days' || view === 'transactions') {
+            items.push({ label: selectedYear!, onClick: () => handleBreadcrumbClick('months', selectedYear!) });
+        }
+        if (view === 'days' || view === 'transactions') {
+            items.push({ label: selectedMonth!, onClick: () => handleBreadcrumbClick('days', selectedYear!, selectedMonth!) });
+        }
+        if (view === 'transactions') {
+            items.push({ label: selectedDay! });
+        }
+        return (
+            <div className="flex items-center gap-2 text-sm font-medium text-text-muted mb-4 flex-wrap">
+                {items.map((item, idx) => (
+                    <React.Fragment key={idx}>
+                        {idx > 0 && <span>/</span>}
+                        {item.onClick ? (
+                            <button onClick={item.onClick} className="hover:text-primary-start transition-colors">
+                                {item.label}
+                            </button>
+                        ) : (
+                            <span className="text-text-primary font-bold">{item.label}</span>
+                        )}
+                    </React.Fragment>
+                ))}
+            </div>
+        );
     };
 
     const renderContent = () => {
@@ -381,20 +437,16 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
 
     return (
         <div className="space-y-4">
-            <AnimatePresence>
+            {/* Breadcrumb and back button area */}
+            <div className="flex items-center justify-between">
+                {renderBreadcrumb()}
                 {view !== 'years' && (
-                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-                        <button onClick={handleBack} className="flex items-center gap-2 text-sm font-bold text-text-muted hover:text-text-primary transition-colors group hover-lift shadow-sm">
-                            <div className="p-2 rounded-full bg-surface/50 backdrop-blur-sm group-hover:bg-hover border border-border-main"><ArrowLeft size={16} /></div>
-                            <span>
-                                {view === 'months' && t('general.backToYears', 'Kthehu te Vitet')}
-                                {view === 'days' && `${t('general.backTo', 'Kthehu te')} ${selectedYear}`}
-                                {view === 'transactions' && `${t('general.backTo', 'Kthehu te')} ${selectedMonth}`}
-                            </span>
-                        </button>
-                    </motion.div>
+                    <button onClick={handleBack} className="flex items-center gap-1 text-sm font-bold text-text-muted hover:text-text-primary transition-colors group hover-lift shadow-sm px-3 py-1.5 rounded-lg bg-surface/30 border border-border-main">
+                        <ArrowLeft size={14} />
+                        <span>{t('general.back', 'Kthehu')}</span>
+                    </button>
                 )}
-            </AnimatePresence>
+            </div>
             <AnimatePresence mode="wait">
                 <motion.div key={view} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.2 }}>
                     {renderContent()}
