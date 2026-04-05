@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V17.7 – CATEGORY-BASED COGS DETECTION FOR BANK IMPORTS
+// V17.8 – ADD EXPENSES TO COGS CALCULATION
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -178,6 +178,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return invInc + posInc;
     }, [invoices, posTransactions, selectedYear]);
 
+    // PHOENIX: COGS with expenses included
     const costOfGoodsSold = useMemo(() => {
         const idMap = new Map<string, number>();
         const nameMap = new Map<string, number>();
@@ -225,6 +226,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         let linkedCount = 0;
         let derivedCount = 0;
 
+        // Process invoices
         invoices.forEach(invoice => {
             if (!invoice.items || invoice.items.length === 0) return;
             invoice.items.forEach(item => {
@@ -255,6 +257,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             });
         });
 
+        // Process POS transactions
         posTransactions.forEach(pos => {
             let cost = 0;
             const salePrice = toNumber(pos.total_price);
@@ -283,15 +286,12 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             }
         });
 
-        // PHOENIX: Process expenses with category-based COGS detection
+        // PHOENIX: Include Expenses in COGS if category matches inventory keywords
+        const cogsCategories = ['mall', 'stock', 'inventory', 'blerje', 'furnizim', 'cogs', 'raw_material'];
+        
         expenses.forEach(exp => {
             const category = (exp.category || '').toLowerCase();
-            const isCogsCategory = category.includes('cogs') || 
-                                   category.includes('inventory') || 
-                                   category.includes('mall') || 
-                                   category.includes('stock') ||
-                                   category.includes('furnizim') ||
-                                   category.includes('blerje');
+            const isCogsCategory = cogsCategories.some(cat => category.includes(cat));
             
             if (isCogsCategory) {
                 const amount = toNumber(exp.amount);
