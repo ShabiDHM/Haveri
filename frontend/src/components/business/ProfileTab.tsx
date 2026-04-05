@@ -1,5 +1,5 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V31.3 (REMOVED UNUSED IMPORT)
+// PHOENIX PROTOCOL - PROFILE TAB V31.4 (IMPROVED INVITE ERROR HANDLING)
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
@@ -184,18 +184,33 @@ export const ProfileTab: React.FC = () => {
     }
   };
 
+  // PHOENIX: Improved invite handler with proper error messages
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail || isPlanFull) return;
+    if (!inviteEmail) return;
+    
+    // Check frontend limit first
+    if (isPlanFull) {
+      alert(`Keni arritur limitin e anëtarëve për planin tuaj ${planConfig.name}. Për të shtuar më shumë anëtarë, ju lutemi përmirësoni planin tuaj.`);
+      return;
+    }
+    
     setInviting(true);
     try {
       await apiService.inviteUser({ email: inviteEmail, role: 'MEMBER' });
+      alert(`Ftesa u dërgua në ${inviteEmail}`);
       setInviteEmail('');
-      fetchTeam();
+      fetchTeam(); // Refresh team list to update count
     } catch (err: any) {
+      console.error('Invite error:', err);
       const errorMessage = err?.response?.data?.detail || err?.message || 'Ftesa dështoi.';
-      if (errorMessage.includes('limit') || errorMessage.includes('plan')) {
-        alert(`Keni arritur limitin e anëtarëve për planin tuaj ${planConfig.name}. Për të shtuar më shumë anëtarë, ju lutemi përmirësoni planin tuaj.`);
+      
+      if (errorMessage.includes('Plan limit reached') || errorMessage.includes('limit')) {
+        alert(`Keni arritur limitin e anëtarëve për planin tuaj ${planConfig.name}. Përmirësoni planin për të ftuar më shumë anëtarë.`);
+      } else if (errorMessage.includes('already invited')) {
+        alert(`Përdoruesi ${inviteEmail} tashmë është i ftuar.`);
+      } else if (errorMessage.includes('already a member')) {
+        alert(`Përdoruesi ${inviteEmail} është tashmë anëtar i ekipit.`);
       } else {
         alert(errorMessage);
       }
