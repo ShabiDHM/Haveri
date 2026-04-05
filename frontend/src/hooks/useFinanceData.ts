@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V17.9 – FIXED NET PROFIT CALCULATION WITH ADJUSTED EXPENSES
+// V17.10 – ADJUSTED EXPENSES FOR DISPLAY
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -159,7 +159,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         setInventoryItems(inventory);
     }, [selectedYear, workspaceId]);
 
-    const totalExpenses = useMemo(() => {
+    const totalExpensesRaw = useMemo(() => {
         const yearToUse = selectedYear;
         const total = expenses
             .filter(e => Number(safeDate(e.date).getFullYear()) === Number(yearToUse))
@@ -300,11 +300,11 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return totalCogs;
     }, [invoices, posTransactions, expenses, inventoryItems, businessProfile, defaultMarginPercent, formatCurrency]);
 
-    // PHOENIX: Calculate adjusted expenses (remove COGS expenses from total)
+    // PHOENIX: Calculate adjusted expenses (remove COGS expenses from total for display)
     const cogsCategories = useMemo(() => ['mall', 'stock', 'inventory', 'blerje', 'furnizim', 'cogs', 'raw_material'], []);
     
     const adjustedExpenses = useMemo(() => {
-        let adjusted = totalExpenses;
+        let adjusted = totalExpensesRaw;
         expenses.forEach(exp => {
             const category = (exp.category || '').toLowerCase();
             if (cogsCategories.some(cat => category.includes(cat))) {
@@ -312,7 +312,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             }
         });
         return adjusted;
-    }, [expenses, totalExpenses, cogsCategories]);
+    }, [expenses, totalExpensesRaw, cogsCategories]);
 
     const displayProfit = displayIncome - costOfGoodsSold - adjustedExpenses;
 
@@ -336,7 +336,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         selectedYear,
         setSelectedYear,
         availableYears,
-        totalExpenses,
+        totalExpenses: adjustedExpenses,  // Use adjusted expenses for display
         displayIncome,
         displayProfit,
         costOfGoodsSold,
