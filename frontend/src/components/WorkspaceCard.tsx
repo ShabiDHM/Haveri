@@ -1,5 +1,5 @@
 // FILE: src/components/WorkspaceCard.tsx
-// PHOENIX PROTOCOL – WORKSPACE CARD V2.0 (NO STATISTICS)
+// PHOENIX PROTOCOL – WORKSPACE CARD V2.1 (FLAT + NESTED CLIENT FIELDS SUPPORT)
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -43,9 +43,14 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
   const hasTitle = workspace.title && workspace.title.trim() !== '';
   const displayTitle = hasTitle ? toTitleCase(workspace.title) : (t('workspace.unnamedWorkspace') || 'Projekt pa Emër');
 
-  const clientName = workspace.client?.name ? toTitleCase(workspace.client.name) : null;
-  const clientEmail = workspace.client?.email || null;
-  const clientPhone = workspace.client?.phone || null;
+  // Support BOTH nested client object AND flat clientName/clientEmail/clientPhone fields
+  const clientNameRaw = workspace.client?.name || (workspace as any).clientName || null;
+  const clientEmailRaw = workspace.client?.email || (workspace as any).clientEmail || null;
+  const clientPhoneRaw = workspace.client?.phone || (workspace as any).clientPhone || null;
+  
+  const clientName = clientNameRaw ? toTitleCase(clientNameRaw) : null;
+  const clientEmail = clientEmailRaw || null;
+  const clientPhone = clientPhoneRaw || null;
   const hasClient = clientName || clientEmail || clientPhone;
 
   return (
