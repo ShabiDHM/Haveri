@@ -1,5 +1,5 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V8.2 (AUTO-INVOICE ON POS SALE)
+# PHOENIX PROTOCOL - FINANCE SERVICE V8.3 (ADD YEAR FILTERING TO INVOICES AND EXPENSES)
 
 import logging
 import csv
@@ -241,17 +241,25 @@ class FinanceService:
         invoice_doc["_id"] = res.inserted_id
         return InvoiceInDB(**invoice_doc)
 
-    def get_invoices(self, context_id: str, case_id: Optional[str] = None) -> List[InvoiceInDB]:
-        logger.info(f"[DEBUG] get_invoices called with context_id={context_id}, case_id={case_id}")
-        total_user_invoices = self.db.invoices.count_documents(self._get_resilient_filter(context_id))
-        logger.info(f"[DEBUG] Total invoices for user (no case filter): {total_user_invoices}")
+    def get_invoices(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[InvoiceInDB]:
+        logger.info(f"[DEBUG] get_invoices called with context_id={context_id}, case_id={case_id}, year={year}")
+        
         query = self._get_resilient_filter(context_id)
         if case_id:
             query["case_id"] = case_id
             logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
+        
+        # Add year filter if provided
+        if year:
+            start_date = datetime(year, 1, 1)
+            end_date = datetime(year + 1, 1, 1)
+            query["issue_date"] = {"$gte": start_date, "$lt": end_date}
+            logger.info(f"[DEBUG] Adding year filter on issue_date: {year} ({start_date} to {end_date})")
+        
         filtered_count = self.db.invoices.count_documents(query)
-        logger.info(f"[DEBUG] Invoices after filter: {filtered_count}")
-        cursor = self.db.invoices.find(query).sort("created_at", -1)
+        logger.info(f"[DEBUG] Invoices after filters: {filtered_count}")
+        
+        cursor = self.db.invoices.find(query).sort("issue_date", -1)
         return [InvoiceInDB(**doc) for doc in cursor]
 
     def get_invoice(self, context_id: str, invoice_id: str) -> InvoiceInDB:
@@ -290,16 +298,24 @@ class FinanceService:
         doc["_id"] = res.inserted_id
         return ExpenseInDB(**doc)
 
-    def get_expenses(self, context_id: str, case_id: Optional[str] = None) -> List[ExpenseInDB]:
-        logger.info(f"[DEBUG] get_expenses called with context_id={context_id}, case_id={case_id}")
-        total_user_expenses = self.db.expenses.count_documents(self._get_resilient_filter(context_id))
-        logger.info(f"[DEBUG] Total expenses for user (no case filter): {total_user_expenses}")
+    def get_expenses(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[ExpenseInDB]:
+        logger.info(f"[DEBUG] get_expenses called with context_id={context_id}, case_id={case_id}, year={year}")
+        
         query = self._get_resilient_filter(context_id)
         if case_id:
             query["case_id"] = case_id
             logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
+        
+        # Add year filter if provided
+        if year:
+            start_date = datetime(year, 1, 1)
+            end_date = datetime(year + 1, 1, 1)
+            query["date"] = {"$gte": start_date, "$lt": end_date}
+            logger.info(f"[DEBUG] Adding year filter on date: {year} ({start_date} to {end_date})")
+        
         filtered_count = self.db.expenses.count_documents(query)
-        logger.info(f"[DEBUG] Expenses after filter: {filtered_count}")
+        logger.info(f"[DEBUG] Expenses after filters: {filtered_count}")
+        
         cursor = self.db.expenses.find(query).sort("date", -1)
         return [ExpenseInDB(**doc) for doc in cursor]
 

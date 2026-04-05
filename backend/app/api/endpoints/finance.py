@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.8 (FIX PARSING SERVICE IMPORT)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.10 (FIX TYPE ERROR IN YEAR FILTER)
 
 import json
 import logging
@@ -7,7 +7,7 @@ import io
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
-from typing import List, Annotated, Optional, Any
+from typing import List, Annotated, Optional, Any, Dict
 from pymongo.database import Database
 import pymongo
 from pydantic import BaseModel
@@ -103,22 +103,28 @@ async def import_clients(
 async def get_imported_transactions(
     current_user: Annotated[UserInDB, Depends(get_current_active_user)],
     db: Any = Depends(get_async_db),
-    case_id: Optional[str] = Query(None)
+    case_id: Optional[str] = Query(None),
+    year: Optional[int] = Query(None)
 ):
     user_id_str = str(current_user.id)
     
     logger = logging.getLogger(__name__)
-    logger.info(f"[DEBUG] get_imported_transactions: user_id={user_id_str}, case_id={case_id}")
-    total_user_transactions = await db["transactions"].count_documents({"user_id": user_id_str})
-    logger.info(f"[DEBUG] Total POS transactions for user (no case filter): {total_user_transactions}")
+    logger.info(f"[DEBUG] get_imported_transactions: user_id={user_id_str}, case_id={case_id}, year={year}")
     
-    filter_criteria = {"user_id": user_id_str}
+    filter_criteria: Dict[str, Any] = {"user_id": user_id_str}
     if case_id:
         filter_criteria["case_id"] = case_id
         logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
     
+    # Add year filter if provided
+    if year:
+        start_date = datetime(year, 1, 1)
+        end_date = datetime(year + 1, 1, 1)
+        filter_criteria["date_time"] = {"$gte": start_date, "$lt": end_date}
+        logger.info(f"[DEBUG] Adding year filter: {year} ({start_date} to {end_date})")
+    
     filtered_count = await db["transactions"].count_documents(filter_criteria)
-    logger.info(f"[DEBUG] POS transactions after filter: {filtered_count}")
+    logger.info(f"[DEBUG] POS transactions after filters: {filtered_count}")
     
     cursor = db["transactions"].find(filter_criteria).sort("date_time", pymongo.DESCENDING)
     transactions = await cursor.to_list(length=None)
@@ -203,9 +209,10 @@ def bulk_delete_transactions(
 def get_invoices(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db),
-    case_id: Optional[str] = Query(None)
+    case_id: Optional[str] = Query(None),
+    year: Optional[int] = Query(None)
 ):
-    return FinanceService(db).get_invoices(str(current_user.id), case_id)
+    return FinanceService(db).get_invoices(str(current_user.id), case_id, year)
 
 @router.post("/invoices", response_model=InvoiceOut, status_code=status.HTTP_201_CREATED)
 def create_invoice(
@@ -462,9 +469,10 @@ def create_expense(
 def get_expenses(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
     db: Database = Depends(get_db),
-    case_id: Optional[str] = Query(None)
+    case_id: Optional[str] = Query(None),
+    year: Optional[int] = Query(None)
 ):
-    return FinanceService(db).get_expenses(str(current_user.id), case_id)
+    return FinanceService(db).get_expenses(str(current_user.id), case_id, year)
 
 @router.delete("/expenses/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_expense(
