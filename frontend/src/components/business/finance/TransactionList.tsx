@@ -1,5 +1,5 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// FIXED: Card labels "Libri i shitjeve" and "Libri i blerjeve"
+// FIXED: Hardcoded labels "Libri i shitjeve" / "Libri i blerjeve", with translation for tooltip only
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,7 +41,7 @@ interface TransactionListProps {
 }
 
 // -----------------------------------------------------------------------------
-// Helpers (unchanged)
+// Helpers
 // -----------------------------------------------------------------------------
 
 const parseDate = (dateStr: string): Date => {
@@ -145,22 +145,20 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
 };
 
 // -----------------------------------------------------------------------------
-// Drill‑Down Card Component (now with correct accounting labels)
+// Drill‑Down Card Component (hardcoded labels, translation only for tooltip)
 // -----------------------------------------------------------------------------
 
 const DrillDownCardWithDelete: React.FC<{
     title: string;
     total: number;
     count: number;
-    isPurchaseBook: boolean;   // true = "Libri i blerjeve", false = "Libri i shitjeve"
+    isExpenseBook: boolean;
     onDrillDown: () => void;
     onDelete: () => void;
     onExport: () => void;
-}> = ({ title, total, count, isPurchaseBook, onDrillDown, onDelete, onExport }) => {
-    const { t } = useTranslation();
-    const cardLabel = isPurchaseBook
-        ? (t('finance.purchasesBook', 'Libri i blerjeve'))
-        : (t('finance.salesBook', 'Libri i shitjeve'));
+}> = ({ title, total, count, isExpenseBook, onDrillDown, onDelete, onExport }) => {
+    const { t } = useTranslation(); // only for tooltip
+    const cardLabel = isExpenseBook ? "Libri i blerjeve" : "Libri i shitjeve";
 
     return (
         <motion.div
@@ -169,7 +167,7 @@ const DrillDownCardWithDelete: React.FC<{
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className={`group relative bg-surface/30 backdrop-blur-sm border-l-4 rounded-2xl p-5 transition-all duration-300 flex flex-col gap-4 shadow-sm hover:shadow-md cursor-pointer border border-border-main hover-lift
-                ${!isPurchaseBook
+                ${!isExpenseBook
                     ? 'border-l-success-start hover:border-l-success-start/70'
                     : 'border-l-danger-start hover:border-l-danger-start/70'
                 }`}
@@ -180,13 +178,13 @@ const DrillDownCardWithDelete: React.FC<{
                     <h3 className="text-2xl font-bold text-text-primary">{title}</h3>
                     <ChevronRight className="text-text-muted group-hover:text-primary-start transition-colors" size={18} />
                 </div>
-                <div className={`p-3 rounded-xl ${!isPurchaseBook ? 'bg-success-start/10 text-success-start' : 'bg-danger-start/10 text-danger-start'}`}>
-                    {!isPurchaseBook ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                <div className={`p-3 rounded-xl ${!isExpenseBook ? 'bg-success-start/10 text-success-start' : 'bg-danger-start/10 text-danger-start'}`}>
+                    {!isExpenseBook ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
                 </div>
             </div>
             <div className="flex-1 mt-2">
-                <span className={`text-3xl font-mono font-bold ${!isPurchaseBook ? 'text-success-start' : 'text-danger-start'}`}>
-                    {!isPurchaseBook ? '+' : ''}€{total.toFixed(2)}
+                <span className={`text-3xl font-mono font-bold ${!isExpenseBook ? 'text-success-start' : 'text-danger-start'}`}>
+                    {!isExpenseBook ? '+' : ''}€{total.toFixed(2)}
                 </span>
                 <p className="text-xs font-black uppercase tracking-widest text-text-muted">{cardLabel}</p>
             </div>
@@ -217,7 +215,7 @@ const DrillDownCardWithDelete: React.FC<{
 };
 
 // -----------------------------------------------------------------------------
-// Main TransactionList Component with purchase/sales dominance logic
+// Main TransactionList Component
 // -----------------------------------------------------------------------------
 
 export const TransactionList: React.FC<TransactionListProps> = (props) => {
@@ -329,26 +327,28 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                 const yearData = Object.entries(hierarchy).map(([year, months]) => {
                     const allTxs = Object.values(months).flatMap(m => Object.values(m.days).flat());
                     const totalSales = allTxs.filter(tx => tx.type !== 'expense').reduce((acc, tx) => acc + tx.amount, 0);
-                    const totalPurchases = allTxs.filter(tx => tx.type === 'expense').reduce((acc, tx) => acc + tx.amount, 0);
-                    const netTotal = totalSales - totalPurchases;
-                    const isPurchaseBook = totalPurchases > totalSales;
+                    const totalExpenses = allTxs.filter(tx => tx.type === 'expense').reduce((acc, tx) => acc + tx.amount, 0);
+                    const netTotal = totalSales - totalExpenses;
+                    const isExpenseBook = totalExpenses > totalSales;
+                    // DEBUG (remove later)
+                    console.log(`Year ${year}: sales=${totalSales}, expenses=${totalExpenses}, isExpenseBook=${isExpenseBook}`);
                     return {
                         year: parseInt(year),
                         netTotal,
-                        isPurchaseBook,
+                        isExpenseBook,
                         txCount: allTxs.length,
                         allTxs,
                     };
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {yearData.sort((a, b) => b.year - a.year).map(({ year, netTotal, isPurchaseBook, txCount, allTxs }) => (
+                        {yearData.sort((a, b) => b.year - a.year).map(({ year, netTotal, isExpenseBook, txCount, allTxs }) => (
                             <DrillDownCardWithDelete
                                 key={year}
                                 title={year.toString()}
                                 total={netTotal}
                                 count={txCount}
-                                isPurchaseBook={isPurchaseBook}
+                                isExpenseBook={isExpenseBook}
                                 onDrillDown={() => { setSelectedYear(year.toString()); setView('months'); }}
                                 onDelete={() => handleBulkDelete(allTxs, year.toString())}
                                 onExport={() => onExportExcel({ year, label: year.toString() })}
@@ -361,27 +361,27 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                 const monthData = Object.entries(hierarchy[selectedYear]).map(([monthName, { monthNumber, days }]) => {
                     const allTxs = Object.values(days).flat();
                     const totalSales = allTxs.filter(tx => tx.type !== 'expense').reduce((acc, tx) => acc + tx.amount, 0);
-                    const totalPurchases = allTxs.filter(tx => tx.type === 'expense').reduce((acc, tx) => acc + tx.amount, 0);
-                    const netTotal = totalSales - totalPurchases;
-                    const isPurchaseBook = totalPurchases > totalSales;
+                    const totalExpenses = allTxs.filter(tx => tx.type === 'expense').reduce((acc, tx) => acc + tx.amount, 0);
+                    const netTotal = totalSales - totalExpenses;
+                    const isExpenseBook = totalExpenses > totalSales;
                     return {
                         monthName,
                         monthNumber,
                         netTotal,
-                        isPurchaseBook,
+                        isExpenseBook,
                         txCount: allTxs.length,
                         allTxs,
                     };
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {monthData.map(({ monthName, monthNumber, netTotal, isPurchaseBook, txCount, allTxs }) => (
+                        {monthData.map(({ monthName, monthNumber, netTotal, isExpenseBook, txCount, allTxs }) => (
                             <DrillDownCardWithDelete
                                 key={monthName}
                                 title={monthName}
                                 total={netTotal}
                                 count={txCount}
-                                isPurchaseBook={isPurchaseBook}
+                                isExpenseBook={isExpenseBook}
                                 onDrillDown={() => { setSelectedMonth(monthName); setView('days'); }}
                                 onDelete={() => handleBulkDelete(allTxs, `${monthName} ${selectedYear}`)}
                                 onExport={() => onExportExcel({ year: parseInt(selectedYear), month: monthNumber, label: `${monthName} ${selectedYear}` })}
@@ -395,21 +395,21 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                     const dateObj = parseDate(dayKey);
                     const displayDay = dateObj.toLocaleDateString(i18n.language, { year: 'numeric', month: '2-digit', day: '2-digit' });
                     const totalSales = txs.filter(tx => tx.type !== 'expense').reduce((acc, tx) => acc + tx.amount, 0);
-                    const totalPurchases = txs.filter(tx => tx.type === 'expense').reduce((acc, tx) => acc + tx.amount, 0);
-                    const netTotal = totalSales - totalPurchases;
-                    const isPurchaseBook = totalPurchases > totalSales;
+                    const totalExpenses = txs.filter(tx => tx.type === 'expense').reduce((acc, tx) => acc + tx.amount, 0);
+                    const netTotal = totalSales - totalExpenses;
+                    const isExpenseBook = totalExpenses > totalSales;
                     return {
                         day: displayDay,
                         dayKey,
                         netTotal,
-                        isPurchaseBook,
+                        isExpenseBook,
                         txCount: txs.length,
                         allTxs: txs,
                     };
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {dayData.sort((a, b) => getSortableDate(b.dayKey).getTime() - getSortableDate(a.dayKey).getTime()).map(({ day, dayKey, netTotal, isPurchaseBook, txCount, allTxs }) => {
+                        {dayData.sort((a, b) => getSortableDate(b.dayKey).getTime() - getSortableDate(a.dayKey).getTime()).map(({ day, dayKey, netTotal, isExpenseBook, txCount, allTxs }) => {
                             const dateObj = parseDate(dayKey);
                             return (
                                 <DrillDownCardWithDelete
@@ -417,7 +417,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                     title={day}
                                     total={netTotal}
                                     count={txCount}
-                                    isPurchaseBook={isPurchaseBook}
+                                    isExpenseBook={isExpenseBook}
                                     onDrillDown={() => { setSelectedDay(dayKey); setView('transactions'); }}
                                     onDelete={() => handleBulkDelete(allTxs, day)}
                                     onExport={() => onExportExcel({
