@@ -1,7 +1,5 @@
 // FILE: src/context/AuthContext.tsx
-// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V6.2 (TYPE SAFE)
-// 1. FIXED: TypeScript error in refreshWorkspaces by ensuring only Workspace | null is passed to setWorkspace.
-// 2. STATUS: Build-ready.
+// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V6.3 (SELECTED YEAR PERSISTENCE)
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, BusinessProfile, Workspace, LoginRequest, RegisterRequest } from '../data/types';
@@ -27,6 +25,20 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const SELECTED_WORKSPACE_KEY = 'selected_workspace_id';
+const SELECTED_YEAR_KEY = 'haveri_selected_year';
+
+// Helper to get initial selected year from localStorage or current year
+const getInitialSelectedYear = (): number => {
+  if (typeof window === 'undefined') return new Date().getFullYear();
+  const stored = localStorage.getItem(SELECTED_YEAR_KEY);
+  if (stored) {
+    const parsed = parseInt(stored, 10);
+    if (!isNaN(parsed) && parsed > 2000 && parsed < 2100) {
+      return parsed;
+    }
+  }
+  return new Date().getFullYear();
+};
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -34,7 +46,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number>(getInitialSelectedYear);
+
+  // Persist selectedYear to localStorage whenever it changes
+  const handleSetSelectedYear = useCallback((year: number) => {
+    setSelectedYear(year);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(SELECTED_YEAR_KEY, year.toString());
+    }
+  }, []);
 
   const logout = useCallback(() => {
     apiService.logout();
@@ -43,6 +63,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setWorkspaces([]);
     setBusinessProfile(null);
     localStorage.removeItem(SELECTED_WORKSPACE_KEY);
+    // Do NOT remove SELECTED_YEAR_KEY on logout - user preference persists
   }, []);
 
   const loadWorkspaces = useCallback(async (): Promise<Workspace[]> => {
@@ -169,7 +190,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         workspaces,
         businessProfile,
         selectedYear,
-        setSelectedYear,
+        setSelectedYear: handleSetSelectedYear,
         isAuthenticated: !!user,
         login,
         register,
