@@ -1,5 +1,5 @@
 // FILE: src/pages/ProjectsDashboardPage.tsx
-// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.9 (LARGER DELETE BUTTON TEXT)
+// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.9 (BUTTON TEXT SIZE FIX)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -220,7 +220,7 @@ const ProjectsDashboardPage: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={() => setWorkspaceToDelete(null)} 
-                  className="btn-secondary flex-1 h-14 rounded-2xl text-sm sm:text-base font-bold uppercase tracking-widest hover-lift shadow-sm"
+                  className="btn-secondary flex-1 h-14 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-widest hover-lift shadow-sm"
                 >
                   {t('general.cancel', 'Anulo')}
                 </button>
@@ -228,7 +228,7 @@ const ProjectsDashboardPage: React.FC = () => {
                   type="button" 
                   onClick={handleDeleteWorkspace} 
                   disabled={isDeleting} 
-                  className="flex-1 h-14 rounded-2xl bg-danger-start hover:bg-danger-start/80 text-text-primary font-black flex items-center justify-center gap-3 active:scale-95 text-sm sm:text-base uppercase tracking-widest disabled:opacity-50 transition-all hover-lift shadow-sm"
+                  className="flex-1 h-14 rounded-2xl bg-danger-start hover:bg-danger-start/80 text-text-primary font-black flex items-center justify-center gap-3 active:scale-95 text-xs sm:text-sm uppercase tracking-widest disabled:opacity-50 transition-all hover-lift shadow-sm"
                 >
                   {isDeleting ? <Loader2 className="animate-spin h-5 w-5" /> : t('general.delete', 'Fshij')}
                 </button>
