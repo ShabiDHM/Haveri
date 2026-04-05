@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V15 – SAFE NUMBER CONVERSION FOR KPI CARDS
+// V16 – ADDED YEAR FILTER TO API CALLS
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -116,27 +116,28 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         },
     ];
 
-    // Fetch all data (including inventory)
+    // Fetch all data (including inventory) - NOW WITH YEAR FILTERING
     useEffect(() => {
         let isMounted = true;
         const fetchData = async () => {
             setLoading(true);
             try {
+                // PHOENIX: Pass selectedYear to API calls for proper filtering
                 const results = await Promise.allSettled([
-                    apiService.getInvoices(workspaceId),
-                    apiService.getExpenses(workspaceId),
+                    apiService.getInvoices(workspaceId, selectedYear),
+                    apiService.getExpenses(workspaceId, selectedYear),
                     apiService.getWorkspaces(),
-                    apiService.getPosTransactions(workspaceId),
+                    apiService.getPosTransactions(workspaceId, selectedYear),
                     apiService.getAnalyticsDashboard(undefined, selectedYear, workspaceId),
                     apiService.getInventoryItems(workspaceId),
                 ]);
-                console.log('[useFinanceData] Raw API responses:');
+                console.log('[useFinanceData] Raw API responses for year:', selectedYear);
                 if (results[0].status === 'fulfilled') {
-                    console.log('  Invoices:', results[0].value);
+                    console.log('  Invoices:', results[0].value.length);
                     setInvoices(results[0].value);
                 } else console.error('  Invoices fetch failed:', results[0].reason);
                 if (results[1].status === 'fulfilled') {
-                    console.log('  Expenses:', results[1].value);
+                    console.log('  Expenses:', results[1].value.length);
                     setExpenses(results[1].value);
                 } else console.error('  Expenses fetch failed:', results[1].reason);
                 if (results[2].status === 'fulfilled') {
@@ -144,7 +145,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
                     setWorkspaces(results[2].value);
                 } else console.error('  Workspaces fetch failed:', results[2].reason);
                 if (results[3].status === 'fulfilled') {
-                    console.log('  POS Transactions:', results[3].value);
+                    console.log('  POS Transactions:', results[3].value.length);
                     setPosTransactions(results[3].value);
                 } else console.error('  POS fetch failed:', results[3].reason);
                 if (results[4].status === 'fulfilled') {
@@ -167,10 +168,11 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
     }, [workspaceId, selectedYear]);
 
     const refreshData = useCallback(async () => {
+        // PHOENIX: Pass selectedYear to API calls for proper filtering
         const [inv, exp, pos, analytics, inventory] = await Promise.all([
-            apiService.getInvoices(workspaceId),
-            apiService.getExpenses(workspaceId),
-            apiService.getPosTransactions(workspaceId),
+            apiService.getInvoices(workspaceId, selectedYear),
+            apiService.getExpenses(workspaceId, selectedYear),
+            apiService.getPosTransactions(workspaceId, selectedYear),
             apiService.getAnalyticsDashboard(undefined, selectedYear, workspaceId),
             apiService.getInventoryItems(workspaceId),
         ]);
@@ -181,7 +183,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         setInventoryItems(inventory);
     }, [selectedYear, workspaceId]);
 
-    // Total Expenses (yearly)
+    // Total Expenses (yearly) - NOW FILTERED BY API, but keep client-side filter as safety
     const totalExpenses = useMemo(() => {
         const yearToUse = selectedYear ?? getLatestYear();
         console.log(`[DEBUG] totalExpenses using year: ${yearToUse}`);
@@ -192,7 +194,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return total;
     }, [expenses, selectedYear, getLatestYear]);
 
-    // Total Income (Invoices + POS) – yearly
+    // Total Income (Invoices + POS) – yearly - NOW FILTERED BY API, but keep client-side filter as safety
     const displayIncome = useMemo(() => {
         const yearToUse = selectedYear ?? getLatestYear();
         console.log(`[DEBUG] displayIncome using year: ${yearToUse}`);
