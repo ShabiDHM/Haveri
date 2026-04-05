@@ -1,5 +1,5 @@
 // FILE: src/pages/ProjectsDashboardPage.tsx
-// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.8 (FLAT PAYLOAD FIX)
+// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.9 (LARGER DELETE BUTTON TEXT)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -207,12 +207,31 @@ const ProjectsDashboardPage: React.FC = () => {
         {workspaceToDelete && (
           <div className="fixed inset-0 bg-canvas/60 backdrop-blur-xl flex items-center justify-center z-[110] p-4">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="glass-panel w-full max-w-md p-10 rounded-[3rem] shadow-sm text-center border border-border-main">
-              <div className="w-20 h-20 bg-danger-start/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-border-main shadow-inner"><Trash2 className="h-10 w-10 text-danger-start" /></div>
-              <h2 className="text-2xl font-black text-text-primary mb-3 uppercase tracking-tight">{t('projectsDashboard.deleteConfirmTitle', 'Fshij Projektin?')}</h2>
-              <p className="text-text-secondary text-sm mb-10 leading-relaxed italic font-medium">{t('projectsDashboard.deleteConfirmMessage', 'Kjo veprim është i pakthyeshëm.')}</p>
+              <div className="w-20 h-20 bg-danger-start/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-border-main shadow-inner">
+                <Trash2 className="h-10 w-10 text-danger-start" />
+              </div>
+              <h2 className="text-2xl font-black text-text-primary mb-3 uppercase tracking-tight">
+                {t('projectsDashboard.deleteConfirmTitle', 'Fshij Projektin?')}
+              </h2>
+              <p className="text-text-secondary text-sm mb-10 leading-relaxed italic font-medium">
+                {t('projectsDashboard.deleteConfirmMessage', 'Kjo veprim është i pakthyeshëm.')}
+              </p>
               <div className="flex justify-center gap-5">
-                <button type="button" onClick={() => setWorkspaceToDelete(null)} className="btn-secondary flex-1 h-14 rounded-2xl text-[10px] uppercase tracking-widest hover-lift shadow-sm">{t('general.cancel', 'Anulo')}</button>
-                <button type="button" onClick={handleDeleteWorkspace} disabled={isDeleting} className="flex-1 h-14 rounded-2xl bg-danger-start hover:bg-danger-start/80 text-text-primary font-black flex items-center justify-center gap-3 active:scale-95 text-[10px] uppercase tracking-widest disabled:opacity-50 transition-all hover-lift shadow-sm">{isDeleting ? <Loader2 className="animate-spin h-5 w-5" /> : t('general.delete', 'Fshij')}</button>
+                <button 
+                  type="button" 
+                  onClick={() => setWorkspaceToDelete(null)} 
+                  className="btn-secondary flex-1 h-14 rounded-2xl text-sm sm:text-base font-bold uppercase tracking-widest hover-lift shadow-sm"
+                >
+                  {t('general.cancel', 'Anulo')}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={handleDeleteWorkspace} 
+                  disabled={isDeleting} 
+                  className="flex-1 h-14 rounded-2xl bg-danger-start hover:bg-danger-start/80 text-text-primary font-black flex items-center justify-center gap-3 active:scale-95 text-sm sm:text-base uppercase tracking-widest disabled:opacity-50 transition-all hover-lift shadow-sm"
+                >
+                  {isDeleting ? <Loader2 className="animate-spin h-5 w-5" /> : t('general.delete', 'Fshij')}
+                </button>
               </div>
             </motion.div>
           </div>
