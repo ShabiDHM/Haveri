@@ -1,9 +1,10 @@
 // FILE: src/hooks/useFinanceData.ts
-// V17.2 – IMPROVED COGS FUZZY MATCHING
+// V17.5 – INTEGRATED WITH CENTRALIZED FISCAL CONTROLLER (CLEANED)
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useFiscal } from './useFiscal';
 import { Invoice, Expense, Workspace, AnalyticsDashboardData, PosTransaction, InventoryItem } from '../data/types';
 
 export type TransactionItem = {
@@ -34,6 +35,8 @@ const toNumber = (val: any): number => {
 
 export const useFinanceData = (options?: UseFinanceDataOptions) => {
     const { selectedYear, setSelectedYear } = useAuth();
+    const { formatCurrency } = useFiscal();  // Only need formatCurrency for display
+    
     const [loading, setLoading] = useState(true);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -170,9 +173,9 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         const total = expenses
             .filter(e => Number(safeDate(e.date).getFullYear()) === Number(yearToUse))
             .reduce((sum, exp) => sum + toNumber(exp.amount), 0);
-        console.log(`[DEBUG] totalExpenses = €${total.toFixed(2)}`);
+        console.log(`[DEBUG] totalExpenses = ${formatCurrency(total)}`);
         return total;
-    }, [expenses, selectedYear]);
+    }, [expenses, selectedYear, formatCurrency]);
 
     // Total Income (Invoices + POS) – yearly
     const displayIncome = useMemo(() => {
@@ -185,22 +188,17 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             .filter(p => Number(safeDate(p.transaction_date).getFullYear()) === Number(yearToUse))
             .reduce((s, p) => s + toNumber(p.total_price), 0);
         const total = invInc + posInc;
-        console.log(`[DEBUG] displayIncome = €${total.toFixed(2)}`);
+        console.log(`[DEBUG] displayIncome = ${formatCurrency(total)}`);
         return total;
-    }, [invoices, posTransactions, selectedYear]);
+    }, [invoices, posTransactions, selectedYear, formatCurrency]);
 
-    // Cost of Goods Sold (COGS) - IMPROVED FUZZY MATCHING
+    // Cost of Goods Sold (COGS) - ONLY for items with explicit inventory_item_id
     const costOfGoodsSold = useMemo(() => {
         const idMap = new Map<string, number>();
-        const nameMap = new Map<string, number>();
         inventoryItems.forEach(item => {
             const id = item._id;
             if (id) idMap.set(id, toNumber(item.cost_per_unit));
-            const name = (item.name || '').toLowerCase().trim();
-            if (name) nameMap.set(name, toNumber(item.cost_per_unit));
         });
-
-        const loggedMissing = new Set<string>();
 
         const getCostById = (id: string | undefined): number | null => {
             if (!id) return null;
@@ -209,101 +207,71 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             return null;
         };
 
-        // PHOENIX: Improved fuzzy matching for product names
-        const getCostByName = (name: string): number => {
-            const normalized = name.toLowerCase().trim();
-            if (!normalized) return 0;
-
-            // 1. Direct exact match
-            if (nameMap.has(normalized)) {
-                console.log(`[DEBUG COGS] Exact match: "${name}" -> cost: ${nameMap.get(normalized)}`);
-                return nameMap.get(normalized)!;
-            }
-
-            // 2. Fuzzy / Partial match (Improved)
-            // Checks if the inventory item name is contained within the transaction name
-            // OR if the transaction name is contained within the inventory item name
-            const match = inventoryItems.find(inv => {
-                const invName = (inv.name || '').toLowerCase().trim();
-                if (!invName) return false;
-                return normalized.includes(invName) || invName.includes(normalized);
-            });
-
-            if (match) {
-                const cost = toNumber(match.cost_per_unit);
-                console.log(`[DEBUG COGS] Fuzzy match found: "${name}" -> "${match.name}" (cost: ${cost})`);
-                return cost;
-            }
-
-            // 3. Word-by-word matching (for multi-word products)
-            const normalizedWords = normalized.split(/\s+/);
-            for (const word of normalizedWords) {
-                if (word.length < 3) continue; // Skip short words
-                const wordMatch = inventoryItems.find(inv => {
-                    const invName = (inv.name || '').toLowerCase().trim();
-                    return invName.includes(word);
-                });
-                if (wordMatch) {
-                    const cost = toNumber(wordMatch.cost_per_unit);
-                    console.log(`[DEBUG COGS] Word match found: "${name}" (word: "${word}") -> "${wordMatch.name}" (cost: ${cost})`);
-                    return cost;
-                }
-            }
-
-            // Log missing once per unique product name with available inventory list
-            if (!loggedMissing.has(normalized)) {
-                loggedMissing.add(normalized);
-                console.warn(`[DEBUG COGS] No match for: "${name}". Check if spelling matches Inventory items.`);
-                console.warn(`[DEBUG COGS] Available inventory names: ${Array.from(nameMap.keys()).join(', ') || '(none)'}`);
-            }
-            return 0;
+        // Check if a description indicates a bank import or service
+        const isBankOrServiceItem = (description: string): boolean => {
+            const lowerDesc = description.toLowerCase();
+            const bankKeywords = [
+                'të hyra nga banka', 'bankë', 'transfertë', 'bank charge',
+                'interest', 'loan payment', 'bank fee', 'shërbim bankar'
+            ];
+            const serviceKeywords = [
+                'konsulencë', 'shërbim', 'consulting', 'service fee',
+                'professional service', 'honorar'
+            ];
+            return bankKeywords.some(kw => lowerDesc.includes(kw)) ||
+                   serviceKeywords.some(kw => lowerDesc.includes(kw));
         };
 
         let totalCogs = 0;
+        let itemsProcessed = 0;
+        let itemsSkipped = 0;
 
+        // Process invoices - ONLY if inventory_item_id is explicitly set
         invoices.forEach(invoice => {
             if (!invoice.items || invoice.items.length === 0) return;
             invoice.items.forEach(item => {
-                let cost = 0;
                 if (item.inventory_item_id) {
-                    const c = getCostById(item.inventory_item_id);
-                    if (c !== null) cost = c;
+                    const cost = getCostById(item.inventory_item_id);
+                    if (cost !== null) {
+                        const quantity = toNumber(item.quantity);
+                        const itemCogs = quantity * cost;
+                        totalCogs += itemCogs;
+                        itemsProcessed++;
+                        console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - item "${item.description}": ${quantity} × ${formatCurrency(cost)} = ${formatCurrency(itemCogs)}`);
+                    } else {
+                        console.warn(`[DEBUG COGS] Invoice ${invoice.invoice_number} - inventory_item_id "${item.inventory_item_id}" not found in inventory`);
+                    }
+                } else {
+                    itemsSkipped++;
+                    if (item.description && !isBankOrServiceItem(item.description)) {
+                        console.log(`[DEBUG COGS] Skipping (no inventory_id): "${item.description}"`);
+                    }
                 }
-                if (cost === 0 && item.description) {
-                    cost = getCostByName(item.description);
-                }
-                const quantity = toNumber(item.quantity);
-                const itemCogs = quantity * cost;
-                if (cost > 0) {
-                    console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - line item "${item.description}": ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
-                }
-                totalCogs += itemCogs;
             });
         });
 
+        // Process POS transactions - ONLY if inventory_item_id is explicitly set
         posTransactions.forEach(pos => {
-            let cost = 0;
             if ((pos as any).inventory_item_id) {
-                const c = getCostById((pos as any).inventory_item_id);
-                if (c !== null) cost = c;
-            }
-            if (cost === 0) {
-                const productName = (pos.product_name || (pos as any).description || '').trim();
-                if (productName) {
-                    cost = getCostByName(productName);
+                const cost = getCostById((pos as any).inventory_item_id);
+                if (cost !== null) {
+                    const quantity = toNumber(pos.quantity ?? 1);
+                    const itemCogs = quantity * cost;
+                    totalCogs += itemCogs;
+                    itemsProcessed++;
+                    console.log(`[DEBUG COGS] POS ${pos.id} - "${pos.product_name}": ${quantity} × ${formatCurrency(cost)} = ${formatCurrency(itemCogs)}`);
+                } else {
+                    console.warn(`[DEBUG COGS] POS ${pos.id} - inventory_item_id not found in inventory`);
                 }
+            } else {
+                itemsSkipped++;
             }
-            const quantity = toNumber(pos.quantity ?? 1);
-            const itemCogs = quantity * cost;
-            if (cost > 0) {
-                console.log(`[DEBUG COGS] POS ${pos.id} - "${pos.product_name}": ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
-            }
-            totalCogs += itemCogs;
         });
 
-        console.log(`[DEBUG COGS] Total COGS = €${totalCogs.toFixed(2)}`);
+        console.log(`[DEBUG COGS] Processed: ${itemsProcessed} items with inventory_id, Skipped: ${itemsSkipped} items without inventory_id`);
+        console.log(`[DEBUG COGS] Total COGS = ${formatCurrency(totalCogs)}`);
         return totalCogs;
-    }, [invoices, posTransactions, inventoryItems]);
+    }, [invoices, posTransactions, inventoryItems, formatCurrency]);
 
     const displayProfit = displayIncome - costOfGoodsSold - totalExpenses;
 

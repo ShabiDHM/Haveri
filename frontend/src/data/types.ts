@@ -1,5 +1,5 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TYPES V4.7 (INVENTORY ITEM ID ADDED TO INVOICE & POS)
+// PHOENIX PROTOCOL - TYPES V4.8 (ADD TAX REGIME TO BUSINESS PROFILE)
 
 export type ConnectionStatus = 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED' | 'ERROR';
 export type EventPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -29,8 +29,37 @@ export interface Workspace {
 export interface Document { id: string; file_name: string; file_type: string; mime_type?: string; storage_key: string; uploaded_by: string; created_at: string; status: 'UPLOADING' | 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED'; summary?: string; risk_score?: number; ocr_status?: string; processed_text_storage_key?: string; preview_storage_key?: string; error_message?: string; progress_percent?: number; progress_message?: string; is_shared?: boolean; }
 export interface CalendarEvent { id: string; title: string; description?: string; start_date: string; end_date: string; is_all_day: boolean; event_type: 'APPOINTMENT' | 'TASK' | 'PAYMENT_DUE' | 'TAX_DEADLINE' | 'PERSONAL' | 'OTHER'; status: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE' | 'ARCHIVED'; workspace_id?: string; document_id?: string; location?: string; notes?: string; priority?: EventPriority; attendees?: string[]; is_public?: boolean; }
 export interface UIAgendaItem { id: string; title: string; description?: string; start_date: string; end_date: string; is_all_day: boolean; status: CalendarEvent['status']; type: CalendarEvent['event_type']; attendees?: string[]; location?: string; notes?: string; workspace_id?: string; time: string; priority: EventPriority; isCompleted: boolean; kind: 'event' | 'alert' | 'task'; raw: any; }
-export interface BusinessProfile { id: string; firm_name: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color: string; logo_url?: string; is_complete: boolean; vat_rate?: number; target_margin?: number; currency?: string; }
-export interface BusinessProfileUpdate { firm_name?: string; address?: string; city?: string; phone?: string; email_public?: string; website?: string; tax_id?: string; branding_color?: string; vat_rate?: number; target_margin?: number; currency?: string; }
+export interface BusinessProfile { 
+  id: string; 
+  firm_name: string; 
+  address?: string; 
+  city?: string; 
+  phone?: string; 
+  email_public?: string; 
+  website?: string; 
+  tax_id?: string; 
+  branding_color: string; 
+  logo_url?: string; 
+  is_complete: boolean; 
+  vat_rate?: number; 
+  target_margin?: number; 
+  currency?: string; 
+  tax_regime?: 'STANDARD' | 'SIMPLIFIED' | 'SMALL_BUSINESS';  // NEW
+}
+export interface BusinessProfileUpdate { 
+  firm_name?: string; 
+  address?: string; 
+  city?: string; 
+  phone?: string; 
+  email_public?: string; 
+  website?: string; 
+  tax_id?: string; 
+  branding_color?: string; 
+  vat_rate?: number; 
+  target_margin?: number; 
+  currency?: string; 
+  tax_regime?: 'STANDARD' | 'SIMPLIFIED' | 'SMALL_BUSINESS';  // NEW
+}
 export interface StrategicBriefingResponse { staffPerformance: { efficiencyStatus: 'sleep' | 'stable' | 'fire'; efficiencyScore: number; mvpName: string; mvpTotal: number; mvpInsight: { key: string; values?: Record<string, string | number>; }; actionBravo: boolean; }; market: { signals: Array<{ id: number; type: 'bestseller' | 'low_stock' | 'diaspora' | 'weather' | 'competitor' | 'holiday'; label: string; impact: 'high' | 'medium' | 'low'; message: string; action: string; }>; }; agenda: UIAgendaItem[]; }
 export interface RestockPrediction { suggested_quantity: number; reason: string; supplier_name?: string; estimated_cost?: number; }
 export interface SalesTrendAnalysis { trend_analysis: string; cross_sell_opportunities: string; }
