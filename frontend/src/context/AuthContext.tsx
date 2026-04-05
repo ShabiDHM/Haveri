@@ -1,5 +1,5 @@
 // FILE: src/context/AuthContext.tsx
-// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V6.3 (SELECTED YEAR PERSISTENCE)
+// PHOENIX PROTOCOL - AUTHENTICATION CONTEXT V6.4 (LOAD BUSINESS PROFILE)
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, BusinessProfile, Workspace, LoginRequest, RegisterRequest } from '../data/types';
@@ -63,7 +63,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setWorkspaces([]);
     setBusinessProfile(null);
     localStorage.removeItem(SELECTED_WORKSPACE_KEY);
-    // Do NOT remove SELECTED_YEAR_KEY on logout - user preference persists
   }, []);
 
   const loadWorkspaces = useCallback(async (): Promise<Workspace[]> => {
@@ -81,7 +80,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const [fullUser, profile, allWorkspaces] = await Promise.all([
         apiService.fetchUserProfile(),
-        apiService.getBusinessProfile(),
+        apiService.getBusinessProfile(),  // PHOENIX: Load business profile
         loadWorkspaces()
       ]);
 
