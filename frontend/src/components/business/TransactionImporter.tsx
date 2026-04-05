@@ -1,9 +1,8 @@
 // FILE: src/components/business/TransactionImporter.tsx
-// PHOENIX PROTOCOL - I18N V24.0 (DESIGN SYSTEM STANDARDIZED)
-// MODIFIED: product_name is now required for POS imports
+// PHOENIX PROTOCOL - I18N V24.1 (FORCE CATEGORY SELECTION FOR BANK IMPORTS)
 
 import React, { useState, useRef } from 'react';
-import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2, ShoppingCart, Landmark } from 'lucide-react';
+import { X, Upload, FileSpreadsheet, ArrowRight, CheckCircle, AlertCircle, Loader2, ShoppingCart, Landmark, Tag } from 'lucide-react';
 import { apiService, ImportPreviewResponse } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
@@ -15,6 +14,21 @@ interface TransactionImporterProps {
 
 type ImportType = 'pos' | 'bank';
 
+const BANK_CATEGORIES = [
+    { value: 'expense_office', label: 'Shpenzim Zyre (Office Expense)', isCogs: false },
+    { value: 'expense_utilities', label: 'Shpenzime (Rrymë, Ujë, Internet)', isCogs: false },
+    { value: 'expense_transport', label: 'Transport / Karburant', isCogs: false },
+    { value: 'expense_marketing', label: 'Marketingu / Reklama', isCogs: false },
+    { value: 'expense_salary', label: 'Paga / Rroga', isCogs: false },
+    { value: 'expense_tax', label: 'Tatime / Taksa', isCogs: false },
+    { value: 'expense_rent', label: 'Qiraja', isCogs: false },
+    { value: 'cogs_inventory', label: 'Blerje Malli / Inventari (COGS)', isCogs: true },
+    { value: 'cogs_raw_material', label: 'Lëndë e Parë (COGS)', isCogs: true },
+    { value: 'income_service', label: 'Të hyra nga Shërbimet', isCogs: false },
+    { value: 'income_other', label: 'Të hyra të Tjera', isCogs: false },
+    { value: 'transfer', label: 'Transfertë / Lëvizje Parash', isCogs: false },
+];
+
 export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClose, onSuccess, t }) => {
     const { workspace } = useAuth();
     const [step, setStep] = useState<'selection' | 'upload' | 'mapping' | 'processing'>('selection');
@@ -22,12 +36,13 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
     const [file, setFile] = useState<File | null>(null);
     const [previewData, setPreviewData] = useState<ImportPreviewResponse | null>(null);
     const [mapping, setMapping] = useState<Record<string, string>>({});
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const posRequiredFields = [
         { key: 'amount', label: t('finance.amount'), required: true },
-        { key: 'product_name', label: t('finance.import.productName'), required: true }, // NOW REQUIRED
+        { key: 'product_name', label: t('finance.import.productName'), required: true },
         { key: 'date', label: t('finance.date'), required: false },
         { key: 'description', label: t('finance.description'), required: false },
         { key: 'category', label: t('finance.expenseCategory'), required: false },
@@ -40,12 +55,14 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
         { key: 'debit', label: t('finance.import.debit'), required: false },
         { key: 'credit', label: t('finance.import.credit'), required: false },
         { key: 'date', label: t('finance.date'), required: true },
+        { key: 'amount', label: t('finance.amount'), required: true },
     ];
 
     const requiredFields = importType === 'bank' ? bankRequiredFields : posRequiredFields;
 
     const handleSelectType = (type: ImportType) => {
         setImportType(type);
+        setSelectedCategory('');
         setStep('upload');
     };
 
@@ -67,11 +84,12 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                     else if (h.includes('debit') || h.includes('dalje')) initialMapping[header] = 'debit';
                     else if (h.includes('credit') || h.includes('hyrje')) initialMapping[header] = 'credit';
                     else if (h.includes('dat') || h.includes('date')) initialMapping[header] = 'date';
-                } else { // POS mapping
+                    else if (h.includes('shum') || h.includes('amount') || h.includes('price')) initialMapping[header] = 'amount';
+                } else {
                     if (h.includes('shum') || h.includes('amount') || h.includes('price')) initialMapping[header] = 'amount';
                     else if (h.includes('dat') || h.includes('date')) initialMapping[header] = 'date';
                     else if (h.includes('përshkrim') || h.includes('desc')) initialMapping[header] = 'description';
-                    else if (h.includes('produkt') || h.includes('product') || h.includes('emri i produktit')) initialMapping[header] = 'product_name';
+                    else if (h.includes('produkt') || h.includes('product')) initialMapping[header] = 'product_name';
                     else if (h.includes('kategori') || h.includes('cat')) initialMapping[header] = 'category';
                     else if (h.includes('tipi') || h.includes('type')) initialMapping[header] = 'Tipi';
                     else if (h.includes('status')) initialMapping[header] = 'status';
@@ -90,11 +108,23 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
     
     const handleSmartImport = async () => {
         if (!file || Object.keys(mapping).length === 0) return;
+        
+        if (importType === 'bank' && !selectedCategory) {
+            alert(t('finance.import.selectCategory', 'Ju lutem zgjidhni një kategori për transaksionet bankare.'));
+            return;
+        }
+        
         setIsLoading(true);
         setStep('processing');
         
         try {
-            await apiService.confirmImport(file, mapping, importType, workspace?.id);
+            await apiService.confirmImport(
+                file, 
+                mapping, 
+                importType, 
+                workspace?.id,
+                importType === 'bank' ? selectedCategory : undefined
+            );
             onSuccess();
             onClose();
         } catch (error) {
@@ -119,9 +149,8 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
     
     const isMappingValid = () => {
         if (importType === 'bank') {
-            return getMappedHeader('description') && getMappedHeader('date') && (getMappedHeader('debit') || getMappedHeader('credit'));
+            return getMappedHeader('description') && getMappedHeader('date') && getMappedHeader('amount');
         }
-        // POS: require amount and product_name
         return getMappedHeader('amount') && getMappedHeader('product_name');
     };
 
@@ -186,6 +215,32 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                                     <p className="text-text-muted text-xs mt-1">{t('finance.import.autoMapInfo')}</p>
                                 </div>
                             </div>
+                            
+                            {importType === 'bank' && (
+                                <div className="bg-surface/50 border border-border-main rounded-xl p-4">
+                                    <label className="text-xs font-black uppercase tracking-widest text-primary-start mb-3 flex items-center gap-2">
+                                        <Tag size={14} />
+                                        {t('finance.import.selectCategory', 'Zgjidh Kategorinë për Transaksionet')}
+                                    </label>
+                                    <select
+                                        className="glass-input w-full"
+                                        value={selectedCategory}
+                                        onChange={(e) => setSelectedCategory(e.target.value)}
+                                        required
+                                    >
+                                        <option value="">{t('finance.import.chooseCategory', '-- Zgjidhni Kategorinë --')}</option>
+                                        {BANK_CATEGORIES.map(cat => (
+                                            <option key={cat.value} value={cat.value}>
+                                                {cat.label} {cat.isCogs ? '(COGS - Ndikon në Fitim)' : '(Shpenzim Operativ)'}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="text-xs text-text-muted mt-2">
+                                        {t('finance.import.categoryHelp', 'Kjo kategori përcakton nëse transaksioni shkon si COGS (Kosto e Mallit) ose Shpenzim Operativ.')}
+                                    </p>
+                                </div>
+                            )}
+                            
                             <div className="space-y-4">
                                 {requiredFields.map((field) => (
                                     <div key={field.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface p-4 rounded-xl border border-border-main">
@@ -224,7 +279,7 @@ export const TransactionImporter: React.FC<TransactionImporterProps> = ({ onClos
                         <button onClick={() => { setStep('selection'); setFile(null); }} className="glass-input !bg-surface hover:bg-hover transition-colors px-6 py-3 rounded-xl">
                             {t('finance.import.back')}
                         </button>
-                        <button onClick={handleSmartImport} disabled={!isMappingValid()} 
+                        <button onClick={handleSmartImport} disabled={!isMappingValid() || (importType === 'bank' && !selectedCategory)} 
                             className="btn-primary px-8 py-3 flex items-center gap-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
                             <CheckCircle size={18} />
                             {t('finance.import.confirm')}

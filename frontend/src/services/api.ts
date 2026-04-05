@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V15.4 (FULL PAYLOAD FOR POS TRANSACTIONS)
+// PHOENIX PROTOCOL - API V15.5 (CATEGORY SUPPORT FOR IMPORT)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -332,7 +332,6 @@ class ApiService {
         return [];
     }
 
-    // PHOENIX: Updated createPosTransaction to accept full payload for invoice generation
     public async createPosTransaction(data: { 
         inventory_item_id: string; 
         quantity: number; 
@@ -376,11 +375,15 @@ class ApiService {
     // --- IMPORTS ---
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
 
-    public async confirmImport(file: File, mapping: Record<string, string>, importType: 'pos' | 'bank', workspaceId?: string): Promise<ImportResult> {
+    // PHOENIX: Updated confirmImport to accept defaultCategory for bank imports
+    public async confirmImport(file: File, mapping: Record<string, string>, importType: 'pos' | 'bank', workspaceId?: string, defaultCategory?: string): Promise<ImportResult> {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('mapping', JSON.stringify(mapping));
         formData.append('importType', importType);
+        if (defaultCategory) {
+            formData.append('defaultCategory', defaultCategory);
+        }
         const params = workspaceId ? { case_id: workspaceId } : {};
         const response = await this.axiosInstance.post<ImportResult>('/finance/import/confirm', formData, { params });
         return response.data;

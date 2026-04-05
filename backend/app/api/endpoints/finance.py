@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.12 (FIXED POS TRANSACTION PAYLOAD)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.13 (CATEGORY SUPPORT FOR IMPORT)
 
 import json
 import logging
@@ -37,7 +37,6 @@ class BulkDeleteRequest(BaseModel):
     expense_ids: Optional[List[str]] = []
     pos_ids: Optional[List[str]] = []
 
-# PHOENIX: Updated POS Transaction Creation Request Model with full fields
 class PosTransactionCreate(BaseModel):
     inventory_item_id: str
     quantity: float = 1.0
@@ -84,6 +83,7 @@ async def confirm_import(
     file: UploadFile = File(...),
     mapping: str = Form(...),
     importType: str = Form('pos'),
+    defaultCategory: Optional[str] = Form(None),
     case_id: Optional[str] = Query(None),
     db: Database = Depends(get_db)
 ):
@@ -92,7 +92,14 @@ async def confirm_import(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid mapping format")
     service = ParsingService(db)
-    return await service.process_import(file, str(current_user.id), mapping_dict, import_type=importType, case_id=case_id)
+    return await service.process_import(
+        file, 
+        str(current_user.id), 
+        mapping_dict, 
+        import_type=importType, 
+        case_id=case_id,
+        default_category=defaultCategory
+    )
 
 @router.post("/import/clients")
 async def import_clients(
@@ -139,7 +146,6 @@ async def get_imported_transactions(
     
     return transactions
 
-# PHOENIX: Updated POS transaction endpoint with full payload
 @router.post("/transactions", response_model=PosTransactionOut, status_code=status.HTTP_201_CREATED)
 def create_pos_transaction(
     transaction_data: PosTransactionCreate,
@@ -147,14 +153,9 @@ def create_pos_transaction(
     db: Database = Depends(get_db),
     case_id: Optional[str] = Query(None)
 ):
-    """
-    Create a POS transaction linked to an inventory item.
-    Automatically deducts stock and calculates COGS.
-    """
     service = FinanceService(db)
     data = transaction_data.model_dump()
     
-    # Set defaults if not provided
     if not data.get("transaction_date"):
         data["transaction_date"] = datetime.now()
     if not data.get("product_name"):

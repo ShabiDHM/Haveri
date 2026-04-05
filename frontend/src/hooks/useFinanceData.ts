@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V17.5 – INTEGRATED WITH CENTRALIZED FISCAL CONTROLLER (CLEANED)
+// V17.7 – CATEGORY-BASED COGS DETECTION FOR BANK IMPORTS
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -26,7 +26,6 @@ const safeDate = (d: any): Date => {
     return isNaN(date.getTime()) ? new Date() : date;
 };
 
-// Helper to safely convert to number
 const toNumber = (val: any): number => {
     if (typeof val === 'number' && !isNaN(val)) return val;
     const num = Number(val);
@@ -34,8 +33,8 @@ const toNumber = (val: any): number => {
 };
 
 export const useFinanceData = (options?: UseFinanceDataOptions) => {
-    const { selectedYear, setSelectedYear } = useAuth();
-    const { formatCurrency } = useFiscal();  // Only need formatCurrency for display
+    const { selectedYear, setSelectedYear, businessProfile } = useAuth();
+    const { formatCurrency, defaultMarginPercent } = useFiscal();
     
     const [loading, setLoading] = useState(true);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -46,9 +45,6 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
     const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const workspaceId = options?.workspaceId;
 
-    // REMOVED: Auto-sync that overrides user's selected year
-
-    // Compute allTransactions (combined, sorted)
     const allTransactions = useMemo<TransactionItem[]>(() => {
         const invoiceItems: TransactionItem[] = invoices.map(inv => ({
             id: inv.id,
@@ -81,7 +77,6 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         });
     }, [invoices, expenses, posTransactions]);
 
-    // Mock transactions (for development / empty state)
     const mockTransactions: TransactionItem[] = [
         {
             id: 'mock-1',
@@ -101,7 +96,6 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         },
     ];
 
-    // Fetch all data (including inventory) - WITH YEAR FILTERING
     useEffect(() => {
         let isMounted = true;
         const fetchData = async () => {
@@ -140,7 +134,6 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
                     console.log('  Inventory Items:', results[5].value);
                     setInventoryItems(results[5].value);
                 } else console.error('  Inventory fetch failed:', results[5].reason);
-                if (isMounted) {}
             } catch (e) {
                 console.error('[useFinanceData] Unexpected error:', e);
             } finally {
@@ -166,116 +159,153 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         setInventoryItems(inventory);
     }, [selectedYear, workspaceId]);
 
-    // Total Expenses (yearly)
     const totalExpenses = useMemo(() => {
         const yearToUse = selectedYear;
-        console.log(`[DEBUG] totalExpenses using year: ${yearToUse}`);
         const total = expenses
             .filter(e => Number(safeDate(e.date).getFullYear()) === Number(yearToUse))
             .reduce((sum, exp) => sum + toNumber(exp.amount), 0);
-        console.log(`[DEBUG] totalExpenses = ${formatCurrency(total)}`);
         return total;
-    }, [expenses, selectedYear, formatCurrency]);
+    }, [expenses, selectedYear]);
 
-    // Total Income (Invoices + POS) – yearly
     const displayIncome = useMemo(() => {
         const yearToUse = selectedYear;
-        console.log(`[DEBUG] displayIncome using year: ${yearToUse}`);
         const invInc = invoices
             .filter(i => i.status === 'PAID' && Number(safeDate(i.issue_date).getFullYear()) === Number(yearToUse))
             .reduce((s, i) => s + toNumber(i.total_amount), 0);
         const posInc = posTransactions
             .filter(p => Number(safeDate(p.transaction_date).getFullYear()) === Number(yearToUse))
             .reduce((s, p) => s + toNumber(p.total_price), 0);
-        const total = invInc + posInc;
-        console.log(`[DEBUG] displayIncome = ${formatCurrency(total)}`);
-        return total;
-    }, [invoices, posTransactions, selectedYear, formatCurrency]);
+        return invInc + posInc;
+    }, [invoices, posTransactions, selectedYear]);
 
-    // Cost of Goods Sold (COGS) - ONLY for items with explicit inventory_item_id
     const costOfGoodsSold = useMemo(() => {
         const idMap = new Map<string, number>();
+        const nameMap = new Map<string, number>();
+        
         inventoryItems.forEach(item => {
             const id = item._id;
             if (id) idMap.set(id, toNumber(item.cost_per_unit));
+            const name = (item.name || '').toLowerCase().trim();
+            if (name) nameMap.set(name, toNumber(item.cost_per_unit));
         });
 
         const getCostById = (id: string | undefined): number | null => {
             if (!id) return null;
             const cost = idMap.get(id);
-            if (cost !== undefined) return cost;
-            return null;
+            return cost !== undefined ? cost : null;
         };
 
-        // Check if a description indicates a bank import or service
-        const isBankOrServiceItem = (description: string): boolean => {
-            const lowerDesc = description.toLowerCase();
-            const bankKeywords = [
-                'të hyra nga banka', 'bankë', 'transfertë', 'bank charge',
-                'interest', 'loan payment', 'bank fee', 'shërbim bankar'
-            ];
-            const serviceKeywords = [
-                'konsulencë', 'shërbim', 'consulting', 'service fee',
-                'professional service', 'honorar'
-            ];
-            return bankKeywords.some(kw => lowerDesc.includes(kw)) ||
-                   serviceKeywords.some(kw => lowerDesc.includes(kw));
+        const getCostByName = (name: string, salePrice: number): number => {
+            const normalized = name.toLowerCase().trim();
+            if (!normalized) return 0;
+
+            if (nameMap.has(normalized)) {
+                return nameMap.get(normalized)!;
+            }
+
+            const match = inventoryItems.find(inv => {
+                const invName = (inv.name || '').toLowerCase().trim();
+                return normalized.includes(invName) || invName.includes(normalized);
+            });
+
+            if (match) {
+                console.log(`[DEBUG COGS] Fuzzy match: "${name}" -> "${match.name}" (cost: ${match.cost_per_unit})`);
+                return toNumber(match.cost_per_unit);
+            }
+
+            const marginPercent = businessProfile?.target_margin ?? defaultMarginPercent ?? 30;
+            const derivedCost = salePrice / (1 + (marginPercent / 100));
+            
+            console.log(`[DEBUG COGS] No inventory match for "${name}". Sale: €${salePrice.toFixed(2)}, Margin: ${marginPercent}%. Derived cost: €${derivedCost.toFixed(2)}`);
+            
+            return derivedCost;
         };
 
         let totalCogs = 0;
-        let itemsProcessed = 0;
-        let itemsSkipped = 0;
+        let linkedCount = 0;
+        let derivedCount = 0;
 
-        // Process invoices - ONLY if inventory_item_id is explicitly set
         invoices.forEach(invoice => {
             if (!invoice.items || invoice.items.length === 0) return;
             invoice.items.forEach(item => {
+                let cost = 0;
+                const salePrice = toNumber(item.unit_price);
+                
                 if (item.inventory_item_id) {
-                    const cost = getCostById(item.inventory_item_id);
-                    if (cost !== null) {
-                        const quantity = toNumber(item.quantity);
-                        const itemCogs = quantity * cost;
-                        totalCogs += itemCogs;
-                        itemsProcessed++;
-                        console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - item "${item.description}": ${quantity} × ${formatCurrency(cost)} = ${formatCurrency(itemCogs)}`);
+                    const c = getCostById(item.inventory_item_id);
+                    if (c !== null) {
+                        cost = c;
+                        linkedCount++;
                     } else {
-                        console.warn(`[DEBUG COGS] Invoice ${invoice.invoice_number} - inventory_item_id "${item.inventory_item_id}" not found in inventory`);
+                        cost = getCostByName(item.description || '', salePrice);
+                        derivedCount++;
                     }
                 } else {
-                    itemsSkipped++;
-                    if (item.description && !isBankOrServiceItem(item.description)) {
-                        console.log(`[DEBUG COGS] Skipping (no inventory_id): "${item.description}"`);
-                    }
+                    cost = getCostByName(item.description || '', salePrice);
+                    derivedCount++;
+                }
+                
+                const quantity = toNumber(item.quantity);
+                const itemCogs = quantity * cost;
+                totalCogs += itemCogs;
+                
+                if (cost > 0) {
+                    console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - "${item.description}": ${quantity} × €${cost.toFixed(2)} = €${itemCogs.toFixed(2)}`);
                 }
             });
         });
 
-        // Process POS transactions - ONLY if inventory_item_id is explicitly set
         posTransactions.forEach(pos => {
+            let cost = 0;
+            const salePrice = toNumber(pos.total_price);
+            const productName = pos.product_name || (pos as any).description || '';
+            
             if ((pos as any).inventory_item_id) {
-                const cost = getCostById((pos as any).inventory_item_id);
-                if (cost !== null) {
-                    const quantity = toNumber(pos.quantity ?? 1);
-                    const itemCogs = quantity * cost;
-                    totalCogs += itemCogs;
-                    itemsProcessed++;
-                    console.log(`[DEBUG COGS] POS ${pos.id} - "${pos.product_name}": ${quantity} × ${formatCurrency(cost)} = ${formatCurrency(itemCogs)}`);
+                const c = getCostById((pos as any).inventory_item_id);
+                if (c !== null) {
+                    cost = c;
+                    linkedCount++;
                 } else {
-                    console.warn(`[DEBUG COGS] POS ${pos.id} - inventory_item_id not found in inventory`);
+                    cost = getCostByName(productName, salePrice);
+                    derivedCount++;
                 }
             } else {
-                itemsSkipped++;
+                cost = getCostByName(productName, salePrice);
+                derivedCount++;
+            }
+            
+            const quantity = toNumber(pos.quantity ?? 1);
+            const itemCogs = quantity * cost;
+            totalCogs += itemCogs;
+            
+            if (cost > 0) {
+                console.log(`[DEBUG COGS] POS - "${productName}": ${quantity} × €${cost.toFixed(2)} = €${itemCogs.toFixed(2)}`);
             }
         });
 
-        console.log(`[DEBUG COGS] Processed: ${itemsProcessed} items with inventory_id, Skipped: ${itemsSkipped} items without inventory_id`);
-        console.log(`[DEBUG COGS] Total COGS = ${formatCurrency(totalCogs)}`);
+        // PHOENIX: Process expenses with category-based COGS detection
+        expenses.forEach(exp => {
+            const category = (exp.category || '').toLowerCase();
+            const isCogsCategory = category.includes('cogs') || 
+                                   category.includes('inventory') || 
+                                   category.includes('mall') || 
+                                   category.includes('stock') ||
+                                   category.includes('furnizim') ||
+                                   category.includes('blerje');
+            
+            if (isCogsCategory) {
+                const amount = toNumber(exp.amount);
+                totalCogs += amount;
+                console.log(`[DEBUG COGS] Expense recognized as COGS: "${exp.description}" (${exp.category}) = €${amount.toFixed(2)}`);
+            }
+        });
+
+        console.log(`[DEBUG COGS] Summary: ${linkedCount} linked items, ${derivedCount} derived from margin. Total COGS = ${formatCurrency(totalCogs)}`);
         return totalCogs;
-    }, [invoices, posTransactions, inventoryItems, formatCurrency]);
+    }, [invoices, posTransactions, expenses, inventoryItems, businessProfile, defaultMarginPercent, formatCurrency]);
 
     const displayProfit = displayIncome - costOfGoodsSold - totalExpenses;
 
-    // Available years (from all transactions)
     const availableYears = useMemo(() => {
         const years = new Set<number>();
         invoices.forEach(i => { if (i.issue_date) years.add(safeDate(i.issue_date).getFullYear()); });

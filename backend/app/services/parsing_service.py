@@ -1,5 +1,5 @@
 # FILE: backend/app/services/parsing_service.py
-# PHOENIX PROTOCOL - PARSING SERVICE V9.4 (USE create_pos_transaction FOR INVOICE AUTO-CREATION)
+# PHOENIX PROTOCOL - PARSING SERVICE V9.5 (CATEGORY SUPPORT FOR BANK IMPORTS)
 
 import pandas as pd
 import io
@@ -75,35 +75,15 @@ class ParsingService:
             logger.error(f"Error previewing file: {e}")
             raise HTTPException(status_code=400, detail=f"Failed to read file. Please ensure it is a valid CSV. Error: {str(e)}")
 
-    def _process_bank_statement_row(self, user_id: str, row: pd.Series, mapping: Dict[str, str], case_id: Optional[str] = None):
-        field_to_column = {v: k for k, v in mapping.items()}
-
-        description_col = field_to_column.get('description')
-        date_col = field_to_column.get('date')
-        debit_col = field_to_column.get('debit')
-        credit_col = field_to_column.get('credit')
-
-        description = str(row.get(description_col, ''))
-        if not description:
-            raise ValueError("Row is missing a description.")
-
-        date_str = row.get(date_col)
-        parsed_date = pd.to_datetime(date_str, dayfirst=False).to_pydatetime() if pd.notna(date_str) else datetime.now()
-
-        debit_amount = self._normalize_currency(row.get(debit_col, 0.0))
-        credit_amount = self._normalize_currency(row.get(credit_col, 0.0))
-
-        if debit_amount > 0:
-            expense_data = ExpenseCreate(category="E importuar nga Banka", amount=debit_amount, description=description, date=parsed_date)
-            self.finance_service.create_expense(user_id, expense_data, case_id)
-        elif credit_amount > 0:
-            invoice_item = InvoiceItem(description="Të hyra nga banka", quantity=1, unit_price=credit_amount, total=credit_amount)
-            invoice_data = InvoiceCreate(client_name=description, items=[invoice_item], tax_rate=0, issue_date=parsed_date, due_date=parsed_date + timedelta(days=30), status="PAID")
-            self.finance_service.create_invoice(user_id, invoice_data, case_id)
-        else:
-            raise ValueError("Row has neither a valid debit nor credit amount.")
-
-    async def process_import(self, file: UploadFile, user_id: str, mapping: Dict[str, str], import_type: str = 'pos', case_id: Optional[str] = None) -> Dict[str, Any]:
+    async def process_import(
+        self, 
+        file: UploadFile, 
+        user_id: str, 
+        mapping: Dict[str, str], 
+        import_type: str = 'pos', 
+        case_id: Optional[str] = None,
+        default_category: Optional[str] = None
+    ) -> Dict[str, Any]:
         contents = await file.read()
         try:
             df = pd.read_csv(io.StringIO(contents.decode('utf-8')), sep=',', engine='python', header=0, on_bad_lines='skip')
@@ -117,10 +97,48 @@ class ParsingService:
         org_id = user_doc.get("organization_id") if user_doc else None
 
         if import_type == 'bank':
+            field_to_column = {v: k for k, v in mapping.items()}
+            description_col = field_to_column.get('description')
+            date_col = field_to_column.get('date')
+            amount_col = field_to_column.get('amount')
+            debit_col = field_to_column.get('debit')
+            credit_col = field_to_column.get('credit')
+
             for index, row in df.iterrows():
                 try:
-                    self._process_bank_statement_row(user_id, row, mapping, case_id)
-                    imported_count += 1
+                    description = str(row.get(description_col, ''))
+                    if not description:
+                        raise ValueError("Row is missing a description.")
+
+                    date_str = row.get(date_col)
+                    parsed_date = pd.to_datetime(date_str, dayfirst=False).to_pydatetime() if pd.notna(date_str) else datetime.now()
+
+                    amount = self._normalize_currency(row.get(amount_col, 0.0))
+                    debit_amount = self._normalize_currency(row.get(debit_col, 0.0))
+                    credit_amount = self._normalize_currency(row.get(credit_col, 0.0))
+
+                    final_amount = amount if amount != 0 else (debit_amount - credit_amount)
+                    
+                    category = default_category or "E importuar nga Banka"
+                    
+                    if final_amount > 0:
+                        expense_data = ExpenseCreate(category=category, amount=final_amount, description=description, date=parsed_date)
+                        self.finance_service.create_expense(user_id, expense_data, case_id)
+                        imported_count += 1
+                    elif final_amount < 0:
+                        invoice_item = InvoiceItem(description=description, quantity=1, unit_price=abs(final_amount), total=abs(final_amount))
+                        invoice_data = InvoiceCreate(
+                            client_name=description,
+                            items=[invoice_item],
+                            tax_rate=0,
+                            issue_date=parsed_date,
+                            due_date=parsed_date + timedelta(days=30),
+                            status="PAID"
+                        )
+                        self.finance_service.create_invoice(user_id, invoice_data, case_id)
+                        imported_count += 1
+                    else:
+                        raise ValueError("Row has zero amount.")
                 except Exception as row_error:
                     failed_count += 1
                     logger.warning(f"Skipping bank row {index}: {row_error} | Data: {row.to_dict()}")
@@ -129,7 +147,7 @@ class ParsingService:
             field_to_column = {v: k for k, v in mapping.items()}
             amount_col = field_to_column.get('amount')
             if not amount_col or amount_col not in df.columns:
-                raise HTTPException(status_code=400, detail="Mapping for 'amount' ('Shuma') is missing or incorrect.")
+                raise HTTPException(status_code=400, detail="Mapping for 'amount' is missing or incorrect.")
 
             description_col = field_to_column.get('description')
             date_col = field_to_column.get('date')
@@ -179,11 +197,12 @@ class ParsingService:
                         imported_count += 1
 
                     else:
-                        # POS TRANSACTION - USE create_pos_transaction TO AUTO-CREATE INVOICE
                         inv_item = self._find_inventory_item_by_name(user_id, product_name, case_id)
                         inventory_item_id = None
+                        cogs = 0.0
                         if inv_item:
-                            inventory_item_id = str(inv_item["_id"])
+                            inventory_item_id = inv_item["_id"]
+                            cogs = float(inv_item.get("cost_per_unit", 0.0)) * 1.0
                         else:
                             import_errors_to_insert.append({
                                 "user_id": user_id,
@@ -194,18 +213,27 @@ class ParsingService:
                                 "row_index": index
                             })
 
-                        # Call finance_service.create_pos_transaction (auto-creates invoice)
-                        pos_data = {
+                        transaction_doc: Dict[str, Any] = {
+                            "user_id": str(user_id),
+                            "date_time": parsed_date,
+                            "amount": abs(amount),
+                            "total_amount": abs(amount),
                             "product_name": product_name,
                             "description": description,
-                            "category": category,
-                            "total_price": abs(amount),
                             "quantity": 1.0,
-                            "date": parsed_date,
+                            "category": category,
+                            "source": "IMPORT",
                             "status": status,
-                            "inventory_item_id": inventory_item_id
+                            "payment_method": "CASH",
+                            "inventory_item_id": inventory_item_id,
+                            "cogs": cogs
                         }
-                        self.finance_service.create_pos_transaction(user_id, pos_data, case_id)
+                        if org_id:
+                            transaction_doc["organization_id"] = org_id
+                        if case_id:
+                            transaction_doc["case_id"] = case_id
+
+                        self.db.transactions.insert_one(transaction_doc)
                         imported_count += 1
 
                 except Exception as row_error:
