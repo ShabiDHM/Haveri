@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V15.1 (ADD YEAR FILTER TO INVOICES, EXPENSES, POS)
+// PHOENIX PROTOCOL - API V15.2 (ADD YEAR TO ACCOUNTANT CHAT)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -171,11 +171,13 @@ class ApiService {
     public async analyzeTaxAnomalies(month: number, year: number): Promise<TaxAuditResult> { try { const response = await this.axiosInstance.post<TaxAuditResult>('/analysis/tax/audit', { month, year }); return response.data; } catch (e) { return { anomalies: ["Sistemi nuk mund të kryejë analizën për momentin."], status: 'WARNING', net_obligation: 0 }; } }
     public async chatWithTaxBot(message: string): Promise<string> { try { const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message }); return response.data.response; } catch (e) { return "Më falni, shërbimi i asistencës tatimore është përkohësisht jashtë funksionit."; } }
 
-    public async chatWithAccountant(query: string, workspaceId?: string): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+    // PHOENIX: Updated chatWithAccountant to accept year parameter
+    public async chatWithAccountant(query: string, workspaceId?: string, year?: number): Promise<ReadableStreamDefaultReader<Uint8Array>> {
         const token = tokenManager.get();
         if (!token) await this.refreshToken();
         const url = new URL(`${API_V1_URL}/accountant/chat`);
         if (workspaceId) url.searchParams.append('case_id', workspaceId);
+        if (year) url.searchParams.append('year', year.toString());
         const response = await fetch(url.toString(), {
             method: 'POST',
             headers: {

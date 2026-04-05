@@ -1,11 +1,12 @@
 // FILE: src/components/business/insights/ForensicAccountantModal.tsx
-// PHOENIX PROTOCOL - FORENSIC MODAL V5.3 (WORKSPACE AWARE)
+// PHOENIX PROTOCOL - FORENSIC MODAL V5.4 (YEAR AWARE)
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Trash2, ShieldCheck, Loader2, FolderInput, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 
 // --- MARKDOWN COMPONENT ---
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
@@ -45,11 +46,12 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
 interface ForensicAccountantModalProps {
     isOpen: boolean;
     onClose: () => void;
-    workspaceId?: string; // NEW: for filtering
+    workspaceId?: string;
 }
 
 export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = ({ isOpen, onClose, workspaceId }) => {
     const { t } = useTranslation();
+    const { selectedYear } = useAuth(); // PHOENIX: Get selected year from global state
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState<{ role: 'user' | 'ai'; content: string }[]>([
         { role: 'ai', content: t('forensic.welcome_message', "Unë jam Auditori juaj Forenzik. Kam qasje në arkivën tuaj dhe në Ligjet Tatimore të Kosovës. Çfarë dëshironi të kontrolloni sot?") }
@@ -68,7 +70,7 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
             const timer = setTimeout(() => setSaveSuccess(false), 3000);
             return () => clearTimeout(timer);
         }
-    }, [messages, saveSuccess]);
+    }, [saveSuccess]);
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -81,7 +83,8 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
         setMessages(prev => [...prev, { role: 'ai', content: '' }]);
 
         try {
-            const reader = await apiService.chatWithAccountant(userQuery, workspaceId);
+            // PHOENIX: Pass both workspaceId AND selectedYear to backend
+            const reader = await apiService.chatWithAccountant(userQuery, workspaceId, selectedYear);
             const decoder = new TextDecoder();
 
             while (true) {
@@ -159,6 +162,10 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                         </span>
                                         <span className="text-xs uppercase font-black text-success-start tracking-widest leading-none">
                                             PRO AUDIT MODE
+                                        </span>
+                                        {/* PHOENIX: Display current year context */}
+                                        <span className="text-[10px] uppercase font-black text-text-muted tracking-widest leading-none ml-2 px-2 py-0.5 rounded-full bg-surface/50 border border-border-main">
+                                            Viti: {selectedYear}
                                         </span>
                                     </div>
                                 </div>

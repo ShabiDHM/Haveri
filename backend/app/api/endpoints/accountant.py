@@ -1,12 +1,9 @@
 # FILE: backend/app/api/endpoints/accountant.py
-# PHOENIX PROTOCOL - ACCOUNTANT ENDPOINT V1.7 (ARCHIVE FIX)
-# 1. FIXED: Corrected ID handling for MongoDB insertion (ObjectId conversion).
-# 2. FIXED: Validated Byte-to-S3 storage chain for the Forensic Auditor reports.
-# 3. STATUS: 100% Functional. Resolves "Dështoi ruajtja në arkivë".
+# PHOENIX PROTOCOL - ACCOUNTANT ENDPOINT V1.8 (YEAR & CASE_ID CONTEXT)
 
 from fastapi import APIRouter, Depends, HTTPException, Body
 from fastapi.responses import StreamingResponse, Response
-from typing import Annotated, Dict
+from typing import Annotated, Dict, Optional
 from pydantic import BaseModel
 from pymongo.database import Database
 from bson import ObjectId
@@ -27,19 +24,29 @@ logger = logging.getLogger(__name__)
 class AuditExportRequest(BaseModel):
     content: str
 
+class ChatRequest(BaseModel):
+    query: str
+    case_id: Optional[str] = None
+    year: Optional[int] = None
+
 @router.post("/chat")
 async def accountant_audit_chat(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
-    query: str = Body(..., embed=True)
+    request: ChatRequest
 ):
-    """Streams the AI Forensic Auditor response."""
-    if not query or len(query.strip()) < 2:
+    """Streams the AI Forensic Auditor response with workspace and year context."""
+    if not request.query or len(request.query.strip()) < 2:
         raise HTTPException(status_code=400, detail="Pyetja është shumë e shkurtër.")
 
     context_id = str(current_user.organization_id) if current_user.organization_id else str(current_user.id)
 
     try:
-        generator = chat_with_accountant(user_id=context_id, query=query)
+        generator = chat_with_accountant(
+            user_id=context_id, 
+            query=request.query, 
+            case_id=request.case_id,
+            year=request.year
+        )
         return StreamingResponse(
             generator, 
             media_type="text/event-stream",
@@ -76,7 +83,6 @@ async def save_audit_report_to_archive(
 ):
     """Generates the PDF and saves it directly to the user's Havery Archive."""
     try:
-        # 1. Generate PDF stream
         pdf_buffer = generate_forensic_audit_pdf(request.content, str(current_user.id), db)
         file_content = pdf_buffer.getvalue()
         file_size = len(file_content)
@@ -84,8 +90,6 @@ async def save_audit_report_to_archive(
         filename = f"Raport_Auditimi_{datetime.now().strftime('%Y-%m-%d_%H%M')}.pdf"
         user_id_str = str(current_user.id)
         
-        # 2. Upload to S3/B2 using the standardized byte uploader
-        # Folder 'reports' used as case_id for categorization
         storage_key = storage_service.upload_bytes_as_file(
             file_obj=io.BytesIO(file_content),
             filename=filename,
@@ -94,9 +98,8 @@ async def save_audit_report_to_archive(
             content_type="application/pdf"
         )
         
-        # 3. Create Database Record in 'archives'
         new_doc = {
-            "user_id": ObjectId(user_id_str), # PHOENIX: Must be ObjectId
+            "user_id": ObjectId(user_id_str),
             "title": filename,
             "file_type": "PDF",
             "category": "REPORTS", 
@@ -114,7 +117,6 @@ async def save_audit_report_to_archive(
         result = db.archives.insert_one(new_doc)
         doc_id = str(result.inserted_id)
         
-        # 4. Trigger Celery Indexing Task
         try:
             process_archive_document.delay(doc_id)
         except Exception as task_err:

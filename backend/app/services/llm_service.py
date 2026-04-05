@@ -1,8 +1,5 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - LLM SERVICE V6.4 (RESTORATION & FIX)
-# 1. FIXED: Restored 'process_chunks_parallel' to resolve ImportError and unblock deployment.
-# 2. FIXED: Restored 'chunk_text', 'extract_expense_data', and 'draft_business_document'.
-# 3. STATUS: 100% complete restoration of all required symbols for document_service.py.
+# PHOENIX PROTOCOL - LLM SERVICE V6.5 (RESTORATION & FIX)
 
 import os
 import json
@@ -82,8 +79,6 @@ async def _call_deepseek_async(system_prompt: str, user_prompt: str, json_mode: 
             logger.warning(f"⚠️ Async AI Call Failed: {e}")
             return None
 
-# --- HYDRA TACTIC / PARALLEL PROCESSING ---
-
 async def process_chunks_parallel(text: str, system_prompt: str, chunk_size: int = 6000) -> List[str]:
     """Processes large documents in parallel chunks using the Global Semaphore."""
     chunks = chunk_text(text, chunk_size)
@@ -92,8 +87,6 @@ async def process_chunks_parallel(text: str, system_prompt: str, chunk_size: int
     tasks = [_call_deepseek_async(system_prompt, f"PARTIAL CONTENT SEGMENT:\n{chunk}") for chunk in chunks]
     results = await asyncio.gather(*tasks)
     return [res for res in results if res]
-
-# --- STREAMING ---
 
 async def stream_text_async(system_prompt: str, user_prompt: str, temp: float = 0.1) -> AsyncGenerator[str, None]:
     client = get_async_client()
@@ -116,8 +109,6 @@ async def stream_text_async(system_prompt: str, user_prompt: str, temp: float = 
         except Exception as e:
             logger.error(f"Streaming Call Failed: {e}")
             yield f"[GABIM NË SISTEM: {e}]"
-
-# --- PUBLIC FUNCTIONS ---
 
 async def analyze_structured_prediction(data_context: str, analysis_type: str) -> Dict[str, Any]:
     if analysis_type == "RESTOCK":
