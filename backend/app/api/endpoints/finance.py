@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.6 (ADD EXPENSE EXPORT)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.8 (FIX PARSING SERVICE IMPORT)
 
 import json
 import logging
@@ -81,6 +81,7 @@ async def confirm_import(
     file: UploadFile = File(...),
     mapping: str = Form(...),
     importType: str = Form('pos'),
+    case_id: Optional[str] = Query(None),
     db: Database = Depends(get_db)
 ):
     try:
@@ -88,7 +89,7 @@ async def confirm_import(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid mapping format")
     service = ParsingService(db)
-    return await service.process_import(file, str(current_user.id), mapping_dict, import_type=importType)
+    return await service.process_import(file, str(current_user.id), mapping_dict, import_type=importType, case_id=case_id)
 
 @router.post("/import/clients")
 async def import_clients(
@@ -106,30 +107,28 @@ async def get_imported_transactions(
 ):
     user_id_str = str(current_user.id)
     
-    # --- DEBUG LOGGING START ---
     logger = logging.getLogger(__name__)
     logger.info(f"[DEBUG] get_imported_transactions: user_id={user_id_str}, case_id={case_id}")
     total_user_transactions = await db["transactions"].count_documents({"user_id": user_id_str})
     logger.info(f"[DEBUG] Total POS transactions for user (no case filter): {total_user_transactions}")
-    # --- END DEBUG LOGGING ---
     
-    filter = {"user_id": user_id_str}
+    filter_criteria = {"user_id": user_id_str}
     if case_id:
-        filter["case_id"] = case_id
+        filter_criteria["case_id"] = case_id
         logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
     
-    filtered_count = await db["transactions"].count_documents(filter)
+    filtered_count = await db["transactions"].count_documents(filter_criteria)
     logger.info(f"[DEBUG] POS transactions after filter: {filtered_count}")
     
-    cursor = db["transactions"].find(filter).sort("date_time", pymongo.DESCENDING)
+    cursor = db["transactions"].find(filter_criteria).sort("date_time", pymongo.DESCENDING)
     transactions = await cursor.to_list(length=None)
     
-    # --- FIX: Add 'date' field from 'date_time' for each transaction ---
+    # Add 'date' field from 'date_time' for each transaction
     for tx in transactions:
         if "date_time" in tx and "date" not in tx:
             tx["date"] = tx["date_time"]
         elif "date" not in tx:
-            tx["date"] = None  # fallback
+            tx["date"] = None
     
     return transactions
 
@@ -151,7 +150,7 @@ def create_pos_transaction(
         data=data,
         case_id=case_id
     )
-    # Fix: Ensure the response contains 'date' field (PosTransactionOut expects 'date', not 'date_time')
+    # Ensure the response contains 'date' field
     if isinstance(result, dict):
         if 'date_time' in result and 'date' not in result:
             result['date'] = result['date_time']
@@ -281,7 +280,7 @@ async def archive_invoice(invoice_id: str, current_user: Annotated[UserInDB, Dep
     )
     return archived_item
 
-# --- EXPORT INVOICES TO EXCEL (Albanian Headers) ---
+# --- EXPORT INVOICES TO EXCEL ---
 @router.get("/invoices/export/excel")
 async def export_invoices_excel(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
@@ -293,11 +292,6 @@ async def export_invoices_excel(
     day: Optional[int] = Query(None),
     lang: Optional[str] = Query("sq")
 ):
-    """
-    Export invoices to Excel file.
-    If invoice_ids provided, export only those.
-    Otherwise export all invoices (optionally filtered by case_id and date).
-    """
     user_id_str = str(current_user.id)
     
     if invoice_ids:
@@ -313,7 +307,6 @@ async def export_invoices_excel(
         if case_id:
             query["case_id"] = case_id
         
-        # Apply date filters
         if year:
             start_date = datetime(year, 1, 1)
             end_date = None
@@ -339,7 +332,6 @@ async def export_invoices_excel(
     if not invoices:
         raise HTTPException(status_code=404, detail="Nuk u gjet asnjë faturë për eksport.")
     
-    # Prepare data for Excel
     data = []
     for inv in invoices:
         items_list = []
@@ -378,7 +370,7 @@ async def export_invoices_excel(
         headers=headers
     )
 
-# --- EXPORT EXPENSES TO EXCEL (Albanian Headers) ---
+# --- EXPORT EXPENSES TO EXCEL ---
 @router.get("/expenses/export/excel")
 async def export_expenses_excel(
     current_user: Annotated[UserInDB, Depends(get_current_user)],
@@ -390,11 +382,6 @@ async def export_expenses_excel(
     day: Optional[int] = Query(None),
     lang: Optional[str] = Query("sq")
 ):
-    """
-    Export expenses to Excel file.
-    If expense_ids provided, export only those.
-    Otherwise export all expenses (optionally filtered by case_id and date).
-    """
     user_id_str = str(current_user.id)
     
     if expense_ids:
@@ -410,7 +397,6 @@ async def export_expenses_excel(
         if case_id:
             query["case_id"] = case_id
         
-        # Apply date filters
         if year:
             start_date = datetime(year, 1, 1)
             end_date = None
@@ -436,7 +422,6 @@ async def export_expenses_excel(
     if not expenses:
         raise HTTPException(status_code=404, detail="Nuk u gjet asnjë shpenzim për eksport.")
     
-    # Prepare data for Excel
     data = []
     for exp in expenses:
         data.append({
@@ -461,7 +446,7 @@ async def export_expenses_excel(
         headers=headers
     )
 
-# --- EXPENSES (Accounts Payable) ---
+# --- EXPENSES ---
 
 @router.post("/expenses", response_model=ExpenseOut, status_code=status.HTTP_201_CREATED)
 def create_expense(
@@ -494,7 +479,7 @@ def delete_expense(
     except:
         pass
 
-# --- ANALYTICS ENDPOINT (FIXED) ---
+# --- ANALYTICS ENDPOINT ---
 @router.get("/analytics/dashboard", response_model=AnalyticsDashboardData)
 async def get_dashboard_data(
     current_user: Annotated[UserInDB, Depends(get_current_user)],

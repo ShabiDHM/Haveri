@@ -1,14 +1,11 @@
 # FILE: backend/app/services/parsing_service.py
-# PHOENIX PROTOCOL - PARSING SERVICE V9.0 (INVENTORY-AWARE IMPORT)
-# 1. ADDED: Inventory lookup for POS transactions to pre‑calculate COGS.
-# 2. ADDED: Logging of missing inventory matches to 'import_errors' collection.
-# 3. STATUS: Production‑ready for email‑to‑CSV automation.
+# PHOENIX PROTOCOL - PARSING SERVICE V9.4 (USE create_pos_transaction FOR INVOICE AUTO-CREATION)
 
 import pandas as pd
 import io
 import logging
-from datetime import datetime
-from typing import Dict, Any, List, Optional
+from datetime import datetime, timedelta
+from typing import Dict, Any, List, Optional, Union
 from fastapi import UploadFile, HTTPException
 from pymongo.database import Database
 from bson import ObjectId
@@ -23,7 +20,7 @@ class ParsingService:
         self.db = db
         self.finance_service = FinanceService(db)
 
-    def _normalize_currency(self, value) -> float:
+    def _normalize_currency(self, value: Union[str, float, int, None]) -> float:
         if isinstance(value, (int, float)):
             return float(value)
         if not isinstance(value, str):
@@ -31,7 +28,6 @@ class ParsingService:
 
         clean_val = str(value).replace('€', '').replace('$', '').strip()
         if ',' in clean_val and '.' in clean_val:
-            # European format (1.200,00) vs US (1,200.00) heuristic
             if clean_val.find(',') > clean_val.find('.'):
                 clean_val = clean_val.replace('.', '').replace(',', '.')
             else:
@@ -45,28 +41,20 @@ class ParsingService:
             return 0.0
 
     def _find_inventory_item_by_name(self, user_id: str, product_name: str, case_id: Optional[str] = None) -> Optional[Dict]:
-        """
-        Search for an inventory item by name (case‑insensitive, trimmed).
-        First exact match, then substring match.
-        Returns the inventory document or None.
-        """
         if not product_name:
             return None
         norm_name = product_name.lower().strip()
-        # Build query
-        query = {"$or": [{"user_id": user_id}]}
+        query: Dict[str, Any] = {"$or": [{"user_id": user_id}]}
         user = self.db.users.find_one({"_id": ObjectId(user_id)})
         if user and user.get("organization_id"):
             query["$or"].append({"organization_id": str(user["organization_id"])})
         if case_id:
             query["case_id"] = case_id
 
-        # Exact match
         exact = self.db.inventory.find_one({**query, "name": {"$regex": f"^{norm_name}$", "$options": "i"}})
         if exact:
             return exact
 
-        # Substring match (product name contains inventory name)
         cursor = self.db.inventory.find(query)
         for item in cursor:
             inv_name = item.get("name", "").lower().strip()
@@ -87,7 +75,7 @@ class ParsingService:
             logger.error(f"Error previewing file: {e}")
             raise HTTPException(status_code=400, detail=f"Failed to read file. Please ensure it is a valid CSV. Error: {str(e)}")
 
-    def _process_bank_statement_row(self, user_id: str, row: pd.Series, mapping: Dict[str, str]):
+    def _process_bank_statement_row(self, user_id: str, row: pd.Series, mapping: Dict[str, str], case_id: Optional[str] = None):
         field_to_column = {v: k for k, v in mapping.items()}
 
         description_col = field_to_column.get('description')
@@ -107,15 +95,15 @@ class ParsingService:
 
         if debit_amount > 0:
             expense_data = ExpenseCreate(category="E importuar nga Banka", amount=debit_amount, description=description, date=parsed_date)
-            self.finance_service.create_expense(user_id, expense_data)
+            self.finance_service.create_expense(user_id, expense_data, case_id)
         elif credit_amount > 0:
             invoice_item = InvoiceItem(description="Të hyra nga banka", quantity=1, unit_price=credit_amount, total=credit_amount)
-            invoice_data = InvoiceCreate(client_name=description, items=[invoice_item], tax_rate=0, issue_date=parsed_date, status="PAID")
-            self.finance_service.create_invoice(user_id, invoice_data)
+            invoice_data = InvoiceCreate(client_name=description, items=[invoice_item], tax_rate=0, issue_date=parsed_date, due_date=parsed_date + timedelta(days=30), status="PAID")
+            self.finance_service.create_invoice(user_id, invoice_data, case_id)
         else:
             raise ValueError("Row has neither a valid debit nor credit amount.")
 
-    async def process_import(self, file: UploadFile, user_id: str, mapping: Dict[str, str], import_type: str = 'pos') -> Dict[str, Any]:
+    async def process_import(self, file: UploadFile, user_id: str, mapping: Dict[str, str], import_type: str = 'pos', case_id: Optional[str] = None) -> Dict[str, Any]:
         contents = await file.read()
         try:
             df = pd.read_csv(io.StringIO(contents.decode('utf-8')), sep=',', engine='python', header=0, on_bad_lines='skip')
@@ -125,21 +113,19 @@ class ParsingService:
         imported_count = 0
         failed_count = 0
 
-        # Get user and organization context
         user_doc = self.db.users.find_one({"_id": ObjectId(user_id)})
         org_id = user_doc.get("organization_id") if user_doc else None
 
         if import_type == 'bank':
             for index, row in df.iterrows():
                 try:
-                    self._process_bank_statement_row(user_id, row, mapping)
+                    self._process_bank_statement_row(user_id, row, mapping, case_id)
                     imported_count += 1
                 except Exception as row_error:
                     failed_count += 1
                     logger.warning(f"Skipping bank row {index}: {row_error} | Data: {row.to_dict()}")
                     continue
         else:
-            # POS / GENERAL IMPORT
             field_to_column = {v: k for k, v in mapping.items()}
             amount_col = field_to_column.get('amount')
             if not amount_col or amount_col not in df.columns:
@@ -152,8 +138,7 @@ class ParsingService:
             status_col = field_to_column.get('status')
             type_col = field_to_column.get('Tipi')
 
-            transactions_to_insert: List[Dict] = []
-            import_errors_to_insert: List[Dict] = []
+            import_errors_to_insert: List[Dict[str, Any]] = []
 
             for index, row in df.iterrows():
                 try:
@@ -165,9 +150,10 @@ class ParsingService:
                     product_name = str(row.get(product_col, description))
                     category = str(row.get(category_col, 'Të Përgjithshme'))
                     status = str(row.get(status_col, 'PAID')).strip().upper()
+                    if status not in ['PAID', 'PENDING', 'OVERDUE']:
+                        status = 'PAID'
 
-                    # Determine transaction type
-                    transaction_type = 'POS'  # default
+                    transaction_type = 'POS'
                     if type_col and row.get(type_col):
                         transaction_type = str(row.get(type_col)).strip().upper()
                     elif amount < 0:
@@ -175,26 +161,30 @@ class ParsingService:
 
                     if 'EXPENSE' in transaction_type:
                         expense_data = ExpenseCreate(category=category, amount=abs(amount), description=description, date=parsed_date)
-                        self.finance_service.create_expense(user_id, expense_data)
+                        self.finance_service.create_expense(user_id, expense_data, case_id)
                         imported_count += 1
 
                     elif 'INVOICE' in transaction_type:
                         invoice_item = InvoiceItem(description=product_name, quantity=1, unit_price=abs(amount), total=abs(amount))
-                        invoice_data = InvoiceCreate(client_name=description, items=[invoice_item], tax_rate=0, issue_date=parsed_date, status=status)
-                        self.finance_service.create_invoice(user_id, invoice_data)
+                        invoice_data = InvoiceCreate(
+                            client_name=description,
+                            items=[invoice_item],
+                            tax_rate=0,
+                            issue_date=parsed_date,
+                            due_date=parsed_date + timedelta(days=30),
+                            status=status,
+                            notes=f"Imported from {file.filename}"
+                        )
+                        self.finance_service.create_invoice(user_id, invoice_data, case_id)
                         imported_count += 1
 
                     else:
-                        # POS / RETAIL TRANSACTION – INVENTORY AWARE
-                        # Look up inventory item by product name
-                        inv_item = self._find_inventory_item_by_name(user_id, product_name)
+                        # POS TRANSACTION - USE create_pos_transaction TO AUTO-CREATE INVOICE
+                        inv_item = self._find_inventory_item_by_name(user_id, product_name, case_id)
                         inventory_item_id = None
-                        cogs = 0.0
                         if inv_item:
-                            inventory_item_id = inv_item["_id"]
-                            cogs = float(inv_item.get("cost_per_unit", 0.0)) * 1.0  # quantity default 1
+                            inventory_item_id = str(inv_item["_id"])
                         else:
-                            # Log missing inventory match
                             import_errors_to_insert.append({
                                 "user_id": user_id,
                                 "timestamp": datetime.utcnow(),
@@ -204,25 +194,18 @@ class ParsingService:
                                 "row_index": index
                             })
 
-                        transaction_doc = {
-                            "user_id": str(user_id),
-                            "date": parsed_date,
-                            "amount": abs(amount),
-                            "total_amount": abs(amount),
+                        # Call finance_service.create_pos_transaction (auto-creates invoice)
+                        pos_data = {
                             "product_name": product_name,
                             "description": description,
-                            "quantity": 1.0,
                             "category": category,
-                            "source": "IMPORT",
+                            "total_price": abs(amount),
+                            "quantity": 1.0,
+                            "date": parsed_date,
                             "status": status,
-                            "payment_method": "CASH",
-                            "inventory_item_id": inventory_item_id,
-                            "cogs": cogs
+                            "inventory_item_id": inventory_item_id
                         }
-                        if org_id:
-                            transaction_doc["organization_id"] = org_id
-
-                        transactions_to_insert.append(transaction_doc)
+                        self.finance_service.create_pos_transaction(user_id, pos_data, case_id)
                         imported_count += 1
 
                 except Exception as row_error:
@@ -230,11 +213,6 @@ class ParsingService:
                     logger.warning(f"Skipping POS row {index}: {row_error} | Data: {row.to_dict()}")
                     continue
 
-            # Bulk insert transactions
-            if transactions_to_insert:
-                self.db.transactions.insert_many(transactions_to_insert)
-
-            # Log import errors (for later manual review)
             if import_errors_to_insert:
                 self.db.import_errors.insert_many(import_errors_to_insert)
                 logger.warning(f"Logged {len(import_errors_to_insert)} missing inventory matches for user {user_id}.")

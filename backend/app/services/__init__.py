@@ -7,7 +7,7 @@ from . import (
     admin_service,
     business_service,
     calendar_service,
-    workspace_service, # PHOENIX: Renamed from case_service
+    workspace_service,
     conversion_service,
     deadline_service,
     document_service,
