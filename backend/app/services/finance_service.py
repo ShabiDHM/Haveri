@@ -1,11 +1,11 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V8.5 (FIXED POS INVOICE CREATION)
+# PHOENIX PROTOCOL - FINANCE SERVICE V8.6 (ADDED GET_POS_TRANSACTIONS METHOD)
 
 import logging
 import csv
 import io
 from datetime import datetime, timezone
-from bson import ObjectId
+from bson import ObjectId, errors as bson_errors
 from pymongo.database import Database
 from fastapi import HTTPException, UploadFile
 from typing import Any, List, Dict, Optional
@@ -46,6 +46,7 @@ class FinanceService:
         })
         return item["_id"] if item else None
 
+    # --- PARTNER LOGIC ---
     def get_partners(self, context_id: str) -> List[PartnerInDB]:
         query = self._get_resilient_filter(context_id)
         cursor = self.db.partners.find(query).sort("name", 1)
@@ -99,6 +100,7 @@ class FinanceService:
             self.db.partners.insert_many(partners_to_insert)
         return {"status": "success", "imported_count": imported_count}
 
+    # --- POS / TRANSACTION LOGIC ---
     async def get_monthly_pos_revenue(self, async_db: Any, user_id: str, month: int, year: int, case_id: Optional[str] = None) -> float:
         try:
             start_date = datetime(year, month, 1)
@@ -130,7 +132,6 @@ class FinanceService:
         except:
             user_oid = user_id
 
-        # Get business profile for VAT rate
         business_profile = self.db.business_profiles.find_one({"user_id": ObjectId(user_id)})
         vat_rate = business_profile.get("vat_rate", 0) if business_profile else 0
 
@@ -158,13 +159,11 @@ class FinanceService:
         res = self.db.transactions.insert_one(doc)
         doc["_id"] = res.inserted_id
 
-        # --- Create proper invoice with line items for PDF generation ---
         item_name = data.get("product_name") or data.get("description") or "Produkt POS"
         quantity = data.get("quantity", 1.0)
         total_price = data.get("total_price", 0.0)
         unit_price = total_price / quantity if quantity > 0 else total_price
         
-        # Calculate tax amounts
         subtotal = total_price
         tax_amount = subtotal * (vat_rate / 100)
         total_with_tax = subtotal + tax_amount
@@ -199,7 +198,6 @@ class FinanceService:
             )
         except Exception as e:
             logger.error(f"Failed to auto-create invoice for POS transaction {doc['_id']}: {e}")
-        # --- End auto-invoice ---
 
         return doc
 
@@ -232,12 +230,12 @@ class FinanceService:
             raise HTTPException(status_code=400, detail="Invalid ID provided in bulk delete.")
         return total_deleted
 
+    # --- INVOICE LOGIC ---
     def _generate_invoice_number(self, user_id: str) -> str:
         count = self.db.invoices.count_documents({"user_id": ObjectId(user_id)})
         return f"F-{datetime.now().year}-{count + 1:04d}"
 
     def create_invoice(self, user_id: str, data: InvoiceCreate, case_id: Optional[str] = None) -> InvoiceInDB:
-        # Calculate all financial fields
         subtotal = sum(item.quantity * item.unit_price for item in data.items)
         tax_amount = subtotal * (data.tax_rate / 100)
         total_amount = subtotal + tax_amount
@@ -306,6 +304,7 @@ class FinanceService:
             raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
         self.db.invoices.delete_one({"_id": oid})
 
+    # --- EXPENSE LOGIC ---
     def create_expense(self, user_id: str, data: ExpenseCreate, case_id: Optional[str] = None) -> ExpenseInDB:
         doc = data.model_dump()
         doc.update({"user_id": ObjectId(user_id), "created_at": datetime.now(timezone.utc)})
@@ -333,6 +332,19 @@ class FinanceService:
             raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
         self.db.expenses.delete_one({"_id": oid})
 
+    # --- PHOENIX: NEW METHOD FOR POS TRANSACTIONS ---
+    def get_pos_transactions(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[Dict[str, Any]]:
+        query = self._get_resilient_filter(context_id)
+        if case_id:
+            query["case_id"] = case_id
+        if year:
+            start_date = datetime(year, 1, 1)
+            end_date = datetime(year + 1, 1, 1)
+            query["date_time"] = {"$gte": start_date, "$lt": end_date}
+        cursor = self.db.transactions.find(query).sort("date_time", -1)
+        return list(cursor)
+
+    # --- UNIFIED IMPORT ---
     def import_unified_transactions(self, user_id: str, transactions: List[Dict[str, Any]]) -> Dict[str, int]:
         counts = {"INVOICE": 0, "EXPENSE": 0, "POS": 0, "UNKNOWN": 0}
         user = self.db.users.find_one({"_id": ObjectId(user_id)})
