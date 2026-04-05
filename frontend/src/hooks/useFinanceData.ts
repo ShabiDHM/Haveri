@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V16 – ADDED YEAR FILTER TO API CALLS
+// V17 – REMOVED AUTO-SYNC THAT OVERRIDES SELECTED YEAR
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -43,25 +43,10 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
     const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const workspaceId = options?.workspaceId;
 
-    // Helper to get the latest year from all transaction data
-    const getLatestYear = useCallback(() => {
-        const years = new Set<number>();
-        invoices.forEach(i => { if (i.issue_date) years.add(safeDate(i.issue_date).getFullYear()); });
-        expenses.forEach(e => { if (e.date) years.add(safeDate(e.date).getFullYear()); });
-        posTransactions.forEach(p => { if (p.transaction_date) years.add(safeDate(p.transaction_date).getFullYear()); });
-        const yearArray = Array.from(years);
-        return yearArray.length ? Math.max(...yearArray) : new Date().getFullYear();
-    }, [invoices, expenses, posTransactions]);
+    // Helper to get the latest year from all transaction data (for display only, not for forcing)
 
-    // Sync selectedYear to the latest available year if it's not set or invalid
-    useEffect(() => {
-        if (!loading && invoices.length + expenses.length + posTransactions.length > 0) {
-            const latestYear = getLatestYear();
-            if (!selectedYear || selectedYear !== latestYear) {
-                setSelectedYear(latestYear);
-            }
-        }
-    }, [loading, invoices, expenses, posTransactions, selectedYear, setSelectedYear, getLatestYear]);
+    // REMOVED: Auto-sync that overrides user's selected year
+    // User's year selection is now respected without interference
 
     // Compute allTransactions (combined, sorted)
     const allTransactions = useMemo<TransactionItem[]>(() => {
@@ -116,13 +101,12 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         },
     ];
 
-    // Fetch all data (including inventory) - NOW WITH YEAR FILTERING
+    // Fetch all data (including inventory) - WITH YEAR FILTERING
     useEffect(() => {
         let isMounted = true;
         const fetchData = async () => {
             setLoading(true);
             try {
-                // PHOENIX: Pass selectedYear to API calls for proper filtering
                 const results = await Promise.allSettled([
                     apiService.getInvoices(workspaceId, selectedYear),
                     apiService.getExpenses(workspaceId, selectedYear),
@@ -168,7 +152,6 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
     }, [workspaceId, selectedYear]);
 
     const refreshData = useCallback(async () => {
-        // PHOENIX: Pass selectedYear to API calls for proper filtering
         const [inv, exp, pos, analytics, inventory] = await Promise.all([
             apiService.getInvoices(workspaceId, selectedYear),
             apiService.getExpenses(workspaceId, selectedYear),
@@ -183,20 +166,20 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         setInventoryItems(inventory);
     }, [selectedYear, workspaceId]);
 
-    // Total Expenses (yearly) - NOW FILTERED BY API, but keep client-side filter as safety
+    // Total Expenses (yearly)
     const totalExpenses = useMemo(() => {
-        const yearToUse = selectedYear ?? getLatestYear();
+        const yearToUse = selectedYear;
         console.log(`[DEBUG] totalExpenses using year: ${yearToUse}`);
         const total = expenses
             .filter(e => Number(safeDate(e.date).getFullYear()) === Number(yearToUse))
             .reduce((sum, exp) => sum + toNumber(exp.amount), 0);
         console.log(`[DEBUG] totalExpenses = €${total.toFixed(2)}`);
         return total;
-    }, [expenses, selectedYear, getLatestYear]);
+    }, [expenses, selectedYear]);
 
-    // Total Income (Invoices + POS) – yearly - NOW FILTERED BY API, but keep client-side filter as safety
+    // Total Income (Invoices + POS) – yearly
     const displayIncome = useMemo(() => {
-        const yearToUse = selectedYear ?? getLatestYear();
+        const yearToUse = selectedYear;
         console.log(`[DEBUG] displayIncome using year: ${yearToUse}`);
         const invInc = invoices
             .filter(i => i.status === 'PAID' && Number(safeDate(i.issue_date).getFullYear()) === Number(yearToUse))
@@ -207,11 +190,10 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         const total = invInc + posInc;
         console.log(`[DEBUG] displayIncome = €${total.toFixed(2)}`);
         return total;
-    }, [invoices, posTransactions, selectedYear, getLatestYear]);
+    }, [invoices, posTransactions, selectedYear]);
 
-    // Cost of Goods Sold (COGS) – uses inventory_item_id if present, else fuzzy name match
+    // Cost of Goods Sold (COGS)
     const costOfGoodsSold = useMemo(() => {
-        // Build maps for fast lookup
         const idMap = new Map<string, number>();
         const nameMap = new Map<string, number>();
         inventoryItems.forEach(item => {
@@ -234,17 +216,14 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             const normalized = name.toLowerCase().trim();
             if (!normalized) return 0;
 
-            // Exact match
             if (nameMap.has(normalized)) return nameMap.get(normalized)!;
 
-            // Fuzzy match (substring)
             const match = inventoryItems.find(inv => {
                 const invName = (inv.name || '').toLowerCase().trim();
                 return normalized.includes(invName);
             });
             if (match) return toNumber(match.cost_per_unit);
 
-            // Log missing once
             if (!loggedMissing.has(normalized)) {
                 loggedMissing.add(normalized);
                 console.log(`[DEBUG COGS] No inventory match for product: ${name}`);
@@ -254,17 +233,14 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
 
         let totalCogs = 0;
 
-        // Process invoices
         invoices.forEach(invoice => {
             if (!invoice.items || invoice.items.length === 0) return;
             invoice.items.forEach(item => {
                 let cost = 0;
-                // Priority 1: use inventory_item_id if present
                 if (item.inventory_item_id) {
                     const c = getCostById(item.inventory_item_id);
                     if (c !== null) cost = c;
                 }
-                // Fallback: use description (name) matching
                 if (cost === 0 && item.description) {
                     cost = getCostByName(item.description);
                 }
@@ -277,15 +253,12 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             });
         });
 
-        // Process POS transactions
         posTransactions.forEach(pos => {
             let cost = 0;
-            // Priority 1: use inventory_item_id if present
             if ((pos as any).inventory_item_id) {
                 const c = getCostById((pos as any).inventory_item_id);
                 if (c !== null) cost = c;
             }
-            // Fallback: use product_name (or description)
             if (cost === 0) {
                 const productName = (pos.product_name || (pos as any).description || '').trim();
                 if (productName) {
