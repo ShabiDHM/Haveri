@@ -1,5 +1,5 @@
 # FILE: backend/app/services/analytics_service.py
-# PHOENIX PROTOCOL - ANALYTICS SERVICE V2.6 (FIXED COGS AND ADD EXPENSES)
+# PHOENIX PROTOCOL - ANALYTICS SERVICE V2.7 (REMOVE POS DOUBLE-COUNTING)
 
 from typing import Optional, Any, Dict, List
 from datetime import datetime, timedelta
@@ -20,7 +20,6 @@ class AnalyticsService:
 
         invoices = await asyncio.to_thread(finance_service.get_invoices, user_id, case_id, year)
         expenses = await asyncio.to_thread(finance_service.get_expenses, user_id, case_id, year)
-        pos_transactions = await asyncio.to_thread(finance_service.get_pos_transactions, user_id, case_id, year)
 
         if year:
             start_date = datetime(year, 1, 1)
@@ -31,11 +30,11 @@ class AnalyticsService:
 
         period_invoices = [i for i in invoices if start_date <= i.issue_date <= end_date]
         period_expenses = [e for e in expenses if start_date <= e.date <= end_date]
-        period_pos = [p for p in pos_transactions if start_date <= p.get("date_time", datetime.min) <= end_date]
 
         total_revenue = sum(i.total_amount for i in period_invoices)
         total_expenses = sum(e.amount for e in period_expenses)
 
+        # Calculate COGS from invoices ONLY (POS invoices are already included)
         total_cogs = 0
         
         business_profile = self.sync_db.business_profiles.find_one({"user_id": ObjectId(user_id)})
@@ -52,26 +51,11 @@ class AnalyticsService:
                             continue
                     except:
                         pass
+                # Fallback: derive cost from selling price using business margin
                 cost = item.unit_price / (1 + margin / 100)
                 total_cogs += cost * item.quantity
-        
-        for pos in period_pos:
-            inv_id = pos.get("inventory_item_id")
-            if inv_id:
-                try:
-                    inv_item = self.sync_db.inventory.find_one({"_id": ObjectId(inv_id)})
-                    if inv_item:
-                        cost = inv_item.get("cost_per_unit", 0)
-                        quantity = pos.get("quantity", 1)
-                        total_cogs += cost * quantity
-                        continue
-                except:
-                    pass
-            amount = pos.get("total_amount", 0)
-            if amount > 0:
-                cost = amount / (1 + margin / 100)
-                total_cogs += cost
 
+        # Check expenses with COGS categories - move them from expenses to COGS
         cogs_categories = ['cogs_inventory', 'cogs_raw_material', 'furnizim', 'inventory', 'mall', 'stock', 'blerje']
         adjusted_expenses = total_expenses
         for exp in period_expenses:
@@ -82,6 +66,7 @@ class AnalyticsService:
 
         total_profit = total_revenue - total_cogs - adjusted_expenses
 
+        # Sales trend
         sales_trend = {}
         for inv in period_invoices:
             date_str = inv.issue_date.strftime('%Y-%m-%d')
@@ -90,6 +75,7 @@ class AnalyticsService:
         sorted_dates = sorted(sales_trend.keys())
         trend_data = [{"date": d, "amount": sales_trend[d]} for d in sorted_dates]
 
+        # Product stats
         product_stats = {}
         for inv in period_invoices:
             for item in inv.items:
