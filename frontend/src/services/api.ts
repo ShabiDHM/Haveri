@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V15.2 (ADD YEAR TO ACCOUNTANT CHAT)
+// PHOENIX PROTOCOL - API V15.3 (ROBUST BASE URL DETECTION)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -59,7 +59,41 @@ export interface LawSearchResult {
 
 export const AUTH_TOKEN_KEY = 'haveri_access_token';
 
-const getBaseUrl = (): string => { if (typeof window !== 'undefined') { const hostname = window.location.hostname; if (hostname === 'www.haveri.tech' || hostname === 'haveri.tech') { return 'https://api.haveri.tech'; } } return 'http://localhost:8000'; };
+// PHOENIX: Robust base URL detection for all environments
+const getBaseUrl = (): string => { 
+    if (typeof window !== 'undefined') { 
+        const hostname = window.location.hostname;
+        
+        // Production detection - any haveri.tech domain
+        const isProduction = hostname === 'www.haveri.tech' || 
+                            hostname === 'haveri.tech' ||
+                            hostname.endsWith('.haveri.tech');
+        
+        // Staging/Preview detection (Vercel preview deployments)
+        const isPreview = hostname.includes('vercel.app') || 
+                         hostname.includes('netlify.app') ||
+                         hostname.includes('github.io');
+        
+        if (isProduction) {
+            console.log('[API] Production mode - using api.haveri.tech');
+            return 'https://api.haveri.tech';
+        }
+        
+        if (isPreview) {
+            // For preview deployments, use production API
+            console.log('[API] Preview mode - using api.haveri.tech');
+            return 'https://api.haveri.tech';
+        }
+        
+        // Development - localhost
+        console.log('[API] Development mode - using localhost:8000');
+        return 'http://localhost:8000';
+    }
+    
+    // Fallback for server-side rendering
+    return 'http://localhost:8000';
+};
+
 const normalizedUrl = getBaseUrl();
 export const API_BASE_URL = normalizedUrl;
 export const API_V1_URL = `${API_BASE_URL}/api/v1`;
@@ -80,7 +114,15 @@ class ApiService {
     private isRefreshing = false;
     private failedQueue: { resolve: (value: any) => void; reject: (reason?: any) => void; }[] = [];
 
-    constructor() { this.axiosInstance = axios.create({ baseURL: API_V1_URL, withCredentials: true }); this.setupInterceptors(); }
+    constructor() { 
+        console.log('[API] Initializing with base URL:', API_V1_URL);
+        this.axiosInstance = axios.create({ 
+            baseURL: API_V1_URL, 
+            withCredentials: true 
+        }); 
+        this.setupInterceptors(); 
+    }
+    
     public setLogoutHandler(handler: () => void) { this.onUnauthorized = handler; }
     private processQueue(error: Error | null) { this.failedQueue.forEach(prom => { if (error) prom.reject(error); else prom.resolve(tokenManager.get()); }); this.failedQueue = []; }
     private setupInterceptors() {
@@ -423,10 +465,35 @@ class ApiService {
     public async getAlertsCount(): Promise<{ count: number }> { const response = await this.axiosInstance.get<{ count: number }>('/calendar/alerts'); return response.data; }
 
     // --- BUSINESS ---
-    public async getBusinessProfile(): Promise<BusinessProfile> { const response = await this.axiosInstance.get<BusinessProfile>('/business/profile'); return response.data; }
-    public async updateBusinessProfile(data: BusinessProfileUpdate): Promise<BusinessProfile> { const response = await this.axiosInstance.put<BusinessProfile>('/business/profile', data); return response.data; }
-    public async uploadBusinessLogo(file: File): Promise<BusinessProfile> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.put<BusinessProfile>('/business/logo', formData); return response.data; }
-    public async fetchImageBlob(url: string): Promise<Blob> { const response = await this.axiosInstance.get(url, { responseType: 'blob' }); return response.data; }
+    public async getBusinessProfile(): Promise<BusinessProfile> { 
+        const response = await this.axiosInstance.get<BusinessProfile>('/business/profile'); 
+        // Store profile in localStorage for caching
+        if (response.data) {
+            localStorage.setItem('haveri_business_profile', JSON.stringify(response.data));
+        }
+        return response.data;
+    }
+    
+    public async updateBusinessProfile(data: BusinessProfileUpdate): Promise<BusinessProfile> { 
+        const response = await this.axiosInstance.put<BusinessProfile>('/business/profile', data); 
+        // Update cache
+        if (response.data) {
+            localStorage.setItem('haveri_business_profile', JSON.stringify(response.data));
+        }
+        return response.data;
+    }
+    
+    public async uploadBusinessLogo(file: File): Promise<BusinessProfile> { 
+        const formData = new FormData(); 
+        formData.append('file', file); 
+        const response = await this.axiosInstance.put<BusinessProfile>('/business/logo', formData); 
+        return response.data; 
+    }
+    
+    public async fetchImageBlob(url: string): Promise<Blob> { 
+        const response = await this.axiosInstance.get(url, { responseType: 'blob' }); 
+        return response.data; 
+    }
 
     // --- BRIEFING & SUPPORT ---
     public async getStrategicBriefing(workspaceId?: string): Promise<StrategicBriefingResponse> {
