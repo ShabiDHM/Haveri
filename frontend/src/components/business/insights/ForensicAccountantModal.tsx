@@ -1,5 +1,5 @@
 // FILE: src/components/business/insights/ForensicAccountantModal.tsx
-// PHOENIX PROTOCOL - FORENSIC MODAL V5.4 (YEAR AWARE)
+// PHOENIX PROTOCOL - FORENSIC MODAL V5.5 (CONVERSATION HISTORY)
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +7,13 @@ import { X, Send, Trash2, ShieldCheck, Loader2, FolderInput, CheckCircle } from 
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
+
+// Type for message with optional timestamp
+interface ChatMessage {
+    role: 'user' | 'ai';
+    content: string;
+    timestamp?: Date;
+}
 
 // --- MARKDOWN COMPONENT ---
 const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
@@ -51,20 +58,30 @@ interface ForensicAccountantModalProps {
 
 export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = ({ isOpen, onClose, workspaceId }) => {
     const { t } = useTranslation();
-    const { selectedYear } = useAuth(); // PHOENIX: Get selected year from global state
-    const [input, setInput] = useState('');
-    const [messages, setMessages] = useState<{ role: 'user' | 'ai'; content: string }[]>([
-        { role: 'ai', content: t('forensic.welcome_message', "Unë jam Auditori juaj Forenzik. Kam qasje në arkivën tuaj dhe në Ligjet Tatimore të Kosovës. Çfarë dëshironi të kontrolloni sot?") }
+    const { selectedYear } = useAuth();
+    
+    // Conversation history with persistence
+    const [messages, setMessages] = useState<ChatMessage[]>([
+        { 
+            role: 'ai', 
+            content: t('forensic.welcome_message', "Unë jam Auditori juaj Forenzik. Kam qasje në arkivën tuaj dhe në Ligjet Tatimore të Kosovës. Çfarë dëshironi të kontrolloni sot?"),
+            timestamp: new Date()
+        }
     ]);
+    const [input, setInput] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [currentStreamingContent, setCurrentStreamingContent] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
+    // Auto-scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, isStreaming]);
+    }, [messages, currentStreamingContent, isStreaming]);
 
+    // Save success timer
     useEffect(() => {
         if (saveSuccess) {
             const timer = setTimeout(() => setSaveSuccess(false), 3000);
@@ -72,42 +89,95 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
         }
     }, [saveSuccess]);
 
+    // Build conversation context from message history
+    const buildConversationContext = (): string => {
+        // Take last 10 messages for context (to avoid token limits)
+        const recentMessages = messages.slice(-10);
+        let context = "KONTEKSTI I BISEDËS:\n\n";
+        
+        for (const msg of recentMessages) {
+            const prefix = msg.role === 'user' ? 'Përdoruesi: ' : 'Auditori: ';
+            context += prefix + msg.content + '\n\n';
+        }
+        
+        return context;
+    };
+
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim() || isStreaming) return;
 
-        const userQuery = input;
+        const userQuery = input.trim();
         setInput('');
-        setMessages(prev => [...prev, { role: 'user', content: userQuery }]);
+        
+        // Add user message to history
+        const userMessage: ChatMessage = { role: 'user', content: userQuery, timestamp: new Date() };
+        setMessages(prev => [...prev, userMessage]);
+        
         setIsStreaming(true);
-        setMessages(prev => [...prev, { role: 'ai', content: '' }]);
+        setCurrentStreamingContent('');
+        
+        // Add placeholder for AI response
+        const aiPlaceholder: ChatMessage = { role: 'ai', content: '', timestamp: new Date() };
+        setMessages(prev => [...prev, aiPlaceholder]);
+
+        // Cancel any existing stream
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
 
         try {
-            // PHOENIX: Pass both workspaceId AND selectedYear to backend
-            const reader = await apiService.chatWithAccountant(userQuery, workspaceId, selectedYear);
+            // Build conversation context including history
+            const conversationContext = buildConversationContext();
+            
+            // Combine context with the specific question
+            const enhancedQuery = `${conversationContext}\nPYETJA AKTUALE: ${userQuery}`;
+            
+            const reader = await apiService.chatWithAccountant(enhancedQuery, workspaceId, selectedYear);
             const decoder = new TextDecoder();
+            let accumulatedContent = '';
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
                 const chunk = decoder.decode(value, { stream: true });
+                accumulatedContent += chunk;
+                setCurrentStreamingContent(accumulatedContent);
+                
+                // Update the last message in real-time
                 setMessages(prev => {
-                    const newHistory = [...prev];
-                    const lastMsg = newHistory[newHistory.length - 1];
-                    lastMsg.content += chunk;
-                    return newHistory;
+                    const updated = [...prev];
+                    const lastIndex = updated.length - 1;
+                    if (updated[lastIndex] && updated[lastIndex].role === 'ai') {
+                        updated[lastIndex] = { ...updated[lastIndex], content: accumulatedContent };
+                    }
+                    return updated;
                 });
             }
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'ai', content: `\n\n[${t('error.generic', 'Gabim Teknik: Nuk munda të lidhem me serverin.')}]` }]);
+            console.error('Chat error:', error);
+            setMessages(prev => {
+                const updated = [...prev];
+                const lastIndex = updated.length - 1;
+                if (updated[lastIndex] && updated[lastIndex].role === 'ai') {
+                    updated[lastIndex] = { 
+                        ...updated[lastIndex], 
+                        content: `\n\n[${t('error.generic', 'Gabim Teknik: Nuk munda të lidhem me serverin.')}]` 
+                    };
+                }
+                return updated;
+            });
         } finally {
             setIsStreaming(false);
+            setCurrentStreamingContent('');
+            abortControllerRef.current = null;
         }
     };
 
     const handleSaveToArchive = async () => {
         const lastAiMessage = messages.filter(m => m.role === 'ai').pop();
-        if (!lastAiMessage || isStreaming || isSaving) return;
+        if (!lastAiMessage || !lastAiMessage.content || isStreaming || isSaving) return;
         
         setIsSaving(true);
         try {
@@ -121,13 +191,25 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
     };
     
     const clearChat = () => {
-        if (!isStreaming) setMessages([{ role: 'ai', content: t('forensic.chat_cleared', "Biseda u pastrua. Jam gati për analizë të re.") }]);
+        if (isStreaming) return;
+        // Cancel any ongoing stream
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        setMessages([
+            { 
+                role: 'ai', 
+                content: t('forensic.chat_cleared', "Biseda u pastrua. Jam gati për analizë të re."),
+                timestamp: new Date()
+            }
+        ]);
+        setCurrentStreamingContent('');
+        setIsStreaming(false);
     };
 
     if (!isOpen) return null;
 
-    const isWaitingForFirstToken = isStreaming && messages[messages.length - 1]?.content === '';
-    const lastMessageIsCompleteAI = !isStreaming && messages.length > 1 && messages[messages.length - 1].role === 'ai';
+    const lastMessageIsCompleteAI = !isStreaming && messages.length > 0 && messages[messages.length - 1].role === 'ai' && messages[messages.length - 1].content !== '';
 
     return (
         <AnimatePresence>
@@ -163,7 +245,6 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                         <span className="text-xs uppercase font-black text-success-start tracking-widest leading-none">
                                             PRO AUDIT MODE
                                         </span>
-                                        {/* PHOENIX: Display current year context */}
                                         <span className="text-[10px] uppercase font-black text-text-muted tracking-widest leading-none ml-2 px-2 py-0.5 rounded-full bg-surface/50 border border-border-main">
                                             Viti: {selectedYear}
                                         </span>
@@ -223,7 +304,8 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                 )
                             ))}
                             
-                            {isWaitingForFirstToken && (
+                            {/* Streaming indicator */}
+                            {isStreaming && messages[messages.length - 1]?.content === '' && (
                                 <div className="flex justify-start">
                                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-input px-5 py-4 rounded-2xl rounded-tl-sm flex items-center gap-3 border border-border-main">
                                         <Loader2 size={14} className="animate-spin text-primary-start" />
@@ -245,8 +327,9 @@ export const ForensicAccountantModal: React.FC<ForensicAccountantModalProps> = (
                                         autoFocus 
                                         value={input} 
                                         onChange={(e) => setInput(e.target.value)} 
-                                        placeholder={t('forensic.placeholder')} 
-                                        className="glass-input w-full pr-16 py-4 text-sm placeholder:text-text-muted border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
+                                        placeholder={isStreaming ? t('forensic.waiting', 'Duke analizuar... Ju lutem prisni') : t('forensic.placeholder', 'Bëni pyetjen tuaj...')}
+                                        className="glass-input w-full pr-16 py-4 text-sm placeholder:text-text-muted border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all disabled:opacity-50" 
+                                        disabled={isStreaming}
                                     />
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                                         <span className="text-xs text-text-muted font-black px-2 py-1 rounded bg-surface/50 border border-border-main uppercase tracking-widest">
