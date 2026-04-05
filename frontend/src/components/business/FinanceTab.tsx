@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.10 (REMOVE UNUSED IMPORT)
+// PHOENIX PROTOCOL - FINANCE TAB V14.11 (REMOVE HARDCODED TREND)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -310,7 +310,7 @@ export const FinanceTab: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={20} className="sm:w-6 sm:h-6" />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
                 <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={20} className="sm:w-6 sm:h-6" />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
-                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={20} className="sm:w-6 sm:h-6" />} type={displayProfit >= 0 ? 'income' : 'expense'} trend="+12%" onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} />
+                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={20} className="sm:w-6 sm:h-6" />} type={displayProfit >= 0 ? 'income' : 'expense'} onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} />
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} className="sm:w-6 sm:h-6" />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 

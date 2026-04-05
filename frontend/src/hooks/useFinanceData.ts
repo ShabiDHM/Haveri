@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V17.8 – ADD EXPENSES TO COGS CALCULATION
+// V17.9 – FIXED NET PROFIT CALCULATION WITH ADJUSTED EXPENSES
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -178,7 +178,6 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return invInc + posInc;
     }, [invoices, posTransactions, selectedYear]);
 
-    // PHOENIX: COGS with expenses included
     const costOfGoodsSold = useMemo(() => {
         const idMap = new Map<string, number>();
         const nameMap = new Map<string, number>();
@@ -226,7 +225,6 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         let linkedCount = 0;
         let derivedCount = 0;
 
-        // Process invoices
         invoices.forEach(invoice => {
             if (!invoice.items || invoice.items.length === 0) return;
             invoice.items.forEach(item => {
@@ -257,7 +255,6 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             });
         });
 
-        // Process POS transactions
         posTransactions.forEach(pos => {
             let cost = 0;
             const salePrice = toNumber(pos.total_price);
@@ -286,7 +283,6 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             }
         });
 
-        // PHOENIX: Include Expenses in COGS if category matches inventory keywords
         const cogsCategories = ['mall', 'stock', 'inventory', 'blerje', 'furnizim', 'cogs', 'raw_material'];
         
         expenses.forEach(exp => {
@@ -304,7 +300,21 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return totalCogs;
     }, [invoices, posTransactions, expenses, inventoryItems, businessProfile, defaultMarginPercent, formatCurrency]);
 
-    const displayProfit = displayIncome - costOfGoodsSold - totalExpenses;
+    // PHOENIX: Calculate adjusted expenses (remove COGS expenses from total)
+    const cogsCategories = useMemo(() => ['mall', 'stock', 'inventory', 'blerje', 'furnizim', 'cogs', 'raw_material'], []);
+    
+    const adjustedExpenses = useMemo(() => {
+        let adjusted = totalExpenses;
+        expenses.forEach(exp => {
+            const category = (exp.category || '').toLowerCase();
+            if (cogsCategories.some(cat => category.includes(cat))) {
+                adjusted -= exp.amount;
+            }
+        });
+        return adjusted;
+    }, [expenses, totalExpenses, cogsCategories]);
+
+    const displayProfit = displayIncome - costOfGoodsSold - adjustedExpenses;
 
     const availableYears = useMemo(() => {
         const years = new Set<number>();
