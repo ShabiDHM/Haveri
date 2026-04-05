@@ -1,5 +1,5 @@
 // FILE: src/pages/FinanceWizardPage.tsx
-// PHOENIX PROTOCOL - FINANCE WIZARD V16.4 (UNIFIED YEAR STATE WITH AUTHCONTEXT)
+// PHOENIX PROTOCOL - FINANCE WIZARD V16.5 (ROBUST YEAR SELECTOR)
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -150,7 +150,7 @@ const TaxStep = ({ data }: { data: TaxCalculation }) => {
 const FinanceWizardPage = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const { workspace, selectedYear, setSelectedYear } = useAuth(); // Use global selectedYear
+    const { workspace, selectedYear, setSelectedYear } = useAuth();
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -159,7 +159,6 @@ const FinanceWizardPage = () => {
     
     const today = new Date();
     const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1);
-    // selectedYear now comes from AuthContext, not local state
 
     const localeMap: { [key: string]: any } = { sq, al: sq, en: enUS };
     const currentLocale = localeMap[i18n.language] || enUS;
@@ -186,11 +185,6 @@ const FinanceWizardPage = () => {
     };
 
     const handleOpenATK = () => { window.open('https://edeklarimi.atk-ks.org/', '_blank'); };
-
-    // Handle year change from dropdown - sync with global state
-    const handleYearChange = (year: number) => {
-        setSelectedYear(year);
-    };
 
     return (
         <div className="flex h-screen bg-canvas text-text-primary overflow-hidden font-sans">
@@ -219,12 +213,13 @@ const FinanceWizardPage = () => {
                                     </option>
                                 ))}
                             </select>
+                            {/* PHOENIX: Robust Year Selector - includes years 2020-2026 */}
                             <select 
                                 value={selectedYear} 
-                                onChange={(e) => handleYearChange(Number(e.target.value))} 
+                                onChange={(e) => setSelectedYear(Number(e.target.value))} 
                                 className="glass-input border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-surface/30 backdrop-blur-sm"
                             >
-                                {Array.from({ length: 5 }, (_, i) => today.getFullYear() - i).map(y => (
+                                {[2026, 2025, 2024, 2023, 2022, 2021, 2020].map(y => (
                                     <option key={y} value={y}>{y}</option>
                                 ))}
                             </select>
