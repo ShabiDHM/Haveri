@@ -1,6 +1,5 @@
-// FILE: src/pages/ AdminDashboardPage.tsx
-// PHOENIX PROTOCOL - ADMIN DASHBOARD V5.3 (EXECUTIVE DESIGN SYSTEM)
-// Aligned with FinanceTab: glass-panel outer, bg-surface/30 panels, bg-canvas inputs.
+// FILE: src/pages/AdminDashboardPage.tsx
+// PHOENIX PROTOCOL - ADMIN DASHBOARD V5.4 (REMOVED SUBSCRIPTION_STATUS)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,7 +36,6 @@ const AdminDashboardPage: React.FC = () => {
                 id: u.id || u._id,
                 role: u.role || 'STANDARD',
                 status: u.status || 'inactive',
-                subscription_status: u.subscription_status || 'INACTIVE',
                 plan_tier: u.plan_tier || 'SOLO',
                 organization_role: u.organization_role || 'OWNER',
                 subscription_expiry_date: u.subscription_expiry_date
@@ -68,7 +66,6 @@ const AdminDashboardPage: React.FC = () => {
             username: user.username,
             email: user.email,
             role: user.role,
-            subscription_status: user.subscription_status,
             status: user.status,
             plan_tier: user.plan_tier || 'SOLO',
             subscription_expiry_date: formattedDate
@@ -84,7 +81,6 @@ const AdminDashboardPage: React.FC = () => {
                 username: editForm.username,
                 email: editForm.email,
                 role: editForm.role,
-                subscription_status: editForm.subscription_status,
                 status: editForm.status,
                 plan_tier: editForm.plan_tier,
                 subscription_expiry_date: editForm.subscription_expiry_date || null
@@ -243,7 +239,7 @@ const AdminDashboardPage: React.FC = () => {
                     </div>
                 </Panel>
 
-                {/* Edit User Modal */}
+                {/* Edit User Modal - REMOVED SUBSCRIPTION_STATUS DROPDOWN */}
                 {editingUser && (
                     <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                         <motion.div
@@ -286,20 +282,6 @@ const AdminDashboardPage: React.FC = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.subscriptionStatus', 'Abonimi')}</label>
-                                        <select
-                                            value={editForm.subscription_status}
-                                            onChange={e => setEditForm({ ...editForm, subscription_status: e.target.value })}
-                                            className="glass-input w-full bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
-                                        >
-                                            <option value="ACTIVE">{t('admin.statuses.ACTIVE', 'Aktive')}</option>
-                                            <option value="INACTIVE">{t('admin.statuses.INACTIVE', 'Jo Aktive')}</option>
-                                            <option value="TRIAL">{t('subscription.TRIAL', 'Provë (Trial)')}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
                                         <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">Paketa</label>
                                         <select
                                             value={editForm.plan_tier || 'SOLO'}
@@ -312,6 +294,8 @@ const AdminDashboardPage: React.FC = () => {
                                             <option value="ENTERPRISE">ENT.</option>
                                         </select>
                                     </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-text-muted mb-1">
                                             <Calendar className="w-3 h-3" />
@@ -326,17 +310,17 @@ const AdminDashboardPage: React.FC = () => {
                                             />
                                         </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.accountStatus', 'Llogaria (Gatekeeper)')}</label>
-                                    <select
-                                        value={editForm.status}
-                                        onChange={e => setEditForm({ ...editForm, status: e.target.value as 'active' | 'inactive' })}
-                                        className={`glass-input w-full bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all font-bold ${editForm.status === 'active' ? 'text-success-start' : 'text-warning-start'}`}
-                                    >
-                                        <option value="active">{t('admin.statuses.ACTIVE', 'Aktive')}</option>
-                                        <option value="inactive">{t('admin.statuses.INACTIVE', 'Në Pritje')}</option>
-                                    </select>
+                                    <div>
+                                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">{t('admin.editModal.accountStatus', 'Llogaria (Gatekeeper)')}</label>
+                                        <select
+                                            value={editForm.status}
+                                            onChange={e => setEditForm({ ...editForm, status: e.target.value as 'active' | 'inactive' })}
+                                            className={`glass-input w-full bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all font-bold ${editForm.status === 'active' ? 'text-success-start' : 'text-warning-start'}`}
+                                        >
+                                            <option value="active">{t('admin.statuses.ACTIVE', 'Aktive')}</option>
+                                            <option value="inactive">{t('admin.statuses.INACTIVE', 'Në Pritje')}</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-border-main">
                                     <button
