@@ -1,5 +1,5 @@
 // FILE: src/hooks/useBusinessIntelligence.ts
-// PHOENIX PROTOCOL - BI ENGINE V1.7 (FIXED PARAMETER TYPE)
+// PHOENIX PROTOCOL - BI ENGINE V1.8 (FIXED DUPLICATE INVENTORY COUNTING)
 
 import { useMemo } from 'react';
 import { useFinanceData } from './useFinanceData';
@@ -10,7 +10,7 @@ import { differenceInDays, parseISO, getYear } from 'date-fns';
 export const useBusinessIntelligence = (workspaceId?: string) => {
     const { user, selectedYear } = useAuth();
     const { invoices, expenses, loading: financeLoading } = useFinanceData({ workspaceId });
-    const { items, posItems, loading: inventoryLoading } = useInventoryData(workspaceId);
+    const { items, loading: inventoryLoading } = useInventoryData(workspaceId);
 
     const loading = financeLoading || inventoryLoading;
     const profile = user?.business_profile;
@@ -37,26 +37,17 @@ export const useBusinessIntelligence = (workspaceId?: string) => {
         return { totalDebt, aging, topDebtors: topDebtors.slice(0, 5) };
     }, [invoices]);
 
+    // PHOENIX: Use ONLY items (not posItems) to avoid double-counting
     const profitAnalytics = useMemo(() => {
-        const combinedItems = [...items, ...posItems];
-        const uniqueItemsMap = new Map();
-        combinedItems.forEach(item => {
-            if (!uniqueItemsMap.has(item.name)) {
-                uniqueItemsMap.set(item.name, { ...item });
-            } else {
-                const existing = uniqueItemsMap.get(item.name);
-                existing.current_stock += item.current_stock;
-            }
-        });
-        const uniqueItems = Array.from(uniqueItemsMap.values());
-        const totalStockValue = uniqueItems.reduce((sum, item) => sum + (item.current_stock * item.cost_per_unit), 0);
-        const lowStockItems = uniqueItems.filter(i => {
+        // Use items directly - posItems are already included in items
+        const totalStockValue = items.reduce((sum, item) => sum + (item.current_stock * item.cost_per_unit), 0);
+        const lowStockItems = items.filter(i => {
             const current = Number(i.current_stock);
             const threshold = Number(i.low_stock_threshold ?? 0);
             return current <= threshold;
         });
         return { totalStockValue, lowStockItems };
-    }, [items, posItems]);
+    }, [items]);
 
     const taxAnalytics = useMemo(() => {
         const taxCoefficient = VAT_RATE / (100 + VAT_RATE);
