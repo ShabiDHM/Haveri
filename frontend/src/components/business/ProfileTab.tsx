@@ -1,8 +1,7 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V31.4 (IMPROVED INVITE ERROR HANDLING)
+// PHOENIX PROTOCOL - PROFILE TAB V31.6 (CONSISTENT CARD STYLES)
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import {
   Building2, Mail, Phone, Save, Upload, Loader2, Camera, MapPin, Globe, CreditCard,
   TrendingUp, Calculator, Coins, Users, UserPlus, Trash2, Crown, ArrowRight, ChevronDown, ChevronUp, AlertCircle
@@ -11,31 +10,10 @@ import { apiService, API_V1_URL } from '../../services/api';
 import { BusinessProfile, BusinessProfileUpdate, User } from '../../data/types';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
-import { Panel } from '../ui/Panel';
 import { useNavigate } from 'react-router-dom';
 import { getPlanLimits, canInviteMoreMembers, getRemainingMemberSlots, PlanTier } from '../../config/plans';
 
-const SectionHeader = ({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle?: string }) => (
-  <div className="mb-6">
-    <div className="flex items-center gap-3">
-      <div className="p-2 rounded-xl bg-primary-start/10 text-primary-start border border-border-main">{icon}</div>
-      <h3 className="text-base sm:text-lg font-bold text-text-primary tracking-tight">{title}</h3>
-    </div>
-    {subtitle && <p className="text-xs font-black uppercase tracking-widest text-text-muted mt-1.5 ml-1">{subtitle}</p>}
-  </div>
-);
 
-const FormField = ({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) => (
-  <div className="space-y-1.5">
-    <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">{label}</label>
-    <div className="relative group">
-      <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
-        {icon}
-      </span>
-      {children}
-    </div>
-  </div>
-);
 
 export const ProfileTab: React.FC = () => {
   const { t } = useTranslation();
@@ -184,12 +162,10 @@ export const ProfileTab: React.FC = () => {
     }
   };
 
-  // PHOENIX: Improved invite handler with proper error messages
   const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail) return;
     
-    // Check frontend limit first
     if (isPlanFull) {
       alert(`Keni arritur limitin e anëtarëve për planin tuaj ${planConfig.name}. Për të shtuar më shumë anëtarë, ju lutemi përmirësoni planin tuaj.`);
       return;
@@ -200,7 +176,7 @@ export const ProfileTab: React.FC = () => {
       await apiService.inviteUser({ email: inviteEmail, role: 'MEMBER' });
       alert(`Ftesa u dërgua në ${inviteEmail}`);
       setInviteEmail('');
-      fetchTeam(); // Refresh team list to update count
+      fetchTeam();
     } catch (err: any) {
       console.error('Invite error:', err);
       const errorMessage = err?.response?.data?.detail || err?.message || 'Ftesa dështoi.';
@@ -237,288 +213,375 @@ export const ProfileTab: React.FC = () => {
       </div>
     );
 
-  const inputClasses = 'glass-input w-full pl-11 text-sm border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-canvas';
+  const inputClasses = 'glass-input w-full pl-11 text-sm border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all bg-surface/30 backdrop-blur-sm';
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="glass-panel p-6 md:p-8 space-y-6 border border-border-main shadow-sm"
-    >
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-border-main/50 pb-8">
-        <div className="flex items-center gap-4">
-          <div className="p-3.5 bg-primary-start/10 text-primary-start rounded-2xl border border-primary-start/20 shadow-inner">
-            <Building2 size={28} />
-          </div>
-          <div>
-            <h3 className="text-2xl font-black text-text-primary tracking-tight uppercase">
-              {t('business.firmData', 'Të dhënat e Zyrës')}
-            </h3>
-            <p className="text-xs font-black uppercase tracking-widest text-text-muted mt-1">
-              {t('business.firmDataSub', 'Konfigurimi i profilit të zyrës')}
-            </p>
-          </div>
-        </div>
-
-        {/* Logo Upload */}
-        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-          <div className="w-20 h-20 rounded-full bg-canvas border border-border-main flex items-center justify-center overflow-hidden shadow-sm transition-all hover:border-primary-start/50 hover-lift">
-            {logoLoading ? (
-              <Loader2 className="animate-spin text-primary-start" />
-            ) : logoSrc ? (
-              <img src={logoSrc} className="w-full h-full object-contain p-2" alt="Logo" />
-            ) : (
-              <Upload className="text-text-muted" />
-            )}
-          </div>
-          <div className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-            <Camera size={20} className="text-white" />
-          </div>
-          <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
-        </div>
-      </div>
-
-      {/* Two‑column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left column */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Subscription */}
-          <Panel className="p-6 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h4 className="text-xs font-black uppercase tracking-widest text-text-muted">Abonimi</h4>
-              <div className="px-2 py-0.5 bg-primary-start/10 rounded border border-primary-start/30 text-primary-start text-xs font-black uppercase tracking-widest flex items-center gap-1">
-                <Crown size={10} /> {currentPlan}
+    <div className="flex flex-col min-h-screen bg-base text-text-primary">
+      <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 pb-24">
+        <div className="glass-panel p-5 sm:p-6 md:p-8 flex flex-col border border-border-main shadow-sm">
+          
+          {/* Header - Consistent with Stoku tab */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-border-main shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-primary-start/10 rounded-xl border border-border-main">
+                <Building2 className="text-primary-start" size={24} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black text-text-primary tracking-tight uppercase">
+                  {t('business.firmData', 'Të dhënat e Zyrës')}
+                </h1>
+                <p className="text-xs font-black uppercase tracking-widest text-text-muted mt-1">
+                  {t('business.firmDataSub', 'Konfigurimi i profilit të zyrës')}
+                </p>
               </div>
             </div>
-          </Panel>
-
-          {/* Inbox card */}
-          <div onClick={() => navigate('/business/inbox')} className="cursor-pointer">
-            <Panel className="p-6 hover:border-primary-start/30 transition-all shadow-sm border border-border-main bg-surface/30 backdrop-blur-sm hover-lift">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-2xl bg-primary-start/20 text-primary-start border border-border-main">
-                    <Mail size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-text-primary">Inbox</h3>
-                    <p className="text-sm text-text-muted">Mesazhe</p>
-                  </div>
-                </div>
-                <ArrowRight size={20} className="text-text-muted" />
+            
+            {/* Logo Upload */}
+            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <div className="w-20 h-20 rounded-full bg-surface/50 border-2 border-border-main flex items-center justify-center overflow-hidden shadow-sm transition-all hover:border-primary-start/50 hover-lift">
+                {logoLoading ? (
+                  <Loader2 className="animate-spin text-primary-start" size={24} />
+                ) : logoSrc ? (
+                  <img src={logoSrc} className="w-full h-full object-cover" alt="Logo" />
+                ) : (
+                  <Camera size={24} className="text-text-muted" />
+                )}
               </div>
-            </Panel>
+              <div className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <Upload size={16} className="text-white" />
+              </div>
+              <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" />
+            </div>
           </div>
 
-          {/* Team management */}
-          {user?.organization_role === 'OWNER' && (
-            <Panel className="p-6 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-              <SectionHeader icon={<Users size={16} />} title="Ekipi" />
-              
-              {/* Team Status Indicator */}
-              <div className="mb-6 p-4 rounded-xl bg-surface/50 backdrop-blur-sm border border-border-main">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-black uppercase tracking-widest text-text-muted">Përdoruesit</span>
-                  <span className="text-xs font-bold text-text-primary">
-                    {currentMemberCount} / {maxUsers}
-                  </span>
-                </div>
-                <div className="w-full h-2 bg-surface rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all duration-300 ${usagePercentage >= 90 ? 'bg-warning-start' : 'bg-primary-start'}`}
-                    style={{ width: `${Math.min(usagePercentage, 100)}%` }}
-                  />
-                </div>
-                {isPlanFull && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-warning-start">
-                    <AlertCircle size={12} />
-                    <span>Keni arritur limitin e anëtarëve për planin {planConfig.name}.</span>
+          {/* Two‑column layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+            {/* Left column - Consistent card styling */}
+            <div className="lg:col-span-4 space-y-6">
+              {/* Subscription Card */}
+              <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-5 shadow-sm hover-lift transition-all">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-text-muted">Abonimi</h4>
+                  <div className="px-3 py-1 bg-primary-start/10 rounded-full border border-primary-start/30 text-primary-start text-xs font-black uppercase tracking-widest flex items-center gap-1">
+                    <Crown size={12} /> {currentPlan}
                   </div>
-                )}
-                {remainingSlots > 0 && remainingSlots <= 2 && (
-                  <div className="mt-3 text-[10px] text-text-muted">
-                    {remainingSlots} vend(et) të lira. Përmirësoni planin për më shumë anëtarë.
-                  </div>
-                )}
+                </div>
               </div>
 
-              <form onSubmit={handleInviteUser} className="mb-6">
-                <FormField label="Email" icon={<Mail size={16} />}>
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    disabled={isPlanFull}
-                    className="glass-input w-full pl-11 bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="email@ekipi.com"
-                  />
-                </FormField>
-                <button
-                  type="submit"
-                  disabled={inviting || isPlanFull}
-                  className={`w-full mt-4 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover-lift shadow-sm ${isPlanFull ? 'bg-warning-start/20 text-warning-start cursor-not-allowed' : 'btn-primary'}`}
-                >
-                  {inviting ? <Loader2 className="animate-spin" size={12} /> : <UserPlus size={12} />} 
-                  {isPlanFull ? 'Limiti i arritur' : 'FTO ANËTARIN'}
-                </button>
-              </form>
-
-              {teamLoading ? (
-                <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary-start" size={20} /></div>
-              ) : teamMembers.length === 0 ? (
-                <p className="text-center text-text-muted text-xs py-4">Nuk ka anëtarë në ekip.</p>
-              ) : (
-                <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {teamMembers.map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface/50 backdrop-blur-sm rounded-xl border border-border-main">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-text-primary truncate">{member.email}</p>
-                        <p className="text-[10px] text-text-muted uppercase tracking-widest">{member.role}</p>
+              {/* Inbox Card */}
+              <div onClick={() => navigate('/business/inbox')} className="cursor-pointer">
+                <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-5 hover:border-primary-start/30 transition-all shadow-sm hover-lift">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-primary-start/10 text-primary-start border border-border-main">
+                        <Mail size={18} />
                       </div>
-                      <button
-                        onClick={() => handleRemoveMember(member.id)}
-                        className="p-1.5 rounded-md text-text-muted hover:text-danger-start hover:bg-danger-start/10 transition-colors hover-lift"
-                        title="Hiq anëtarin"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div>
+                        <h3 className="font-bold text-text-primary">Inbox</h3>
+                        <p className="text-xs text-text-muted">Mesazhe</p>
+                      </div>
                     </div>
-                  ))}
+                    <ArrowRight size={18} className="text-text-muted" />
+                  </div>
                 </div>
-              )}
-            </Panel>
-          )}
-        </div>
+              </div>
 
-        {/* Right column – main form */}
-        <div className="lg:col-span-8">
-          <form onSubmit={handleProfileSubmit}>
-            <Panel className="p-6 sm:p-10 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-              <SectionHeader icon={<Building2 size={20} />} title="Konfigurimi" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField label="Emri" icon={<Building2 size={16} />}>
-                  <input
-                    type="text"
-                    value={formData.firm_name}
-                    onChange={(e) => setFormData({ ...formData, firm_name: e.target.value })}
-                    className={inputClasses}
-                  />
-                </FormField>
-                <FormField label="Email" icon={<Mail size={16} />}>
-                  <input
-                    type="email"
-                    value={formData.email_public}
-                    onChange={(e) => setFormData({ ...formData, email_public: e.target.value })}
-                    className={inputClasses}
-                  />
-                </FormField>
-                <FormField label="Telefon" icon={<Phone size={16} />}>
-                  <input
-                    type="text"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className={inputClasses}
-                  />
-                </FormField>
-                <FormField label="Adresa" icon={<MapPin size={16} />}>
-                  <input
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className={inputClasses}
-                  />
-                </FormField>
-                <FormField label="Qyteti" icon={<MapPin size={16} />}>
-                  <input
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className={inputClasses}
-                  />
-                </FormField>
-                <FormField label="Website" icon={<Globe size={16} />}>
-                  <input
-                    type="text"
-                    value={formData.website}
-                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                    className={inputClasses}
-                  />
-                </FormField>
-                <FormField label="Numri Fiskal" icon={<CreditCard size={16} />}>
-                  <input
-                    type="text"
-                    value={formData.tax_id}
-                    onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
-                    className={inputClasses}
-                  />
-                </FormField>
+              {/* Team Management Card */}
+              {user?.organization_role === 'OWNER' && (
+                <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="p-2 rounded-xl bg-primary-start/10 text-primary-start border border-border-main">
+                      <Users size={16} />
+                    </div>
+                    <h3 className="text-sm font-black text-text-primary uppercase tracking-widest">Ekipi</h3>
+                  </div>
+                  
+                  {/* Team Status Indicator */}
+                  <div className="mb-5 p-4 rounded-xl bg-surface/50 backdrop-blur-sm border border-border-main">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-black uppercase tracking-widest text-text-muted">Përdoruesit</span>
+                      <span className="text-xs font-bold text-text-primary">
+                        {currentMemberCount} / {maxUsers}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-surface rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-300 ${usagePercentage >= 90 ? 'bg-warning-start' : 'bg-primary-start'}`}
+                        style={{ width: `${Math.min(usagePercentage, 100)}%` }}
+                      />
+                    </div>
+                    {isPlanFull && (
+                      <div className="mt-3 flex items-center gap-2 text-xs text-warning-start">
+                        <AlertCircle size={12} />
+                        <span>Keni arritur limitin e anëtarëve për planin {planConfig.name}.</span>
+                      </div>
+                    )}
+                    {remainingSlots > 0 && remainingSlots <= 2 && (
+                      <div className="mt-3 text-[10px] text-text-muted">
+                        {remainingSlots} vend(et) të lira. Përmirësoni planin për më shumë anëtarë.
+                      </div>
+                    )}
+                  </div>
 
-                {/* Fiscal Parameters - Collapsible */}
-                <div className="md:col-span-2 pt-8 border-t border-border-main mt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowFiscalParams(!showFiscalParams)}
-                    className="flex items-center gap-2 text-text-primary hover:text-primary transition-colors w-full text-left mb-4"
-                  >
-                    <Calculator size={18} />
-                    <span className="font-bold text-sm uppercase tracking-wide">Parametrat Fiskal</span>
-                    {showFiscalParams ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  </button>
-                  {showFiscalParams && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
-                      <FormField label="TVSH %" icon={<span className="text-xs font-bold">%</span>}>
+                  <form onSubmit={handleInviteUser} className="mb-5">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">Email</label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
+                          <Mail size={14} />
+                        </span>
                         <input
-                          type="number"
-                          value={formData.vat_rate !== undefined ? formData.vat_rate : ''}
-                          onChange={(e) => {
-                            const parsed = parseNumber(e.target.value);
-                            setFormData({ ...formData, vat_rate: parsed });
-                          }}
-                          className={inputClasses}
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          disabled={isPlanFull}
+                          className="glass-input w-full pl-11 bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          placeholder="email@ekipi.com"
                         />
-                      </FormField>
-                      <FormField label="Margjina %" icon={<TrendingUp size={16} />}>
-                        <input
-                          type="number"
-                          value={formData.target_margin !== undefined ? formData.target_margin : ''}
-                          onChange={(e) => {
-                            const parsed = parseNumber(e.target.value);
-                            setFormData({ ...formData, target_margin: parsed });
-                          }}
-                          className={inputClasses}
-                        />
-                      </FormField>
-                      <FormField label="Monedha" icon={<Coins size={16} />}>
-                        <select
-                          value={formData.currency || ''}
-                          onChange={(e) => setFormData({ ...formData, currency: e.target.value || undefined })}
-                          className={`${inputClasses} appearance-none cursor-pointer`}
-                        >
-                          <option value="">Zgjidhni</option>
-                          <option value="EUR">Euro (€)</option>
-                          <option value="ALL">Lek (ALL)</option>
-                          <option value="USD">Dollar ($)</option>
-                        </select>
-                      </FormField>
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={inviting || isPlanFull}
+                      className={`w-full mt-4 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover-lift shadow-sm ${isPlanFull ? 'bg-warning-start/20 text-warning-start cursor-not-allowed' : 'btn-primary'}`}
+                    >
+                      {inviting ? <Loader2 className="animate-spin" size={12} /> : <UserPlus size={12} />} 
+                      {isPlanFull ? 'Limiti i arritur' : 'FTO ANËTARIN'}
+                    </button>
+                  </form>
+
+                  {teamLoading ? (
+                    <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary-start" size={20} /></div>
+                  ) : teamMembers.length === 0 ? (
+                    <p className="text-center text-text-muted text-xs py-4">Nuk ka anëtarë në ekip.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                      {teamMembers.map((member) => (
+                        <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface/50 backdrop-blur-sm rounded-xl border border-border-main">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-text-primary truncate">{member.email}</p>
+                            <p className="text-[10px] text-text-muted uppercase tracking-widest">{member.role}</p>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveMember(member.id)}
+                            className="p-1.5 rounded-md text-text-muted hover:text-danger-start hover:bg-danger-start/10 transition-colors hover-lift"
+                            title="Hiq anëtarin"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
+              )}
+            </div>
 
-                <div className="md:col-span-2 mt-6">
-                  <button
-                    type="submit"
-                    className="btn-primary w-full py-4 flex items-center justify-center gap-2 rounded-xl hover-lift shadow-sm"
-                    disabled={saving}
-                  >
-                    {saving ? <Loader2 className="animate-spin" /> : <Save size={18} />}RUHAJ
-                  </button>
+            {/* Right column – main form */}
+            <div className="lg:col-span-8">
+              <form onSubmit={handleProfileSubmit}>
+                <div className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-6 sm:p-8 shadow-sm">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-xl bg-primary-start/10 text-primary-start border border-border-main">
+                      <Building2 size={18} />
+                    </div>
+                    <h3 className="text-sm font-black text-text-primary uppercase tracking-widest">Konfigurimi</h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">Emri</label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
+                          <Building2 size={14} />
+                        </span>
+                        <input
+                          type="text"
+                          value={formData.firm_name}
+                          onChange={(e) => setFormData({ ...formData, firm_name: e.target.value })}
+                          className={inputClasses}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">Email</label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
+                          <Mail size={14} />
+                        </span>
+                        <input
+                          type="email"
+                          value={formData.email_public}
+                          onChange={(e) => setFormData({ ...formData, email_public: e.target.value })}
+                          className={inputClasses}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">Telefon</label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
+                          <Phone size={14} />
+                        </span>
+                        <input
+                          type="text"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          className={inputClasses}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">Adresa</label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
+                          <MapPin size={14} />
+                        </span>
+                        <input
+                          type="text"
+                          value={formData.address}
+                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          className={inputClasses}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">Qyteti</label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
+                          <MapPin size={14} />
+                        </span>
+                        <input
+                          type="text"
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          className={inputClasses}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">Website</label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
+                          <Globe size={14} />
+                        </span>
+                        <input
+                          type="text"
+                          value={formData.website}
+                          onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                          className={inputClasses}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">Numri Fiskal</label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
+                          <CreditCard size={14} />
+                        </span>
+                        <input
+                          type="text"
+                          value={formData.tax_id}
+                          onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                          className={inputClasses}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Fiscal Parameters - Collapsible */}
+                    <div className="md:col-span-2 pt-6 border-t border-border-main mt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowFiscalParams(!showFiscalParams)}
+                        className="flex items-center gap-2 text-text-primary hover:text-primary transition-colors w-full text-left mb-4"
+                      >
+                        <Calculator size={18} />
+                        <span className="font-bold text-sm uppercase tracking-wide">Parametrat Fiskal</span>
+                        {showFiscalParams ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
+                      {showFiscalParams && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">TVSH %</label>
+                            <div className="relative group">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors text-xs font-bold">
+                                %
+                              </span>
+                              <input
+                                type="number"
+                                value={formData.vat_rate !== undefined ? formData.vat_rate : ''}
+                                onChange={(e) => {
+                                  const parsed = parseNumber(e.target.value);
+                                  setFormData({ ...formData, vat_rate: parsed });
+                                }}
+                                className={inputClasses}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">Margjina %</label>
+                            <div className="relative group">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
+                                <TrendingUp size={14} />
+                              </span>
+                              <input
+                                type="number"
+                                value={formData.target_margin !== undefined ? formData.target_margin : ''}
+                                onChange={(e) => {
+                                  const parsed = parseNumber(e.target.value);
+                                  setFormData({ ...formData, target_margin: parsed });
+                                }}
+                                className={inputClasses}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-black uppercase tracking-widest text-text-muted ml-1">Monedha</label>
+                            <div className="relative group">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary-start transition-colors">
+                                <Coins size={14} />
+                              </span>
+                              <select
+                                value={formData.currency || ''}
+                                onChange={(e) => setFormData({ ...formData, currency: e.target.value || undefined })}
+                                className={`${inputClasses} appearance-none cursor-pointer`}
+                              >
+                                <option value="">Zgjidhni</option>
+                                <option value="EUR">Euro (€)</option>
+                                <option value="ALL">Lek (ALL)</option>
+                                <option value="USD">Dollar ($)</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="md:col-span-2 mt-6">
+                      <button
+                        type="submit"
+                        className="btn-primary w-full py-3 flex items-center justify-center gap-2 rounded-xl hover-lift shadow-sm"
+                        disabled={saving}
+                      >
+                        {saving ? <Loader2 className="animate-spin" /> : <Save size={18} />}
+                        RUHAJ
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </Panel>
-          </form>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
