@@ -1,11 +1,11 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V8.6 (ADDED GET_POS_TRANSACTIONS METHOD)
+# PHOENIX PROTOCOL - FINANCE SERVICE V8.6 (FIXED IMPORTS)
 
 import logging
 import csv
 import io
 from datetime import datetime, timezone
-from bson import ObjectId, errors as bson_errors
+from bson import ObjectId
 from pymongo.database import Database
 from fastapi import HTTPException, UploadFile
 from typing import Any, List, Dict, Optional
@@ -332,7 +332,7 @@ class FinanceService:
             raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
         self.db.expenses.delete_one({"_id": oid})
 
-    # --- PHOENIX: NEW METHOD FOR POS TRANSACTIONS ---
+    # --- PHOENIX: GET POS TRANSACTIONS ---
     def get_pos_transactions(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[Dict[str, Any]]:
         query = self._get_resilient_filter(context_id)
         if case_id:
