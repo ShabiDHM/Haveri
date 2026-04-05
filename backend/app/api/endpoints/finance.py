@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.5 (FIX EXPORT DATE FILTER TYPING)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.6 (ADD EXPENSE EXPORT)
 
 import json
 import logging
@@ -371,6 +371,89 @@ async def export_invoices_excel(
     output.seek(0)
     
     filename = f"faturat_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers
+    )
+
+# --- EXPORT EXPENSES TO EXCEL (Albanian Headers) ---
+@router.get("/expenses/export/excel")
+async def export_expenses_excel(
+    current_user: Annotated[UserInDB, Depends(get_current_user)],
+    db: Database = Depends(get_db),
+    case_id: Optional[str] = Query(None),
+    expense_ids: Optional[List[str]] = Query(None),
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    day: Optional[int] = Query(None),
+    lang: Optional[str] = Query("sq")
+):
+    """
+    Export expenses to Excel file.
+    If expense_ids provided, export only those.
+    Otherwise export all expenses (optionally filtered by case_id and date).
+    """
+    user_id_str = str(current_user.id)
+    
+    if expense_ids:
+        oids = []
+        for id_str in expense_ids:
+            try:
+                oids.append(ObjectId(id_str))
+            except:
+                pass
+        expenses = list(db.expenses.find({"_id": {"$in": oids}, "user_id": user_id_str}))
+    else:
+        query: dict = {"user_id": user_id_str}
+        if case_id:
+            query["case_id"] = case_id
+        
+        # Apply date filters
+        if year:
+            start_date = datetime(year, 1, 1)
+            end_date = None
+            if month:
+                start_date = datetime(year, month, 1)
+                if day:
+                    start_date = datetime(year, month, day)
+                    end_date = start_date + timedelta(days=1)
+                else:
+                    if month == 12:
+                        end_date = datetime(year + 1, 1, 1)
+                    else:
+                        end_date = datetime(year, month + 1, 1)
+            else:
+                end_date = datetime(year + 1, 1, 1)
+            
+            query["date"] = {"$gte": start_date}
+            if end_date:
+                query["date"]["$lt"] = end_date
+        
+        expenses = list(db.expenses.find(query).sort("date", -1))
+    
+    if not expenses:
+        raise HTTPException(status_code=404, detail="Nuk u gjet asnjë shpenzim për eksport.")
+    
+    # Prepare data for Excel
+    data = []
+    for exp in expenses:
+        data.append({
+            "Kategoria": exp.get("category", ""),
+            "Shuma": exp.get("amount", 0),
+            "Data": exp.get("date", ""),
+            "Përshkrimi": exp.get("description", ""),
+            "Statusi": exp.get("status", "PAID"),
+        })
+    
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name="Shpenzimet", index=False)
+    output.seek(0)
+    
+    filename = f"shpenzimet_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
     return StreamingResponse(
         output,

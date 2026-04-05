@@ -1,5 +1,5 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// NEW DRILL-DOWN: Years → Months → Sales/Purchases split
+// DRILL-DOWN: Years → Months → Sales/Purchases split with export buttons
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -73,7 +73,7 @@ const getTranslatedMonth = (dateObj: Date, lang: string, t: any) => {
 };
 
 // -----------------------------------------------------------------------------
-// TransactionCard Component (unchanged)
+// TransactionCard Component
 // -----------------------------------------------------------------------------
 
 const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListProps }> = ({ tx, props }) => {
@@ -140,7 +140,7 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
 };
 
 // -----------------------------------------------------------------------------
-// Summary Card (for Sales or Purchases)
+// Summary Card (for Sales or Purchases) with Export Button
 // -----------------------------------------------------------------------------
 
 const SummaryCard: React.FC<{
@@ -148,8 +148,9 @@ const SummaryCard: React.FC<{
     total: number;
     count: number;
     isSales: boolean;
+    onExport: () => void;
     onClick: () => void;
-}> = ({ title, total, count, isSales, onClick }) => {
+}> = ({ title, total, count, isSales, onExport, onClick }) => {
     const { t } = useTranslation();
     return (
         <motion.div
@@ -182,6 +183,13 @@ const SummaryCard: React.FC<{
                     <Hash size={14} />
                     <span className="font-bold">{count}</span> {t('finance.transactions', 'transaksione')}
                 </div>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onExport(); }}
+                    className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-primary-start/10 hover:text-primary-start transition-colors hover-lift shadow-sm"
+                    title={t('finance.exportExcel', 'Eksporto në Excel')}
+                >
+                    <Download size={16} />
+                </button>
             </div>
         </motion.div>
     );
@@ -197,9 +205,8 @@ const DrillDownCard: React.FC<{
     count: number;
     label: string;
     onDrillDown: () => void;
-    onDelete: () => void;
     onExport: () => void;
-}> = ({ title, total, count, label, onDrillDown, onDelete, onExport }) => {
+}> = ({ title, total, count, label, onDrillDown, onExport }) => {
     const { t } = useTranslation();
     return (
         <motion.div
@@ -231,21 +238,13 @@ const DrillDownCard: React.FC<{
                     <Hash size={14} />
                     <span className="font-bold">{count}</span> {t('finance.transactions', 'transaksione')}
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onExport(); }}
-                        className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-primary-start/10 hover:text-primary-start transition-colors hover-lift shadow-sm"
-                        title={t('finance.exportExcel', 'Eksporto në Excel')}
-                    >
-                        <Download size={16} />
-                    </button>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                        className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-danger-start/10 hover:text-danger-start transition-colors hover-lift shadow-sm"
-                    >
-                        <Trash2 size={16} />
-                    </button>
-                </div>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onExport(); }}
+                    className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-primary-start/10 hover:text-primary-start transition-colors hover-lift shadow-sm"
+                    title={t('finance.exportExcel', 'Eksporto në Excel')}
+                >
+                    <Download size={16} />
+                </button>
             </div>
         </motion.div>
     );
@@ -259,13 +258,12 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
     const { allTransactions, onBulkDelete, onExportExcel } = props;
     const { t, i18n } = useTranslation();
 
-    // View levels: 'years' | 'months' | 'split' | 'invoices' | 'expenses'
     const [view, setView] = useState<'years' | 'months' | 'split' | 'invoices' | 'expenses'>('years');
     const [selectedYear, setSelectedYear] = useState<string | null>(null);
     const [selectedMonthName, setSelectedMonthName] = useState<string | null>(null);
-    const [, setSelectedMonthNumber] = useState<number | null>(null);
+    const [selectedMonthNumber, setSelectedMonthNumber] = useState<number | null>(null);
 
-    // Build hierarchy: year -> month -> { sales, expenses }
+    // Build hierarchy
     const hierarchy = useMemo(() => {
         const tree: Record<string, Record<string, { monthNumber: number; sales: TransactionItem[]; expenses: TransactionItem[] }>> = {};
         allTransactions.forEach(tx => {
@@ -280,7 +278,6 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
             } else if (tx.type === 'expense') {
                 tree[year][monthName].expenses.push(tx);
             }
-            // POS transactions are excluded as per earlier requirement
         });
         return tree;
     }, [allTransactions, i18n.language, t]);
@@ -367,7 +364,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                     });
                     const netTotal = totalSales - totalExpenses;
                     const totalCount = Object.values(months).reduce((c, m) => c + m.sales.length + m.expenses.length, 0);
-                    return { year: parseInt(year), netTotal, totalCount, allTxs: [] }; // allTxs not used for delete now
+                    return { year: parseInt(year), netTotal, totalCount };
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -379,7 +376,6 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                 count={totalCount}
                                 label="Transakcionet vjetore"
                                 onDrillDown={() => { setSelectedYear(year.toString()); setView('months'); }}
-                                onDelete={() => {}} // No bulk delete at year level for simplicity
                                 onExport={() => onExportExcel({ year, label: year.toString() })}
                             />
                         ))}
@@ -404,7 +400,6 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                 count={totalCount}
                                 label="Transaksionet mujore"
                                 onDrillDown={() => { setSelectedMonthName(monthName); setSelectedMonthNumber(monthNumber); setView('split'); }}
-                                onDelete={() => {}} // No bulk delete at month level
                                 onExport={() => onExportExcel({ year: parseInt(selectedYear), month: monthNumber, label: `${monthName} ${selectedYear}` })}
                             />
                         ))}
@@ -422,6 +417,11 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                             total={totalSales}
                             count={monthDataSplit.sales.length}
                             isSales={true}
+                            onExport={() => onExportExcel({
+                                year: parseInt(selectedYear),
+                                month: selectedMonthNumber!,
+                                label: `${selectedMonthName} ${selectedYear} - Shitje`
+                            })}
                             onClick={() => setView('invoices')}
                         />
                         <SummaryCard
@@ -429,6 +429,11 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                             total={totalExpenses}
                             count={monthDataSplit.expenses.length}
                             isSales={false}
+                            onExport={() => onExportExcel({
+                                year: parseInt(selectedYear),
+                                month: selectedMonthNumber!,
+                                label: `${selectedMonthName} ${selectedYear} - Blerje`
+                            })}
                             onClick={() => setView('expenses')}
                         />
                     </div>
