@@ -1,5 +1,5 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// FIXED: Year card label = "Libri i transakcioneve"
+// NEW DRILL-DOWN: Years → Months → Sales/Purchases split
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,11 +50,6 @@ const parseDate = (dateStr: string): Date => {
     return isNaN(date.getTime()) ? new Date() : date;
 };
 
-const getSortableDate = (dateStr: string): Date => {
-    const date = parseDate(dateStr);
-    return isNaN(date.getTime()) ? new Date(0) : date;
-};
-
 const getCategoryIcon = (category: string) => {
     const cat = category.toLowerCase();
     if (cat.includes('transport') || cat.includes('naft') || cat.includes('vetur')) return <Car size={16} />;
@@ -78,7 +73,7 @@ const getTranslatedMonth = (dateObj: Date, lang: string, t: any) => {
 };
 
 // -----------------------------------------------------------------------------
-// TransactionCard Component
+// TransactionCard Component (unchanged)
 // -----------------------------------------------------------------------------
 
 const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListProps }> = ({ tx, props }) => {
@@ -145,41 +140,74 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
 };
 
 // -----------------------------------------------------------------------------
-// Drill‑Down Card Component (now accepts optional isYear flag)
+// Summary Card (for Sales or Purchases)
 // -----------------------------------------------------------------------------
 
-const DrillDownCardWithDelete: React.FC<{
+const SummaryCard: React.FC<{
     title: string;
     total: number;
     count: number;
-    isExpenseBook: boolean;      // only meaningful for month/day cards
-    isYearCard?: boolean;        // if true, label is "Libri i transakcioneve"
-    onDrillDown: () => void;
-    onDelete: () => void;
-    onExport: () => void;
-}> = ({ title, total, count, isExpenseBook, isYearCard = false, onDrillDown, onDelete, onExport }) => {
+    isSales: boolean;
+    onClick: () => void;
+}> = ({ title, total, count, isSales, onClick }) => {
     const { t } = useTranslation();
-    let cardLabel: string;
-    if (isYearCard) {
-        cardLabel = "Libri i transakcioneve";
-    } else {
-        cardLabel = isExpenseBook ? "Libri i blerjeve" : "Libri i shitjeve";
-    }
-    // For year cards, we don't use the red/green border; use neutral primary
-    const isPositive = !isExpenseBook && !isYearCard;
-    const borderColorClass = isYearCard ? 'border-l-primary-start hover:border-l-primary-start/70' : (isPositive ? 'border-l-success-start hover:border-l-success-start/70' : 'border-l-danger-start hover:border-l-danger-start/70');
-    const iconBgClass = isYearCard ? 'bg-primary-start/10 text-primary-start' : (isPositive ? 'bg-success-start/10 text-success-start' : 'bg-danger-start/10 text-danger-start');
-    const iconComponent = isYearCard ? <TrendingUp size={20} /> : (isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />);
-    const totalPrefix = isYearCard ? '' : (isPositive ? '+' : '');
-    const totalColorClass = isYearCard ? 'text-primary-start' : (isPositive ? 'text-success-start' : 'text-danger-start');
-
     return (
         <motion.div
             layout
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`group relative bg-surface/30 backdrop-blur-sm border-l-4 rounded-2xl p-5 transition-all duration-300 flex flex-col gap-4 shadow-sm hover:shadow-md cursor-pointer border border-border-main hover-lift ${borderColorClass}`}
+            className={`group relative bg-surface/30 backdrop-blur-sm border-l-4 rounded-2xl p-5 transition-all duration-300 flex flex-col gap-4 shadow-sm hover:shadow-md cursor-pointer border border-border-main hover-lift
+                ${isSales ? 'border-l-success-start hover:border-l-success-start/70' : 'border-l-danger-start hover:border-l-danger-start/70'}`}
+            onClick={onClick}
+        >
+            <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                    <h3 className="text-2xl font-bold text-text-primary">{title}</h3>
+                    <ChevronRight className="text-text-muted group-hover:text-primary-start transition-colors" size={18} />
+                </div>
+                <div className={`p-3 rounded-xl ${isSales ? 'bg-success-start/10 text-success-start' : 'bg-danger-start/10 text-danger-start'}`}>
+                    {isSales ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                </div>
+            </div>
+            <div className="flex-1 mt-2">
+                <span className={`text-3xl font-mono font-bold ${isSales ? 'text-success-start' : 'text-danger-start'}`}>
+                    {isSales ? '+' : '-'}€{total.toFixed(2)}
+                </span>
+                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{title}</p>
+            </div>
+            <hr className="border-border-main" />
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2 text-sm text-text-muted">
+                    <Hash size={14} />
+                    <span className="font-bold">{count}</span> {t('finance.transactions', 'transaksione')}
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
+// -----------------------------------------------------------------------------
+// Main Drill-Down Card (for Years and Months)
+// -----------------------------------------------------------------------------
+
+const DrillDownCard: React.FC<{
+    title: string;
+    total: number;
+    count: number;
+    label: string;
+    onDrillDown: () => void;
+    onDelete: () => void;
+    onExport: () => void;
+}> = ({ title, total, count, label, onDrillDown, onDelete, onExport }) => {
+    const { t } = useTranslation();
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="group relative bg-surface/30 backdrop-blur-sm border-l-4 rounded-2xl p-5 transition-all duration-300 flex flex-col gap-4 shadow-sm hover:shadow-md cursor-pointer border border-border-main hover-lift border-l-primary-start hover:border-l-primary-start/70"
             onClick={onDrillDown}
         >
             <div className="flex items-start justify-between">
@@ -187,15 +215,15 @@ const DrillDownCardWithDelete: React.FC<{
                     <h3 className="text-2xl font-bold text-text-primary">{title}</h3>
                     <ChevronRight className="text-text-muted group-hover:text-primary-start transition-colors" size={18} />
                 </div>
-                <div className={`p-3 rounded-xl ${iconBgClass}`}>
-                    {iconComponent}
+                <div className="p-3 rounded-xl bg-primary-start/10 text-primary-start">
+                    <TrendingUp size={20} />
                 </div>
             </div>
             <div className="flex-1 mt-2">
-                <span className={`text-3xl font-mono font-bold ${totalColorClass}`}>
-                    {totalPrefix}€{total.toFixed(2)}
+                <span className="text-3xl font-mono font-bold text-primary-start">
+                    €{total.toFixed(2)}
                 </span>
-                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{cardLabel}</p>
+                <p className="text-xs font-black uppercase tracking-widest text-text-muted">{label}</p>
             </div>
             <hr className="border-border-main" />
             <div className="flex justify-between items-center">
@@ -231,65 +259,64 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
     const { allTransactions, onBulkDelete, onExportExcel } = props;
     const { t, i18n } = useTranslation();
 
-    const [view, setView] = useState<'years' | 'months' | 'days' | 'transactions'>('years');
+    // View levels: 'years' | 'months' | 'split' | 'invoices' | 'expenses'
+    const [view, setView] = useState<'years' | 'months' | 'split' | 'invoices' | 'expenses'>('years');
     const [selectedYear, setSelectedYear] = useState<string | null>(null);
-    const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
-    const [selectedDay, setSelectedDay] = useState<string | null>(null);
+    const [selectedMonthName, setSelectedMonthName] = useState<string | null>(null);
+    const [, setSelectedMonthNumber] = useState<number | null>(null);
 
-    // Build hierarchy with month number
+    // Build hierarchy: year -> month -> { sales, expenses }
     const hierarchy = useMemo(() => {
-        const tree: Record<string, Record<string, { monthNumber: number; days: Record<string, TransactionItem[]> }>> = {};
-
+        const tree: Record<string, Record<string, { monthNumber: number; sales: TransactionItem[]; expenses: TransactionItem[] }>> = {};
         allTransactions.forEach(tx => {
             const dateObj = parseDate(tx.date);
             const year = dateObj.getFullYear().toString();
             const monthName = getTranslatedMonth(dateObj, i18n.language, t);
             const monthNumber = dateObj.getMonth() + 1;
-            const dayKey = dateObj.toISOString().slice(0, 10);
-
             if (!tree[year]) tree[year] = {};
-            if (!tree[year][monthName]) tree[year][monthName] = { monthNumber, days: {} };
-            if (!tree[year][monthName].days[dayKey]) tree[year][monthName].days[dayKey] = [];
-
-            tree[year][monthName].days[dayKey].push(tx);
+            if (!tree[year][monthName]) tree[year][monthName] = { monthNumber, sales: [], expenses: [] };
+            if (tx.type === 'invoice') {
+                tree[year][monthName].sales.push(tx);
+            } else if (tx.type === 'expense') {
+                tree[year][monthName].expenses.push(tx);
+            }
+            // POS transactions are excluded as per earlier requirement
         });
-
         return tree;
     }, [allTransactions, i18n.language, t]);
 
     const handleBack = () => {
-        if (view === 'transactions') setView('days');
-        else if (view === 'days') setView('months');
-        else if (view === 'months') setView('years');
+        if (view === 'months') setView('years');
+        else if (view === 'split') setView('months');
+        else if (view === 'invoices' || view === 'expenses') setView('split');
     };
 
-    const handleBreadcrumbClick = (targetView: 'years' | 'months' | 'days', year?: string, month?: string) => {
-        if (targetView === 'years') {
+    const handleBreadcrumbClick = (target: 'years' | 'months' | 'split', year?: string, monthName?: string) => {
+        if (target === 'years') {
             setView('years');
             setSelectedYear(null);
-            setSelectedMonth(null);
-            setSelectedDay(null);
-        } else if (targetView === 'months' && year) {
+            setSelectedMonthName(null);
+            setSelectedMonthNumber(null);
+        } else if (target === 'months' && year) {
             setView('months');
             setSelectedYear(year);
-            setSelectedMonth(null);
-            setSelectedDay(null);
-        } else if (targetView === 'days' && year && month) {
-            setView('days');
+            setSelectedMonthName(null);
+            setSelectedMonthNumber(null);
+        } else if (target === 'split' && year && monthName) {
+            setView('split');
             setSelectedYear(year);
-            setSelectedMonth(month);
-            setSelectedDay(null);
+            setSelectedMonthName(monthName);
+            setSelectedMonthNumber(hierarchy[year]?.[monthName]?.monthNumber || null);
         }
     };
 
-    const handleBulkDelete = (transactions: TransactionItem[], scope: string) => {
+    const handleBulkDeleteForPeriod = (transactions: TransactionItem[], scope: string) => {
         const idsToProcess = {
             invoice_ids: transactions.filter(tx => tx.type === 'invoice').map(tx => tx.id),
             expense_ids: transactions.filter(tx => tx.type === 'expense').map(tx => tx.id),
-            pos_ids: transactions.filter(tx => tx.type === 'pos').map(tx => tx.id),
+            pos_ids: [],
         };
-        const totalCount = idsToProcess.invoice_ids.length + idsToProcess.expense_ids.length + idsToProcess.pos_ids.length;
-
+        const totalCount = idsToProcess.invoice_ids.length + idsToProcess.expense_ids.length;
         if (totalCount === 0) {
             alert(t('finance.bulkDelete.noItems', 'Nuk ka transaksione për t\'u fshirë në këtë periudhë.'));
             return;
@@ -303,15 +330,14 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         if (view === 'years') return null;
         const items = [];
         items.push({ label: t('general.years', 'Vitet'), onClick: () => handleBreadcrumbClick('years') });
-        if (view === 'months' || view === 'days' || view === 'transactions') {
+        if (view === 'months' || view === 'split' || view === 'invoices' || view === 'expenses') {
             items.push({ label: selectedYear!, onClick: () => handleBreadcrumbClick('months', selectedYear!) });
         }
-        if (view === 'days' || view === 'transactions') {
-            items.push({ label: selectedMonth!, onClick: () => handleBreadcrumbClick('days', selectedYear!, selectedMonth!) });
+        if (view === 'split' || view === 'invoices' || view === 'expenses') {
+            items.push({ label: selectedMonthName!, onClick: () => handleBreadcrumbClick('split', selectedYear!, selectedMonthName!) });
         }
-        if (view === 'transactions') {
-            items.push({ label: selectedDay! });
-        }
+        if (view === 'invoices') items.push({ label: t('finance.salesBook', 'Libri i shitjeve') });
+        if (view === 'expenses') items.push({ label: t('finance.purchasesBook', 'Libri i blerjeve') });
         return (
             <div className="flex items-center gap-2 text-sm font-medium text-text-muted mb-4 flex-wrap">
                 {items.map((item, idx) => (
@@ -334,30 +360,26 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         switch (view) {
             case 'years':
                 const yearData = Object.entries(hierarchy).map(([year, months]) => {
-                    const allTxs = Object.values(months).flatMap(m => Object.values(m.days).flat());
-                    const totalSales = allTxs.filter(tx => tx.type !== 'expense').reduce((acc, tx) => acc + tx.amount, 0);
-                    const totalExpenses = allTxs.filter(tx => tx.type === 'expense').reduce((acc, tx) => acc + tx.amount, 0);
+                    let totalSales = 0, totalExpenses = 0;
+                    Object.values(months).forEach(m => {
+                        totalSales += m.sales.reduce((s, tx) => s + tx.amount, 0);
+                        totalExpenses += m.expenses.reduce((s, tx) => s + tx.amount, 0);
+                    });
                     const netTotal = totalSales - totalExpenses;
-                    // Year card uses neutral label, so isExpenseBook is irrelevant; we pass false.
-                    return {
-                        year: parseInt(year),
-                        netTotal,
-                        txCount: allTxs.length,
-                        allTxs,
-                    };
+                    const totalCount = Object.values(months).reduce((c, m) => c + m.sales.length + m.expenses.length, 0);
+                    return { year: parseInt(year), netTotal, totalCount, allTxs: [] }; // allTxs not used for delete now
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {yearData.sort((a, b) => b.year - a.year).map(({ year, netTotal, txCount, allTxs }) => (
-                            <DrillDownCardWithDelete
+                        {yearData.sort((a, b) => b.year - a.year).map(({ year, netTotal, totalCount }) => (
+                            <DrillDownCard
                                 key={year}
                                 title={year.toString()}
                                 total={netTotal}
-                                count={txCount}
-                                isExpenseBook={false}   // not used
-                                isYearCard={true}
+                                count={totalCount}
+                                label="Transakcionet vjetore"
                                 onDrillDown={() => { setSelectedYear(year.toString()); setView('months'); }}
-                                onDelete={() => handleBulkDelete(allTxs, year.toString())}
+                                onDelete={() => {}} // No bulk delete at year level for simplicity
                                 onExport={() => onExportExcel({ year, label: year.toString() })}
                             />
                         ))}
@@ -365,87 +387,84 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                 );
             case 'months':
                 if (!selectedYear || !hierarchy[selectedYear]) return null;
-                const monthData = Object.entries(hierarchy[selectedYear]).map(([monthName, { monthNumber, days }]) => {
-                    const allTxs = Object.values(days).flat();
-                    const totalSales = allTxs.filter(tx => tx.type !== 'expense').reduce((acc, tx) => acc + tx.amount, 0);
-                    const totalExpenses = allTxs.filter(tx => tx.type === 'expense').reduce((acc, tx) => acc + tx.amount, 0);
+                const monthData = Object.entries(hierarchy[selectedYear]).map(([monthName, { monthNumber, sales, expenses }]) => {
+                    const totalSales = sales.reduce((s, tx) => s + tx.amount, 0);
+                    const totalExpenses = expenses.reduce((s, tx) => s + tx.amount, 0);
                     const netTotal = totalSales - totalExpenses;
-                    const isExpenseBook = totalExpenses > totalSales;
-                    return {
-                        monthName,
-                        monthNumber,
-                        netTotal,
-                        isExpenseBook,
-                        txCount: allTxs.length,
-                        allTxs,
-                    };
+                    const totalCount = sales.length + expenses.length;
+                    return { monthName, monthNumber, netTotal, totalCount };
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {monthData.map(({ monthName, monthNumber, netTotal, isExpenseBook, txCount, allTxs }) => (
-                            <DrillDownCardWithDelete
+                        {monthData.map(({ monthName, monthNumber, netTotal, totalCount }) => (
+                            <DrillDownCard
                                 key={monthName}
                                 title={monthName}
                                 total={netTotal}
-                                count={txCount}
-                                isExpenseBook={isExpenseBook}
-                                isYearCard={false}
-                                onDrillDown={() => { setSelectedMonth(monthName); setView('days'); }}
-                                onDelete={() => handleBulkDelete(allTxs, `${monthName} ${selectedYear}`)}
+                                count={totalCount}
+                                label="Transaksionet mujore"
+                                onDrillDown={() => { setSelectedMonthName(monthName); setSelectedMonthNumber(monthNumber); setView('split'); }}
+                                onDelete={() => {}} // No bulk delete at month level
                                 onExport={() => onExportExcel({ year: parseInt(selectedYear), month: monthNumber, label: `${monthName} ${selectedYear}` })}
                             />
                         ))}
                     </div>
                 );
-            case 'days':
-                if (!selectedYear || !selectedMonth || !hierarchy[selectedYear]?.[selectedMonth]) return null;
-                const dayData = Object.entries(hierarchy[selectedYear][selectedMonth].days).map(([dayKey, txs]) => {
-                    const dateObj = parseDate(dayKey);
-                    const displayDay = dateObj.toLocaleDateString(i18n.language, { year: 'numeric', month: '2-digit', day: '2-digit' });
-                    const totalSales = txs.filter(tx => tx.type !== 'expense').reduce((acc, tx) => acc + tx.amount, 0);
-                    const totalExpenses = txs.filter(tx => tx.type === 'expense').reduce((acc, tx) => acc + tx.amount, 0);
-                    const netTotal = totalSales - totalExpenses;
-                    const isExpenseBook = totalExpenses > totalSales;
-                    return {
-                        day: displayDay,
-                        dayKey,
-                        netTotal,
-                        isExpenseBook,
-                        txCount: txs.length,
-                        allTxs: txs,
-                    };
-                });
+            case 'split':
+                if (!selectedYear || !selectedMonthName || !hierarchy[selectedYear]?.[selectedMonthName]) return null;
+                const monthDataSplit = hierarchy[selectedYear][selectedMonthName];
+                const totalSales = monthDataSplit.sales.reduce((s, tx) => s + tx.amount, 0);
+                const totalExpenses = monthDataSplit.expenses.reduce((s, tx) => s + tx.amount, 0);
                 return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {dayData.sort((a, b) => getSortableDate(b.dayKey).getTime() - getSortableDate(a.dayKey).getTime()).map(({ day, dayKey, netTotal, isExpenseBook, txCount, allTxs }) => {
-                            const dateObj = parseDate(dayKey);
-                            return (
-                                <DrillDownCardWithDelete
-                                    key={dayKey}
-                                    title={day}
-                                    total={netTotal}
-                                    count={txCount}
-                                    isExpenseBook={isExpenseBook}
-                                    isYearCard={false}
-                                    onDrillDown={() => { setSelectedDay(dayKey); setView('transactions'); }}
-                                    onDelete={() => handleBulkDelete(allTxs, day)}
-                                    onExport={() => onExportExcel({
-                                        year: dateObj.getFullYear(),
-                                        month: dateObj.getMonth() + 1,
-                                        day: dateObj.getDate(),
-                                        label: day
-                                    })}
-                                />
-                            );
-                        })}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <SummaryCard
+                            title="Libri i shitjeve"
+                            total={totalSales}
+                            count={monthDataSplit.sales.length}
+                            isSales={true}
+                            onClick={() => setView('invoices')}
+                        />
+                        <SummaryCard
+                            title="Libri i blerjeve"
+                            total={totalExpenses}
+                            count={monthDataSplit.expenses.length}
+                            isSales={false}
+                            onClick={() => setView('expenses')}
+                        />
                     </div>
                 );
-            case 'transactions':
-                if (!selectedYear || !selectedMonth || !selectedDay || !hierarchy[selectedYear]?.[selectedMonth]?.days[selectedDay]) return null;
-                const transactions = hierarchy[selectedYear][selectedMonth].days[selectedDay];
+            case 'invoices':
+                if (!selectedYear || !selectedMonthName || !hierarchy[selectedYear]?.[selectedMonthName]) return null;
+                const salesTransactions = hierarchy[selectedYear][selectedMonthName].sales;
+                if (salesTransactions.length === 0) {
+                    return <div className="text-center py-10 text-text-muted">{t('finance.noSales', 'Nuk ka shitje në këtë muaj.')}</div>;
+                }
                 return (
                     <div className="space-y-2">
-                        {transactions.map(tx => <TransactionCard key={tx.id} tx={tx} props={props} />)}
+                        {salesTransactions.map(tx => <TransactionCard key={tx.id} tx={tx} props={props} />)}
+                        <button
+                            onClick={() => handleBulkDeleteForPeriod(salesTransactions, `${selectedMonthName} ${selectedYear} shitje`)}
+                            className="mt-4 w-full py-2 bg-danger-start/10 text-danger-start rounded-xl text-sm font-bold hover:bg-danger-start/20 transition-colors"
+                        >
+                            {t('finance.bulkDeleteAll', 'Fshij të gjitha shitjet e këtij muaji')}
+                        </button>
+                    </div>
+                );
+            case 'expenses':
+                if (!selectedYear || !selectedMonthName || !hierarchy[selectedYear]?.[selectedMonthName]) return null;
+                const expenseTransactions = hierarchy[selectedYear][selectedMonthName].expenses;
+                if (expenseTransactions.length === 0) {
+                    return <div className="text-center py-10 text-text-muted">{t('finance.noExpenses', 'Nuk ka shpenzime në këtë muaj.')}</div>;
+                }
+                return (
+                    <div className="space-y-2">
+                        {expenseTransactions.map(tx => <TransactionCard key={tx.id} tx={tx} props={props} />)}
+                        <button
+                            onClick={() => handleBulkDeleteForPeriod(expenseTransactions, `${selectedMonthName} ${selectedYear} shpenzime`)}
+                            className="mt-4 w-full py-2 bg-danger-start/10 text-danger-start rounded-xl text-sm font-bold hover:bg-danger-start/20 transition-colors"
+                        >
+                            {t('finance.bulkDeleteAll', 'Fshij të gjitha shpenzimet e këtij muaji')}
+                        </button>
                     </div>
                 );
             default:
