@@ -1,5 +1,5 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V22.6 (USING CENTRALIZED FISCAL CONTROLLER)
+// PHOENIX PROTOCOL - INVOICE MODAL V22.7 (FIX TAX CALCULATION)
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2, Search, Package, Info } from 'lucide-react';
@@ -97,16 +97,38 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
         setLineItems(newItems);
     };
 
+    // Calculate totals for display and submission
+    const calculateTotals = () => {
+        const subtotal = lineItems.reduce((sum, item) => sum + (item.quantity || 0) * (item.unit_price || 0), 0);
+        const taxRate = includeVat ? formData.tax_rate : 0;
+        const taxAmount = subtotal * (taxRate / 100);
+        const totalAmount = subtotal + taxAmount;
+        return { subtotal, taxAmount, totalAmount };
+    };
+
+    const { subtotal, taxAmount, totalAmount } = calculateTotals();
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const payload = { ...formData, items: lineItems, tax_rate: includeVat ? formData.tax_rate : 0 };
+            const { subtotal, taxAmount, totalAmount } = calculateTotals();
+            
+            const payload = {
+                ...formData,
+                items: lineItems,
+                tax_rate: includeVat ? formData.tax_rate : 0,
+                tax_amount: taxAmount,
+                subtotal: subtotal,
+                total_amount: totalAmount,
+            };
+            
             if (invoiceToEdit) {
                 await apiService.updateInvoice(invoiceToEdit.id, payload);
             } else {
                 await apiService.createInvoice(payload, workspace?.id);
             }
-            onSuccess(); onClose();
+            onSuccess();
+            onClose();
         } catch (err) {
             console.error(err);
             alert(t('error.generic'));
@@ -234,6 +256,25 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                                 {t('finance.applyVat', 'Apliko TVSH')} ({currentTaxRate}%)
                             </label>
                         </div>
+                        
+                        {/* Summary Section */}
+                        <div className="mt-4 pt-3 border-t border-border-main space-y-1 text-right">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-text-muted">Nëntotali:</span>
+                                <span className="font-mono">€{subtotal.toFixed(2)}</span>
+                            </div>
+                            {includeVat && currentTaxRate > 0 && (
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-text-muted">TVSH ({currentTaxRate}%):</span>
+                                    <span className="font-mono">€{taxAmount.toFixed(2)}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between text-base font-bold pt-1">
+                                <span>Totali:</span>
+                                <span className="font-mono">€{totalAmount.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        
                         <div className="text-[10px] text-text-muted text-right">
                             {t('finance.taxRateInfo', 'Norma e TVSH-së e konfiguruar')}: {taxRateDisplay}
                         </div>

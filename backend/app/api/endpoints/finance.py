@@ -1,12 +1,12 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.10 (FIX TYPE ERROR IN YEAR FILTER)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.11 (FIXED PDF CORS)
 
 import json
 import logging
 import io
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from typing import List, Annotated, Optional, Any, Dict
 from pymongo.database import Database
 import pymongo
@@ -37,7 +37,6 @@ class BulkDeleteRequest(BaseModel):
     expense_ids: Optional[List[str]] = []
     pos_ids: Optional[List[str]] = []
 
-# --- NEW: POS Transaction Creation Request Model ---
 class PosTransactionCreate(BaseModel):
     inventory_item_id: str
     quantity: float = 1.0
@@ -116,12 +115,11 @@ async def get_imported_transactions(
         filter_criteria["case_id"] = case_id
         logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
     
-    # Add year filter if provided
     if year:
         start_date = datetime(year, 1, 1)
         end_date = datetime(year + 1, 1, 1)
         filter_criteria["date_time"] = {"$gte": start_date, "$lt": end_date}
-        logger.info(f"[DEBUG] Adding year filter: {year} ({start_date} to {end_date})")
+        logger.info(f"[DEBUG] Adding year filter: {year}")
     
     filtered_count = await db["transactions"].count_documents(filter_criteria)
     logger.info(f"[DEBUG] POS transactions after filters: {filtered_count}")
@@ -129,7 +127,6 @@ async def get_imported_transactions(
     cursor = db["transactions"].find(filter_criteria).sort("date_time", pymongo.DESCENDING)
     transactions = await cursor.to_list(length=None)
     
-    # Add 'date' field from 'date_time' for each transaction
     for tx in transactions:
         if "date_time" in tx and "date" not in tx:
             tx["date"] = tx["date_time"]
@@ -145,10 +142,6 @@ def create_pos_transaction(
     db: Database = Depends(get_db),
     case_id: Optional[str] = Query(None)
 ):
-    """
-    Create a POS transaction linked to an inventory item.
-    Automatically deducts stock and calculates COGS.
-    """
     service = FinanceService(db)
     data = transaction_data.model_dump()
     result = service.create_pos_transaction(
@@ -156,7 +149,6 @@ def create_pos_transaction(
         data=data,
         case_id=case_id
     )
-    # Ensure the response contains 'date' field
     if isinstance(result, dict):
         if 'date_time' in result and 'date' not in result:
             result['date'] = result['date_time']
@@ -261,14 +253,33 @@ def delete_invoice(
     except:
         pass
 
+# PHOENIX: FIXED PDF DOWNLOAD WITH CORS HEADERS
 @router.get("/invoices/{invoice_id}/pdf")
-def download_invoice_pdf(invoice_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db), lang: Optional[str] = Query("sq")):
+def download_invoice_pdf(
+    invoice_id: str, 
+    current_user: Annotated[UserInDB, Depends(get_current_user)], 
+    db: Database = Depends(get_db), 
+    lang: Optional[str] = Query("sq")
+):
     service = FinanceService(db)
     invoice = service.get_invoice(str(current_user.id), invoice_id)
     pdf_buffer = report_service.generate_invoice_pdf(invoice, db, str(current_user.id), lang=lang or "sq")
     filename = f"Invoice_{invoice.invoice_number}.pdf"
-    headers = {'Content-Disposition': f'inline; filename="{filename}"'}
-    return StreamingResponse(pdf_buffer, media_type="application/pdf", headers=headers)
+    
+    # Explicit CORS headers for PDF download
+    headers = {
+        'Content-Disposition': f'attachment; filename="{filename}"',
+        'Access-Control-Allow-Origin': 'https://www.haveri.tech',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Expose-Headers': 'Content-Disposition, Content-Type, Content-Length',
+        'Cache-Control': 'no-cache'
+    }
+    
+    return StreamingResponse(
+        pdf_buffer, 
+        media_type="application/pdf", 
+        headers=headers
+    )
 
 @router.post("/invoices/{invoice_id}/archive", response_model=ArchiveItemOut)
 async def archive_invoice(invoice_id: str, current_user: Annotated[UserInDB, Depends(get_current_user)], db: Database = Depends(get_db), case_id: Optional[str] = Query(None), lang: Optional[str] = Query("sq")):

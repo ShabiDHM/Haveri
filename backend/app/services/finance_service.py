@@ -1,5 +1,5 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V8.3 (ADD YEAR FILTERING TO INVOICES AND EXPENSES)
+# PHOENIX PROTOCOL - FINANCE SERVICE V8.4 (FIXED TAX CALCULATION)
 
 import logging
 import csv
@@ -36,7 +36,6 @@ class FinanceService:
                 {"organization_id": context_id}
             ]}
 
-    # --- HELPER: find inventory item by name (case-insensitive) ---
     def _find_inventory_item_by_name(self, user_id: str, name: str) -> Optional[ObjectId]:
         if not name:
             return None
@@ -156,23 +155,33 @@ class FinanceService:
         res = self.db.transactions.insert_one(doc)
         doc["_id"] = res.inserted_id
 
-        # --- Auto-create invoice ---
+        # --- Auto-create invoice with proper tax calculation ---
         item_name = data.get("product_name") or data.get("description") or "Produkt POS"
         quantity = data.get("quantity", 1.0)
         unit_price = data.get("total_price", 0.0) / quantity if quantity > 0 else data.get("total_price", 0.0)
+        
+        # Get VAT rate from business profile
+        business_profile = self.db.business_profiles.find_one({"user_id": ObjectId(user_id)})
+        vat_rate = business_profile.get("vat_rate", 0) if business_profile else 0
+        
         invoice_item = InvoiceItem(
             description=item_name,
             quantity=quantity,
             unit_price=unit_price,
             inventory_item_id=inv_id
         )
+        
+        subtotal = quantity * unit_price
+        tax_amount = subtotal * (vat_rate / 100)
+        total_amount = subtotal + tax_amount
+        
         invoice_data = InvoiceCreate(
             client_name="Klient POS",
             client_email=None,
             client_address=None,
             client_tax_id=None,
             items=[invoice_item],
-            tax_rate=0.0,
+            tax_rate=vat_rate,
             notes=f"Krijuar automatikisht nga shitja POS (ID: {doc['_id']})",
             status="PAID",
             issue_date=doc["date_time"],
@@ -226,13 +235,18 @@ class FinanceService:
         return f"F-{datetime.now().year}-{count + 1:04d}"
 
     def create_invoice(self, user_id: str, data: InvoiceCreate, case_id: Optional[str] = None) -> InvoiceInDB:
+        # Calculate all financial fields
         subtotal = sum(item.quantity * item.unit_price for item in data.items)
+        tax_amount = subtotal * (data.tax_rate / 100)
+        total_amount = subtotal + tax_amount
+        
         invoice_doc = data.model_dump()
         invoice_doc.update({
             "user_id": ObjectId(user_id),
             "invoice_number": self._generate_invoice_number(user_id),
             "subtotal": subtotal,
-            "total_amount": subtotal + (subtotal * data.tax_rate / 100),
+            "tax_amount": tax_amount,
+            "total_amount": total_amount,
             "created_at": datetime.now(timezone.utc)
         })
         if case_id:
@@ -249,12 +263,11 @@ class FinanceService:
             query["case_id"] = case_id
             logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
         
-        # Add year filter if provided
         if year:
             start_date = datetime(year, 1, 1)
             end_date = datetime(year + 1, 1, 1)
             query["issue_date"] = {"$gte": start_date, "$lt": end_date}
-            logger.info(f"[DEBUG] Adding year filter on issue_date: {year} ({start_date} to {end_date})")
+            logger.info(f"[DEBUG] Adding year filter on issue_date: {year}")
         
         filtered_count = self.db.invoices.count_documents(query)
         logger.info(f"[DEBUG] Invoices after filters: {filtered_count}")
@@ -276,7 +289,20 @@ class FinanceService:
             raise HTTPException(status_code=404, detail="Invoice not found")
         if existing.get("is_locked"):
             raise HTTPException(status_code=403, detail="Locked records cannot be edited.")
+        
         update_dict = update_data.model_dump(exclude_unset=True)
+        
+        # Recalculate totals if items or tax_rate changed
+        if "items" in update_dict or "tax_rate" in update_dict:
+            items = update_dict.get("items", existing.get("items", []))
+            tax_rate = update_dict.get("tax_rate", existing.get("tax_rate", 0))
+            subtotal = sum(item.get("quantity", 0) * item.get("unit_price", 0) for item in items)
+            tax_amount = subtotal * (tax_rate / 100)
+            total_amount = subtotal + tax_amount
+            update_dict["subtotal"] = subtotal
+            update_dict["tax_amount"] = tax_amount
+            update_dict["total_amount"] = total_amount
+        
         update_dict["updated_at"] = datetime.now(timezone.utc)
         result = self.db.invoices.find_one_and_update({"_id": oid}, {"$set": update_dict}, return_document=True)
         return InvoiceInDB(**result)
@@ -306,12 +332,11 @@ class FinanceService:
             query["case_id"] = case_id
             logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
         
-        # Add year filter if provided
         if year:
             start_date = datetime(year, 1, 1)
             end_date = datetime(year + 1, 1, 1)
             query["date"] = {"$gte": start_date, "$lt": end_date}
-            logger.info(f"[DEBUG] Adding year filter on date: {year} ({start_date} to {end_date})")
+            logger.info(f"[DEBUG] Adding year filter on date: {year}")
         
         filtered_count = self.db.expenses.count_documents(query)
         logger.info(f"[DEBUG] Expenses after filters: {filtered_count}")

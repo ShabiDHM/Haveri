@@ -1,5 +1,5 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V12.8 (ADDED LAWS ROUTER)
+# PHOENIX PROTOCOL - MAIN APPLICATION V12.9 (FIXED CORS FOR PDF DOWNLOADS)
 
 from fastapi import FastAPI, status, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +27,6 @@ from app.api.endpoints.inbound import router as inbound_router
 from app.api.endpoints.mobile_handoff import router as mobile_handoff_router
 from app.api.endpoints.accountant import router as accountant_router
 from app.api.endpoints.drafting import router as drafting_router
-# NEW: Laws router for private law search
 from app.api.endpoints.laws import router as laws_router
 
 logging.basicConfig(level=logging.INFO)
@@ -38,9 +37,16 @@ app = FastAPI(title="Haveri AI API", lifespan=lifespan)
 # PHOENIX: Added type ignore to satisfy Pylance protocol mismatch
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*") # type: ignore
 
-# --- CORS ---
+# --- CORS - FIXED FOR PDF DOWNLOADS ---
 allow_origin_regex = r"https?://(localhost(:\d+)?|([\w-]+\.)?haveri\.tech|([\w-]+\.)?vercel\.app)"
-app.add_middleware(CORSMiddleware, allow_origin_regex=allow_origin_regex, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware, 
+    allow_origin_regex=allow_origin_regex, 
+    allow_credentials=True, 
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+    expose_headers=["Content-Disposition", "Content-Type", "Content-Length"]  # Critical for PDF downloads
+)
 
 # --- ROUTER ASSEMBLY ---
 api_v1_router = APIRouter(prefix="/api/v1")
@@ -63,8 +69,7 @@ api_v1_router.include_router(inbound_router, prefix="/inbound", tags=["Inbound D
 api_v1_router.include_router(mobile_handoff_router, prefix="/mobile-handoff", tags=["Mobile Handoff"])
 api_v1_router.include_router(accountant_router, prefix="/accountant", tags=["Forensic Accountant"])
 api_v1_router.include_router(drafting_router, prefix="/drafting", tags=["Legal Drafting"])
-# NEW: Laws router for private law search
-api_v1_router.include_router(laws_router, tags=["Laws"])  # laws.py already has prefix="/laws"
+api_v1_router.include_router(laws_router, tags=["Laws"])
 
 app.include_router(api_v1_router)
 
