@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V17 – REMOVED AUTO-SYNC THAT OVERRIDES SELECTED YEAR
+// V17.2 – IMPROVED COGS FUZZY MATCHING
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -43,10 +43,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
     const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const workspaceId = options?.workspaceId;
 
-    // Helper to get the latest year from all transaction data (for display only, not for forcing)
-
     // REMOVED: Auto-sync that overrides user's selected year
-    // User's year selection is now respected without interference
 
     // Compute allTransactions (combined, sorted)
     const allTransactions = useMemo<TransactionItem[]>(() => {
@@ -192,7 +189,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return total;
     }, [invoices, posTransactions, selectedYear]);
 
-    // Cost of Goods Sold (COGS)
+    // Cost of Goods Sold (COGS) - IMPROVED FUZZY MATCHING
     const costOfGoodsSold = useMemo(() => {
         const idMap = new Map<string, number>();
         const nameMap = new Map<string, number>();
@@ -212,21 +209,52 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             return null;
         };
 
+        // PHOENIX: Improved fuzzy matching for product names
         const getCostByName = (name: string): number => {
             const normalized = name.toLowerCase().trim();
             if (!normalized) return 0;
 
-            if (nameMap.has(normalized)) return nameMap.get(normalized)!;
+            // 1. Direct exact match
+            if (nameMap.has(normalized)) {
+                console.log(`[DEBUG COGS] Exact match: "${name}" -> cost: ${nameMap.get(normalized)}`);
+                return nameMap.get(normalized)!;
+            }
 
+            // 2. Fuzzy / Partial match (Improved)
+            // Checks if the inventory item name is contained within the transaction name
+            // OR if the transaction name is contained within the inventory item name
             const match = inventoryItems.find(inv => {
                 const invName = (inv.name || '').toLowerCase().trim();
-                return normalized.includes(invName);
+                if (!invName) return false;
+                return normalized.includes(invName) || invName.includes(normalized);
             });
-            if (match) return toNumber(match.cost_per_unit);
 
+            if (match) {
+                const cost = toNumber(match.cost_per_unit);
+                console.log(`[DEBUG COGS] Fuzzy match found: "${name}" -> "${match.name}" (cost: ${cost})`);
+                return cost;
+            }
+
+            // 3. Word-by-word matching (for multi-word products)
+            const normalizedWords = normalized.split(/\s+/);
+            for (const word of normalizedWords) {
+                if (word.length < 3) continue; // Skip short words
+                const wordMatch = inventoryItems.find(inv => {
+                    const invName = (inv.name || '').toLowerCase().trim();
+                    return invName.includes(word);
+                });
+                if (wordMatch) {
+                    const cost = toNumber(wordMatch.cost_per_unit);
+                    console.log(`[DEBUG COGS] Word match found: "${name}" (word: "${word}") -> "${wordMatch.name}" (cost: ${cost})`);
+                    return cost;
+                }
+            }
+
+            // Log missing once per unique product name with available inventory list
             if (!loggedMissing.has(normalized)) {
                 loggedMissing.add(normalized);
-                console.log(`[DEBUG COGS] No inventory match for product: ${name}`);
+                console.warn(`[DEBUG COGS] No match for: "${name}". Check if spelling matches Inventory items.`);
+                console.warn(`[DEBUG COGS] Available inventory names: ${Array.from(nameMap.keys()).join(', ') || '(none)'}`);
             }
             return 0;
         };

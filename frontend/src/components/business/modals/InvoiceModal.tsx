@@ -1,5 +1,5 @@
 // FILE: src/components/business/modals/InvoiceModal.tsx
-// PHOENIX PROTOCOL - INVOICE MODAL V22.3 (ALLOW NON‑INVENTORY SERVICES)
+// PHOENIX PROTOCOL - INVOICE MODAL V22.4 (DYNAMIC VAT RATE FROM BUSINESS PROFILE)
 
 import React, { useState, useEffect } from 'react';
 import { X, User, FileText, Plus, Trash2, Search, Package, Info } from 'lucide-react';
@@ -17,13 +17,17 @@ interface InvoiceModalProps {
 
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onSuccess, invoiceToEdit }) => {
     const { t } = useTranslation();
-    const { workspace } = useAuth();
+    const { workspace, businessProfile } = useAuth(); // PHOENIX: Get business profile for dynamic tax rate
+    
+    // PHOENIX: Derive dynamic tax rate from business profile, fallback to 18
+    const defaultTaxRate = businessProfile?.vat_rate ?? 18;
+    
     const [partners, setPartners] = useState<Partner[]>([]);
     const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const [formData, setFormData] = useState({ 
         client_name: '', client_email: '', client_phone: '', client_address: '', 
         client_city: '', client_tax_id: '', client_website: '', 
-        tax_rate: 18, notes: '', status: 'PAID'
+        tax_rate: defaultTaxRate, notes: '', status: 'PAID'
     });
     const [includeVat, setIncludeVat] = useState(true);
     const [lineItems, setLineItems] = useState<InvoiceItem[]>([{ description: '', quantity: 1, unit_price: 0, total: 0 }]);
@@ -56,12 +60,16 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                 const items = invoiceToEdit.items || [{ description: '', quantity: 1, unit_price: 0, total: 0 }];
                 setLineItems(items);
             } else {
-                setFormData({ client_name: '', client_email: '', client_phone: '', client_address: '', client_city: '', client_tax_id: '', client_website: '', tax_rate: 18, notes: '', status: 'PAID' });
+                setFormData({ 
+                    client_name: '', client_email: '', client_phone: '', client_address: '', 
+                    client_city: '', client_tax_id: '', client_website: '', 
+                    tax_rate: defaultTaxRate, notes: '', status: 'PAID' 
+                });
                 setIncludeVat(true);
                 setLineItems([{ description: '', quantity: 1, unit_price: 0, total: 0, inventory_item_id: undefined }]);
             }
         }
-    }, [isOpen, invoiceToEdit]);
+    }, [isOpen, invoiceToEdit, defaultTaxRate]);
 
     const handleClientChange = (name: string) => {
         setFormData(prev => ({ ...prev, client_name: name }));
@@ -107,6 +115,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
     };
 
     if (!isOpen) return null;
+
+    // PHOENIX: Display current tax rate in UI
+    const currentTaxRate = includeVat ? formData.tax_rate : 0;
 
     return (
         <div className="fixed inset-0 bg-canvas/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -212,6 +223,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                             <Plus size={14} /> {t('finance.addLine')}
                         </button>
 
+                        {/* PHOENIX: Dynamic VAT checkbox with current tax rate display */}
                         <div className="flex items-center gap-2 pt-1">
                             <input
                                 id="includeVat"
@@ -221,7 +233,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ isOpen, onClose, onS
                                 onChange={(e) => setIncludeVat(e.target.checked)}
                             />
                             <label htmlFor="includeVat" className="text-xs text-text-secondary cursor-pointer">
-                                {t('finance.applyVat', 'Apliko TVSH (18%)')}
+                                {t('finance.applyVat', 'Apliko TVSH')} ({currentTaxRate}%)
                             </label>
                         </div>
                     </div>
