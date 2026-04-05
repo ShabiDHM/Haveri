@@ -1,5 +1,5 @@
 // FILE: src/components/business/finance/TransactionList.tsx
-// FIXED: Hardcoded labels "Libri i shitjeve" / "Libri i blerjeve", with translation for tooltip only
+// FIXED: Year card label = "Libri i transakcioneve"
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -78,7 +78,7 @@ const getTranslatedMonth = (dateObj: Date, lang: string, t: any) => {
 };
 
 // -----------------------------------------------------------------------------
-// TransactionCard Component (unchanged)
+// TransactionCard Component
 // -----------------------------------------------------------------------------
 
 const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListProps }> = ({ tx, props }) => {
@@ -145,20 +145,33 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
 };
 
 // -----------------------------------------------------------------------------
-// Drill‑Down Card Component (hardcoded labels, translation only for tooltip)
+// Drill‑Down Card Component (now accepts optional isYear flag)
 // -----------------------------------------------------------------------------
 
 const DrillDownCardWithDelete: React.FC<{
     title: string;
     total: number;
     count: number;
-    isExpenseBook: boolean;
+    isExpenseBook: boolean;      // only meaningful for month/day cards
+    isYearCard?: boolean;        // if true, label is "Libri i transakcioneve"
     onDrillDown: () => void;
     onDelete: () => void;
     onExport: () => void;
-}> = ({ title, total, count, isExpenseBook, onDrillDown, onDelete, onExport }) => {
-    const { t } = useTranslation(); // only for tooltip
-    const cardLabel = isExpenseBook ? "Libri i blerjeve" : "Libri i shitjeve";
+}> = ({ title, total, count, isExpenseBook, isYearCard = false, onDrillDown, onDelete, onExport }) => {
+    const { t } = useTranslation();
+    let cardLabel: string;
+    if (isYearCard) {
+        cardLabel = "Libri i transakcioneve";
+    } else {
+        cardLabel = isExpenseBook ? "Libri i blerjeve" : "Libri i shitjeve";
+    }
+    // For year cards, we don't use the red/green border; use neutral primary
+    const isPositive = !isExpenseBook && !isYearCard;
+    const borderColorClass = isYearCard ? 'border-l-primary-start hover:border-l-primary-start/70' : (isPositive ? 'border-l-success-start hover:border-l-success-start/70' : 'border-l-danger-start hover:border-l-danger-start/70');
+    const iconBgClass = isYearCard ? 'bg-primary-start/10 text-primary-start' : (isPositive ? 'bg-success-start/10 text-success-start' : 'bg-danger-start/10 text-danger-start');
+    const iconComponent = isYearCard ? <TrendingUp size={20} /> : (isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />);
+    const totalPrefix = isYearCard ? '' : (isPositive ? '+' : '');
+    const totalColorClass = isYearCard ? 'text-primary-start' : (isPositive ? 'text-success-start' : 'text-danger-start');
 
     return (
         <motion.div
@@ -166,11 +179,7 @@ const DrillDownCardWithDelete: React.FC<{
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`group relative bg-surface/30 backdrop-blur-sm border-l-4 rounded-2xl p-5 transition-all duration-300 flex flex-col gap-4 shadow-sm hover:shadow-md cursor-pointer border border-border-main hover-lift
-                ${!isExpenseBook
-                    ? 'border-l-success-start hover:border-l-success-start/70'
-                    : 'border-l-danger-start hover:border-l-danger-start/70'
-                }`}
+            className={`group relative bg-surface/30 backdrop-blur-sm border-l-4 rounded-2xl p-5 transition-all duration-300 flex flex-col gap-4 shadow-sm hover:shadow-md cursor-pointer border border-border-main hover-lift ${borderColorClass}`}
             onClick={onDrillDown}
         >
             <div className="flex items-start justify-between">
@@ -178,13 +187,13 @@ const DrillDownCardWithDelete: React.FC<{
                     <h3 className="text-2xl font-bold text-text-primary">{title}</h3>
                     <ChevronRight className="text-text-muted group-hover:text-primary-start transition-colors" size={18} />
                 </div>
-                <div className={`p-3 rounded-xl ${!isExpenseBook ? 'bg-success-start/10 text-success-start' : 'bg-danger-start/10 text-danger-start'}`}>
-                    {!isExpenseBook ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                <div className={`p-3 rounded-xl ${iconBgClass}`}>
+                    {iconComponent}
                 </div>
             </div>
             <div className="flex-1 mt-2">
-                <span className={`text-3xl font-mono font-bold ${!isExpenseBook ? 'text-success-start' : 'text-danger-start'}`}>
-                    {!isExpenseBook ? '+' : ''}€{total.toFixed(2)}
+                <span className={`text-3xl font-mono font-bold ${totalColorClass}`}>
+                    {totalPrefix}€{total.toFixed(2)}
                 </span>
                 <p className="text-xs font-black uppercase tracking-widest text-text-muted">{cardLabel}</p>
             </div>
@@ -329,26 +338,24 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                     const totalSales = allTxs.filter(tx => tx.type !== 'expense').reduce((acc, tx) => acc + tx.amount, 0);
                     const totalExpenses = allTxs.filter(tx => tx.type === 'expense').reduce((acc, tx) => acc + tx.amount, 0);
                     const netTotal = totalSales - totalExpenses;
-                    const isExpenseBook = totalExpenses > totalSales;
-                    // DEBUG (remove later)
-                    console.log(`Year ${year}: sales=${totalSales}, expenses=${totalExpenses}, isExpenseBook=${isExpenseBook}`);
+                    // Year card uses neutral label, so isExpenseBook is irrelevant; we pass false.
                     return {
                         year: parseInt(year),
                         netTotal,
-                        isExpenseBook,
                         txCount: allTxs.length,
                         allTxs,
                     };
                 });
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {yearData.sort((a, b) => b.year - a.year).map(({ year, netTotal, isExpenseBook, txCount, allTxs }) => (
+                        {yearData.sort((a, b) => b.year - a.year).map(({ year, netTotal, txCount, allTxs }) => (
                             <DrillDownCardWithDelete
                                 key={year}
                                 title={year.toString()}
                                 total={netTotal}
                                 count={txCount}
-                                isExpenseBook={isExpenseBook}
+                                isExpenseBook={false}   // not used
+                                isYearCard={true}
                                 onDrillDown={() => { setSelectedYear(year.toString()); setView('months'); }}
                                 onDelete={() => handleBulkDelete(allTxs, year.toString())}
                                 onExport={() => onExportExcel({ year, label: year.toString() })}
@@ -382,6 +389,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                 total={netTotal}
                                 count={txCount}
                                 isExpenseBook={isExpenseBook}
+                                isYearCard={false}
                                 onDrillDown={() => { setSelectedMonth(monthName); setView('days'); }}
                                 onDelete={() => handleBulkDelete(allTxs, `${monthName} ${selectedYear}`)}
                                 onExport={() => onExportExcel({ year: parseInt(selectedYear), month: monthNumber, label: `${monthName} ${selectedYear}` })}
@@ -418,6 +426,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                     total={netTotal}
                                     count={txCount}
                                     isExpenseBook={isExpenseBook}
+                                    isYearCard={false}
                                     onDrillDown={() => { setSelectedDay(dayKey); setView('transactions'); }}
                                     onDelete={() => handleBulkDelete(allTxs, day)}
                                     onExport={() => onExportExcel({
