@@ -1,6 +1,6 @@
 // FILE: src/components/business/finance/TransactionList.tsx
 // DRILL-DOWN: Years → Months → Sales/Purchases split with export buttons
-// PHOENIX PROTOCOL - V2.0 (UNIVERSAL DELETE BUTTON)
+// PHOENIX PROTOCOL - V2.1 (DELETE BUTTONS ON DRILLDOWN AND SUMMARY CARDS)
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -74,7 +74,7 @@ const getTranslatedMonth = (dateObj: Date, lang: string, t: any) => {
 };
 
 // -----------------------------------------------------------------------------
-// TransactionCard Component - PHOENIX: Universal Delete Button
+// TransactionCard Component - Universal Delete Button
 // -----------------------------------------------------------------------------
 
 const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListProps }> = ({ tx, props }) => {
@@ -135,7 +135,7 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
                         </>
                     )}
 
-                    {/* PHOENIX: Universal Delete Button - Always renders for all transaction types */}
+                    {/* Universal Delete Button - Always renders for all transaction types */}
                     <button 
                         onClick={() => {
                             if (tx.type === 'invoice') props.onDeleteInvoice(tx.id);
@@ -153,7 +153,7 @@ const TransactionCard: React.FC<{ tx: TransactionItem; props: TransactionListPro
 };
 
 // -----------------------------------------------------------------------------
-// Summary Card (for Sales or Purchases) with Export Button
+// Summary Card (for Sales or Purchases) with Export + Delete Buttons
 // -----------------------------------------------------------------------------
 
 const SummaryCard: React.FC<{
@@ -162,8 +162,9 @@ const SummaryCard: React.FC<{
     count: number;
     isSales: boolean;
     onExport: () => void;
+    onDelete: () => void;
     onClick: () => void;
-}> = ({ title, total, count, isSales, onExport, onClick }) => {
+}> = ({ title, total, count, isSales, onExport, onDelete, onClick }) => {
     const { t } = useTranslation();
     return (
         <motion.div
@@ -196,20 +197,29 @@ const SummaryCard: React.FC<{
                     <Hash size={14} />
                     <span className="font-bold">{count}</span> {t('finance.transactions', 'transaksione')}
                 </div>
-                <button
-                    onClick={(e) => { e.stopPropagation(); onExport(); }}
-                    className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-primary-start/10 hover:text-primary-start transition-colors hover-lift shadow-sm"
-                    title={t('finance.exportExcel', 'Eksporto në Excel')}
-                >
-                    <Download size={16} />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onExport(); }}
+                        className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-primary-start/10 hover:text-primary-start transition-colors hover-lift shadow-sm"
+                        title={t('finance.exportExcel', 'Eksporto në Excel')}
+                    >
+                        <Download size={16} />
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                        className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-danger-start/10 hover:text-danger-start transition-colors hover-lift shadow-sm"
+                        title={t('finance.bulkDeleteAll', 'Fshij të gjitha transaksionet')}
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
             </div>
         </motion.div>
     );
 };
 
 // -----------------------------------------------------------------------------
-// Main Drill-Down Card (for Years and Months)
+// Main Drill-Down Card (for Years and Months) with Delete Button
 // -----------------------------------------------------------------------------
 
 const DrillDownCard: React.FC<{
@@ -219,7 +229,8 @@ const DrillDownCard: React.FC<{
     label: string;
     onDrillDown: () => void;
     onExport: () => void;
-}> = ({ title, total, count, label, onDrillDown, onExport }) => {
+    onDelete: () => void;
+}> = ({ title, total, count, label, onDrillDown, onExport, onDelete }) => {
     const { t } = useTranslation();
     return (
         <motion.div
@@ -251,13 +262,22 @@ const DrillDownCard: React.FC<{
                     <Hash size={14} />
                     <span className="font-bold">{count}</span> {t('finance.transactions', 'transaksione')}
                 </div>
-                <button
-                    onClick={(e) => { e.stopPropagation(); onExport(); }}
-                    className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-primary-start/10 hover:text-primary-start transition-colors hover-lift shadow-sm"
-                    title={t('finance.exportExcel', 'Eksporto në Excel')}
-                >
-                    <Download size={16} />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onExport(); }}
+                        className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-primary-start/10 hover:text-primary-start transition-colors hover-lift shadow-sm"
+                        title={t('finance.exportExcel', 'Eksporto në Excel')}
+                    >
+                        <Download size={16} />
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                        className="p-2 rounded-lg text-text-muted bg-transparent hover:bg-danger-start/10 hover:text-danger-start transition-colors hover-lift shadow-sm"
+                        title={t('finance.bulkDeleteAll', 'Fshij të gjitha transaksionet e kësaj periudhe')}
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
             </div>
         </motion.div>
     );
@@ -295,6 +315,50 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
         return tree;
     }, [allTransactions, i18n.language, t]);
 
+    const handleBulkDeleteForPeriod = (transactions: TransactionItem[], scope: string) => {
+        const idsToProcess = {
+            invoice_ids: transactions.filter(tx => tx.type === 'invoice').map(tx => tx.id),
+            expense_ids: transactions.filter(tx => tx.type === 'expense').map(tx => tx.id),
+            pos_ids: transactions.filter(tx => tx.type === 'pos').map(tx => tx.id),
+        };
+        const totalCount = idsToProcess.invoice_ids.length + idsToProcess.expense_ids.length + idsToProcess.pos_ids.length;
+        if (totalCount === 0) {
+            alert(t('finance.bulkDelete.noItems', 'Nuk ka transaksione për t\'u fshirë në këtë periudhë.'));
+            return;
+        }
+        if (window.confirm(t('finance.bulkDelete.confirm', `A jeni i sigurt që dëshironi të fshini të gjitha {{count}} transaksionet për '{{scope}}'? Ky veprim nuk mund të kthehet.`, { count: totalCount, scope }))) {
+            onBulkDelete(idsToProcess);
+        }
+    };
+
+    const handleDeleteYear = (year: number) => {
+        const yearTransactions: TransactionItem[] = [];
+        const yearData = hierarchy[year.toString()];
+        if (yearData) {
+            Object.values(yearData).forEach(monthData => {
+                yearTransactions.push(...monthData.sales, ...monthData.expenses);
+            });
+        }
+        handleBulkDeleteForPeriod(yearTransactions, `Viti ${year}`);
+    };
+
+    const handleDeleteMonth = (year: number, monthName: string) => {
+        const monthData = hierarchy[year.toString()]?.[monthName];
+        if (monthData) {
+            const monthTransactions = [...monthData.sales, ...monthData.expenses];
+            handleBulkDeleteForPeriod(monthTransactions, `${monthName} ${year}`);
+        }
+    };
+
+    const handleDeleteSplit = (year: number, monthName: string, type: 'sales' | 'expenses') => {
+        const monthData = hierarchy[year.toString()]?.[monthName];
+        if (monthData) {
+            const transactions = type === 'sales' ? monthData.sales : monthData.expenses;
+            const scope = type === 'sales' ? `Shitjet e ${monthName} ${year}` : `Shpenzimet e ${monthName} ${year}`;
+            handleBulkDeleteForPeriod(transactions, scope);
+        }
+    };
+
     const handleBack = () => {
         if (view === 'months') setView('years');
         else if (view === 'split') setView('months');
@@ -317,22 +381,6 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
             setSelectedYear(year);
             setSelectedMonthName(monthName);
             setSelectedMonthNumber(hierarchy[year]?.[monthName]?.monthNumber || null);
-        }
-    };
-
-    const handleBulkDeleteForPeriod = (transactions: TransactionItem[], scope: string) => {
-        const idsToProcess = {
-            invoice_ids: transactions.filter(tx => tx.type === 'invoice').map(tx => tx.id),
-            expense_ids: transactions.filter(tx => tx.type === 'expense').map(tx => tx.id),
-            pos_ids: [],
-        };
-        const totalCount = idsToProcess.invoice_ids.length + idsToProcess.expense_ids.length;
-        if (totalCount === 0) {
-            alert(t('finance.bulkDelete.noItems', 'Nuk ka transaksione për t\'u fshirë në këtë periudhë.'));
-            return;
-        }
-        if (window.confirm(t('finance.bulkDelete.confirm', `A jeni i sigurt që dëshironi të fshini të gjitha {{count}} transaksionet për '{{scope}}'? Ky veprim nuk mund të kthehet.`, { count: totalCount, scope }))) {
-            onBulkDelete(idsToProcess);
         }
     };
 
@@ -390,6 +438,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                 label="Transakcionet vjetore"
                                 onDrillDown={() => { setSelectedYear(year.toString()); setView('months'); }}
                                 onExport={() => onExportExcel({ year, label: year.toString() })}
+                                onDelete={() => handleDeleteYear(year)}
                             />
                         ))}
                     </div>
@@ -414,6 +463,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                 label="Transaksionet mujore"
                                 onDrillDown={() => { setSelectedMonthName(monthName); setSelectedMonthNumber(monthNumber); setView('split'); }}
                                 onExport={() => onExportExcel({ year: parseInt(selectedYear), month: monthNumber, label: `${monthName} ${selectedYear}` })}
+                                onDelete={() => handleDeleteMonth(parseInt(selectedYear), monthName)}
                             />
                         ))}
                     </div>
@@ -435,6 +485,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                 month: selectedMonthNumber!,
                                 label: `${selectedMonthName} ${selectedYear} - Shitje`
                             })}
+                            onDelete={() => handleDeleteSplit(parseInt(selectedYear), selectedMonthName, 'sales')}
                             onClick={() => setView('invoices')}
                         />
                         <SummaryCard
@@ -447,6 +498,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                                 month: selectedMonthNumber!,
                                 label: `${selectedMonthName} ${selectedYear} - Blerje`
                             })}
+                            onDelete={() => handleDeleteSplit(parseInt(selectedYear), selectedMonthName, 'expenses')}
                             onClick={() => setView('expenses')}
                         />
                     </div>
@@ -461,7 +513,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                     <div className="space-y-2">
                         {salesTransactions.map(tx => <TransactionCard key={tx.id} tx={tx} props={props} />)}
                         <button
-                            onClick={() => handleBulkDeleteForPeriod(salesTransactions, `${selectedMonthName} ${selectedYear} shitje`)}
+                            onClick={() => handleDeleteSplit(parseInt(selectedYear), selectedMonthName, 'sales')}
                             className="mt-4 w-full py-2 bg-danger-start/10 text-danger-start rounded-xl text-sm font-bold hover:bg-danger-start/20 transition-colors"
                         >
                             {t('finance.bulkDeleteAll', 'Fshij të gjitha shitjet e këtij muaji')}
@@ -478,7 +530,7 @@ export const TransactionList: React.FC<TransactionListProps> = (props) => {
                     <div className="space-y-2">
                         {expenseTransactions.map(tx => <TransactionCard key={tx.id} tx={tx} props={props} />)}
                         <button
-                            onClick={() => handleBulkDeleteForPeriod(expenseTransactions, `${selectedMonthName} ${selectedYear} shpenzime`)}
+                            onClick={() => handleDeleteSplit(parseInt(selectedYear), selectedMonthName, 'expenses')}
                             className="mt-4 w-full py-2 bg-danger-start/10 text-danger-start rounded-xl text-sm font-bold hover:bg-danger-start/20 transition-colors"
                         >
                             {t('finance.bulkDeleteAll', 'Fshij të gjitha shpenzimet e këtij muaji')}
