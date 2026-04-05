@@ -1,6 +1,5 @@
 // FILE: src/components/PDFViewerModal.tsx
-// PHOENIX PROTOCOL - UNIVERSAL DOCUMENT VIEWER V8.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - UNIVERSAL DOCUMENT VIEWER V8.1 (FIXED INVOICE PDF DOWNLOAD)
 
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
@@ -86,8 +85,10 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
     const token = apiService.getToken();
 
     try {
+        // PHOENIX: Handle directUrl (for invoice PDFs)
         if (directUrl) {
             if (targetMode === 'PDF') {
+                 // For invoice PDFs, use direct URL with auth header
                  setPdfSource(isAuth && token ? { url: directUrl, httpHeaders: { 'Authorization': `Bearer ${token}` }, withCredentials: true } : directUrl);
                  setActualViewerMode('PDF');
                  setIsLoading(false);
@@ -101,6 +102,7 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
             return;
         }
 
+        // PHOENIX: Handle archive documents
         if (caseId) {
             const blob = await apiService.getOriginalDocument(caseId, documentData.id);
             if (targetMode === 'PDF') {
@@ -110,8 +112,25 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
             } else {
                 handleBlobContent(blob, targetMode);
             }
+        } else {
+            // PHOENIX: Fallback - try to download as blob
+            const response = await fetch(`/api/v1/archive/items/${documentData.id}/download`, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            });
+            if (response.ok) {
+                const blob = await response.blob();
+                if (targetMode === 'PDF') {
+                    setPdfSource(URL.createObjectURL(blob));
+                    setActualViewerMode('PDF');
+                } else {
+                    handleBlobContent(blob, targetMode);
+                }
+            } else {
+                throw new Error('Document not found');
+            }
         }
     } catch (err) {
+        console.error('PDF fetch error:', err);
         setError(t('pdfViewer.errorFetch', { defaultValue: 'Dështoi ngarkimi i dokumentit.' }));
         setIsLoading(false);
         setActualViewerMode('DOWNLOAD');
@@ -129,9 +148,28 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
   const handleDownloadOriginal = async () => {
     setIsDownloading(true);
     try {
-        await apiService.downloadArchiveItem(documentData.id, documentData.file_name);
+        // PHOENIX: For invoice PDFs, use directUrl
+        if (directUrl) {
+            const token = apiService.getToken();
+            const response = await fetch(directUrl, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            });
+            if (!response.ok) throw new Error('Download failed');
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = documentData.file_name || 'document.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } else {
+            await apiService.downloadArchiveItem(documentData.id, documentData.file_name);
+        }
     } catch (e) { 
-        console.error(e); 
+        console.error('Download error:', e);
+        setError(t('error.downloadFailed', 'Dështoi shkarkimi i dokumentit.'));
     } finally { 
         setIsDownloading(false); 
     }
@@ -154,7 +192,7 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
                                   {rows[0]?.map((h, i) => (
                                       <th key={i} className="px-3 py-2 text-xs font-black uppercase tracking-widest border border-border-main text-text-primary">{h}</th>
                                   ))}
-                                </tr>
+                              </tr>
                           </thead>
                           <tbody>
                               {rows.slice(1).map((row, i) => (
@@ -180,6 +218,10 @@ const PDFViewerModal: React.FC<PDFViewerModalProps> = ({ documentData, caseId, o
             <AlertTriangle className="h-16 w-16 text-danger-start mb-6" />
             <h3 className="text-xl font-bold text-text-primary mb-2">{t('error.generic')}</h3>
             <p className="text-text-muted max-w-md">{error}</p>
+            <button onClick={handleDownloadOriginal} className="mt-4 btn-primary px-6 py-2 rounded-xl">
+                <Download size={16} className="inline mr-2" />
+                {t('pdfViewer.downloadOriginal')}
+            </button>
         </div>
     );
 
