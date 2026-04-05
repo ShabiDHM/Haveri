@@ -1,12 +1,11 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V31.1 (ROBUST FISCAL PARAMS)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - PROFILE TAB V31.3 (REMOVED UNUSED IMPORT)
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Building2, Mail, Phone, Save, Upload, Loader2, Camera, MapPin, Globe, CreditCard,
-  TrendingUp, Calculator, Coins, Users, UserPlus, Trash2, Crown, ArrowRight, ChevronDown, ChevronUp
+  TrendingUp, Calculator, Coins, Users, UserPlus, Trash2, Crown, ArrowRight, ChevronDown, ChevronUp, AlertCircle
 } from 'lucide-react';
 import { apiService, API_V1_URL } from '../../services/api';
 import { BusinessProfile, BusinessProfileUpdate, User } from '../../data/types';
@@ -14,13 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { Panel } from '../ui/Panel';
 import { useNavigate } from 'react-router-dom';
-
-const PLAN_LIMITS: Record<string, number> = {
-  SOLO: 1,
-  STARTUP: 5,
-  GROWTH: 10,
-  ENTERPRISE: 50,
-};
+import { getPlanLimits, canInviteMoreMembers, getRemainingMemberSlots, PlanTier } from '../../config/plans';
 
 const SectionHeader = ({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle?: string }) => (
   <div className="mb-6">
@@ -59,11 +52,16 @@ export const ProfileTab: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
-  const [, setTeamLoading] = useState(false);
+  const [teamLoading, setTeamLoading] = useState(false);
 
-  const currentPlan = user?.plan_tier || 'SOLO';
-  const maxUsers = PLAN_LIMITS[currentPlan] || 1;
-  const isPlanFull = teamMembers.length >= maxUsers;
+  // PHOENIX: Use centralized plan configuration
+  const currentPlan = (user?.plan_tier || 'SOLO') as PlanTier;
+  const planConfig = getPlanLimits(currentPlan);
+  const maxUsers = planConfig.maxMembers;
+  const currentMemberCount = teamMembers.length;
+  const remainingSlots = getRemainingMemberSlots(currentMemberCount, currentPlan);
+  const isPlanFull = !canInviteMoreMembers(currentMemberCount, currentPlan);
+  const usagePercentage = (currentMemberCount / maxUsers) * 100;
 
   const [formData, setFormData] = useState<BusinessProfileUpdate>({
     firm_name: '',
@@ -138,7 +136,6 @@ export const ProfileTab: React.FC = () => {
     }
   }, [profile?.logo_url]);
 
-  // Helper to safely parse number from input string, return undefined if invalid
   const parseNumber = (value: string): number | undefined => {
     const trimmed = value.trim();
     if (trimmed === '') return undefined;
@@ -150,7 +147,6 @@ export const ProfileTab: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      // Prepare payload – ensure numbers are numbers, strings are strings
       const payload: BusinessProfileUpdate = {
         firm_name: formData.firm_name || undefined,
         email_public: formData.email_public || undefined,
@@ -165,7 +161,7 @@ export const ProfileTab: React.FC = () => {
       };
       await apiService.updateBusinessProfile(payload);
       alert(t('saveSuccess'));
-      await refreshBusinessProfile(); // ensure context updates
+      await refreshBusinessProfile();
     } catch (err) {
       console.error(err);
       alert(t('error.generic'));
@@ -197,19 +193,24 @@ export const ProfileTab: React.FC = () => {
       setInviteEmail('');
       fetchTeam();
     } catch (err: any) {
-      alert('Ftesa dështoi.');
+      const errorMessage = err?.response?.data?.detail || err?.message || 'Ftesa dështoi.';
+      if (errorMessage.includes('limit') || errorMessage.includes('plan')) {
+        alert(`Keni arritur limitin e anëtarëve për planin tuaj ${planConfig.name}. Për të shtuar më shumë anëtarë, ju lutemi përmirësoni planin tuaj.`);
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setInviting(false);
     }
   };
 
   const handleRemoveMember = async (id: string) => {
-    if (window.confirm('A jeni i sigurt?')) {
+    if (window.confirm('A jeni i sigurt që doni ta hiqni këtë anëtar?')) {
       try {
         await apiService.removeTeamMember(id);
         fetchTeam();
       } catch {
-        alert('Dështoi.');
+        alert('Dështoi heqja e anëtarit.');
       }
     }
   };
@@ -299,6 +300,34 @@ export const ProfileTab: React.FC = () => {
           {user?.organization_role === 'OWNER' && (
             <Panel className="p-6 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
               <SectionHeader icon={<Users size={16} />} title="Ekipi" />
+              
+              {/* Team Status Indicator */}
+              <div className="mb-6 p-4 rounded-xl bg-surface/50 backdrop-blur-sm border border-border-main">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-black uppercase tracking-widest text-text-muted">Përdoruesit</span>
+                  <span className="text-xs font-bold text-text-primary">
+                    {currentMemberCount} / {maxUsers}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-surface rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-300 ${usagePercentage >= 90 ? 'bg-warning-start' : 'bg-primary-start'}`}
+                    style={{ width: `${Math.min(usagePercentage, 100)}%` }}
+                  />
+                </div>
+                {isPlanFull && (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-warning-start">
+                    <AlertCircle size={12} />
+                    <span>Keni arritur limitin e anëtarëve për planin {planConfig.name}.</span>
+                  </div>
+                )}
+                {remainingSlots > 0 && remainingSlots <= 2 && (
+                  <div className="mt-3 text-[10px] text-text-muted">
+                    {remainingSlots} vend(et) të lira. Përmirësoni planin për më shumë anëtarë.
+                  </div>
+                )}
+              </div>
+
               <form onSubmit={handleInviteUser} className="mb-6">
                 <FormField label="Email" icon={<Mail size={16} />}>
                   <input
@@ -306,31 +335,43 @@ export const ProfileTab: React.FC = () => {
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     disabled={isPlanFull}
-                    className="glass-input w-full pl-11 bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all text-sm"
+                    className="glass-input w-full pl-11 bg-canvas border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="email@ekipi.com"
                   />
                 </FormField>
                 <button
                   type="submit"
-                  disabled={inviting}
-                  className="w-full mt-4 py-2 btn-primary rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover-lift shadow-sm"
+                  disabled={inviting || isPlanFull}
+                  className={`w-full mt-4 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover-lift shadow-sm ${isPlanFull ? 'bg-warning-start/20 text-warning-start cursor-not-allowed' : 'btn-primary'}`}
                 >
-                  {inviting ? <Loader2 className="animate-spin" size={12} /> : <UserPlus size={12} />} FTO ANËTARIN
+                  {inviting ? <Loader2 className="animate-spin" size={12} /> : <UserPlus size={12} />} 
+                  {isPlanFull ? 'Limiti i arritur' : 'FTO ANËTARIN'}
                 </button>
               </form>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {teamMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface/50 backdrop-blur-sm rounded-xl border border-border-main">
-                    <p className="text-xs text-text-secondary truncate max-w-[70%]">{member.email}</p>
-                    <button
-                      onClick={() => handleRemoveMember(member.id)}
-                      className="p-1.5 rounded-md text-text-muted hover:text-danger-start hover:bg-danger-start/10 transition-colors hover-lift"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
+
+              {teamLoading ? (
+                <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary-start" size={20} /></div>
+              ) : teamMembers.length === 0 ? (
+                <p className="text-center text-text-muted text-xs py-4">Nuk ka anëtarë në ekip.</p>
+              ) : (
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {teamMembers.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface/50 backdrop-blur-sm rounded-xl border border-border-main">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-text-primary truncate">{member.email}</p>
+                        <p className="text-[10px] text-text-muted uppercase tracking-widest">{member.role}</p>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveMember(member.id)}
+                        className="p-1.5 rounded-md text-text-muted hover:text-danger-start hover:bg-danger-start/10 transition-colors hover-lift"
+                        title="Hiq anëtarin"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Panel>
           )}
         </div>
