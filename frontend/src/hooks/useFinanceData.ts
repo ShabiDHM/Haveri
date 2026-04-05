@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V14 – COGS uses inventory_item_id first, falls back to fuzzy name match
+// V15 – SAFE NUMBER CONVERSION FOR KPI CARDS
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -23,6 +23,13 @@ const safeDate = (d: any): Date => {
     if (!d) return new Date();
     const date = new Date(d);
     return isNaN(date.getTime()) ? new Date() : date;
+};
+
+// Helper to safely convert to number
+const toNumber = (val: any): number => {
+    if (typeof val === 'number' && !isNaN(val)) return val;
+    const num = Number(val);
+    return isNaN(num) ? 0 : num;
 };
 
 export const useFinanceData = (options?: UseFinanceDataOptions) => {
@@ -62,7 +69,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             id: inv.id,
             type: 'invoice',
             date: inv.issue_date,
-            amount: inv.total_amount,
+            amount: toNumber(inv.total_amount),
             label: inv.invoice_number || `Invoice ${inv.id.slice(0, 8)}`,
             raw: inv,
         }));
@@ -70,7 +77,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             id: exp.id,
             type: 'expense',
             date: exp.date,
-            amount: exp.amount,
+            amount: toNumber(exp.amount),
             label: exp.category || exp.description || `Expense ${exp.id.slice(0, 8)}`,
             raw: exp,
         }));
@@ -78,7 +85,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             id: pos.id,
             type: 'pos',
             date: pos.transaction_date,
-            amount: pos.total_price,
+            amount: toNumber(pos.total_price),
             label: pos.product_name || `POS ${pos.id.slice(0, 8)}`,
             raw: pos,
         }));
@@ -180,7 +187,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         console.log(`[DEBUG] totalExpenses using year: ${yearToUse}`);
         const total = expenses
             .filter(e => Number(safeDate(e.date).getFullYear()) === Number(yearToUse))
-            .reduce((sum, exp) => sum + exp.amount, 0);
+            .reduce((sum, exp) => sum + toNumber(exp.amount), 0);
         console.log(`[DEBUG] totalExpenses = €${total.toFixed(2)}`);
         return total;
     }, [expenses, selectedYear, getLatestYear]);
@@ -191,10 +198,10 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         console.log(`[DEBUG] displayIncome using year: ${yearToUse}`);
         const invInc = invoices
             .filter(i => i.status === 'PAID' && Number(safeDate(i.issue_date).getFullYear()) === Number(yearToUse))
-            .reduce((s, i) => s + i.total_amount, 0);
+            .reduce((s, i) => s + toNumber(i.total_amount), 0);
         const posInc = posTransactions
             .filter(p => Number(safeDate(p.transaction_date).getFullYear()) === Number(yearToUse))
-            .reduce((s, p) => s + p.total_price, 0);
+            .reduce((s, p) => s + toNumber(p.total_price), 0);
         const total = invInc + posInc;
         console.log(`[DEBUG] displayIncome = €${total.toFixed(2)}`);
         return total;
@@ -207,9 +214,9 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         const nameMap = new Map<string, number>();
         inventoryItems.forEach(item => {
             const id = item._id;
-            if (id) idMap.set(id, item.cost_per_unit);
+            if (id) idMap.set(id, toNumber(item.cost_per_unit));
             const name = (item.name || '').toLowerCase().trim();
-            if (name) nameMap.set(name, item.cost_per_unit);
+            if (name) nameMap.set(name, toNumber(item.cost_per_unit));
         });
 
         const loggedMissing = new Set<string>();
@@ -233,7 +240,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
                 const invName = (inv.name || '').toLowerCase().trim();
                 return normalized.includes(invName);
             });
-            if (match) return match.cost_per_unit;
+            if (match) return toNumber(match.cost_per_unit);
 
             // Log missing once
             if (!loggedMissing.has(normalized)) {
@@ -259,7 +266,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
                 if (cost === 0 && item.description) {
                     cost = getCostByName(item.description);
                 }
-                const quantity = item.quantity || 1;
+                const quantity = toNumber(item.quantity);
                 const itemCogs = quantity * cost;
                 if (cost > 0) {
                     console.log(`[DEBUG COGS] Invoice ${invoice.invoice_number} - line item "${item.description}": ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
@@ -283,7 +290,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
                     cost = getCostByName(productName);
                 }
             }
-            const quantity = pos.quantity ?? 1;
+            const quantity = toNumber(pos.quantity ?? 1);
             const itemCogs = quantity * cost;
             if (cost > 0) {
                 console.log(`[DEBUG COGS] POS ${pos.id} - "${pos.product_name}": ${quantity} × €${cost} = €${itemCogs.toFixed(2)}`);
