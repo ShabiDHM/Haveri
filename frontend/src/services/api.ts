@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V15.3 (ROBUST BASE URL DETECTION)
+// PHOENIX PROTOCOL - API V15.4 (FULL PAYLOAD FOR POS TRANSACTIONS)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -80,24 +80,19 @@ const getBaseUrl = (): string => {
         }
         
         if (isPreview) {
-            // For preview deployments, use production API
             console.log('[API] Preview mode - using api.haveri.tech');
             return 'https://api.haveri.tech';
         }
         
-        // Development - localhost
         console.log('[API] Development mode - using localhost:8000');
         return 'http://localhost:8000';
     }
-    
-    // Fallback for server-side rendering
     return 'http://localhost:8000';
 };
 
 const normalizedUrl = getBaseUrl();
 export const API_BASE_URL = normalizedUrl;
 export const API_V1_URL = `${API_BASE_URL}/api/v1`;
-// SOURCE_API_V1_URL is kept for reference but no longer used for law methods
 export const SOURCE_API_V1_URL = 'https://api.juristi.tech/api/v1';
 
 class TokenManager {
@@ -213,7 +208,6 @@ class ApiService {
     public async analyzeTaxAnomalies(month: number, year: number): Promise<TaxAuditResult> { try { const response = await this.axiosInstance.post<TaxAuditResult>('/analysis/tax/audit', { month, year }); return response.data; } catch (e) { return { anomalies: ["Sistemi nuk mund të kryejë analizën për momentin."], status: 'WARNING', net_obligation: 0 }; } }
     public async chatWithTaxBot(message: string): Promise<string> { try { const response = await this.axiosInstance.post<{ response: string }>('/analysis/tax/chat', { message }); return response.data.response; } catch (e) { return "Më falni, shërbimi i asistencës tatimore është përkohësisht jashtë funksionit."; } }
 
-    // PHOENIX: Updated chatWithAccountant to accept year parameter
     public async chatWithAccountant(query: string, workspaceId?: string, year?: number): Promise<ReadableStreamDefaultReader<Uint8Array>> {
         const token = tokenManager.get();
         if (!token) await this.refreshToken();
@@ -271,7 +265,7 @@ class ApiService {
 
     public async createPurchaseOrder(data: { item_id: string; item_name: string; unit: string; quantity: number; estimated_cost: number; supplier_name: string; }): Promise<any> { const response = await this.axiosInstance.post('/drafting/purchase-order', data); return response.data; }
 
-    // --- FINANCE & ANALYTICS (FISCAL YEAR SUPPORTED, WORKSPACE FILTERING) ---
+    // --- FINANCE & ANALYTICS ---
     public async getAnalyticsDashboard(days?: number, year?: number, workspaceId?: string): Promise<AnalyticsDashboardData> {
         const params: any = {};
         if (days !== undefined) params.days = days;
@@ -283,7 +277,6 @@ class ApiService {
 
     public async getWorkspaceSummaries(): Promise<WorkspaceFinancialSummary[]> { const response = await this.axiosInstance.get<WorkspaceFinancialSummary[]>('/finance/case-summary'); return response.data; }
 
-    // FIXED: Added year parameter to getInvoices
     public async getInvoices(workspaceId?: string, year?: number): Promise<Invoice[]> {
         const params: any = {};
         if (workspaceId) params.case_id = workspaceId;
@@ -310,7 +303,6 @@ class ApiService {
     public async updatePartner(partnerId: string, data: Partial<Partner>): Promise<Partner> { const response = await this.axiosInstance.put<Partner>(`/finance/partners/${partnerId}`, data); return response.data; }
     public async importClients(file: File): Promise<ImportResult> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportResult>('/finance/import/clients', formData); return response.data; }
 
-    // FIXED: Added year parameter to getExpenses
     public async getExpenses(workspaceId?: string, year?: number): Promise<Expense[]> {
         const params: any = {};
         if (workspaceId) params.case_id = workspaceId;
@@ -330,7 +322,6 @@ class ApiService {
     public async uploadExpenseReceipt(expenseId: string, file: File): Promise<void> { const formData = new FormData(); formData.append('file', file); await this.axiosInstance.put(`/finance/expenses/${expenseId}/receipt`, formData); }
     public async getExpenseReceiptBlob(expenseId: string): Promise<{ blob: Blob, filename: string }> { const response = await this.axiosInstance.get(`/finance/expenses/${expenseId}/receipt`, { responseType: 'blob' }); const disposition = response.headers['content-disposition']; let filename = `receipt-${expenseId}.pdf`; if (disposition && disposition.indexOf('filename=') !== -1) { const matches = /filename="([^"]*)"/.exec(disposition); if (matches != null && matches[1]) filename = matches[1]; } return { blob: response.data, filename }; }
 
-    // FIXED: Added year parameter to getPosTransactions
     public async getPosTransactions(workspaceId?: string, year?: number): Promise<PosTransaction[]> {
         const params: any = {};
         if (workspaceId) params.case_id = workspaceId;
@@ -341,8 +332,17 @@ class ApiService {
         return [];
     }
 
-    // NEW: Create a single POS transaction linked to inventory
-    public async createPosTransaction(data: { inventory_item_id: string; quantity: number; total_price: number; transaction_date?: string; notes?: string }, workspaceId?: string): Promise<any> {
+    // PHOENIX: Updated createPosTransaction to accept full payload for invoice generation
+    public async createPosTransaction(data: { 
+        inventory_item_id: string; 
+        quantity: number; 
+        total_price: number; 
+        product_name?: string;
+        description?: string;
+        transaction_date?: string;
+        payment_method?: string;
+        notes?: string;
+    }, workspaceId?: string): Promise<any> {
         const params = workspaceId ? { case_id: workspaceId } : {};
         const response = await this.axiosInstance.post('/finance/transactions', data, { params });
         return response.data;
@@ -351,7 +351,7 @@ class ApiService {
     public async deletePosTransaction(transactionId: string): Promise<void> { await this.axiosInstance.delete(`/finance/transactions/${transactionId}`); }
     public async bulkDeleteTransactions(ids: { invoice_ids?: string[], expense_ids?: string[], pos_ids?: string[] }): Promise<any> { const response = await this.axiosInstance.post('/finance/transactions/bulk-delete', ids); return response.data; }
 
-    // --- WIZARD (workspace filtered) ---
+    // --- WIZARD ---
     public async getWizardState(month: number, year: number, workspaceId?: string): Promise<WizardState> {
         const params: any = { month, year };
         if (workspaceId) params.case_id = workspaceId;
@@ -376,7 +376,6 @@ class ApiService {
     // --- IMPORTS ---
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
 
-    // UPDATED: confirmImport now accepts workspaceId and adds case_id query param
     public async confirmImport(file: File, mapping: Record<string, string>, importType: 'pos' | 'bank', workspaceId?: string): Promise<ImportResult> {
         const formData = new FormData();
         formData.append('file', file);
@@ -467,7 +466,6 @@ class ApiService {
     // --- BUSINESS ---
     public async getBusinessProfile(): Promise<BusinessProfile> { 
         const response = await this.axiosInstance.get<BusinessProfile>('/business/profile'); 
-        // Store profile in localStorage for caching
         if (response.data) {
             localStorage.setItem('haveri_business_profile', JSON.stringify(response.data));
         }
@@ -476,7 +474,6 @@ class ApiService {
     
     public async updateBusinessProfile(data: BusinessProfileUpdate): Promise<BusinessProfile> { 
         const response = await this.axiosInstance.put<BusinessProfile>('/business/profile', data); 
-        // Update cache
         if (response.data) {
             localStorage.setItem('haveri_business_profile', JSON.stringify(response.data));
         }
@@ -510,7 +507,6 @@ class ApiService {
     }
 
     // ========== LEGAL DRAFTING ==========
-
     public async getCases(): Promise<Case[]> {
         try {
             const response = await this.axiosInstance.get<any>('/cases');
@@ -562,8 +558,7 @@ class ApiService {
         } as AsyncIterable<string>;
     }
 
-    // ========== LAW LIBRARY METHODS (now using business backend) ==========
-
+    // ========== LAW LIBRARY METHODS ==========
     public async searchLaws(query: string, jurisdiction?: string, limit: number = 50): Promise<LawSearchResult[]> {
         const params: any = { q: query, limit };
         if (jurisdiction) params.jurisdiction = jurisdiction;

@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.11 (FIXED PDF CORS)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.12 (FIXED POS TRANSACTION PAYLOAD)
 
 import json
 import logging
@@ -37,11 +37,15 @@ class BulkDeleteRequest(BaseModel):
     expense_ids: Optional[List[str]] = []
     pos_ids: Optional[List[str]] = []
 
+# PHOENIX: Updated POS Transaction Creation Request Model with full fields
 class PosTransactionCreate(BaseModel):
     inventory_item_id: str
     quantity: float = 1.0
     total_price: float
+    product_name: Optional[str] = None
+    description: Optional[str] = None
     transaction_date: Optional[datetime] = None
+    payment_method: Optional[str] = "CASH"
     notes: Optional[str] = None
 
 # --- PARTNER / CLIENT ENDPOINTS ---
@@ -135,6 +139,7 @@ async def get_imported_transactions(
     
     return transactions
 
+# PHOENIX: Updated POS transaction endpoint with full payload
 @router.post("/transactions", response_model=PosTransactionOut, status_code=status.HTTP_201_CREATED)
 def create_pos_transaction(
     transaction_data: PosTransactionCreate,
@@ -142,13 +147,25 @@ def create_pos_transaction(
     db: Database = Depends(get_db),
     case_id: Optional[str] = Query(None)
 ):
+    """
+    Create a POS transaction linked to an inventory item.
+    Automatically deducts stock and calculates COGS.
+    """
     service = FinanceService(db)
     data = transaction_data.model_dump()
+    
+    # Set defaults if not provided
+    if not data.get("transaction_date"):
+        data["transaction_date"] = datetime.now()
+    if not data.get("product_name"):
+        data["product_name"] = data.get("description", "Produkt POS")
+    
     result = service.create_pos_transaction(
         user_id=str(current_user.id),
         data=data,
         case_id=case_id
     )
+    
     if isinstance(result, dict):
         if 'date_time' in result and 'date' not in result:
             result['date'] = result['date_time']
@@ -157,6 +174,7 @@ def create_pos_transaction(
                 result['date'] = datetime.fromisoformat(result['date'].replace('Z', '+00:00'))
             except:
                 pass
+    
     return result
 
 @router.delete("/transactions/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -253,7 +271,6 @@ def delete_invoice(
     except:
         pass
 
-# PHOENIX: FIXED PDF DOWNLOAD WITH CORS HEADERS
 @router.get("/invoices/{invoice_id}/pdf")
 def download_invoice_pdf(
     invoice_id: str, 
@@ -266,7 +283,6 @@ def download_invoice_pdf(
     pdf_buffer = report_service.generate_invoice_pdf(invoice, db, str(current_user.id), lang=lang or "sq")
     filename = f"Invoice_{invoice.invoice_number}.pdf"
     
-    # Explicit CORS headers for PDF download
     headers = {
         'Content-Disposition': f'attachment; filename="{filename}"',
         'Access-Control-Allow-Origin': 'https://www.haveri.tech',

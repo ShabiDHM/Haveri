@@ -1,5 +1,5 @@
 // FILE: src/components/business/modals/PosModal.tsx
-// PHOENIX PROTOCOL - POS MODAL V2.0 (USING CENTRALIZED FISCAL CONTROLLER)
+// PHOENIX PROTOCOL - POS MODAL V2.3 (COMPLETE PAYLOAD FOR INVOICE)
 
 import React, { useState, useEffect } from 'react';
 import { X, ShoppingCart, AlertCircle, TrendingUp } from 'lucide-react';
@@ -36,14 +36,10 @@ export const PosModal: React.FC<PosModalProps> = ({ isOpen, onClose, onSuccess }
 
     const selectedItem = inventoryItems.find(i => i._id === selectedItemId);
     
-    // Calculate suggested price based on cost + margin
     const costForQuantity = selectedItem ? selectedItem.cost_per_unit * quantity : 0;
     const suggestedPrice = selectedItem ? calculateSellingPrice(costForQuantity) : 0;
-    
-    // Calculate VAT on the final price
     const vatAmount = (priceOverride !== null ? priceOverride : suggestedPrice) * (vatRate / 100);
     const totalWithVat = (priceOverride !== null ? priceOverride : suggestedPrice) + vatAmount;
-    
     const totalPrice = priceOverride !== null ? priceOverride : suggestedPrice;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -59,10 +55,16 @@ export const PosModal: React.FC<PosModalProps> = ({ isOpen, onClose, onSuccess }
         setLoading(true);
         setError('');
         try {
+            const now = new Date().toISOString();
             await apiService.createPosTransaction({
                 inventory_item_id: selectedItemId,
-                quantity,
+                quantity: quantity,
                 total_price: totalPrice,
+                product_name: selectedItem?.name || 'Produkt POS',
+                description: `${selectedItem?.name || 'Produkt'} x${quantity}`,
+                transaction_date: now,
+                payment_method: 'CASH',
+                notes: `Shitje POS: ${selectedItem?.name} x${quantity} = €${totalPrice.toFixed(2)}`
             }, workspace?.id);
             onSuccess();
             onClose();

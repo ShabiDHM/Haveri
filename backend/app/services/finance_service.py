@@ -1,11 +1,11 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V8.4 (FIXED TAX CALCULATION)
+# PHOENIX PROTOCOL - FINANCE SERVICE V8.5 (FIXED POS INVOICE CREATION)
 
 import logging
 import csv
 import io
 from datetime import datetime, timezone
-from bson import ObjectId, errors as bson_errors
+from bson import ObjectId
 from pymongo.database import Database
 from fastapi import HTTPException, UploadFile
 from typing import Any, List, Dict, Optional
@@ -46,7 +46,6 @@ class FinanceService:
         })
         return item["_id"] if item else None
 
-    # --- PARTNER LOGIC ---
     def get_partners(self, context_id: str) -> List[PartnerInDB]:
         query = self._get_resilient_filter(context_id)
         cursor = self.db.partners.find(query).sort("name", 1)
@@ -100,7 +99,6 @@ class FinanceService:
             self.db.partners.insert_many(partners_to_insert)
         return {"status": "success", "imported_count": imported_count}
 
-    # --- POS / TRANSACTION LOGIC ---
     async def get_monthly_pos_revenue(self, async_db: Any, user_id: str, month: int, year: int, case_id: Optional[str] = None) -> float:
         try:
             start_date = datetime(year, month, 1)
@@ -132,6 +130,10 @@ class FinanceService:
         except:
             user_oid = user_id
 
+        # Get business profile for VAT rate
+        business_profile = self.db.business_profiles.find_one({"user_id": ObjectId(user_id)})
+        vat_rate = business_profile.get("vat_rate", 0) if business_profile else 0
+
         doc = {
             "user_id": str(user_oid),
             "product_name": data.get("product_name"),
@@ -139,9 +141,10 @@ class FinanceService:
             "category": data.get("category", "Shitje"),
             "amount": data.get("total_price", 0.0),
             "total_amount": data.get("total_price", 0.0),
-            "date_time": data.get("date", datetime.now(timezone.utc)),
+            "date_time": data.get("transaction_date", datetime.now(timezone.utc)),
             "source": "MANUAL",
             "status": "PAID",
+            "payment_method": data.get("payment_method", "CASH"),
         }
         inv_id = data.get("inventory_item_id")
         if inv_id:
@@ -155,25 +158,24 @@ class FinanceService:
         res = self.db.transactions.insert_one(doc)
         doc["_id"] = res.inserted_id
 
-        # --- Auto-create invoice with proper tax calculation ---
+        # --- Create proper invoice with line items for PDF generation ---
         item_name = data.get("product_name") or data.get("description") or "Produkt POS"
         quantity = data.get("quantity", 1.0)
-        unit_price = data.get("total_price", 0.0) / quantity if quantity > 0 else data.get("total_price", 0.0)
+        total_price = data.get("total_price", 0.0)
+        unit_price = total_price / quantity if quantity > 0 else total_price
         
-        # Get VAT rate from business profile
-        business_profile = self.db.business_profiles.find_one({"user_id": ObjectId(user_id)})
-        vat_rate = business_profile.get("vat_rate", 0) if business_profile else 0
+        # Calculate tax amounts
+        subtotal = total_price
+        tax_amount = subtotal * (vat_rate / 100)
+        total_with_tax = subtotal + tax_amount
         
         invoice_item = InvoiceItem(
             description=item_name,
             quantity=quantity,
             unit_price=unit_price,
+            total=total_price,
             inventory_item_id=inv_id
         )
-        
-        subtotal = quantity * unit_price
-        tax_amount = subtotal * (vat_rate / 100)
-        total_amount = subtotal + tax_amount
         
         invoice_data = InvoiceCreate(
             client_name="Klient POS",
@@ -182,11 +184,12 @@ class FinanceService:
             client_tax_id=None,
             items=[invoice_item],
             tax_rate=vat_rate,
-            notes=f"Krijuar automatikisht nga shitja POS (ID: {doc['_id']})",
+            notes=f"Krijuar automatikisht nga shitja POS. ID Transaksionit: {doc['_id']}",
             status="PAID",
             issue_date=doc["date_time"],
             due_date=doc["date_time"]
         )
+        
         try:
             created_invoice = self.create_invoice(user_id, invoice_data, case_id)
             logger.info(f"Auto-created invoice {created_invoice.invoice_number} for POS transaction {doc['_id']}")
@@ -229,7 +232,6 @@ class FinanceService:
             raise HTTPException(status_code=400, detail="Invalid ID provided in bulk delete.")
         return total_deleted
 
-    # --- INVOICE LOGIC ---
     def _generate_invoice_number(self, user_id: str) -> str:
         count = self.db.invoices.count_documents({"user_id": ObjectId(user_id)})
         return f"F-{datetime.now().year}-{count + 1:04d}"
@@ -256,22 +258,13 @@ class FinanceService:
         return InvoiceInDB(**invoice_doc)
 
     def get_invoices(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[InvoiceInDB]:
-        logger.info(f"[DEBUG] get_invoices called with context_id={context_id}, case_id={case_id}, year={year}")
-        
         query = self._get_resilient_filter(context_id)
         if case_id:
             query["case_id"] = case_id
-            logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
-        
         if year:
             start_date = datetime(year, 1, 1)
             end_date = datetime(year + 1, 1, 1)
             query["issue_date"] = {"$gte": start_date, "$lt": end_date}
-            logger.info(f"[DEBUG] Adding year filter on issue_date: {year}")
-        
-        filtered_count = self.db.invoices.count_documents(query)
-        logger.info(f"[DEBUG] Invoices after filters: {filtered_count}")
-        
         cursor = self.db.invoices.find(query).sort("issue_date", -1)
         return [InvoiceInDB(**doc) for doc in cursor]
 
@@ -292,7 +285,6 @@ class FinanceService:
         
         update_dict = update_data.model_dump(exclude_unset=True)
         
-        # Recalculate totals if items or tax_rate changed
         if "items" in update_dict or "tax_rate" in update_dict:
             items = update_dict.get("items", existing.get("items", []))
             tax_rate = update_dict.get("tax_rate", existing.get("tax_rate", 0))
@@ -314,7 +306,6 @@ class FinanceService:
             raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
         self.db.invoices.delete_one({"_id": oid})
 
-    # --- EXPENSE LOGIC ---
     def create_expense(self, user_id: str, data: ExpenseCreate, case_id: Optional[str] = None) -> ExpenseInDB:
         doc = data.model_dump()
         doc.update({"user_id": ObjectId(user_id), "created_at": datetime.now(timezone.utc)})
@@ -325,22 +316,13 @@ class FinanceService:
         return ExpenseInDB(**doc)
 
     def get_expenses(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[ExpenseInDB]:
-        logger.info(f"[DEBUG] get_expenses called with context_id={context_id}, case_id={case_id}, year={year}")
-        
         query = self._get_resilient_filter(context_id)
         if case_id:
             query["case_id"] = case_id
-            logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
-        
         if year:
             start_date = datetime(year, 1, 1)
             end_date = datetime(year + 1, 1, 1)
             query["date"] = {"$gte": start_date, "$lt": end_date}
-            logger.info(f"[DEBUG] Adding year filter on date: {year}")
-        
-        filtered_count = self.db.expenses.count_documents(query)
-        logger.info(f"[DEBUG] Expenses after filters: {filtered_count}")
-        
         cursor = self.db.expenses.find(query).sort("date", -1)
         return [ExpenseInDB(**doc) for doc in cursor]
 
@@ -351,7 +333,6 @@ class FinanceService:
             raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
         self.db.expenses.delete_one({"_id": oid})
 
-    # --- UNIFIED IMPORT ---
     def import_unified_transactions(self, user_id: str, transactions: List[Dict[str, Any]]) -> Dict[str, int]:
         counts = {"INVOICE": 0, "EXPENSE": 0, "POS": 0, "UNKNOWN": 0}
         user = self.db.users.find_one({"_id": ObjectId(user_id)})
