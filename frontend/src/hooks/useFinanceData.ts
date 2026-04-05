@@ -1,5 +1,5 @@
 // FILE: src/hooks/useFinanceData.ts
-// V17.10 – ADJUSTED EXPENSES FOR DISPLAY
+// V17.11 – REMOVED POS DOUBLE-COUNTING FROM COGS
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
@@ -178,6 +178,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         return invInc + posInc;
     }, [invoices, posTransactions, selectedYear]);
 
+    // PHOENIX: COGS from invoices ONLY (POS transactions already have invoices)
     const costOfGoodsSold = useMemo(() => {
         const idMap = new Map<string, number>();
         const nameMap = new Map<string, number>();
@@ -225,6 +226,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         let linkedCount = 0;
         let derivedCount = 0;
 
+        // Process invoices ONLY (POS transactions already have invoices)
         invoices.forEach(invoice => {
             if (!invoice.items || invoice.items.length === 0) return;
             invoice.items.forEach(item => {
@@ -255,33 +257,8 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
             });
         });
 
-        posTransactions.forEach(pos => {
-            let cost = 0;
-            const salePrice = toNumber(pos.total_price);
-            const productName = pos.product_name || (pos as any).description || '';
-            
-            if ((pos as any).inventory_item_id) {
-                const c = getCostById((pos as any).inventory_item_id);
-                if (c !== null) {
-                    cost = c;
-                    linkedCount++;
-                } else {
-                    cost = getCostByName(productName, salePrice);
-                    derivedCount++;
-                }
-            } else {
-                cost = getCostByName(productName, salePrice);
-                derivedCount++;
-            }
-            
-            const quantity = toNumber(pos.quantity ?? 1);
-            const itemCogs = quantity * cost;
-            totalCogs += itemCogs;
-            
-            if (cost > 0) {
-                console.log(`[DEBUG COGS] POS - "${productName}": ${quantity} × €${cost.toFixed(2)} = €${itemCogs.toFixed(2)}`);
-            }
-        });
+        // POS transactions are SKIPPED because they already have invoices
+        // Do NOT process posTransactions here
 
         const cogsCategories = ['mall', 'stock', 'inventory', 'blerje', 'furnizim', 'cogs', 'raw_material'];
         
@@ -298,7 +275,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
 
         console.log(`[DEBUG COGS] Summary: ${linkedCount} linked items, ${derivedCount} derived from margin. Total COGS = ${formatCurrency(totalCogs)}`);
         return totalCogs;
-    }, [invoices, posTransactions, expenses, inventoryItems, businessProfile, defaultMarginPercent, formatCurrency]);
+    }, [invoices, expenses, inventoryItems, businessProfile, defaultMarginPercent, formatCurrency]);
 
     // PHOENIX: Calculate adjusted expenses (remove COGS expenses from total for display)
     const cogsCategories = useMemo(() => ['mall', 'stock', 'inventory', 'blerje', 'furnizim', 'cogs', 'raw_material'], []);
@@ -336,7 +313,7 @@ export const useFinanceData = (options?: UseFinanceDataOptions) => {
         selectedYear,
         setSelectedYear,
         availableYears,
-        totalExpenses: adjustedExpenses,  // Use adjusted expenses for display
+        totalExpenses: adjustedExpenses,
         displayIncome,
         displayProfit,
         costOfGoodsSold,
