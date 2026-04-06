@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.7 (SANITIZED SUPPLIER FIELDS)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.8 (STRUCTURED SUPPLIER BLOCK)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -137,16 +137,22 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     story.append(header_table)
     story.append(Spacer(1, 0.5*cm))
     
-    # SANITIZED SUPPLIER FIELDS - prevents "None" from appearing in PDF
+    # STRUCTURED SUPPLIER BLOCK - Professional formatting with line breaks and conditional fields
+    def format_supplier_line(label: str, value: str) -> str:
+        """Format a supplier detail line with bold label, returns empty string if value is empty."""
+        if not value or not value.strip():
+            return ""
+        return f"<b>{label}:</b> {value}<br/>"
+    
     supplier_name = clean_field(order_data.get('supplier_name', ''))
     supplier_address = clean_field(order_data.get('supplier_address', ''))
     supplier_vat = clean_field(order_data.get('supplier_vat', ''))
     
     supplier_text = f"""
     <b>FURNITORI</b><br/>
-    {supplier_name}<br/>
-    {f"{supplier_address}<br/>" if supplier_address else ""}
-    {f"VAT: {supplier_vat}" if supplier_vat else ""}
+    <b>{supplier_name}</b><br/>
+    {format_supplier_line('Adresa', supplier_address)}
+    {format_supplier_line('VAT', supplier_vat)}
     """
     story.append(Paragraph(supplier_text, normal_style))
     story.append(Spacer(1, 0.5*cm))
