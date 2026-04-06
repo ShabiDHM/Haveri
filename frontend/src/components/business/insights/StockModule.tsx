@@ -1,6 +1,7 @@
 // FILE: src/components/business/insights/StockModule.tsx
-// PHOENIX PROTOCOL - STOCK MODULE V13.2 (EXECUTIVE DESIGN SYSTEM)
+// PHOENIX PROTOCOL - STOCK MODULE V13.3 (HEIGHT ENFORCEMENT & SCROLLING)
 // Fixed: Replaced text-[9px] with text-xs for consistency.
+// FIXED: Added max-h-[300px] to stock list container to prevent card overflow
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -129,8 +130,8 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                         </span>
                     </div>
 
-                    {/* List Area */}
-                    <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
+                    {/* List Area - FIXED: Added max-h-[300px] to enforce consistent card height */}
+                    <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 custom-scrollbar pr-2">
                         {lowStockItems.length === 0 ? (
                             <div className="glass-input p-6 flex items-center justify-center text-center border border-border-main bg-surface/30 backdrop-blur-sm">
                                 <p className="text-xs text-text-muted uppercase font-black tracking-widest">
