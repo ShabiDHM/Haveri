@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V3.1 (PROPER TABLE ANCHORING)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V3.2 (0% VAT SUPPORT & CONDITIONAL VAT ROW)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -81,7 +81,7 @@ def get_business_info(business_service, user_id: str) -> Dict[str, Any]:
             "vat": clean_field(profile_dict.get('tax_id', '')),
             "email": clean_field(profile_dict.get('email_public', '')),
             "phone": clean_field(profile_dict.get('phone', '')),
-            "vat_rate": profile_dict.get('vat_rate', 18),
+            "vat_rate": profile_dict.get('vat_rate', 0),  # Default to 0% VAT
         }
     except Exception as e:
         print(f"DEBUG: Profile lookup failed: {e}")
@@ -91,7 +91,7 @@ def get_business_info(business_service, user_id: str) -> Dict[str, Any]:
             "vat": "",
             "email": "",
             "phone": "",
-            "vat_rate": 18,
+            "vat_rate": 0,  # Default to 0% VAT on error
         }
 
 def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_number: str) -> bytes:
@@ -175,9 +175,12 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     story.append(Spacer(1, 0.5*cm))
     
     subtotal = order_data['estimated_cost']
-    # Use the vat_rate fetched from business profile (default to 18 if not set)
-    vat_rate_percent = float(buyer_info.get('vat_rate', 18))
+    
+    # FISCAL AWARE: Read VAT rate dynamically from business profile (passed via buyer_info)
+    # Default to 0% VAT if not specified, allowing for tax-exempt scenarios
+    vat_rate_percent = float(buyer_info.get('vat_rate', 0))
     vat_rate = vat_rate_percent / 100
+    
     vat_amount = subtotal * vat_rate
     grand_total = subtotal + vat_amount
     
@@ -206,11 +209,20 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     story.append(item_table)
     story.append(Spacer(1, 0.3*cm))
     
-    totals_data = [
-        ["Subtotal:", f"€{subtotal:.2f}"],
-        [f"TVSH ({vat_rate_percent:.0f}%):", f"€{vat_amount:.2f}"],
-        ["TOTAL I PËRGJITHSHËM:", f"€{grand_total:.2f}"]
-    ]
+    # CONDITIONAL TOTALS TABLE: Hide VAT row if VAT rate is 0%
+    if vat_rate_percent > 0:
+        totals_data = [
+            ["Subtotal:", f"€{subtotal:.2f}"],
+            [f"TVSH ({vat_rate_percent:.0f}%):", f"€{vat_amount:.2f}"],
+            ["TOTAL I PËRGJITHSHËM:", f"€{grand_total:.2f}"]
+        ]
+    else:
+        # VAT is 0% - show only subtotal and total
+        totals_data = [
+            ["Subtotal:", f"€{subtotal:.2f}"],
+            ["TOTAL I PËRGJITHSHËM:", f"€{grand_total:.2f}"]
+        ]
+    
     totals_table = Table(totals_data, colWidths=[13*cm, 3*cm])
     totals_table.hAlign = 'LEFT'
     totals_table.setStyle(TableStyle([
