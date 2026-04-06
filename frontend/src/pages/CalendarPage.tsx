@@ -1,5 +1,7 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR PAGE V8.1 (WORKSPACE PRESELECT)
+// PHOENIX PROTOCOL - CALENDAR PAGE V8.2 (UNIFIED PRIORITY SYSTEM)
+// FIXED: Priority dropdown now uses 3-tier system (LOW, MEDIUM, CRITICAL)
+// FIXED: Priority filter now uses 3-tier system
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -24,6 +26,7 @@ import DayEventsModal from '../components/DayEventsModal';
 import { EventDetailModal, UIAgendaItem } from '../components/modals/EventDetailModal';
 import { Panel } from '../components/ui/Panel';
 import { useAuth } from '../context/AuthContext';
+import { PRIORITY_OPTIONS } from '../config/priorities';
 
 const DatePicker = (ReactDatePicker as any).default;
 const localeMap: { [key: string]: Locale } = { sq: sq, al: sq, en: enUS };
@@ -67,7 +70,7 @@ interface CreateEventModalProps {
   existingEvents: CalendarEvent[];
   onClose: () => void;
   onCreate: () => void;
-  initialWorkspaceId?: string; // NEW
+  initialWorkspaceId?: string;
 }
 
 type ViewMode = 'month' | 'list';
@@ -87,7 +90,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existin
       is_public: boolean;
     }
   >({
-    workspace_id: initialWorkspaceId || '', // PRESELECT current workspace if provided
+    workspace_id: initialWorkspaceId || '',
     title: '',
     description: '',
     event_type: 'TASK',
@@ -188,10 +191,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ workspaces, existin
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value as EventPriority })}
                 className={formElementClasses}
               >
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="HIGH">HIGH</option>
-                <option value="CRITICAL">CRITICAL</option>
+                {/* UNIFIED PRIORITY OPTIONS - 3-tier system */}
+                {PRIORITY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -285,7 +290,7 @@ const CalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { workspace } = useAuth(); // Get current workspace
+  const { workspace } = useAuth();
 
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -608,10 +613,12 @@ const CalendarPage: React.FC = () => {
                     className="glass-input w-full sm:w-auto bg-canvas border-border-main rounded-xl py-2 sm:py-3 text-xs sm:text-sm"
                   >
                     <option value="ALL">{t('calendar.allPriorities')}</option>
-                    <option value="LOW">LOW</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                    <option value="HIGH">HIGH</option>
-                    <option value="CRITICAL">CRITICAL</option>
+                    {/* UNIFIED PRIORITY FILTER - 3-tier system */}
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                   <div className="flex bg-surface/30 backdrop-blur-sm p-1 rounded-2xl border border-border-main">
                     <button
