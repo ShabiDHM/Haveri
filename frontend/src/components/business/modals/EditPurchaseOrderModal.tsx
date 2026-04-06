@@ -1,10 +1,9 @@
 // FILE: src/components/business/modals/EditPurchaseOrderModal.tsx
-// Edit Purchase Order Modal – allows editing of existing purchase orders
+// PHOENIX PROTOCOL - HARDCODED ALBANIAN LOCALIZATION V2.0
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Save } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { apiService } from '../../../services/api';
 
 interface EditPurchaseOrderModalProps {
@@ -20,7 +19,6 @@ export const EditPurchaseOrderModal: React.FC<EditPurchaseOrderModalProps> = ({
     onClose,
     onSuccess,
 }) => {
-    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [poNumber, setPoNumber] = useState('');
@@ -60,8 +58,8 @@ export const EditPurchaseOrderModal: React.FC<EditPurchaseOrderModalProps> = ({
                 notes: response.order_data.notes || '',
             });
         } catch (err) {
-            console.error('Failed to fetch purchase order data:', err);
-            alert(t('error.generic'));
+            console.error('Dështoi ngarkimi i të dhënave:', err);
+            alert('Ndodhi një gabim gjatë ngarkimit të urdhër blerjes.');
             onClose();
         } finally {
             setLoading(false);
@@ -72,7 +70,7 @@ export const EditPurchaseOrderModal: React.FC<EditPurchaseOrderModalProps> = ({
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [name]: name === 'quantity' || name === 'estimated_cost' ? parseFloat(value) : value,
+            [name]: name === 'quantity' || name === 'estimated_cost' ? parseFloat(value) || 0 : value,
         }));
     };
 
@@ -88,8 +86,8 @@ export const EditPurchaseOrderModal: React.FC<EditPurchaseOrderModalProps> = ({
             onSuccess();
             onClose();
         } catch (err) {
-            console.error('Failed to update purchase order:', err);
-            alert(t('error.generic'));
+            console.error('Dështoi përditësimi:', err);
+            alert('Ndodhi një gabim gjatë ruajtjes së urdhër blerjes.');
         } finally {
             setSaving(false);
         }
@@ -104,21 +102,21 @@ export const EditPurchaseOrderModal: React.FC<EditPurchaseOrderModalProps> = ({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                    className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-canvas/50 backdrop-blur-md"
                 >
                     <motion.div
                         initial={{ scale: 0.95 }}
                         animate={{ scale: 1 }}
                         exit={{ scale: 0.95 }}
-                        className="relative glass-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl border border-border-main"
+                        className="relative glass-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl border border-border-main flex flex-col"
                     >
-                        <div className="sticky top-0 bg-primary-start p-5 flex justify-between items-center rounded-t-2xl">
-                            <h3 className="text-white font-bold text-lg">
-                                {t('purchaseOrder.editTitle', 'Edit Purchase Order')}
+                        <div className="sticky top-0 bg-surface/80 backdrop-blur-xl border-b border-border-main p-5 flex justify-between items-center z-10">
+                            <h3 className="text-text-primary font-bold text-lg">
+                                Ndrysho Urdhër Blerjen
                             </h3>
                             <button
                                 onClick={onClose}
-                                className="p-2 hover:bg-white/10 rounded-full text-white transition-colors"
+                                className="p-2 hover:bg-hover rounded-full text-text-muted hover:text-text-primary transition-colors"
                             >
                                 <X size={20} />
                             </button>
@@ -132,28 +130,29 @@ export const EditPurchaseOrderModal: React.FC<EditPurchaseOrderModalProps> = ({
                             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-text-muted uppercase mb-1">
-                                            {t('purchaseOrder.itemName', 'Product Name')}
+                                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">
+                                            Emri i Produktit
                                         </label>
                                         <input
                                             type="text"
                                             name="item_name"
                                             value={formData.item_name}
                                             onChange={handleChange}
-                                            className="glass-input w-full p-2 border border-border-main rounded-lg"
+                                            className="glass-input w-full p-2.5 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all rounded-lg text-sm"
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-text-muted uppercase mb-1">
-                                            {t('purchaseOrder.unit', 'Unit')}
+                                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">
+                                            Njësia
                                         </label>
                                         <input
                                             type="text"
                                             name="unit"
+                                            placeholder="p.sh. kg, copë, litër"
                                             value={formData.unit}
                                             onChange={handleChange}
-                                            className="glass-input w-full p-2 border border-border-main rounded-lg"
+                                            className="glass-input w-full p-2.5 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all rounded-lg text-sm"
                                             required
                                         />
                                     </div>
@@ -161,8 +160,8 @@ export const EditPurchaseOrderModal: React.FC<EditPurchaseOrderModalProps> = ({
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-text-muted uppercase mb-1">
-                                            {t('purchaseOrder.quantity', 'Quantity')}
+                                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">
+                                            Sasia
                                         </label>
                                         <input
                                             type="number"
@@ -170,13 +169,13 @@ export const EditPurchaseOrderModal: React.FC<EditPurchaseOrderModalProps> = ({
                                             name="quantity"
                                             value={formData.quantity}
                                             onChange={handleChange}
-                                            className="glass-input w-full p-2 border border-border-main rounded-lg"
+                                            className="glass-input w-full p-2.5 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all rounded-lg text-sm"
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-text-muted uppercase mb-1">
-                                            {t('purchaseOrder.estimatedCost', 'Estimated Cost (€)')}
+                                        <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">
+                                            Kostoja e Vlerësuar (€)
                                         </label>
                                         <input
                                             type="number"
@@ -184,81 +183,80 @@ export const EditPurchaseOrderModal: React.FC<EditPurchaseOrderModalProps> = ({
                                             name="estimated_cost"
                                             value={formData.estimated_cost}
                                             onChange={handleChange}
-                                            className="glass-input w-full p-2 border border-border-main rounded-lg"
+                                            className="glass-input w-full p-2.5 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all rounded-lg text-sm"
                                             required
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-text-muted uppercase mb-1">
-                                        {t('purchaseOrder.supplierName', 'Supplier Name')}
+                                    <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">
+                                        Emri i Furnitorit
                                     </label>
                                     <input
                                         type="text"
                                         name="supplier_name"
                                         value={formData.supplier_name}
                                         onChange={handleChange}
-                                        className="glass-input w-full p-2 border border-border-main rounded-lg"
+                                        className="glass-input w-full p-2.5 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all rounded-lg text-sm"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-text-muted uppercase mb-1">
-                                        {t('purchaseOrder.supplierAddress', 'Supplier Address')}
+                                    <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">
+                                        Adresa e Furnitorit
                                     </label>
                                     <input
                                         type="text"
                                         name="supplier_address"
                                         value={formData.supplier_address}
                                         onChange={handleChange}
-                                        className="glass-input w-full p-2 border border-border-main rounded-lg"
+                                        className="glass-input w-full p-2.5 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all rounded-lg text-sm"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-text-muted uppercase mb-1">
-                                        {t('purchaseOrder.supplierVat', 'Supplier VAT')}
+                                    <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">
+                                        Numri Fiskal i Furnitorit
                                     </label>
                                     <input
                                         type="text"
                                         name="supplier_vat"
                                         value={formData.supplier_vat}
                                         onChange={handleChange}
-                                        className="glass-input w-full p-2 border border-border-main rounded-lg"
+                                        className="glass-input w-full p-2.5 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all rounded-lg text-sm"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-text-muted uppercase mb-1">
-                                        {t('purchaseOrder.notes', 'Notes')}
+                                    <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-1">
+                                        Shënime
                                     </label>
                                     <textarea
                                         name="notes"
                                         rows={3}
                                         value={formData.notes}
                                         onChange={handleChange}
-                                        className="glass-input w-full p-2 border border-border-main rounded-lg"
+                                        className="glass-input w-full p-2.5 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all rounded-lg text-sm resize-none"
                                     />
                                 </div>
 
-                                <div className="flex justify-end gap-3 pt-4">
+                                <div className="flex justify-end gap-3 pt-4 border-t border-border-main">
                                     <button
                                         type="button"
                                         onClick={onClose}
-                                        className="px-4 py-2 rounded-lg glass-input border border-border-main hover:bg-hover transition-colors"
+                                        className="px-6 py-2.5 rounded-xl glass-input !bg-surface/30 backdrop-blur-sm border border-border-main hover:bg-hover transition-colors font-bold text-sm hover-lift shadow-sm"
                                     >
-                                        {t('general.cancel', 'Cancel')}
+                                        Anulo
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={saving}
-                                        className="btn-primary px-6 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
+                                        className="btn-primary px-8 py-2.5 rounded-xl flex items-center gap-2 font-bold text-sm disabled:opacity-50 hover-lift shadow-sm"
                                     >
-                                        {saving && <Loader2 size={16} className="animate-spin" />}
-                                        <Save size={16} />
-                                        {t('general.save', 'Save')}
+                                        {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                                        Ruaj
                                     </button>
                                 </div>
                             </form>

@@ -1,5 +1,6 @@
 // FILE: src/components/business/archive/ArchiveCard.tsx
-// PHOENIX PROTOCOL - ARCHIVE CARD V4.1 (EXECUTIVE DESIGN SYSTEM)
+// PHOENIX PROTOCOL - ARCHIVE CARD V4.2 (EXECUTIVE DESIGN SYSTEM)
+// FIXED: Separated rename (Edit3) and edit content (FileEdit) actions with distinct icons
 // ADDED: hover-lift and ensured shadow-sm consistency.
 // RETAINED: All logic and functionality.
 
@@ -7,8 +8,9 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
     Calendar, Info, Hash, FileText, FolderOpen, Share2, 
-    Eye, Download, Trash2, Pencil, Loader2, FileImage, 
-    FileCode, File as FileIcon, FileSpreadsheet, MessageSquare
+    Eye, Download, Trash2, Loader2, FileImage, 
+    FileCode, File as FileIcon, FileSpreadsheet, MessageSquare,
+    Edit3, FileEdit
 } from 'lucide-react';
 
 interface ArchiveCardProps {
@@ -20,7 +22,8 @@ interface ArchiveCardProps {
     onClick: () => void;
     onDownload?: () => void;
     onDelete?: () => void;
-    onRename?: () => void;
+    onRename?: () => void;        // Rename the file title
+    onEditContent?: () => void;   // Edit the document data (e.g., Purchase Order form)
     onShare?: () => void;
     onAskAI?: () => void;
     isShared?: boolean;
@@ -39,7 +42,7 @@ export const getFileIcon = (fileType: string) => {
 };
 
 export const ArchiveCard: React.FC<ArchiveCardProps> = ({ 
-    title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onShare, onAskAI,
+    title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onEditContent, onShare, onAskAI,
     isShared, isFolder, isLoading, indexingStatus 
 }) => {
     const { t } = useTranslation();
@@ -96,6 +99,7 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                          <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-primary-start hover:bg-primary-start/10 transition-colors hover-lift" title="Bisedo me Dokumentin"><MessageSquare size={16} /></button>
                     )}
                     
+                    {/* Share button */}
                     {!isFolder && onShare && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onShare(); }} 
@@ -105,15 +109,30 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                             <Share2 className="h-4 w-4" />
                         </button>
                     )}
+                    
+                    {/* RENAME FILE - uses Edit3 icon (different from edit content) */}
                     {onRename && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onRename(); }} 
-                            className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-hover transition-colors hover-lift" 
-                            title={t('general.edit')}
+                            className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-warning-start hover:bg-warning-start/10 transition-colors hover-lift" 
+                            title={t('archive.renameFile', 'Rename File')}
                         >
-                            <Pencil className="h-4 w-4" />
+                            <Edit3 className="h-4 w-4" />
                         </button>
                     )}
+                    
+                    {/* EDIT CONTENT (e.g., Purchase Order form) - uses FileEdit icon */}
+                    {onEditContent && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onEditContent(); }} 
+                            className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-primary-start hover:bg-primary-start/10 transition-colors hover-lift" 
+                            title={t('archive.editData', 'Edit Document Data')}
+                        >
+                            <FileEdit className="h-4 w-4" />
+                        </button>
+                    )}
+                    
+                    {/* View / Open button */}
                     {!isFolder && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onClick(); }} 
@@ -123,6 +142,8 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-primary-start" /> : <Eye className="h-4 w-4" />}
                         </button>
                     )}
+                    
+                    {/* Download button */}
                     {!isFolder && onDownload && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onDownload(); }} 
@@ -132,6 +153,8 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                             <Download className="h-4 w-4" />
                         </button>
                     )}
+                    
+                    {/* Delete button */}
                     {onDelete && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onDelete(); }} 
