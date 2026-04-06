@@ -1,5 +1,5 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V31.9 (FIXED TEXT SIZES)
+// PHOENIX PROTOCOL - PROFILE TAB V32.0 (ZERO-AWARE PARSE NUMBER)
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
@@ -112,11 +112,14 @@ export const ProfileTab: React.FC = () => {
     }
   }, [profile?.logo_url]);
 
-  const parseNumber = (value: string): number | undefined => {
+  // ZERO-AWARE parseNumber: Allows 0 to be sent as a valid number
+  // Returns null for empty string (so backend can differentiate between "not set" and "zero")
+  const parseNumber = (value: string): number | null => {
     const trimmed = value.trim();
-    if (trimmed === '') return undefined;
+    if (trimmed === '') return null;  // Empty = null (don't update)
     const num = Number(trimmed);
-    return isNaN(num) ? undefined : num;
+    if (isNaN(num)) return null;      // Invalid = null
+    return num;                        // Valid number including 0
   };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -131,10 +134,14 @@ export const ProfileTab: React.FC = () => {
         city: formData.city || undefined,
         website: formData.website || undefined,
         tax_id: formData.tax_id || undefined,
-        vat_rate: formData.vat_rate !== undefined && !isNaN(formData.vat_rate) ? formData.vat_rate : undefined,
-        target_margin: formData.target_margin !== undefined && !isNaN(formData.target_margin) ? formData.target_margin : undefined,
+        // For fiscal fields, we MUST send 0 explicitly if the user wants 0%
+        // Using null check: if value is null, don't send (undefined); if it's 0, send 0
+        vat_rate: formData.vat_rate !== null && formData.vat_rate !== undefined ? formData.vat_rate : undefined,
+        target_margin: formData.target_margin !== null && formData.target_margin !== undefined ? formData.target_margin : undefined,
         currency: formData.currency || 'EUR',
       };
+      
+      console.log('[ProfileTab] Submitting payload:', payload);
       await apiService.updateBusinessProfile(payload);
       alert(t('saveSuccess'));
       await refreshBusinessProfile();
@@ -513,10 +520,10 @@ export const ProfileTab: React.FC = () => {
                               </span>
                               <input
                                 type="number"
-                                value={formData.vat_rate !== undefined ? formData.vat_rate : ''}
+                                value={formData.vat_rate !== undefined && formData.vat_rate !== null ? formData.vat_rate : ''}
                                 onChange={(e) => {
                                   const parsed = parseNumber(e.target.value);
-                                  setFormData({ ...formData, vat_rate: parsed });
+                                  setFormData({ ...formData, vat_rate: parsed !== null ? parsed : undefined });
                                 }}
                                 className={inputClasses}
                               />
@@ -531,10 +538,10 @@ export const ProfileTab: React.FC = () => {
                               </span>
                               <input
                                 type="number"
-                                value={formData.target_margin !== undefined ? formData.target_margin : ''}
+                                value={formData.target_margin !== undefined && formData.target_margin !== null ? formData.target_margin : ''}
                                 onChange={(e) => {
                                   const parsed = parseNumber(e.target.value);
-                                  setFormData({ ...formData, target_margin: parsed });
+                                  setFormData({ ...formData, target_margin: parsed !== null ? parsed : undefined });
                                 }}
                                 className={inputClasses}
                               />

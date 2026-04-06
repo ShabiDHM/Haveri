@@ -1,5 +1,5 @@
 # FILE: backend/app/services/business_service.py
-# PHOENIX PROTOCOL - BUSINESS SERVICE V2.1 (FIXED IMPORT & CLASS DEFINITION)
+# PHOENIX PROTOCOL - BUSINESS SERVICE V2.2 (FIXED ZERO VALUE HANDLING)
 
 import structlog
 import mimetypes
@@ -39,8 +39,15 @@ class BusinessService:
     def update_profile(self, user_id: str, data: BusinessProfileUpdate) -> BusinessProfileInDB:
         current_profile = self.get_or_create_profile(user_id)
         
-        update_data = data.model_dump(exclude_unset=True)
+        # CRITICAL FIX: Use exclude_none=True instead of exclude_unset=True
+        # This allows 0 values to be saved (exclude_unset would exclude 0 because
+        # it treats 0 as "unset" in some cases, but we want to allow 0% VAT)
+        # exclude_none=True only excludes actual None values, preserving 0
+        update_data = data.model_dump(exclude_none=True)
         update_data["updated_at"] = datetime.now(timezone.utc)
+        
+        # Log the update for debugging
+        logger.info("business.profile_update", user_id=user_id, update_fields=list(update_data.keys()))
         
         result = self.db.business_profiles.find_one_and_update(
             {"_id": ObjectId(current_profile.id)},
