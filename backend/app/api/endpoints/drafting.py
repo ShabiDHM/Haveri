@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V1.1 (FIXED PREFIX)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V1.2 (ADDED PURCHASE ORDER)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -17,6 +17,15 @@ class DraftRequest(BaseModel):
     user_prompt: str
     document_type: str = "generic"
     include_legal_context: bool = True
+
+# New model for purchase order
+class PurchaseOrderRequest(BaseModel):
+    item_id: str
+    item_name: str
+    unit: str
+    quantity: float
+    estimated_cost: float
+    supplier_name: str
 
 @router.post("/stream")
 async def stream_draft(
@@ -48,6 +57,23 @@ async def stream_draft(
             "X-Content-Type-Options": "nosniff"
         }
     )
+
+# New endpoint for purchase order drafting
+@router.post("/purchase-order")
+async def create_purchase_order(
+    order: PurchaseOrderRequest,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Draft a purchase order (store in archive or return a PDF).
+    Currently returns a simple JSON response.
+    """
+    # TODO: Generate a PDF or store in archive
+    return {
+        "status": "created",
+        "message": f"Purchase order for {order.quantity} {order.unit} of {order.item_name} drafted successfully.",
+        "order": order.dict()
+    }
 
 @router.get("/health")
 async def health_check():
