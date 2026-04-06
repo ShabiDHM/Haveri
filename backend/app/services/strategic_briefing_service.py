@@ -1,5 +1,5 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.9 (FULL DEBUG)
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V29.0 (REMOVE CASE_ID FILTER FOR AGENDA)
 
 import logging
 import asyncio
@@ -114,45 +114,13 @@ class StrategicBriefingService:
     async def _compile_tactical_agenda(self) -> List[Dict]:
         """Fetch all calendar events for the next 7 days (not just today)."""
         
-        # ========== FULL DEBUG: Check ALL events in database ==========
-        logger.info("=" * 60)
-        logger.info("AGENDA FULL DEBUG - CHECKING DATABASE")
-        logger.info("=" * 60)
-        
-        # Get ALL events without any filter to see what's in the collection
-        all_events_cursor = self.db.calendar_events.find({})
-        all_events = await all_events_cursor.to_list(length=50)
-        logger.info(f"TOTAL events in calendar_events collection: {len(all_events)}")
-        
-        for ev in all_events[:5]:
-            logger.info(f"Event in DB: id={ev.get('_id')}, owner_id={ev.get('owner_id')}, user_id={ev.get('user_id')}, title={ev.get('title')}, start_date={ev.get('start_date')}")
-        
-        # Check events with owner_id = current user
-        owner_filter = {"owner_id": self.user_id_obj}
-        owner_events = await self.db.calendar_events.find(owner_filter).to_list(length=50)
-        logger.info(f"Events with owner_id={self.user_id_obj}: {len(owner_events)}")
-        
-        # Check events with user_id = current user
-        user_filter = {"user_id": self.user_id_obj}
-        user_events = await self.db.calendar_events.find(user_filter).to_list(length=50)
-        logger.info(f"Events with user_id={self.user_id_obj}: {len(user_events)}")
-        
-        # Check events with workspace filter
-        if self.case_id:
-            case_filter = {"case_id": self.case_id}
-            case_events = await self.db.calendar_events.find(case_filter).to_list(length=50)
-            logger.info(f"Events with case_id={self.case_id}: {len(case_events)}")
-        # ========== END DEBUG ==========
-        
-        # Now use the correct filter
+        # CRITICAL FIX: Do NOT filter by case_id for agenda
+        # The agenda should show ALL events for the user, regardless of workspace/case
         user_filter: Dict[str, Any] = {"owner_id": self.user_id_obj}
         
-        if self.case_id:
-            try:
-                user_filter["case_id"] = str(self.case_id)
-            except Exception:
-                user_filter["case_id"] = self.case_id
-
+        # NOTE: case_id is intentionally NOT added to the filter
+        # This ensures events are shown regardless of which workspace they belong to
+        
         now = datetime.utcnow()
         week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_end = week_start + timedelta(days=7)
@@ -165,7 +133,7 @@ class StrategicBriefingService:
         cursor = self.db.calendar_events.find(date_filter).sort("start_date", 1)
         events = await cursor.to_list(length=100)
         
-        logger.info(f"Final filtered events count: {len(events)}")
+        logger.info(f"Agenda: Found {len(events)} events for user in next 7 days")
         
         agenda_items = []
 
