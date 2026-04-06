@@ -1,9 +1,11 @@
 # FILE: backend/app/api/endpoints/finance_wizard.py
-# PHOENIX PROTOCOL - FINANCE WIZARD ENDPOINT v3.3 (CORRECT ADAPTER SIGNATURE)
+# PHOENIX PROTOCOL - FINANCE WIZARD ENDPOINT v3.4 (DEBUG SALES BREAKDOWN)
 
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from fastapi.responses import StreamingResponse
 from typing import List, Any, Optional
+from datetime import datetime
+from bson import ObjectId
 from app.models.user import UserInDB
 
 from app.api.endpoints.dependencies import get_current_user
@@ -132,3 +134,108 @@ async def download_monthly_report(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+
+# ========== DEBUG ENDPOINT ==========
+@router.get("/debug/sales-breakdown")
+async def debug_sales_breakdown(
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(..., ge=2000, le=2100),
+    current_user: Any = Depends(get_current_user),
+    db: Any = Depends(get_db),
+    async_db: Any = Depends(get_async_db),
+    case_id: Optional[str] = Query(None)
+):
+    """DEBUG: Show exactly what's contributing to sales total"""
+    
+    try:
+        if hasattr(current_user, "id"):
+            user_id = str(current_user.id)
+        else:
+            user_id = str(current_user._id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid User ID")
+    
+    start_date = datetime(year, month, 1)
+    if month == 12:
+        end_date = datetime(year + 1, 1, 1)
+    else:
+        end_date = datetime(year, month + 1, 1)
+    
+    # Get ALL invoices (including deleted ones) for debugging
+    all_invoices = list(db.invoices.find({"user_id": ObjectId(user_id)}))
+    
+    # Get invoices for the selected month (no status filter)
+    month_invoices_raw = list(db.invoices.find({
+        "user_id": ObjectId(user_id),
+        "issue_date": {"$gte": start_date, "$lt": end_date}
+    }))
+    
+    # Get invoices for the selected month with status filter (what wizard sees)
+    month_invoices_filtered = list(db.invoices.find({
+        "user_id": ObjectId(user_id),
+        "issue_date": {"$gte": start_date, "$lt": end_date},
+        "status": {"$nin": ["CANCELLED", "DELETED", "ARCHIVED"]}
+    }))
+    
+    # Get POS transactions for the selected month
+    pos_transactions = list(db.transactions.find({
+        "user_id": str(user_id),
+        "date_time": {"$gte": start_date, "$lt": end_date}
+    }))
+    
+    # Calculate totals
+    invoice_total_raw = sum(inv.get("total_amount", 0) for inv in month_invoices_raw)
+    invoice_total_filtered = sum(inv.get("total_amount", 0) for inv in month_invoices_filtered)
+    pos_total = sum(tx.get("total_amount", 0) for tx in pos_transactions)
+    
+    # Get service instance for wizard data comparison
+    service = FinanceService(db)
+    wizard_invoices = service.get_invoices(user_id, case_id)
+    wizard_invoices_month = _filter_by_month(wizard_invoices, month, year)
+    wizard_invoice_total = sum(inv.total_amount for inv in wizard_invoices_month)
+    
+    # Also get POS revenue from service
+    wizard_pos_revenue = await service.get_monthly_pos_revenue(async_db, user_id, month, year, case_id)
+    
+    return {
+        "user_id": user_id,
+        "month": month,
+        "year": year,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "case_id": case_id,
+        "invoice_count_total_db": len(all_invoices),
+        "invoice_count_this_month_raw": len(month_invoices_raw),
+        "invoice_count_this_month_filtered": len(month_invoices_filtered),
+        "invoices_this_month_raw": [
+            {
+                "id": str(inv.get("_id")),
+                "invoice_number": inv.get("invoice_number"),
+                "total_amount": inv.get("total_amount"),
+                "status": inv.get("status"),
+                "issue_date": str(inv.get("issue_date"))
+            }
+            for inv in month_invoices_raw[:20]
+        ],
+        "invoice_total_raw": invoice_total_raw,
+        "invoice_total_filtered": invoice_total_filtered,
+        "pos_transaction_count_this_month": len(pos_transactions),
+        "pos_transactions_this_month": [
+            {
+                "id": str(tx.get("_id")),
+                "product_name": tx.get("product_name"),
+                "total_amount": tx.get("total_amount"),
+                "date_time": str(tx.get("date_time"))
+            }
+            for tx in pos_transactions[:20]
+        ],
+        "pos_total": pos_total,
+        "wizard_invoice_total": wizard_invoice_total,
+        "wizard_pos_revenue": wizard_pos_revenue,
+        "wizard_total_sales": wizard_invoice_total + wizard_pos_revenue,
+        "explanation": {
+            "invoice_filter_used": "status NOT IN ['CANCELLED', 'DELETED', 'ARCHIVED']",
+            "pos_filter_used": "date_time in month range"
+        }
+    }
