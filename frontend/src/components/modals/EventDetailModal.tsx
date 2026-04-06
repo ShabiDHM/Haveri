@@ -1,5 +1,5 @@
 // FILE: src/components/modals/EventDetailModal.tsx
-// PHOENIX PROTOCOL - WORKSPACE ALIGNMENT V6.0 (DESIGN SYSTEM STANDARDIZED)
+// PHOENIX PROTOCOL - WORKSPACE ALIGNMENT V6.1 (UNIFIED PRIORITY SYSTEM)
 // STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React, { useState } from 'react';
@@ -13,6 +13,7 @@ import {
     Clock, MapPin, Users, Briefcase, X, ShieldAlert, 
     DollarSign, CheckSquare, Handshake, Calendar as CalendarIcon 
 } from 'lucide-react';
+import { getPriorityConfig } from '../../config/priorities';
 
 const localeMap: { [key: string]: any } = { sq: sq, al: sq, en: enUS };
 
@@ -51,6 +52,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClo
     const [isDeleting, setIsDeleting] = useState(false);
     
     const rawEvent = event.raw;
+    const priorityConfig = getPriorityConfig(rawEvent.priority);
     
     const formatEventDate = (dateString: string) => {
         const date = parseISO(dateString);
@@ -85,7 +87,12 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({ event, onClo
                             <h2 className="text-2xl font-bold text-text-primary mb-2">{event.title}</h2>
                             <div className="flex flex-wrap gap-2">
                                 <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border ${style.border} ${style.bg} ${style.text}`}>{t(`calendar.types.${rawEvent.event_type}`, rawEvent.event_type)}</span>
-                                {rawEvent.priority && <span className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-border-main bg-surface text-text-secondary">{t(`calendar.priorities.${rawEvent.priority}`)}</span>}
+                                {/* UNIFIED PRIORITY DISPLAY - Uses centralized config instead of translation */}
+                                {rawEvent.priority && (
+                                    <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border ${priorityConfig.borderColor} bg-surface text-text-secondary`}>
+                                        {priorityConfig.label}
+                                    </span>
+                                )}
                                 {relatedWorkspace && <span className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-border-main bg-surface text-text-secondary flex items-center gap-2"><Briefcase size={14}/> {relatedWorkspace.title}</span>}
                             </div>
                         </div>

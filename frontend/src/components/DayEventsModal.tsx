@@ -1,5 +1,5 @@
 // FILE: src/components/DayEventsModal.tsx
-// PHOENIX PROTOCOL - TYPE ALIGNMENT V4.0 (DESIGN SYSTEM STANDARDIZED)
+// PHOENIX PROTOCOL - TYPE ALIGNMENT V4.1 (UNIFIED PRIORITY SYSTEM)
 // STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { X, Clock, MapPin, Calendar, Plus } from 'lucide-react';
 import { CalendarEvent } from '../data/types';
 import { TFunction } from 'i18next';
+import { getPriorityConfig } from '../config/priorities';
 
 interface DayEventsModalProps {
   isOpen: boolean;
@@ -16,13 +17,6 @@ interface DayEventsModalProps {
   t: TFunction;
   onAddEvent: () => void;
 }
-
-const priorityColors = {
-  CRITICAL: 'bg-danger-start',
-  HIGH: 'bg-warning-start',
-  MEDIUM: 'bg-primary',
-  LOW: 'bg-text-muted',
-};
 
 const DayEventsModal: React.FC<DayEventsModalProps> = ({ 
   isOpen, onClose, date, events, t, onAddEvent 
@@ -62,34 +56,37 @@ const DayEventsModal: React.FC<DayEventsModalProps> = ({
               <p className="text-text-muted">{t('calendar.noEventsFound', 'Nuk ka ngjarje për këtë datë.')}</p>
             </div>
           ) : (
-            events.map((event) => (
-              <div 
-                key={event.id} 
-                className="bg-surface/30 border border-border-main hover:border-border-main rounded-xl p-4 transition-all group"
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`mt-1.5 w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] ${priorityColors[event.priority as keyof typeof priorityColors] || 'bg-text-muted'}`} />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-text-primary font-semibold text-sm mb-1">{event.title}</h3>
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-center text-xs text-text-muted">
-                            <Clock size={12} className="mr-1.5" />
-                            {new Date(event.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        {event.location && (
-                            <div className="flex items-center text-xs text-text-muted">
-                                <MapPin size={12} className="mr-1.5" />
-                                {event.location}
-                            </div>
-                        )}
-                        {event.description && (
-                            <p className="text-xs text-text-muted mt-1 line-clamp-2">{event.description}</p>
-                        )}
+            events.map((event) => {
+              const priorityConfig = getPriorityConfig(event.priority);
+              return (
+                <div 
+                  key={event.id} 
+                  className="bg-surface/30 border border-border-main hover:border-border-main rounded-xl p-4 transition-all group"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-1.5 w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] ${priorityConfig.dotColor}`} />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-text-primary font-semibold text-sm mb-1">{event.title}</h3>
+                      <div className="flex flex-col gap-1">
+                          <div className="flex items-center text-xs text-text-muted">
+                              <Clock size={12} className="mr-1.5" />
+                              {new Date(event.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          {event.location && (
+                              <div className="flex items-center text-xs text-text-muted">
+                                  <MapPin size={12} className="mr-1.5" />
+                                  {event.location}
+                              </div>
+                          )}
+                          {event.description && (
+                              <p className="text-xs text-text-muted mt-1 line-clamp-2">{event.description}</p>
+                          )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
         <div className="p-4 border-t border-border-main bg-surface/30 shrink-0 flex gap-3">
