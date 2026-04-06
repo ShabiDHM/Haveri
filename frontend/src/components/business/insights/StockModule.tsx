@@ -1,5 +1,5 @@
-// FILE: src/components/business/insights/ProfitModule.tsx
-// PHOENIX PROTOCOL - PROFIT MODULE V13.2 (EXECUTIVE DESIGN SYSTEM)
+// FILE: src/components/business/insights/StockModule.tsx
+// PHOENIX PROTOCOL - STOCK MODULE V13.2 (EXECUTIVE DESIGN SYSTEM)
 // Fixed: Replaced text-[9px] with text-xs for consistency.
 
 import React, { useState, useEffect } from 'react';
@@ -9,14 +9,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '../../../services/api';
 import { RestockPrediction, SalesTrendAnalysis } from '../../../data/types';
 
-interface ProfitModuleProps {
+interface StockModuleProps {
     data: {
         totalStockValue: number;
         lowStockItems: any[];
     };
 }
 
-export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
+export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
     const { t } = useTranslation();
     const { totalStockValue, lowStockItems } = data;
 
@@ -232,7 +232,7 @@ export const ProfitModule: React.FC<ProfitModuleProps> = ({ data }) => {
                                             {aiData.trend?.cross_sell_opportunities && (
                                                 <div className="mt-4 pt-4 border-t border-border-main">
                                                     <p className="text-xs text-text-muted uppercase font-black tracking-widest mb-2">
-                                                        {t('inventory.analysis.crossSell', 'Mundësi Cross-Sell')}
+                                                        {t('inventory.analysis.crossSell', 'Mundësi për Shitje të Kryqëzuar')}
                                                     </p>
                                                     <p className="text-xs text-text-secondary font-medium leading-relaxed">
                                                         {aiData.trend.cross_sell_opportunities}

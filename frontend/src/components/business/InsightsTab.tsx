@@ -11,7 +11,7 @@ import { useStrategicBriefing } from '../../hooks/useStrategicBriefing';
 import { useAuth } from '../../context/AuthContext';
 
 import { TaxModule } from './insights/TaxModule';
-import { ProfitModule } from './insights/ProfitModule';
+import { StockModule } from './insights/StockModule';
 import { SmartAgendaCard } from './insights/SmartAgendaCard';
 import SpreadsheetAnalysisPanel from '../SpreadsheetAnalysisPanel';
 import { ForensicAccountantModal } from './insights/ForensicAccountantModal';
@@ -82,7 +82,7 @@ export const InsightsTab: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {briefingData && <SmartAgendaCard agenda={briefingData.agenda} />}
                 <TaxModule data={taxAnalytics} />
-                <ProfitModule data={profitAnalytics} />
+                <StockModule data={profitAnalytics} />
             </div>
 
             {/* Forensic Modal logic preserved for backend functionality, just hidden from UI header */}
