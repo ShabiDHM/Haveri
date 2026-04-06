@@ -1,5 +1,5 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V29.1 (DATE DEBUG)
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V29.2 (FIXED OBJECTID SERIALIZATION)
 
 import logging
 import asyncio
@@ -13,6 +13,19 @@ def map_api_priority(priority: Optional[str]) -> str:
     if priority in ['CRITICAL', 'HIGH']: return 'high'
     if priority == 'MEDIUM': return 'medium'
     return 'low'
+
+def convert_objectid_to_str(obj: Any) -> Any:
+    """Recursively convert ObjectId to string for JSON serialization."""
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    elif isinstance(obj, dict):
+        return {k: convert_objectid_to_str(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_objectid_to_str(item) for item in obj]
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    else:
+        return obj
 
 class StrategicBriefingService:
     def __init__(self, db, user_id: str, case_id: Optional[str] = None):
@@ -121,28 +134,16 @@ class StrategicBriefingService:
         week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_end = week_start + timedelta(days=7)
         
-        logger.info(f"DATE DEBUG: week_start = {week_start}")
-        logger.info(f"DATE DEBUG: week_end = {week_end}")
-        
-        # First, get ALL events for this user (no date filter)
-        all_user_events = await self.db.calendar_events.find(user_filter).to_list(length=100)
-        logger.info(f"All events for user (no date filter): {len(all_user_events)}")
-        
-        for ev in all_user_events:
-            logger.info(f"Event date: {ev.get('start_date')}, type: {type(ev.get('start_date'))}")
-        
-        # Now apply date filter
+        # Apply date filter
         date_filter: Dict[str, Any] = {
             **user_filter,
             "start_date": {"$gte": week_start, "$lt": week_end}
         }
         
-        logger.info(f"DATE FILTER: {date_filter}")
-        
         cursor = self.db.calendar_events.find(date_filter).sort("start_date", 1)
         events = await cursor.to_list(length=100)
         
-        logger.info(f"Events after date filter: {len(events)}")
+        logger.info(f"Agenda: Found {len(events)} events for user in next 7 days")
         
         agenda_items = []
 
@@ -166,6 +167,9 @@ class StrategicBriefingService:
             else:
                 time_display = event_date.strftime("%d %b")
             
+            # Convert the raw event to a serializable dict (convert ObjectId to string)
+            serializable_raw = convert_objectid_to_str(event)
+            
             agenda_item = {
                 "id": str(event.get('_id')), 
                 "title": event.get('title', 'Pa titull'),
@@ -173,7 +177,7 @@ class StrategicBriefingService:
                 "priority": map_api_priority(event.get('priority')),
                 "isCompleted": False,
                 "kind": 'alert' if is_alert else 'event',
-                "raw": event,
+                "raw": serializable_raw,
                 "type": event_type,
                 "date": event_date.isoformat() if hasattr(event_date, 'isoformat') else str(event_date)
             }
