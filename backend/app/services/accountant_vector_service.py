@@ -1,5 +1,5 @@
 # FILE: backend/app/services/accountant_vector_service.py
-# PHOENIX PROTOCOL - ACCOUNTANT VECTOR V2.9 (YEAR FILTERING + GROUNDING)
+# PHOENIX PROTOCOL - ACCOUNTANT VECTOR V2.10 (FIXED: USE BUSINESS KB FOR LAWS)
 
 from __future__ import annotations
 import logging
@@ -155,7 +155,8 @@ async def get_combined_context(
     
     # Vector search for RAG
     private_rag = await asyncio.to_thread(havery_vs.query_private_diary, context_id, query)
-    global_rag = await asyncio.to_thread(havery_vs.query_public_library, query, agent_type='legal')
+    # FIX: Use 'business' because Kosovo laws are stored in business_knowledge_base
+    global_rag = await asyncio.to_thread(havery_vs.query_public_library, query, agent_type='business')
     
     context_str = "\n--- ARKIVA DHE LIGJET ---\n"
     for d in private_rag: 
