@@ -1,5 +1,6 @@
 // FILE: src/components/business/ArchiveTab.tsx
 // PHOENIX PROTOCOL - UNIFIED SEARCH BAR & GLASS STYLING V1
+// FIXED: handleViewItem now detects text files and sets correct mime_type
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -197,8 +198,23 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
         }
     };
 
+    // FIXED: Proper MIME type detection for text files (TXT, MD, JSON) and other formats
     const handleViewItem = async (item: ArchiveItemOut) => {
-        const isDataFile = ['CSV', 'XLSX', 'XLS'].includes(item.file_type.toUpperCase());
+        const fileType = item.file_type?.toUpperCase() || '';
+        const isDataFile = ['CSV', 'XLSX', 'XLS'].includes(fileType);
+        const isTextFile = ['TXT', 'MD', 'JSON'].includes(fileType);
+        
+        let mimeType = 'application/octet-stream';
+        if (isDataFile) mimeType = 'text/csv';
+        else if (isTextFile) mimeType = 'text/plain';
+        else if (fileType === 'PDF') mimeType = 'application/pdf';
+        else if (['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(fileType)) mimeType = `image/${fileType.toLowerCase()}`;
+        else mimeType = 'text/plain'; // fallback to text is safer than image
+
+        // Ensure filename has an extension so PDFViewerModal can double-check
+        const hasExtension = item.title.toLowerCase().endsWith(`.${fileType.toLowerCase()}`);
+        const safeFileName = hasExtension ? item.title : `${item.title}.${fileType.toLowerCase()}`;
+
         setOpeningDocId(item.id); 
         try { 
             const blob = await apiService.getArchiveFileBlob(item.id); 
@@ -206,8 +222,8 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
             setViewingUrl(url); 
             setViewingDoc({ 
                 id: item.id, 
-                file_name: item.title, 
-                mime_type: isDataFile ? 'text/csv' : (item.file_type.toUpperCase() === 'PDF' ? 'application/pdf' : 'image/jpeg'), 
+                file_name: safeFileName, 
+                mime_type: mimeType, 
                 status: 'READY' 
             } as any); 
         } catch { 
@@ -226,7 +242,6 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                 <div className="flex flex-col xl:flex-row gap-4">
                     <div className="flex-1 relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
-                        {/* PHOENIX DIRECTIVE: Removed bg-canvas override to let glass-input use standard bg-surface */}
                         <input 
                             type="text" 
                             placeholder={t('header.searchPlaceholder')} 
