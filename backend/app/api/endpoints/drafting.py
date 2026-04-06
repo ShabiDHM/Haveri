@@ -1,11 +1,18 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V1.4 (FIXED OBJECTID SERIALIZATION)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.0 (PDF PURCHASE ORDER)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from io import BytesIO
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
 
 from app.services.drafting_service import DraftingService
 from app.services.archive_service import ArchiveService
@@ -66,41 +73,84 @@ async def create_purchase_order(
     db: Database = Depends(get_db)
 ):
     """
-    Create a purchase order and save it as a text file in the archive.
+    Create a purchase order as a PDF and save it to the archive.
     """
-    # Build the purchase order content
-    content = f"""POROSIA E BLERJES
-Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-Produkti: {order.item_name}
-Njësia: {order.unit}
-Sasia: {order.quantity}
-Furnitori: {order.supplier_name}
-Kosto e vlerësuar: €{order.estimated_cost:.2f}
-Statusi: Draft (krijuar nga AI)
-"""
-    file_content = content.encode('utf-8')
-    filename = f"purchase_order_{order.item_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    # Create PDF in memory
+    pdf_buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        pdf_buffer,
+        pagesize=A4,
+        topMargin=1.5*cm,
+        bottomMargin=1.5*cm,
+        leftMargin=2*cm,
+        rightMargin=2*cm
+    )
     
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        alignment=1,  # center
+        spaceAfter=20
+    )
+    normal_style = styles['Normal']
+    
+    story = []
+    story.append(Paragraph("POROSIA E BLERJES", title_style))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph(f"<b>Data:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style))
+    story.append(Spacer(1, 12))
+    
+    # Table of order details
+    data = [
+        ["Produkti:", order.item_name],
+        ["Njësia:", order.unit],
+        ["Sasia:", str(order.quantity)],
+        ["Furnitori:", order.supplier_name],
+        ["Kosto e vlerësuar:", f"€{order.estimated_cost:.2f}"],
+        ["Statusi:", "Draft (krijuar nga AI)"]
+    ]
+    
+    table = Table(data, colWidths=[4*cm, 8*cm])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (0,-1), colors.lightgrey),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+    story.append(table)
+    story.append(Spacer(1, 20))
+    
+    # Build PDF
+    doc.build(story)
+    pdf_bytes = pdf_buffer.getvalue()
+    
+    # Prepare filename
+    filename = f"purchase_order_{order.item_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    
+    # Save to archive
     archive_service = ArchiveService(db)
     try:
         archive_item = await archive_service.save_generated_file(
             user_id=str(current_user.id),
             filename=filename,
-            file_content=file_content,
+            file_content=pdf_bytes,
             category="purchase_order",
             title=f"Porosia Blerje: {order.item_name}",
             case_id=None
         )
-        # Convert ObjectId to string for JSON response
         archive_id_str = str(archive_item.id)
         return {
             "status": "created",
-            "message": f"Purchase order for {order.item_name} saved to archive.",
+            "message": f"Purchase order PDF for {order.item_name} saved to archive.",
             "archive_id": archive_id_str,
             "order": order.dict()
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save purchase order: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to save purchase order PDF: {str(e)}")
 
 @router.get("/health")
 async def health_check():
