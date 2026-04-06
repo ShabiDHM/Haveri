@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance.py
-# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.13 (CATEGORY SUPPORT FOR IMPORT)
+# PHOENIX PROTOCOL - FINANCE ENDPOINTS V17.14 (CASCADE DELETE SUPPORT)
 
 import json
 import logging
@@ -29,6 +29,8 @@ from app.services.graph_service import GraphService
 from app.services import report_service
 from app.services.analytics_service import AnalyticsService
 from app.api.endpoints.dependencies import get_current_user, get_db, get_async_db, get_current_active_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Finance"])
 
@@ -118,10 +120,9 @@ async def get_imported_transactions(
 ):
     user_id_str = str(current_user.id)
     
-    logger = logging.getLogger(__name__)
     logger.info(f"[DEBUG] get_imported_transactions: user_id={user_id_str}, case_id={case_id}, year={year}")
     
-    filter_criteria: Dict[str, Any] = {"user_id": user_id_str}
+    filter_criteria: Dict[str, Any] = {"user_id": user_id_str, "deleted_at": None}
     if case_id:
         filter_criteria["case_id"] = case_id
         logger.info(f"[DEBUG] Adding case_id filter: {case_id}")
@@ -213,6 +214,38 @@ def bulk_delete_transactions(
     except:
         pass
     return {"status": "success", "deleted_count": deleted_count}
+
+# --- CASCADE DELETE BY DATE RANGE ---
+@router.delete("/delete-range", status_code=status.HTTP_200_OK)
+async def delete_financial_range(
+    year: int = Query(..., description="Year to delete (e.g., 2026)"),
+    month: Optional[int] = Query(None, ge=1, le=12, description="Optional month to delete (1-12)"),
+    case_id: Optional[str] = Query(None),
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db),
+):
+    """
+    DELETE ALL financial records (invoices, expenses, POS transactions) for a specific year or month.
+    This performs a soft delete, marking records as deleted without removing them from the database.
+    """
+    service = FinanceService(db)
+    
+    try:
+        result = service.delete_by_date_range(
+            user_id=str(current_user.id),
+            year=year,
+            month=month,
+            case_id=case_id
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Deleted {result['invoices_deleted']} invoices, {result['expenses_deleted']} expenses, and {result['pos_transactions_deleted']} POS transactions for {year}{f'-{month}' if month else ''}",
+            "details": result
+        }
+    except Exception as e:
+        logger.error(f"Error in delete_financial_range: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete records: {str(e)}")
 
 # --- INVOICES (Sales Management) ---
 
@@ -336,9 +369,9 @@ async def export_invoices_excel(
                 oids.append(ObjectId(id_str))
             except:
                 pass
-        invoices = list(db.invoices.find({"_id": {"$in": oids}, "user_id": user_id_str}))
+        invoices = list(db.invoices.find({"_id": {"$in": oids}, "user_id": user_id_str, "deleted_at": None}))
     else:
-        query: dict = {"user_id": user_id_str}
+        query: dict = {"user_id": user_id_str, "deleted_at": None}
         if case_id:
             query["case_id"] = case_id
         
@@ -426,9 +459,9 @@ async def export_expenses_excel(
                 oids.append(ObjectId(id_str))
             except:
                 pass
-        expenses = list(db.expenses.find({"_id": {"$in": oids}, "user_id": user_id_str}))
+        expenses = list(db.expenses.find({"_id": {"$in": oids}, "user_id": user_id_str, "deleted_at": None}))
     else:
-        query: dict = {"user_id": user_id_str}
+        query: dict = {"user_id": user_id_str, "deleted_at": None}
         if case_id:
             query["case_id"] = case_id
         

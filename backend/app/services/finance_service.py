@@ -1,5 +1,5 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V9.0 (ROBUST SOFT DELETE)
+# PHOENIX PROTOCOL - FINANCE SERVICE V9.1 (CASCADE DELETE)
 
 import logging
 import csv
@@ -125,7 +125,7 @@ class FinanceService:
             match_filter = {
                 "user_id": str(user_id),
                 "date_time": {"$gte": start_date, "$lt": end_date},
-                "deleted_at": None  # Exclude soft-deleted transactions
+                "deleted_at": None
             }
             if case_id:
                 match_filter["case_id"] = case_id
@@ -169,7 +169,7 @@ class FinanceService:
             "status": "PAID",
             "payment_method": data.get("payment_method", "CASH"),
             "created_at": datetime.now(timezone.utc),
-            "deleted_at": None  # Initialize as not deleted
+            "deleted_at": None
         }
         inv_id = data.get("inventory_item_id")
         if inv_id:
@@ -232,7 +232,6 @@ class FinanceService:
         except:
             raise HTTPException(status_code=400, detail="Invalid Transaction ID")
         
-        # Soft delete the transaction
         result = self.db.transactions.update_one(
             {"_id": oid, "user_id": str(user_id)},
             {"$set": {"deleted_at": datetime.now(timezone.utc)}}
@@ -241,7 +240,6 @@ class FinanceService:
         if result.modified_count == 0:
             raise HTTPException(status_code=404, detail="Transaction not found")
         
-        # Also soft delete the auto-generated invoice if it exists
         trans = self.db.transactions.find_one({"_id": oid})
         if trans and trans.get("generated_invoice_id"):
             try:
@@ -287,6 +285,84 @@ class FinanceService:
             raise HTTPException(status_code=400, detail="Invalid ID provided in bulk delete.")
         
         return total_deleted
+
+    # --- CASCADE DELETE BY DATE RANGE ---
+    def delete_by_date_range(self, user_id: str, year: int, month: Optional[int] = None, case_id: Optional[str] = None) -> Dict[str, int]:
+        """
+        Soft delete all financial records for a specific date range.
+        If month is provided, delete only that month.
+        If only year is provided, delete the entire year.
+        """
+        user_oid = ObjectId(user_id)
+        now = datetime.now(timezone.utc)
+        
+        # Set up date range
+        if month:
+            start_date = datetime(year, month, 1)
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1)
+            else:
+                end_date = datetime(year, month + 1, 1)
+        else:
+            start_date = datetime(year, 1, 1)
+            end_date = datetime(year + 1, 1, 1)
+        
+        result = {
+            "invoices_deleted": 0,
+            "expenses_deleted": 0,
+            "pos_transactions_deleted": 0,
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat()
+        }
+        
+        # Soft delete invoices
+        invoice_query = {
+            "user_id": user_oid,
+            "deleted_at": None,
+            "issue_date": {"$gte": start_date, "$lt": end_date}
+        }
+        if case_id:
+            invoice_query["case_id"] = case_id
+        
+        invoice_result = self.db.invoices.update_many(
+            invoice_query,
+            {"$set": {"deleted_at": now}}
+        )
+        result["invoices_deleted"] = invoice_result.modified_count
+        
+        # Soft delete expenses
+        expense_query = {
+            "user_id": user_oid,
+            "deleted_at": None,
+            "date": {"$gte": start_date, "$lt": end_date}
+        }
+        if case_id:
+            expense_query["case_id"] = case_id
+        
+        expense_result = self.db.expenses.update_many(
+            expense_query,
+            {"$set": {"deleted_at": now}}
+        )
+        result["expenses_deleted"] = expense_result.modified_count
+        
+        # Soft delete POS transactions (they use string user_id)
+        pos_query = {
+            "user_id": str(user_id),
+            "deleted_at": None,
+            "date_time": {"$gte": start_date, "$lt": end_date}
+        }
+        if case_id:
+            pos_query["case_id"] = case_id
+        
+        pos_result = self.db.transactions.update_many(
+            pos_query,
+            {"$set": {"deleted_at": now}}
+        )
+        result["pos_transactions_deleted"] = pos_result.modified_count
+        
+        logger.info(f"Cascade delete for {year}-{month or 'YEAR'}: {result}")
+        
+        return result
 
     # --- INVOICE LOGIC ---
     def _generate_invoice_number(self, user_id: str) -> str:
@@ -418,10 +494,10 @@ class FinanceService:
     # --- PHOENIX: GET POS TRANSACTIONS ---
     def get_pos_transactions(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[Dict[str, Any]]:
         """Get only active (non-deleted) POS transactions"""
-        query = self._get_active_filter(context_id)
-        # Convert to string for POS transactions (they use string user_id)
-        query["user_id"] = context_id
-        del query["$or"]  # Remove the $or from _get_active_filter for POS
+        query = {
+            "user_id": context_id,
+            "deleted_at": None
+        }
         
         if case_id:
             query["case_id"] = case_id
