@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.5 (FIXED BUSINESS INFO & DYNAMIC VAT)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.6 (LOCALIZED TITLE)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -98,7 +98,8 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     small_style = ParagraphStyle('SmallStyle', parent=styles['Normal'], fontSize=8,
                                  textColor=colors.HexColor('#666666'))
     story = []
-    story.append(Paragraph("PURCHASE ORDER", title_style))
+    # LOCALIZED TITLE - Changed from "PURCHASE ORDER" to "URDHËR BLERJE"
+    story.append(Paragraph("URDHËR BLERJE", title_style))
     story.append(Spacer(1, 0.2*cm))
     buyer_text = f"""
     <b>BLERËSI (Kompania juaj)</b><br/>
