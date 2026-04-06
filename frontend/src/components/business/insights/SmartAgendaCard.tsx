@@ -1,6 +1,7 @@
 // FILE: src/components/business/briefing/SmartAgendaCard.tsx
-// PHOENIX PROTOCOL - AGENDA CARD V11.2 (EXECUTIVE DESIGN SYSTEM)
+// PHOENIX PROTOCOL - AGENDA CARD V11.3 (EXECUTIVE DESIGN SYSTEM)
 // Fixed: Replaced text-[9px] with text-xs and text-[8px] with text-xs for consistency.
+// FIXED: Added max-h-[300px] to agenda list container for consistent card height
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -82,7 +83,8 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
                         </p>
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2">
+                    // FIXED: Added max-h-[300px] to enforce consistent card height with internal scrolling
+                    <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 custom-scrollbar pr-2">
                         {agenda.slice(0, 4).map((item) => (
                             <div 
                                 key={item.id}
