@@ -1,5 +1,5 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.7 (FIXED OBJECTID TYPES)
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.8 (FIXED: owner_id NOT user_id)
 
 import logging
 import asyncio
@@ -113,16 +113,17 @@ class StrategicBriefingService:
 
     async def _compile_tactical_agenda(self) -> List[Dict]:
         """Fetch all calendar events for the next 7 days (not just today)."""
-        user_filter: Dict[str, Any] = {"user_id": self.user_id_obj}
+        # CRITICAL FIX: Use 'owner_id' (not 'user_id') because calendar_service.py saves with 'owner_id'
+        user_filter: Dict[str, Any] = {"owner_id": self.user_id_obj}
+        
         if self.case_id:
             # Convert string case_id to ObjectId for MongoDB query
             try:
-                user_filter["workspace_id"] = ObjectId(self.case_id)
+                user_filter["case_id"] = str(self.case_id)
             except Exception:
-                # If conversion fails, try as string
-                user_filter["workspace_id"] = self.case_id
+                user_filter["case_id"] = self.case_id
 
-        # DEBUG: Log the user_id being queried
+        # DEBUG: Log the filter being used
         logger.info(f"AGENDA DEBUG: user_id = {self.user_id_obj}, case_id = {self.case_id}")
         logger.info(f"AGENDA DEBUG: user_filter = {user_filter}")
 
@@ -135,7 +136,7 @@ class StrategicBriefingService:
         
         # First, check if there are ANY calendar events for this user
         total_count = await self.db.calendar_events.count_documents(user_filter)
-        logger.info(f"AGENDA DEBUG: Total calendar events for user: {total_count}")
+        logger.info(f"AGENDA DEBUG: Total calendar events for user (using owner_id): {total_count}")
         
         # Check events in the next 7 days
         date_filter: Dict[str, Any] = {
@@ -144,22 +145,6 @@ class StrategicBriefingService:
         }
         date_count = await self.db.calendar_events.count_documents(date_filter)
         logger.info(f"AGENDA DEBUG: Events in next 7 days: {date_count}")
-        
-        # If no events in next 7 days, check for any future events beyond 7 days
-        future_filter: Dict[str, Any] = {
-            **user_filter,
-            "start_date": {"$gte": week_end}
-        }
-        future_count = await self.db.calendar_events.count_documents(future_filter)
-        logger.info(f"AGENDA DEBUG: Events beyond 7 days: {future_count}")
-        
-        # Also check for events before today (past events)
-        past_filter: Dict[str, Any] = {
-            **user_filter,
-            "start_date": {"$lt": week_start}
-        }
-        past_count = await self.db.calendar_events.count_documents(past_filter)
-        logger.info(f"AGENDA DEBUG: Past events: {past_count}")
         
         cursor = self.db.calendar_events.find(date_filter).sort("start_date", 1)
         events = await cursor.to_list(length=100)
