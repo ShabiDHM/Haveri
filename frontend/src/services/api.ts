@@ -265,6 +265,18 @@ class ApiService {
 
     public async createPurchaseOrder(data: { item_id: string; item_name: string; unit: string; quantity: number; estimated_cost: number; supplier_name: string; }): Promise<any> { const response = await this.axiosInstance.post('/drafting/purchase-order', data); return response.data; }
 
+    // NEW: Get purchase order data for editing
+    public async getPurchaseOrderData(archiveId: string): Promise<{ po_number: string; order_data: any }> {
+        const response = await this.axiosInstance.get(`/drafting/purchase-order/${archiveId}`);
+        return response.data;
+    }
+
+    // NEW: Update purchase order and regenerate PDF
+    public async updatePurchaseOrder(archiveId: string, data: any): Promise<any> {
+        const response = await this.axiosInstance.put(`/drafting/purchase-order/${archiveId}`, data);
+        return response.data;
+    }
+
     // --- FINANCE & ANALYTICS ---
     public async getAnalyticsDashboard(days?: number, year?: number, workspaceId?: string): Promise<AnalyticsDashboardData> {
         const params: any = {};

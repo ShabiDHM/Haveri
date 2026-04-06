@@ -1,6 +1,8 @@
 // FILE: src/components/business/ArchiveTab.tsx
 // PHOENIX PROTOCOL - UNIFIED SEARCH BAR & GLASS STYLING V1
 // FIXED: handleViewItem now detects text files and sets correct mime_type
+// ADDED: Edit purchase order functionality
+// FIXED: Download now appends correct file extension based on file_type
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,6 +20,7 @@ import ShareModal from '../ShareModal';
 import { ForensicAccountantModal } from './insights/ForensicAccountantModal';
 import { getFileIcon } from './archive/ArchiveCard';
 import { Panel } from '../ui/Panel';
+import { EditPurchaseOrderModal } from './modals/EditPurchaseOrderModal';
 
 interface ArchiveTabProps {
     workspaceId?: string;
@@ -102,7 +105,24 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
     );
 };
 
-const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelete, onRename, onShare, onReIndex, onAskAI, isShared, isFolder, isLoading, indexingStatus }: any) => { 
+// Helper function to get safe filename with extension for download
+const getSafeFileNameForDownload = (item: ArchiveItemOut): string => {
+    // 1. Get the file extension from the item's file_type
+    const fileType = item.file_type?.toLowerCase() || '';
+    const ext = fileType ? `.${fileType}` : '';
+    
+    // 2. If no extension, return original title
+    if (!ext) return item.title;
+    
+    // 3. Check if the title already has the extension
+    const hasExtension = item.title.toLowerCase().endsWith(ext);
+    
+    // 4. Create a safe filename for the browser
+    return hasExtension ? item.title : `${item.title}${ext}`;
+};
+
+// Local ArchiveCard component (updated with onEdit and category)
+const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelete, onRename, onShare, onReIndex, onAskAI, onEdit, isShared, isFolder, isLoading, indexingStatus, category }: any) => { 
     const { t } = useTranslation();
     return ( 
         <motion.div whileHover={{ scale: 1.01 }} onClick={onClick} className="group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-2xl glass-panel border border-border-main hover:border-primary-start/30 transition-all cursor-pointer hover-lift shadow-sm"> 
@@ -130,6 +150,12 @@ const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelet
                     {!isFolder && indexingStatus === 'READY' && onAskAI && <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-2 text-text-muted hover:text-primary-start transition-colors hover-lift" title={t('archive.ask_ai')}><MessageSquare size={16} /></button>}
                     {onShare && <button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 ${isShared ? 'text-success-start' : 'text-text-muted hover:text-text-primary'} hover-lift`}><Share2 size={16} /></button>}
                     {onRename && <button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 text-text-muted hover:text-text-primary transition-colors hover-lift" title={t('general.edit')}><Pencil size={16}/></button>}
+                    {/* NEW: Edit button for purchase orders */}
+                    {!isFolder && category === 'purchase_order' && onEdit && (
+                        <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-2 text-text-muted hover:text-primary-start transition-colors hover-lift" title={t('purchaseOrder.edit', 'Edit Purchase Order')}>
+                            <Pencil size={16} />
+                        </button>
+                    )}
                     {!isFolder && (
                         <>
                             <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-2 text-text-muted hover:text-primary-start transition-colors hover-lift">{isLoading ? <Loader2 className="animate-spin" size={16} /> : <Eye size={16} />}</button>
@@ -163,6 +189,9 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
     const [showShareModal, setShowShareModal] = useState(false);
     const [showForensicModal, setShowForensicModal] = useState(false);
     const [chatDoc, setChatDoc] = useState<{id: string, title: string} | null>(null);
+    // NEW: Edit purchase order modal state
+    const [editPoId, setEditPoId] = useState<string | null>(null);
+    const [showEditModal, setShowEditModal] = useState(false);
 
     const archiveInputRef = useRef<HTMLInputElement>(null);
 
@@ -198,6 +227,16 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
         }
     };
 
+    // NEW: Handle edit purchase order
+    const handleEditItem = (item: ArchiveItemOut) => {
+        setEditPoId(item.id);
+        setShowEditModal(true);
+    };
+
+    const handleEditSuccess = () => {
+        fetchArchiveContent(); // refresh list to show updated title if changed
+    };
+
     // FIXED: Proper MIME type detection for text files (TXT, MD, JSON) and other formats
     const handleViewItem = async (item: ArchiveItemOut) => {
         const fileType = item.file_type?.toUpperCase() || '';
@@ -231,6 +270,12 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
         } finally { 
             setOpeningDocId(null); 
         } 
+    };
+
+    // NEW: Handle download with correct file extension
+    const handleDownloadItem = (item: ArchiveItemOut) => {
+        const safeFileName = getSafeFileNameForDownload(item);
+        apiService.downloadArchiveItem(item.id, safeFileName);
     };
 
     if (loading && filteredItems.length === 0) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary-start" /></div>;
@@ -294,12 +339,14 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                             isFolder={item.item_type === 'FOLDER'} 
                             isShared={item.is_shared} 
                             isLoading={openingDocId === item.id} 
+                            category={item.category}
                             onClick={() => item.item_type === 'FOLDER' ? enterFolder(item.id, item.title, 'FOLDER') : handleViewItem(item)} 
-                            onDownload={() => apiService.downloadArchiveItem(item.id, item.title)} 
+                            onDownload={() => handleDownloadItem(item)} 
                             onDelete={() => deleteItem(item.id)} 
                             onRename={() => { setItemToRename(item); setRenameValue(item.title); setShowRenameModal(true); }} 
                             onShare={() => shareItem(item)} 
                             onAskAI={() => setChatDoc({id: item.id, title: item.title})}
+                            onEdit={() => handleEditItem(item)}
                         />
                     ))}
                 </AnimatePresence>
@@ -365,6 +412,14 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            
+            {/* Edit Purchase Order Modal */}
+            <EditPurchaseOrderModal
+                isOpen={showEditModal}
+                archiveId={editPoId}
+                onClose={() => setShowEditModal(false)}
+                onSuccess={handleEditSuccess}
+            />
             
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={() => setViewingDoc(null)} t={t} directUrl={viewingUrl || ""} />}
             {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={(isInsideWorkspace ? currentView.id : workspaceId) || ""} caseTitle={currentView.name} />}
