@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.8 (STRUCTURED SUPPLIER BLOCK)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.9 (TABLE-BASED SUPPLIER BLOCK)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -113,7 +113,7 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     story.append(Spacer(1, 0.2*cm))
     
     buyer_text = f"""
-    <b>BLERËSI (Kompania juaj)</b><br/>
+    <b>BLERËSI</b><br/>
     {buyer_info.get('name', 'Haveri Business')}<br/>
     {buyer_info.get('address', '')}<br/>
     {f"VAT: {buyer_info.get('vat', '')}" if buyer_info.get('vat') else ""}<br/>
@@ -137,24 +137,31 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     story.append(header_table)
     story.append(Spacer(1, 0.5*cm))
     
-    # STRUCTURED SUPPLIER BLOCK - Professional formatting with line breaks and conditional fields
-    def format_supplier_line(label: str, value: str) -> str:
-        """Format a supplier detail line with bold label, returns empty string if value is empty."""
-        if not value or not value.strip():
-            return ""
-        return f"<b>{label}:</b> {value}<br/>"
-    
+    # TABLE-BASED SUPPLIER BLOCK - Professional multi-line layout using Table (not fragile <br/> tags)
+    # Clean the supplier data first
     supplier_name = clean_field(order_data.get('supplier_name', ''))
     supplier_address = clean_field(order_data.get('supplier_address', ''))
     supplier_vat = clean_field(order_data.get('supplier_vat', ''))
     
-    supplier_text = f"""
-    <b>FURNITORI</b><br/>
-    <b>{supplier_name}</b><br/>
-    {format_supplier_line('Adresa', supplier_address)}
-    {format_supplier_line('VAT', supplier_vat)}
-    """
-    story.append(Paragraph(supplier_text, normal_style))
+    # Build table rows dynamically (only include non-empty fields)
+    supplier_rows = [
+        [Paragraph("<b>FURNITORI</b>", normal_style)],
+        [Paragraph(f"<b>{supplier_name}</b>", normal_style)],
+    ]
+    
+    if supplier_address:
+        supplier_rows.append([Paragraph(supplier_address, normal_style)])
+    if supplier_vat:
+        supplier_rows.append([Paragraph(f"VAT: {supplier_vat}", normal_style)])
+    
+    supplier_table = Table(supplier_rows, colWidths=[8*cm])
+    supplier_table.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('PADDING', (0,0), (-1,-1), 2),
+    ]))
+    
+    story.append(supplier_table)
     story.append(Spacer(1, 0.5*cm))
     
     subtotal = order_data['estimated_cost']
