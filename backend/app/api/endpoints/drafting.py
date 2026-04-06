@@ -1,27 +1,32 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.0 (PDF PURCHASE ORDER)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.4 (SYNC MONGO FIX)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, Any
 from datetime import datetime
 from io import BytesIO
+import uuid
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
+from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import cm
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 
 from app.services.drafting_service import DraftingService
 from app.services.archive_service import ArchiveService
+from app.services.business_service import BusinessService
 from app.api.endpoints.dependencies import get_current_user, get_db
 from app.models.user import UserInDB
 from pymongo.database import Database
+from bson import ObjectId
 
 router = APIRouter(tags=["drafting"])
 
+# ---------- Pydantic Models ----------
 class DraftRequest(BaseModel):
     user_prompt: str
     document_type: str = "generic"
@@ -34,104 +39,184 @@ class PurchaseOrderRequest(BaseModel):
     quantity: float
     estimated_cost: float
     supplier_name: str
+    supplier_address: Optional[str] = None
+    supplier_vat: Optional[str] = None
+    notes: Optional[str] = None
 
-@router.post("/stream")
-async def stream_draft(
-    request: DraftRequest,
-    current_user: UserInDB = Depends(get_current_user)
-):
-    """
-    Generate a legal document with streaming response.
-    Uses Juristi's knowledge base for legal context.
-    """
-    if not request.user_prompt or not request.user_prompt.strip():
-        raise HTTPException(status_code=400, detail="User prompt is required")
-    
-    drafting_service = DraftingService()
-    
-    async def generate():
-        async for chunk in drafting_service.draft_document_stream(
-            user_prompt=request.user_prompt,
-            document_type=request.document_type,
-            include_legal_context=request.include_legal_context
-        ):
-            yield chunk
-    
-    return StreamingResponse(
-        generate(),
-        media_type="text/plain",
-        headers={
-            "Content-Disposition": "attachment; filename=draft.txt",
-            "X-Content-Type-Options": "nosniff"
+class PurchaseOrderUpdate(PurchaseOrderRequest):
+    po_number: str
+
+# ---------- Helper Functions ----------
+def generate_po_number() -> str:
+    now = datetime.now()
+    return f"PO-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:6].upper()}"
+
+def get_business_info(business_service, user_id: str) -> Dict[str, str]:
+    try:
+        profile = business_service.get_business_profile(user_id)
+        return {
+            "name": profile.firm_name,
+            "address": profile.address or "",
+            "vat": profile.vat_number or "",
+            "email": profile.email or "",
+            "phone": profile.phone or "",
         }
-    )
+    except Exception:
+        return {
+            "name": "Haveri Business",
+            "address": "",
+            "vat": "",
+            "email": "",
+            "phone": "",
+        }
 
+def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, str], po_number: str) -> bytes:
+    pdf_buffer = BytesIO()
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=A4, topMargin=1.8*cm, bottomMargin=1.8*cm,
+                            leftMargin=2.2*cm, rightMargin=2.2*cm)
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('TitleStyle', parent=styles['Heading1'], fontSize=18,
+                                 alignment=TA_CENTER, textColor=colors.HexColor('#1a4d8c'),
+                                 spaceAfter=20, fontName='Helvetica-Bold')
+    normal_style = ParagraphStyle('NormalStyle', parent=styles['Normal'], fontSize=9,
+                                  leading=12, textColor=colors.HexColor('#444444'))
+    right_style = ParagraphStyle('RightStyle', parent=normal_style, alignment=TA_RIGHT)
+    small_style = ParagraphStyle('SmallStyle', parent=styles['Normal'], fontSize=8,
+                                 textColor=colors.HexColor('#666666'))
+    story = []
+    story.append(Paragraph("PURCHASE ORDER", title_style))
+    story.append(Spacer(1, 0.2*cm))
+    buyer_text = f"""
+    <b>BLERËSI (Kompania juaj)</b><br/>
+    {buyer_info['name']}<br/>
+    {buyer_info['address']}<br/>
+    VAT: {buyer_info['vat']}<br/>
+    Tel: {buyer_info['phone']}<br/>
+    Email: {buyer_info['email']}
+    """
+    po_details_text = f"""
+    <b>URDHËR BLERJE Nr.</b><br/>
+    {po_number}<br/><br/>
+    <b>Data:</b> {datetime.now().strftime('%d.%m.%Y')}<br/>
+    <b>Statusi:</b> Draft<br/>
+    """
+    buyer_para = Paragraph(buyer_text, normal_style)
+    po_para = Paragraph(po_details_text, right_style)
+    header_table = Table([[buyer_para, po_para]], colWidths=[8*cm, 8*cm])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOX', (0,0), (-1,-1), 0.5, colors.lightgrey),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+    story.append(header_table)
+    story.append(Spacer(1, 0.5*cm))
+    supplier_text = f"""
+    <b>FURNITORI</b><br/>
+    {order_data['supplier_name']}<br/>
+    {order_data.get('supplier_address', '')}<br/>
+    {f"VAT: {order_data.get('supplier_vat', '')}" if order_data.get('supplier_vat') else ''}
+    """
+    story.append(Paragraph(supplier_text, normal_style))
+    story.append(Spacer(1, 0.5*cm))
+    subtotal = order_data['estimated_cost']
+    vat_rate = 0.18
+    vat_amount = subtotal * vat_rate
+    grand_total = subtotal + vat_amount
+    line_items = [
+        ["Përshkrimi", "Njësia", "Sasia", "Çmimi/Njësi (€)", "Total (€)"],
+        [
+            Paragraph(order_data['item_name'], normal_style),
+            order_data['unit'],
+            str(order_data['quantity']),
+            f"{subtotal / order_data['quantity']:.2f}" if order_data['quantity'] > 0 else "0.00",
+            f"{subtotal:.2f}"
+        ]
+    ]
+    item_table = Table(line_items, colWidths=[6*cm, 2.5*cm, 2.5*cm, 3*cm, 3*cm])
+    item_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1a4d8c')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.lightgrey),
+        ('BACKGROUND', (0,1), (-1,-1), colors.whitesmoke),
+        ('PADDING', (0,0), (-1,-1), 6),
+    ]))
+    story.append(item_table)
+    story.append(Spacer(1, 0.3*cm))
+    totals_data = [
+        ["Subtotal:", f"€{subtotal:.2f}"],
+        [f"TVSH ({vat_rate*100:.0f}%):", f"€{vat_amount:.2f}"],
+        ["TOTAL I PËRGJITHSHËM:", f"€{grand_total:.2f}"]
+    ]
+    totals_table = Table(totals_data, colWidths=[13*cm, 3*cm])
+    totals_table.setStyle(TableStyle([
+        ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('LINEABOVE', (0,-1), (-1,-1), 1, colors.black),
+        ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#e6f0fa')),
+        ('TEXTCOLOR', (0,-1), (-1,-1), colors.HexColor('#1a4d8c')),
+        ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold'),
+    ]))
+    story.append(totals_table)
+    story.append(Spacer(1, 0.5*cm))
+    terms_text = """
+    <b>KUSHTET DHE SHËRBIMET:</b><br/>
+    1. Kjo porosi është draft i krijuar nga Inteligjenca Artificiale e Haveri.<br/>
+    2. Furnitori duhet të konfirmojë disponueshmërinë brenda 48 orëve.<br/>
+    3. Pagesa do të kryhet pas faturimit dhe dorëzimit të mallrave.<br/>
+    4. Çdo ankesë për cilësinë e produkteve duhet të bëhet me shkrim brenda 7 ditëve.<br/>
+    5. Tatimi dhe detyrimet shtesë paguhen nga blerësi, përveç nëse specifikohet ndryshe.
+    """
+    story.append(Paragraph(terms_text, small_style))
+    story.append(Spacer(1, 0.5*cm))
+    story.append(Paragraph("<i>Ky dokument është gjeneruar automatikisht nga Haveri Platform.</i>", small_style))
+    doc.build(story)
+    return pdf_buffer.getvalue()
+
+# ---------- Database Store for Purchase Orders (SYNC) ----------
+class PurchaseOrderStore:
+    def __init__(self, db: Database):
+        self.collection = db.purchase_orders
+
+    def create(self, user_id: str, archive_id: str, po_number: str, order_data: dict) -> None:
+        doc = {
+            "user_id": ObjectId(user_id),
+            "archive_id": ObjectId(archive_id),
+            "po_number": po_number,
+            "order_data": order_data,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        self.collection.insert_one(doc)
+
+    def get_by_archive_id(self, user_id: str, archive_id: str) -> Optional[dict]:
+        doc = self.collection.find_one({
+            "user_id": ObjectId(user_id),
+            "archive_id": ObjectId(archive_id)
+        })
+        return doc
+
+    def update(self, user_id: str, archive_id: str, new_order_data: dict) -> None:
+        self.collection.update_one(
+            {"user_id": ObjectId(user_id), "archive_id": ObjectId(archive_id)},
+            {"$set": {"order_data": new_order_data, "updated_at": datetime.utcnow()}}
+        )
+
+# ---------- API Endpoints ----------
 @router.post("/purchase-order")
 async def create_purchase_order(
     order: PurchaseOrderRequest,
     current_user: UserInDB = Depends(get_current_user),
     db: Database = Depends(get_db)
 ):
-    """
-    Create a purchase order as a PDF and save it to the archive.
-    """
-    # Create PDF in memory
-    pdf_buffer = BytesIO()
-    doc = SimpleDocTemplate(
-        pdf_buffer,
-        pagesize=A4,
-        topMargin=1.5*cm,
-        bottomMargin=1.5*cm,
-        leftMargin=2*cm,
-        rightMargin=2*cm
-    )
-    
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'TitleStyle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        alignment=1,  # center
-        spaceAfter=20
-    )
-    normal_style = styles['Normal']
-    
-    story = []
-    story.append(Paragraph("POROSIA E BLERJES", title_style))
-    story.append(Spacer(1, 12))
-    story.append(Paragraph(f"<b>Data:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style))
-    story.append(Spacer(1, 12))
-    
-    # Table of order details
-    data = [
-        ["Produkti:", order.item_name],
-        ["Njësia:", order.unit],
-        ["Sasia:", str(order.quantity)],
-        ["Furnitori:", order.supplier_name],
-        ["Kosto e vlerësuar:", f"€{order.estimated_cost:.2f}"],
-        ["Statusi:", "Draft (krijuar nga AI)"]
-    ]
-    
-    table = Table(data, colWidths=[4*cm, 8*cm])
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (0,-1), colors.lightgrey),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('PADDING', (0,0), (-1,-1), 6),
-    ]))
-    story.append(table)
-    story.append(Spacer(1, 20))
-    
-    # Build PDF
-    doc.build(story)
-    pdf_bytes = pdf_buffer.getvalue()
-    
-    # Prepare filename
-    filename = f"purchase_order_{order.item_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-    
-    # Save to archive
+    po_number = generate_po_number()
+    business_service = BusinessService(db)
+    buyer_info = get_business_info(business_service, str(current_user.id))
+    order_data = order.dict()
+    pdf_bytes = generate_pdf_po(order_data, buyer_info, po_number)
+    filename = f"PO_{po_number}_{order.item_name.replace(' ', '_')}.pdf"
     archive_service = ArchiveService(db)
     try:
         archive_item = await archive_service.save_generated_file(
@@ -139,18 +224,68 @@ async def create_purchase_order(
             filename=filename,
             file_content=pdf_bytes,
             category="purchase_order",
-            title=f"Porosia Blerje: {order.item_name}",
+            title=f"Urdhër Blerje: {order.item_name} (PO-{po_number})",
             case_id=None
         )
-        archive_id_str = str(archive_item.id)
+        store = PurchaseOrderStore(db)
+        store.create(str(current_user.id), str(archive_item.id), po_number, order_data)
         return {
             "status": "created",
-            "message": f"Purchase order PDF for {order.item_name} saved to archive.",
-            "archive_id": archive_id_str,
-            "order": order.dict()
+            "message": "Purchase order created.",
+            "archive_id": str(archive_item.id),
+            "po_number": po_number
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save purchase order PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create purchase order: {str(e)}")
+
+@router.get("/purchase-order/{archive_id}")
+async def get_purchase_order_data(
+    archive_id: str,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    store = PurchaseOrderStore(db)
+    po_doc = store.get_by_archive_id(str(current_user.id), archive_id)
+    if not po_doc:
+        raise HTTPException(status_code=404, detail="Purchase order not found")
+    return {
+        "po_number": po_doc["po_number"],
+        "order_data": po_doc["order_data"]
+    }
+
+@router.put("/purchase-order/{archive_id}")
+async def update_purchase_order(
+    archive_id: str,
+    update: PurchaseOrderUpdate,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    store = PurchaseOrderStore(db)
+    po_doc = store.get_by_archive_id(str(current_user.id), archive_id)
+    if not po_doc:
+        raise HTTPException(status_code=404, detail="Purchase order not found")
+    new_order_data = update.dict(exclude={"po_number"})
+    store.update(str(current_user.id), archive_id, new_order_data)
+    business_service = BusinessService(db)
+    buyer_info = get_business_info(business_service, str(current_user.id))
+    pdf_bytes = generate_pdf_po(new_order_data, buyer_info, update.po_number)
+    archive_service = ArchiveService(db)
+    try:
+        filename = f"PO_{update.po_number}_{update.item_name.replace(' ', '_')}.pdf"
+        await archive_service.replace_file_content(
+            user_id=str(current_user.id),
+            archive_id=archive_id,
+            new_file_content=pdf_bytes,
+            new_filename=filename
+        )
+        return {
+            "status": "updated",
+            "message": "Purchase order updated successfully.",
+            "archive_id": archive_id,
+            "po_number": update.po_number
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update purchase order: {str(e)}")
 
 @router.get("/health")
 async def health_check():
