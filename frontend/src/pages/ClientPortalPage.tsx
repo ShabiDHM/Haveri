@@ -1,7 +1,10 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - PORTAL V11.1 (EXECUTIVE DESIGN SYSTEM)
+// PHOENIX PROTOCOL - PORTAL V11.3 (EXECUTIVE DESIGN SYSTEM)
 // UPDATED: Semantic Tailwind classes (glass-panel, border-border-main, text-text-*, etc.)
 // ADDED: shadow-sm, hover-lift, consistent backdrop blur.
+// REMOVED: "Njoftim nga Drejtoria" (Management Notice) component per UX cleanup
+// FIXED: Albanian date localization with 'sq-AL' locale
+// FIXED: Simplified grid layout after notice removal
 // RETAINED: All logic and functionality.
 
 import React, { useEffect, useState } from 'react';
@@ -9,7 +12,7 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
     Loader2, FileText, ShieldCheck, Building2, Download,
-    Calendar, Eye, Quote, AlignLeft, User, Mail, MessageSquare, Send, Phone,
+    Calendar, Eye, User, Mail, MessageSquare, Send, Phone,
     MapPin, Globe
 } from 'lucide-react';
 import { API_V1_URL, apiService } from '../services/api';
@@ -98,8 +101,12 @@ const ClientPortalPage: React.FC = () => {
     if (error || !data) return ( <div className="min-h-screen bg-canvas flex items-center justify-center p-6"><div className="bg-danger-start/10 border border-danger-start/30 p-12 rounded-3xl text-center shadow-sm"><ShieldCheck className="w-16 h-16 text-danger-start/50 mx-auto mb-6" /><h1 className="text-2xl font-bold text-text-primary mb-2">{t('portal.access_denied')}</h1><p className="text-text-muted">{error}</p></div></div> );
 
     const logoSrc = getLogoUrl();
-    const currentDate = new Date().toLocaleDateString('sq-AL', { year: 'numeric', month: 'long', day: 'numeric' });
-    const directorMessage = data.description || "Të nderuar, bashkëngjitur gjeni dokumentacionin e përgatitur për rishikimin tuaj.";
+    // FORCED ALBANIAN DATE LOCALIZATION - using 'sq-AL' locale
+    const currentDate = new Date().toLocaleDateString('sq-AL', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
     
     const businessName = data.organization_name;
     const businessAddress = data.owner_address || data.address;
@@ -130,25 +137,26 @@ const ClientPortalPage: React.FC = () => {
                 </div>
             </header>
             <main className="max-w-6xl mx-auto px-6 pt-12 relative z-10 space-y-16">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-                    <div className="space-y-6 pt-4">
-                        <div className="inline-flex items-center gap-2 text-success-start bg-success-start/10 px-3 py-1 rounded-lg border border-success-start/30 text-xs font-black uppercase tracking-widest shadow-sm"><Calendar size={12} /> {currentDate}</div>
-                        <div><h1 className="text-5xl sm:text-6xl font-black text-text-primary tracking-tight leading-[1.1] mb-4">Përshëndetje,</h1><p className="text-text-secondary text-lg font-light leading-relaxed max-w-md">Këtu do të gjeni pasqyrën e plotë të dokumentacionit dhe komunikimet.</p></div>
+                {/* Greeting Section - Simplified layout after management notice removal */}
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: 0.1 }} 
+                    className="pt-4"
+                >
+                    <div className="inline-flex items-center gap-2 text-success-start bg-success-start/10 px-3 py-1 rounded-lg border border-success-start/30 text-xs font-black uppercase tracking-widest shadow-sm">
+                        <Calendar size={12} /> {currentDate}
                     </div>
-                    <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-br from-success-start/20 via-transparent to-primary-start/20 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition"></div>
-                        <div className="relative glass-panel p-8 sm:p-10 shadow-sm border border-border-main">
-                            <div className="flex items-start justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-success-start to-success-start/70 flex items-center justify-center shadow-sm border border-border-main"><Quote size={18} className="text-text-inverse" /></div>
-                                    <div><h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">Njoftim</h3><p className="text-xs font-black uppercase tracking-widest text-success-start mt-0.5">Nga Drejtoria</p></div>
-                                </div>
-                                <AlignLeft className="text-text-muted/20" size={24} />
-                            </div>
-                            <div className="prose prose-invert prose-sm max-w-none"><p className="text-text-secondary leading-relaxed font-light whitespace-pre-wrap">{directorMessage}</p></div>
-                        </div>
+                    <div>
+                        <h1 className="text-5xl sm:text-6xl font-black text-text-primary tracking-tight leading-[1.1] mb-4 mt-6">
+                            Përshëndetje,
+                        </h1>
+                        <p className="text-text-secondary text-lg font-light leading-relaxed max-w-xl">
+                            Këtu do të gjeni pasqyrën e plotë të dokumentacionit dhe komunikimet.
+                        </p>
                     </div>
                 </motion.div>
+                
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                     <div className="flex items-center justify-between mb-8 border-b border-border-main pb-4">
                         <div className="flex items-center gap-4">
@@ -175,7 +183,7 @@ const ClientPortalPage: React.FC = () => {
                                     </div>
                                     <div className="relative z-10 flex-1">
                                         <h4 className="font-bold text-text-primary group-hover:text-text-primary line-clamp-2 leading-snug text-base mb-1">{doc.file_name}</h4>
-                                        <div className="flex items-center gap-2 text-xs text-text-muted"><Calendar size={12} /><span>{new Date(doc.created_at).toLocaleDateString()}</span></div>
+                                        <div className="flex items-center gap-2 text-xs text-text-muted"><Calendar size={12} /><span>{new Date(doc.created_at).toLocaleDateString('sq-AL')}</span></div>
                                     </div>
                                     <div className="relative z-10 mt-4 pt-4 border-t border-border-main flex justify-between items-center">
                                         <span className="text-xs font-black uppercase tracking-widest text-text-muted">{doc.file_type || 'PDF'}</span>
@@ -186,6 +194,7 @@ const ClientPortalPage: React.FC = () => {
                         )}
                     </div>
                 </motion.div>
+                
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="pt-8">
                     <div className="glass-panel overflow-hidden shadow-sm relative border border-border-main">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-start via-primary-start to-primary-start" />
