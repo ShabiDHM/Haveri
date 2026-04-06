@@ -1,5 +1,5 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V8.7 (FIXED WIZARD FILTERING)
+# PHOENIX PROTOCOL - FINANCE SERVICE V9.0 (ROBUST SOFT DELETE)
 
 import logging
 import csv
@@ -36,6 +36,12 @@ class FinanceService:
                 {"organization_id": context_id}
             ]}
 
+    def _get_active_filter(self, context_id: str) -> Dict:
+        """Get filter for active (non-deleted) records only"""
+        base_filter = self._get_resilient_filter(context_id)
+        base_filter["deleted_at"] = None
+        return base_filter
+
     def _find_inventory_item_by_name(self, user_id: str, name: str) -> Optional[ObjectId]:
         if not name:
             return None
@@ -46,15 +52,23 @@ class FinanceService:
         })
         return item["_id"] if item else None
 
+    def _soft_delete(self, collection, record_id: ObjectId, user_id: str) -> bool:
+        """Soft delete a record by setting deleted_at timestamp"""
+        result = collection.update_one(
+            {"_id": record_id, "user_id": ObjectId(user_id)},
+            {"$set": {"deleted_at": datetime.now(timezone.utc)}}
+        )
+        return result.modified_count > 0
+
     # --- PARTNER LOGIC ---
     def get_partners(self, context_id: str) -> List[PartnerInDB]:
-        query = self._get_resilient_filter(context_id)
+        query = self._get_active_filter(context_id)
         cursor = self.db.partners.find(query).sort("name", 1)
         return [PartnerInDB(**doc) for doc in cursor]
 
     def update_partner(self, context_id: str, partner_id: str, data: PartnerUpdate) -> PartnerInDB:
         oid = ObjectId(partner_id)
-        query = {"_id": oid, **self._get_resilient_filter(context_id)}
+        query = {"_id": oid, **self._get_active_filter(context_id)}
         update_dict = data.model_dump(exclude_unset=True)
         res = self.db.partners.find_one_and_update(query, {"$set": update_dict}, return_document=True)
         if not res:
@@ -63,9 +77,9 @@ class FinanceService:
 
     def delete_partner(self, context_id: str, partner_id: str):
         oid = ObjectId(partner_id)
-        query = {"_id": oid, **self._get_resilient_filter(context_id)}
-        res = self.db.partners.delete_one(query)
-        if res.deleted_count == 0:
+        query = {"_id": oid, **self._get_active_filter(context_id)}
+        res = self.db.partners.update_one(query, {"$set": {"deleted_at": datetime.now(timezone.utc)}})
+        if res.modified_count == 0:
             raise HTTPException(status_code=404, detail="Partner not found")
 
     async def import_partners(self, user_id: str, file: UploadFile) -> Dict[str, Any]:
@@ -88,7 +102,8 @@ class FinanceService:
                     "address": row.get("Adresa") or row.get("Address"),
                     "tax_id": row.get("NIPT") or row.get("TaxID"),
                     "type": str(row.get("Tipi") or row.get("Type", "CLIENT")).upper(),
-                    "created_at": datetime.now(timezone.utc)
+                    "created_at": datetime.now(timezone.utc),
+                    "deleted_at": None
                 }
                 if org_id:
                     partner_doc["organization_id"] = ObjectId(str(org_id))
@@ -102,12 +117,19 @@ class FinanceService:
 
     # --- POS / TRANSACTION LOGIC ---
     async def get_monthly_pos_revenue(self, async_db: Any, user_id: str, month: int, year: int, case_id: Optional[str] = None) -> float:
+        """Get POS revenue for a specific month (excluding deleted transactions)"""
         try:
             start_date = datetime(year, month, 1)
             end_date = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
-            match_filter = {"user_id": str(user_id), "date_time": {"$gte": start_date, "$lt": end_date}}
+            
+            match_filter = {
+                "user_id": str(user_id),
+                "date_time": {"$gte": start_date, "$lt": end_date},
+                "deleted_at": None  # Exclude soft-deleted transactions
+            }
             if case_id:
                 match_filter["case_id"] = case_id
+                
             pipeline = [
                 {"$match": match_filter},
                 {"$group": {"_id": None, "total_revenue": {"$sum": "$total_amount"}}}
@@ -146,6 +168,8 @@ class FinanceService:
             "source": "MANUAL",
             "status": "PAID",
             "payment_method": data.get("payment_method", "CASH"),
+            "created_at": datetime.now(timezone.utc),
+            "deleted_at": None  # Initialize as not deleted
         }
         inv_id = data.get("inventory_item_id")
         if inv_id:
@@ -202,37 +226,71 @@ class FinanceService:
         return doc
 
     def delete_pos_transaction(self, user_id: str, transaction_id: str) -> None:
+        """Soft delete a POS transaction"""
         try:
             oid = ObjectId(transaction_id)
         except:
             raise HTTPException(status_code=400, detail="Invalid Transaction ID")
-        trans = self.db.transactions.find_one({"_id": oid, "user_id": str(user_id)})
+        
+        # Soft delete the transaction
+        result = self.db.transactions.update_one(
+            {"_id": oid, "user_id": str(user_id)},
+            {"$set": {"deleted_at": datetime.now(timezone.utc)}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Transaction not found")
+        
+        # Also soft delete the auto-generated invoice if it exists
+        trans = self.db.transactions.find_one({"_id": oid})
         if trans and trans.get("generated_invoice_id"):
             try:
-                self.db.invoices.delete_one({"_id": ObjectId(trans["generated_invoice_id"]), "user_id": ObjectId(user_id)})
+                self.db.invoices.update_one(
+                    {"_id": ObjectId(trans["generated_invoice_id"]), "user_id": ObjectId(user_id)},
+                    {"$set": {"deleted_at": datetime.now(timezone.utc)}}
+                )
             except:
                 pass
-        result = self.db.transactions.delete_one({"_id": oid, "user_id": str(user_id)})
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Transaction not found")
 
     def bulk_delete_transactions(self, user_id: str, invoice_ids: List[str] = [], expense_ids: List[str] = [], pos_ids: List[str] = []) -> int:
+        """Soft delete multiple transactions"""
         total_deleted = 0
         user_oid = ObjectId(user_id)
+        now = datetime.now(timezone.utc)
+        
         try:
             if invoice_ids:
-                total_deleted += self.db.invoices.delete_many({"_id": {"$in": [ObjectId(tid) for tid in invoice_ids]}, "user_id": user_oid, "is_locked": {"$ne": True}}).deleted_count
+                oids = [ObjectId(tid) for tid in invoice_ids]
+                result = self.db.invoices.update_many(
+                    {"_id": {"$in": oids}, "user_id": user_oid, "is_locked": {"$ne": True}},
+                    {"$set": {"deleted_at": now}}
+                )
+                total_deleted += result.modified_count
+                
             if expense_ids:
-                total_deleted += self.db.expenses.delete_many({"_id": {"$in": [ObjectId(tid) for tid in expense_ids]}, "user_id": user_oid, "is_locked": {"$ne": True}}).deleted_count
+                oids = [ObjectId(tid) for tid in expense_ids]
+                result = self.db.expenses.update_many(
+                    {"_id": {"$in": oids}, "user_id": user_oid, "is_locked": {"$ne": True}},
+                    {"$set": {"deleted_at": now}}
+                )
+                total_deleted += result.modified_count
+                
             if pos_ids:
-                total_deleted += self.db.transactions.delete_many({"_id": {"$in": [ObjectId(tid) for tid in pos_ids]}, "user_id": str(user_id)}).deleted_count
-        except Exception:
+                oids = [ObjectId(tid) for tid in pos_ids]
+                result = self.db.transactions.update_many(
+                    {"_id": {"$in": oids}, "user_id": str(user_id)},
+                    {"$set": {"deleted_at": now}}
+                )
+                total_deleted += result.modified_count
+        except Exception as e:
+            logger.error(f"Bulk delete error: {e}")
             raise HTTPException(status_code=400, detail="Invalid ID provided in bulk delete.")
+        
         return total_deleted
 
     # --- INVOICE LOGIC ---
     def _generate_invoice_number(self, user_id: str) -> str:
-        count = self.db.invoices.count_documents({"user_id": ObjectId(user_id)})
+        count = self.db.invoices.count_documents({"user_id": ObjectId(user_id), "deleted_at": None})
         return f"F-{datetime.now().year}-{count + 1:04d}"
 
     def create_invoice(self, user_id: str, data: InvoiceCreate, case_id: Optional[str] = None) -> InvoiceInDB:
@@ -247,7 +305,8 @@ class FinanceService:
             "subtotal": subtotal,
             "tax_amount": tax_amount,
             "total_amount": total_amount,
-            "created_at": datetime.now(timezone.utc)
+            "created_at": datetime.now(timezone.utc),
+            "deleted_at": None
         })
         if case_id:
             invoice_doc["case_id"] = case_id
@@ -256,11 +315,8 @@ class FinanceService:
         return InvoiceInDB(**invoice_doc)
 
     def get_invoices(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[InvoiceInDB]:
-        query = self._get_resilient_filter(context_id)
-        
-        # PHOENIX FIX: Exclude cancelled/archived/deleted invoices from wizard calculations
-        # Only include active invoices with status not in excluded list
-        query["status"] = {"$nin": ["CANCELLED", "DELETED", "ARCHIVED"]}
+        """Get only active (non-deleted) invoices"""
+        query = self._get_active_filter(context_id)
         
         if case_id:
             query["case_id"] = case_id
@@ -273,14 +329,14 @@ class FinanceService:
 
     def get_invoice(self, context_id: str, invoice_id: str) -> InvoiceInDB:
         oid = ObjectId(invoice_id)
-        doc = self.db.invoices.find_one({"_id": oid, **self._get_resilient_filter(context_id)})
+        doc = self.db.invoices.find_one({"_id": oid, **self._get_active_filter(context_id)})
         if not doc:
             raise HTTPException(status_code=404, detail="Invoice not found")
         return InvoiceInDB(**doc)
 
     def update_invoice(self, context_id: str, invoice_id: str, update_data: InvoiceUpdate) -> InvoiceInDB:
         oid = ObjectId(invoice_id)
-        existing = self.db.invoices.find_one({"_id": oid, **self._get_resilient_filter(context_id)})
+        existing = self.db.invoices.find_one({"_id": oid, **self._get_active_filter(context_id)})
         if not existing:
             raise HTTPException(status_code=404, detail="Invoice not found")
         if existing.get("is_locked"):
@@ -303,16 +359,28 @@ class FinanceService:
         return InvoiceInDB(**result)
 
     def delete_invoice(self, user_id: str, invoice_id: str) -> None:
+        """Soft delete an invoice"""
         oid = ObjectId(invoice_id)
-        existing = self.db.invoices.find_one({"_id": oid, **self._get_resilient_filter(user_id)})
+        existing = self.db.invoices.find_one({"_id": oid, **self._get_active_filter(user_id)})
         if existing and existing.get("is_locked"):
             raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
-        self.db.invoices.delete_one({"_id": oid})
+        
+        result = self.db.invoices.update_one(
+            {"_id": oid},
+            {"$set": {"deleted_at": datetime.now(timezone.utc)}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Invoice not found")
 
     # --- EXPENSE LOGIC ---
     def create_expense(self, user_id: str, data: ExpenseCreate, case_id: Optional[str] = None) -> ExpenseInDB:
         doc = data.model_dump()
-        doc.update({"user_id": ObjectId(user_id), "created_at": datetime.now(timezone.utc)})
+        doc.update({
+            "user_id": ObjectId(user_id),
+            "created_at": datetime.now(timezone.utc),
+            "deleted_at": None
+        })
         if case_id:
             doc["case_id"] = case_id
         res = self.db.expenses.insert_one(doc)
@@ -320,10 +388,8 @@ class FinanceService:
         return ExpenseInDB(**doc)
 
     def get_expenses(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[ExpenseInDB]:
-        query = self._get_resilient_filter(context_id)
-        
-        # PHOENIX FIX: Exclude deleted/archived expenses
-        query["status"] = {"$nin": ["DELETED", "ARCHIVED"]}
+        """Get only active (non-deleted) expenses"""
+        query = self._get_active_filter(context_id)
         
         if case_id:
             query["case_id"] = case_id
@@ -335,15 +401,28 @@ class FinanceService:
         return [ExpenseInDB(**doc) for doc in cursor]
 
     def delete_expense(self, user_id: str, expense_id: str) -> None:
+        """Soft delete an expense"""
         oid = ObjectId(expense_id)
-        existing = self.db.expenses.find_one({"_id": oid, **self._get_resilient_filter(user_id)})
+        existing = self.db.expenses.find_one({"_id": oid, **self._get_active_filter(user_id)})
         if existing and existing.get("is_locked"):
             raise HTTPException(status_code=403, detail="Locked records cannot be deleted.")
-        self.db.expenses.delete_one({"_id": oid})
+        
+        result = self.db.expenses.update_one(
+            {"_id": oid},
+            {"$set": {"deleted_at": datetime.now(timezone.utc)}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Expense not found")
 
     # --- PHOENIX: GET POS TRANSACTIONS ---
     def get_pos_transactions(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[Dict[str, Any]]:
-        query = self._get_resilient_filter(context_id)
+        """Get only active (non-deleted) POS transactions"""
+        query = self._get_active_filter(context_id)
+        # Convert to string for POS transactions (they use string user_id)
+        query["user_id"] = context_id
+        del query["$or"]  # Remove the $or from _get_active_filter for POS
+        
         if case_id:
             query["case_id"] = case_id
         if year:
@@ -358,6 +437,8 @@ class FinanceService:
         counts = {"INVOICE": 0, "EXPENSE": 0, "POS": 0, "UNKNOWN": 0}
         user = self.db.users.find_one({"_id": ObjectId(user_id)})
         org_id = user.get("organization_id") if user else None
+        now = datetime.now(timezone.utc)
+        
         for row in transactions:
             try:
                 row_type = str(row.get("Tipi", "POS")).upper().strip()
@@ -385,7 +466,9 @@ class FinanceService:
                         "date_time": dt,
                         "source": "IMPORT",
                         "status": "PAID",
-                        "inventory_item_id": inv_id
+                        "inventory_item_id": inv_id,
+                        "created_at": now,
+                        "deleted_at": None
                     }
                     if org_id:
                         pos_doc["organization_id"] = ObjectId(str(org_id))

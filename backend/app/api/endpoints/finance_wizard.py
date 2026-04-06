@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance_wizard.py
-# PHOENIX PROTOCOL - FINANCE WIZARD ENDPOINT v3.5 (DEBUG SALES SOURCE)
+# PHOENIX PROTOCOL - FINANCE WIZARD ENDPOINT v3.6 (ROBUST)
 
 import logging
 from fastapi import APIRouter, Depends, Query, HTTPException, status
@@ -71,36 +71,9 @@ async def _get_wizard_data(month: int, year: int, user: Any, db: Any, async_db: 
 
     service = get_finance_service(db)
     
-    # Fetch ALL data for the user, optionally filtered by workspace
+    # Fetch ALL active data for the user (deleted records are automatically excluded)
     all_invoices = service.get_invoices(user_id, case_id)
     all_expenses = service.get_expenses(user_id, case_id)
-    
-    # ========== DEBUG: Log all invoices for April 2026 ==========
-    logger.info("=" * 60)
-    logger.info("WIZARD DEBUG - INVOICE BREAKDOWN")
-    logger.info("=" * 60)
-    
-    april_total = 0.0
-    for inv in all_invoices:
-        if hasattr(inv, 'issue_date') and inv.issue_date:
-            if inv.issue_date.month == 4 and inv.issue_date.year == 2026:
-                logger.info(f"Invoice: {inv.invoice_number} | Amount: €{inv.total_amount} | Status: {inv.status}")
-                april_total += inv.total_amount
-    
-    logger.info(f"TOTAL SALES FOR APRIL 2026 (from invoices): €{april_total}")
-    
-    # Also check POS transactions for April 2026
-    start_date = datetime(2026, 4, 1)
-    end_date = datetime(2026, 5, 1)
-    pos_transactions = list(db.transactions.find({
-        "user_id": user_id,
-        "date_time": {"$gte": start_date, "$lt": end_date}
-    }))
-    
-    pos_total = sum(tx.get("total_amount", 0) for tx in pos_transactions)
-    logger.info(f"POS TRANSACTIONS FOR APRIL 2026: {len(pos_transactions)} transactions, total: €{pos_total}")
-    logger.info("=" * 60)
-    # ========== END DEBUG ==========
     
     # Filter for current month
     period_invoices = _filter_by_month(all_invoices, month, year)
@@ -109,10 +82,10 @@ async def _get_wizard_data(month: int, year: int, user: Any, db: Any, async_db: 
     # Calculate Annual Turnover (YTD) from all invoices (respects workspace filter)
     annual_turnover = _calculate_annual_turnover(all_invoices, year)
 
-    # Fetch POS Revenue (Async) – also filter by workspace
+    # Fetch POS Revenue (Async) – automatically excludes deleted transactions
     pos_revenue = await service.get_monthly_pos_revenue(async_db, user_id, month, year, case_id)
 
-    # Run Tax Logic – correct parameter names: annual_turnover_ytd, pos_total_revenue
+    # Run Tax Logic
     calculation_result = tax_adapter.analyze_month(
         period_invoices,
         period_expenses,
@@ -164,76 +137,3 @@ async def download_monthly_report(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
-
-
-# ========== DEBUG ENDPOINT ==========
-@router.get("/debug/sales-source")
-async def debug_sales_source(
-    current_user: Any = Depends(get_current_user),
-    db: Any = Depends(get_db),
-):
-    """DEBUG: Identify where sales numbers are coming from"""
-    
-    user_id = ObjectId(current_user.id)
-    user_id_str = str(current_user.id)
-    
-    # Get ALL invoices (no filters)
-    all_invoices = list(db.invoices.find({"user_id": user_id}))
-    
-    # Get invoices for April 2026
-    start_date = datetime(2026, 4, 1)
-    end_date = datetime(2026, 5, 1)
-    
-    april_invoices = list(db.invoices.find({
-        "user_id": user_id,
-        "issue_date": {"$gte": start_date, "$lt": end_date}
-    }))
-    
-    # Get POS transactions for April 2026
-    pos_transactions = list(db.transactions.find({
-        "user_id": user_id_str,
-        "date_time": {"$gte": start_date, "$lt": end_date}
-    }))
-    
-    # Get expenses for April 2026
-    expenses = list(db.expenses.find({
-        "user_id": user_id,
-        "date": {"$gte": start_date, "$lt": end_date}
-    }))
-    
-    # Calculate totals
-    invoice_total = sum(inv.get("total_amount", 0) for inv in april_invoices)
-    pos_total = sum(tx.get("total_amount", 0) for tx in pos_transactions)
-    expense_total = sum(exp.get("amount", 0) for exp in expenses)
-    
-    return {
-        "user_id": user_id_str,
-        "period": "April 2026",
-        "start_date": start_date.isoformat(),
-        "end_date": end_date.isoformat(),
-        "invoices_count": len(april_invoices),
-        "invoices_total": invoice_total,
-        "invoices_list": [
-            {
-                "number": inv.get("invoice_number"),
-                "amount": inv.get("total_amount"),
-                "status": inv.get("status"),
-                "date": inv.get("issue_date").isoformat() if inv.get("issue_date") else None
-            }
-            for inv in april_invoices
-        ],
-        "pos_transactions_count": len(pos_transactions),
-        "pos_transactions_total": pos_total,
-        "pos_transactions_list": [
-            {
-                "product": tx.get("product_name"),
-                "amount": tx.get("total_amount"),
-                "date": tx.get("date_time").isoformat() if tx.get("date_time") else None
-            }
-            for tx in pos_transactions[:10]
-        ],
-        "expenses_count": len(expenses),
-        "expenses_total": expense_total,
-        "total_sales": invoice_total + pos_total,
-        "net_profit": (invoice_total + pos_total) - expense_total
-    }
