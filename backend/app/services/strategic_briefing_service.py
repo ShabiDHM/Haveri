@@ -1,5 +1,5 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V29.0 (REMOVE CASE_ID FILTER FOR AGENDA)
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V29.1 (DATE DEBUG)
 
 import logging
 import asyncio
@@ -112,28 +112,37 @@ class StrategicBriefingService:
         return {"signals": signals}
 
     async def _compile_tactical_agenda(self) -> List[Dict]:
-        """Fetch all calendar events for the next 7 days (not just today)."""
+        """Fetch all calendar events for the next 7 days."""
         
-        # CRITICAL FIX: Do NOT filter by case_id for agenda
-        # The agenda should show ALL events for the user, regardless of workspace/case
+        # Filter by owner_id only (no case_id filter)
         user_filter: Dict[str, Any] = {"owner_id": self.user_id_obj}
-        
-        # NOTE: case_id is intentionally NOT added to the filter
-        # This ensures events are shown regardless of which workspace they belong to
         
         now = datetime.utcnow()
         week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_end = week_start + timedelta(days=7)
         
+        logger.info(f"DATE DEBUG: week_start = {week_start}")
+        logger.info(f"DATE DEBUG: week_end = {week_end}")
+        
+        # First, get ALL events for this user (no date filter)
+        all_user_events = await self.db.calendar_events.find(user_filter).to_list(length=100)
+        logger.info(f"All events for user (no date filter): {len(all_user_events)}")
+        
+        for ev in all_user_events:
+            logger.info(f"Event date: {ev.get('start_date')}, type: {type(ev.get('start_date'))}")
+        
+        # Now apply date filter
         date_filter: Dict[str, Any] = {
             **user_filter,
             "start_date": {"$gte": week_start, "$lt": week_end}
         }
         
+        logger.info(f"DATE FILTER: {date_filter}")
+        
         cursor = self.db.calendar_events.find(date_filter).sort("start_date", 1)
         events = await cursor.to_list(length=100)
         
-        logger.info(f"Agenda: Found {len(events)} events for user in next 7 days")
+        logger.info(f"Events after date filter: {len(events)}")
         
         agenda_items = []
 
