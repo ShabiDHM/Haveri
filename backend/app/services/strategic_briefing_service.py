@@ -1,5 +1,5 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.8 (FIXED: owner_id NOT user_id)
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.9 (FULL DEBUG)
 
 import logging
 import asyncio
@@ -113,46 +113,59 @@ class StrategicBriefingService:
 
     async def _compile_tactical_agenda(self) -> List[Dict]:
         """Fetch all calendar events for the next 7 days (not just today)."""
-        # CRITICAL FIX: Use 'owner_id' (not 'user_id') because calendar_service.py saves with 'owner_id'
+        
+        # ========== FULL DEBUG: Check ALL events in database ==========
+        logger.info("=" * 60)
+        logger.info("AGENDA FULL DEBUG - CHECKING DATABASE")
+        logger.info("=" * 60)
+        
+        # Get ALL events without any filter to see what's in the collection
+        all_events_cursor = self.db.calendar_events.find({})
+        all_events = await all_events_cursor.to_list(length=50)
+        logger.info(f"TOTAL events in calendar_events collection: {len(all_events)}")
+        
+        for ev in all_events[:5]:
+            logger.info(f"Event in DB: id={ev.get('_id')}, owner_id={ev.get('owner_id')}, user_id={ev.get('user_id')}, title={ev.get('title')}, start_date={ev.get('start_date')}")
+        
+        # Check events with owner_id = current user
+        owner_filter = {"owner_id": self.user_id_obj}
+        owner_events = await self.db.calendar_events.find(owner_filter).to_list(length=50)
+        logger.info(f"Events with owner_id={self.user_id_obj}: {len(owner_events)}")
+        
+        # Check events with user_id = current user
+        user_filter = {"user_id": self.user_id_obj}
+        user_events = await self.db.calendar_events.find(user_filter).to_list(length=50)
+        logger.info(f"Events with user_id={self.user_id_obj}: {len(user_events)}")
+        
+        # Check events with workspace filter
+        if self.case_id:
+            case_filter = {"case_id": self.case_id}
+            case_events = await self.db.calendar_events.find(case_filter).to_list(length=50)
+            logger.info(f"Events with case_id={self.case_id}: {len(case_events)}")
+        # ========== END DEBUG ==========
+        
+        # Now use the correct filter
         user_filter: Dict[str, Any] = {"owner_id": self.user_id_obj}
         
         if self.case_id:
-            # Convert string case_id to ObjectId for MongoDB query
             try:
                 user_filter["case_id"] = str(self.case_id)
             except Exception:
                 user_filter["case_id"] = self.case_id
 
-        # DEBUG: Log the filter being used
-        logger.info(f"AGENDA DEBUG: user_id = {self.user_id_obj}, case_id = {self.case_id}")
-        logger.info(f"AGENDA DEBUG: user_filter = {user_filter}")
-
         now = datetime.utcnow()
         week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_end = week_start + timedelta(days=7)
         
-        # DEBUG: Log the date range
-        logger.info(f"AGENDA DEBUG: week_start = {week_start.isoformat()}, week_end = {week_end.isoformat()}")
-        
-        # First, check if there are ANY calendar events for this user
-        total_count = await self.db.calendar_events.count_documents(user_filter)
-        logger.info(f"AGENDA DEBUG: Total calendar events for user (using owner_id): {total_count}")
-        
-        # Check events in the next 7 days
         date_filter: Dict[str, Any] = {
             **user_filter,
             "start_date": {"$gte": week_start, "$lt": week_end}
         }
-        date_count = await self.db.calendar_events.count_documents(date_filter)
-        logger.info(f"AGENDA DEBUG: Events in next 7 days: {date_count}")
         
         cursor = self.db.calendar_events.find(date_filter).sort("start_date", 1)
         events = await cursor.to_list(length=100)
         
-        # DEBUG: Log the raw events found
-        logger.info(f"AGENDA DEBUG: Raw events found in date range = {len(events)}")
-        for ev in events[:5]:  # Log first 5 events
-            logger.info(f"AGENDA DEBUG: Event: {ev.get('title')} - start_date: {ev.get('start_date')} - type: {ev.get('event_type')}")
+        logger.info(f"Final filtered events count: {len(events)}")
         
         agenda_items = []
 
@@ -161,24 +174,19 @@ class StrategicBriefingService:
             event_type = event.get('event_type', 'TASK').upper()
             is_alert = event_type in ['PAYMENT_DUE', 'TAX_DEADLINE']
             
-            # Ensure event_date is a datetime object
             if isinstance(event_date, str):
                 try:
                     event_date = datetime.fromisoformat(event_date.replace('Z', '+00:00'))
                 except Exception:
                     event_date = now
             
-            # Format time display - show date for future days, time for today
             days_diff = (event_date.replace(hour=0, minute=0, second=0, microsecond=0) - week_start.replace(hour=0, minute=0, second=0, microsecond=0)).days
             
             if days_diff == 0:
-                # Today - show time
                 time_display = event_date.strftime("%H:%M")
             elif days_diff == 1:
-                # Tomorrow
                 time_display = "Nesër"
             else:
-                # Future days - show date
                 time_display = event_date.strftime("%d %b")
             
             agenda_item = {
@@ -194,5 +202,5 @@ class StrategicBriefingService:
             }
             agenda_items.append(agenda_item)
             
-        logger.info(f"AGENDA DEBUG: Final agenda items count = {len(agenda_items)}")
+        logger.info(f"Final agenda items count = {len(agenda_items)}")
         return agenda_items
