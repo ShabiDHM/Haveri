@@ -1,8 +1,5 @@
 # FILE: backend/app/api/endpoints/calendar.py
-# PHOENIX PROTOCOL - CALENDAR API V3.0 (SYNC ARCHITECTURE)
-# 1. FIX: Converted endpoints to 'async def' with 'asyncio.to_thread'.
-# 2. FIX: Replaced async DB dependencies with standard 'get_db'.
-# 3. STATUS: Unified with project-wide synchronous architecture.
+# PHOENIX PROTOCOL - CALENDAR API V3.1 (DEBUG ENDPOINT ADDED)
 
 from fastapi import APIRouter, Depends, status, HTTPException, Response
 from typing import List, Dict
@@ -100,3 +97,59 @@ async def delete_user_event(
     
     await asyncio.to_thread(calendar_service.delete_event, db=db, event_id=object_id, user_id=current_user.id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ========== DEBUG ENDPOINT ==========
+@router.get("/debug/check-events")
+async def debug_check_events(
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    """
+    DEBUG: Check all calendar events for the current user.
+    This helps diagnose why events aren't showing in the agenda.
+    """
+    from bson import ObjectId
+    
+    # Query with ObjectId owner_id
+    events_with_objectid = await asyncio.to_thread(
+        list,
+        db.calendar_events.find({"owner_id": current_user.id})
+    )
+    
+    # Query with string owner_id (just in case)
+    events_with_string = await asyncio.to_thread(
+        list,
+        db.calendar_events.find({"owner_id": str(current_user.id)})
+    )
+    
+    # Get all events without filter (to see if any exist at all)
+    all_events = await asyncio.to_thread(list, db.calendar_events.find({}))
+    
+    # Get one sample event to see structure
+    sample = await asyncio.to_thread(db.calendar_events.find_one, {})
+    
+    return {
+        "user_id": str(current_user.id),
+        "user_id_as_objectid": str(current_user.id),
+        "events_with_owner_id_objectid": len(events_with_objectid),
+        "events_with_owner_id_string": len(events_with_string),
+        "total_events_in_collection": len(all_events),
+        "sample_event": {
+            "id": str(sample.get("_id")) if sample else None,
+            "owner_id": str(sample.get("owner_id")) if sample else None,
+            "title": sample.get("title") if sample else None,
+            "start_date": str(sample.get("start_date")) if sample else None,
+            "event_type": sample.get("event_type") if sample else None,
+        } if sample else None,
+        "first_5_events": [
+            {
+                "id": str(e.get("_id")),
+                "owner_id": str(e.get("owner_id")) if e.get("owner_id") else None,
+                "owner_id_type": type(e.get("owner_id")).__name__ if e.get("owner_id") else None,
+                "title": e.get("title"),
+                "start_date": str(e.get("start_date")) if e.get("start_date") else None,
+            }
+            for e in all_events[:5]
+        ]
+    }
