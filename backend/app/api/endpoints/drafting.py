@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.4 (SYNC MONGO FIX)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.5 (FIXED BUSINESS INFO & DYNAMIC VAT)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -51,26 +51,40 @@ def generate_po_number() -> str:
     now = datetime.now()
     return f"PO-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:6].upper()}"
 
-def get_business_info(business_service, user_id: str) -> Dict[str, str]:
+def get_business_info(business_service, user_id: str) -> Dict[str, Any]:
+    """Fetch business profile using the correct method and field names."""
     try:
-        profile = business_service.get_business_profile(user_id)
+        # Use get_or_create_profile (the only method available in BusinessService)
+        profile = business_service.get_or_create_profile(user_id)
+        
+        # Convert to dict if it's a Pydantic model, otherwise use as dict
+        if hasattr(profile, 'model_dump'):
+            profile_dict = profile.model_dump()
+        elif hasattr(profile, 'dict'):
+            profile_dict = profile.dict()
+        else:
+            profile_dict = profile
+        
         return {
-            "name": profile.firm_name,
-            "address": profile.address or "",
-            "vat": profile.vat_number or "",
-            "email": profile.email or "",
-            "phone": profile.phone or "",
+            "name": profile_dict.get('firm_name', 'Haveri Business'),
+            "address": profile_dict.get('address', ''),
+            "vat": profile_dict.get('tax_id', ''),  # Corrected field name
+            "email": profile_dict.get('email_public', ''),  # Corrected field name
+            "phone": profile_dict.get('phone', ''),
+            "vat_rate": profile_dict.get('vat_rate', 18),  # Pass through for dynamic VAT
         }
-    except Exception:
+    except Exception as e:
+        print(f"DEBUG: Profile lookup failed: {e}")
         return {
             "name": "Haveri Business",
             "address": "",
             "vat": "",
             "email": "",
             "phone": "",
+            "vat_rate": 18,
         }
 
-def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, str], po_number: str) -> bytes:
+def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_number: str) -> bytes:
     pdf_buffer = BytesIO()
     doc = SimpleDocTemplate(pdf_buffer, pagesize=A4, topMargin=1.8*cm, bottomMargin=1.8*cm,
                             leftMargin=2.2*cm, rightMargin=2.2*cm)
@@ -88,11 +102,11 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, str], po_n
     story.append(Spacer(1, 0.2*cm))
     buyer_text = f"""
     <b>BLERËSI (Kompania juaj)</b><br/>
-    {buyer_info['name']}<br/>
-    {buyer_info['address']}<br/>
-    VAT: {buyer_info['vat']}<br/>
-    Tel: {buyer_info['phone']}<br/>
-    Email: {buyer_info['email']}
+    {buyer_info.get('name', 'Haveri Business')}<br/>
+    {buyer_info.get('address', '')}<br/>
+    VAT: {buyer_info.get('vat', '')}<br/>
+    Tel: {buyer_info.get('phone', '')}<br/>
+    Email: {buyer_info.get('email', '')}
     """
     po_details_text = f"""
     <b>URDHËR BLERJE Nr.</b><br/>
@@ -119,7 +133,9 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, str], po_n
     story.append(Paragraph(supplier_text, normal_style))
     story.append(Spacer(1, 0.5*cm))
     subtotal = order_data['estimated_cost']
-    vat_rate = 0.18
+    # Use the vat_rate fetched from business profile (default to 18 if not set)
+    vat_rate_percent = float(buyer_info.get('vat_rate', 18))
+    vat_rate = vat_rate_percent / 100
     vat_amount = subtotal * vat_rate
     grand_total = subtotal + vat_amount
     line_items = [
@@ -147,7 +163,7 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, str], po_n
     story.append(Spacer(1, 0.3*cm))
     totals_data = [
         ["Subtotal:", f"€{subtotal:.2f}"],
-        [f"TVSH ({vat_rate*100:.0f}%):", f"€{vat_amount:.2f}"],
+        [f"TVSH ({vat_rate_percent:.0f}%):", f"€{vat_amount:.2f}"],
         ["TOTAL I PËRGJITHSHËM:", f"€{grand_total:.2f}"]
     ]
     totals_table = Table(totals_data, colWidths=[13*cm, 3*cm])
