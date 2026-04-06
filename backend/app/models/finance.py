@@ -1,5 +1,5 @@
 # FILE: backend/app/models/finance.py
-# PHOENIX PROTOCOL - FINANCE MODELS V11.10 (ADDED EXPENSES AND PROFIT TO ANALYTICS)
+# PHOENIX PROTOCOL - FINANCE MODELS V11.11 (ADDED suggested_action TO AuditIssue)
 
 from pydantic import BaseModel, Field, ConfigDict, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -169,13 +169,12 @@ class TopProductItem(BaseModel):
     total_quantity: float = 0.0
     total_revenue: float
 
-# PHOENIX: Updated AnalyticsDashboardData with expenses and profit
 class AnalyticsDashboardData(BaseModel):
     total_revenue_period: float
     total_transactions_period: int
     total_cogs_period: float = 0.0
-    total_expenses_period: float = 0.0   # NEW
-    total_profit_period: float = 0.0     # NEW
+    total_expenses_period: float = 0.0
+    total_profit_period: float = 0.0
     sales_trend: List[SalesTrendPoint]
     top_products: List[TopProductItem]
 
@@ -206,6 +205,7 @@ class AuditIssue(BaseModel):
     message: str
     related_item_id: Optional[str] = None
     item_type: Optional[str] = None
+    suggested_action: Optional[str] = None   # NEW: specific action for the user
 
 class WizardState(BaseModel):
     calculation: TaxCalculation

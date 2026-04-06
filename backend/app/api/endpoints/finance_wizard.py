@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/finance_wizard.py
-# PHOENIX PROTOCOL - FINANCE WIZARD ENDPOINT v3.6 (ROBUST)
+# PHOENIX PROTOCOL - FINANCE WIZARD ENDPOINT v3.7 (ADDED suggested_action TO AUDIT ISSUES)
 
 import logging
 from fastapi import APIRouter, Depends, Query, HTTPException, status
@@ -44,14 +44,35 @@ def _run_audit_rules(invoices: list, expenses: list) -> List[AuditIssue]:
     issues = []
     for exp in expenses:
         if exp.amount > 10.0 and not exp.receipt_url:
-            issues.append(AuditIssue(id=f"missing_receipt_{exp.id}", severity="WARNING", message=f"Shpenzimi '{exp.category}' prej €{exp.amount} nuk ka faturë të bashkangjitur.", related_item_id=str(exp.id), item_type="EXPENSE"))
+            issues.append(AuditIssue(
+                id=f"missing_receipt_{exp.id}",
+                severity="WARNING",
+                message=f"Shpenzimi '{exp.category}' prej €{exp.amount} nuk ka faturë të bashkangjitur.",
+                related_item_id=str(exp.id),
+                item_type="EXPENSE",
+                suggested_action=f"Ngarkoni faturën për këtë shpenzim në menynë e shpenzimeve ose shtoni një shënim."
+            ))
     for exp in expenses:
         cat_lower = exp.category.lower() if exp.category else ""
-        if "court" in cat_lower and not exp.related_case_id:
-            issues.append(AuditIssue(id=f"unlinked_court_fee_{exp.id}", severity="CRITICAL", message=f"Taksa Gjyqësore prej €{exp.amount} nuk është lidhur me një Rast Klienti (E pafaturuar).", related_item_id=str(exp.id), item_type="EXPENSE"))
+        if "court" in cat_lower and not getattr(exp, "related_case_id", None):
+            issues.append(AuditIssue(
+                id=f"unlinked_court_fee_{exp.id}",
+                severity="CRITICAL",
+                message=f"Taksa Gjyqësore prej €{exp.amount} nuk është lidhur me një Rast Klienti (E pafaturuar).",
+                related_item_id=str(exp.id),
+                item_type="EXPENSE",
+                suggested_action=f"Shkoni te moduli i Rasteve, hapni rastin përkatës dhe lidhni këtë shpenzim (ID: {exp.id}) ose krijoni një faturë për klientin."
+            ))
     for inv in invoices:
         if inv.status == "DRAFT":
-            issues.append(AuditIssue(id=f"draft_invoice_{inv.id}", severity="WARNING", message=f"Fatura #{inv.invoice_number or '???'} është ende në statusin DRAFT (E pa lëshuar).", related_item_id=str(inv.id), item_type="INVOICE"))
+            issues.append(AuditIssue(
+                id=f"draft_invoice_{inv.id}",
+                severity="WARNING",
+                message=f"Fatura #{inv.invoice_number or '???'} është ende në statusin DRAFT (E pa lëshuar).",
+                related_item_id=str(inv.id),
+                item_type="INVOICE",
+                suggested_action=f"Hapni faturën dhe ndryshoni statusin në 'SENT' ose 'PAID' për ta regjistruar në llogaritjet tatimore."
+            ))
     return issues
 
 async def _get_wizard_data(month: int, year: int, user: Any, db: Any, async_db: Any, case_id: Optional[str] = None) -> WizardState:
