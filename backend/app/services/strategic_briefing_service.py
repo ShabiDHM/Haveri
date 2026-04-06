@@ -1,5 +1,5 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.4 (TYPE FIX)
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.5 (7-DAY AGENDA)
 
 import logging
 import asyncio
@@ -112,34 +112,53 @@ class StrategicBriefingService:
         return {"signals": signals}
 
     async def _compile_tactical_agenda(self) -> List[Dict]:
+        """Fetch all calendar events for the next 7 days (not just today)."""
         user_filter = {"user_id": self.user_id_obj}
         if self.case_id:
             # Use string for workspace_id; ignore type because field may be string
             user_filter["workspace_id"] = str(self.case_id)  # type: ignore[assignment]
 
-        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        today_end = today_start + timedelta(days=1)
+        # FIXED: Changed from 1 day to 7 days
+        now = datetime.utcnow()
+        week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_end = week_start + timedelta(days=7)
         
         cursor = self.db.calendar_events.find({
             **user_filter,
-            "start_date": {"$gte": today_start, "$lt": today_end}
+            "start_date": {"$gte": week_start, "$lt": week_end}
         }).sort("start_date", 1)
         
-        events = await cursor.to_list(length=50)
+        events = await cursor.to_list(length=100)  # Increased limit to accommodate 7 days
         agenda_items = []
-        now = datetime.utcnow()
 
         for event in events:
             event_date = event.get('start_date', now)
             event_type = event.get('event_type', 'TASK').upper()
             is_alert = event_type in ['PAYMENT_DUE', 'TAX_DEADLINE']
-            hours_diff = (event_date.timestamp() - now.timestamp()) / 3600
+            
+            # Format time display - show date for future days, time for today
+            days_diff = (event_date.replace(hour=0, minute=0, second=0, microsecond=0) - week_start.replace(hour=0, minute=0, second=0, microsecond=0)).days
+            
+            if days_diff == 0:
+                # Today - show time
+                time_display = event_date.strftime("%H:%M")
+            elif days_diff == 1:
+                # Tomorrow
+                time_display = "Nesër"
+            else:
+                # Future days - show date
+                time_display = event_date.strftime("%d %b")
             
             agenda_item = {
-                "id": str(event.get('_id')), "title": event.get('title', 'Pa titull'),
-                "time": event_date.strftime("%H:%M"), "priority": map_api_priority(event.get('priority')),
-                "isCompleted": hours_diff < -1, "kind": 'alert' if is_alert else 'event',
-                "raw": event
+                "id": str(event.get('_id')), 
+                "title": event.get('title', 'Pa titull'),
+                "time": time_display,
+                "priority": map_api_priority(event.get('priority')),
+                "isCompleted": False,
+                "kind": 'alert' if is_alert else 'event',
+                "raw": event,
+                "type": event_type,  # Add type for color coding
+                "date": event_date.isoformat()
             }
             agenda_items.append(agenda_item)
             
