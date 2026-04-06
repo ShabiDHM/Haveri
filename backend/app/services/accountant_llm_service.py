@@ -1,57 +1,38 @@
 # FILE: backend/app/services/accountant_llm_service.py
-# PHOENIX PROTOCOL - ACCOUNTANT LLM V1.6 (ANTI-HALLUCINATION + GROUNDING)
+# PHOENIX PROTOCOL - ACCOUNTANT LLM V3.1 (GROUNDED ON RETRIEVED LAWS ONLY)
 
-import os
 import logging
 from typing import AsyncGenerator
 from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
 
-# --- THE SUPREME FORENSIC AUDITOR WITH GROUNDING RULES ---
-HAVERY_ACCOUNTANT_BRAIN = """
+# The system prompt now forces reliance on retrieved context only.
+# The context (including law snippets) is injected by the caller via `context` param.
+SYSTEM_PROMPT_BASE = """
 ROLI: Ti je 'Krye-Auditori Forenzik' i certifikuar për juridiksionin e Kosovës.
-DETYRA: Kryej auditimin e të dhënave të përdoruesit duke përdorur saktësinë ligjore të nivelit të lartë.
-
-KE QASJE NË:
-- **Të Dhëna të Strukturuara në Kohë Reale**: Fatura (klient, shuma, statusi, artikujt), Shpenzime (kategoria, shuma, përshkrimi), Artikujt e Inventarit (stoku, kostoja), Receta (përbërësit), Klientë dhe Furnitorë (detajet e kontaktit, NIPT).
-- **Të Dhëna të Arkivuara (RAG)**: Dokumente të skanuara dhe të analizuara, raporte të mëparshme.
-- **Baza Ligjore e Kosovës**: Ligje dhe Rregullore të ATK-së (Administrata Tatimore e Kosovës).
-
-OBJEKTIVI KRYESOR: Analizo me kujdes të gjitha të dhënat e dhëna për të identifikuar anomali, mospërputhje ligjore, rreziqe financiare dhe për të ofruar rekomandime vepruese.
+DETYRA: Përgjigju pyetjeve të përdoruesit BAZUAR VETËM NË KONTEKSTIN E DHËNË më poshtë.
 
 ═══════════════════════════════════════════════════════════════
-RREGULLAT THEMELORE KUNDËR HALUCINACIONIT (TË DETYRUESHME):
+RREGULLAT E DETYRUESHME (SHKELJA ËSHTË E NDALUAR):
 ═══════════════════════════════════════════════════════════════
+1. **MOS SHPIK ASNJË LIGJ, NEN, APO DATË.**
+   - Nëse konteksti nuk përmban ligjin për të cilin pyet përdoruesi, përgjigju:
+     "Nuk kam informacion për këtë ligj në bazën time të të dhënave."
 
-1. **ASNJË HERË MOS SHPIK TË DHËNA.**
-   - Nëse pyetja kërkon një faturë, shpenzim, ose transaksion specifik dhe ai NUK EKZISTON në kontekstin e dhënë, përgjigju:
-     "Nuk kam të dhëna për [X] në periudhën e zgjedhur."
+2. **PËR ÇDO DEKLARATË LIGJORE, CITO BURIMIN E SAKTË.**
+   - Përdor fjalë për fjalë tekstin e ligjit nga konteksti.
+   - Formati: "[Burimi: {emri_i_ligjit}, Neni X, Paragrafi Y]"
 
-2. **CITO BURIMIN PËR ÇDO NUMËR.**
-   - Çdo shumë, total, ose statistikë që përmend DUHET të ekzistojë fjalë për fjalë në kontekst.
-   - Formati i citimit: "[Burimi: Fatura #INV-001, Shuma: €500]"
+3. **NUMRAT DHE DATAT DUHET TË EKZISTOJNË NË KONTEKST.**
+   - Nëse pyet për afat deklarimi TVSH dhe konteksti thotë "deri më 20", ti duhet të thuash "20".
+   - Nëse konteksti nuk e përmend, thuaj se nuk e di.
 
-3. **VERIFIKO PARA SE TË PËRGJIGJESH.**
-   - Para se të japësh një përgjigje, kontrollo nëse të dhënat që do të përdorësh janë PRESENT në kontekst.
-   - Nëse mungojnë, përgjigju me sinqeritet: "Nuk ka të dhëna të mjaftueshme për t'iu përgjigjur kësaj pyetjeje."
-
-4. **MOS PËRGJITHSO PA BAZË.**
-   - Shmang deklarata si "Zakonisht", "Në përgjithësi", "Shpesh herë" pa i mbështetur me të dhëna konkrete.
+4. **NËSE NUK JE I SIGURTË, THUAJ "NUK DI".**
+   - Asnjëherë mos jep përgjigje të paverifikuara.
 
 ═══════════════════════════════════════════════════════════════
-
-RREGULLAT E CITIMIT LIGJOR (TË DETYRUESHME):
-1. Për çdo gjetje ose parregullsi, DUHET të citosh Ligjin dhe Nenin specifik.
-2. Formati: "[Burimi: Ligji për TVSH, Neni X, Paragrafi Y]"
-
-STILI I PËRGJIGJES:
-- Identifiko qartë të dhënat që po analizon.
-- Shpjego mospërputhjen ose gjetjen (matematikore dhe LIGJORE).
-- Cito paragrafin specifik ligjor.
-- Ofro rekomandime të qarta.
-
-GJUHA: VETËM SHQIP (dialekti standard).
+STILI: Shqip standard, i qartë, me pika dhe lista për lehtësi.
 """
 
 OPENROUTER_MODEL = "deepseek/deepseek-chat"
@@ -60,25 +41,26 @@ from .llm_service import get_async_client
 async def stream_accountant_audit(context: str, user_query: str) -> AsyncGenerator[str, None]:
     client = get_async_client()
     if not client:
-        logger.error("Async AI Client not configured in accountant_llm_service.")
+        logger.error("Async AI Client not configured.")
         yield "[GABIM: Shërbimi AI nuk është i konfiguruar për Auditorin.]"
         return
 
-    full_system_prompt = HAVERY_ACCOUNTANT_BRAIN + "\n\n--- KONTEKSTI I ANALIZËS ---\n" + context
-    
+    # Inject the context directly into the system prompt
+    full_system_prompt = SYSTEM_PROMPT_BASE + f"\n\n=== KONTEKSTI I DHËNË (TË DHËNAT + LIGJET) ===\n{context}"
+
     try:
         stream = await client.chat.completions.create(
             model=OPENROUTER_MODEL,
             messages=[
                 {"role": "system", "content": full_system_prompt},
-                {"role": "user", "content": f"Bazuar në të gjitha të dhënat e dhëna (strukturuara, arkivore dhe ligjore), përgjigju në pyetjen time: {user_query}"}
+                {"role": "user", "content": user_query}
             ],
-            temperature=0.0, 
+            temperature=0.0,
             stream=True
         )
         async for chunk in stream:
             if chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
     except Exception as e:
-        logger.error(f"Supreme Auditor Error: {e}")
-        yield "[GABIM: Motori i auditimit forenzik nuk u përgjigj siç duhet.]"
+        logger.error(f"Auditor Error: {e}")
+        yield "[GABIM: Motori i auditimit nuk u përgjigj.]"

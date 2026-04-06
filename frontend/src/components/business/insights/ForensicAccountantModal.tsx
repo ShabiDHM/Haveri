@@ -1,5 +1,5 @@
 // FILE: src/components/business/insights/ForensicAccountantModal.tsx
-// PHOENIX PROTOCOL - FORENSIC MODAL V6.1 (REMOVED UNUSED IMPORTS)
+// PHOENIX PROTOCOL - FORENSIC MODAL V6.2 (REMOVED UNTRUSTED SUGGESTION)
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -109,7 +109,7 @@ const generateFollowUpQuestions = (aiResponse: string): string[] => {
     return questions.slice(0, 3);
 };
 
-// --- Suggested initial questions (enhanced) ---
+// --- Suggested initial questions (enhanced, removed untrusted one) ---
 const INITIAL_SUGGESTIONS = [
     { icon: "📊", text: "Cilat janë produktet më fitimprurëse?" },
     { icon: "⚠️", text: "Ku po humbas më shumë para?" },
@@ -117,7 +117,6 @@ const INITIAL_SUGGESTIONS = [
     { icon: "🏷️", text: "A janë çmimet e mia konkurruese?" },
     { icon: "📅", text: "Krahaso performancën me muajin e kaluar" },
     { icon: "💡", text: "Sugjero optimizime tatimore (shpjego thjesht)" },
-    { icon: "🔍", text: "Shpjego si për 5 vjeç: Çfarë është TVSH?" },
 ];
 
 interface ForensicAccountantModalProps {
