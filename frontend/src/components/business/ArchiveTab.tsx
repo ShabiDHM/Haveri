@@ -3,13 +3,14 @@
 // FIXED: handleViewItem now detects text files and sets correct mime_type
 // ADDED: Edit purchase order functionality
 // FIXED: Download now appends correct file extension based on file_type
+// FIXED: Removed inline ArchiveCard - now using imported component from ./archive/ArchiveCard
+// FIXED: Removed unused imports
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     FolderOpen, ChevronRight, FolderPlus, Loader2,
-    Calendar, Eye, Download, Trash2, Pencil,
-    FileUp, Search, Share2, Link as LinkIcon, Archive, Zap, CheckCircle, MessageSquare, Send, X, Bot
+    FileUp, Search, Link as LinkIcon, Archive, Send, X, Bot
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { ArchiveItemOut, Document } from '../../data/types';
@@ -18,7 +19,7 @@ import { useArchiveData } from '../../hooks/useArchiveData';
 import PDFViewerModal from '../PDFViewerModal';
 import ShareModal from '../ShareModal';
 import { ForensicAccountantModal } from './insights/ForensicAccountantModal';
-import { getFileIcon } from './archive/ArchiveCard';
+import { ArchiveCard, getFileIcon } from './archive/ArchiveCard';
 import { Panel } from '../ui/Panel';
 import { EditPurchaseOrderModal } from './modals/EditPurchaseOrderModal';
 
@@ -121,54 +122,6 @@ const getSafeFileNameForDownload = (item: ArchiveItemOut): string => {
     return hasExtension ? item.title : `${item.title}${ext}`;
 };
 
-// Local ArchiveCard component (updated with onEdit and category)
-const ArchiveCard = ({ title, subtitle, type, date, onClick, onDownload, onDelete, onRename, onShare, onReIndex, onAskAI, onEdit, isShared, isFolder, isLoading, indexingStatus, category }: any) => { 
-    const { t } = useTranslation();
-    return ( 
-        <motion.div whileHover={{ scale: 1.01 }} onClick={onClick} className="group relative flex flex-col justify-between h-full min-h-[14rem] p-6 rounded-2xl glass-panel border border-border-main hover:border-primary-start/30 transition-all cursor-pointer hover-lift shadow-sm"> 
-            <div> 
-                <div className="flex justify-between items-start gap-2 mb-4"> 
-                    <div className="p-3 rounded-2xl bg-surface/30 backdrop-blur-sm border border-border-main">{isFolder ? <FolderOpen className="w-6 h-6 text-warning-start" /> : getFileIcon(type)}</div> 
-                    <div className="flex items-center gap-2">
-                        {indexingStatus === 'READY' && <CheckCircle size={14} className="text-success-start" />}
-                        {indexingStatus === 'PROCESSING' && <Loader2 size={14} className="animate-spin text-primary-start" />}
-                        {isShared && <Share2 size={14} className="text-success-start" />}
-                    </div> 
-                </div> 
-                <h2 className="text-lg font-bold text-text-primary line-clamp-2 leading-tight">{title}</h2>
-                <div className="flex items-center gap-2 mt-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{subtitle}</span>
-                </div>
-            </div> 
-            <div className="pt-4 border-t border-border-main flex justify-between items-center mt-4"> 
-                <div className="flex items-center gap-1.5 text-text-muted">
-                    <Calendar size={12}/> 
-                    <span className="text-[10px] font-black uppercase tracking-widest">{date}</span>
-                </div>
-                <div className="flex gap-1 items-center">
-                    {!isFolder && onReIndex && <button onClick={(e) => { e.stopPropagation(); onReIndex(); }} className="p-2 text-text-muted hover:text-warning-start transition-colors hover-lift" title={t('archive.reindex')}><Zap size={16} /></button>}
-                    {!isFolder && indexingStatus === 'READY' && onAskAI && <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-2 text-text-muted hover:text-primary-start transition-colors hover-lift" title={t('archive.ask_ai')}><MessageSquare size={16} /></button>}
-                    {onShare && <button onClick={(e) => { e.stopPropagation(); onShare(); }} className={`p-2 ${isShared ? 'text-success-start' : 'text-text-muted hover:text-text-primary'} hover-lift`}><Share2 size={16} /></button>}
-                    {onRename && <button onClick={(e) => { e.stopPropagation(); onRename(); }} className="p-2 text-text-muted hover:text-text-primary transition-colors hover-lift" title={t('general.edit')}><Pencil size={16}/></button>}
-                    {/* NEW: Edit button for purchase orders */}
-                    {!isFolder && category === 'purchase_order' && onEdit && (
-                        <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-2 text-text-muted hover:text-primary-start transition-colors hover-lift" title={t('purchaseOrder.edit', 'Edit Purchase Order')}>
-                            <Pencil size={16} />
-                        </button>
-                    )}
-                    {!isFolder && (
-                        <>
-                            <button onClick={(e) => { e.stopPropagation(); onClick(); }} className="p-2 text-text-muted hover:text-primary-start transition-colors hover-lift">{isLoading ? <Loader2 className="animate-spin" size={16} /> : <Eye size={16} />}</button>
-                            <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="p-2 text-text-muted hover:text-success-start transition-colors hover-lift"><Download size={16} /></button>
-                        </>
-                    )}
-                    <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 text-text-muted hover:text-danger-start transition-colors hover-lift"><Trash2 size={16} /></button>
-                </div> 
-            </div> 
-        </motion.div> 
-    ); 
-};
-
 export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
     const { t } = useTranslation();
     const { 
@@ -227,8 +180,8 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
         }
     };
 
-    // NEW: Handle edit purchase order
-    const handleEditItem = (item: ArchiveItemOut) => {
+    // Handle edit purchase order content (opens the form modal)
+    const handleEditContent = (item: ArchiveItemOut) => {
         setEditPoId(item.id);
         setShowEditModal(true);
     };
@@ -335,18 +288,18 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                             subtitle={item.item_type === 'FOLDER' ? t('archive.caseFolders') : `${item.file_type} ${t('general.document')}`} 
                             type={item.item_type === 'FOLDER' ? 'Folder' : item.file_type} 
                             date={new Date(item.created_at).toLocaleDateString()} 
+                            icon={item.item_type === 'FOLDER' ? <FolderOpen className="w-5 h-5 text-warning-start" /> : getFileIcon(item.file_type || '')}
                             indexingStatus={item.indexing_status}
                             isFolder={item.item_type === 'FOLDER'} 
                             isShared={item.is_shared} 
                             isLoading={openingDocId === item.id} 
-                            category={item.category}
                             onClick={() => item.item_type === 'FOLDER' ? enterFolder(item.id, item.title, 'FOLDER') : handleViewItem(item)} 
                             onDownload={() => handleDownloadItem(item)} 
                             onDelete={() => deleteItem(item.id)} 
                             onRename={() => { setItemToRename(item); setRenameValue(item.title); setShowRenameModal(true); }} 
                             onShare={() => shareItem(item)} 
                             onAskAI={() => setChatDoc({id: item.id, title: item.title})}
-                            onEdit={() => handleEditItem(item)}
+                            onEditContent={item.category === 'purchase_order' ? () => handleEditContent(item) : undefined}
                         />
                     ))}
                 </AnimatePresence>
