@@ -1,5 +1,5 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V22.5 (TRANSLATED LowStockThreshold)
+// PHOENIX PROTOCOL - INVENTORY TAB V23.0 (MOBILE FRIENDLY)
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -55,24 +55,27 @@ export const InventoryTab: React.FC = () => {
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-success-start" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
             <style>{`
-                .custom-finance-scroll::-webkit-scrollbar { width: 6px; } 
+                .custom-finance-scroll::-webkit-scrollbar { width: 8px; } 
                 .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
-                .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--status-success); border-radius: 10px; opacity: 0.3; } 
+                .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--status-success); border-radius: 10px; opacity: 0.3; }
+                @media (min-width: 640px) {
+                    .custom-finance-scroll::-webkit-scrollbar { width: 6px; }
+                }
             `}</style>
 
             <Panel className="p-3 sm:p-4 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-                <div className="flex items-center gap-3 sm:gap-4">
+                <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3 sm:gap-4">
                     <ActionButton primary icon={<Plus size={20} />} label={t('inventory.items.add')} onClick={openCreateItem} />
                     <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.items.import', 'Importo Artikujt')} onClick={() => setShowImportModal(true)} />
                 </div>
             </Panel>
 
-            <Panel className="p-4 sm:p-6 h-[700px] flex flex-col overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-                <div className="flex items-center justify-between gap-4 mb-6 pb-4">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-3">
-                        <Box className="text-success-start" />
+            <Panel className="p-4 sm:p-6 flex flex-col overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm min-h-[500px] sm:min-h-[600px]">
+                <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6 pb-2 sm:pb-4 flex-wrap">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-2 sm:gap-3">
+                        <Box className="text-success-start" size={24} />
                         {t('inventory.title')}
                     </h2>
                 </div>
