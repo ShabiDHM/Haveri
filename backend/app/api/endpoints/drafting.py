@@ -1,16 +1,18 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V1.2 (ADDED PURCHASE ORDER)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V1.3 (PURCHASE ORDER WITH ARCHIVE SAVE)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
 from app.services.drafting_service import DraftingService
-from app.api.endpoints.dependencies import get_current_user
+from app.services.archive_service import ArchiveService
+from app.api.endpoints.dependencies import get_current_user, get_db
 from app.models.user import UserInDB
+from pymongo.database import Database
 
-# Removed prefix="/drafting" to avoid duplication with main.py
 router = APIRouter(tags=["drafting"])
 
 class DraftRequest(BaseModel):
@@ -18,7 +20,6 @@ class DraftRequest(BaseModel):
     document_type: str = "generic"
     include_legal_context: bool = True
 
-# New model for purchase order
 class PurchaseOrderRequest(BaseModel):
     item_id: str
     item_name: str
@@ -58,22 +59,47 @@ async def stream_draft(
         }
     )
 
-# New endpoint for purchase order drafting
 @router.post("/purchase-order")
 async def create_purchase_order(
     order: PurchaseOrderRequest,
-    current_user: UserInDB = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db)
 ):
     """
-    Draft a purchase order (store in archive or return a PDF).
-    Currently returns a simple JSON response.
+    Create a purchase order and save it as a text file in the archive.
     """
-    # TODO: Generate a PDF or store in archive
-    return {
-        "status": "created",
-        "message": f"Purchase order for {order.quantity} {order.unit} of {order.item_name} drafted successfully.",
-        "order": order.dict()
-    }
+    # Build the purchase order content
+    content = f"""POROSIA E BLERJES
+Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Produkti: {order.item_name}
+Njësia: {order.unit}
+Sasia: {order.quantity}
+Furnitori: {order.supplier_name}
+Kosto e vlerësuar: €{order.estimated_cost:.2f}
+Statusi: Draft (krijuar nga AI)
+"""
+    file_content = content.encode('utf-8')
+    filename = f"purchase_order_{order.item_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    
+    archive_service = ArchiveService(db)
+    try:
+        # case_id can be None if no workspace context
+        archive_item = await archive_service.save_generated_file(
+            user_id=str(current_user.id),
+            filename=filename,
+            file_content=file_content,
+            category="purchase_order",
+            title=f"Porosia Blerje: {order.item_name}",
+            case_id=None          # Use None or current_user.current_workspace_id if available
+        )
+        return {
+            "status": "created",
+            "message": f"Purchase order for {order.item_name} saved to archive.",
+            "archive_id": archive_item.id,      # .id, not ._id
+            "order": order.dict()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save purchase order: {str(e)}")
 
 @router.get("/health")
 async def health_check():

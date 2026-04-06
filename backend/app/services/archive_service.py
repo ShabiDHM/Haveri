@@ -1,7 +1,8 @@
 # FILE: backend/app/services/archive_service.py
-# PHOENIX PROTOCOL - ARCHIVE SERVICE V5.8 (STREAMING RECOVERY)
+# PHOENIX PROTOCOL - ARCHIVE SERVICE V5.9 (MISSING METHODS ADDED)
 # 1. FIXED: Restored missing 'get_file_stream' method to resolve AttributeError.
-# 2. STATUS: Fully synchronized with API endpoints for both viewing and saving.
+# 2. ADDED: re_index_item, chat_with_document, share_case_items stubs/methods.
+# 3. STATUS: Fully synchronized with API endpoints for both viewing and saving.
 
 import os
 import logging
@@ -149,3 +150,29 @@ class ArchiveService:
         try: celery_app.send_task("app.tasks.document_processing.process_archive_document", args=[str(result.inserted_id)])
         except: pass
         return ArchiveItemOut.model_validate(archive_data)
+
+    # ========== MISSING METHODS ADDED (for compatibility with archive.py) ==========
+    def re_index_item(self, user_id: str, item_id: str) -> None:
+        """Trigger re-indexing of an archive item (stub)."""
+        # TODO: Implement actual re-indexing (queue a Celery task)
+        logger.info(f"Re-index requested for user {user_id}, item {item_id}")
+        # Optionally call vector store service to re-embed
+        # For now, just pass
+        pass
+
+    async def chat_with_document(self, user_id: str, item_id: str, question: str) -> str:
+        """Answer questions about a document using AI (stub)."""
+        # TODO: Implement using vector store and LLM
+        logger.info(f"Chat with document {item_id} for user {user_id}: {question}")
+        return f"AI chat not yet implemented for document {item_id}. Question: {question}"
+
+    def share_case_items(self, user_id: str, case_id: str, is_shared: bool) -> int:
+        """Share all items belonging to a case (stub)."""
+        # TODO: Bulk update items with case_id
+        oid_user = self._to_oid(user_id)
+        result = self.db.archives.update_many(
+            {"user_id": oid_user, "case_id": case_id},
+            {"$set": {"is_shared": is_shared}}
+        )
+        logger.info(f"Shared {result.modified_count} items for case {case_id} (is_shared={is_shared})")
+        return result.modified_count
