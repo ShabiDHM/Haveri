@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PHOENIX PROTOCOL - INGEST KOSOVO LAWS (FIXED EMBEDDING DIMENSION)
+PHOENIX PROTOCOL - INGEST KOSOVO LAWS (USING pdfplumber FOR ROBUST EXTRACTION)
 Run: docker compose exec backend python scripts/ingest_laws.py /app/data/laws --force
 """
 
@@ -19,15 +19,35 @@ try:
     from langchain.text_splitter import RecursiveCharacterTextSplitter
     import chromadb
     from app.services import embedding_service
-    from app.services.text_extraction_service import extract_text
+    # We'll use pdfplumber directly; fallback to old extract_text if needed
+    import pdfplumber
 except ImportError as e:
     print(f"❌ Missing libraries: {e}")
-    print("Run: pip install langchain-community langchain-text-splitters chromadb pypdf")
+    print("Run: pip install pdfplumber langchain-community langchain-text-splitters chromadb pypdf")
     sys.exit(1)
 
 CHROMA_HOST = os.getenv("CHROMA_HOST", "chroma")
 CHROMA_PORT = int(os.getenv("CHROMA_PORT", 8000))
 COLLECTION_NAME = "business_knowledge_base"
+
+def extract_pdf_text(filepath: str) -> str:
+    """Extract text using pdfplumber; fallback to pypdf if needed."""
+    full_text = ""
+    try:
+        with pdfplumber.open(filepath) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    full_text += page_text + "\n"
+        if full_text.strip():
+            return full_text
+        else:
+            raise ValueError("pdfplumber returned empty text")
+    except Exception as e:
+        print(f"⚠️ pdfplumber failed: {e}, falling back to pypdf...")
+        # Fallback to original extract_text from service
+        from app.services.text_extraction_service import extract_text as old_extract
+        return old_extract(filepath, "application/pdf")
 
 def clean_text(text: str) -> str:
     text = re.sub(r'(?m)^={5,}\s*Page\s+\d+\s*={5,}\s*$', '', text, flags=re.IGNORECASE)
@@ -56,6 +76,7 @@ def extract_law_title(text: str, filename: str) -> str:
     return f"Ligji: {name}"
 
 def split_by_article(text: str) -> List[Tuple[str, str]]:
+    """Split text into articles using 'Neni' or 'Art.' markers."""
     lines = text.split('\n')
     article_starts = []
     for i, line in enumerate(lines):
@@ -120,8 +141,8 @@ def ingest_legal_laws(directory: str, force: bool = False, chunk_size: int = 100
                     stats["skipped"] += 1
                     continue
             collection.delete(where={"source": filename})
-            print("📄 Extracting text...")
-            full_text = extract_text(file_path, "application/pdf")
+            print("📄 Extracting text with pdfplumber...")
+            full_text = extract_pdf_text(file_path)
             if not full_text or len(full_text.strip()) < 100:
                 print("⚠️  Text too short, skipping.")
                 stats["failed"] += 1

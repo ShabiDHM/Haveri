@@ -1,9 +1,5 @@
-# FILE: backend/requirements.txt (UNIFIED & PINNED - V5.3)
-# PHOENIX PROTOCOL - DEPENDENCY UPDATE
-# 1. ADDED: 'beautifulsoup4' (Required for OAK/Web Scraping Engine).
-# 2. ADDED: 'onnxruntime' (Required for embedding and OCR models).
-# 3. VERIFIED: 'holidays', 'pandas', 'requests' are present.
-# 4. STATUS: Ready for Data Engineering tasks.
+# FILE: backend/requirements.txt (UNIFIED & PINNED - V5.4)
+# PHOENIX PROTOCOL - ADDED pdfplumber FOR ROBUST PDF EXTRACTION
 
 # --- Core Web Framework & Async ---
 fastapi==0.109.2
@@ -46,7 +42,6 @@ boto3==1.40.32
 Jinja2==3.1.4
 requests
 dateparser==1.2.0
-# PHOENIX ADDITION: Required for Kosovo Smart Calendar
 holidays>=0.40
 
 # --- Document Processing & Scraping ---
@@ -63,10 +58,11 @@ reportlab==4.4.3
 pandas
 openpyxl
 opencv-python-headless==4.9.0.80
-# PHOENIX ADDITION: Required for The Harvester (Web Scraper)
 beautifulsoup4==4.12.3
+# PHOENIX ADDITION: Robust PDF text extraction
+pdfplumber>=0.10.0
 
-# --- AI & ML Dependencies (UNIFIED) ---
+# --- AI & ML Dependencies ---
 chromadb-client==1.1.0
 langchain
 langchain-community
@@ -74,12 +70,10 @@ langchain-openai
 langchain-text-splitters
 langdetect==1.0.9
 numpy<2,>=1.26.4
-# PHOENIX ADDITION: Required for embedding and OCR models
 onnxruntime>=1.19.0
-# PHOENIX ADDITION: OpenAI SDK for DeepSeek/OpenRouter
 openai>=1.0.0
 
-# AI Service Specific Libraries
+# AI Service Specific
 torch --index-url https://download.pytorch.org/whl/cpu
 transformers
 sentence-transformers
