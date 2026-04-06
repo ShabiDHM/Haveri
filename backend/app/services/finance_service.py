@@ -1,5 +1,5 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V8.6 (FIXED IMPORTS)
+# PHOENIX PROTOCOL - FINANCE SERVICE V8.7 (FIXED WIZARD FILTERING)
 
 import logging
 import csv
@@ -257,6 +257,11 @@ class FinanceService:
 
     def get_invoices(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[InvoiceInDB]:
         query = self._get_resilient_filter(context_id)
+        
+        # PHOENIX FIX: Exclude cancelled/archived/deleted invoices from wizard calculations
+        # Only include active invoices with status not in excluded list
+        query["status"] = {"$nin": ["CANCELLED", "DELETED", "ARCHIVED"]}
+        
         if case_id:
             query["case_id"] = case_id
         if year:
@@ -316,6 +321,10 @@ class FinanceService:
 
     def get_expenses(self, context_id: str, case_id: Optional[str] = None, year: Optional[int] = None) -> List[ExpenseInDB]:
         query = self._get_resilient_filter(context_id)
+        
+        # PHOENIX FIX: Exclude deleted/archived expenses
+        query["status"] = {"$nin": ["DELETED", "ARCHIVED"]}
+        
         if case_id:
             query["case_id"] = case_id
         if year:
