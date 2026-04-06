@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.6 (LOCALIZED TITLE)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.7 (SANITIZED SUPPLIER FIELDS)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -51,6 +51,16 @@ def generate_po_number() -> str:
     now = datetime.now()
     return f"PO-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:6].upper()}"
 
+def clean_field(value: Any) -> str:
+    """Sanitize field values to prevent 'None' strings in PDF output."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        if value.lower() == "none" or value.strip() == "":
+            return ""
+        return value.strip()
+    return str(value) if value else ""
+
 def get_business_info(business_service, user_id: str) -> Dict[str, Any]:
     """Fetch business profile using the correct method and field names."""
     try:
@@ -67,11 +77,11 @@ def get_business_info(business_service, user_id: str) -> Dict[str, Any]:
         
         return {
             "name": profile_dict.get('firm_name', 'Haveri Business'),
-            "address": profile_dict.get('address', ''),
-            "vat": profile_dict.get('tax_id', ''),  # Corrected field name
-            "email": profile_dict.get('email_public', ''),  # Corrected field name
-            "phone": profile_dict.get('phone', ''),
-            "vat_rate": profile_dict.get('vat_rate', 18),  # Pass through for dynamic VAT
+            "address": clean_field(profile_dict.get('address', '')),
+            "vat": clean_field(profile_dict.get('tax_id', '')),
+            "email": clean_field(profile_dict.get('email_public', '')),
+            "phone": clean_field(profile_dict.get('phone', '')),
+            "vat_rate": profile_dict.get('vat_rate', 18),
         }
     except Exception as e:
         print(f"DEBUG: Profile lookup failed: {e}")
@@ -98,16 +108,17 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     small_style = ParagraphStyle('SmallStyle', parent=styles['Normal'], fontSize=8,
                                  textColor=colors.HexColor('#666666'))
     story = []
-    # LOCALIZED TITLE - Changed from "PURCHASE ORDER" to "URDHËR BLERJE"
+    # LOCALIZED TITLE
     story.append(Paragraph("URDHËR BLERJE", title_style))
     story.append(Spacer(1, 0.2*cm))
+    
     buyer_text = f"""
     <b>BLERËSI (Kompania juaj)</b><br/>
     {buyer_info.get('name', 'Haveri Business')}<br/>
     {buyer_info.get('address', '')}<br/>
-    VAT: {buyer_info.get('vat', '')}<br/>
-    Tel: {buyer_info.get('phone', '')}<br/>
-    Email: {buyer_info.get('email', '')}
+    {f"VAT: {buyer_info.get('vat', '')}" if buyer_info.get('vat') else ""}<br/>
+    {f"Tel: {buyer_info.get('phone', '')}" if buyer_info.get('phone') else ""}<br/>
+    {f"Email: {buyer_info.get('email', '')}" if buyer_info.get('email') else ""}
     """
     po_details_text = f"""
     <b>URDHËR BLERJE Nr.</b><br/>
@@ -125,20 +136,28 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     ]))
     story.append(header_table)
     story.append(Spacer(1, 0.5*cm))
+    
+    # SANITIZED SUPPLIER FIELDS - prevents "None" from appearing in PDF
+    supplier_name = clean_field(order_data.get('supplier_name', ''))
+    supplier_address = clean_field(order_data.get('supplier_address', ''))
+    supplier_vat = clean_field(order_data.get('supplier_vat', ''))
+    
     supplier_text = f"""
     <b>FURNITORI</b><br/>
-    {order_data['supplier_name']}<br/>
-    {order_data.get('supplier_address', '')}<br/>
-    {f"VAT: {order_data.get('supplier_vat', '')}" if order_data.get('supplier_vat') else ''}
+    {supplier_name}<br/>
+    {f"{supplier_address}<br/>" if supplier_address else ""}
+    {f"VAT: {supplier_vat}" if supplier_vat else ""}
     """
     story.append(Paragraph(supplier_text, normal_style))
     story.append(Spacer(1, 0.5*cm))
+    
     subtotal = order_data['estimated_cost']
     # Use the vat_rate fetched from business profile (default to 18 if not set)
     vat_rate_percent = float(buyer_info.get('vat_rate', 18))
     vat_rate = vat_rate_percent / 100
     vat_amount = subtotal * vat_rate
     grand_total = subtotal + vat_amount
+    
     line_items = [
         ["Përshkrimi", "Njësia", "Sasia", "Çmimi/Njësi (€)", "Total (€)"],
         [
@@ -162,6 +181,7 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     ]))
     story.append(item_table)
     story.append(Spacer(1, 0.3*cm))
+    
     totals_data = [
         ["Subtotal:", f"€{subtotal:.2f}"],
         [f"TVSH ({vat_rate_percent:.0f}%):", f"€{vat_amount:.2f}"],
@@ -178,6 +198,7 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     ]))
     story.append(totals_table)
     story.append(Spacer(1, 0.5*cm))
+    
     terms_text = """
     <b>KUSHTET DHE SHËRBIMET:</b><br/>
     1. Kjo porosi është draft i krijuar nga Inteligjenca Artificiale e Haveri.<br/>
