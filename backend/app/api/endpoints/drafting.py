@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V2.9 (TABLE-BASED SUPPLIER BLOCK)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V3.0 (PROPER TABLE ALIGNMENT & TYPOGRAPHY)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -14,7 +14,7 @@ from reportlab.lib import colors
 from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 
 from app.services.drafting_service import DraftingService
 from app.services.archive_service import ArchiveService
@@ -104,6 +104,9 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
                                  spaceAfter=20, fontName='Helvetica-Bold')
     normal_style = ParagraphStyle('NormalStyle', parent=styles['Normal'], fontSize=9,
                                   leading=12, textColor=colors.HexColor('#444444'))
+    # Define non-bold style for supplier details (address, VAT, etc.)
+    normal_non_bold = ParagraphStyle('NormalNonBold', parent=styles['Normal'], fontSize=9,
+                                     leading=12, textColor=colors.HexColor('#444444'))
     right_style = ParagraphStyle('RightStyle', parent=normal_style, alignment=TA_RIGHT)
     small_style = ParagraphStyle('SmallStyle', parent=styles['Normal'], fontSize=8,
                                  textColor=colors.HexColor('#666666'))
@@ -113,7 +116,7 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     story.append(Spacer(1, 0.2*cm))
     
     buyer_text = f"""
-    <b>BLERËSI</b><br/>
+    <b>BLERËSI (Kompania juaj)</b><br/>
     {buyer_info.get('name', 'Haveri Business')}<br/>
     {buyer_info.get('address', '')}<br/>
     {f"VAT: {buyer_info.get('vat', '')}" if buyer_info.get('vat') else ""}<br/>
@@ -131,34 +134,37 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     header_table = Table([[buyer_para, po_para]], colWidths=[8*cm, 8*cm])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
         ('BOX', (0,0), (-1,-1), 0.5, colors.lightgrey),
         ('PADDING', (0,0), (-1,-1), 6),
     ]))
     story.append(header_table)
     story.append(Spacer(1, 0.5*cm))
     
-    # TABLE-BASED SUPPLIER BLOCK - Professional multi-line layout using Table (not fragile <br/> tags)
+    # TABLE-BASED SUPPLIER BLOCK - With proper alignment and typography
     # Clean the supplier data first
     supplier_name = clean_field(order_data.get('supplier_name', ''))
     supplier_address = clean_field(order_data.get('supplier_address', ''))
     supplier_vat = clean_field(order_data.get('supplier_vat', ''))
     
-    # Build table rows dynamically (only include non-empty fields)
+    # Build table rows with proper styling:
+    # - Header and Name use bold (normal_style)
+    # - Details (address, VAT) use non-bold (normal_non_bold)
     supplier_rows = [
         [Paragraph("<b>FURNITORI</b>", normal_style)],
-        [Paragraph(f"<b>{supplier_name}</b>", normal_style)],
+        [Paragraph(supplier_name, normal_style)],  # Supplier name is bold
     ]
     
     if supplier_address:
-        supplier_rows.append([Paragraph(supplier_address, normal_style)])
+        supplier_rows.append([Paragraph(supplier_address, normal_non_bold)])
     if supplier_vat:
-        supplier_rows.append([Paragraph(f"VAT: {supplier_vat}", normal_style)])
+        supplier_rows.append([Paragraph(f"VAT: {supplier_vat}", normal_non_bold)])
     
     supplier_table = Table(supplier_rows, colWidths=[8*cm])
     supplier_table.setStyle(TableStyle([
-        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),      # FORCE LEFT ALIGNMENT
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('PADDING', (0,0), (-1,-1), 2),
+        ('PADDING', (0,0), (-1,-1), 1),         # Tight padding for professional look
     ]))
     
     story.append(supplier_table)
@@ -202,6 +208,7 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     ]
     totals_table = Table(totals_data, colWidths=[13*cm, 3*cm])
     totals_table.setStyle(TableStyle([
+        ('ALIGN', (0,0), (0,-1), 'LEFT'),
         ('ALIGN', (1,0), (1,-1), 'RIGHT'),
         ('FONTSIZE', (0,0), (-1,-1), 10),
         ('LINEABOVE', (0,-1), (-1,-1), 1, colors.black),
