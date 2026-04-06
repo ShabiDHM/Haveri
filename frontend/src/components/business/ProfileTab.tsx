@@ -1,5 +1,5 @@
 // FILE: src/components/business/ProfileTab.tsx
-// PHOENIX PROTOCOL - PROFILE TAB V31.6 (CONSISTENT CARD STYLES)
+// PHOENIX PROTOCOL - PROFILE TAB V31.9 (FIXED TEXT SIZES)
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
@@ -12,8 +12,6 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getPlanLimits, canInviteMoreMembers, getRemainingMemberSlots, PlanTier } from '../../config/plans';
-
-
 
 export const ProfileTab: React.FC = () => {
   const { t } = useTranslation();
@@ -296,7 +294,7 @@ export const ProfileTab: React.FC = () => {
                     <h3 className="text-sm font-black text-text-primary uppercase tracking-widest">Ekipi</h3>
                   </div>
                   
-                  {/* Team Status Indicator */}
+                  {/* Team Status Indicator - FIXED TEXT SIZES */}
                   <div className="mb-5 p-4 rounded-xl bg-surface/50 backdrop-blur-sm border border-border-main">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-xs font-black uppercase tracking-widest text-text-muted">Përdoruesit</span>
@@ -311,13 +309,13 @@ export const ProfileTab: React.FC = () => {
                       />
                     </div>
                     {isPlanFull && (
-                      <div className="mt-3 flex items-center gap-2 text-xs text-warning-start">
-                        <AlertCircle size={12} />
+                      <div className="mt-3 flex items-center gap-2 text-sm text-warning-start">
+                        <AlertCircle size={16} />
                         <span>Keni arritur limitin e anëtarëve për planin {planConfig.name}.</span>
                       </div>
                     )}
                     {remainingSlots > 0 && remainingSlots <= 2 && (
-                      <div className="mt-3 text-[10px] text-text-muted">
+                      <div className="mt-3 text-sm text-text-muted">
                         {remainingSlots} vend(et) të lira. Përmirësoni planin për më shumë anëtarë.
                       </div>
                     )}
@@ -353,14 +351,14 @@ export const ProfileTab: React.FC = () => {
                   {teamLoading ? (
                     <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary-start" size={20} /></div>
                   ) : teamMembers.length === 0 ? (
-                    <p className="text-center text-text-muted text-xs py-4">Nuk ka anëtarë në ekip.</p>
+                    <p className="text-center text-text-muted text-sm py-4">Nuk ka anëtarë në ekip.</p>
                   ) : (
                     <div className="space-y-2 max-h-[200px] overflow-y-auto">
                       {teamMembers.map((member) => (
                         <div key={member.id} className="flex items-center justify-between p-2.5 bg-surface/50 backdrop-blur-sm rounded-xl border border-border-main">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-text-primary truncate">{member.email}</p>
-                            <p className="text-[10px] text-text-muted uppercase tracking-widest">{member.role}</p>
+                            <p className="text-sm font-medium text-text-primary truncate">{member.email}</p>
+                            <p className="text-xs text-text-muted uppercase tracking-widest">{member.role}</p>
                           </div>
                           <button
                             onClick={() => handleRemoveMember(member.id)}
