@@ -1,19 +1,20 @@
-// FILE: src/components/business/briefing/SmartAgendaCard.tsx
-// PHOENIX PROTOCOL - AGENDA CARD V11.3 (EXECUTIVE DESIGN SYSTEM)
-// Fixed: Replaced text-[9px] with text-xs and text-[8px] with text-xs for consistency.
-// FIXED: Added max-h-[300px] to agenda list container for consistent card height
+// FILE: src/components/business/insights/SmartAgendaCard.tsx
+// PHOENIX PROTOCOL - AGENDA CARD V11.5 (FIXED CLICK HANDLER)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, ChevronRight, AlertCircle, DollarSign, Calendar as CalendarIcon, Users, CheckSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// Extended AgendaItem interface to match backend response
 interface AgendaItem {
     id: string;
     title: string;
     time: string;
     type: string;
     priority: string;
+    date?: string;
+    raw?: any;
 }
 
 interface SmartAgendaCardProps {
@@ -49,6 +50,12 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
         navigate('/calendar');
     };
 
+    const handleEventClick = (item: AgendaItem) => {
+        if (onEventClick) {
+            onEventClick(item);
+        }
+    };
+
     return (
         <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group shadow-sm border border-border-main">
             
@@ -79,16 +86,15 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
                             <Calendar size={20} className="text-text-muted" />
                         </div>
                         <p className="text-xs text-text-muted uppercase font-black tracking-widest">
-                            {t('dashboard.noEvents', 'Nuk ka ngjarje për sot.')}
+                            {t('dashboard.noEvents', 'Nuk ka ngjarje për 7 ditët e ardhshme.')}
                         </p>
                     </div>
                 ) : (
-                    // FIXED: Added max-h-[300px] to enforce consistent card height with internal scrolling
                     <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 custom-scrollbar pr-2">
-                        {agenda.slice(0, 4).map((item) => (
+                        {agenda.map((item) => (
                             <div 
                                 key={item.id}
-                                onClick={() => onEventClick?.(item)}
+                                onClick={() => handleEventClick(item)}
                                 className="glass-input p-4 flex items-center gap-4 group/item hover:border-warning-start/30 transition-all cursor-pointer hover-lift border border-border-main bg-surface/30 backdrop-blur-sm"
                             >
                                 <div className={`shrink-0 ${getEventColorClass(item.type)}`}>
@@ -98,7 +104,7 @@ export const SmartAgendaCard: React.FC<SmartAgendaCardProps> = ({ agenda = [], o
                                     <p className="text-xs font-bold text-text-primary truncate">
                                         {item.title}
                                     </p>
-                                    <div className="flex items-center gap-2 mt-1.5">
+                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                         <span className="text-xs text-text-muted uppercase font-black tracking-widest leading-none">
                                             {item.time}
                                         </span>
