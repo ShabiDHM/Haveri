@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V3.0 (PROPER TABLE ALIGNMENT & TYPOGRAPHY)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V3.1 (PROPER TABLE ANCHORING)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -132,6 +132,7 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     buyer_para = Paragraph(buyer_text, normal_style)
     po_para = Paragraph(po_details_text, right_style)
     header_table = Table([[buyer_para, po_para]], colWidths=[8*cm, 8*cm])
+    header_table.hAlign = 'LEFT'
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('ALIGN', (0,0), (-1,-1), 'LEFT'),
@@ -141,15 +142,13 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
     story.append(header_table)
     story.append(Spacer(1, 0.5*cm))
     
-    # TABLE-BASED SUPPLIER BLOCK - With proper alignment and typography
+    # TABLE-BASED SUPPLIER BLOCK - With proper table anchoring (hAlign)
     # Clean the supplier data first
     supplier_name = clean_field(order_data.get('supplier_name', ''))
     supplier_address = clean_field(order_data.get('supplier_address', ''))
     supplier_vat = clean_field(order_data.get('supplier_vat', ''))
     
-    # Build table rows with proper styling:
-    # - Header and Name use bold (normal_style)
-    # - Details (address, VAT) use non-bold (normal_non_bold)
+    # Build table rows as a list of lists (each inner list is a separate row)
     supplier_rows = [
         [Paragraph("<b>FURNITORI</b>", normal_style)],
         [Paragraph(supplier_name, normal_style)],  # Supplier name is bold
@@ -161,8 +160,13 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
         supplier_rows.append([Paragraph(f"VAT: {supplier_vat}", normal_non_bold)])
     
     supplier_table = Table(supplier_rows, colWidths=[8*cm])
+    
+    # CRITICAL: hAlign controls the table's position within the document margins
+    # Default is 'CENTER' - setting to 'LEFT' anchors the entire block to the left margin
+    supplier_table.hAlign = 'LEFT'
+    
     supplier_table.setStyle(TableStyle([
-        ('ALIGN', (0,0), (-1,-1), 'LEFT'),      # FORCE LEFT ALIGNMENT
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),      # Align cell contents left
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('PADDING', (0,0), (-1,-1), 1),         # Tight padding for professional look
     ]))
@@ -188,6 +192,7 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
         ]
     ]
     item_table = Table(line_items, colWidths=[6*cm, 2.5*cm, 2.5*cm, 3*cm, 3*cm])
+    item_table.hAlign = 'LEFT'
     item_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1a4d8c')),
         ('TEXTCOLOR', (0,0), (-1,0), colors.white),
@@ -207,6 +212,7 @@ def generate_pdf_po(order_data: Dict[str, Any], buyer_info: Dict[str, Any], po_n
         ["TOTAL I PËRGJITHSHËM:", f"€{grand_total:.2f}"]
     ]
     totals_table = Table(totals_data, colWidths=[13*cm, 3*cm])
+    totals_table.hAlign = 'LEFT'
     totals_table.setStyle(TableStyle([
         ('ALIGN', (0,0), (0,-1), 'LEFT'),
         ('ALIGN', (1,0), (1,-1), 'RIGHT'),
