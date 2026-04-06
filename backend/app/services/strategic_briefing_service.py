@@ -1,5 +1,5 @@
 # FILE: backend/app/services/strategic_briefing_service.py
-# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.5 (7-DAY AGENDA)
+# PHOENIX PROTOCOL - STRATEGIC INTELLIGENCE ENGINE V28.7 (FIXED OBJECTID TYPES)
 
 import logging
 import asyncio
@@ -113,28 +113,75 @@ class StrategicBriefingService:
 
     async def _compile_tactical_agenda(self) -> List[Dict]:
         """Fetch all calendar events for the next 7 days (not just today)."""
-        user_filter = {"user_id": self.user_id_obj}
+        user_filter: Dict[str, Any] = {"user_id": self.user_id_obj}
         if self.case_id:
-            # Use string for workspace_id; ignore type because field may be string
-            user_filter["workspace_id"] = str(self.case_id)  # type: ignore[assignment]
+            # Convert string case_id to ObjectId for MongoDB query
+            try:
+                user_filter["workspace_id"] = ObjectId(self.case_id)
+            except Exception:
+                # If conversion fails, try as string
+                user_filter["workspace_id"] = self.case_id
 
-        # FIXED: Changed from 1 day to 7 days
+        # DEBUG: Log the user_id being queried
+        logger.info(f"AGENDA DEBUG: user_id = {self.user_id_obj}, case_id = {self.case_id}")
+        logger.info(f"AGENDA DEBUG: user_filter = {user_filter}")
+
         now = datetime.utcnow()
         week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_end = week_start + timedelta(days=7)
         
-        cursor = self.db.calendar_events.find({
+        # DEBUG: Log the date range
+        logger.info(f"AGENDA DEBUG: week_start = {week_start.isoformat()}, week_end = {week_end.isoformat()}")
+        
+        # First, check if there are ANY calendar events for this user
+        total_count = await self.db.calendar_events.count_documents(user_filter)
+        logger.info(f"AGENDA DEBUG: Total calendar events for user: {total_count}")
+        
+        # Check events in the next 7 days
+        date_filter: Dict[str, Any] = {
             **user_filter,
             "start_date": {"$gte": week_start, "$lt": week_end}
-        }).sort("start_date", 1)
+        }
+        date_count = await self.db.calendar_events.count_documents(date_filter)
+        logger.info(f"AGENDA DEBUG: Events in next 7 days: {date_count}")
         
-        events = await cursor.to_list(length=100)  # Increased limit to accommodate 7 days
+        # If no events in next 7 days, check for any future events beyond 7 days
+        future_filter: Dict[str, Any] = {
+            **user_filter,
+            "start_date": {"$gte": week_end}
+        }
+        future_count = await self.db.calendar_events.count_documents(future_filter)
+        logger.info(f"AGENDA DEBUG: Events beyond 7 days: {future_count}")
+        
+        # Also check for events before today (past events)
+        past_filter: Dict[str, Any] = {
+            **user_filter,
+            "start_date": {"$lt": week_start}
+        }
+        past_count = await self.db.calendar_events.count_documents(past_filter)
+        logger.info(f"AGENDA DEBUG: Past events: {past_count}")
+        
+        cursor = self.db.calendar_events.find(date_filter).sort("start_date", 1)
+        events = await cursor.to_list(length=100)
+        
+        # DEBUG: Log the raw events found
+        logger.info(f"AGENDA DEBUG: Raw events found in date range = {len(events)}")
+        for ev in events[:5]:  # Log first 5 events
+            logger.info(f"AGENDA DEBUG: Event: {ev.get('title')} - start_date: {ev.get('start_date')} - type: {ev.get('event_type')}")
+        
         agenda_items = []
 
         for event in events:
             event_date = event.get('start_date', now)
             event_type = event.get('event_type', 'TASK').upper()
             is_alert = event_type in ['PAYMENT_DUE', 'TAX_DEADLINE']
+            
+            # Ensure event_date is a datetime object
+            if isinstance(event_date, str):
+                try:
+                    event_date = datetime.fromisoformat(event_date.replace('Z', '+00:00'))
+                except Exception:
+                    event_date = now
             
             # Format time display - show date for future days, time for today
             days_diff = (event_date.replace(hour=0, minute=0, second=0, microsecond=0) - week_start.replace(hour=0, minute=0, second=0, microsecond=0)).days
@@ -157,9 +204,10 @@ class StrategicBriefingService:
                 "isCompleted": False,
                 "kind": 'alert' if is_alert else 'event',
                 "raw": event,
-                "type": event_type,  # Add type for color coding
-                "date": event_date.isoformat()
+                "type": event_type,
+                "date": event_date.isoformat() if hasattr(event_date, 'isoformat') else str(event_date)
             }
             agenda_items.append(agenda_item)
             
+        logger.info(f"AGENDA DEBUG: Final agenda items count = {len(agenda_items)}")
         return agenda_items
