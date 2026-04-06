@@ -7,8 +7,6 @@ from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
 
-# The system prompt now forces reliance on retrieved context only.
-# The context (including law snippets) is injected by the caller via `context` param.
 SYSTEM_PROMPT_BASE = """
 ROLI: Ti je 'Krye-Auditori Forenzik' i certifikuar për juridiksionin e Kosovës.
 DETYRA: Përgjigju pyetjeve të përdoruesit BAZUAR VETËM NË KONTEKSTIN E DHËNË më poshtë.
@@ -31,7 +29,6 @@ RREGULLAT E DETYRUESHME (SHKELJA ËSHTË E NDALUAR):
 4. **NËSE NUK JE I SIGURTË, THUAJ "NUK DI".**
    - Asnjëherë mos jep përgjigje të paverifikuara.
 
-═══════════════════════════════════════════════════════════════
 STILI: Shqip standard, i qartë, me pika dhe lista për lehtësi.
 """
 
@@ -45,7 +42,6 @@ async def stream_accountant_audit(context: str, user_query: str) -> AsyncGenerat
         yield "[GABIM: Shërbimi AI nuk është i konfiguruar për Auditorin.]"
         return
 
-    # Inject the context directly into the system prompt
     full_system_prompt = SYSTEM_PROMPT_BASE + f"\n\n=== KONTEKSTI I DHËNË (TË DHËNAT + LIGJET) ===\n{context}"
 
     try:

@@ -18,7 +18,6 @@ def _normalize(text: str) -> str:
     return re.sub(r'[^\w\s]', '', str(text).lower()).strip()
 
 def _stem_albanian(word: str) -> str:
-    """Strips common Albanian genitive/definite suffixes to find the root name."""
     suffixes = ['os', 'as', 'es', 'is', 'it', 'te', 'in', 's']
     stemmed = word
     for suffix in suffixes:
@@ -43,14 +42,10 @@ def _get_resilient_filter(context_id: str) -> Dict:
         ]}
 
 def _add_year_filter(base_filter: Dict, year: Optional[int]) -> Dict:
-    """Adds year filtering to the MongoDB query."""
     if not year:
         return base_filter
-    
     start_date = datetime(year, 1, 1)
     end_date = datetime(year + 1, 1, 1)
-    
-    # Create date filter that checks multiple possible date fields
     date_filter = {
         "$or": [
             {"issue_date": {"$gte": start_date, "$lt": end_date}},
@@ -59,7 +54,6 @@ def _add_year_filter(base_filter: Dict, year: Optional[int]) -> Dict:
             {"created_at": {"$gte": start_date, "$lt": end_date}}
         ]
     }
-    
     return {"$and": [base_filter, date_filter]}
 
 def _format_mongo_docs_for_ai(docs: List[Any], title: str) -> str:
@@ -83,10 +77,6 @@ async def get_combined_context(
     case_id: Optional[str] = None,
     year: Optional[int] = None
 ) -> str:
-    """
-    Retrieves combined context for the forensic accountant.
-    Includes year filtering to ensure data relevance.
-    """
     if db.db_instance is None: 
         db.connect_to_mongo()
     active_db = db.db_instance
@@ -99,18 +89,12 @@ async def get_combined_context(
     all_search_terms = list(set(raw_words + stemmed_words))
     
     resilient_filter = _get_resilient_filter(context_id)
-    
-    # Add case_id filter if provided
     if case_id:
         resilient_filter["case_id"] = case_id
-    
-    # Add year filter
     base_filter = resilient_filter.copy()
     final_filter = _add_year_filter(base_filter, year) if year else base_filter
 
     structured_data_context = ""
-    
-    # Build search filter for text search
     entity_filter = None
     if all_search_terms:
         regex_pattern = "|".join([re.escape(w) for w in all_search_terms])
@@ -129,33 +113,25 @@ async def get_combined_context(
 
     try:
         search_filter = entity_filter if entity_filter else final_filter
-        
-        # 1. Invoices - limit 20 for better coverage
         invoices = list(active_db.invoices.find(search_filter).sort("issue_date", -1).limit(20))
         structured_data_context += _format_mongo_docs_for_ai(invoices, f"Faturat (Invoices) - Viti: {year if year else 'Të gjithë'}")
 
-        # 2. Expenses
         expenses = list(active_db.expenses.find(search_filter).sort("date", -1).limit(20))
         structured_data_context += _format_mongo_docs_for_ai(expenses, f"Shpenzimet (Expenses) - Viti: {year if year else 'Të gjithë'}")
 
-        # 3. POS Transactions
         txs = list(active_db.transactions.find(search_filter).sort("date_time", -1).limit(20))
         structured_data_context += _format_mongo_docs_for_ai(txs, f"Transaksionet POS/Bankare - Viti: {year if year else 'Të gjithë'}")
 
-        # 4. Inventory (only if relevant keywords)
         if any(kw in query_norm for kw in ["stok", "stock", "inventar", "produkt", "product"]):
             items = list(active_db.inventory.find(resilient_filter).limit(20))
             structured_data_context += _format_mongo_docs_for_ai(items, "Inventari")
-            
     except Exception as e:
         logger.error(f"Context error: {e}")
 
-    # Add year context to the prompt
     year_context = f"\n--- KONTEKSTI I VITIT ---\nViti i zgjedhur për analizë: {year if year else 'Të gjithë vitet'}\n"
     
-    # Vector search for RAG
     private_rag = await asyncio.to_thread(havery_vs.query_private_diary, context_id, query)
-    # FIX: Use 'business' because Kosovo laws are stored in business_knowledge_base
+    # FIX: use 'business' because Kosovo laws are stored in business_knowledge_base
     global_rag = await asyncio.to_thread(havery_vs.query_public_library, query, agent_type='business')
     
     context_str = "\n--- ARKIVA DHE LIGJET ---\n"

@@ -82,7 +82,6 @@ def calculate_file_hash(filepath: str) -> str:
 
 def get_or_create_collection(client, name):
     try:
-        # Delete existing to force recreation with correct embedding dimension
         client.delete_collection(name)
         print(f"🗑️  Deleted existing collection '{name}'.")
     except:
@@ -151,7 +150,6 @@ def ingest_legal_laws(directory: str, force: bool = False, chunk_size: int = 100
                         "file_hash": file_hash,
                         "chunk_index": i
                     })
-            # Generate embeddings using the same service as query (768-dim)
             print("🔄 Generating embeddings...")
             embeddings = []
             for text in batch_texts:
@@ -159,9 +157,7 @@ def ingest_legal_laws(directory: str, force: bool = False, chunk_size: int = 100
                 if emb:
                     embeddings.append(emb)
                 else:
-                    # Fallback (should not happen)
                     embeddings.append([0.0] * 768)
-            # Add to ChromaDB in batches
             for i in range(0, len(batch_ids), 50):
                 collection.add(
                     ids=batch_ids[i:i+50],
