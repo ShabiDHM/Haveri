@@ -1,9 +1,9 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - PORTAL V11.3 (EXECUTIVE DESIGN SYSTEM)
+// PHOENIX PROTOCOL - PORTAL V11.4 (EXECUTIVE DESIGN SYSTEM)
 // UPDATED: Semantic Tailwind classes (glass-panel, border-border-main, text-text-*, etc.)
 // ADDED: shadow-sm, hover-lift, consistent backdrop blur.
 // REMOVED: "Njoftim nga Drejtoria" (Management Notice) component per UX cleanup
-// FIXED: Albanian date localization with 'sq-AL' locale
+// FIXED: Albanian date localization using date-fns with sq locale (browser-agnostic)
 // FIXED: Simplified grid layout after notice removal
 // RETAINED: All logic and functionality.
 
@@ -15,6 +15,8 @@ import {
     Calendar, Eye, User, Mail, MessageSquare, Send, Phone,
     MapPin, Globe
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { sq } from 'date-fns/locale';
 import { API_V1_URL, apiService } from '../services/api';
 import PDFViewerModal from '../components/PDFViewerModal';
 import { Document } from '../data/types';
@@ -101,12 +103,9 @@ const ClientPortalPage: React.FC = () => {
     if (error || !data) return ( <div className="min-h-screen bg-canvas flex items-center justify-center p-6"><div className="bg-danger-start/10 border border-danger-start/30 p-12 rounded-3xl text-center shadow-sm"><ShieldCheck className="w-16 h-16 text-danger-start/50 mx-auto mb-6" /><h1 className="text-2xl font-bold text-text-primary mb-2">{t('portal.access_denied')}</h1><p className="text-text-muted">{error}</p></div></div> );
 
     const logoSrc = getLogoUrl();
-    // FORCED ALBANIAN DATE LOCALIZATION - using 'sq-AL' locale
-    const currentDate = new Date().toLocaleDateString('sq-AL', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
+    // FORCED ALBANIAN DATE LOCALIZATION using date-fns with sq locale
+    // This guarantees "Prill" appears instead of "April" regardless of browser/system settings
+    const currentDate = format(new Date(), 'd MMMM yyyy', { locale: sq });
     
     const businessName = data.organization_name;
     const businessAddress = data.owner_address || data.address;
@@ -183,7 +182,10 @@ const ClientPortalPage: React.FC = () => {
                                     </div>
                                     <div className="relative z-10 flex-1">
                                         <h4 className="font-bold text-text-primary group-hover:text-text-primary line-clamp-2 leading-snug text-base mb-1">{doc.file_name}</h4>
-                                        <div className="flex items-center gap-2 text-xs text-text-muted"><Calendar size={12} /><span>{new Date(doc.created_at).toLocaleDateString('sq-AL')}</span></div>
+                                        <div className="flex items-center gap-2 text-xs text-text-muted">
+                                            <Calendar size={12} />
+                                            <span>{format(new Date(doc.created_at), 'd MMMM yyyy', { locale: sq })}</span>
+                                        </div>
                                     </div>
                                     <div className="relative z-10 mt-4 pt-4 border-t border-border-main flex justify-between items-center">
                                         <span className="text-xs font-black uppercase tracking-widest text-text-muted">{doc.file_type || 'PDF'}</span>
