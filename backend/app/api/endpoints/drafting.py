@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V1.3 (PURCHASE ORDER WITH ARCHIVE SAVE)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V1.4 (FIXED OBJECTID SERIALIZATION)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -83,19 +83,20 @@ Statusi: Draft (krijuar nga AI)
     
     archive_service = ArchiveService(db)
     try:
-        # case_id can be None if no workspace context
         archive_item = await archive_service.save_generated_file(
             user_id=str(current_user.id),
             filename=filename,
             file_content=file_content,
             category="purchase_order",
             title=f"Porosia Blerje: {order.item_name}",
-            case_id=None          # Use None or current_user.current_workspace_id if available
+            case_id=None
         )
+        # Convert ObjectId to string for JSON response
+        archive_id_str = str(archive_item.id)
         return {
             "status": "created",
             "message": f"Purchase order for {order.item_name} saved to archive.",
-            "archive_id": archive_item.id,      # .id, not ._id
+            "archive_id": archive_id_str,
             "order": order.dict()
         }
     except Exception as e:
