@@ -1,10 +1,5 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - UNIFIED SEARCH BAR & GLASS STYLING V1
-// FIXED: handleViewItem now detects text files and sets correct mime_type
-// ADDED: Edit purchase order functionality
-// FIXED: Download now appends correct file extension based on file_type
-// FIXED: Removed inline ArchiveCard - now using imported component from ./archive/ArchiveCard
-// FIXED: Removed unused imports
+// PHOENIX PROTOCOL - BREADCRUMBS MERGED INTO ACTION BAR
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -108,17 +103,10 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
 
 // Helper function to get safe filename with extension for download
 const getSafeFileNameForDownload = (item: ArchiveItemOut): string => {
-    // 1. Get the file extension from the item's file_type
     const fileType = item.file_type?.toLowerCase() || '';
     const ext = fileType ? `.${fileType}` : '';
-    
-    // 2. If no extension, return original title
     if (!ext) return item.title;
-    
-    // 3. Check if the title already has the extension
     const hasExtension = item.title.toLowerCase().endsWith(ext);
-    
-    // 4. Create a safe filename for the browser
     return hasExtension ? item.title : `${item.title}${ext}`;
 };
 
@@ -142,7 +130,6 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
     const [showShareModal, setShowShareModal] = useState(false);
     const [showForensicModal, setShowForensicModal] = useState(false);
     const [chatDoc, setChatDoc] = useState<{id: string, title: string} | null>(null);
-    // NEW: Edit purchase order modal state
     const [editPoId, setEditPoId] = useState<string | null>(null);
     const [showEditModal, setShowEditModal] = useState(false);
 
@@ -180,17 +167,15 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
         }
     };
 
-    // Handle edit purchase order content (opens the form modal)
     const handleEditContent = (item: ArchiveItemOut) => {
         setEditPoId(item.id);
         setShowEditModal(true);
     };
 
     const handleEditSuccess = () => {
-        fetchArchiveContent(); // refresh list to show updated title if changed
+        fetchArchiveContent();
     };
 
-    // FIXED: Proper MIME type detection for text files (TXT, MD, JSON) and other formats
     const handleViewItem = async (item: ArchiveItemOut) => {
         const fileType = item.file_type?.toUpperCase() || '';
         const isDataFile = ['CSV', 'XLSX', 'XLS'].includes(fileType);
@@ -201,9 +186,8 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
         else if (isTextFile) mimeType = 'text/plain';
         else if (fileType === 'PDF') mimeType = 'application/pdf';
         else if (['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(fileType)) mimeType = `image/${fileType.toLowerCase()}`;
-        else mimeType = 'text/plain'; // fallback to text is safer than image
+        else mimeType = 'text/plain';
 
-        // Ensure filename has an extension so PDFViewerModal can double-check
         const hasExtension = item.title.toLowerCase().endsWith(`.${fileType.toLowerCase()}`);
         const safeFileName = hasExtension ? item.title : `${item.title}.${fileType.toLowerCase()}`;
 
@@ -225,7 +209,6 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
         } 
     };
 
-    // NEW: Handle download with correct file extension
     const handleDownloadItem = (item: ArchiveItemOut) => {
         const safeFileName = getSafeFileNameForDownload(item);
         apiService.downloadArchiveItem(item.id, safeFileName);
@@ -235,7 +218,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 h-full flex flex-col border border-border-main shadow-sm">
-            {/* Search and Actions Panel */}
+            {/* Search and Actions Panel - now includes breadcrumbs */}
             <Panel className="p-4 sm:p-6 flex-shrink-0 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
                 <div className="flex flex-col xl:flex-row gap-4">
                     <div className="flex-1 relative group">
@@ -249,7 +232,30 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                         />
                     </div>
                     
-                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                    {/* Button group - breadcrumbs now integrated as first items */}
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 items-center">
+                        {/* Breadcrumbs mapped as action buttons */}
+                        {breadcrumbs.map((crumb, index) => {
+                            const isLast = index === breadcrumbs.length - 1;
+                            return (
+                                <React.Fragment key={crumb.id || index}>
+                                    <button
+                                        onClick={() => navigateTo(index)}
+                                        className={`glass-input !bg-surface/30 backdrop-blur-sm hover:bg-hover transition-colors px-3 py-3 text-xs sm:text-sm flex items-center justify-center gap-2 hover-lift shadow-sm border ${
+                                            isLast 
+                                                ? 'border-primary-start/50 text-primary-start bg-primary-start/10' 
+                                                : 'border-border-main'
+                                        }`}
+                                    >
+                                        <Archive size={14} />
+                                        <span>{crumb.name === "My Workspace" ? t('archive.myWorkspace') : crumb.name}</span>
+                                    </button>
+                                    {!isLast && <ChevronRight size={14} className="text-border-main shrink-0" />}
+                                </React.Fragment>
+                            );
+                        })}
+                        
+                        {/* Existing action buttons */}
                         {(isInsideWorkspace || !!workspaceId) && (
                             <button onClick={() => setShowShareModal(true)} className="glass-input !bg-surface/30 backdrop-blur-sm hover:bg-hover transition-colors px-3 py-3 text-xs sm:text-sm flex items-center justify-center gap-2 hover-lift shadow-sm border border-border-main">
                                 <LinkIcon size={16} className="shrink-0" /><span>{t('archive.portal_access')}</span>
@@ -266,19 +272,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                 </div>
             </Panel>
 
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-2 overflow-x-auto text-xs sm:text-sm no-scrollbar pb-2 flex-shrink-0">
-                {breadcrumbs.map((crumb, index) => (
-                    <React.Fragment key={crumb.id || index}>
-                        <button onClick={() => navigateTo(index)} className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg border ${index === breadcrumbs.length - 1 ? 'bg-primary-start/20 text-primary-start border border-primary-start/30' : 'text-text-muted border border-border-main hover:bg-hover'} hover-lift shadow-sm`}>
-                            <Archive size={14} />{crumb.name === "My Workspace" ? t('archive.myWorkspace') : crumb.name}
-                        </button>
-                        {index < breadcrumbs.length - 1 && <ChevronRight size={14} className="text-border-main" />}
-                    </React.Fragment>
-                ))}
-            </div>
-            
-            {/* Archive Cards Grid */}
+            {/* Archive Cards Grid - now directly below the top panel */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 <AnimatePresence>
                     {filteredItems.map(item => (
