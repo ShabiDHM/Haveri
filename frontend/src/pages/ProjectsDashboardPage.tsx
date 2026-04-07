@@ -1,5 +1,5 @@
 // FILE: src/pages/ProjectsDashboardPage.tsx
-// PHOENIX PROTOCOL – PROJECTS DASHBOARD V1.9 (BUTTON TEXT SIZE FIX)
+// PHOENIX PROTOCOL – PROJECTS DASHBOARD V2.0 (TITLE RENAMED, SUBTITLE LARGER)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -94,11 +94,13 @@ const ProjectsDashboardPage: React.FC = () => {
           <div className="shrink-0 space-y-5 mb-6">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-b border-border-main pb-6">
               <div className="flex flex-col gap-1">
+                {/* Title changed from "Projektet e Mia" to "PROJEKTET" */}
                 <h2 className="text-2xl font-black text-text-primary tracking-tighter uppercase leading-none flex items-center gap-2">
                   <Activity className="text-primary-start" size={24} />
-                  {t('projectsDashboard.title', 'Projektet e Mia')}
+                  {t('projectsDashboard.title', 'PROJEKTET')}
                 </h2>
-                <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mt-1 ml-8">
+                {/* Subtitle font size increased from text-[10px] to text-sm */}
+                <p className="text-sm font-black text-text-muted uppercase tracking-[0.2em] mt-1 ml-8">
                   {t('projectsDashboard.subtitle', 'Menaxhimi i Projekteve Aktive')}
                 </p>
               </div>
