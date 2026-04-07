@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - FIXED SCROLLING, DROPDOWN OVERLAY, IMPROVED SPACING
+// PHOENIX PROTOCOL - DROPDOWN CLIPPING FIXED, OVERFLOW VISIBLE, ENHANCED STACKING
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -259,10 +259,10 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
   }
 
   return (
-    // Single scrolling container - no internal overflow-y-auto on parent
-    <div className="flex flex-col h-full w-full">
-      {/* Centered wrapper - max-w-5xl, no overflow-y-auto here */}
-      <div className="max-w-5xl mx-auto w-full px-6 sm:px-8 mt-12 flex-1">
+    // Outer container: no overflow hidden, allows dropdown to escape
+    <div className="flex flex-col h-full w-full overflow-y-auto">
+      {/* Main centered wrapper - higher z-index context */}
+      <div className="max-w-5xl mx-auto w-full px-6 sm:px-8 mt-12 flex-1 relative z-10">
         {/* Back button aligned with card */}
         <button
           onClick={handleBack}
@@ -272,10 +272,10 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
           <span>KTHEHU</span>
         </button>
 
-        {/* Search card - increased padding and height */}
-        <div className="glass-panel p-8 sm:p-10 rounded-[2rem] border border-border-main shadow-xl w-full mb-8">
-          {/* Law selection dropdown with proper absolute positioning */}
-          <div className="relative z-[60] mb-5">
+        {/* Search card - NO overflow-hidden, overflow-visible to allow dropdown to float */}
+        <div className="glass-panel p-8 sm:p-10 rounded-[2rem] border border-border-main shadow-xl w-full mb-8 overflow-visible relative z-20">
+          {/* Dropdown button container - relative for positioning */}
+          <div className="relative z-30 mb-5">
             <button
               ref={buttonRef}
               onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -295,6 +295,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
               )}
             </button>
 
+            {/* Dropdown - absolutely positioned, no clipping, high z-index */}
             <AnimatePresence>
               {dropdownOpen && (
                 <motion.div
@@ -302,7 +303,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute left-0 right-0 top-full z-[100] mt-2 w-full bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar py-2"
+                  className="absolute top-full left-0 right-0 z-[100] mt-1 bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl max-h-80 overflow-y-auto custom-scrollbar py-2"
                 >
                   {lawTitles.map(title => (
                     <button
@@ -319,7 +320,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
             </AnimatePresence>
           </div>
 
-          {/* Search input with blue glow - increased padding */}
+          {/* Search input - unaffected by dropdown */}
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
               <Search className={`h-6 w-6 transition-colors ${loading ? 'text-primary-start animate-pulse' : 'text-text-muted group-focus-within:text-blue-500'}`} />
@@ -343,8 +344,8 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
           </div>
         </div>
 
-        {/* Results section - scrollable area only here */}
-        <div className="overflow-y-auto custom-scrollbar pb-12" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+        {/* Results section - scrollable, unaffected by dropdown positioning */}
+        <div className="overflow-y-auto custom-scrollbar pb-12 relative z-10" style={{ maxHeight: 'calc(100vh - 380px)' }}>
           {loading && (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
