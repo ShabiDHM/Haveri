@@ -1,5 +1,6 @@
 # FILE: backend/app/services/accountant_vector_service.py
-# PHOENIX PROTOCOL - ACCOUNTANT VECTOR V2.10 (FIXED: USE BUSINESS KB FOR LAWS)
+# PHOENIX PROTOCOL - ACCOUNTANT VECTOR V3.0 (ROBUST LEGAL RETRIEVAL)
+# FIX: Multi-query retrieval to ensure both rate and deadline are found.
 
 from __future__ import annotations
 import logging
@@ -131,8 +132,35 @@ async def get_combined_context(
     year_context = f"\n--- KONTEKSTI I VITIT ---\nViti i zgjedhur për analizë: {year if year else 'Të gjithë vitet'}\n"
     
     private_rag = await asyncio.to_thread(havery_vs.query_private_diary, context_id, query)
-    # FIX: use 'business' because Kosovo laws are stored in business_knowledge_base
-    global_rag = await asyncio.to_thread(havery_vs.query_public_library, query, agent_type='business')
+    
+    # --- PHOENIX FIX: Multi-query legal retrieval ---
+    # Use the original query plus targeted queries for key legal concepts.
+    global_rag = []
+    # 1. Original query
+    global_rag += await asyncio.to_thread(havery_vs.query_public_library, query, agent_type='business', n_results=5)
+    # 2. If query mentions TVSH, add targeted queries for rate and deadline
+    if 'tvsh' in query.lower():
+        # Rate query
+        rate_results = await asyncio.to_thread(havery_vs.query_public_library, 'norma standarde e TVSH', agent_type='business', n_results=3)
+        global_rag += rate_results
+        # Deadline query (monthly declaration)
+        deadline_results = await asyncio.to_thread(havery_vs.query_public_library, 'afati i deklarimit mujor TVSH', agent_type='business', n_results=3)
+        global_rag += deadline_results
+        # Also search for '20' (common deadline day)
+        day_results = await asyncio.to_thread(havery_vs.query_public_library, 'deri më 20', agent_type='business', n_results=3)
+        global_rag += day_results
+    
+    # Remove duplicates based on content (simple heuristic)
+    seen_contents = set()
+    unique_global = []
+    for doc in global_rag:
+        content = doc.get('content', '')
+        # Use first 200 chars as key to avoid exact match issues
+        key = content[:200]
+        if key not in seen_contents:
+            seen_contents.add(key)
+            unique_global.append(doc)
+    global_rag = unique_global[:15]  # Limit to 15 total law chunks
     
     context_str = "\n--- ARKIVA DHE LIGJET ---\n"
     for d in private_rag: 
