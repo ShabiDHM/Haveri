@@ -1,5 +1,5 @@
 // FILE: src/components/business/archive/ArchiveCard.tsx
-// PHOENIX PROTOCOL - ARCHIVE CARD V4.5 (DETAILS REMOVED, PROPS/IMPORTS RESTORED)
+// PHOENIX PROTOCOL - ARCHIVE CARD V4.7 (RESTORED FILE INFO, NO "DETAILS" LABEL)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,8 +12,8 @@ import {
 
 interface ArchiveCardProps {
     title: string;
-    subtitle: string;   // Kept for parent compatibility, not rendered
-    type: string;       // Kept for parent compatibility, not rendered
+    subtitle: string;   // Document tag like "# PDF DOKUMENT"
+    type: string;       // File type like "PDF"
     date: string;
     icon: React.ReactNode;
     onClick: () => void;
@@ -39,9 +39,8 @@ export const getFileIcon = (fileType: string) => {
 };
 
 export const ArchiveCard: React.FC<ArchiveCardProps> = ({ 
-    title, date, icon, onClick, onDownload, onDelete, onRename, onEditContent, onShare, onAskAI,
+    title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onEditContent, onShare, onAskAI,
     isShared, isFolder, isLoading, indexingStatus 
-    // subtitle and type are intentionally ignored (not used in UI)
 }) => {
     const { t } = useTranslation();
 
@@ -71,8 +70,23 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                         </div>
                     </div>
                 </div>
-                {/* DETAILS section completely removed */}
+
+                {/* Restored file information section (no "DETAILS" label) */}
+                <div className="flex flex-col mb-4 sm:mb-6 relative z-10">
+                    <div className="space-y-1.5 pl-1">
+                        {/* File type icon + name */}
+                        <div className="flex items-center gap-2 text-sm sm:text-base font-medium text-text-secondary">
+                            {getFileIcon(type)}
+                            <span className="truncate">{type}</span>
+                        </div>
+                        {/* Subtitle tag (e.g., "# PDF DOKUMENT") */}
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted">
+                            <span className="truncate">{subtitle}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
+
             <div className="relative z-10 pt-3 sm:pt-4 border-t border-border-main flex items-center justify-between min-h-[2.5rem] sm:min-h-[3rem]">
                 <span className="text-xs sm:text-sm font-medium text-primary-start group-hover:text-primary-start/80 transition-colors flex items-center gap-1">{isFolder ? t('archive.openFolder') : ''}</span>
                 
