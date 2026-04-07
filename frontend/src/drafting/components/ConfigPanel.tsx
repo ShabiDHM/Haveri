@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V7.9 (WITH BIBLIOTEKA BUTTON)
+// PHOENIX PROTOCOL - CONFIG PANEL V7.10 (HEADER VERTICAL ALIGNMENT FIX)
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Send, RefreshCw, ChevronDown, BookOpen } from 'lucide-react';
@@ -81,7 +81,7 @@ export const ConfigPanel: React.FC<ExtendedConfigPanelProps> = ({
     <div className="glass-panel border border-border-main rounded-3xl p-6 sm:p-8 flex flex-col h-auto lg:h-[700px] shrink-0 shadow-sm transition-all duration-300 relative group pointer-events-auto z-10">
       <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none" />
 
-      {/* Header with title and Biblioteka button */}
+      {/* Header with title and Biblioteka button - vertically aligned */}
       <div className="flex items-center justify-between border-b border-border-main pb-5 mb-6 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary-start/10 rounded-xl border border-primary-start/20">
@@ -93,7 +93,7 @@ export const ConfigPanel: React.FC<ExtendedConfigPanelProps> = ({
         </div>
         <button
           onClick={onOpenLibrary}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-surface hover:bg-hover border border-border-main transition-all"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-surface hover:bg-hover border border-border-main transition-all leading-none"
           title={t('drafting.libraryTooltip', 'Biblioteka e Ligjeve')}
         >
           <BookOpen size={14} />

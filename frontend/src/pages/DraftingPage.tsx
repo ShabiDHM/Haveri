@@ -1,11 +1,12 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - MOBILE-FRIENDLY DRAFTING PAGE (HEADER REMOVED, BIBLIOTEKA MOVED)
+// PHOENIX PROTOCOL - MOBILE-FRIENDLY DRAFTING PAGE (HEADER REMOVED, BIBLIOTEKA MOVED, LIBRARY RETURN BUTTON ADDED)
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 
 import { TemplateType, DraftingJobState, NotificationState } from '../drafting/types';
 import { ConfigPanel } from '../drafting/components/ConfigPanel';
@@ -118,6 +119,9 @@ const DraftingPage: React.FC = () => {
     setActiveMode('library');
   };
 
+  const switchToDrafting = () => {
+    setActiveMode('drafting');
+  };
 
   return (
     <motion.div className="w-full pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -152,9 +156,21 @@ const DraftingPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="flex-1 lg:h-[750px] overflow-hidden">
-            <LawSearchPage />
-          </div>
+          <>
+            {/* Minimal return button - preserves workspace while allowing navigation back */}
+            <div className="mb-4">
+              <button
+                onClick={switchToDrafting}
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted hover:text-primary-start transition-colors"
+              >
+                <ArrowLeft size={14} />
+                <span>{t('drafting.backToDrafting', '← Kthehu te Hartimi')}</span>
+              </button>
+            </div>
+            <div className="flex-1 lg:h-[750px] overflow-hidden">
+              <LawSearchPage />
+            </div>
+          </>
         )}
       </div>
     </motion.div>
