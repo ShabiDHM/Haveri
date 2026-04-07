@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PHOENIX PROTOCOL - INGEST KOSOVO LAWS (USING pdfplumber FOR ROBUST EXTRACTION)
+PHOENIX PROTOCOL - INGEST KOSOVO LAWS (FIXED EMBEDDING DIMENSION)
 Run: docker compose exec backend python scripts/ingest_laws.py /app/data/laws --force
 """
 
@@ -11,6 +11,7 @@ import hashlib
 import argparse
 import re
 import uuid
+import time
 from typing import List, Tuple
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -19,19 +20,38 @@ try:
     from langchain.text_splitter import RecursiveCharacterTextSplitter
     import chromadb
     from app.services import embedding_service
-    # We'll use pdfplumber directly; fallback to old extract_text if needed
     import pdfplumber
 except ImportError as e:
     print(f"❌ Missing libraries: {e}")
-    print("Run: pip install pdfplumber langchain-community langchain-text-splitters chromadb pypdf")
     sys.exit(1)
 
 CHROMA_HOST = os.getenv("CHROMA_HOST", "chroma")
 CHROMA_PORT = int(os.getenv("CHROMA_PORT", 8000))
 COLLECTION_NAME = "business_knowledge_base"
 
+def get_embedding_dimension() -> int:
+    """Generate a dummy embedding to determine current dimension."""
+    emb = embedding_service.generate_embedding("test dimension detection")
+    if not emb:
+        raise RuntimeError("Cannot get embedding dimension – embedding service unreachable")
+    return len(emb)
+
+def delete_and_recreate_collection(client, collection_name: str, dimension: int):
+    """Delete old collection and create a new one with correct dimension."""
+    try:
+        client.delete_collection(collection_name)
+        print(f"🗑️  Deleted old collection '{collection_name}' (wrong dimension).")
+    except Exception:
+        pass  # Collection may not exist
+    collection = client.create_collection(
+        name=collection_name,
+        metadata={"hnsw:space": "cosine", "embedding_dimension": dimension}
+    )
+    print(f"✅ Created new collection '{collection_name}' with dimension {dimension}.")
+    return collection
+
 def extract_pdf_text(filepath: str) -> str:
-    """Extract text using pdfplumber; fallback to pypdf if needed."""
+    """Extract text using pdfplumber."""
     full_text = ""
     try:
         with pdfplumber.open(filepath) as pdf:
@@ -44,10 +64,8 @@ def extract_pdf_text(filepath: str) -> str:
         else:
             raise ValueError("pdfplumber returned empty text")
     except Exception as e:
-        print(f"⚠️ pdfplumber failed: {e}, falling back to pypdf...")
-        # Fallback to original extract_text from service
-        from app.services.text_extraction_service import extract_text as old_extract
-        return old_extract(filepath, "application/pdf")
+        print(f"⚠️ pdfplumber failed: {e}")
+        return ""
 
 def clean_text(text: str) -> str:
     text = re.sub(r'(?m)^={5,}\s*Page\s+\d+\s*={5,}\s*$', '', text, flags=re.IGNORECASE)
@@ -76,7 +94,6 @@ def extract_law_title(text: str, filename: str) -> str:
     return f"Ligji: {name}"
 
 def split_by_article(text: str) -> List[Tuple[str, str]]:
-    """Split text into articles using 'Neni' or 'Art.' markers."""
     lines = text.split('\n')
     article_starts = []
     for i, line in enumerate(lines):
@@ -101,25 +118,19 @@ def calculate_file_hash(filepath: str) -> str:
             hasher.update(chunk)
     return hasher.hexdigest()
 
-def get_or_create_collection(client, name):
-    try:
-        client.delete_collection(name)
-        print(f"🗑️  Deleted existing collection '{name}'.")
-    except:
-        pass
-    collection = client.create_collection(name=name)
-    print(f"✅ Created new collection '{name}'.")
-    return collection
-
 def ingest_legal_laws(directory: str, force: bool = False, chunk_size: int = 1000):
     abs_path = os.path.abspath(directory)
     if not os.path.isdir(abs_path):
         print(f"❌ Directory not found: {abs_path}")
         return
 
+    print("🔍 Determining embedding dimension...")
+    dimension = get_embedding_dimension()
+    print(f"✅ Embedding dimension = {dimension}")
+
     print(f"🔌 Connecting to ChromaDB...")
     client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
-    collection = get_or_create_collection(client, COLLECTION_NAME)
+    collection = delete_and_recreate_collection(client, COLLECTION_NAME, dimension)
 
     files = glob.glob(os.path.join(abs_path, "**", "*.pdf"), recursive=True)
     files += glob.glob(os.path.join(abs_path, "**", "*.PDF"), recursive=True)
@@ -175,10 +186,11 @@ def ingest_legal_laws(directory: str, force: bool = False, chunk_size: int = 100
             embeddings = []
             for text in batch_texts:
                 emb = embedding_service.generate_embedding(text)
-                if emb:
+                if emb and len(emb) == dimension:
                     embeddings.append(emb)
                 else:
-                    embeddings.append([0.0] * 768)
+                    print(f"⚠️  Bad embedding for chunk {chunk_id}, using zero vector")
+                    embeddings.append([0.0] * dimension)
             for i in range(0, len(batch_ids), 50):
                 collection.add(
                     ids=batch_ids[i:i+50],
