@@ -1,5 +1,5 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - BREADCRUMBS MERGED INTO ACTION BAR
+// PHOENIX PROTOCOL - INTERNAL SCROLLING (HEADER FIXED, CARDS SCROLL)
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -101,7 +101,6 @@ const DocumentChatModal: React.FC<{ documentId: string; documentTitle: string; o
     );
 };
 
-// Helper function to get safe filename with extension for download
 const getSafeFileNameForDownload = (item: ArchiveItemOut): string => {
     const fileType = item.file_type?.toLowerCase() || '';
     const ext = fileType ? `.${fileType}` : '';
@@ -217,92 +216,98 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
     if (loading && filteredItems.length === 0) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-primary-start" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-6 md:p-8 space-y-6 h-full flex flex-col border border-border-main shadow-sm">
-            {/* Search and Actions Panel - now includes breadcrumbs */}
-            <Panel className="p-4 sm:p-6 flex-shrink-0 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
-                <div className="flex flex-col xl:flex-row gap-4">
-                    <div className="flex-1 relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
-                        <input 
-                            type="text" 
-                            placeholder={t('header.searchPlaceholder')} 
-                            value={searchTerm} 
-                            onChange={(e) => setSearchTerm(e.target.value)} 
-                            className="glass-input w-full pl-12 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
-                        />
-                    </div>
-                    
-                    {/* Button group - breadcrumbs now integrated as first items */}
-                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 items-center">
-                        {/* Breadcrumbs mapped as action buttons */}
-                        {breadcrumbs.map((crumb, index) => {
-                            const isLast = index === breadcrumbs.length - 1;
-                            return (
-                                <React.Fragment key={crumb.id || index}>
-                                    <button
-                                        onClick={() => navigateTo(index)}
-                                        className={`glass-input !bg-surface/30 backdrop-blur-sm hover:bg-hover transition-colors px-3 py-3 text-xs sm:text-sm flex items-center justify-center gap-2 hover-lift shadow-sm border ${
-                                            isLast 
-                                                ? 'border-primary-start/50 text-primary-start bg-primary-start/10' 
-                                                : 'border-border-main'
-                                        }`}
-                                    >
-                                        <Archive size={14} />
-                                        <span>{crumb.name === "My Workspace" ? t('archive.myWorkspace') : crumb.name}</span>
-                                    </button>
-                                    {!isLast && <ChevronRight size={14} className="text-border-main shrink-0" />}
-                                </React.Fragment>
-                            );
-                        })}
+        <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="h-[calc(100vh-140px)] overflow-hidden flex flex-col glass-panel p-6 md:p-8 border border-border-main shadow-sm"
+        >
+            {/* Fixed Top Panel - search + action buttons + breadcrumbs integrated */}
+            <div className="flex-shrink-0 space-y-4">
+                <Panel className="p-4 sm:p-6 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
+                    <div className="flex flex-col xl:flex-row gap-4">
+                        <div className="flex-1 relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
+                            <input 
+                                type="text" 
+                                placeholder={t('header.searchPlaceholder')} 
+                                value={searchTerm} 
+                                onChange={(e) => setSearchTerm(e.target.value)} 
+                                className="glass-input w-full pl-12 border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all" 
+                            />
+                        </div>
                         
-                        {/* Existing action buttons */}
-                        {(isInsideWorkspace || !!workspaceId) && (
-                            <button onClick={() => setShowShareModal(true)} className="glass-input !bg-surface/30 backdrop-blur-sm hover:bg-hover transition-colors px-3 py-3 text-xs sm:text-sm flex items-center justify-center gap-2 hover-lift shadow-sm border border-border-main">
-                                <LinkIcon size={16} className="shrink-0" /><span>{t('archive.portal_access')}</span>
+                        {/* Button group with breadcrumbs integrated */}
+                        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 items-center">
+                            {breadcrumbs.map((crumb, index) => {
+                                const isLast = index === breadcrumbs.length - 1;
+                                return (
+                                    <React.Fragment key={crumb.id || index}>
+                                        <button
+                                            onClick={() => navigateTo(index)}
+                                            className={`glass-input !bg-surface/30 backdrop-blur-sm hover:bg-hover transition-colors px-3 py-3 text-xs sm:text-sm flex items-center justify-center gap-2 hover-lift shadow-sm border ${
+                                                isLast 
+                                                    ? 'border-primary-start/50 text-primary-start bg-primary-start/10' 
+                                                    : 'border-border-main'
+                                            }`}
+                                        >
+                                            <Archive size={14} />
+                                            <span>{crumb.name === "My Workspace" ? t('archive.myWorkspace') : crumb.name}</span>
+                                        </button>
+                                        {!isLast && <ChevronRight size={14} className="text-border-main shrink-0" />}
+                                    </React.Fragment>
+                                );
+                            })}
+                            
+                            {(isInsideWorkspace || !!workspaceId) && (
+                                <button onClick={() => setShowShareModal(true)} className="glass-input !bg-surface/30 backdrop-blur-sm hover:bg-hover transition-colors px-3 py-3 text-xs sm:text-sm flex items-center justify-center gap-2 hover-lift shadow-sm border border-border-main">
+                                    <LinkIcon size={16} className="shrink-0" /><span>{t('archive.portal_access')}</span>
+                                </button>
+                            )}
+                            <button onClick={() => setShowFolderModal(true)} className="glass-input !bg-surface/30 backdrop-blur-sm hover:bg-hover transition-colors px-3 py-3 text-xs sm:text-sm flex items-center justify-center gap-2 hover-lift shadow-sm border border-border-main">
+                                <FolderPlus size={16} className="shrink-0" /> <span>{t('archive.createFolder')}</span>
                             </button>
-                        )}
-                        <button onClick={() => setShowFolderModal(true)} className="glass-input !bg-surface/30 backdrop-blur-sm hover:bg-hover transition-colors px-3 py-3 text-xs sm:text-sm flex items-center justify-center gap-2 hover-lift shadow-sm border border-border-main">
-                            <FolderPlus size={16} className="shrink-0" /> <span>{t('archive.createFolder')}</span>
-                        </button>
-                        <input type="file" ref={archiveInputRef} className="hidden" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])} />
-                        <button onClick={() => archiveInputRef.current?.click()} disabled={isUploading} className="btn-primary col-span-2 sm:col-auto px-6 py-3 text-sm flex items-center justify-center gap-2 rounded-xl hover-lift shadow-sm">
-                            {isUploading ? <Loader2 className="animate-spin" size={18}/> : <FileUp size={18}/>} {t('archive.upload')}
-                        </button>
+                            <input type="file" ref={archiveInputRef} className="hidden" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])} />
+                            <button onClick={() => archiveInputRef.current?.click()} disabled={isUploading} className="btn-primary col-span-2 sm:col-auto px-6 py-3 text-sm flex items-center justify-center gap-2 rounded-xl hover-lift shadow-sm">
+                                {isUploading ? <Loader2 className="animate-spin" size={18}/> : <FileUp size={18}/>} {t('archive.upload')}
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </Panel>
+                </Panel>
+            </div>
 
-            {/* Archive Cards Grid - now directly below the top panel */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                <AnimatePresence>
-                    {filteredItems.map(item => (
-                        <ArchiveCard 
-                            key={item.id}
-                            title={item.title} 
-                            subtitle={item.item_type === 'FOLDER' ? t('archive.caseFolders') : `${item.file_type} ${t('general.document')}`} 
-                            type={item.item_type === 'FOLDER' ? 'Folder' : item.file_type} 
-                            date={new Date(item.created_at).toLocaleDateString()} 
-                            icon={item.item_type === 'FOLDER' ? <FolderOpen className="w-5 h-5 text-warning-start" /> : getFileIcon(item.file_type || '')}
-                            indexingStatus={item.indexing_status}
-                            isFolder={item.item_type === 'FOLDER'} 
-                            isShared={item.is_shared} 
-                            isLoading={openingDocId === item.id} 
-                            onClick={() => item.item_type === 'FOLDER' ? enterFolder(item.id, item.title, 'FOLDER') : handleViewItem(item)} 
-                            onDownload={() => handleDownloadItem(item)} 
-                            onDelete={() => deleteItem(item.id)} 
-                            onRename={() => { setItemToRename(item); setRenameValue(item.title); setShowRenameModal(true); }} 
-                            onShare={() => shareItem(item)} 
-                            onAskAI={() => setChatDoc({id: item.id, title: item.title})}
-                            onEditContent={item.category === 'purchase_order' ? () => handleEditContent(item) : undefined}
-                        />
-                    ))}
-                </AnimatePresence>
+            {/* Scrollable Content Area: cards grid */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar mt-4 pr-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                    <AnimatePresence>
+                        {filteredItems.map(item => (
+                            <ArchiveCard 
+                                key={item.id}
+                                title={item.title} 
+                                subtitle={item.item_type === 'FOLDER' ? t('archive.caseFolders') : `${item.file_type} ${t('general.document')}`} 
+                                type={item.item_type === 'FOLDER' ? 'Folder' : item.file_type} 
+                                date={new Date(item.created_at).toLocaleDateString()} 
+                                icon={item.item_type === 'FOLDER' ? <FolderOpen className="w-5 h-5 text-warning-start" /> : getFileIcon(item.file_type || '')}
+                                indexingStatus={item.indexing_status}
+                                isFolder={item.item_type === 'FOLDER'} 
+                                isShared={item.is_shared} 
+                                isLoading={openingDocId === item.id} 
+                                onClick={() => item.item_type === 'FOLDER' ? enterFolder(item.id, item.title, 'FOLDER') : handleViewItem(item)} 
+                                onDownload={() => handleDownloadItem(item)} 
+                                onDelete={() => deleteItem(item.id)} 
+                                onRename={() => { setItemToRename(item); setRenameValue(item.title); setShowRenameModal(true); }} 
+                                onShare={() => shareItem(item)} 
+                                onAskAI={() => setChatDoc({id: item.id, title: item.title})}
+                                onEditContent={item.category === 'purchase_order' ? () => handleEditContent(item) : undefined}
+                            />
+                        ))}
+                    </AnimatePresence>
+                </div>
             </div>
             
             <ForensicAccountantModal isOpen={showForensicModal} onClose={() => setShowForensicModal(false)} />
             <AnimatePresence>{chatDoc && <DocumentChatModal documentId={chatDoc.id} documentTitle={chatDoc.title} onClose={() => setChatDoc(null)} />}</AnimatePresence>
             
-            {/* Create Folder Modal */}
+            {/* Modals (unchanged) */}
             <AnimatePresence>
                 {showFolderModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
@@ -331,7 +336,6 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                 )}
             </AnimatePresence>
             
-            {/* Rename Modal */}
             <AnimatePresence>
                 {showRenameModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
@@ -360,7 +364,6 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                 )}
             </AnimatePresence>
             
-            {/* Edit Purchase Order Modal */}
             <EditPurchaseOrderModal
                 isOpen={showEditModal}
                 archiveId={editPoId}
