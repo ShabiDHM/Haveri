@@ -1,12 +1,17 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V7.8 (REMOVED PRO RESTRICTIONS)
+// PHOENIX PROTOCOL - CONFIG PANEL V7.9 (WITH BIBLIOTEKA BUTTON)
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { FileText, LayoutTemplate, Send, RefreshCw, ChevronDown } from 'lucide-react';
+import { FileText, LayoutTemplate, Send, RefreshCw, ChevronDown, BookOpen } from 'lucide-react';
 import { ConfigPanelProps } from '../types';
 import { getTemplatePlaceholder } from '../utils/templateHelpers';
 
-export const ConfigPanel: React.FC<ConfigPanelProps> = ({
+// Extend ConfigPanelProps to include onOpenLibrary
+interface ExtendedConfigPanelProps extends ConfigPanelProps {
+  onOpenLibrary: () => void;
+}
+
+export const ConfigPanel: React.FC<ExtendedConfigPanelProps> = ({
   t,
   selectedTemplate,
   context,
@@ -14,6 +19,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   onSelectTemplate,
   onChangeContext,
   onSubmit,
+  onOpenLibrary,
 }) => {
   const placeholder = useMemo(() => getTemplatePlaceholder(selectedTemplate), [selectedTemplate]);
   const [isOpen, setIsOpen] = useState(false);
@@ -35,7 +41,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Removed litigation group and power_of_attorney from real estate
   const templateGroups = [
     { label: t('drafting.groupCorporate'), options: ['nda', 'mou', 'shareholders', 'sla'] },
     { label: t('drafting.groupEmployment'), options: ['employment_contract', 'termination_notice', 'warning_letter'] },
@@ -74,17 +79,26 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
   return (
     <div className="glass-panel border border-border-main rounded-3xl p-6 sm:p-8 flex flex-col h-auto lg:h-[700px] shrink-0 shadow-sm transition-all duration-300 relative group pointer-events-auto z-10">
-      {/* Absolute hover border – never clipped */}
       <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none" />
 
-      {/* Executive Header with visible icon background */}
-      <div className="flex items-center gap-3 border-b border-border-main pb-5 mb-6 flex-shrink-0">
-        <div className="p-2 bg-primary-start/10 rounded-xl border border-primary-start/20">
-          <FileText className="text-primary-start" size={20} />
+      {/* Header with title and Biblioteka button */}
+      <div className="flex items-center justify-between border-b border-border-main pb-5 mb-6 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary-start/10 rounded-xl border border-primary-start/20">
+            <FileText className="text-primary-start" size={20} />
+          </div>
+          <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
+            {t('drafting.configuration', 'Konfigurimi')}
+          </h2>
         </div>
-        <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
-          {t('drafting.configuration', 'Konfigurimi')}
-        </h2>
+        <button
+          onClick={onOpenLibrary}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-surface hover:bg-hover border border-border-main transition-all"
+          title={t('drafting.libraryTooltip', 'Biblioteka e Ligjeve')}
+        >
+          <BookOpen size={14} />
+          <span>{t('drafting.libraryBtn', 'Biblioteka')}</span>
+        </button>
       </div>
 
       <div className="flex flex-col gap-6 flex-1 min-h-0 overflow-hidden">
@@ -94,9 +108,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
             <label className="text-[10px] font-black text-text-muted uppercase tracking-widest">
               {t('drafting.templateLabel')}
             </label>
-            {/* PRO badge removed */}
           </div>
-
           <div className="relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-start pointer-events-none z-10">
               <LayoutTemplate size={16} />
@@ -110,7 +122,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
               <span>{getOptionLabel(selectedTemplate)}</span>
               <ChevronDown className={`h-4 w-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
-
             {isOpen && (
               <div
                 ref={dropdownRef}
