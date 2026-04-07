@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - CENTERED SEARCH CARD DESIGN
+// PHOENIX PROTOCOL - CLEAN UI (NO DUPLICATE BACK, NO EMPTY STATE)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -229,7 +229,7 @@ export default function LawSearchPage() {
 
   return (
     <div className="flex flex-col h-full w-full overflow-y-auto custom-scrollbar">
-      {/* Back button above the centered card */}
+      {/* Only the pill-shaped back button - no duplicate */}
       <div className="px-6 sm:px-8 pt-6">
         <button
           onClick={() => navigate(-1)}
@@ -309,7 +309,7 @@ export default function LawSearchPage() {
         </div>
       </div>
 
-      {/* Results section (unchanged layout) */}
+      {/* Results section */}
       <div className="flex-1 overflow-y-auto px-6 sm:px-8 pb-6 mt-8">
         {loading && (
           <div className="space-y-4">
@@ -397,15 +397,6 @@ export default function LawSearchPage() {
                 </div>
               </motion.div>
             ))}
-          </div>
-        )}
-
-        {!loading && !error && rawResults.length === 0 && query.trim() === '' && (
-          <div className="flex flex-col items-center text-center opacity-30 mt-24">
-            <Search className="h-16 w-16 mb-6 text-text-muted" strokeWidth={1} />
-            <p className="text-xl font-black text-text-primary uppercase tracking-widest">
-              {t('lawSearch.startTyping', 'Hulumtimi Inteligjent')}
-            </p>
           </div>
         )}
       </div>
