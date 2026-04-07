@@ -1,12 +1,11 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V7.10 (HEADER VERTICAL ALIGNMENT FIX)
+// PHOENIX PROTOCOL - CONFIG PANEL V7.11 (PERFECT HEADER SYMMETRY)
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Send, RefreshCw, ChevronDown, BookOpen } from 'lucide-react';
 import { ConfigPanelProps } from '../types';
 import { getTemplatePlaceholder } from '../utils/templateHelpers';
 
-// Extend ConfigPanelProps to include onOpenLibrary
 interface ExtendedConfigPanelProps extends ConfigPanelProps {
   onOpenLibrary: () => void;
 }
@@ -81,22 +80,25 @@ export const ConfigPanel: React.FC<ExtendedConfigPanelProps> = ({
     <div className="glass-panel border border-border-main rounded-3xl p-6 sm:p-8 flex flex-col h-auto lg:h-[700px] shrink-0 shadow-sm transition-all duration-300 relative group pointer-events-auto z-10">
       <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none" />
 
-      {/* Header with title and Biblioteka button - vertically aligned */}
+      {/* Header with perfect vertical alignment and equal heights */}
       <div className="flex items-center justify-between border-b border-border-main pb-5 mb-6 flex-shrink-0">
+        {/* Left side: icon + title */}
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary-start/10 rounded-xl border border-primary-start/20">
+          <div className="h-10 w-10 flex items-center justify-center bg-primary-start/10 rounded-xl border border-primary-start/20">
             <FileText className="text-primary-start" size={20} />
           </div>
           <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
             {t('drafting.configuration', 'Konfigurimi')}
           </h2>
         </div>
+
+        {/* Right side: Biblioteka button - exact same height as left icon container (h-10) */}
         <button
           onClick={onOpenLibrary}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-surface hover:bg-hover border border-border-main transition-all leading-none"
+          className="h-10 flex items-center gap-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest bg-surface hover:bg-hover border border-border-main transition-all"
           title={t('drafting.libraryTooltip', 'Biblioteka e Ligjeve')}
         >
-          <BookOpen size={14} />
+          <BookOpen size={18} />
           <span>{t('drafting.libraryBtn', 'Biblioteka')}</span>
         </button>
       </div>
