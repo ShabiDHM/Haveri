@@ -55,12 +55,16 @@ function isBareLawNumber(title: string): boolean {
 }
 
 function useDebounce<T extends (...args: any[]) => any>(callback: T, delay: number) {
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const debouncedCallback = useCallback((...args: Parameters<T>) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => callback(...args), delay);
   }, [callback, delay]);
-  useEffect(() => () => timeoutRef.current && clearTimeout(timeoutRef.current), []);
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
   return debouncedCallback;
 }
 
