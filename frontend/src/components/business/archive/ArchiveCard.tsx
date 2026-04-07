@@ -1,13 +1,10 @@
 // FILE: src/components/business/archive/ArchiveCard.tsx
-// PHOENIX PROTOCOL - ARCHIVE CARD V4.2 (EXECUTIVE DESIGN SYSTEM)
-// FIXED: Separated rename (Edit3) and edit content (FileEdit) actions with distinct icons
-// ADDED: hover-lift and ensured shadow-sm consistency.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - ARCHIVE CARD V4.5 (DETAILS REMOVED, PROPS/IMPORTS RESTORED)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
-    Calendar, Info, Hash, FileText, FolderOpen, Share2, 
+    Calendar, FileText, Share2, 
     Eye, Download, Trash2, Loader2, FileImage, 
     FileCode, File as FileIcon, FileSpreadsheet, MessageSquare,
     Edit3, FileEdit
@@ -15,15 +12,15 @@ import {
 
 interface ArchiveCardProps {
     title: string;
-    subtitle: string;
-    type: string;
+    subtitle: string;   // Kept for parent compatibility, not rendered
+    type: string;       // Kept for parent compatibility, not rendered
     date: string;
     icon: React.ReactNode;
     onClick: () => void;
     onDownload?: () => void;
     onDelete?: () => void;
-    onRename?: () => void;        // Rename the file title
-    onEditContent?: () => void;   // Edit the document data (e.g., Purchase Order form)
+    onRename?: () => void;
+    onEditContent?: () => void;
     onShare?: () => void;
     onAskAI?: () => void;
     isShared?: boolean;
@@ -42,8 +39,9 @@ export const getFileIcon = (fileType: string) => {
 };
 
 export const ArchiveCard: React.FC<ArchiveCardProps> = ({ 
-    title, subtitle, type, date, icon, onClick, onDownload, onDelete, onRename, onEditContent, onShare, onAskAI,
+    title, date, icon, onClick, onDownload, onDelete, onRename, onEditContent, onShare, onAskAI,
     isShared, isFolder, isLoading, indexingStatus 
+    // subtitle and type are intentionally ignored (not used in UI)
 }) => {
     const { t } = useTranslation();
 
@@ -73,33 +71,16 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-col mb-4 sm:mb-6 relative z-10">
-                    <div className="flex items-center gap-2 mb-2 sm:mb-3 pb-2 border-b border-border-main">
-                        <Info className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-primary-start" />
-                        <span className="text-xs font-black uppercase tracking-widest text-text-muted">{isFolder ? t('archive.contents') : t('archive.details')}</span>
-                    </div>
-                    <div className="space-y-1.5 pl-1">
-                        <div className="flex items-center gap-2 text-sm sm:text-base font-medium text-text-secondary">
-                            {isFolder ? <FolderOpen className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-warning-start" /> : getFileIcon(type)}
-                            <span className="truncate">{type}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted">
-                            <Hash className="w-3 sm:w-3.5 h-3 sm:h-3.5 flex-shrink-0" />
-                            <span className="truncate">{subtitle}</span>
-                        </div>
-                    </div>
-                </div>
+                {/* DETAILS section completely removed */}
             </div>
             <div className="relative z-10 pt-3 sm:pt-4 border-t border-border-main flex items-center justify-between min-h-[2.5rem] sm:min-h-[3rem]">
                 <span className="text-xs sm:text-sm font-medium text-primary-start group-hover:text-primary-start/80 transition-colors flex items-center gap-1">{isFolder ? t('archive.openFolder') : ''}</span>
                 
                 <div className="flex gap-1 items-center flex-wrap justify-end">
-                    {/* Document Assistant only */}
                     {!isFolder && indexingStatus === 'READY' && onAskAI && (
                          <button onClick={(e) => { e.stopPropagation(); onAskAI(); }} className="p-1.5 sm:p-2 rounded-lg text-text-muted hover:text-primary-start hover:bg-primary-start/10 transition-colors hover-lift" title="Bisedo me Dokumentin"><MessageSquare size={16} /></button>
                     )}
                     
-                    {/* Share button */}
                     {!isFolder && onShare && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onShare(); }} 
@@ -110,7 +91,6 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                         </button>
                     )}
                     
-                    {/* RENAME FILE - uses Edit3 icon (different from edit content) */}
                     {onRename && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onRename(); }} 
@@ -121,7 +101,6 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                         </button>
                     )}
                     
-                    {/* EDIT CONTENT (e.g., Purchase Order form) - uses FileEdit icon */}
                     {onEditContent && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onEditContent(); }} 
@@ -132,7 +111,6 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                         </button>
                     )}
                     
-                    {/* View / Open button */}
                     {!isFolder && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onClick(); }} 
@@ -143,7 +121,6 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                         </button>
                     )}
                     
-                    {/* Download button */}
                     {!isFolder && onDownload && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onDownload(); }} 
@@ -154,7 +131,6 @@ export const ArchiveCard: React.FC<ArchiveCardProps> = ({
                         </button>
                     )}
                     
-                    {/* Delete button */}
                     {onDelete && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onDelete(); }} 
