@@ -1,9 +1,9 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V24.0 (FIXED LAYOUT, SCROLLING ONLY IN LIST)
+// PHOENIX PROTOCOL - INVENTORY TAB V26.0 (CONSOLIDATED TOP ROW, MAXIMUM VERTICAL SPACE)
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Loader2, FileSpreadsheet, Box, Search } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InventoryItem } from '../../data/types';
 
@@ -69,47 +69,38 @@ export const InventoryTab: React.FC = () => {
                 }
             `}</style>
 
-            {/* First Panel: Actions - shrink-0, no growth */}
-            <Panel className="p-3 sm:p-4 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm flex-shrink-0">
+            {/* Consolidated Top Panel: Actions + Search */}
+            <Panel className="p-3 sm:p-4 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 flex-shrink-0">
+                {/* Left side: Action buttons */}
                 <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3 sm:gap-4">
                     <ActionButton primary icon={<Plus size={20} />} label={t('inventory.items.add')} onClick={openCreateItem} />
                     <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.items.import', 'Importo Artikujt')} onClick={() => setShowImportModal(true)} />
                 </div>
+
+                {/* Right side: Search input */}
+                <div className="w-full md:max-w-md">
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-success-start transition-colors" />
+                        <input 
+                            type="text" 
+                            placeholder={t('header.searchPlaceholder')} 
+                            className="glass-input w-full pl-12 py-3 sm:py-4 text-sm sm:text-base border border-border-main focus:border-success-start transition-all" 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                        />
+                    </div>
+                </div>
             </Panel>
 
-            {/* Second Panel: List & Search - fills remaining space, contains scrolling area */}
+            {/* Main List Panel: only scrollable inventory cards, no padding/margin */}
             <Panel className="flex-1 flex flex-col overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm min-h-0 p-0">
-                <div className="p-4 sm:p-6 flex flex-col flex-1 min-h-0 overflow-hidden">
-                    <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6 pb-2 sm:pb-4 flex-wrap shrink-0">
-                        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-2 sm:gap-3">
-                            <Box className="text-success-start" size={24} />
-                            {t('inventory.title')}
-                        </h2>
-                    </div>
-
-                    <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
-                        {/* Search input - stays at top, shrink-0 */}
-                        <div className="relative group mb-4 shrink-0">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-success-start transition-colors" />
-                            <input 
-                                type="text" 
-                                placeholder={t('header.searchPlaceholder')} 
-                                className="glass-input w-full pl-12 py-3 sm:py-4 text-sm sm:text-base border border-border-main focus:border-success-start transition-all" 
-                                value={searchTerm} 
-                                onChange={(e) => setSearchTerm(e.target.value)} 
-                            />
-                        </div>
-
-                        {/* Scrollable inventory list */}
-                        <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 pb-2">
-                            <InventoryList 
-                                manualItems={filteredManual} 
-                                posItems={filteredPos} 
-                                onEdit={openEditItem} 
-                                onDelete={handleDeleteItem} 
-                            />
-                        </div>
-                    </div>
+                <div className="flex-1 overflow-y-auto custom-finance-scroll p-0">
+                    <InventoryList 
+                        manualItems={filteredManual} 
+                        posItems={filteredPos} 
+                        onEdit={openEditItem} 
+                        onDelete={handleDeleteItem} 
+                    />
                 </div>
             </Panel>
 
