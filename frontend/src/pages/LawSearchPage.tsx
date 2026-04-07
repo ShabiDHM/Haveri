@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - WITH BACK TO DRAFTING CALLBACK
+// PHOENIX PROTOCOL - CENTERED WRAPPER, BUTTON ALIGNED WITH CARD
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -241,20 +241,19 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
 
   return (
     <div className="flex flex-col h-full w-full overflow-y-auto custom-scrollbar">
-      {/* Only the pill-shaped back button */}
-      <div className="px-6 sm:px-8 pt-6">
+      {/* Single centered wrapper for both back button and search card */}
+      <div className="max-w-4xl mx-auto w-full px-6 sm:px-8 mt-12">
+        {/* Back button - now aligned with card's left edge */}
         <button
           onClick={handleBack}
-          className="text-xs font-black uppercase tracking-widest text-text-primary bg-surface/50 border border-border-main px-4 py-2 rounded-lg mb-4 hover:bg-surface transition-all w-fit flex items-center gap-2"
+          className="text-xs font-black uppercase tracking-widest text-text-primary bg-surface/50 border border-border-main px-4 py-2 rounded-lg mb-6 hover:bg-surface transition-all w-fit flex items-center gap-2"
         >
           <ArrowLeft size={14} />
           <span>KTHEHU</span>
         </button>
-      </div>
 
-      {/* Centered search card */}
-      <div className="max-w-4xl mx-auto w-full mt-4 sm:mt-10 px-6 sm:px-8">
-        <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-border-main shadow-xl">
+        {/* Search card - w-full inside the same centered container */}
+        <div className="glass-panel p-6 sm:p-8 rounded-[2rem] border border-border-main shadow-xl w-full">
           {/* Law selection dropdown */}
           <div className="relative z-[60] mb-4">
             <button
@@ -321,8 +320,8 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
         </div>
       </div>
 
-      {/* Results section */}
-      <div className="flex-1 overflow-y-auto px-6 sm:px-8 pb-6 mt-8">
+      {/* Results section - also constrained to same max-width for consistency */}
+      <div className="max-w-4xl mx-auto w-full px-6 sm:px-8 pb-6 mt-8">
         {loading && (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
