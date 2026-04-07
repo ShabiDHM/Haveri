@@ -1,5 +1,5 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - INVENTORY TAB V23.0 (MOBILE FRIENDLY)
+// PHOENIX PROTOCOL - INVENTORY TAB V24.0 (FIXED LAYOUT, SCROLLING ONLY IN LIST)
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -55,7 +55,11 @@ export const InventoryTab: React.FC = () => {
     if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-success-start" /></div>;
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
+        <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="flex flex-col h-[calc(100vh-140px)] space-y-4 sm:space-y-6 overflow-hidden"
+        >
             <style>{`
                 .custom-finance-scroll::-webkit-scrollbar { width: 8px; } 
                 .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
@@ -65,40 +69,46 @@ export const InventoryTab: React.FC = () => {
                 }
             `}</style>
 
-            <Panel className="p-3 sm:p-4 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
+            {/* First Panel: Actions - shrink-0, no growth */}
+            <Panel className="p-3 sm:p-4 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm flex-shrink-0">
                 <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3 sm:gap-4">
                     <ActionButton primary icon={<Plus size={20} />} label={t('inventory.items.add')} onClick={openCreateItem} />
                     <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.items.import', 'Importo Artikujt')} onClick={() => setShowImportModal(true)} />
                 </div>
             </Panel>
 
-            <Panel className="p-4 sm:p-6 flex flex-col overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm min-h-[500px] sm:min-h-[600px]">
-                <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6 pb-2 sm:pb-4 flex-wrap">
-                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-2 sm:gap-3">
-                        <Box className="text-success-start" size={24} />
-                        {t('inventory.title')}
-                    </h2>
-                </div>
-
-                <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
-                    <div className="relative group mb-4 shrink-0">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-success-start transition-colors" />
-                        <input 
-                            type="text" 
-                            placeholder={t('header.searchPlaceholder')} 
-                            className="glass-input w-full pl-12 py-3 sm:py-4 text-sm sm:text-base border border-border-main focus:border-success-start transition-all" 
-                            value={searchTerm} 
-                            onChange={(e) => setSearchTerm(e.target.value)} 
-                        />
+            {/* Second Panel: List & Search - fills remaining space, contains scrolling area */}
+            <Panel className="flex-1 flex flex-col overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm min-h-0 p-0">
+                <div className="p-4 sm:p-6 flex flex-col flex-1 min-h-0 overflow-hidden">
+                    <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6 pb-2 sm:pb-4 flex-wrap shrink-0">
+                        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary tracking-tight flex items-center gap-2 sm:gap-3">
+                            <Box className="text-success-start" size={24} />
+                            {t('inventory.title')}
+                        </h2>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 pb-2">
-                        <InventoryList 
-                            manualItems={filteredManual} 
-                            posItems={filteredPos} 
-                            onEdit={openEditItem} 
-                            onDelete={handleDeleteItem} 
-                        />
+                    <div className="flex-1 overflow-hidden relative flex flex-col min-h-0">
+                        {/* Search input - stays at top, shrink-0 */}
+                        <div className="relative group mb-4 shrink-0">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-success-start transition-colors" />
+                            <input 
+                                type="text" 
+                                placeholder={t('header.searchPlaceholder')} 
+                                className="glass-input w-full pl-12 py-3 sm:py-4 text-sm sm:text-base border border-border-main focus:border-success-start transition-all" 
+                                value={searchTerm} 
+                                onChange={(e) => setSearchTerm(e.target.value)} 
+                            />
+                        </div>
+
+                        {/* Scrollable inventory list */}
+                        <div className="flex-1 overflow-y-auto custom-finance-scroll pr-2 pb-2">
+                            <InventoryList 
+                                manualItems={filteredManual} 
+                                posItems={filteredPos} 
+                                onEdit={openEditItem} 
+                                onDelete={handleDeleteItem} 
+                            />
+                        </div>
                     </div>
                 </div>
             </Panel>
