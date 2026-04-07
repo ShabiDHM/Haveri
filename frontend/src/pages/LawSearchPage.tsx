@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - DROPDOWN CLIPPING FIXED, OVERFLOW VISIBLE, ENHANCED STACKING
+// PHOENIX PROTOCOL - SINGLE SCROLLBAR (ONLY RESULTS AREA)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -89,7 +89,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
   const [enrichedTitles, setEnrichedTitles] = useState<Map<string, string>>(new Map());
   const [enrichingTitles, setEnrichingTitles] = useState<Set<string>>(new Set());
 
-  // Close dropdown on outside click
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -111,7 +110,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
   useEffect(() => {
     apiService.getLawTitles()
       .then(async (titles) => {
-        console.log('[LawSearchPage] Fetched law titles:', titles);
         const filteredTitles = titles.filter(title => normalizeForDisplay(title).length >= 2);
         setLawTitles(filteredTitles);
         
@@ -144,7 +142,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
               return { bare: bareTitle, full: lawData.law_title };
             }
             return { bare: bareTitle, full: bareTitle };
-          } catch (err) {
+          } catch {
             return { bare: bareTitle, full: bareTitle };
           }
         });
@@ -156,7 +154,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
         setEnrichingTitles(new Set());
       })
       .catch((err) => {
-        console.error('[LawSearchPage] Error fetching law titles:', err);
+        console.error(err);
         setLoadingTitles(false);
       })
       .finally(() => setLoadingTitles(false));
@@ -259,11 +257,10 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
   }
 
   return (
-    // Outer container: no overflow hidden, allows dropdown to escape
-    <div className="flex flex-col h-full w-full overflow-y-auto">
-      {/* Main centered wrapper - higher z-index context */}
-      <div className="max-w-5xl mx-auto w-full px-6 sm:px-8 mt-12 flex-1 relative z-10">
-        {/* Back button aligned with card */}
+    // Outer container: no overflow-y-auto (single scroll handled by results area)
+    <div className="flex flex-col h-full w-full">
+      <div className="max-w-5xl mx-auto w-full px-6 sm:px-8 mt-12 flex-1">
+        {/* Back button */}
         <button
           onClick={handleBack}
           className="text-xs font-black uppercase tracking-widest text-text-primary bg-surface/50 border border-border-main px-4 py-2 rounded-lg mb-6 hover:bg-surface transition-all w-fit flex items-center gap-2"
@@ -272,9 +269,8 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
           <span>KTHEHU</span>
         </button>
 
-        {/* Search card - NO overflow-hidden, overflow-visible to allow dropdown to float */}
+        {/* Search card - overflow-visible, no hidden */}
         <div className="glass-panel p-8 sm:p-10 rounded-[2rem] border border-border-main shadow-xl w-full mb-8 overflow-visible relative z-20">
-          {/* Dropdown button container - relative for positioning */}
           <div className="relative z-30 mb-5">
             <button
               ref={buttonRef}
@@ -295,7 +291,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
               )}
             </button>
 
-            {/* Dropdown - absolutely positioned, no clipping, high z-index */}
             <AnimatePresence>
               {dropdownOpen && (
                 <motion.div
@@ -320,7 +315,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
             </AnimatePresence>
           </div>
 
-          {/* Search input - unaffected by dropdown */}
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
               <Search className={`h-6 w-6 transition-colors ${loading ? 'text-primary-start animate-pulse' : 'text-text-muted group-focus-within:text-blue-500'}`} />
@@ -344,8 +338,8 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
           </div>
         </div>
 
-        {/* Results section - scrollable, unaffected by dropdown positioning */}
-        <div className="overflow-y-auto custom-scrollbar pb-12 relative z-10" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+        {/* ONLY results area scrolls - single scrollbar */}
+        <div className="overflow-y-auto custom-scrollbar pb-12" style={{ maxHeight: 'calc(100vh - 380px)' }}>
           {loading && (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
