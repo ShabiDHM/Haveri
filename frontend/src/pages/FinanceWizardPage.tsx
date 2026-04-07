@@ -1,5 +1,6 @@
 // FILE: src/pages/FinanceWizardPage.tsx
-// PHOENIX PROTOCOL - FINANCE WIZARD V17.0 (NON-ACCOUNTANT FRIENDLY)
+// PHOENIX PROTOCOL - FINANCE WIZARD V17.1 (EXECUTIVE DARK THEME MATCH)
+// MODIFIED: Step indicator, success panel, and main card to match "Hartimi" page style.
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -73,7 +74,7 @@ const ATKBox = ({ number, label, value, currency, description }: { number: strin
     );
 };
 
-// --- Step indicator with helper text ---
+// --- Step indicator with helper text (MODIFIED: rounded-2xl, bg-primary-start/10, border-primary-start/20, glow) ---
 const StepIndicator = ({ currentStep }: { currentStep: number }) => {
     const { t } = useTranslation();
     const steps = [
@@ -87,7 +88,11 @@ const StepIndicator = ({ currentStep }: { currentStep: number }) => {
             <div className="flex items-center justify-center space-x-2 sm:space-x-4">
                 {steps.map((step, index) => (
                     <div key={step.id} className="flex items-center">
-                        <div className={`flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-sm ${currentStep >= step.id ? 'bg-primary-start text-text-inverse border-primary-start shadow-primary-start/30' : 'bg-surface/30 backdrop-blur-sm border-border-main text-text-muted'}`}>
+                        <div className={`flex items-center justify-center w-12 h-12 rounded-2xl border transition-all duration-300 shadow-sm ${
+                            currentStep >= step.id 
+                                ? 'bg-primary-start/10 text-primary-start border-primary-start/20 shadow-[0_0_15px_rgba(149,164,255,0.1)]' 
+                                : 'bg-surface/30 backdrop-blur-sm border-border-main text-text-muted'
+                        }`}>
                             <step.icon size={20} />
                         </div>
                         <span className={`ml-3 text-sm font-bold hidden md:block ${currentStep >= step.id ? 'text-text-primary' : 'text-text-muted'}`}>{step.label}</span>
@@ -102,7 +107,7 @@ const StepIndicator = ({ currentStep }: { currentStep: number }) => {
     );
 };
 
-// --- Enhanced AuditStep with explanations and actions ---
+// --- Enhanced AuditStep with explanations and actions (MODIFIED: clean record panel uses border-border-main and rounded-2xl) ---
 const AuditStep = ({ issues }: { issues: AuditIssue[] }) => {
     const { t } = useTranslation();
     const critical = issues.filter(i => i.severity === 'CRITICAL');
@@ -110,12 +115,16 @@ const AuditStep = ({ issues }: { issues: AuditIssue[] }) => {
 
     if (issues.length === 0) {
         return (
-            <div className="bg-success-start/10 border border-success-start/30 rounded-3xl p-8 text-center shadow-sm">
-                <div className="w-20 h-20 bg-success-start/10 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-success-start/20">
-                    <CheckCircle className="text-success-start" size={40} />
+            <div className="bg-surface/20 border border-border-main rounded-3xl p-8 text-center shadow-sm">
+                <div className="w-20 h-20 bg-primary-start/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-primary-start/20">
+                    <CheckCircle className="text-primary-start" size={40} />
                 </div>
-                <h3 className="text-xl font-bold text-text-primary mb-2">{t('finance.wizard.cleanRecordTitle', 'Të dhënat janë të pastra!')}</h3>
-                <p className="text-text-muted text-sm">{t('finance.wizard.cleanRecordDesc', 'Nuk u gjetën probleme. Mund të vazhdoni me llogaritjen e taksave.')}</p>
+                <h3 className="text-xl font-black text-text-primary uppercase tracking-tight mb-2">
+                    {t('finance.wizard.cleanRecordTitle', 'Të dhënat janë të pastra!')}
+                </h3>
+                <p className="text-text-muted text-[11px] uppercase tracking-widest font-bold">
+                    {t('finance.wizard.cleanRecordDesc', 'Nuk u gjetën probleme. Mund të vazhdoni me llogaritjen e taksave.')}
+                </p>
             </div>
         );
     }
@@ -254,7 +263,7 @@ const TaxStep = ({ data }: { data: TaxCalculation }) => {
     );
 };
 
-// --- Main Finance Wizard Page ---
+// --- Main Finance Wizard Page (MODIFIED: main card uses glass-panel without extra bg-surface/30) ---
 const FinanceWizardPage = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
@@ -345,7 +354,7 @@ const FinanceWizardPage = () => {
                             <AnimatePresence mode="wait">
                                 <motion.div 
                                     key={step} 
-                                    className="glass-panel border border-border-main rounded-3xl p-6 sm:p-10 shadow-sm bg-surface/30 backdrop-blur-sm"
+                                    className="glass-panel border border-border-main rounded-3xl p-6 sm:p-10 shadow-sm"
                                 >
                                     {step === 1 && <AuditStep issues={state.issues} />}
                                     {step === 2 && <TaxStep data={state.calculation} />}
