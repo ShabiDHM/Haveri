@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - CLEAN UI (NO DUPLICATE BACK, NO EMPTY STATE)
+// PHOENIX PROTOCOL - WITH BACK TO DRAFTING CALLBACK
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,10 @@ interface ArticleGroup {
   preview: string;
   chunkCount: number;
   chunkIds: string[];
+}
+
+interface LawSearchPageProps {
+  onBackToDrafting?: () => void;
 }
 
 const KNOWN_JUNK_MAP: Record<string, string> = {
@@ -68,7 +72,7 @@ function useDebounce<T extends (...args: any[]) => any>(callback: T, delay: numb
   return debouncedCallback;
 }
 
-export default function LawSearchPage() {
+export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -208,6 +212,14 @@ export default function LawSearchPage() {
     navigate(`/law-article?lawTitle=${encodeURIComponent(lawTitle)}&articleNumber=${encodeURIComponent(articleNumber)}`);
   };
 
+  const handleBack = () => {
+    if (onBackToDrafting) {
+      onBackToDrafting();
+    } else {
+      navigate(-1);
+    }
+  };
+
   if (loadingTitles) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
@@ -229,10 +241,10 @@ export default function LawSearchPage() {
 
   return (
     <div className="flex flex-col h-full w-full overflow-y-auto custom-scrollbar">
-      {/* Only the pill-shaped back button - no duplicate */}
+      {/* Only the pill-shaped back button */}
       <div className="px-6 sm:px-8 pt-6">
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           className="text-xs font-black uppercase tracking-widest text-text-primary bg-surface/50 border border-border-main px-4 py-2 rounded-lg mb-4 hover:bg-surface transition-all w-fit flex items-center gap-2"
         >
           <ArrowLeft size={14} />

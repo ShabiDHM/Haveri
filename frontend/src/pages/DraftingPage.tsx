@@ -1,5 +1,5 @@
 // FILE: src/pages/DraftingPage.tsx
-// PHOENIX PROTOCOL - NO DUPLICATE BACK BUTTON IN LIBRARY MODE
+// PHOENIX PROTOCOL - WITH CALLBACK TO SWITCH BACK TO DRAFTING
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -118,6 +118,9 @@ const DraftingPage: React.FC = () => {
     setActiveMode('library');
   };
 
+  const switchToDrafting = () => {
+    setActiveMode('drafting');
+  };
 
   return (
     <motion.div className="w-full pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -152,9 +155,8 @@ const DraftingPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          // Library mode – NO back button here (LawSearchPage provides its own)
           <div className="flex-1 overflow-hidden">
-            <LawSearchPage />
+            <LawSearchPage onBackToDrafting={switchToDrafting} />
           </div>
         )}
       </div>
