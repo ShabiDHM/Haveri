@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ResultPanel.tsx
-// PHOENIX PROTOCOL - RESULT PANEL V8.4 (SMALLER BRAIN ICON & LOADING STATE)
+// PHOENIX PROTOCOL - HEADER SYNCED WITH CONFIG PANEL
 
 import React, { useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,19 +34,17 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     }
   }, [currentJob.status, t]);
 
-  const actionButtonBase = "p-3 bg-surface border border-border-main text-text-primary hover:text-primary-start hover:border-primary-start/50 rounded-xl transition-all shadow-sm hover:shadow-md hover-lift disabled:opacity-30 disabled:hover:shadow-none pointer-events-auto";
+  // Action buttons now have same height as ConfigPanel's "Biblioteka" button (h-10)
+  const actionButtonBase = "h-10 flex items-center gap-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest bg-surface border border-border-main text-text-primary hover:text-primary-start hover:border-primary-start/50 transition-all shadow-sm hover:shadow-md hover-lift disabled:opacity-30 disabled:hover:shadow-none pointer-events-auto";
 
   const handleCopy = async () => {
     if (!documentRef.current) return;
 
-    // 1. Clone node to perform style injection
     const clone = documentRef.current.cloneNode(true) as HTMLElement;
 
-    // 2. Recursive function to inline styles for Word/Docs compatibility
     const styleElement = (el: HTMLElement) => {
       const tag = el.tagName.toLowerCase();
       
-      // Force typography for Word
       el.style.fontFamily = 'Times New Roman, serif';
       el.style.lineHeight = '1.6';
 
@@ -64,7 +62,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         el.style.fontWeight = 'bold';
       }
       
-      // Target the yellow placeholder highlights specifically
       if (el.className && el.className.includes('bg-yellow-100')) {
         el.style.backgroundColor = '#fef08a';
         el.style.padding = '2px 4px';
@@ -77,14 +74,12 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
     styleElement(clone);
 
-    // 3. Create HTML wrapper
     const html = `
       <div style="background: white; padding: 50px; color: black; max-width: 800px; margin: auto;">
         ${clone.innerHTML}
       </div>
     `;
 
-    // 4. Clipboard Injection
     try {
       const data = [new ClipboardItem({ 
         'text/html': new Blob([html], { type: 'text/html' }),
@@ -101,28 +96,34 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     <div className="glass-panel border border-border-main rounded-3xl p-0 flex flex-col h-auto lg:h-[700px] shadow-sm relative group overflow-visible">
       <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none z-[200]" />
 
-      <div className="flex justify-between items-center px-6 py-4 bg-surface border-b border-border-main flex-shrink-0 relative z-50 pointer-events-auto">
-        <div className="flex items-center gap-4">
-          <div className="p-2 bg-primary-start/10 rounded-xl border border-primary-start/20">
+      {/* Header - now matches ConfigPanel: same padding, alignment, icon container size, typography */}
+      <div className="flex justify-between items-center border-b border-border-main pb-5 mb-0 px-6 pt-5 flex-shrink-0 relative z-50 pointer-events-auto">
+        <div className="flex items-center gap-3">
+          {/* Icon container: exactly h-10 w-10 like ConfigPanel */}
+          <div className="h-10 w-10 flex items-center justify-center bg-primary-start/10 rounded-xl border border-primary-start/20">
             <BrainCircuit className="text-primary-start" size={20} />
           </div>
-          <h3 className="text-text-primary text-xs font-black uppercase tracking-widest leading-none">
+          <h3 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
             {statusText}
           </h3>
         </div>
 
+        {/* Right actions: buttons now have same height (h-10) as ConfigPanel's Biblioteka button */}
         <div className="flex items-center gap-2">
           <button onClick={handleCopy} title={t('drafting.copy', 'Kopjo')} disabled={!currentJob.result} className={actionButtonBase}>
-            <Copy size={18} className="stroke-[2.5px] text-text-primary" />
+            <Copy size={16} />
+            <span>{t('drafting.copy', 'Kopjo')}</span>
           </button>
           {currentJob.status === 'FAILED' && (
             <button onClick={onRetry} title="Riprovo" className={actionButtonBase}>
-              <RefreshCw size={18} className="text-text-primary" />
+              <RefreshCw size={16} />
+              <span>Riprovo</span>
             </button>
           )}
           <div className="h-6 w-px bg-border-main mx-1" />
-          <button onClick={onClear} title={t('drafting.clear', 'Pastro')} disabled={!currentJob.result && currentJob.status !== 'FAILED'} className="p-3 bg-surface border border-border-main text-danger-start hover:text-danger-start/80 hover:border-danger-start/30 rounded-xl transition-all disabled:opacity-30 hover-lift pointer-events-auto">
-            <Trash2 size={18} className="stroke-[2.5px] text-danger-start" />
+          <button onClick={onClear} title={t('drafting.clear', 'Pastro')} disabled={!currentJob.result && currentJob.status !== 'FAILED'} className="h-10 flex items-center gap-2 px-4 rounded-xl bg-surface border border-border-main text-danger-start hover:text-danger-start/80 hover:border-danger-start/30 transition-all disabled:opacity-30 hover-lift pointer-events-auto">
+            <Trash2 size={16} />
+            <span>{t('drafting.clear', 'Pastro')}</span>
           </button>
         </div>
       </div>
@@ -146,9 +147,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center text-center mt-32 pointer-events-none opacity-40">
                 {currentJob.status === 'PROCESSING' ? (
                   <div className="flex flex-col items-center">
-                    {/* SMALLER BRAIN ICON CONTAINER AND ICON */}
-                    <div className="w-12 h-12 rounded-[1rem] bg-primary-start flex items-center justify-center shadow-accent-glow mb-4 animate-pulse">
-                      <BrainCircuit className="w-6 h-6 text-white" />
+                    <div className="h-10 w-10 rounded-xl bg-primary-start/10 border border-primary-start/20 flex items-center justify-center mb-4 animate-pulse">
+                      <BrainCircuit className="w-5 h-5 text-primary-start" />
                     </div>
                     <p className="text-text-primary font-black uppercase tracking-widest text-xs">
                       {t('drafting.statusWorking', 'Duke Gjeneruar...')}
