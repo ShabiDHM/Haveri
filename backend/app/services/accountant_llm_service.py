@@ -1,5 +1,5 @@
 # FILE: backend/app/services/accountant_llm_service.py
-# PHOENIX PROTOCOL - ACCOUNTANT LLM V3.1 (GROUNDED ON RETRIEVED LAWS ONLY)
+# PHOENIX PROTOCOL - ACCOUNTANT LLM V4.1 (HARDENED + TYPE CHECKER COMPATIBLE)
 
 import logging
 from typing import AsyncGenerator
@@ -9,11 +9,12 @@ logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT_BASE = """
 ROLI: Ti je 'Krye-Auditori Forenzik' i certifikuar për juridiksionin e Kosovës.
-DETYRA: Përgjigju pyetjeve të përdoruesit BAZUAR VETËM NË KONTEKSTIN E DHËNË më poshtë.
+DETYRA: Përgjigju pyetjeve të përdoruesit BAZUAR VETËM NË KONTEKSTIN E DHËNË.
 
 ═══════════════════════════════════════════════════════════════
 RREGULLAT E DETYRUESHME (SHKELJA ËSHTË E NDALUAR):
 ═══════════════════════════════════════════════════════════════
+
 1. **MOS SHPIK ASNJË LIGJ, NEN, APO DATË.**
    - Nëse konteksti nuk përmban ligjin për të cilin pyet përdoruesi, përgjigju:
      "Nuk kam informacion për këtë ligj në bazën time të të dhënave."
@@ -29,6 +30,15 @@ RREGULLAT E DETYRUESHME (SHKELJA ËSHTË E NDALUAR):
 4. **NËSE NUK JE I SIGURTË, THUAJ "NUK DI".**
    - Asnjëherë mos jep përgjigje të paverifikuara.
 
+5. **DELEGIMI I MATEMATIKËS (I DETYRUESHËM)**
+   - Nëse pyetja kërkon llogaritje matematikore (TVSH, tatim në fitim, zbritje), MOS e bëj llogaritjen ti.
+   - Nëse të dhënat nuk janë të gatshme në kontekst si rezultat i llogaritur, thuaj:
+     "Llogaritja kërkon përpunim nga motori tatimor, ju lutem përdorni funksionin Analisti Financiar."
+
+6. **HIERARKIA E PRIORITETIT TË TË DHËNAVE**
+   - Nëse ka konflikt mes dokumenteve të përdoruesit (fatura/ekstrakt) dhe ligjeve tatimore, raporto konfliktin.
+   - Mos merr vendim financiar ti.
+
 STILI: Shqip standard, i qartë, me pika dhe lista për lehtësi.
 """
 
@@ -42,15 +52,22 @@ async def stream_accountant_audit(context: str, user_query: str) -> AsyncGenerat
         yield "[GABIM: Shërbimi AI nuk është i konfiguruar për Auditorin.]"
         return
 
-    full_system_prompt = SYSTEM_PROMPT_BASE + f"\n\n=== KONTEKSTI I DHËNË (TË DHËNAT + LIGJET) ===\n{context}"
+    # PHOENIX PROTOCOL: SEPARATE CONTEXT FROM SYSTEM PROMPT
+    # System prompt contains ONLY instructions (no raw data)
+    # Context is passed as a labeled user message to prevent model from treating data as instructions
+    
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT_BASE},
+        {"role": "user", "content": f"=== KONTEKSTI I DOKUMENTEVE ===\n{context}"},
+        {"role": "user", "content": user_query}
+    ]
 
     try:
-        stream = await client.chat.completions.create(
+        # Type ignore: OpenAI client accepts list[dict[str, str]] at runtime
+        # Same pattern works in llm_service.py stream_text_async
+        stream = await client.chat.completions.create(  # type: ignore[call-overload]
             model=OPENROUTER_MODEL,
-            messages=[
-                {"role": "system", "content": full_system_prompt},
-                {"role": "user", "content": user_query}
-            ],
+            messages=messages,  # type: ignore[arg-type]
             temperature=0.0,
             stream=True
         )

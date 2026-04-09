@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V15.6 (ADD suggested_action TO AuditIssue)
+// PHOENIX PROTOCOL - API V15.7 (ADDED askLawAuditor FOR INTERACTIVE LAW CHAT)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -39,7 +39,7 @@ export interface LawArticle {
   article_number?: string;
   source: string;
   text: string;
-  chunk_id?: string;
+  chunk_id?: string;  // PHOENIX: Added for audit chat anchoring
 }
 
 export interface LawOverview {
@@ -622,6 +622,54 @@ class ApiService {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                yield decoder.decode(value, { stream: true });
+            }
+        } finally {
+            reader.releaseLock();
+        }
+    }
+
+    // ========== LAW AUDITOR CHAT (INTERACTIVE, ANCHORED TO ARTICLE) ==========
+    /**
+     * Interactive chat with the Rigid Auditor anchored to a specific law article.
+     * Accepts article_id (chunk_id from the article) and a query string.
+     * Returns an AsyncGenerator that yields streaming text chunks.
+     * 
+     * @param articleId - The chunk_id of the law article (from getLawArticle response)
+     * @param query - The user's question about the article
+     * @returns AsyncGenerator yielding string chunks
+     */
+    public async *askLawAuditor(articleId: string, query: string): AsyncGenerator<string, void, unknown> {
+        const token = tokenManager.get();
+        if (!token) {
+            await this.refreshToken();
+        }
+
+        const response = await fetch(`${API_V1_URL}/laws/audit-chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenManager.get()}`
+            },
+            body: JSON.stringify({ article_id: articleId, query })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Audit chat failed: ${response.status} - ${errorText}`);
+        }
+
+        if (!response.body) {
+            throw new Error("No response body from audit chat endpoint");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
         try {
             while (true) {
                 const { done, value } = await reader.read();

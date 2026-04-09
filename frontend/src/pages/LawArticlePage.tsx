@@ -1,10 +1,11 @@
 // FILE: src/pages/LawArticlePage.tsx
+// PHOENIX PROTOCOL - LAW ARTICLE PAGE V2.0 (WITH INTERACTIVE AUDITOR CHAT)
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { apiService, LawArticle } from '../services/api';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Scale, Calendar, AlertCircle, BookOpen, Sparkles, Loader2, X, BrainCircuit, User } from 'lucide-react';
+import { ArrowLeft, Scale, Calendar, AlertCircle, BookOpen, Sparkles, Loader2, X, BrainCircuit, User, Send, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ArticleData {
@@ -12,6 +13,14 @@ interface ArticleData {
   article_number: string;
   source: string;
   text: string;
+  chunk_id?: string;
+}
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'auditor';
+  content: string;
+  timestamp: Date;
 }
 
 // ========== PHOENIX: ADVANCED TEXT SANITIZATION FOR PROFESSIONAL READING ==========
@@ -79,12 +88,21 @@ export default function LawArticlePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // --- AI STATE ---
+  // --- AI EXPLANATION STATE (existing) ---
   const [isExplaining, setIsExplaining] = useState(false);
   const [rawExplanation, setRawExplanation] = useState('');
   const [activePerspective, setActivePerspective] = useState<'senior' | 'citizen'>('senior');
   const [aiError, setAiError] = useState('');
   const aiSectionRef = useRef<HTMLDivElement>(null);
+
+  // --- NEW: AUDITOR CHAT STATE ---
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputQuery, setInputQuery] = useState('');
+  const [isAuditing, setIsAuditing] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [showChat, setShowChat] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const lawTitle = searchParams.get('lawTitle');
   const articleNumber = searchParams.get('articleNumber');
@@ -107,6 +125,7 @@ export default function LawArticlePage() {
     };
   }, [rawExplanation]);
 
+  // Load article
   useEffect(() => {
     if (!lawTitle || !articleNumber) {
       setError(t('lawArticle.missingParams', 'Parametrat e artikullit mungojnë.'));
@@ -122,6 +141,7 @@ export default function LawArticlePage() {
           article_number: data.article_number || '',
           source: data.source,
           text: normalizedText,
+          chunk_id: data.chunk_id,
         });
       })
       .catch((err) => {
@@ -129,6 +149,27 @@ export default function LawArticlePage() {
       })
       .finally(() => setLoading(false));
   }, [lawTitle, articleNumber, t]);
+
+  // Auto-scroll chat to bottom when new messages arrive
+  useEffect(() => {
+    if (chatContainerRef.current && showChat) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages, showChat]);
+
+  // Initialize chat with welcome message when article loads
+  useEffect(() => {
+    if (article && !loading && messages.length === 0) {
+      setMessages([
+        {
+          id: 'welcome',
+          role: 'auditor',
+          content: `Mirë se vini në Auditorin Ligjor. Unë jam Asistenti Juaj i Auditimit për **${article.law_title}**, Neni **${article.article_number}**. Si mund t'ju ndihmoj të kuptoni më mirë këtë nen?`,
+          timestamp: new Date(),
+        },
+      ]);
+    }
+  }, [article, loading, messages.length]);
 
   const handleAiExplain = async () => {
     if (!article || isExplaining) return;
@@ -149,6 +190,67 @@ export default function LawArticlePage() {
         setAiError(t('lawArticle.aiError', 'Dështoi analiza inteligjente.'));
     } finally {
         setIsExplaining(false);
+    }
+  };
+
+  // NEW: Handle sending a query to the auditor
+  const handleSendQuery = async () => {
+    if (!article?.chunk_id) {
+      setChatError('Artikulli nuk ka ID të vlefshme për chat.');
+      return;
+    }
+
+    const query = inputQuery.trim();
+    if (!query || isAuditing) return;
+
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: query,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setInputQuery('');
+    setIsAuditing(true);
+    setChatError(null);
+
+    // Add placeholder auditor message (streaming)
+    const auditorMessageId = (Date.now() + 1).toString();
+    setMessages(prev => [...prev, {
+      id: auditorMessageId,
+      role: 'auditor',
+      content: '',
+      timestamp: new Date(),
+    }]);
+
+    try {
+      const stream = apiService.askLawAuditor(article.chunk_id, query);
+      let accumulatedContent = '';
+
+      for await (const chunk of stream) {
+        accumulatedContent += chunk;
+        setMessages(prev => prev.map(msg =>
+          msg.id === auditorMessageId
+            ? { ...msg, content: accumulatedContent }
+            : msg
+        ));
+      }
+    } catch (err: any) {
+      setChatError(err.message || 'Dështoi komunikimi me Auditorin.');
+      // Remove the empty auditor message on error
+      setMessages(prev => prev.filter(msg => msg.id !== auditorMessageId));
+    } finally {
+      setIsAuditing(false);
+      // Refocus input
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendQuery();
     }
   };
 
@@ -215,18 +317,32 @@ export default function LawArticlePage() {
                       <span className="text-xs font-bold uppercase tracking-widest truncate max-w-[150px] sm:max-w-[200px]">{article.source}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={handleAiExplain}
-                    disabled={isExplaining}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover-lift ${
-                      isExplaining
-                        ? 'bg-canvas text-text-muted cursor-not-allowed border border-border-main'
-                        : 'btn-primary'
-                    }`}
-                  >
-                    {isExplaining ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                    {isExplaining ? t('lawArticle.analyzing', 'Duke Analizuar...') : t('lawArticle.aiExplain', 'Analizo me AI')}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {/* NEW: Toggle Chat Button */}
+                    <button
+                      onClick={() => setShowChat(!showChat)}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover-lift ${
+                        showChat
+                          ? 'bg-primary-start text-white'
+                          : 'bg-surface border border-border-main text-text-primary hover:border-primary-start'
+                      }`}
+                    >
+                      <MessageCircle size={14} />
+                      {showChat ? t('lawArticle.hideChat', 'Fshiho Chat') : t('lawArticle.askAuditor', 'Pyet Auditorin')}
+                    </button>
+                    <button
+                      onClick={handleAiExplain}
+                      disabled={isExplaining}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover-lift ${
+                        isExplaining
+                          ? 'bg-canvas text-text-muted cursor-not-allowed border border-border-main'
+                          : 'btn-primary'
+                      }`}
+                    >
+                      {isExplaining ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                      {isExplaining ? t('lawArticle.analyzing', 'Duke Analizuar...') : t('lawArticle.aiExplain', 'Analizo me AI')}
+                    </button>
+                  </div>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-black text-text-primary leading-tight tracking-tighter">{article.law_title}</h1>
                 <div className="flex items-center gap-4 border-t border-border-main/50 pt-6 mt-2">
@@ -245,7 +361,122 @@ export default function LawArticlePage() {
               </div>
             </div>
 
-            {/* AI PERSPECTIVE AREA (unchanged) */}
+            {/* NEW: AUDITOR CHAT CONTAINER */}
+            <AnimatePresence>
+              {showChat && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="border-t border-primary-start/30 bg-primary-start/[0.02] overflow-hidden"
+                >
+                  <div className="p-6 sm:p-8">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 flex items-center justify-center bg-primary-start/10 rounded-xl border border-primary-start/20">
+                          <BrainCircuit className="text-primary-start" size={20} />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-black text-text-primary uppercase tracking-widest">
+                            {t('lawArticle.auditorTitle', 'AUDITORI LIGJOR')}
+                          </h3>
+                          <p className="text-xs text-text-muted">
+                            {t('lawArticle.auditorSubtitle', 'I fiksuar pas këtij neni — përgjigjet bazohen vetëm në ligj')}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowChat(false)}
+                        className="p-2 bg-surface border border-border-main rounded-lg text-text-muted hover:text-danger-start hover:border-danger-start/30 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {/* Chat Messages */}
+                    <div
+                      ref={chatContainerRef}
+                      className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar mb-4 pr-2"
+                    >
+                      {messages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[85%] p-4 rounded-2xl ${
+                              msg.role === 'user'
+                                ? 'bg-primary-start text-white rounded-br-sm'
+                                : 'bg-surface border border-border-main text-text-primary rounded-bl-sm'
+                            }`}
+                          >
+                            {msg.role === 'auditor' ? (
+                              <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                                {renderMarkdown(msg.content) || (
+                                  <span className="inline-block w-2 h-4 bg-primary-start animate-pulse" />
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-sm font-medium whitespace-pre-wrap">{msg.content}</p>
+                            )}
+                            <p className={`text-[10px] mt-2 ${msg.role === 'user' ? 'text-white/60' : 'text-text-muted'}`}>
+                              {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      {isAuditing && (
+                        <div className="flex justify-start">
+                          <div className="bg-surface border border-border-main p-4 rounded-2xl rounded-bl-sm">
+                            <div className="flex gap-1">
+                              <span className="w-2 h-2 bg-primary-start rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <span className="w-2 h-2 bg-primary-start rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <span className="w-2 h-2 bg-primary-start rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {chatError && (
+                        <div className="bg-danger-start/10 border border-danger-start/30 rounded-xl p-3">
+                          <p className="text-danger-start text-xs font-medium flex items-center gap-2">
+                            <AlertCircle size={14} /> {chatError}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Chat Input */}
+                    <div className="flex gap-3 items-end mt-4">
+                      <textarea
+                        ref={inputRef}
+                        value={inputQuery}
+                        onChange={(e) => setInputQuery(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={t('lawArticle.chatPlaceholder', 'Bëj një pyetje për këtë nen...')}
+                        rows={2}
+                        className="flex-1 p-3 bg-surface border border-border-main rounded-xl text-sm resize-none text-text-primary focus:border-primary-start outline-none transition-all placeholder:text-text-muted"
+                        disabled={isAuditing}
+                      />
+                      <button
+                        onClick={handleSendQuery}
+                        disabled={!inputQuery.trim() || isAuditing || !article?.chunk_id}
+                        className="h-12 w-12 flex items-center justify-center rounded-xl bg-primary-start text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-end transition-all shadow-sm hover-lift"
+                      >
+                        {isAuditing ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                      </button>
+                    </div>
+
+                    {/* Footer Disclaimer */}
+                    <div className="mt-4 pt-3 border-t border-border-main/30 flex items-center gap-2 text-[10px] text-text-muted font-black uppercase tracking-widest">
+                      <BrainCircuit size={10} className="text-primary-start" /> 
+                      {t('lawArticle.auditorDisclaimer', 'Përgjigjet gjenerohen nga Auditor i ngurtë — bazuar vetëm në tekstin e ligjit. Temperatura 0.0, pa llogaritje.')}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* AI PERSPECTIVE AREA (existing) */}
             <AnimatePresence>
               {(rawExplanation || isExplaining || aiError) && (
                 <motion.div

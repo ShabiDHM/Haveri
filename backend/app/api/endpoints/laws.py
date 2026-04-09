@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/laws.py
-# PHOENIX PROTOCOL - PRIVATE LAW SEARCH (BUSINESS APP) - CORRECTED
+# PHOENIX PROTOCOL - PRIVATE LAW SEARCH (BUSINESS APP) - CORRECTED + AUDIT CHAT
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -15,6 +15,11 @@ class LawExplainRequest(BaseModel):
     article_number: str
     prompt: str
 
+# NEW: Audit Chat Request Model
+class AuditChatRequest(BaseModel):
+    article_id: str
+    query: str
+
 def _safe_int(value: Any) -> int:
     if value is None: return 0
     try: return int(value)
@@ -24,6 +29,104 @@ def _natural_sort_key(article_any: Any) -> List[int]:
     article = str(article_any) if article_any is not None else "0"
     parts = article.split('.')
     return [int(p) for p in parts if p.isdigit()]
+
+# ==================================================================
+# NEW: RIGID AUDITOR SYSTEM PROMPT (from Phoenix Protocol)
+# ==================================================================
+RIGID_AUDITOR_PROMPT = """
+ROLI: Ti je 'Krye-Auditori Forenzik' i certifikuar për juridiksionin e Kosovës.
+DETYRA: Përgjigju pyetjeve të përdoruesit BAZUAR VETËM NË KONTEKSTIN E DHËNË.
+
+═══════════════════════════════════════════════════════════════
+RREGULLAT E DETYRUESHME (SHKELJA ËSHTË E NDALUAR):
+═══════════════════════════════════════════════════════════════
+
+1. **MOS SHPIK ASNJË LIGJ, NEN, APO DATË.**
+   - Nëse konteksti nuk përmban ligjin për të cilin pyet përdoruesi, përgjigju:
+     "Nuk kam informacion për këtë ligj në bazën time të të dhënave."
+
+2. **PËR ÇDO DEKLARATË LIGJORE, CITO BURIMIN E SAKTË.**
+   - Përdor fjalë për fjalë tekstin e ligjit nga konteksti.
+   - Formati: "[Burimi: {emri_i_ligjit}, Neni X, Paragrafi Y]"
+
+3. **NUMRAT DHE DATAT DUHET TË EKZISTOJNË NË KONTEKST.**
+   - Nëse pyet për afat deklarimi TVSH dhe konteksti thotë "deri më 20", ti duhet të thuash "20".
+   - Nëse konteksti nuk e përmend, thuaj se nuk e di.
+
+4. **NËSE NUK JE I SIGURTË, THUAJ "NUK DI".**
+   - Asnjëherë mos jep përgjigje të paverifikuara.
+
+5. **DELEGIMI I MATEMATIKËS (I DETYRUESHËM)**
+   - Nëse pyetja kërkon llogaritje matematikore (TVSH, tatim në fitim, zbritje), MOS e bëj llogaritjen ti.
+   - Nëse të dhënat nuk janë të gatshme në kontekst si rezultat i llogaritur, thuaj:
+     "Llogaritja kërkon përpunim nga motori tatimor, ju lutem përdorni funksionin Analisti Financiar."
+
+6. **HIERARKIA E PRIORITETIT TË TË DHËNAVE**
+   - Nëse ka konflikt mes dokumenteve të përdoruesit (fatura/ekstrakt) dhe ligjeve tatimore, raporto konfliktin.
+   - Mos merr vendim financiar ti.
+
+STILI: Shqip standard, i qartë, me pika dhe lista për lehtësi.
+"""
+
+# ==================================================================
+# NEW: AUDIT CHAT ENDPOINT (streaming, anchored to article)
+# ==================================================================
+@router.post("/audit-chat")
+async def audit_chat(
+    request: AuditChatRequest,
+    current_user = Depends(get_current_user)
+):
+    """
+    Interactive chat with the Rigid Auditor anchored to a specific law article.
+    Accepts article_id and query, retrieves the article content, and streams AI response.
+    """
+    try:
+        # Retrieve the article content using chunk_id (article_id is actually chunk_id from frontend)
+        collection = vector_store_service.get_business_kb_collection()
+        result = collection.get(
+            ids=[request.article_id],
+            include=["documents", "metadatas"]
+        )
+        
+        documents = result.get("documents") or []
+        metadatas = result.get("metadatas") or []
+        
+        if not documents:
+            raise HTTPException(status_code=404, detail="Article not found")
+        
+        first_meta = metadatas[0] if metadatas else {}
+        law_title = first_meta.get("law_title", "Ligj i panjohur")
+        article_number = first_meta.get("article_number", "")
+        article_text = documents[0]
+        
+        # Build context for the auditor
+        context = f"""
+=== KONTEKSTI I DOKUMENTEVE ===
+Titulli i Ligjit: {law_title}
+Numri i Nenit: {article_number}
+Përmbajtja e Nenit:
+{article_text}
+"""
+        
+        # Build user prompt with the query
+        user_prompt = f"Pyetja e përdoruesit në lidhje me këtë nen: {request.query}"
+        
+        # Use the rigid auditor system prompt with context separation
+        # Note: The llm_service.stream_text_async expects system_prompt and user_prompt
+        # We inject the context into the user_prompt as per Phoenix Protocol
+        full_user_prompt = f"{context}\n\n{user_prompt}"
+        
+        generator = llm_service.stream_text_async(
+            system_prompt=RIGID_AUDITOR_PROMPT,
+            user_prompt=full_user_prompt,
+            temp=0.0  # Zero temperature for deterministic responses
+        )
+        return StreamingResponse(generator, media_type="text/plain")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Audit chat failed: {str(e)}")
 
 # ----------------------------------------------------------------------
 # AI EXPLANATION ENDPOINT (streaming)
@@ -161,7 +264,8 @@ async def get_law_article(
         "law_title": first_meta.get("law_title", law_title),
         "article_number": first_meta.get("article_number", article_number),
         "source": first_meta.get("source", ""),
-        "text": "\n\n".join(documents)
+        "text": "\n\n".join(documents),
+        "chunk_id": metadatas[0].get("chunk_id", "") if metadatas else ""
     }
 
 @router.get("/by-title")

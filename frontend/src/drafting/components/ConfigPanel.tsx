@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V7.11 (PERFECT HEADER SYMMETRY)
+// PHOENIX PROTOCOL - CONFIG PANEL V8.0 (FULLY MOBILE-RESPONSIVE + FLUID HEIGHT)
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Send, RefreshCw, ChevronDown, BookOpen } from 'lucide-react';
@@ -77,11 +77,12 @@ export const ConfigPanel: React.FC<ExtendedConfigPanelProps> = ({
   const isButtonDisabled = isSubmitting || !context.trim();
 
   return (
-    <div className="glass-panel border border-border-main rounded-3xl p-6 sm:p-8 flex flex-col h-auto lg:h-[700px] shrink-0 shadow-sm transition-all duration-300 relative group pointer-events-auto z-10">
+    // TASK 1: Fluid Height Strategy + w-full
+    <div className="glass-panel border border-border-main rounded-3xl p-4 sm:p-6 flex flex-col h-full min-h-[500px] max-h-[85vh] lg:max-h-[700px] w-full shrink-0 shadow-sm transition-all duration-300 relative group pointer-events-auto z-10">
       <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-primary-start transition-colors duration-300 pointer-events-none" />
 
-      {/* Header with perfect vertical alignment and equal heights */}
-      <div className="flex items-center justify-between border-b border-border-main pb-5 mb-6 flex-shrink-0">
+      {/* TASK 2: Responsive Header - flex-wrap + gap-y-3 */}
+      <div className="flex flex-wrap items-center justify-between gap-y-3 border-b border-border-main pb-5 mb-6 flex-shrink-0">
         {/* Left side: icon + title */}
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 flex items-center justify-center bg-primary-start/10 rounded-xl border border-primary-start/20">
@@ -92,7 +93,7 @@ export const ConfigPanel: React.FC<ExtendedConfigPanelProps> = ({
           </h2>
         </div>
 
-        {/* Right side: Biblioteka button - exact same height as left icon container (h-10) */}
+        {/* Right side: Biblioteka button */}
         <button
           onClick={onOpenLibrary}
           className="h-10 flex items-center gap-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest bg-surface hover:bg-hover border border-border-main transition-all"
@@ -103,7 +104,8 @@ export const ConfigPanel: React.FC<ExtendedConfigPanelProps> = ({
         </button>
       </div>
 
-      <div className="flex flex-col gap-6 flex-1 min-h-0 overflow-hidden">
+      {/* TASK 3: Layout Refinement - responsive gap + overflow-y-auto */}
+      <div className="flex flex-col gap-4 lg:gap-6 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
         {/* Template Selector */}
         <div className="flex-shrink-0 relative z-20">
           <div className="flex justify-between items-center mb-2">
@@ -124,6 +126,7 @@ export const ConfigPanel: React.FC<ExtendedConfigPanelProps> = ({
               <span>{getOptionLabel(selectedTemplate)}</span>
               <ChevronDown className={`h-4 w-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
+            {/* TASK 4: Dropdown Safety - already has max-h-60 + z-[9999] */}
             {isOpen && (
               <div
                 ref={dropdownRef}
