@@ -1,5 +1,5 @@
 // FILE: src/pages/LawArticlePage.tsx
-// PHOENIX PROTOCOL - LAW ARTICLE PAGE V3.1 (STREAMLINED AUDITOR EXPERIENCE + FIXED WARNINGS)
+// PHOENIX PROTOCOL - LAW ARTICLE PAGE V4.0 (DECOUPLED SUMMARY + CHAT)
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -23,7 +23,7 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-// ========== PHOENIX: ADVANCED TEXT SANITIZATION FOR PROFESSIONAL READING ==========
+// ========== PHOENIX: ADVANCED TEXT SANITIZATION ==========
 const normalizeText = (raw: string): string => {
   if (!raw) return '';
   let cleaned = raw.replace(/---\s*\[?FAQJA\s+\d+\]?\s*---/gi, '');
@@ -36,7 +36,7 @@ const normalizeText = (raw: string): string => {
   return normalizedParagraphs.filter(p => p.length > 0).join('\n\n');
 };
 
-// ========== PHOENIX: LIGHTWEIGHT MARKDOWN RENDERER ==========
+// ========== LIGHTWEIGHT MARKDOWN RENDERER ==========
 const renderMarkdown = (text: string) => {
     if (!text) return null;
     return text.split('\n').map((line, i) => {
@@ -58,6 +58,14 @@ const renderMarkdown = (text: string) => {
     });
 };
 
+// Suggested questions for the auditor
+const SUGGESTED_QUESTIONS = [
+  'Cilat janë detyrimet kryesore sipas këtij neni?',
+  'Çfarë ndodh nëse shkelet ky nen?',
+  'A ka ndonjë afat kohor që duhet respektuar?',
+  'Si mund ta zbatoj këtë nen në praktikë?',
+];
+
 export default function LawArticlePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -66,18 +74,19 @@ export default function LawArticlePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // --- AI SUMMARY STATE (merged with chat visibility) ---
+  // --- AI SUMMARY STATE ---
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [summaryContent, setSummaryContent] = useState('');
   const [activePerspective, setActivePerspective] = useState<'senior' | 'citizen'>('senior');
   const [summaryError, setSummaryError] = useState('');
   
-  // --- CHAT STATE ---
+  // --- CHAT STATE (completely separate from summary) ---
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuery, setInputQuery] = useState('');
   const [isAuditing, setIsAuditing] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatVisible, setChatVisible] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   
   // --- Refs ---
   const summarySectionRef = useRef<HTMLDivElement>(null);
@@ -132,37 +141,47 @@ export default function LawArticlePage() {
     }
   }, [messages, chatVisible]);
 
-  // Initialize chat with context from summary when summary finishes
+  // TASK 2: Initialize chat with welcome message + suggested questions ONLY after summary finishes
   useEffect(() => {
     if (summaryContent && chatVisible && messages.length === 0 && !isSummarizing) {
       const lawTitleText = article?.law_title || '';
       const articleNumberText = article?.article_number || '';
       
+      // Welcome message without the summary content (summary is displayed separately above)
+      const welcomeMessage = `🔍 **Auditori Ligjor** — ${lawTitleText}, Neni ${articleNumberText}\n\nUnë jam këtu për t'iu përgjigjur pyetjeve specifike rreth këtij neni. Çfarë dëshironi të sqaroni më tej?`;
+      
       setMessages([
         {
-          id: 'context',
+          id: 'welcome',
           role: 'auditor',
-          content: `📋 **${lawTitleText}** — Neni **${articleNumberText}**\n\n${perspectives.citizen || perspectives.senior}\n\n---\n\n🔍 **Auditori Ligjor**\n\nUnë jam këtu për t'iu përgjigjur pyetjeve specifike rreth këtij neni. Çfarë dëshironi të sqaroni më tej?`,
+          content: welcomeMessage,
           timestamp: new Date(),
         },
       ]);
       
+      // Show suggested questions after a short delay
+      setTimeout(() => {
+        setShowSuggestions(true);
+      }, 500);
+      
       // Scroll chat into view
       setTimeout(() => {
         chatPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+        inputRef.current?.focus();
+      }, 300);
     }
-  }, [summaryContent, chatVisible, messages.length, isSummarizing, article, perspectives.citizen, perspectives.senior]);
+  }, [summaryContent, chatVisible, messages.length, isSummarizing, article]);
 
-  // MAIN ACTION: Single button triggers summary + chat
+  // TASK 1 & 3: Single button triggers summary, chat starts EMPTY and hidden until summary completes
   const handleStartAudit = async () => {
     if (!article || isSummarizing) return;
     
-    // Reset states
+    // Reset all states
     setSummaryContent('');
     setSummaryError('');
-    setMessages([]);
-    setChatVisible(true);
+    setMessages([]);           // TASK 1: Empty chat history
+    setShowSuggestions(false);
+    setChatVisible(false);     // TASK 3: Hide chat during summary generation
     setIsSummarizing(true);
     setActivePerspective('senior');
     
@@ -176,11 +195,8 @@ export default function LawArticlePage() {
         setSummaryContent(accumulated);
       }
       
-      // After summary finishes, scroll to chat area
-      setTimeout(() => {
-        chatPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        inputRef.current?.focus();
-      }, 300);
+      // TASK 3: Only show chat AFTER summary is complete
+      setChatVisible(true);
       
     } catch (err: any) {
       setSummaryError(t('lawArticle.aiError', 'Dështoi analiza inteligjente.'));
@@ -190,26 +206,27 @@ export default function LawArticlePage() {
   };
 
   // Handle sending a chat query
-  const handleSendQuery = async () => {
+  const handleSendQuery = async (query?: string) => {
     if (!article?.chunk_id) {
       setChatError('Artikulli nuk ka ID të vlefshme për chat.');
       return;
     }
 
-    const query = inputQuery.trim();
-    if (!query || isAuditing) return;
+    const finalQuery = query ?? inputQuery.trim();
+    if (!finalQuery || isAuditing) return;
 
     // Add user message
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: query,
+      content: finalQuery,
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, userMessage]);
     setInputQuery('');
     setIsAuditing(true);
     setChatError(null);
+    setShowSuggestions(false); // Hide suggestions after user asks a question
 
     // Add placeholder auditor message
     const auditorMessageId = (Date.now() + 1).toString();
@@ -221,7 +238,7 @@ export default function LawArticlePage() {
     }]);
 
     try {
-      const stream = apiService.askLawAuditor(article.chunk_id, query);
+      const stream = apiService.askLawAuditor(article.chunk_id, finalQuery);
       let accumulatedContent = '';
 
       for await (const chunk of stream) {
@@ -241,6 +258,10 @@ export default function LawArticlePage() {
     }
   };
 
+  const handleSuggestedClick = (question: string) => {
+    handleSendQuery(question);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -252,6 +273,7 @@ export default function LawArticlePage() {
     setChatVisible(false);
     setMessages([]);
     setSummaryContent('');
+    setShowSuggestions(false);
   };
 
   const handleBack = () => {
@@ -301,7 +323,7 @@ export default function LawArticlePage() {
               {t('general.back', 'Kthehu Mbrapa')}
             </button>
 
-            {/* Single clean button - changes based on chat visibility */}
+            {/* Single button - changes based on chat visibility */}
             {!chatVisible ? (
               <button
                 onClick={handleStartAudit}
@@ -428,7 +450,7 @@ export default function LawArticlePage() {
               )}
             </AnimatePresence>
 
-            {/* CHAT PANEL - Renders underneath summary as natural continuation */}
+            {/* CHAT PANEL - Only visible when summary is complete (chatVisible = true) */}
             <AnimatePresence>
               {chatVisible && (
                 <motion.div
@@ -448,7 +470,7 @@ export default function LawArticlePage() {
                           {t('lawArticle.auditorTitle', 'Bisedë me Auditorin')}
                         </h3>
                         <p className="text-xs text-text-muted">
-                          {t('lawArticle.auditorSubtitle', 'Bazuar në përmbledhjen e mësipërme dhe tekstin e ligjit')}
+                          {t('lawArticle.auditorSubtitle', 'Bazuar në tekstin e ligjit')}
                         </p>
                       </div>
                     </div>
@@ -485,6 +507,25 @@ export default function LawArticlePage() {
                           </div>
                         </div>
                       ))}
+                      
+                      {/* TASK 2: Suggested Questions */}
+                      {showSuggestions && messages.length === 1 && (
+                        <div className="flex flex-col gap-2 mt-2">
+                          <p className="text-xs text-text-muted font-medium uppercase tracking-widest">Pyetje të sugjeruara:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {SUGGESTED_QUESTIONS.map((question, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => handleSuggestedClick(question)}
+                                className="text-xs bg-surface border border-border-main hover:border-primary-start hover:bg-primary-start/5 text-text-primary px-3 py-2 rounded-xl transition-all text-left"
+                              >
+                                {question}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       {isAuditing && (
                         <div className="flex justify-start">
                           <div className="bg-surface border border-border-main p-4 rounded-2xl rounded-bl-sm">
@@ -518,7 +559,7 @@ export default function LawArticlePage() {
                         disabled={isAuditing}
                       />
                       <button
-                        onClick={handleSendQuery}
+                        onClick={() => handleSendQuery()}
                         disabled={!inputQuery.trim() || isAuditing || !article?.chunk_id}
                         className="h-12 w-12 flex items-center justify-center rounded-xl bg-primary-start text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary-end transition-all shadow-sm hover-lift"
                       >
