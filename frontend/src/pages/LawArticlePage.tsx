@@ -1,5 +1,5 @@
 // FILE: src/pages/LawArticlePage.tsx
-// PHOENIX PROTOCOL - LAW ARTICLE PAGE V4.0 (DECOUPLED SUMMARY + CHAT)
+// PHOENIX PROTOCOL - LAW ARTICLE PAGE V4.1 (ENHANCED TEXT SANITIZATION FOR ALL LAWS)
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -23,16 +23,73 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-// ========== PHOENIX: ADVANCED TEXT SANITIZATION ==========
+// ========== PHOENIX: ENHANCED TEXT SANITIZATION FOR ALL LAWS ==========
+/**
+ * Normalizes raw law article text by:
+ * - Removing page markers like "--- [FAQJA 3] ---"
+ * - Removing repetitive law headers
+ * - Merging broken paragraphs (lines that end mid-sentence)
+ * - Removing duplicate paragraph numbers
+ * - Cleaning up whitespace for smooth reading
+ */
 const normalizeText = (raw: string): string => {
   if (!raw) return '';
+
+  // Step 1: Remove page markers
   let cleaned = raw.replace(/---\s*\[?FAQJA\s+\d+\]?\s*---/gi, '');
+
+  // Step 2: Remove repetitive law headers
   const lawHeaderRegex = /(?:^|\n)\s*LIGJI\s+NR\.\s+\d+[\/\-]?[A-Z]?\d*\s+[A-ZËÇSHQËWXYZ].*?(?=\n|$)/gi;
   cleaned = cleaned.replace(lawHeaderRegex, '');
+
+  // Step 3: Fix broken paragraphs - merge lines that end with a lowercase letter or comma
+  // and the next line starts with a lowercase letter (not a number or bullet)
+  const lines = cleaned.split('\n');
+  const mergedLines: string[] = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const currentLine = lines[i].trim();
+    if (!currentLine) {
+      mergedLines.push(currentLine);
+      continue;
+    }
+    
+    // Check if this line ends mid-sentence (no period, question mark, or exclamation)
+    const endsMidSentence = !/[.!?:;]$/.test(currentLine);
+    
+    // Check if next line exists and starts with a lowercase letter (not a number or bullet)
+    const nextLine = lines[i + 1]?.trim() || '';
+    const nextStartsLowercase = /^[a-zëç]/i.test(nextLine) && !/^\d+\./.test(nextLine);
+    
+    if (endsMidSentence && nextStartsLowercase && nextLine) {
+      // Merge current line with next line
+      lines[i + 1] = currentLine + ' ' + nextLine;
+    } else {
+      mergedLines.push(currentLine);
+    }
+  }
+  
+  cleaned = mergedLines.join('\n');
+
+  // Step 4: Fix duplicate paragraph numbers (e.g., "6.\n\n6." becomes just "6.")
+  // This handles the specific issue where a paragraph number appears twice
+  cleaned = cleaned.replace(/(\d+\.)\s*\n\s*\1/g, '$1');
+  
+  // Also fix case where number appears, then line break, then same number with text
+  cleaned = cleaned.replace(/(\d+\.)\s*\n\s*\d+\.\s*/g, '$1 ');
+
+  // Step 5: Collapse multiple newlines into exactly 2 newlines (paragraph break)
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+  // Step 6: Trim leading/trailing whitespace
   cleaned = cleaned.trim();
+
+  // Step 7: Convert single newlines to spaces within paragraphs
   const paragraphs = cleaned.split(/\n\n+/);
-  const normalizedParagraphs = paragraphs.map(para => para.replace(/\n/g, ' ').trim());
+  const normalizedParagraphs = paragraphs.map(para =>
+    para.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
+  );
+  
   return normalizedParagraphs.filter(p => p.length > 0).join('\n\n');
 };
 
@@ -80,7 +137,7 @@ export default function LawArticlePage() {
   const [activePerspective, setActivePerspective] = useState<'senior' | 'citizen'>('senior');
   const [summaryError, setSummaryError] = useState('');
   
-  // --- CHAT STATE (completely separate from summary) ---
+  // --- CHAT STATE ---
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuery, setInputQuery] = useState('');
   const [isAuditing, setIsAuditing] = useState(false);
@@ -119,6 +176,7 @@ export default function LawArticlePage() {
     }
     apiService.getLawArticle(lawTitle, articleNumber)
       .then((data: LawArticle) => {
+        // Apply enhanced normalization to fix duplicate paragraphs and broken lines
         const normalizedText = normalizeText(data.text);
         setArticle({
           law_title: data.law_title,
@@ -141,13 +199,12 @@ export default function LawArticlePage() {
     }
   }, [messages, chatVisible]);
 
-  // TASK 2: Initialize chat with welcome message + suggested questions ONLY after summary finishes
+  // Initialize chat with welcome message after summary finishes
   useEffect(() => {
     if (summaryContent && chatVisible && messages.length === 0 && !isSummarizing) {
       const lawTitleText = article?.law_title || '';
       const articleNumberText = article?.article_number || '';
       
-      // Welcome message without the summary content (summary is displayed separately above)
       const welcomeMessage = `🔍 **Auditori Ligjor** — ${lawTitleText}, Neni ${articleNumberText}\n\nUnë jam këtu për t'iu përgjigjur pyetjeve specifike rreth këtij neni. Çfarë dëshironi të sqaroni më tej?`;
       
       setMessages([
@@ -159,12 +216,10 @@ export default function LawArticlePage() {
         },
       ]);
       
-      // Show suggested questions after a short delay
       setTimeout(() => {
         setShowSuggestions(true);
       }, 500);
       
-      // Scroll chat into view
       setTimeout(() => {
         chatPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         inputRef.current?.focus();
@@ -172,30 +227,27 @@ export default function LawArticlePage() {
     }
   }, [summaryContent, chatVisible, messages.length, isSummarizing, article]);
 
-  // TASK 1 & 3: Single button triggers summary, chat starts EMPTY and hidden until summary completes
+  // Single button triggers summary, chat starts EMPTY and hidden until summary completes
   const handleStartAudit = async () => {
     if (!article || isSummarizing) return;
     
-    // Reset all states
     setSummaryContent('');
     setSummaryError('');
-    setMessages([]);           // TASK 1: Empty chat history
+    setMessages([]);
     setShowSuggestions(false);
-    setChatVisible(false);     // TASK 3: Hide chat during summary generation
+    setChatVisible(false);
     setIsSummarizing(true);
     setActivePerspective('senior');
     
     try {
       const stream = apiService.explainLawStream(article.law_title, article.article_number, article.text);
       
-      // Stream the summary
       let accumulated = '';
       for await (const chunk of stream) {
         accumulated += chunk;
         setSummaryContent(accumulated);
       }
       
-      // TASK 3: Only show chat AFTER summary is complete
       setChatVisible(true);
       
     } catch (err: any) {
@@ -215,7 +267,6 @@ export default function LawArticlePage() {
     const finalQuery = query ?? inputQuery.trim();
     if (!finalQuery || isAuditing) return;
 
-    // Add user message
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -226,9 +277,8 @@ export default function LawArticlePage() {
     setInputQuery('');
     setIsAuditing(true);
     setChatError(null);
-    setShowSuggestions(false); // Hide suggestions after user asks a question
+    setShowSuggestions(false);
 
-    // Add placeholder auditor message
     const auditorMessageId = (Date.now() + 1).toString();
     setMessages(prev => [...prev, {
       id: auditorMessageId,
@@ -323,7 +373,6 @@ export default function LawArticlePage() {
               {t('general.back', 'Kthehu Mbrapa')}
             </button>
 
-            {/* Single button - changes based on chat visibility */}
             {!chatVisible ? (
               <button
                 onClick={handleStartAudit}
@@ -368,7 +417,7 @@ export default function LawArticlePage() {
               </div>
             </div>
 
-            {/* Article Text */}
+            {/* Article Text - Now properly sanitized */}
             <div className="bg-surface/50 px-8 sm:px-12 py-12 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
               <div className="max-w-[75ch] mx-auto">
                 <div className="text-base sm:text-lg text-text-primary leading-relaxed font-medium whitespace-pre-wrap text-justify">
@@ -377,7 +426,7 @@ export default function LawArticlePage() {
               </div>
             </div>
 
-            {/* AI SUMMARY SECTION (renders when summary exists or is loading) */}
+            {/* AI SUMMARY SECTION */}
             <AnimatePresence>
               {(summaryContent || isSummarizing || summaryError) && (
                 <motion.div
@@ -389,7 +438,6 @@ export default function LawArticlePage() {
                 >
                   <div className="p-8 sm:p-12 relative">
                     
-                    {/* Perspective Switcher */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-6 border-b border-border-main/50 pb-6">
                       <div className="flex bg-surface p-1.5 rounded-2xl border border-border-main shadow-inner w-full sm:w-auto">
                         <button
@@ -415,14 +463,12 @@ export default function LawArticlePage() {
                       </div>
                     </div>
 
-                    {/* Error State */}
                     {summaryError && (
                       <div className="bg-danger-start/5 border border-danger-start/20 rounded-xl p-6 text-danger-start text-sm font-medium flex items-center gap-3">
                         <AlertCircle size={18} /> {summaryError}
                       </div>
                     )}
 
-                    {/* Loading Shimmer */}
                     {isSummarizing && !summaryContent && (
                       <div className="space-y-4">
                         <div className="h-4 bg-primary-start/10 rounded w-full animate-pulse" />
@@ -431,7 +477,6 @@ export default function LawArticlePage() {
                       </div>
                     )}
 
-                    {/* Summary Content */}
                     {summaryContent && (
                       <div className="min-h-[150px]">
                         {activePerspective === 'senior' && renderMarkdown(perspectives.senior)}
@@ -440,7 +485,6 @@ export default function LawArticlePage() {
                       </div>
                     )}
                     
-                    {/* Disclaimer */}
                     <div className="mt-8 pt-6 border-t border-border-main/30 flex items-center gap-2 text-[10px] text-text-muted font-black uppercase tracking-widest">
                       <Sparkles size={12} className="text-primary-start" /> 
                       {t('lawArticle.aiDisclaimer', 'Rezultati i gjeneruar nga modeli juridik i AI')}
@@ -450,7 +494,7 @@ export default function LawArticlePage() {
               )}
             </AnimatePresence>
 
-            {/* CHAT PANEL - Only visible when summary is complete (chatVisible = true) */}
+            {/* CHAT PANEL */}
             <AnimatePresence>
               {chatVisible && (
                 <motion.div
@@ -475,7 +519,6 @@ export default function LawArticlePage() {
                       </div>
                     </div>
 
-                    {/* Chat Messages */}
                     <div
                       ref={chatContainerRef}
                       className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar mb-4 pr-2"
@@ -508,7 +551,6 @@ export default function LawArticlePage() {
                         </div>
                       ))}
                       
-                      {/* TASK 2: Suggested Questions */}
                       {showSuggestions && messages.length === 1 && (
                         <div className="flex flex-col gap-2 mt-2">
                           <p className="text-xs text-text-muted font-medium uppercase tracking-widest">Pyetje të sugjeruara:</p>
@@ -546,7 +588,6 @@ export default function LawArticlePage() {
                       )}
                     </div>
 
-                    {/* Chat Input */}
                     <div className="flex gap-3 items-end mt-4">
                       <textarea
                         ref={inputRef}
@@ -567,7 +608,6 @@ export default function LawArticlePage() {
                       </button>
                     </div>
 
-                    {/* Footer Disclaimer */}
                     <div className="mt-4 pt-3 border-t border-border-main/30 flex items-center gap-2 text-[10px] text-text-muted font-black uppercase tracking-widest">
                       <BrainCircuit size={10} className="text-primary-start" /> 
                       {t('lawArticle.auditorDisclaimer', 'Përgjigjet gjenerohen nga Auditor i ngurtë — bazuar vetëm në tekstin e ligjit. Temperatura 0.0, pa llogaritje.')}
