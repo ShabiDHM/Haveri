@@ -1,5 +1,5 @@
 // FILE: src/pages/LawArticlePage.tsx
-// PHOENIX PROTOCOL - LAW ARTICLE PAGE V4.1 (ENHANCED TEXT SANITIZATION FOR ALL LAWS)
+// PHOENIX PROTOCOL - LAW ARTICLE PAGE V4.2 (DISCLAIMER REMOVED)
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -24,14 +24,6 @@ interface ChatMessage {
 }
 
 // ========== PHOENIX: ENHANCED TEXT SANITIZATION FOR ALL LAWS ==========
-/**
- * Normalizes raw law article text by:
- * - Removing page markers like "--- [FAQJA 3] ---"
- * - Removing repetitive law headers
- * - Merging broken paragraphs (lines that end mid-sentence)
- * - Removing duplicate paragraph numbers
- * - Cleaning up whitespace for smooth reading
- */
 const normalizeText = (raw: string): string => {
   if (!raw) return '';
 
@@ -43,7 +35,6 @@ const normalizeText = (raw: string): string => {
   cleaned = cleaned.replace(lawHeaderRegex, '');
 
   // Step 3: Fix broken paragraphs - merge lines that end with a lowercase letter or comma
-  // and the next line starts with a lowercase letter (not a number or bullet)
   const lines = cleaned.split('\n');
   const mergedLines: string[] = [];
   
@@ -54,15 +45,11 @@ const normalizeText = (raw: string): string => {
       continue;
     }
     
-    // Check if this line ends mid-sentence (no period, question mark, or exclamation)
     const endsMidSentence = !/[.!?:;]$/.test(currentLine);
-    
-    // Check if next line exists and starts with a lowercase letter (not a number or bullet)
     const nextLine = lines[i + 1]?.trim() || '';
     const nextStartsLowercase = /^[a-zëç]/i.test(nextLine) && !/^\d+\./.test(nextLine);
     
     if (endsMidSentence && nextStartsLowercase && nextLine) {
-      // Merge current line with next line
       lines[i + 1] = currentLine + ' ' + nextLine;
     } else {
       mergedLines.push(currentLine);
@@ -71,20 +58,17 @@ const normalizeText = (raw: string): string => {
   
   cleaned = mergedLines.join('\n');
 
-  // Step 4: Fix duplicate paragraph numbers (e.g., "6.\n\n6." becomes just "6.")
-  // This handles the specific issue where a paragraph number appears twice
+  // Step 4: Fix duplicate paragraph numbers
   cleaned = cleaned.replace(/(\d+\.)\s*\n\s*\1/g, '$1');
-  
-  // Also fix case where number appears, then line break, then same number with text
   cleaned = cleaned.replace(/(\d+\.)\s*\n\s*\d+\.\s*/g, '$1 ');
 
-  // Step 5: Collapse multiple newlines into exactly 2 newlines (paragraph break)
+  // Step 5: Collapse multiple newlines
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
 
-  // Step 6: Trim leading/trailing whitespace
+  // Step 6: Trim
   cleaned = cleaned.trim();
 
-  // Step 7: Convert single newlines to spaces within paragraphs
+  // Step 7: Normalize paragraphs
   const paragraphs = cleaned.split(/\n\n+/);
   const normalizedParagraphs = paragraphs.map(para =>
     para.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
@@ -176,7 +160,6 @@ export default function LawArticlePage() {
     }
     apiService.getLawArticle(lawTitle, articleNumber)
       .then((data: LawArticle) => {
-        // Apply enhanced normalization to fix duplicate paragraphs and broken lines
         const normalizedText = normalizeText(data.text);
         setArticle({
           law_title: data.law_title,
@@ -417,7 +400,7 @@ export default function LawArticlePage() {
               </div>
             </div>
 
-            {/* Article Text - Now properly sanitized */}
+            {/* Article Text */}
             <div className="bg-surface/50 px-8 sm:px-12 py-12 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
               <div className="max-w-[75ch] mx-auto">
                 <div className="text-base sm:text-lg text-text-primary leading-relaxed font-medium whitespace-pre-wrap text-justify">
@@ -588,6 +571,7 @@ export default function LawArticlePage() {
                       )}
                     </div>
 
+                    {/* Chat Input */}
                     <div className="flex gap-3 items-end mt-4">
                       <textarea
                         ref={inputRef}
@@ -608,10 +592,6 @@ export default function LawArticlePage() {
                       </button>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-border-main/30 flex items-center gap-2 text-[10px] text-text-muted font-black uppercase tracking-widest">
-                      <BrainCircuit size={10} className="text-primary-start" /> 
-                      {t('lawArticle.auditorDisclaimer', 'Përgjigjet gjenerohen nga Auditor i ngurtë — bazuar vetëm në tekstin e ligjit. Temperatura 0.0, pa llogaritje.')}
-                    </div>
                   </div>
                 </motion.div>
               )}
