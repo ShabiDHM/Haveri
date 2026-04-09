@@ -1,5 +1,5 @@
 // FILE: src/pages/LawArticlePage.tsx
-// PHOENIX PROTOCOL - LAW ARTICLE PAGE V2.0 (WITH INTERACTIVE AUDITOR CHAT)
+// PHOENIX PROTOCOL - LAW ARTICLE PAGE V3.1 (STREAMLINED AUDITOR EXPERIENCE + FIXED WARNINGS)
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -24,32 +24,15 @@ interface ChatMessage {
 }
 
 // ========== PHOENIX: ADVANCED TEXT SANITIZATION FOR PROFESSIONAL READING ==========
-/**
- * Normalizes raw law article text by removing page markers, repetitive law headers,
- * and cleaning up whitespace for a smooth reading experience.
- */
 const normalizeText = (raw: string): string => {
   if (!raw) return '';
-
-  // Step 1: Remove page markers like "--- [FAQJA 3] ---" or "--- FAQJA 3 ---" (case-insensitive)
   let cleaned = raw.replace(/---\s*\[?FAQJA\s+\d+\]?\s*---/gi, '');
-
-  // Step 2: Remove repetitive law headers that appear mid-text
-  // Pattern: "LIGJI NR. 04/L-123 PËR PRONËSINË ..." at line start or after newline
   const lawHeaderRegex = /(?:^|\n)\s*LIGJI\s+NR\.\s+\d+[\/\-]?[A-Z]?\d*\s+[A-ZËÇSHQËWXYZ].*?(?=\n|$)/gi;
   cleaned = cleaned.replace(lawHeaderRegex, '');
-
-  // Step 3: Collapse 3 or more consecutive newlines into exactly 2 newlines (paragraph break)
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-
-  // Step 4: Trim leading/trailing whitespace
   cleaned = cleaned.trim();
-
-  // Step 5: Apply existing paragraph splitting and single-newline-to-space conversion
   const paragraphs = cleaned.split(/\n\n+/);
-  const normalizedParagraphs = paragraphs.map(para =>
-    para.replace(/\n/g, ' ').trim()
-  );
+  const normalizedParagraphs = paragraphs.map(para => para.replace(/\n/g, ' ').trim());
   return normalizedParagraphs.filter(p => p.length > 0).join('\n\n');
 };
 
@@ -59,14 +42,9 @@ const renderMarkdown = (text: string) => {
     return text.split('\n').map((line, i) => {
         const trimmed = line.trim();
         if (!trimmed) return <div key={i} className="h-4" />;
-        
-        // Strip out any redundant LLM headers that may leak into the citizen view
         if (trimmed.toUpperCase().includes('### NIVELI')) return null;
         if (trimmed === '---') return null;
-
-        // Parse bold (**text**) and regular text
         const parts = trimmed.split(/(\*\*.*?\*\*)/g);
-        
         return (
             <p key={i} className="mb-4 text-base sm:text-lg text-text-primary leading-relaxed font-medium">
                 {parts.map((part, j) => {
@@ -88,42 +66,40 @@ export default function LawArticlePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // --- AI EXPLANATION STATE (existing) ---
-  const [isExplaining, setIsExplaining] = useState(false);
-  const [rawExplanation, setRawExplanation] = useState('');
+  // --- AI SUMMARY STATE (merged with chat visibility) ---
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [summaryContent, setSummaryContent] = useState('');
   const [activePerspective, setActivePerspective] = useState<'senior' | 'citizen'>('senior');
-  const [aiError, setAiError] = useState('');
-  const aiSectionRef = useRef<HTMLDivElement>(null);
-
-  // --- NEW: AUDITOR CHAT STATE ---
+  const [summaryError, setSummaryError] = useState('');
+  
+  // --- CHAT STATE ---
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuery, setInputQuery] = useState('');
   const [isAuditing, setIsAuditing] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
-  const [showChat, setShowChat] = useState(false);
+  const [chatVisible, setChatVisible] = useState(false);
+  
+  // --- Refs ---
+  const summarySectionRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const chatPanelRef = useRef<HTMLDivElement>(null);
 
   const lawTitle = searchParams.get('lawTitle');
   const articleNumber = searchParams.get('articleNumber');
 
-  // --- PHOENIX: ROBUST DUAL PERSPECTIVE PARSING WITH FALLBACK ---
+  // Parse dual perspective from summary
   const perspectives = useMemo(() => {
-    let cleanText = rawExplanation.replace(/\n\n---\n\*Kjo përgjigje është gjeneruar nga AI, vetëm për referencë\.\*/g, '');
-    
-    // Attempt standard split first
+    let cleanText = summaryContent.replace(/\n\n---\n\*Kjo përgjigje është gjeneruar nga AI, vetëm për referencë\.\*/g, '');
     let parts = cleanText.split('[NDARJA]');
-    
-    // Fallback: If AI ignored the tag, try splitting by "---" or "### NIVELI 2"
     if (parts.length < 2) {
         parts = cleanText.split(/(?:\n---\n|\n### NIVELI 2.*?\n)/i);
     }
-
     return {
         senior: parts[0] ? parts[0].trim() : '',
         citizen: parts[1] ? parts[1].trim() : ''
     };
-  }, [rawExplanation]);
+  }, [summaryContent]);
 
   // Load article
   useEffect(() => {
@@ -134,7 +110,6 @@ export default function LawArticlePage() {
     }
     apiService.getLawArticle(lawTitle, articleNumber)
       .then((data: LawArticle) => {
-        // Normalize the article text to remove unwanted line breaks and artifacts
         const normalizedText = normalizeText(data.text);
         setArticle({
           law_title: data.law_title,
@@ -150,50 +125,71 @@ export default function LawArticlePage() {
       .finally(() => setLoading(false));
   }, [lawTitle, articleNumber, t]);
 
-  // Auto-scroll chat to bottom when new messages arrive
+  // Auto-scroll chat to bottom
   useEffect(() => {
-    if (chatContainerRef.current && showChat) {
+    if (chatContainerRef.current && chatVisible) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [messages, showChat]);
+  }, [messages, chatVisible]);
 
-  // Initialize chat with welcome message when article loads
+  // Initialize chat with context from summary when summary finishes
   useEffect(() => {
-    if (article && !loading && messages.length === 0) {
+    if (summaryContent && chatVisible && messages.length === 0 && !isSummarizing) {
+      const lawTitleText = article?.law_title || '';
+      const articleNumberText = article?.article_number || '';
+      
       setMessages([
         {
-          id: 'welcome',
+          id: 'context',
           role: 'auditor',
-          content: `Mirë se vini në Auditorin Ligjor. Unë jam Asistenti Juaj i Auditimit për **${article.law_title}**, Neni **${article.article_number}**. Si mund t'ju ndihmoj të kuptoni më mirë këtë nen?`,
+          content: `📋 **${lawTitleText}** — Neni **${articleNumberText}**\n\n${perspectives.citizen || perspectives.senior}\n\n---\n\n🔍 **Auditori Ligjor**\n\nUnë jam këtu për t'iu përgjigjur pyetjeve specifike rreth këtij neni. Çfarë dëshironi të sqaroni më tej?`,
           timestamp: new Date(),
         },
       ]);
+      
+      // Scroll chat into view
+      setTimeout(() => {
+        chatPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     }
-  }, [article, loading, messages.length]);
+  }, [summaryContent, chatVisible, messages.length, isSummarizing, article, perspectives.citizen, perspectives.senior]);
 
-  const handleAiExplain = async () => {
-    if (!article || isExplaining) return;
+  // MAIN ACTION: Single button triggers summary + chat
+  const handleStartAudit = async () => {
+    if (!article || isSummarizing) return;
     
-    setIsExplaining(true);
-    setRawExplanation('');
-    setAiError('');
+    // Reset states
+    setSummaryContent('');
+    setSummaryError('');
+    setMessages([]);
+    setChatVisible(true);
+    setIsSummarizing(true);
     setActivePerspective('senior');
     
     try {
-        const stream = apiService.explainLawStream(article.law_title, article.article_number, article.text);
-        setTimeout(() => aiSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), 300);
-
-        for await (const chunk of stream) {
-            setRawExplanation(prev => prev + chunk);
-        }
+      const stream = apiService.explainLawStream(article.law_title, article.article_number, article.text);
+      
+      // Stream the summary
+      let accumulated = '';
+      for await (const chunk of stream) {
+        accumulated += chunk;
+        setSummaryContent(accumulated);
+      }
+      
+      // After summary finishes, scroll to chat area
+      setTimeout(() => {
+        chatPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        inputRef.current?.focus();
+      }, 300);
+      
     } catch (err: any) {
-        setAiError(t('lawArticle.aiError', 'Dështoi analiza inteligjente.'));
+      setSummaryError(t('lawArticle.aiError', 'Dështoi analiza inteligjente.'));
     } finally {
-        setIsExplaining(false);
+      setIsSummarizing(false);
     }
   };
 
-  // NEW: Handle sending a query to the auditor
+  // Handle sending a chat query
   const handleSendQuery = async () => {
     if (!article?.chunk_id) {
       setChatError('Artikulli nuk ka ID të vlefshme për chat.');
@@ -215,7 +211,7 @@ export default function LawArticlePage() {
     setIsAuditing(true);
     setChatError(null);
 
-    // Add placeholder auditor message (streaming)
+    // Add placeholder auditor message
     const auditorMessageId = (Date.now() + 1).toString();
     setMessages(prev => [...prev, {
       id: auditorMessageId,
@@ -238,11 +234,9 @@ export default function LawArticlePage() {
       }
     } catch (err: any) {
       setChatError(err.message || 'Dështoi komunikimi me Auditorin.');
-      // Remove the empty auditor message on error
       setMessages(prev => prev.filter(msg => msg.id !== auditorMessageId));
     } finally {
       setIsAuditing(false);
-      // Refocus input
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
@@ -252,6 +246,12 @@ export default function LawArticlePage() {
       e.preventDefault();
       handleSendQuery();
     }
+  };
+
+  const handleCloseAuditor = () => {
+    setChatVisible(false);
+    setMessages([]);
+    setSummaryContent('');
   };
 
   const handleBack = () => {
@@ -290,15 +290,37 @@ export default function LawArticlePage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col">
         <div className="glass-panel p-6 sm:p-8 md:p-10 flex flex-col flex-1 shadow-lawyer-dark border border-border-main">
           
-          <button
-            onClick={handleBack}
-            className="group mb-8 flex items-center gap-3 text-text-muted hover:text-text-primary transition-colors font-bold text-sm uppercase tracking-widest hover-lift w-max"
-          >
-            <div className="p-2 rounded-lg bg-surface border border-border-main group-hover:border-primary-start transition-colors">
-              <ArrowLeft size={16} className="text-primary-start" />
-            </div>
-            {t('general.back', 'Kthehu Mbrapa')}
-          </button>
+          <div className="flex items-center justify-between mb-8">
+            <button
+              onClick={handleBack}
+              className="group flex items-center gap-3 text-text-muted hover:text-text-primary transition-colors font-bold text-sm uppercase tracking-widest hover-lift"
+            >
+              <div className="p-2 rounded-lg bg-surface border border-border-main group-hover:border-primary-start transition-colors">
+                <ArrowLeft size={16} className="text-primary-start" />
+              </div>
+              {t('general.back', 'Kthehu Mbrapa')}
+            </button>
+
+            {/* Single clean button - changes based on chat visibility */}
+            {!chatVisible ? (
+              <button
+                onClick={handleStartAudit}
+                disabled={isSummarizing}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover-lift btn-primary"
+              >
+                {isSummarizing ? <Loader2 size={14} className="animate-spin" /> : <BrainCircuit size={14} />}
+                {isSummarizing ? t('lawArticle.analyzing', 'Duke Analizuar...') : t('lawArticle.auditBtn', 'Auditimi Ligjor')}
+              </button>
+            ) : (
+              <button
+                onClick={handleCloseAuditor}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm bg-surface border border-border-main text-text-primary hover:border-danger-start hover:text-danger-start"
+              >
+                <X size={14} />
+                {t('lawArticle.closeAuditor', 'Mbyll Auditorin')}
+              </button>
+            )}
+          </div>
 
           <div className="p-0 flex flex-col overflow-hidden shadow-sm border border-border-main rounded-2xl">
             
@@ -306,42 +328,14 @@ export default function LawArticlePage() {
             <div className="bg-surface px-8 py-10 border-b border-border-main relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary-start/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
               <div className="relative z-10 flex flex-col gap-6">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 bg-primary-start/10 text-primary-start border border-primary-start/20 px-3 py-1.5 rounded-lg">
-                      <BookOpen size={14} />
-                      <span className="text-xs font-black uppercase tracking-widest">{t('lawArticle.lawTitle', 'LIGJI')}</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-canvas text-text-secondary border border-border-main px-3 py-1.5 rounded-lg">
-                      <Calendar size={14} />
-                      <span className="text-xs font-bold uppercase tracking-widest truncate max-w-[150px] sm:max-w-[200px]">{article.source}</span>
-                    </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 bg-primary-start/10 text-primary-start border border-primary-start/20 px-3 py-1.5 rounded-lg">
+                    <BookOpen size={14} />
+                    <span className="text-xs font-black uppercase tracking-widest">{t('lawArticle.lawTitle', 'LIGJI')}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {/* NEW: Toggle Chat Button */}
-                    <button
-                      onClick={() => setShowChat(!showChat)}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover-lift ${
-                        showChat
-                          ? 'bg-primary-start text-white'
-                          : 'bg-surface border border-border-main text-text-primary hover:border-primary-start'
-                      }`}
-                    >
-                      <MessageCircle size={14} />
-                      {showChat ? t('lawArticle.hideChat', 'Fshiho Chat') : t('lawArticle.askAuditor', 'Pyet Auditorin')}
-                    </button>
-                    <button
-                      onClick={handleAiExplain}
-                      disabled={isExplaining}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm hover-lift ${
-                        isExplaining
-                          ? 'bg-canvas text-text-muted cursor-not-allowed border border-border-main'
-                          : 'btn-primary'
-                      }`}
-                    >
-                      {isExplaining ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                      {isExplaining ? t('lawArticle.analyzing', 'Duke Analizuar...') : t('lawArticle.aiExplain', 'Analizo me AI')}
-                    </button>
+                  <div className="flex items-center gap-2 bg-canvas text-text-secondary border border-border-main px-3 py-1.5 rounded-lg">
+                    <Calendar size={14} />
+                    <span className="text-xs font-bold uppercase tracking-widest truncate max-w-[150px] sm:max-w-[200px]">{article.source}</span>
                   </div>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-black text-text-primary leading-tight tracking-tighter">{article.law_title}</h1>
@@ -352,7 +346,7 @@ export default function LawArticlePage() {
               </div>
             </div>
 
-            {/* PHOENIX: Optimized Reading Surface – normalized text, justified, continuous flow */}
+            {/* Article Text */}
             <div className="bg-surface/50 px-8 sm:px-12 py-12 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
               <div className="max-w-[75ch] mx-auto">
                 <div className="text-base sm:text-lg text-text-primary leading-relaxed font-medium whitespace-pre-wrap text-justify">
@@ -361,36 +355,102 @@ export default function LawArticlePage() {
               </div>
             </div>
 
-            {/* NEW: AUDITOR CHAT CONTAINER */}
+            {/* AI SUMMARY SECTION (renders when summary exists or is loading) */}
             <AnimatePresence>
-              {showChat && (
+              {(summaryContent || isSummarizing || summaryError) && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
+                  ref={summarySectionRef}
+                  className="border-t border-primary-start/30 bg-primary-start/[0.02] overflow-hidden"
+                >
+                  <div className="p-8 sm:p-12 relative">
+                    
+                    {/* Perspective Switcher */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-6 border-b border-border-main/50 pb-6">
+                      <div className="flex bg-surface p-1.5 rounded-2xl border border-border-main shadow-inner w-full sm:w-auto">
+                        <button
+                          onClick={() => setActivePerspective('senior')}
+                          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                            activePerspective === 'senior'
+                              ? 'bg-primary-start text-white shadow-sm'
+                              : 'text-text-muted hover:text-text-primary hover:bg-canvas'
+                          }`}
+                        >
+                          <BrainCircuit size={16} /> Analiza Profesionale
+                        </button>
+                        <button
+                          onClick={() => setActivePerspective('citizen')}
+                          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                            activePerspective === 'citizen'
+                              ? 'bg-primary-start text-white shadow-sm'
+                              : 'text-text-muted hover:text-text-primary hover:bg-canvas'
+                          }`}
+                        >
+                          <User size={16} /> Për Qytetarin
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Error State */}
+                    {summaryError && (
+                      <div className="bg-danger-start/5 border border-danger-start/20 rounded-xl p-6 text-danger-start text-sm font-medium flex items-center gap-3">
+                        <AlertCircle size={18} /> {summaryError}
+                      </div>
+                    )}
+
+                    {/* Loading Shimmer */}
+                    {isSummarizing && !summaryContent && (
+                      <div className="space-y-4">
+                        <div className="h-4 bg-primary-start/10 rounded w-full animate-pulse" />
+                        <div className="h-4 bg-primary-start/10 rounded w-5/6 animate-pulse" />
+                        <div className="h-4 bg-primary-start/10 rounded w-4/6 animate-pulse" />
+                      </div>
+                    )}
+
+                    {/* Summary Content */}
+                    {summaryContent && (
+                      <div className="min-h-[150px]">
+                        {activePerspective === 'senior' && renderMarkdown(perspectives.senior)}
+                        {activePerspective === 'citizen' && renderMarkdown(perspectives.citizen)}
+                        {isSummarizing && <span className="inline-block w-2 h-5 bg-primary-start animate-pulse ml-1 align-middle" />}
+                      </div>
+                    )}
+                    
+                    {/* Disclaimer */}
+                    <div className="mt-8 pt-6 border-t border-border-main/30 flex items-center gap-2 text-[10px] text-text-muted font-black uppercase tracking-widest">
+                      <Sparkles size={12} className="text-primary-start" /> 
+                      {t('lawArticle.aiDisclaimer', 'Rezultati i gjeneruar nga modeli juridik i AI')}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* CHAT PANEL - Renders underneath summary as natural continuation */}
+            <AnimatePresence>
+              {chatVisible && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  ref={chatPanelRef}
                   className="border-t border-primary-start/30 bg-primary-start/[0.02] overflow-hidden"
                 >
                   <div className="p-6 sm:p-8">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 flex items-center justify-center bg-primary-start/10 rounded-xl border border-primary-start/20">
-                          <BrainCircuit className="text-primary-start" size={20} />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-black text-text-primary uppercase tracking-widest">
-                            {t('lawArticle.auditorTitle', 'AUDITORI LIGJOR')}
-                          </h3>
-                          <p className="text-xs text-text-muted">
-                            {t('lawArticle.auditorSubtitle', 'I fiksuar pas këtij neni — përgjigjet bazohen vetëm në ligj')}
-                          </p>
-                        </div>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="h-10 w-10 flex items-center justify-center bg-primary-start/10 rounded-xl border border-primary-start/20">
+                        <MessageCircle className="text-primary-start" size={20} />
                       </div>
-                      <button
-                        onClick={() => setShowChat(false)}
-                        className="p-2 bg-surface border border-border-main rounded-lg text-text-muted hover:text-danger-start hover:border-danger-start/30 transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
+                      <div>
+                        <h3 className="text-sm font-black text-text-primary uppercase tracking-widest">
+                          {t('lawArticle.auditorTitle', 'Bisedë me Auditorin')}
+                        </h3>
+                        <p className="text-xs text-text-muted">
+                          {t('lawArticle.auditorSubtitle', 'Bazuar në përmbledhjen e mësipërme dhe tekstin e ligjit')}
+                        </p>
+                      </div>
                     </div>
 
                     {/* Chat Messages */}
@@ -470,90 +530,6 @@ export default function LawArticlePage() {
                     <div className="mt-4 pt-3 border-t border-border-main/30 flex items-center gap-2 text-[10px] text-text-muted font-black uppercase tracking-widest">
                       <BrainCircuit size={10} className="text-primary-start" /> 
                       {t('lawArticle.auditorDisclaimer', 'Përgjigjet gjenerohen nga Auditor i ngurtë — bazuar vetëm në tekstin e ligjit. Temperatura 0.0, pa llogaritje.')}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* AI PERSPECTIVE AREA (existing) */}
-            <AnimatePresence>
-              {(rawExplanation || isExplaining || aiError) && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  ref={aiSectionRef}
-                  className="border-t border-primary-start/30 bg-primary-start/[0.02] overflow-hidden"
-                >
-                  <div className="p-8 sm:p-12 relative">
-                    
-                    {/* Switcher */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-6 border-b border-border-main/50 pb-6">
-                      <div className="flex bg-surface p-1.5 rounded-2xl border border-border-main shadow-inner w-full sm:w-auto">
-                        <button
-                          onClick={() => setActivePerspective('senior')}
-                          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                            activePerspective === 'senior'
-                              ? 'bg-primary-start text-white shadow-sm'
-                              : 'text-text-muted hover:text-text-primary hover:bg-canvas'
-                          }`}
-                        >
-                          <BrainCircuit size={16} /> Analiza Profesionale
-                        </button>
-                        <button
-                          onClick={() => setActivePerspective('citizen')}
-                          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                            activePerspective === 'citizen'
-                              ? 'bg-primary-start text-white shadow-sm'
-                              : 'text-text-muted hover:text-text-primary hover:bg-canvas'
-                          }`}
-                        >
-                          <User size={16} /> Për Qytetarin
-                        </button>
-                      </div>
-                      <button
-                        onClick={() => { setRawExplanation(''); setAiError(''); }}
-                        className="p-3 bg-surface border border-border-main rounded-xl text-text-muted hover:text-danger-start hover:border-danger-start/30 transition-colors hover-lift self-end sm:self-auto"
-                      >
-                        <X size={20} />
-                      </button>
-                    </div>
-
-                    {/* Error State */}
-                    {aiError && (
-                      <div className="bg-danger-start/5 border border-danger-start/20 rounded-xl p-6 text-danger-start text-sm font-medium flex items-center gap-3">
-                        <AlertCircle size={18} /> {aiError}
-                      </div>
-                    )}
-
-                    {/* Shimmer */}
-                    {isExplaining && !rawExplanation && (
-                      <div className="space-y-4">
-                        <div className="h-4 bg-primary-start/10 rounded w-full animate-pulse" />
-                        <div className="h-4 bg-primary-start/10 rounded w-5/6 animate-pulse" />
-                        <div className="h-4 bg-primary-start/10 rounded w-4/6 animate-pulse" />
-                      </div>
-                    )}
-
-                    {/* Result – using markdown renderer and fallback split */}
-                    {rawExplanation && (
-                      <div className="min-h-[150px] mt-4">
-                        {activePerspective === 'senior' && renderMarkdown(perspectives.senior)}
-                        
-                        {activePerspective === 'citizen' && (
-                          perspectives.citizen 
-                            ? renderMarkdown(perspectives.citizen) 
-                            : (isExplaining ? <p className="text-text-muted font-bold animate-pulse">Duke përgatitur shpjegimin e thjeshtësuar...</p> : null)
-                        )}
-                        
-                        {isExplaining && <span className="inline-block w-2 h-5 bg-primary-start animate-pulse ml-1 align-middle" />}
-                      </div>
-                    )}
-                    
-                    {/* Footer Disclaimer */}
-                    <div className="mt-8 pt-6 border-t border-border-main/30 flex items-center gap-2 text-[10px] text-text-muted font-black uppercase tracking-widest">
-                      <Sparkles size={12} className="text-primary-start" /> {t('lawArticle.aiDisclaimer', 'Rezultati i gjeneruar nga modeli juridik i AI')}
                     </div>
                   </div>
                 </motion.div>
