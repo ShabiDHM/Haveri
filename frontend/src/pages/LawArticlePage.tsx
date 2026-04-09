@@ -1,5 +1,5 @@
 // FILE: src/pages/LawArticlePage.tsx
-// PHOENIX PROTOCOL - LAW ARTICLE PAGE V4.2 (DISCLAIMER REMOVED)
+// PHOENIX PROTOCOL - LAW ARTICLE PAGE V4.3 (FIXED SUGGESTED QUESTIONS)
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -27,14 +27,10 @@ interface ChatMessage {
 const normalizeText = (raw: string): string => {
   if (!raw) return '';
 
-  // Step 1: Remove page markers
   let cleaned = raw.replace(/---\s*\[?FAQJA\s+\d+\]?\s*---/gi, '');
-
-  // Step 2: Remove repetitive law headers
   const lawHeaderRegex = /(?:^|\n)\s*LIGJI\s+NR\.\s+\d+[\/\-]?[A-Z]?\d*\s+[A-ZËÇSHQËWXYZ].*?(?=\n|$)/gi;
   cleaned = cleaned.replace(lawHeaderRegex, '');
-
-  // Step 3: Fix broken paragraphs - merge lines that end with a lowercase letter or comma
+  
   const lines = cleaned.split('\n');
   const mergedLines: string[] = [];
   
@@ -57,18 +53,11 @@ const normalizeText = (raw: string): string => {
   }
   
   cleaned = mergedLines.join('\n');
-
-  // Step 4: Fix duplicate paragraph numbers
   cleaned = cleaned.replace(/(\d+\.)\s*\n\s*\1/g, '$1');
   cleaned = cleaned.replace(/(\d+\.)\s*\n\s*\d+\.\s*/g, '$1 ');
-
-  // Step 5: Collapse multiple newlines
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-
-  // Step 6: Trim
   cleaned = cleaned.trim();
-
-  // Step 7: Normalize paragraphs
+  
   const paragraphs = cleaned.split(/\n\n+/);
   const normalizedParagraphs = paragraphs.map(para =>
     para.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
@@ -160,6 +149,13 @@ export default function LawArticlePage() {
     }
     apiService.getLawArticle(lawTitle, articleNumber)
       .then((data: LawArticle) => {
+        console.log('[DEBUG] Loaded article:', {
+          law_title: data.law_title,
+          article_number: data.article_number,
+          chunk_id: data.chunk_id,
+          has_chunk_id: !!data.chunk_id
+        });
+        
         const normalizedText = normalizeText(data.text);
         setArticle({
           law_title: data.law_title,
@@ -170,6 +166,7 @@ export default function LawArticlePage() {
         });
       })
       .catch((err) => {
+        console.error('[ERROR] Failed to load article:', err);
         setError(err.message || t('lawArticle.fetchError', 'Dështoi ngarkimi i artikullit.'));
       })
       .finally(() => setLoading(false));
@@ -188,6 +185,9 @@ export default function LawArticlePage() {
       const lawTitleText = article?.law_title || '';
       const articleNumberText = article?.article_number || '';
       
+      console.log('[DEBUG] Initializing chat with welcome message');
+      console.log('[DEBUG] Article chunk_id:', article?.chunk_id);
+      
       const welcomeMessage = `🔍 **Auditori Ligjor** — ${lawTitleText}, Neni ${articleNumberText}\n\nUnë jam këtu për t'iu përgjigjur pyetjeve specifike rreth këtij neni. Çfarë dëshironi të sqaroni më tej?`;
       
       setMessages([
@@ -200,6 +200,7 @@ export default function LawArticlePage() {
       ]);
       
       setTimeout(() => {
+        console.log('[DEBUG] Showing suggestions');
         setShowSuggestions(true);
       }, 500);
       
@@ -213,6 +214,8 @@ export default function LawArticlePage() {
   // Single button triggers summary, chat starts EMPTY and hidden until summary completes
   const handleStartAudit = async () => {
     if (!article || isSummarizing) return;
+    
+    console.log('[DEBUG] Starting audit for article:', article.law_title, article.article_number);
     
     setSummaryContent('');
     setSummaryError('');
@@ -231,9 +234,11 @@ export default function LawArticlePage() {
         setSummaryContent(accumulated);
       }
       
+      console.log('[DEBUG] Summary completed, showing chat');
       setChatVisible(true);
       
     } catch (err: any) {
+      console.error('[ERROR] Summary failed:', err);
       setSummaryError(t('lawArticle.aiError', 'Dështoi analiza inteligjente.'));
     } finally {
       setIsSummarizing(false);
@@ -242,13 +247,19 @@ export default function LawArticlePage() {
 
   // Handle sending a chat query
   const handleSendQuery = async (query?: string) => {
+    console.log('[DEBUG] handleSendQuery called with query:', query);
+    console.log('[DEBUG] Article chunk_id:', article?.chunk_id);
+    
     if (!article?.chunk_id) {
+      console.log('[ERROR] No chunk_id available');
       setChatError('Artikulli nuk ka ID të vlefshme për chat.');
       return;
     }
 
     const finalQuery = query ?? inputQuery.trim();
     if (!finalQuery || isAuditing) return;
+
+    console.log('[DEBUG] Sending query to auditor:', finalQuery);
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -282,7 +293,9 @@ export default function LawArticlePage() {
             : msg
         ));
       }
+      console.log('[DEBUG] Query completed successfully');
     } catch (err: any) {
+      console.error('[ERROR] Audit query failed:', err);
       setChatError(err.message || 'Dështoi komunikimi me Auditorin.');
       setMessages(prev => prev.filter(msg => msg.id !== auditorMessageId));
     } finally {
@@ -292,6 +305,7 @@ export default function LawArticlePage() {
   };
 
   const handleSuggestedClick = (question: string) => {
+    console.log('[DEBUG] Suggested question clicked:', question);
     handleSendQuery(question);
   };
 
@@ -303,6 +317,7 @@ export default function LawArticlePage() {
   };
 
   const handleCloseAuditor = () => {
+    console.log('[DEBUG] Closing auditor');
     setChatVisible(false);
     setMessages([]);
     setSummaryContent('');
@@ -542,7 +557,7 @@ export default function LawArticlePage() {
                               <button
                                 key={idx}
                                 onClick={() => handleSuggestedClick(question)}
-                                className="text-xs bg-surface border border-border-main hover:border-primary-start hover:bg-primary-start/5 text-text-primary px-3 py-2 rounded-xl transition-all text-left"
+                                className="text-xs bg-surface border border-border-main hover:border-primary-start hover:bg-primary-start/5 text-text-primary px-3 py-2 rounded-xl transition-all text-left cursor-pointer"
                               >
                                 {question}
                               </button>
