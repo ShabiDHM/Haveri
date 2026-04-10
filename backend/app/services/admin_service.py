@@ -1,5 +1,5 @@
 # FILE: backend/app/services/admin_service.py
-# PHOENIX PROTOCOL - ADMIN SERVICE V3.2 (WORKSPACE-BASED LEFT-JOIN SAFE AGGREGATION)
+# PHOENIX PROTOCOL - ADMIN SERVICE V3.3 (GUARANTEED USER RETURN + DEBUG)
 
 from bson import ObjectId
 from datetime import datetime
@@ -22,7 +22,18 @@ def get_all_users(db: Database) -> List[Dict[str, Any]]:
     Get all users with their workspace and document counts.
     Uses LEFT JOIN semantics - users with 0 workspaces/documents still appear.
     """
+    logger.info("--- [ADMIN] get_all_users called ---")
+    
+    # First, get all users to ensure we have a baseline
+    all_users = list(db[USER_COLLECTION].find({}, {"hashed_password": 0}))
+    logger.info(f"--- [ADMIN] Total users in DB: {len(all_users)} ---")
+    
+    # If no users, return empty list
+    if not all_users:
+        return []
+    
     pipeline = [
+        # Step 1: Start with all users (no match filter)
         # Left-join with workspaces collection using user_id
         {
             "$lookup": {
@@ -49,12 +60,24 @@ def get_all_users(db: Database) -> List[Dict[str, Any]]:
                 "preserveNullAndEmptyArrays": True
             }
         },
-        # Safe size calculation using $ifNull
+        # Safe size calculation using $ifNull - handles null/missing arrays
         {
             "$addFields": {
                 "id": {"$toString": "$_id"},
-                "workspace_count": {"$size": {"$ifNull": ["$owned_workspaces", []]}},
-                "document_count": {"$size": {"$ifNull": ["$owned_documents", []]}}
+                "workspace_count": {
+                    "$cond": {
+                        "if": {"$isArray": "$owned_workspaces"},
+                        "then": {"$size": "$owned_workspaces"},
+                        "else": 0
+                    }
+                },
+                "document_count": {
+                    "$cond": {
+                        "if": {"$isArray": "$owned_documents"},
+                        "then": {"$size": "$owned_documents"},
+                        "else": 0
+                    }
+                }
             }
         },
         # Project only the fields needed for admin view
@@ -70,6 +93,12 @@ def get_all_users(db: Database) -> List[Dict[str, Any]]:
     ]
     
     users_data = list(db[USER_COLLECTION].aggregate(pipeline))
+    logger.info(f"--- [ADMIN] Users returned by pipeline: {len(users_data)} ---")
+    
+    # Log first user for debugging
+    if users_data:
+        logger.info(f"--- [ADMIN] Sample user: {users_data[0].get('email', 'N/A')} - workspaces: {users_data[0].get('workspace_count', 0)} ---")
+    
     return users_data
 
 
@@ -81,6 +110,7 @@ def find_user_in_aggregate(user_id: str, db: Database) -> Optional[AdminUserOut]
     try:
         oid = ObjectId(user_id)
     except:
+        logger.error(f"--- [ADMIN] Invalid user_id: {user_id} ---")
         return None
 
     pipeline = [
@@ -111,12 +141,24 @@ def find_user_in_aggregate(user_id: str, db: Database) -> Optional[AdminUserOut]
                 "preserveNullAndEmptyArrays": True
             }
         },
-        # Safe size calculation
+        # Safe size calculation using $cond for reliability
         {
             "$addFields": {
                 "id": {"$toString": "$_id"},
-                "workspace_count": {"$size": {"$ifNull": ["$owned_workspaces", []]}},
-                "document_count": {"$size": {"$ifNull": ["$owned_documents", []]}}
+                "workspace_count": {
+                    "$cond": {
+                        "if": {"$isArray": "$owned_workspaces"},
+                        "then": {"$size": "$owned_workspaces"},
+                        "else": 0
+                    }
+                },
+                "document_count": {
+                    "$cond": {
+                        "if": {"$isArray": "$owned_documents"},
+                        "then": {"$size": "$owned_documents"},
+                        "else": 0
+                    }
+                }
             }
         },
         {
@@ -132,7 +174,10 @@ def find_user_in_aggregate(user_id: str, db: Database) -> Optional[AdminUserOut]
     
     result = list(db[USER_COLLECTION].aggregate(pipeline))
     if not result:
+        logger.warning(f"--- [ADMIN] User {user_id} not found ---")
         return None
+    
+    logger.info(f"--- [ADMIN] Found user: {result[0].get('email', 'N/A')} - workspaces: {result[0].get('workspace_count', 0)} ---")
     return AdminUserOut.model_validate(result[0])
 
 
