@@ -1,5 +1,5 @@
 # FILE: backend/app/services/admin_service.py
-# PHOENIX PROTOCOL - ADMIN SERVICE V3.4 (SIMPLIFIED - MANUAL COUNTING)
+# PHOENIX PROTOCOL - ADMIN SERVICE V3.5 (MATCHES AdminUserOut MODEL)
 
 from bson import ObjectId
 from datetime import datetime
@@ -20,18 +20,17 @@ DOCUMENT_COLLECTION = "documents"
 def get_all_users(db: Database) -> List[Dict[str, Any]]:
     """
     Get all users with their workspace and document counts.
-    Uses manual counting instead of complex aggregation to ensure all users are returned.
+    Returns fields matching AdminUserOut model.
     """
-    logger.info("--- [ADMIN] get_all_users called (simplified version) ---")
+    logger.info("--- [ADMIN] get_all_users called ---")
     
-    # Get all users first (no filtering)
+    # Get all users first
     all_users = list(db[USER_COLLECTION].find({}, {"hashed_password": 0}))
     logger.info(f"--- [ADMIN] Total users found: {len(all_users)} ---")
     
     if not all_users:
         return []
     
-    # For each user, manually count workspaces and documents
     result = []
     for user in all_users:
         user_id = user["_id"]
@@ -47,22 +46,24 @@ def get_all_users(db: Database) -> List[Dict[str, Any]]:
         if workspace_ids:
             document_count = db[DOCUMENT_COLLECTION].count_documents({"workspace_id": {"$in": workspace_ids}})
         
-        # Build the response object
+        # Build response matching AdminUserOut model
         user_dict = {
             "id": str(user_id),
+            "username": user.get("email", ""),  # Using email as username
             "email": user.get("email", ""),
             "first_name": user.get("first_name", ""),
             "last_name": user.get("last_name", ""),
+            "role": user.get("role", "user"),  # Default role
             "status": user.get("status", "ACTIVE"),
             "subscription_status": user.get("subscription_status", "inactive"),
             "subscription_expiry_date": user.get("subscription_expiry_date"),
             "created_at": user.get("created_at"),
-            "workspace_count": workspace_count,
+            "case_count": workspace_count,  # Field name expected by model
             "document_count": document_count,
         }
         result.append(user_dict)
     
-    logger.info(f"--- [ADMIN] Returning {len(result)} users with counts ---")
+    logger.info(f"--- [ADMIN] Returning {len(result)} users ---")
     return result
 
 
@@ -76,7 +77,6 @@ def find_user_in_aggregate(user_id: str, db: Database) -> Optional[AdminUserOut]
         logger.error(f"--- [ADMIN] Invalid user_id: {user_id} ---")
         return None
     
-    # Get the user
     user = db[USER_COLLECTION].find_one({"_id": oid}, {"hashed_password": 0})
     if not user:
         logger.warning(f"--- [ADMIN] User {user_id} not found ---")
@@ -93,17 +93,19 @@ def find_user_in_aggregate(user_id: str, db: Database) -> Optional[AdminUserOut]
     if workspace_ids:
         document_count = db[DOCUMENT_COLLECTION].count_documents({"workspace_id": {"$in": workspace_ids}})
     
-    # Build response
+    # Build response matching AdminUserOut model
     user_dict = {
         "id": str(user["_id"]),
+        "username": user.get("email", ""),
         "email": user.get("email", ""),
         "first_name": user.get("first_name", ""),
         "last_name": user.get("last_name", ""),
+        "role": user.get("role", "user"),
         "status": user.get("status", "ACTIVE"),
         "subscription_status": user.get("subscription_status", "inactive"),
         "subscription_expiry_date": user.get("subscription_expiry_date"),
         "created_at": user.get("created_at"),
-        "workspace_count": workspace_count,
+        "case_count": workspace_count,
         "document_count": document_count,
     }
     
