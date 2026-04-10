@@ -1,8 +1,5 @@
 # FILE: backend/app/services/admin_service.py
-# PHOENIX PROTOCOL - ADMIN SERVICE V2.1 (FORCED UPDATE)
-# 1. LOGIC: Explicitly extracts 'status' to ensure it's never dropped.
-# 2. VERIFICATION: Reads the document immediately after update to confirm success.
-# 3. STATUS: Hardened against silent failures.
+# PHOENIX PROTOCOL - ADMIN SERVICE V3.2 (WORKSPACE-BASED LEFT-JOIN SAFE AGGREGATION)
 
 from bson import ObjectId
 from datetime import datetime
@@ -12,63 +9,139 @@ from pymongo import ReturnDocument
 import logging
 
 from ..models.admin import UserUpdateRequest, AdminUserOut
-from ..models.user import UserInDB
 
 logger = logging.getLogger(__name__)
 
 USER_COLLECTION = "users"
-CASE_COLLECTION = "cases"
+WORKSPACE_COLLECTION = "workspaces"
 DOCUMENT_COLLECTION = "documents"
 
+
 def get_all_users(db: Database) -> List[Dict[str, Any]]:
+    """
+    Get all users with their workspace and document counts.
+    Uses LEFT JOIN semantics - users with 0 workspaces/documents still appear.
+    """
     pipeline = [
-        {"$lookup": {"from": CASE_COLLECTION, "localField": "_id", "foreignField": "owner_id", "as": "owned_cases"}},
-        {"$lookup": {"from": DOCUMENT_COLLECTION, "localField": "_id", "foreignField": "owner_id", "as": "owned_documents"}},
-        {"$addFields": {
-            "id": {"$toString": "$_id"},
-            "case_count": {"$size": "$owned_cases"},
-            "document_count": {"$size": "$owned_documents"}
-        }},
-        {"$project": {
-            "_id": 0, 
-            "owned_cases": 0, 
-            "owned_documents": 0, 
-            "hashed_password": 0
-        }}
+        # Left-join with workspaces collection using user_id
+        {
+            "$lookup": {
+                "from": WORKSPACE_COLLECTION,
+                "localField": "_id",
+                "foreignField": "user_id",
+                "as": "owned_workspaces",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        # Get all workspace IDs from the user's workspaces
+        {
+            "$addFields": {
+                "workspace_ids": "$owned_workspaces._id"
+            }
+        },
+        # Left-join with documents collection using workspace_id
+        {
+            "$lookup": {
+                "from": DOCUMENT_COLLECTION,
+                "localField": "workspace_ids",
+                "foreignField": "workspace_id",
+                "as": "owned_documents",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        # Safe size calculation using $ifNull
+        {
+            "$addFields": {
+                "id": {"$toString": "$_id"},
+                "workspace_count": {"$size": {"$ifNull": ["$owned_workspaces", []]}},
+                "document_count": {"$size": {"$ifNull": ["$owned_documents", []]}}
+            }
+        },
+        # Project only the fields needed for admin view
+        {
+            "$project": {
+                "_id": 0,
+                "owned_workspaces": 0,
+                "workspace_ids": 0,
+                "owned_documents": 0,
+                "hashed_password": 0
+            }
+        }
     ]
+    
     users_data = list(db[USER_COLLECTION].aggregate(pipeline))
     return users_data
 
+
 def find_user_in_aggregate(user_id: str, db: Database) -> Optional[AdminUserOut]:
-    try: oid = ObjectId(user_id)
-    except: return None
+    """
+    Find a single user by ID with their workspace and document counts.
+    Uses LEFT JOIN semantics.
+    """
+    try:
+        oid = ObjectId(user_id)
+    except:
+        return None
 
     pipeline = [
         {"$match": {"_id": oid}},
-        {"$lookup": {"from": CASE_COLLECTION, "localField": "_id", "foreignField": "owner_id", "as": "owned_cases"}},
-        {"$lookup": {"from": DOCUMENT_COLLECTION, "localField": "_id", "foreignField": "owner_id", "as": "owned_documents"}},
-        {"$addFields": {
-            "id": {"$toString": "$_id"},
-            "case_count": {"$size": "$owned_cases"},
-            "document_count": {"$size": "$owned_documents"}
-        }},
-        {"$project": {
-            "_id": 0, 
-            "owned_cases": 0, 
-            "owned_documents": 0, 
-            "hashed_password": 0
-        }}
+        # Left-join with workspaces collection using user_id
+        {
+            "$lookup": {
+                "from": WORKSPACE_COLLECTION,
+                "localField": "_id",
+                "foreignField": "user_id",
+                "as": "owned_workspaces",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        # Get workspace IDs
+        {
+            "$addFields": {
+                "workspace_ids": "$owned_workspaces._id"
+            }
+        },
+        # Left-join with documents collection using workspace_id
+        {
+            "$lookup": {
+                "from": DOCUMENT_COLLECTION,
+                "localField": "workspace_ids",
+                "foreignField": "workspace_id",
+                "as": "owned_documents",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        # Safe size calculation
+        {
+            "$addFields": {
+                "id": {"$toString": "$_id"},
+                "workspace_count": {"$size": {"$ifNull": ["$owned_workspaces", []]}},
+                "document_count": {"$size": {"$ifNull": ["$owned_documents", []]}}
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "owned_workspaces": 0,
+                "workspace_ids": 0,
+                "owned_documents": 0,
+                "hashed_password": 0
+            }
+        }
     ]
     
     result = list(db[USER_COLLECTION].aggregate(pipeline))
-    if not result: return None
+    if not result:
+        return None
     return AdminUserOut.model_validate(result[0])
 
+
 def update_user_details(user_id: str, update_data: UserUpdateRequest, db: Database) -> Optional[AdminUserOut]:
-    # PHOENIX FIX: Dump as dict, then explicitly check status
+    """
+    Update user details and return the updated user with counts.
+    """
     payload = update_data.model_dump(exclude_unset=True)
     
-    # If the frontend sent a status, FORCE it into the payload
     if update_data.status:
         payload['status'] = update_data.status.lower()
 
@@ -96,7 +169,11 @@ def update_user_details(user_id: str, update_data: UserUpdateRequest, db: Databa
         logger.error(f"Update failed: {e}")
         raise e
 
+
 def expire_subscriptions(db: Database) -> int:
+    """
+    Expire subscriptions where the expiry date has passed.
+    """
     now = datetime.utcnow()
     result = db.users.update_many(
         {"subscription_status": "active", "subscription_expiry_date": {"$lt": now}},
