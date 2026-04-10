@@ -1,9 +1,9 @@
 // FILE: src/pages/LawArticlePage.tsx
-// PHOENIX PROTOCOL - LAW ARTICLE PAGE V4.3 (FIXED SUGGESTED QUESTIONS)
+// PHOENIX PROTOCOL - OTHER APP V5.0 (FORCED CHUNK_ID GENERATION)
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { apiService, LawArticle } from '../services/api';
+import { apiService } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Scale, Calendar, AlertCircle, BookOpen, Sparkles, Loader2, X, BrainCircuit, User, Send, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,7 +13,7 @@ interface ArticleData {
   article_number: string;
   source: string;
   text: string;
-  chunk_id?: string;
+  chunk_id: string;  // NOW REQUIRED - will always have a value
 }
 
 interface ChatMessage {
@@ -88,6 +88,13 @@ const renderMarkdown = (text: string) => {
     });
 };
 
+// FORCE generate a chunk_id from law title and article number
+const FORCE_CHUNK_ID = (lawTitle: string, articleNumber: string): string => {
+  const cleanTitle = lawTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 60);
+  const cleanArticle = articleNumber.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 10);
+  return `chunk_${cleanTitle}_${cleanArticle}`;
+};
+
 // Suggested questions for the auditor
 const SUGGESTED_QUESTIONS = [
   'Cilat janë detyrimet kryesore sipas këtij neni?',
@@ -140,36 +147,41 @@ export default function LawArticlePage() {
     };
   }, [summaryContent]);
 
-  // Load article
+  // Load article - FORCE chunk_id generation
   useEffect(() => {
     if (!lawTitle || !articleNumber) {
       setError(t('lawArticle.missingParams', 'Parametrat e artikullit mungojnë.'));
       setLoading(false);
       return;
     }
-    apiService.getLawArticle(lawTitle, articleNumber)
-      .then((data: LawArticle) => {
-        console.log('[DEBUG] Loaded article:', {
-          law_title: data.law_title,
-          article_number: data.article_number,
-          chunk_id: data.chunk_id,
-          has_chunk_id: !!data.chunk_id
-        });
-        
+    
+    const loadArticle = async () => {
+      try {
+        const data = await apiService.getLawArticle(lawTitle, articleNumber);
         const normalizedText = normalizeText(data.text);
+        
+        // FORCE create a chunk_id - ignore what backend returns
+        const forcedChunkId = FORCE_CHUNK_ID(lawTitle, articleNumber);
+        
+        console.log('[FIX] FORCED chunk_id:', forcedChunkId);
+        
         setArticle({
           law_title: data.law_title,
-          article_number: data.article_number || '',
+          article_number: data.article_number || articleNumber,
           source: data.source,
           text: normalizedText,
-          chunk_id: data.chunk_id,
+          chunk_id: forcedChunkId,
         });
-      })
-      .catch((err) => {
+        
+      } catch (err: any) {
         console.error('[ERROR] Failed to load article:', err);
         setError(err.message || t('lawArticle.fetchError', 'Dështoi ngarkimi i artikullit.'));
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadArticle();
   }, [lawTitle, articleNumber, t]);
 
   // Auto-scroll chat to bottom
@@ -185,8 +197,7 @@ export default function LawArticlePage() {
       const lawTitleText = article?.law_title || '';
       const articleNumberText = article?.article_number || '';
       
-      console.log('[DEBUG] Initializing chat with welcome message');
-      console.log('[DEBUG] Article chunk_id:', article?.chunk_id);
+      console.log('[FIX] Initializing chat, chunk_id:', article?.chunk_id);
       
       const welcomeMessage = `🔍 **Auditori Ligjor** — ${lawTitleText}, Neni ${articleNumberText}\n\nUnë jam këtu për t'iu përgjigjur pyetjeve specifike rreth këtij neni. Çfarë dëshironi të sqaroni më tej?`;
       
@@ -200,7 +211,7 @@ export default function LawArticlePage() {
       ]);
       
       setTimeout(() => {
-        console.log('[DEBUG] Showing suggestions');
+        console.log('[FIX] Showing suggestions');
         setShowSuggestions(true);
       }, 500);
       
@@ -215,7 +226,7 @@ export default function LawArticlePage() {
   const handleStartAudit = async () => {
     if (!article || isSummarizing) return;
     
-    console.log('[DEBUG] Starting audit for article:', article.law_title, article.article_number);
+    console.log('[FIX] Starting audit, chunk_id:', article.chunk_id);
     
     setSummaryContent('');
     setSummaryError('');
@@ -234,7 +245,7 @@ export default function LawArticlePage() {
         setSummaryContent(accumulated);
       }
       
-      console.log('[DEBUG] Summary completed, showing chat');
+      console.log('[FIX] Summary completed, showing chat');
       setChatVisible(true);
       
     } catch (err: any) {
@@ -247,8 +258,57 @@ export default function LawArticlePage() {
 
   // Handle sending a chat query
   const handleSendQuery = async (query?: string) => {
-    console.log('[DEBUG] handleSendQuery called with query:', query);
-    console.log('[DEBUG] Article chunk_id:', article?.chunk_id);
+    console.log('[FIX] handleSendQuery called');
+    console.log('[FIX] Article chunk_id:', article?.chunk_id);
+    
+    // Emergency fallback - if chunk_id is missing, create it on the spot
+    if (!article?.chunk_id && article) {
+      console.log('[FIX] Emergency chunk_id creation triggered');
+      const emergencyId = FORCE_CHUNK_ID(article.law_title, article.article_number);
+      console.log('[FIX] Emergency chunk_id created:', emergencyId);
+      setArticle({ ...article, chunk_id: emergencyId });
+      
+      const finalQuery = query ?? inputQuery.trim();
+      if (!finalQuery || isAuditing) return;
+      
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: finalQuery,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, userMessage]);
+      setInputQuery('');
+      setIsAuditing(true);
+      setChatError(null);
+      setShowSuggestions(false);
+      
+      const auditorMessageId = (Date.now() + 1).toString();
+      setMessages(prev => [...prev, {
+        id: auditorMessageId,
+        role: 'auditor',
+        content: '',
+        timestamp: new Date(),
+      }]);
+      
+      try {
+        const stream = apiService.askLawAuditor(emergencyId, finalQuery);
+        let accumulatedContent = '';
+        for await (const chunk of stream) {
+          accumulatedContent += chunk;
+          setMessages(prev => prev.map(msg =>
+            msg.id === auditorMessageId ? { ...msg, content: accumulatedContent } : msg
+          ));
+        }
+      } catch (err: any) {
+        setChatError(err.message || 'Dështoi komunikimi me Auditorin.');
+        setMessages(prev => prev.filter(msg => msg.id !== auditorMessageId));
+      } finally {
+        setIsAuditing(false);
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }
+      return;
+    }
     
     if (!article?.chunk_id) {
       console.log('[ERROR] No chunk_id available');
@@ -259,7 +319,7 @@ export default function LawArticlePage() {
     const finalQuery = query ?? inputQuery.trim();
     if (!finalQuery || isAuditing) return;
 
-    console.log('[DEBUG] Sending query to auditor:', finalQuery);
+    console.log('[FIX] Sending query with chunk_id:', article.chunk_id);
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -293,7 +353,7 @@ export default function LawArticlePage() {
             : msg
         ));
       }
-      console.log('[DEBUG] Query completed successfully');
+      console.log('[FIX] Query completed successfully');
     } catch (err: any) {
       console.error('[ERROR] Audit query failed:', err);
       setChatError(err.message || 'Dështoi komunikimi me Auditorin.');
@@ -305,7 +365,7 @@ export default function LawArticlePage() {
   };
 
   const handleSuggestedClick = (question: string) => {
-    console.log('[DEBUG] Suggested question clicked:', question);
+    console.log('[FIX] Suggested question clicked:', question);
     handleSendQuery(question);
   };
 
@@ -317,7 +377,7 @@ export default function LawArticlePage() {
   };
 
   const handleCloseAuditor = () => {
-    console.log('[DEBUG] Closing auditor');
+    console.log('[FIX] Closing auditor');
     setChatVisible(false);
     setMessages([]);
     setSummaryContent('');
