@@ -1,5 +1,5 @@
 // FILE: src/pages/LawArticlePage.tsx
-// PHOENIX PROTOCOL - OTHER APP V5.0 (FORCED CHUNK_ID GENERATION)
+// PHOENIX PROTOCOL - OTHER APP V5.1 (CORRECTED API SIGNATURE)
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -13,7 +13,7 @@ interface ArticleData {
   article_number: string;
   source: string;
   text: string;
-  chunk_id: string;  // NOW REQUIRED - will always have a value
+  chunk_id: string;
 }
 
 interface ChatMessage {
@@ -256,7 +256,7 @@ export default function LawArticlePage() {
     }
   };
 
-  // Handle sending a chat query
+  // Handle sending a chat query - UPDATED to pass 3 arguments
   const handleSendQuery = async (query?: string) => {
     console.log('[FIX] handleSendQuery called');
     console.log('[FIX] Article chunk_id:', article?.chunk_id);
@@ -292,7 +292,8 @@ export default function LawArticlePage() {
       }]);
       
       try {
-        const stream = apiService.askLawAuditor(emergencyId, finalQuery);
+        // UPDATED: Pass 3 arguments: lawTitle, articleNumber, query
+        const stream = apiService.askLawAuditor(article.law_title, article.article_number, finalQuery);
         let accumulatedContent = '';
         for await (const chunk of stream) {
           accumulatedContent += chunk;
@@ -319,7 +320,8 @@ export default function LawArticlePage() {
     const finalQuery = query ?? inputQuery.trim();
     if (!finalQuery || isAuditing) return;
 
-    console.log('[FIX] Sending query with chunk_id:', article.chunk_id);
+    console.log('[FIX] Sending query with law_title:', article.law_title);
+    console.log('[FIX] Sending query with article_number:', article.article_number);
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -342,7 +344,8 @@ export default function LawArticlePage() {
     }]);
 
     try {
-      const stream = apiService.askLawAuditor(article.chunk_id, finalQuery);
+      // UPDATED: Pass 3 arguments: lawTitle, articleNumber, query
+      const stream = apiService.askLawAuditor(article.law_title, article.article_number, finalQuery);
       let accumulatedContent = '';
 
       for await (const chunk of stream) {

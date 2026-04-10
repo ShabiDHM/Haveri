@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V15.7 (ADDED askLawAuditor FOR INTERACTIVE LAW CHAT)
+// PHOENIX PROTOCOL - API V15.8 (UPDATED askLawAuditor WITH LAW TITLE + ARTICLE NUMBER)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -39,7 +39,7 @@ export interface LawArticle {
   article_number?: string;
   source: string;
   text: string;
-  chunk_id?: string;  // PHOENIX: Added for audit chat anchoring
+  chunk_id?: string;
 }
 
 export interface LawOverview {
@@ -633,17 +633,18 @@ class ApiService {
         }
     }
 
-    // ========== LAW AUDITOR CHAT (INTERACTIVE, ANCHORED TO ARTICLE) ==========
+    // ========== LAW AUDITOR CHAT (UPDATED - uses law_title + article_number) ==========
     /**
      * Interactive chat with the Rigid Auditor anchored to a specific law article.
-     * Accepts article_id (chunk_id from the article) and a query string.
+     * Accepts law_title and article_number to identify the article.
      * Returns an AsyncGenerator that yields streaming text chunks.
      * 
-     * @param articleId - The chunk_id of the law article (from getLawArticle response)
+     * @param lawTitle - The title of the law
+     * @param articleNumber - The article number
      * @param query - The user's question about the article
      * @returns AsyncGenerator yielding string chunks
      */
-    public async *askLawAuditor(articleId: string, query: string): AsyncGenerator<string, void, unknown> {
+    public async *askLawAuditor(lawTitle: string, articleNumber: string, query: string): AsyncGenerator<string, void, unknown> {
         const token = tokenManager.get();
         if (!token) {
             await this.refreshToken();
@@ -655,7 +656,11 @@ class ApiService {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${tokenManager.get()}`
             },
-            body: JSON.stringify({ article_id: articleId, query })
+            body: JSON.stringify({ 
+                law_title: lawTitle, 
+                article_number: articleNumber, 
+                query 
+            })
         });
 
         if (!response.ok) {
