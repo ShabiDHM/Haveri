@@ -1,5 +1,5 @@
 # FILE: backend/app/services/admin_service.py
-# PHOENIX PROTOCOL - ADMIN SERVICE V3.3 (GUARANTEED USER RETURN + DEBUG)
+# PHOENIX PROTOCOL - ADMIN SERVICE V3.4 (SIMPLIFIED - MANUAL COUNTING)
 
 from bson import ObjectId
 from datetime import datetime
@@ -20,165 +20,95 @@ DOCUMENT_COLLECTION = "documents"
 def get_all_users(db: Database) -> List[Dict[str, Any]]:
     """
     Get all users with their workspace and document counts.
-    Uses LEFT JOIN semantics - users with 0 workspaces/documents still appear.
+    Uses manual counting instead of complex aggregation to ensure all users are returned.
     """
-    logger.info("--- [ADMIN] get_all_users called ---")
+    logger.info("--- [ADMIN] get_all_users called (simplified version) ---")
     
-    # First, get all users to ensure we have a baseline
+    # Get all users first (no filtering)
     all_users = list(db[USER_COLLECTION].find({}, {"hashed_password": 0}))
-    logger.info(f"--- [ADMIN] Total users in DB: {len(all_users)} ---")
+    logger.info(f"--- [ADMIN] Total users found: {len(all_users)} ---")
     
-    # If no users, return empty list
     if not all_users:
         return []
     
-    pipeline = [
-        # Step 1: Start with all users (no match filter)
-        # Left-join with workspaces collection using user_id
-        {
-            "$lookup": {
-                "from": WORKSPACE_COLLECTION,
-                "localField": "_id",
-                "foreignField": "user_id",
-                "as": "owned_workspaces",
-                "preserveNullAndEmptyArrays": True
-            }
-        },
-        # Get all workspace IDs from the user's workspaces
-        {
-            "$addFields": {
-                "workspace_ids": "$owned_workspaces._id"
-            }
-        },
-        # Left-join with documents collection using workspace_id
-        {
-            "$lookup": {
-                "from": DOCUMENT_COLLECTION,
-                "localField": "workspace_ids",
-                "foreignField": "workspace_id",
-                "as": "owned_documents",
-                "preserveNullAndEmptyArrays": True
-            }
-        },
-        # Safe size calculation using $ifNull - handles null/missing arrays
-        {
-            "$addFields": {
-                "id": {"$toString": "$_id"},
-                "workspace_count": {
-                    "$cond": {
-                        "if": {"$isArray": "$owned_workspaces"},
-                        "then": {"$size": "$owned_workspaces"},
-                        "else": 0
-                    }
-                },
-                "document_count": {
-                    "$cond": {
-                        "if": {"$isArray": "$owned_documents"},
-                        "then": {"$size": "$owned_documents"},
-                        "else": 0
-                    }
-                }
-            }
-        },
-        # Project only the fields needed for admin view
-        {
-            "$project": {
-                "_id": 0,
-                "owned_workspaces": 0,
-                "workspace_ids": 0,
-                "owned_documents": 0,
-                "hashed_password": 0
-            }
+    # For each user, manually count workspaces and documents
+    result = []
+    for user in all_users:
+        user_id = user["_id"]
+        
+        # Count workspaces owned by this user
+        workspace_count = db[WORKSPACE_COLLECTION].count_documents({"user_id": user_id})
+        
+        # Get all workspace IDs for this user
+        workspace_ids = [w["_id"] for w in db[WORKSPACE_COLLECTION].find({"user_id": user_id}, {"_id": 1})]
+        
+        # Count documents in those workspaces
+        document_count = 0
+        if workspace_ids:
+            document_count = db[DOCUMENT_COLLECTION].count_documents({"workspace_id": {"$in": workspace_ids}})
+        
+        # Build the response object
+        user_dict = {
+            "id": str(user_id),
+            "email": user.get("email", ""),
+            "first_name": user.get("first_name", ""),
+            "last_name": user.get("last_name", ""),
+            "status": user.get("status", "ACTIVE"),
+            "subscription_status": user.get("subscription_status", "inactive"),
+            "subscription_expiry_date": user.get("subscription_expiry_date"),
+            "created_at": user.get("created_at"),
+            "workspace_count": workspace_count,
+            "document_count": document_count,
         }
-    ]
+        result.append(user_dict)
     
-    users_data = list(db[USER_COLLECTION].aggregate(pipeline))
-    logger.info(f"--- [ADMIN] Users returned by pipeline: {len(users_data)} ---")
-    
-    # Log first user for debugging
-    if users_data:
-        logger.info(f"--- [ADMIN] Sample user: {users_data[0].get('email', 'N/A')} - workspaces: {users_data[0].get('workspace_count', 0)} ---")
-    
-    return users_data
+    logger.info(f"--- [ADMIN] Returning {len(result)} users with counts ---")
+    return result
 
 
 def find_user_in_aggregate(user_id: str, db: Database) -> Optional[AdminUserOut]:
     """
     Find a single user by ID with their workspace and document counts.
-    Uses LEFT JOIN semantics.
     """
     try:
         oid = ObjectId(user_id)
     except:
         logger.error(f"--- [ADMIN] Invalid user_id: {user_id} ---")
         return None
-
-    pipeline = [
-        {"$match": {"_id": oid}},
-        # Left-join with workspaces collection using user_id
-        {
-            "$lookup": {
-                "from": WORKSPACE_COLLECTION,
-                "localField": "_id",
-                "foreignField": "user_id",
-                "as": "owned_workspaces",
-                "preserveNullAndEmptyArrays": True
-            }
-        },
-        # Get workspace IDs
-        {
-            "$addFields": {
-                "workspace_ids": "$owned_workspaces._id"
-            }
-        },
-        # Left-join with documents collection using workspace_id
-        {
-            "$lookup": {
-                "from": DOCUMENT_COLLECTION,
-                "localField": "workspace_ids",
-                "foreignField": "workspace_id",
-                "as": "owned_documents",
-                "preserveNullAndEmptyArrays": True
-            }
-        },
-        # Safe size calculation using $cond for reliability
-        {
-            "$addFields": {
-                "id": {"$toString": "$_id"},
-                "workspace_count": {
-                    "$cond": {
-                        "if": {"$isArray": "$owned_workspaces"},
-                        "then": {"$size": "$owned_workspaces"},
-                        "else": 0
-                    }
-                },
-                "document_count": {
-                    "$cond": {
-                        "if": {"$isArray": "$owned_documents"},
-                        "then": {"$size": "$owned_documents"},
-                        "else": 0
-                    }
-                }
-            }
-        },
-        {
-            "$project": {
-                "_id": 0,
-                "owned_workspaces": 0,
-                "workspace_ids": 0,
-                "owned_documents": 0,
-                "hashed_password": 0
-            }
-        }
-    ]
     
-    result = list(db[USER_COLLECTION].aggregate(pipeline))
-    if not result:
+    # Get the user
+    user = db[USER_COLLECTION].find_one({"_id": oid}, {"hashed_password": 0})
+    if not user:
         logger.warning(f"--- [ADMIN] User {user_id} not found ---")
         return None
     
-    logger.info(f"--- [ADMIN] Found user: {result[0].get('email', 'N/A')} - workspaces: {result[0].get('workspace_count', 0)} ---")
-    return AdminUserOut.model_validate(result[0])
+    # Count workspaces
+    workspace_count = db[WORKSPACE_COLLECTION].count_documents({"user_id": oid})
+    
+    # Get workspace IDs
+    workspace_ids = [w["_id"] for w in db[WORKSPACE_COLLECTION].find({"user_id": oid}, {"_id": 1})]
+    
+    # Count documents
+    document_count = 0
+    if workspace_ids:
+        document_count = db[DOCUMENT_COLLECTION].count_documents({"workspace_id": {"$in": workspace_ids}})
+    
+    # Build response
+    user_dict = {
+        "id": str(user["_id"]),
+        "email": user.get("email", ""),
+        "first_name": user.get("first_name", ""),
+        "last_name": user.get("last_name", ""),
+        "status": user.get("status", "ACTIVE"),
+        "subscription_status": user.get("subscription_status", "inactive"),
+        "subscription_expiry_date": user.get("subscription_expiry_date"),
+        "created_at": user.get("created_at"),
+        "workspace_count": workspace_count,
+        "document_count": document_count,
+    }
+    
+    logger.info(f"--- [ADMIN] User {user_id}: {workspace_count} workspaces, {document_count} documents ---")
+    return AdminUserOut.model_validate(user_dict)
 
 
 def update_user_details(user_id: str, update_data: UserUpdateRequest, db: Database) -> Optional[AdminUserOut]:
