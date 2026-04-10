@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/laws.py
-# PHOENIX PROTOCOL - PRIVATE LAW SEARCH (BUSINESS APP) - CORRECTED + AUDIT CHAT
+# PHOENIX PROTOCOL - PRIVATE LAW SEARCH (BUSINESS APP) - FIXED AUDIT CHAT
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -15,9 +15,10 @@ class LawExplainRequest(BaseModel):
     article_number: str
     prompt: str
 
-# NEW: Audit Chat Request Model
+# FIXED: Audit Chat Request Model - uses law_title and article_number
 class AuditChatRequest(BaseModel):
-    article_id: str
+    law_title: str
+    article_number: str
     query: str
 
 def _safe_int(value: Any) -> int:
@@ -31,7 +32,7 @@ def _natural_sort_key(article_any: Any) -> List[int]:
     return [int(p) for p in parts if p.isdigit()]
 
 # ==================================================================
-# NEW: RIGID AUDITOR SYSTEM PROMPT (from Phoenix Protocol)
+# RIGID AUDITOR SYSTEM PROMPT (from Phoenix Protocol)
 # ==================================================================
 RIGID_AUDITOR_PROMPT = """
 ROLI: Ti je 'Krye-Auditori Forenzik' i certifikuar për juridiksionin e Kosovës.
@@ -69,7 +70,7 @@ STILI: Shqip standard, i qartë, me pika dhe lista për lehtësi.
 """
 
 # ==================================================================
-# NEW: AUDIT CHAT ENDPOINT (streaming, anchored to article)
+# FIXED: AUDIT CHAT ENDPOINT - uses law_title and article_number
 # ==================================================================
 @router.post("/audit-chat")
 async def audit_chat(
@@ -78,26 +79,39 @@ async def audit_chat(
 ):
     """
     Interactive chat with the Rigid Auditor anchored to a specific law article.
-    Accepts article_id and query, retrieves the article content, and streams AI response.
+    Accepts law_title and article_number, retrieves the article content, and streams AI response.
     """
     try:
-        # Retrieve the article content using chunk_id (article_id is actually chunk_id from frontend)
         collection = vector_store_service.get_business_kb_collection()
-        result = collection.get(
-            ids=[request.article_id],
+        
+        # Retrieve all chunks for this law title and article number
+        results = collection.get(
+            where={"$and": [
+                {"law_title": {"$eq": request.law_title}},
+                {"article_number": {"$eq": request.article_number}}
+            ]},
             include=["documents", "metadatas"]
         )
         
-        documents = result.get("documents") or []
-        metadatas = result.get("metadatas") or []
+        documents = results.get("documents") or []
+        metadatas = results.get("metadatas") or []
         
         if not documents:
-            raise HTTPException(status_code=404, detail="Article not found")
+            raise HTTPException(status_code=404, detail=f"Article not found: {request.law_title}, Neni {request.article_number}")
         
+        # Sort by chunk_index if available
+        if metadatas and all("chunk_index" in m for m in metadatas):
+            pairs = list(zip(documents, metadatas))
+            pairs.sort(key=lambda x: _safe_int(x[1].get("chunk_index")))
+            documents = [d for d, _ in pairs]
+        
+        # Combine all chunks into full article text
+        full_article_text = "\n\n".join(documents)
+        
+        # Get law title and article number from metadata
         first_meta = metadatas[0] if metadatas else {}
-        law_title = first_meta.get("law_title", "Ligj i panjohur")
-        article_number = first_meta.get("article_number", "")
-        article_text = documents[0]
+        law_title = first_meta.get("law_title", request.law_title)
+        article_number = first_meta.get("article_number", request.article_number)
         
         # Build context for the auditor
         context = f"""
@@ -105,21 +119,17 @@ async def audit_chat(
 Titulli i Ligjit: {law_title}
 Numri i Nenit: {article_number}
 Përmbajtja e Nenit:
-{article_text}
+{full_article_text}
 """
         
         # Build user prompt with the query
         user_prompt = f"Pyetja e përdoruesit në lidhje me këtë nen: {request.query}"
-        
-        # Use the rigid auditor system prompt with context separation
-        # Note: The llm_service.stream_text_async expects system_prompt and user_prompt
-        # We inject the context into the user_prompt as per Phoenix Protocol
         full_user_prompt = f"{context}\n\n{user_prompt}"
         
         generator = llm_service.stream_text_async(
             system_prompt=RIGID_AUDITOR_PROMPT,
             user_prompt=full_user_prompt,
-            temp=0.0  # Zero temperature for deterministic responses
+            temp=0.0
         )
         return StreamingResponse(generator, media_type="text/plain")
         
@@ -185,13 +195,11 @@ async def search_laws(
     Search the business knowledge base (ingested laws).
     """
     try:
-        # Use business public library (agent_type='business')
         raw_results = vector_store_service.query_public_library(
             query_text=q,
             n_results=limit,
             agent_type='business'
         )
-        # Convert to the same format expected by frontend
         results = []
         for item in raw_results:
             meta = item.get('metadata', {})
@@ -202,7 +210,6 @@ async def search_laws(
                 "text": item['content'],
                 "chunk_id": meta.get('chunk_id', '')
             })
-        # Deduplicate by (law_title, article_number)
         unique = {}
         for r in results:
             key = (r['law_title'], r['article_number'] or '0')
@@ -253,7 +260,6 @@ async def get_law_article(
     if not documents:
         raise HTTPException(status_code=404, detail="Article not found")
 
-    # Sort by chunk_index if available
     if metadatas and all("chunk_index" in m for m in metadatas):
         pairs = list(zip(documents, metadatas))
         pairs.sort(key=lambda x: _safe_int(x[1].get("chunk_index")))
