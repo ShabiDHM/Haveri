@@ -1,5 +1,5 @@
 # FILE: backend/app/services/admin_service.py
-# PHOENIX PROTOCOL - ADMIN SERVICE V3.5 (MATCHES AdminUserOut MODEL)
+# PHOENIX PROTOCOL - ADMIN SERVICE V3.6 (ADDED plan_tier TO RESPONSE)
 
 from bson import ObjectId
 from datetime import datetime
@@ -20,7 +20,7 @@ DOCUMENT_COLLECTION = "documents"
 def get_all_users(db: Database) -> List[Dict[str, Any]]:
     """
     Get all users with their workspace and document counts.
-    Returns fields matching AdminUserOut model.
+    Returns fields matching AdminUserOut model including plan_tier.
     """
     logger.info("--- [ADMIN] get_all_users called ---")
     
@@ -49,17 +49,18 @@ def get_all_users(db: Database) -> List[Dict[str, Any]]:
         # Build response matching AdminUserOut model
         user_dict = {
             "id": str(user_id),
-            "username": user.get("email", ""),  # Using email as username
+            "username": user.get("email", ""),
             "email": user.get("email", ""),
             "first_name": user.get("first_name", ""),
             "last_name": user.get("last_name", ""),
-            "role": user.get("role", "user"),  # Default role
+            "role": user.get("role", "user"),
             "status": user.get("status", "ACTIVE"),
             "subscription_status": user.get("subscription_status", "inactive"),
             "subscription_expiry_date": user.get("subscription_expiry_date"),
             "created_at": user.get("created_at"),
-            "case_count": workspace_count,  # Field name expected by model
+            "case_count": workspace_count,
             "document_count": document_count,
+            "plan_tier": user.get("plan_tier", "SOLO"),  # ADDED: Include plan_tier
         }
         result.append(user_dict)
     
@@ -107,9 +108,10 @@ def find_user_in_aggregate(user_id: str, db: Database) -> Optional[AdminUserOut]
         "created_at": user.get("created_at"),
         "case_count": workspace_count,
         "document_count": document_count,
+        "plan_tier": user.get("plan_tier", "SOLO"),  # ADDED: Include plan_tier
     }
     
-    logger.info(f"--- [ADMIN] User {user_id}: {workspace_count} workspaces, {document_count} documents ---")
+    logger.info(f"--- [ADMIN] User {user_id}: {workspace_count} workspaces, {document_count} documents, plan: {user_dict['plan_tier']} ---")
     return AdminUserOut.model_validate(user_dict)
 
 
