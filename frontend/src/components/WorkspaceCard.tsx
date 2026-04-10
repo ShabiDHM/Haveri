@@ -1,5 +1,5 @@
 // FILE: src/components/WorkspaceCard.tsx
-// PHOENIX PROTOCOL – WORKSPACE CARD V2.1 (FLAT + NESTED CLIENT FIELDS SUPPORT)
+// PHOENIX PROTOCOL – WORKSPACE CARD V2.2 (HARDCODED KONTAKTI LABEL)
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -83,7 +83,7 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace, onDelete }) =>
             <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border-main">
               <User className="w-3.5 h-3.5 text-primary-start" />
               <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-                {t('workspace.clientLabel', 'Klienti')}
+                KONTAKTI
               </span>
             </div>
             
