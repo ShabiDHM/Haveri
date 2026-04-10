@@ -1,9 +1,5 @@
 # FILE: backend/app/services/user_service.py
-# PHOENIX PROTOCOL - USER SERVICE V2.3 (FIXED DELETE USER)
-# 1. FIXED: Implemented delete_user_and_all_data to cascade delete user data.
-# 2. DETAIL: Deletes workspaces, documents, calendar events, invoices, expenses,
-#    pos transactions, inventory items, recipes, archive items, and business profile.
-# 3. STATUS: Fully synchronized with database schema.
+# PHOENIX PROTOCOL - USER SERVICE V2.4 (FIXED None hashed_password)
 
 from pymongo.database import Database
 from bson import ObjectId
@@ -24,18 +20,30 @@ logger = logging.getLogger(__name__)
 def get_user_by_username(db: Database, username: str) -> Optional[UserInDB]:
     query = {"username": {"$regex": f"^{re.escape(username)}$", "$options": "i"}}
     user_dict = db.users.find_one(query)
-    if user_dict: return UserInDB.model_validate(user_dict)
+    if user_dict: 
+        # Ensure hashed_password is a string
+        if user_dict.get("hashed_password") is None:
+            user_dict["hashed_password"] = ""
+        return UserInDB.model_validate(user_dict)
     return None
 
 def get_user_by_email(db: Database, email: str) -> Optional[UserInDB]:
     query = {"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}}
     user_dict = db.users.find_one(query)
-    if user_dict: return UserInDB.model_validate(user_dict)
+    if user_dict: 
+        # Ensure hashed_password is a string
+        if user_dict.get("hashed_password") is None:
+            user_dict["hashed_password"] = ""
+        return UserInDB.model_validate(user_dict)
     return None
 
 def get_user_by_id(db: Database, user_id: ObjectId) -> Optional[UserInDB]:
     user_dict = db.users.find_one({"_id": user_id})
     if user_dict:
+        # FIX: Handle None hashed_password (e.g., invited users)
+        if user_dict.get("hashed_password") is None:
+            user_dict["hashed_password"] = ""
+        
         business_profile = db.business_profiles.find_one({"user_id": str(user_id)})
         if business_profile:
             user_dict["business_profile"] = {"firm_name": business_profile.get("firm_name"), "logo_url": business_profile.get("logo_url")}
@@ -44,8 +52,10 @@ def get_user_by_id(db: Database, user_id: ObjectId) -> Optional[UserInDB]:
 
 def authenticate(db: Database, username: str, password: str) -> Optional[UserInDB]:
     user = get_user_by_username(db, username) or get_user_by_email(db, username)
-    if not user or not user.hashed_password: return None
-    if not verify_password(password, user.hashed_password): return None
+    if not user or not user.hashed_password: 
+        return None
+    if not verify_password(password, user.hashed_password): 
+        return None
     return user
 
 def create(db: Database, obj_in: UserCreate) -> UserInDB:
@@ -58,12 +68,17 @@ def create(db: Database, obj_in: UserCreate) -> UserInDB:
     
     result = db.users.insert_one(user_data)
     new_user_dict = db.users.find_one({"_id": result.inserted_id})
-    if not new_user_dict: raise HTTPException(status_code=500, detail="User creation failed")
+    if not new_user_dict: 
+        raise HTTPException(status_code=500, detail="User creation failed")
+    
+    # Ensure hashed_password is set
+    if new_user_dict.get("hashed_password") is None:
+        new_user_dict["hashed_password"] = ""
+    
     new_user = UserInDB.model_validate(new_user_dict)
 
     try:
         ws_name = f"Hapësira e {new_user.full_name or new_user.username}"
-        # PHOENIX: Correcting constructor to use alias names
         default_ws = WorkspaceCreate(
             title=ws_name, 
             case_name=ws_name, 
@@ -77,23 +92,22 @@ def create(db: Database, obj_in: UserCreate) -> UserInDB:
     return new_user
 
 def update_last_login(db: Database, user_id: str):
-    try: db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"last_login": datetime.now(timezone.utc)}})
-    except Exception: pass
+    try: 
+        db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"last_login": datetime.now(timezone.utc)}})
+    except Exception: 
+        pass
 
 def change_password(db: Database, user_id: str, old_pass: str, new_pass: str):
     user_dict = db.users.find_one({"_id": ObjectId(user_id)})
-    if not user_dict: raise HTTPException(status_code=404, detail="User not found")
-    if not verify_password(old_pass, user_dict["hashed_password"]): raise HTTPException(status_code=400, detail="Invalid old password")
+    if not user_dict: 
+        raise HTTPException(status_code=404, detail="User not found")
+    if not verify_password(old_pass, user_dict["hashed_password"]): 
+        raise HTTPException(status_code=400, detail="Invalid old password")
     db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"hashed_password": get_password_hash(new_pass)}})
 
 def delete_user_and_all_data(db: Database, user: UserInDB):
     """
     Permanently deletes a user and all associated data across collections.
-    This includes:
-    - All workspaces owned by the user, and all documents, calendar events, invoices,
-      expenses, POS transactions, inventory items, recipes, and archive items under those workspaces.
-    - The user's business profile.
-    - The user record itself.
     """
     # 1. Delete all workspaces owned by the user
     workspaces = db.cases.find({"owner_id": user.id})
@@ -101,7 +115,7 @@ def delete_user_and_all_data(db: Database, user: UserInDB):
         ws_id = ws["_id"]
         ws_id_str = str(ws_id)
 
-        # Delete documents (case_id as string)
+        # Delete documents
         db.documents.delete_many({"case_id": ws_id_str})
         # Delete calendar events
         db.calendar_events.delete_many({"case_id": ws_id_str})
@@ -121,7 +135,7 @@ def delete_user_and_all_data(db: Database, user: UserInDB):
         # Finally delete the workspace itself
         db.cases.delete_one({"_id": ws_id})
 
-    # 2. Delete business profile (if any)
+    # 2. Delete business profile
     db.business_profiles.delete_one({"user_id": str(user.id)})
 
     # 3. Delete the user
@@ -130,6 +144,10 @@ def delete_user_and_all_data(db: Database, user: UserInDB):
 def get_organization_members(db: Database, org_id: str) -> List[UserInDB]:
     try:
         users_dict = list(db.users.find({"organization_id": ObjectId(org_id)}))
+        # Fix None hashed_password for each user
+        for user_dict in users_dict:
+            if user_dict.get("hashed_password") is None:
+                user_dict["hashed_password"] = ""
         return [UserInDB.model_validate(u) for u in users_dict]
     except Exception as e:
         logger.error(f"Error fetching organization members: {e}")
@@ -140,24 +158,68 @@ def invite_user_to_organization(db: Database, owner: UserInDB, email: str, role:
     plan = getattr(owner, 'plan_tier', "SOLO")
     max_users = PLAN_LIMITS.get(plan, 1)
     current_count = db.users.count_documents({"organization_id": ObjectId(org_id)})
-    if current_count >= max_users: raise HTTPException(status_code=403, detail=f"Plan limit reached.")
+    if current_count >= max_users: 
+        raise HTTPException(status_code=403, detail=f"Plan limit reached.")
+    
     invitation_token = str(uuid.uuid4())
     token_expiry = datetime.now(timezone.utc) + timedelta(days=3)
     existing_user = get_user_by_email(db, email)
+    
     if existing_user:
-        db.users.update_one({"_id": existing_user.id}, {"$set": {"organization_id": ObjectId(org_id), "organization_role": role, "invitation_token": invitation_token, "invitation_token_expiry": token_expiry, "status": "pending_invite"}})
+        db.users.update_one(
+            {"_id": existing_user.id}, 
+            {"$set": {
+                "organization_id": ObjectId(org_id), 
+                "organization_role": role, 
+                "invitation_token": invitation_token, 
+                "invitation_token_expiry": token_expiry, 
+                "status": "pending_invite"
+            }}
+        )
     else:
-        placeholder_data = {"username": email.split('@')[0], "email": email, "hashed_password": None, "role": "STANDARD", "status": "pending_invite", "organization_id": ObjectId(org_id), "organization_role": role, "invitation_token": invitation_token, "invitation_token_expiry": token_expiry, "created_at": datetime.now(timezone.utc)}
+        placeholder_data = {
+            "username": email.split('@')[0], 
+            "email": email, 
+            "hashed_password": None,  # This is allowed, we handle it in get_user_by_id
+            "role": "STANDARD", 
+            "status": "pending_invite", 
+            "organization_id": ObjectId(org_id), 
+            "organization_role": role, 
+            "invitation_token": invitation_token, 
+            "invitation_token_expiry": token_expiry, 
+            "created_at": datetime.now(timezone.utc)
+        }
         db.users.insert_one(placeholder_data)
+    
     frontend_url = "https://haveri.tech" 
     invite_link = f"{frontend_url}/accept-invite?token={invitation_token}"
-    email_service.send_invitation_email_sync(to_email=email, owner_name=owner.full_name or owner.username, invite_link=invite_link)
-    if not (hasattr(owner, 'organization_id') and owner.organization_id): db.users.update_one({"_id": owner.id}, {"$set": {"organization_id": owner.id}})
+    email_service.send_invitation_email_sync(
+        to_email=email, 
+        owner_name=owner.full_name or owner.username, 
+        invite_link=invite_link
+    )
+    
+    if not (hasattr(owner, 'organization_id') and owner.organization_id): 
+        db.users.update_one({"_id": owner.id}, {"$set": {"organization_id": owner.id}})
 
 def activate_invited_user(db: Database, token: str, new_password: str) -> UserInDB:
-    user_dict = db.users.find_one({"invitation_token": token, "invitation_token_expiry": {"$gt": datetime.now(timezone.utc)}})
-    if not user_dict: raise HTTPException(status_code=400, detail="Invalid token.")
-    db.users.update_one({"_id": user_dict["_id"]}, {"$set": {"hashed_password": get_password_hash(new_password), "status": "active", "invitation_token": None, "invitation_token_expiry": None}})
+    user_dict = db.users.find_one({
+        "invitation_token": token, 
+        "invitation_token_expiry": {"$gt": datetime.now(timezone.utc)}
+    })
+    if not user_dict: 
+        raise HTTPException(status_code=400, detail="Invalid token.")
+    
+    db.users.update_one(
+        {"_id": user_dict["_id"]}, 
+        {"$set": {
+            "hashed_password": get_password_hash(new_password), 
+            "status": "active", 
+            "invitation_token": None, 
+            "invitation_token_expiry": None
+        }}
+    )
     activated_user = get_user_by_id(db, user_dict["_id"])
-    if not activated_user: raise HTTPException(status_code=500, detail="Activation failed.")
+    if not activated_user: 
+        raise HTTPException(status_code=500, detail="Activation failed.")
     return activated_user
