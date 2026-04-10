@@ -1,12 +1,11 @@
 # FILE: backend/app/api/endpoints/auth.py
-# PHOENIX PROTOCOL - AUTH ENGINE V5.4 (CROSS-SUBDOMAIN COOKIE FIX)
-# 1. CRITICAL FIX: Added the `domain` attribute to the `set_cookie` and `delete_cookie` calls for the refresh token.
-# 2. REASON: This resolves the persistent "401 Unauthorized" error on application load by allowing the refresh token cookie to be sent on requests originating from any subdomain of 'haveri.tech' (e.g., www.haveri.tech) to the API (api.haveri.tech). This corrects the browser security policy issue that was preventing the token refresh mechanism from working.
+# PHOENIX PROTOCOL - AUTH ENGINE V5.5 (ADDED PASSWORD RESET ENDPOINTS)
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from pymongo.database import Database
 from bson import ObjectId
 
@@ -14,6 +13,7 @@ from app.core import security
 from app.core.config import settings
 from app.core.db import get_db
 from app.services import user_service
+from app.services.email_service import send_password_reset_email_sync
 from app.models.token import Token
 from app.models.user import UserInDB, UserCreate, UserLogin
 from app.api.endpoints.dependencies import get_current_user
@@ -27,6 +27,15 @@ class ChangePasswordSchema(BaseModel):
 class AcceptInviteSchema(BaseModel):
     token: str
     new_password: str
+
+# ========== PASSWORD RESET MODELS ==========
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
 
 @router.post("/login", response_model=Token)
 async def login_access_token(response: Response, form_data: UserLogin, db: Database = Depends(get_db)) -> Any:
@@ -63,11 +72,12 @@ async def login_access_token(response: Response, form_data: UserLogin, db: Datab
         httponly=True, 
         secure=settings.ENVIRONMENT != "development", 
         samesite="lax",
-        domain=cookie_domain,  # PHOENIX: CRITICAL FIX ADDED HERE
+        domain=cookie_domain,
         max_age=int(refresh_token_expires.total_seconds())
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 async def get_user_from_refresh_token(request: Request, db: Database = Depends(get_db)) -> UserInDB:
     refresh_token = request.cookies.get("refresh_token")
@@ -90,6 +100,7 @@ async def get_user_from_refresh_token(request: Request, db: Database = Depends(g
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Could not validate credentials: {e}")
 
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(user_in: UserCreate, db: Database = Depends(get_db)) -> Any:
     user_in.username = user_in.username.lower()
@@ -103,6 +114,7 @@ async def register_user(user_in: UserCreate, db: Database = Depends(get_db)) -> 
     
     user = user_service.create(db, obj_in=user_in)
     return {"message": "Registration successful. Please wait for admin approval."}
+
 
 @router.post("/accept-invite", status_code=status.HTTP_200_OK)
 async def accept_invitation(
@@ -139,6 +151,7 @@ async def refresh_token(current_user: UserInDB = Depends(get_user_from_refresh_t
     new_access_token = security.create_access_token(data=new_payload)
     return {"access_token": new_access_token, "token_type": "bearer"}
 
+
 @router.post("/logout", status_code=status.HTTP_200_OK)
 async def logout(response: Response):
     cookie_domain = ".haveri.tech" if settings.ENVIRONMENT != "development" else None
@@ -151,7 +164,82 @@ async def logout(response: Response):
     )
     return {"message": "Logged out successfully"}
 
+
 @router.post("/change-password", status_code=status.HTTP_200_OK)
 async def change_password(password_data: ChangePasswordSchema, current_user: UserInDB = Depends(get_current_user), db: Database = Depends(get_db)):
     user_service.change_password(db, str(current_user.id), password_data.old_password, password_data.new_password)
     return {"message": "Password updated successfully"}
+
+
+# ========== PASSWORD RESET ENDPOINTS ==========
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+async def forgot_password(
+    request: ForgotPasswordRequest,
+    db: Database = Depends(get_db)
+):
+    """
+    Send password reset email to user.
+    """
+    # Find user by email
+    user = db.users.find_one({"email": request.email})
+    if not user:
+        # For security, don't reveal if email exists
+        return {"message": "Nëse email-i ekziston, do të merrni një link për rivendosje."}
+    
+    # Generate reset token
+    reset_token = str(uuid.uuid4())
+    token_expiry = datetime.utcnow() + timedelta(hours=24)
+    
+    # Store token in database
+    db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {
+            "reset_password_token": reset_token,
+            "reset_password_expiry": token_expiry
+        }}
+    )
+    
+    # Build reset link
+    reset_link = f"https://www.haveri.tech/reset-password?token={reset_token}"
+    
+    # Send email with reset link
+    user_name = user.get("first_name", "") or user.get("username", "")
+    send_password_reset_email_sync(request.email, reset_link, user_name)
+    
+    return {"message": "Nëse email-i ekziston, do të merrni një link për rivendosje."}
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+async def reset_password(
+    request: ResetPasswordRequest,
+    db: Database = Depends(get_db)
+):
+    """
+    Reset password using valid token.
+    """
+    # Find user by reset token
+    user = db.users.find_one({
+        "reset_password_token": request.token,
+        "reset_password_expiry": {"$gt": datetime.utcnow()}
+    })
+    
+    if not user:
+        raise HTTPException(
+            status_code=400,
+            detail="Token i pavlefshëm ose i skaduar."
+        )
+    
+    # Hash new password
+    hashed_password = security.get_password_hash(request.password)
+    
+    # Update user password and clear reset token
+    db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {
+            "hashed_password": hashed_password,
+            "reset_password_token": None,
+            "reset_password_expiry": None
+        }}
+    )
+    
+    return {"message": "Fjalëkalimi u rivendos me sukses."}

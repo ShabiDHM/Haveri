@@ -1,7 +1,5 @@
 // FILE: src/pages/LoginPage.tsx
-// PHOENIX PROTOCOL - LOGIN PAGE V6.1 (EXECUTIVE DESIGN SYSTEM)
-// UPDATED: Added hover-lift, shadow-sm, semantic border and text classes.
-// RETAINED: All logic and functionality.
+// PHOENIX PROTOCOL - LOGIN PAGE V6.2 (ADDED FORGOT PASSWORD LINK)
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -95,6 +93,16 @@ const LoginPage: React.FC = () => {
                             />
                         </div>
                     </div>
+                </div>
+
+                {/* Forgot Password Link */}
+                <div className="text-right">
+                    <Link 
+                        to="/forgot-password" 
+                        className="text-xs font-medium text-text-muted hover:text-primary-start transition-colors hover-lift inline-block"
+                    >
+                        {t('login.forgotPassword', 'Harruat fjalëkalimin?')}
+                    </Link>
                 </div>
 
                 {error && <div className="text-danger-start text-sm text-center bg-danger-start/10 p-3 rounded-xl border border-danger-start/30 shadow-sm">{error}</div>}

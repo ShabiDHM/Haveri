@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V15.8 (UPDATED askLawAuditor WITH LAW TITLE + ARTICLE NUMBER)
+// PHOENIX PROTOCOL - API V15.9 (ADDED PASSWORD RESET METHODS)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -161,6 +161,17 @@ class ApiService {
     public async fetchUserProfile(): Promise<User> { const response = await this.axiosInstance.get<User>('/users/me'); return response.data; }
     public async changePassword(data: ChangePasswordRequest): Promise<void> { await this.axiosInstance.post('/auth/change-password', data); }
     public async deleteAccount(): Promise<void> { await this.axiosInstance.delete('/users/me'); }
+
+    // ========== PASSWORD RESET METHODS ==========
+    public async forgotPassword(email: string): Promise<{ message: string }> {
+        const response = await this.axiosInstance.post('/auth/forgot-password', { email });
+        return response.data;
+    }
+
+    public async resetPassword(token: string, password: string): Promise<{ message: string }> {
+        const response = await this.axiosInstance.post('/auth/reset-password', { token, password });
+        return response.data;
+    }
 
     // --- TEAM MANAGEMENT ---
     public async inviteUser(data: InviteUserRequest): Promise<any> { const response = await this.axiosInstance.post('/users/invite', data); return response.data; }

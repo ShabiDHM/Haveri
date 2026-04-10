@@ -1,5 +1,5 @@
 // FILE: src/App.tsx
-// PHOENIX PROTOCOL - ROUTES V2.5 (FINAL)
+// PHOENIX PROTOCOL - ROUTES V2.6 (ADDED FORGOT/RESET PASSWORD ROUTES)
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -10,6 +10,8 @@ import MainLayout from './pages/MainLayout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import AcceptInvitePage from './pages/AcceptInvitePage';
 import CalendarPage from './pages/CalendarPage';
 import SupportPage from './pages/SupportPage';
@@ -51,6 +53,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/" element={isAuthenticated ? <Navigate to="/projects" /> : <LandingPage />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/projects" /> : <LoginPage />} />
       <Route path="/register" element={isAuthenticated ? <Navigate to="/projects" /> : <RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
       <Route path="/portal/:workspaceId" element={<ClientPortalPage />} />
 
