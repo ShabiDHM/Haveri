@@ -1,4 +1,4 @@
-// FILE: src/pages/MainLayout.tsx
+// FILE: src/pages/ MainLayout.tsx
 // PHOENIX PROTOCOL - TOP NAVIGATION LAYOUT V4.1 (FIXED HEADER CLIPPING)
 
 import React from 'react';
