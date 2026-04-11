@@ -122,8 +122,8 @@ const AdminDashboardPage: React.FC = () => {
     if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="animate-spin h-8 w-8 text-primary-start" /></div>;
 
     return (
-        <div className="min-h-screen bg-canvas p-6 md:p-8">
-            <div className="glass-panel p-6 md:p-8 space-y-6 border border-border-main shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+            <div className="space-y-6">
                 <div>
                     <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-2">{t('admin.title', 'Paneli i Administratorit')}</h1>
                     <p className="text-xs font-black uppercase tracking-widest text-text-muted">{t('admin.subtitle', 'Menaxhimi i përdoruesve dhe sistemit.')}</p>
