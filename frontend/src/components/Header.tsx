@@ -81,46 +81,52 @@ const Header: React.FC = () => {
     return location.pathname.startsWith(item.path);
   };
 
+  const isProjectsRoute = location.pathname === "/projects";
+
   return (
     // PHOENIX DIRECTIVE: Increased opacity from /80 to /95 to prevent text bleed-through
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 md:px-8 py-3 bg-canvas/95 backdrop-blur-xl border-b border-border-main">
       
       {/* Left: Brand */}
       <div className="flex items-center gap-3 shrink-0">
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-          className="p-2 text-text-primary lg:hidden hover:bg-surface/20 rounded-lg"
-        >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        {!isProjectsRoute && (
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+            className="p-2 text-text-primary lg:hidden hover:bg-surface/20 rounded-lg"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        )}
         {/* PHOENIX: Logo now links to Projects dashboard */}
         <Link to="/projects" className="flex items-center">
           <BrandLogo />
         </Link>
       </div>
 
-      {/* Center: Segmented Glass Bar */}
-      <div className="hidden lg:flex items-center bg-surface/50 p-1 rounded-2xl border border-border-main shadow-inner">
-        {navItems.map((item) => {
-          const active = isActive(item);
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all duration-200
-                ${active 
-                  ? 'bg-canvas text-primary-start shadow-sm' 
-                  : 'text-text-muted hover:text-text-primary'
-                }
-              `}
-            >
-              <item.icon size={18} />
-              <span className="hidden xl:inline">{item.label}</span>
-            </NavLink>
-          );
-        })}
-      </div>
+      {/* Center: Segmented Glass Bar - HIDDEN on /projects */}
+      {!isProjectsRoute && (
+        <div className="hidden lg:flex items-center bg-surface/50 p-1 rounded-2xl border border-border-main shadow-inner">
+          {navItems.map((item) => {
+            const active = isActive(item);
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all duration-200
+                  ${active 
+                    ? 'bg-canvas text-primary-start shadow-sm' 
+                    : 'text-text-muted hover:text-text-primary'
+                  }
+                `}
+              >
+                <item.icon size={18} />
+                <span className="hidden xl:inline">{item.label}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+      )}
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
@@ -195,8 +201,8 @@ const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation Overlay */}
-      {isMobileMenuOpen && (
+      {/* Mobile Navigation Overlay - HIDDEN on /projects */}
+      {!isProjectsRoute && isMobileMenuOpen && (
         <div className="fixed inset-x-0 top-16 bg-card border-b border-border-main p-4 lg:hidden z-40 shadow-lg">
           <div className="grid grid-cols-2 gap-3">
             {navItems.map(item => (
