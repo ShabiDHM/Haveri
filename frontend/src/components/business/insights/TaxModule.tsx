@@ -64,7 +64,7 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data, workspaceId }) => {
                     <div className="grid grid-cols-2 gap-4 mb-6 flex-shrink-0">
                         <div className="glass-input p-4 text-center group/item hover:border-success-start/30 transition-colors border border-border-main bg-surface/30 backdrop-blur-sm hover-lift">
                             <div className="flex items-center justify-center gap-1.5 text-xs text-success-start uppercase font-black tracking-widest mb-2">
-                                <TrendingUp size={12} /> TVSH Mbledhur
+                                <TrendingUp size={12} /> TVSH e Llogaritur
                             </div>
                             <p className="text-sm font-mono font-black text-text-primary">
                                 €{vatCollected.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
