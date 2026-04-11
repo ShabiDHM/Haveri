@@ -164,28 +164,28 @@ const AdminDashboardPage: React.FC = () => {
                     </div>
 
                     <div className="w-full overflow-x-auto">
-                        <table className="w-full text-left text-sm text-text-secondary min-w-[1000px]">
+                        <table className="w-full text-left text-sm text-text-secondary">
                             <thead className="bg-surface/30 backdrop-blur-sm text-text-primary text-xs font-black uppercase tracking-widest border-b border-border-main">
                                 <tr>
-                                    <th className="px-6 py-3 font-black tracking-widest">{t('admin.table.user', 'Përdoruesi')}</th>
-                                    <th className="px-6 py-3 font-black tracking-widest">Organizata</th>
-                                    <th className="px-6 py-3 font-black tracking-widest">Plani</th>
-                                    <th className="px-6 py-3 font-black tracking-widest">
+                                    <th className="px-4 py-3 font-black tracking-widest">{t('admin.table.user', 'Përdoruesi')}</th>
+                                    <th className="px-4 py-3 font-black tracking-widest">Organizata</th>
+                                    <th className="px-4 py-3 font-black tracking-widest">Plani</th>
+                                    <th className="px-4 py-3 font-black tracking-widest">
                                         <div className="flex items-center gap-2">
                                             <Calendar className="w-4 h-4 text-text-muted" />
                                             <span>Skadimi</span>
                                         </div>
                                     </th>
-                                    <th className="px-6 py-3 font-black tracking-widest">{t('admin.table.role', 'Roli')}</th>
-                                    <th className="px-6 py-3 font-black tracking-widest">{t('admin.table.status', 'Statusi')}</th>
-                                    <th className="px-6 py-3 font-black tracking-widest">{t('admin.table.registered', 'Regjistruar')}</th>
-                                    <th className="px-6 py-3 text-right font-black tracking-widest">{t('general.actions', 'Veprime')}</th>
+                                    <th className="px-4 py-3 font-black tracking-widest">{t('admin.table.role', 'Roli')}</th>
+                                    <th className="px-4 py-3 font-black tracking-widest">{t('admin.table.status', 'Statusi')}</th>
+                                    <th className="px-4 py-3 font-black tracking-widest">{t('admin.table.registered', 'Regjistruar')}</th>
+                                    <th className="px-4 py-3 text-right font-black tracking-widest">{t('general.actions', 'Veprime')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border-main">
                                 {filteredUsers.map((user) => (
                                     <tr key={user.id} className="hover:bg-hover transition-colors">
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 py-4">
                                             <div className="flex items-center">
                                                 <div className="w-8 h-8 rounded-full bg-primary-start/20 flex items-center justify-center text-primary-start font-bold mr-3 border border-border-main shrink-0">
                                                     {user.username.charAt(0).toUpperCase()}
@@ -196,7 +196,7 @@ const AdminDashboardPage: React.FC = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 py-4">
                                             <div className="flex items-center gap-2">
                                                 {user.organization_role === 'OWNER' ? (
                                                     <Shield className="w-4 h-4 text-success-start" />
@@ -206,13 +206,13 @@ const AdminDashboardPage: React.FC = () => {
                                                 <span className="text-xs font-medium text-text-secondary">{user.organization_role || 'OWNER'}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 py-4">
                                             <div className="flex items-center gap-2">
                                                 {user.plan_tier !== 'SOLO' && <Crown className="w-3 h-3 text-warning-start" />}
                                                 <span className="text-xs font-mono uppercase text-text-muted">{user.plan_tier || 'SOLO'}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 py-4">
                                             {user.subscription_expiry_date ? (
                                                 <span className="text-xs font-mono text-text-secondary bg-surface/30 backdrop-blur-sm px-2 py-1 rounded border border-border-main">
                                                     {new Date(user.subscription_expiry_date).toLocaleDateString()}
@@ -221,14 +221,14 @@ const AdminDashboardPage: React.FC = () => {
                                                 <span className="text-xs text-text-muted">-</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 py-4">
                                             <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${user.role.toUpperCase() === 'ADMIN' ? 'bg-danger-start/10 text-danger-start border-danger-start/30' : 'bg-surface/30 text-text-muted border-border-main'}`}>
                                                 {user.role}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">{renderStatusBadge(user)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-xs">{new Date(user.created_at).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                                        <td className="px-4 py-4">{renderStatusBadge(user)}</td>
+                                        <td className="px-4 py-4 whitespace-nowrap text-xs">{new Date(user.created_at).toLocaleDateString()}</td>
+                                        <td className="px-4 py-4 text-right space-x-2 whitespace-nowrap">
                                             <button onClick={() => handleEditClick(user)} className="p-2 rounded-lg bg-primary-start/10 hover:bg-primary-start/20 text-primary-start transition-colors border border-border-main hover-lift shadow-sm" title={t('general.edit', 'Ndrysho')}><Edit2 className="w-4 h-4" /></button>
                                             <button onClick={() => handleDeleteUser(user.id)} className="p-2 rounded-lg bg-danger-start/10 hover:bg-danger-start/20 text-danger-start transition-colors border border-border-main hover-lift shadow-sm" title={t('general.delete', 'Fshi')}><Trash2 className="w-4 h-4" /></button>
                                         </td>
