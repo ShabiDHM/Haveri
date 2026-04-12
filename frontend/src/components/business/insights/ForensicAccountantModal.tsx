@@ -1,4 +1,4 @@
-// FILE: src/components/business/insights/ForensicAccountantModal.tsx
+// FILE: src/components/business/insights/ ForensicAccountantModal.tsx
 // PHOENIX PROTOCOL - FORENSIC MODAL V6.2 (REMOVED UNTRUSTED SUGGESTION)
 
 import React, { useState, useRef, useEffect } from 'react';
