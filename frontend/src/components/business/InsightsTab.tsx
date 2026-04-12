@@ -1,5 +1,5 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V5.8 (ADDED EVENT CLICK HANDLER)
+// PHOENIX PROTOCOL - INSIGHTS UI V5.9 (EQUAL HEIGHT GRID)
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,21 +21,15 @@ export const InsightsTab: React.FC = () => {
     const { t } = useTranslation();
     const { workspace } = useAuth();
 
-    // UI State
     const [showAnalystPanel, setShowAnalystPanel] = useState(false);
     const [showForensicModal, setShowForensicModal] = useState(false);
-    
-    // State for event detail modal
     const [selectedEvent, setSelectedEvent] = useState<UIAgendaItem | null>(null);
 
-    // Data fetching hooks
     const { loading: intelLoading, profitAnalytics, taxAnalytics } = useBusinessIntelligence(workspace?.id);
     const { loading: financeLoading } = useFinanceData({ workspaceId: workspace?.id });
     const { data: briefingData, loading: briefingLoading, refreshData } = useStrategicBriefing(workspace?.id);
 
-    // Handle event click from agenda card
     const handleEventClick = (event: any) => {
-        // Convert the agenda item to UIAgendaItem format expected by EventDetailModal
         const uiEvent: UIAgendaItem = {
             id: event.id,
             title: event.title,
@@ -62,7 +56,7 @@ export const InsightsTab: React.FC = () => {
 
     const handleModalClose = () => {
         setSelectedEvent(null);
-        refreshData(); // Refresh agenda after closing (in case of updates/deletes)
+        refreshData();
     };
 
     const loading = intelLoading || financeLoading || briefingLoading;
@@ -114,8 +108,8 @@ export const InsightsTab: React.FC = () => {
                 </AnimatePresence>
             </div>
 
-            {/* Dashboard Metrics Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Three‑column grid with equal height */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
                 {briefingData && (
                     <SmartAgendaCard 
                         agenda={briefingData.agenda} 
@@ -126,7 +120,6 @@ export const InsightsTab: React.FC = () => {
                 <StockModule data={profitAnalytics} />
             </div>
 
-            {/* Event Detail Modal */}
             <AnimatePresence>
                 {selectedEvent && (
                     <EventDetailModal 
@@ -138,7 +131,6 @@ export const InsightsTab: React.FC = () => {
                 )}
             </AnimatePresence>
 
-            {/* Forensic Modal logic preserved for backend functionality, just hidden from UI header */}
             <ForensicAccountantModal
                 isOpen={showForensicModal}
                 onClose={() => setShowForensicModal(false)}

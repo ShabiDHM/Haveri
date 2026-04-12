@@ -1,6 +1,5 @@
 // FILE: src/components/business/insights/TaxModule.tsx
-// PHOENIX PROTOCOL - TAX MODULE V13.8 (HARD OVERRIDE + SEMANTIC COLORS)
-// EXPORT: named export TaxModule
+// PHOENIX PROTOCOL - TAX MODULE V13.9 (STANDARDISED TYPOGRAPHY & LAYOUT)
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -31,11 +30,11 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data, workspaceId }) => {
 
     return (
         <>
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-2xl h-full flex flex-col min-h-[480px]">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-2xl h-full flex flex-col">
                 
                 {/* Header */}
                 <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                    <h2 className="text-white font-black uppercase tracking-widest flex items-center gap-2">
+                    <h2 className="text-lg font-black uppercase tracking-widest text-white flex items-center gap-2">
                         <Landmark className="text-primary-start" size={20} />
                         {t('insights.tax.estimator', 'Vlerësimi i TVSH-së')}
                     </h2>
@@ -50,10 +49,10 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data, workspaceId }) => {
 
                 {/* Main Liability Box */}
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6 text-center">
-                    <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-2">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">
                         {t('insights.tax.toPay', 'Për të paguar (Vlerësim)')}
                     </p>
-                    <h3 className={`text-4xl font-black ${isPositive ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    <h3 className={`text-3xl font-black tracking-tight ${isPositive ? 'text-rose-400' : 'text-emerald-400'}`}>
                         €{Math.abs(estimatedLiability).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </h3>
                 </div>
@@ -63,18 +62,18 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data, workspaceId }) => {
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                         <div className="flex items-center gap-1.5 mb-1">
                             <TrendingUp size={12} className="text-emerald-400" />
-                            <p className="text-white/50 text-xs font-bold uppercase tracking-widest">TVSH e Llogaritur</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">TVSH e Llogaritur</p>
                         </div>
-                        <h3 className="text-2xl font-black text-emerald-400">
+                        <h3 className="text-3xl font-black tracking-tight text-emerald-400">
                             €{vatCollected.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </h3>
                     </div>
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
                         <div className="flex items-center gap-1.5 mb-1">
                             <TrendingDown size={12} className="text-rose-400" />
-                            <p className="text-white/50 text-xs font-bold uppercase tracking-widest">TVSH Zbritshme</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">TVSH Zbritshme</p>
                         </div>
-                        <h3 className="text-2xl font-black text-rose-400">
+                        <h3 className="text-3xl font-black tracking-tight text-rose-400">
                             €{vatDeductible.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </h3>
                     </div>
@@ -84,13 +83,13 @@ export const TaxModule: React.FC<TaxModuleProps> = ({ data, workspaceId }) => {
                 <div className="mt-auto space-y-3 flex-shrink-0">
                     <button 
                         onClick={() => setShowForensicChat(true)}
-                        className="w-full py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2"
+                        className="w-full h-12 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2"
                     >
                         Audito me AI
                     </button>
                     <button 
                         onClick={handleDirectClose} 
-                        className="w-full py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3"
+                        className="w-full h-12 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3"
                     >
                         <Calculator size={16} />
                         {t('finance.monthlyClose', 'Mbyllja Mujore')}

@@ -1,6 +1,5 @@
 // FILE: src/components/business/insights/StockModule.tsx
-// PHOENIX PROTOCOL - STOCK MODULE V13.8 (HARD OVERRIDE + SEMANTIC COLORS)
-// EXPORT: named export StockModule
+// PHOENIX PROTOCOL - STOCK MODULE V13.9 (STANDARDISED TYPOGRAPHY & LAYOUT)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -92,11 +91,11 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-2xl h-full flex flex-col min-h-[480px]">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-2xl h-full flex flex-col">
                 
                 {/* Header */}
                 <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                    <h2 className="text-white font-black uppercase tracking-widest flex items-center gap-2">
+                    <h2 className="text-lg font-black uppercase tracking-widest text-white flex items-center gap-2">
                         <Package className="text-primary-start" size={20} />
                         {t('insights.inventory.title', 'Inteligjenca e Stokut')}
                     </h2>
@@ -104,13 +103,13 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
 
                 {/* Total Stock Value */}
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6">
-                    <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">
                         {t('insights.inventory.value', 'Vlera Totale e Stokut')}
                     </p>
-                    <h3 className="text-2xl font-black text-emerald-400">
+                    <h3 className="text-3xl font-black tracking-tight text-emerald-400">
                         €{totalStockValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </h3>
-                    <p className="text-white/40 text-xs mt-1 uppercase font-black tracking-widest">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mt-1">
                         {t('insights.inventory.valueDesc', 'Para të bllokuara në rafte')}
                     </p>
                 </div>
@@ -119,11 +118,11 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                 <div className="flex justify-between items-center mb-3 flex-shrink-0">
                     <div className="flex items-center gap-2">
                         <div className={`w-1.5 h-1.5 rounded-full ${hasLowStock ? 'bg-amber-400' : 'bg-emerald-400'}`}></div>
-                        <h3 className="text-white/60 text-xs font-black uppercase tracking-widest">
+                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-white/60">
                             {t('inventory.lowStock', 'Stoku Kritik')}
                         </h3>
                     </div>
-                    <span className={`text-xs px-2 py-0.5 rounded font-black uppercase tracking-widest border ${hasLowStock ? 'bg-amber-400/20 text-amber-400 border-amber-400/30' : 'bg-emerald-400/20 text-emerald-400 border-emerald-400/30'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-widest border ${hasLowStock ? 'bg-amber-400/20 text-amber-400 border-amber-400/30' : 'bg-emerald-400/20 text-emerald-400 border-emerald-400/30'}`}>
                         {lowStockItems.length} {t('inventory.itemsCount', 'Artikuj')}
                     </span>
                 </div>
@@ -132,7 +131,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                 <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 custom-scrollbar pr-2">
                     {lowStockItems.length === 0 ? (
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
-                            <p className="text-white/50 text-xs font-black uppercase tracking-widest">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
                                 {t('general.allGood', 'Gjithçka në rregull!')}
                             </p>
                         </div>
@@ -158,7 +157,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                 </div>
             </div>
 
-            {/* AI Analysis Modal */}
+            {/* AI Analysis Modal (unchanged styling, kept functional) */}
             <AnimatePresence>
                 {selectedItem && !showPOModal && (
                     <motion.div 
@@ -211,7 +210,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             <button 
                                                 onClick={handleOpenDraftModal} 
                                                 disabled={!aiData.prediction || aiData.prediction.suggested_quantity === 0} 
-                                                className="w-full py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-40"
+                                                className="w-full h-12 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-40"
                                             >
                                                 {t('inventory.analysis.draftOrder', 'Drafto Porosinë')} <ArrowRight size={14} />
                                             </button>
@@ -317,7 +316,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                 <button 
                                     onClick={handleConfirmAndGeneratePO} 
                                     disabled={drafting} 
-                                    className="w-full py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-40"
+                                    className="h-12 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-40 px-6"
                                 >
                                     {drafting ? <Loader2 size={16} className="animate-spin"/> : null}
                                     {t('inventory.poModal.generatePDF', 'Gjenero PDF')}
