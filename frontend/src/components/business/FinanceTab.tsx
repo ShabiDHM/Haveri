@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.15 (NUCLEAR OVERRIDE FOR PARTNER CARDS)
+// PHOENIX PROTOCOL - FINANCE TAB V14.18 (COMBINED SHADOW FIX)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,7 +28,6 @@ import { Panel } from '../ui/Panel';
 import { useAuth } from '../../context/AuthContext';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    // Determine color classes based on type (with dark mode support)
     let colorClasses = {
         text: 'text-indigo-600 dark:text-indigo-400',
         bg: 'bg-indigo-100 dark:bg-indigo-900/30',
@@ -36,7 +35,6 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
         accent: 'bg-indigo-500',
         iconColor: 'text-indigo-600 dark:text-indigo-400'
     };
-    
     if (type === 'income') {
         colorClasses = {
             text: 'text-emerald-600 dark:text-emerald-400',
@@ -71,9 +69,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
             onClick={onClick} 
             className="relative overflow-hidden rounded-2xl border border-border-main bg-glass backdrop-blur-xl p-4 sm:p-6 cursor-pointer group shadow-md hover:shadow-xl transition-all duration-300"
         >
-            {/* Accent Grounding Line */}
             <div className={`absolute bottom-0 left-0 w-full h-1 ${colorClasses.accent}`} />
-
             <div className="flex justify-between items-start mb-3 sm:mb-4">
                 <div className={`p-2.5 sm:p-3 rounded-xl ${colorClasses.bg} ${colorClasses.iconColor} border ${colorClasses.border}`}>
                     {icon}
@@ -184,7 +180,6 @@ export const FinanceTab: React.FC = () => {
         }
     };
 
-    // --- EXCEL EXPORT HANDLER (with date filters) ---
     const handleExportExcel = async (params: { year?: number; month?: number; day?: number; label: string }) => {
         try {
             const token = localStorage.getItem('accessToken');
@@ -217,7 +212,6 @@ export const FinanceTab: React.FC = () => {
         }
     };
 
-    // --- EXCLUDE POS TRANSACTIONS: they are already represented by invoices ---
     const allTransactions: TransactionItem[] = useMemo(() => {
         const combined: TransactionItem[] = [
             ...invoices.map(i => ({ 
@@ -236,7 +230,6 @@ export const FinanceTab: React.FC = () => {
                 label: e.category, 
                 raw: e 
             })),
-            // POS transactions removed to avoid duplication (each POS creates an invoice)
         ];
         return combined.filter(tx => !searchTerm || tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || tx.amount.toString().includes(searchTerm))
                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -397,51 +390,50 @@ export const FinanceTab: React.FC = () => {
                                     {filteredPartners.map((partner) => (
                                         <div 
                                             key={partner.id} 
-                                            className="relative overflow-hidden rounded-2xl border border-white/10 !bg-white/[0.04] backdrop-blur-md p-5 hover:border-white/20 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)]"
+                                            className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-indigo-900/10 backdrop-blur-md p-5 hover:border-indigo-500/40 transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.2),inset_0_0_20px_rgba(99,102,241,0.05)]"
                                         >
                                             {/* Dynamic Identity Accent Line */}
                                             <div className={`absolute bottom-0 left-0 w-full h-1 ${partner.type === 'CLIENT' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                             
                                             <div className="flex justify-between items-start mb-3 sm:mb-4">
-                                                {/* Nuclear override: forced black/20 background */}
-                                                <div className="rounded-xl border border-white/5 !bg-black/20 p-3 text-indigo-400">
+                                                <div className="rounded-xl border border-indigo-500/20 bg-indigo-800/20 p-3 text-indigo-300">
                                                     <Users size={16} className="sm:w-5 sm:h-5" />
                                                 </div>
                                                 <div className="flex flex-col items-end gap-2">
-                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
                                                         {partner.type === 'CLIENT' ? 'Klient' : 'Furnitor'}
                                                     </span>
                                                     <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-white/5 text-rose-400 hover:bg-rose-500/20 transition-all border border-white/10" title={t('general.delete')}>
+                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-indigo-500/20 text-rose-300 hover:bg-rose-500/30 transition-all border border-indigo-500/30" title={t('general.delete')}>
                                                             <Trash2 size={12} className="sm:w-3.5 sm:h-3.5"/>
                                                         </button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <h4 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-3 group-hover:text-primary-start transition-colors">
+                                            <h4 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-3 group-hover:text-indigo-300 transition-colors">
                                                 {partner.name}
                                             </h4>
                                             <div className="space-y-1 sm:space-y-2">
                                                 {partner.email && (
-                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/60">
+                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-indigo-200/60">
                                                         <Mail size={12} className="sm:w-3.5 sm:h-3.5 text-indigo-400" /> {partner.email}
                                                     </div>
                                                 )}
                                                 {partner.phone && (
-                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/60">
+                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-indigo-200/60">
                                                         <Phone size={12} className="sm:w-3.5 sm:h-3.5 text-indigo-400" /> {partner.phone}
                                                     </div>
                                                 )}
                                                 {partner.address && (
-                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/60">
+                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-indigo-200/60">
                                                         <MapPin size={12} className="sm:w-3.5 sm:h-3.5 text-indigo-400" /> {partner.address}
                                                     </div>
                                                 )}
                                             </div>
                                             {partner.tax_id && (
-                                                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-white/10 flex justify-between items-center">
-                                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white/40">NIPT / TAX ID</span>
-                                                    <span className="text-[10px] sm:text-xs font-mono text-white/60">{partner.tax_id}</span>
+                                                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-indigo-500/20 flex justify-between items-center">
+                                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-indigo-200/60">NIPT / TAX ID</span>
+                                                    <span className="text-[10px] sm:text-xs font-mono text-white/70">{partner.tax_id}</span>
                                                 </div>
                                             )}
                                         </div>
