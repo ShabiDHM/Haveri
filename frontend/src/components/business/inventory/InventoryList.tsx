@@ -1,5 +1,5 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V6.3 (ATMOSPHERIC GLASS CARDS)
+// PHOENIX PROTOCOL - INVENTORY LIST V6.4 (NUCLEAR OVERRIDE)
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -30,14 +30,14 @@ const ItemCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 hover:border-white/20 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.1)] group flex flex-col justify-between h-full min-h-[13rem]"
+            className="relative overflow-hidden rounded-2xl border border-white/10 !bg-white/[0.04] backdrop-blur-md p-5 hover:border-white/20 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] group flex flex-col justify-between h-full min-h-[13rem]"
         >
             {/* Dynamic Status Accent Line */}
             <div className={`absolute bottom-0 left-0 w-full h-1 ${isCritical ? 'bg-rose-500' : 'bg-indigo-500'}`} />
             
             <div>
                 <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
-                    <div className={`p-2.5 sm:p-3 rounded-xl bg-white/5 border border-white/10 ${isPos ? 'text-indigo-400' : 'text-emerald-400'}`}>
+                    <div className={`rounded-xl border border-white/5 !bg-black/20 p-3 ${isPos ? 'text-indigo-400' : 'text-emerald-400'}`}>
                         {isPos ? <Layers size={18} /> : <Package size={18} />}
                     </div>
                     {isCritical && (

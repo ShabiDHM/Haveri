@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.13 (DYNAMIC IDENTITY FOR PARTNER CARDS)
+// PHOENIX PROTOCOL - FINANCE TAB V14.15 (NUCLEAR OVERRIDE FOR PARTNER CARDS)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -397,13 +397,14 @@ export const FinanceTab: React.FC = () => {
                                     {filteredPartners.map((partner) => (
                                         <div 
                                             key={partner.id} 
-                                            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 hover:border-white/20 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)]"
+                                            className="relative overflow-hidden rounded-2xl border border-white/10 !bg-white/[0.04] backdrop-blur-md p-5 hover:border-white/20 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)]"
                                         >
                                             {/* Dynamic Identity Accent Line */}
                                             <div className={`absolute bottom-0 left-0 w-full h-1 ${partner.type === 'CLIENT' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                             
                                             <div className="flex justify-between items-start mb-3 sm:mb-4">
-                                                <div className="p-2 sm:p-3 rounded-xl bg-white/5 border border-white/10 text-indigo-400">
+                                                {/* Nuclear override: forced black/20 background */}
+                                                <div className="rounded-xl border border-white/5 !bg-black/20 p-3 text-indigo-400">
                                                     <Users size={16} className="sm:w-5 sm:h-5" />
                                                 </div>
                                                 <div className="flex flex-col items-end gap-2">
