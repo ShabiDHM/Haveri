@@ -1,5 +1,5 @@
 // FILE: src/components/business/insights/StockModule.tsx
-// PHOENIX PROTOCOL - STOCK MODULE V13.5 (FULL-STACK UI HARMONIZATION)
+// PHOENIX PROTOCOL - STOCK MODULE V13.6 (FORCED DYNAMIC STRATEGIST TRANSPARENCY)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,7 +91,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.1)] transition-all duration-300 h-full flex flex-col min-h-[480px] hover-lift group">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/5 backdrop-blur-2xl p-6 shadow-2xl flex flex-col h-full min-h-[480px] hover-lift group">
                 
                 {/* Executive Header */}
                 <div className="flex items-center gap-3 border-b border-white/10 pb-5 mb-6 flex-shrink-0">
@@ -103,7 +103,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                 
                 <div className="flex flex-col flex-1 min-h-0">
                     {/* Main Value Box - Vlera Totale e Stokut */}
-                    <div className="relative rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 mb-6 flex-shrink-0 shadow-sm">
+                    <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 mb-6 flex-shrink-0 shadow-sm">
                         <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-start/40 rounded-b-xl"></div>
                         <p className="text-xs text-text-muted uppercase font-black tracking-widest mb-2">
                             {t('insights.inventory.value', 'Vlera Totale e Stokut')}
@@ -132,7 +132,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                     {/* List Area */}
                     <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 custom-scrollbar pr-2">
                         {lowStockItems.length === 0 ? (
-                            <div className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-6 flex items-center justify-center text-center shadow-sm">
+                            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-6 flex items-center justify-center text-center shadow-sm">
                                 <p className="text-xs text-text-muted uppercase font-black tracking-widest">
                                     {t('general.allGood', 'Gjithçka në rregull!')}
                                 </p>
@@ -142,7 +142,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                 <div 
                                     key={idx} 
                                     onClick={() => handleItemClick(item)} 
-                                    className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer hover-lift shadow-sm"
+                                    className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer hover-lift shadow-sm"
                                 >
                                     <div className="flex items-center gap-3 overflow-hidden flex-1">
                                         <div className="text-warning-start/70 group-hover:text-warning-start transition-colors shrink-0">
@@ -175,7 +175,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                             initial={{ scale: 0.98, y: 20 }} 
                             animate={{ scale: 1, y: 0 }} 
                             exit={{ scale: 0.98, y: 20 }} 
-                            className="relative rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl w-full max-w-lg shadow-sm overflow-hidden"
+                            className="relative rounded-3xl border border-white/10 bg-black/5 backdrop-blur-2xl w-full max-w-lg shadow-2xl overflow-hidden"
                         >
                             <div className="p-6 sm:p-8 border-b border-white/10 flex justify-between items-start">
                                 <div>
@@ -204,7 +204,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
-                                        <div className="relative rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 shadow-sm">
+                                        <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-primary-start" />
                                             <h4 className="text-xs font-black text-primary-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <ShoppingCart size={14} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}
@@ -215,13 +215,13 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             <button 
                                                 onClick={handleOpenDraftModal} 
                                                 disabled={!aiData.prediction || aiData.prediction.suggested_quantity === 0} 
-                                                className="w-full h-12 btn-primary rounded-lg text-xs uppercase font-black tracking-widest flex items-center justify-center gap-2 disabled:opacity-40 hover-lift shadow-sm"
+                                                className="w-full h-12 bg-indigo-600/20 backdrop-blur-sm border border-indigo-500/30 text-indigo-400 rounded-xl text-xs uppercase font-black tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-600/30 transition-colors disabled:opacity-40 hover-lift shadow-sm"
                                             >
                                                 {t('inventory.analysis.draftOrder', 'Drafto Porosinë')} <ArrowRight size={14} />
                                             </button>
                                         </div>
 
-                                        <div className="relative rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 shadow-sm">
+                                        <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-success-start" />
                                             <h4 className="text-xs font-black text-success-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <TrendingUp size={14} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}
@@ -261,7 +261,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                             initial={{ scale: 0.98, y: 20 }} 
                             animate={{ scale: 1, y: 0 }} 
                             exit={{ scale: 0.98, y: 20 }} 
-                            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl w-full max-w-lg shadow-sm"
+                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/5 backdrop-blur-2xl w-full max-w-lg shadow-2xl"
                         >
                             <div className="p-6 sm:p-8 border-b border-white/10">
                                 <h3 className="text-sm font-black text-text-primary uppercase tracking-widest mb-2">
@@ -280,7 +280,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                     <textarea 
                                         value={poSupplier} 
                                         onChange={(e) => setPoSupplier(e.target.value)}
-                                        className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md w-full p-4 h-24 resize-none text-sm placeholder:text-text-muted focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                        className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md w-full p-4 h-24 resize-none text-sm placeholder:text-text-muted focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         placeholder={t('inventory.poModal.supplierPlaceholder', 'Shkruani emrin dhe adresën e furnitorit...')}
                                     />
                                 </div>
@@ -293,7 +293,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             type="number" 
                                             value={poQuantity} 
                                             onChange={(e) => setPoQuantity(parseFloat(e.target.value) || 0)} 
-                                            className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md w-full p-4 text-sm focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md w-full p-4 text-sm focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                     <div>
@@ -305,23 +305,23 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             value={manualCost !== "" ? manualCost : calculatedCost.toFixed(2)}
                                             onChange={(e) => setManualCost(e.target.value)}
                                             placeholder={`Calculated: €${calculatedCost.toFixed(2)}`}
-                                            className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md w-full p-4 text-sm font-mono focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md w-full p-4 text-sm font-mono focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="p-6 sm:p-8 border-t border-white/10 flex justify-end gap-3 bg-white/[0.03] backdrop-blur-sm">
+                            <div className="p-6 sm:p-8 border-t border-white/10 flex justify-end gap-3 bg-white/5 backdrop-blur-sm">
                                 <button 
                                     onClick={() => setShowPOModal(false)} 
-                                    className="px-6 h-12 rounded-lg text-xs uppercase font-black tracking-widest text-text-muted hover:text-text-primary hover:bg-white/10 transition-colors hover-lift shadow-sm"
+                                    className="px-6 h-12 rounded-xl text-xs uppercase font-black tracking-widest text-text-muted hover:text-text-primary hover:bg-white/10 transition-colors hover-lift shadow-sm"
                                 >
                                     {t('general.cancel', 'Anulo')}
                                 </button>
                                 <button 
                                     onClick={handleConfirmAndGeneratePO} 
                                     disabled={drafting} 
-                                    className="btn-primary px-6 h-12 rounded-lg flex items-center justify-center gap-2 disabled:opacity-40 hover-lift shadow-sm"
+                                    className="btn-primary px-6 h-12 rounded-xl flex items-center justify-center gap-2 disabled:opacity-40 hover-lift shadow-sm"
                                 >
                                     {drafting ? <Loader2 size={16} className="animate-spin"/> : null}
                                     <span className="text-xs uppercase font-black tracking-widest">
