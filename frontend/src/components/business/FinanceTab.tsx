@@ -28,53 +28,50 @@ import { Panel } from '../ui/Panel';
 import { useAuth } from '../../context/AuthContext';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    let borderTopClass = 'border-t-primary-start';
     let iconColor = 'text-primary-start';
     let iconBg = 'bg-primary-start/10';
-    let amountColor = 'text-primary-start';
     
     if (type === 'income') { 
-        borderTopClass = 'border-t-success-start';
         iconColor = 'text-success-start';
         iconBg = 'bg-success-start/10';
-        amountColor = 'text-success-start';
     }
     if (type === 'expense') { 
-        borderTopClass = 'border-t-danger-start';
         iconColor = 'text-danger-start';
         iconBg = 'bg-danger-start/10';
-        amountColor = 'text-danger-start';
     }
     if (type === 'warning') { 
-        borderTopClass = 'border-t-warning-start';
         iconColor = 'text-warning-start';
         iconBg = 'bg-warning-start/10';
-        amountColor = 'text-warning-start';
     }
+    
+    // Determine bottom accent line color based on type
+    let accentColorClass = 'bg-indigo-500';
+    if (type === 'income') accentColorClass = 'bg-emerald-500';
+    if (type === 'expense') accentColorClass = 'bg-rose-500';
+    if (type === 'warning') accentColorClass = 'bg-amber-500';
     
     return (
         <motion.div 
-            whileHover={{ scale: 1.02, y: -2 }} 
+            whileHover={{ y: -4 }} 
             onClick={onClick} 
-            className={`relative overflow-hidden rounded-2xl border border-border-main ${borderTopClass} border-t-4 bg-surface/80 backdrop-blur-sm p-3 sm:p-5 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300 hover-lift`}
+            className="relative overflow-hidden rounded-2xl border border-border-main bg-surface/80 backdrop-blur-md p-3 sm:p-5 cursor-pointer group shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_30px_rgba(var(--accent-primary-rgb),0.15)] transition-all duration-300"
         >
-            <div className="flex justify-between items-start mb-2 sm:mb-3">
-                <div className={`p-2 sm:p-2.5 rounded-xl ${iconBg} ${iconColor} border border-border-main`}>
+            {/* Accent Grounding Line - Replaces thick top border */}
+            <div className={`absolute bottom-0 left-0 w-full h-1 ${accentColorClass}`} />
+
+            <div className="flex justify-between items-start mb-2 sm:mb-4">
+                <div className={`p-2 sm:p-3 rounded-xl bg-white/5 border border-white/10 ${iconColor} ${iconBg}`}>
                     {icon}
                 </div>
                 {trend && (
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-surface text-text-muted border border-border-main">
+                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-black/20 text-white/50 border border-white/5">
                         {trend}
                     </span>
                 )}
             </div>
             <div>
-                <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-text-muted mb-1">
-                    {title}
-                </p>
-                <h3 className={`text-lg sm:text-2xl font-bold ${amountColor} tracking-tight`}>
-                    {amount}
-                </h3>
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{title}</p>
+                <h3 className="text-lg sm:text-2xl font-black text-text-primary tracking-tight">{amount}</h3>
             </div>
         </motion.div>
     );
