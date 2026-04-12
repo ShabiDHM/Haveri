@@ -45,16 +45,16 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     }
     
     // Determine bottom accent line color based on type
-    let accentColorClass = 'bg-indigo-500';
-    if (type === 'income') accentColorClass = 'bg-emerald-500';
-    if (type === 'expense') accentColorClass = 'bg-rose-500';
-    if (type === 'warning') accentColorClass = 'bg-amber-500';
+    let accentColorClass = 'bg-indigo-500/90';
+    if (type === 'income') accentColorClass = 'bg-emerald-500/90';
+    if (type === 'expense') accentColorClass = 'bg-rose-500/90';
+    if (type === 'warning') accentColorClass = 'bg-amber-500/90';
     
     return (
         <motion.div 
             whileHover={{ y: -4 }} 
             onClick={onClick} 
-            className="relative overflow-hidden rounded-2xl border border-border-main bg-surface/80 backdrop-blur-md p-3 sm:p-5 cursor-pointer group shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_30px_rgba(var(--accent-primary-rgb),0.15)] transition-all duration-300"
+            className="relative overflow-hidden rounded-2xl border border-border-main bg-white/[0.06] backdrop-blur-xl p-3 sm:p-5 cursor-pointer group shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_30px_rgba(var(--accent-primary-rgb),0.15)] transition-all duration-300"
         >
             {/* Accent Grounding Line - Replaces thick top border */}
             <div className={`absolute bottom-0 left-0 w-full h-1 ${accentColorClass}`} />
@@ -70,8 +70,8 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
                 )}
             </div>
             <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{title}</p>
-                <h3 className="text-lg sm:text-2xl font-black text-text-primary tracking-tight">{amount}</h3>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">{title}</p>
+                <h3 className="text-lg sm:text-2xl font-black text-white tracking-tight">{amount}</h3>
             </div>
         </motion.div>
     );
