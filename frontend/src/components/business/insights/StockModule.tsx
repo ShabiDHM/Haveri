@@ -1,5 +1,5 @@
 // FILE: src/components/business/insights/StockModule.tsx
-// PHOENIX PROTOCOL - STOCK MODULE V13.6 (FORCED DYNAMIC STRATEGIST TRANSPARENCY)
+// PHOENIX PROTOCOL - STOCK MODULE V13.7 (TOTAL STYLE OVERRIDE)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,27 +91,27 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/5 backdrop-blur-2xl p-6 shadow-2xl flex flex-col h-full min-h-[480px] hover-lift group">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.05] backdrop-blur-2xl p-6 shadow-2xl h-full flex flex-col min-h-[480px] hover-lift group">
                 
                 {/* Executive Header */}
                 <div className="flex items-center gap-3 border-b border-white/10 pb-5 mb-6 flex-shrink-0">
                     <Package className="text-primary-start" size={20} /> 
-                    <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
+                    <h2 className="text-sm font-black text-white/80 uppercase tracking-widest leading-none">
                         {t('insights.inventory.title', 'Inteligjenca e Stokut')}
                     </h2>
                 </div>
                 
                 <div className="flex flex-col flex-1 min-h-0">
                     {/* Main Value Box - Vlera Totale e Stokut */}
-                    <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 mb-6 flex-shrink-0 shadow-sm">
+                    <div className="relative rounded-2xl border border-white/10 bg-black/10 backdrop-blur-md p-5 mb-6 flex-shrink-0 shadow-sm">
                         <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-start/40 rounded-b-xl"></div>
-                        <p className="text-xs text-text-muted uppercase font-black tracking-widest mb-2">
+                        <p className="text-xs text-white/60 uppercase font-black tracking-widest mb-2">
                             {t('insights.inventory.value', 'Vlera Totale e Stokut')}
                         </p>
-                        <p className="text-2xl font-mono font-black text-text-primary">
+                        <p className="text-2xl font-mono font-black text-white/90">
                             €{totalStockValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
-                        <p className="text-xs text-text-muted mt-1 uppercase font-black tracking-widest">
+                        <p className="text-xs text-white/50 mt-1 uppercase font-black tracking-widest">
                             {t('insights.inventory.valueDesc', 'Para të bllokuara në rafte')}
                         </p>
                     </div>
@@ -120,11 +120,11 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                     <div className="flex justify-between items-center mb-3 flex-shrink-0">
                         <div className="flex items-center gap-2">
                             <div className={`w-1.5 h-1.5 rounded-full ${hasLowStock ? 'bg-warning-start' : 'bg-success-start'}`}></div>
-                            <h3 className="text-xs text-text-muted uppercase font-black tracking-widest">
+                            <h3 className="text-xs text-white/60 uppercase font-black tracking-widest">
                                 {t('inventory.lowStock', 'Stoku Kritik')}
                             </h3>
                         </div>
-                        <span className={`text-xs px-2 py-0.5 rounded font-black uppercase tracking-widest border ${hasLowStock ? 'bg-warning-start/10 text-warning-start border-warning-start/20' : 'bg-success-start/10 text-success-start border-success-start/20'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded font-black uppercase tracking-widest border ${hasLowStock ? 'bg-warning-start/20 text-warning-start border-warning-start/30' : 'bg-success-start/20 text-success-start border-success-start/30'}`}>
                             {lowStockItems.length} {t('inventory.itemsCount', 'Artikuj')}
                         </span>
                     </div>
@@ -132,8 +132,8 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                     {/* List Area */}
                     <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 custom-scrollbar pr-2">
                         {lowStockItems.length === 0 ? (
-                            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-6 flex items-center justify-center text-center shadow-sm">
-                                <p className="text-xs text-text-muted uppercase font-black tracking-widest">
+                            <div className="rounded-2xl border border-white/10 bg-black/10 backdrop-blur-md p-6 flex items-center justify-center text-center shadow-sm">
+                                <p className="text-xs text-white/60 uppercase font-black tracking-widest">
                                     {t('general.allGood', 'Gjithçka në rregull!')}
                                 </p>
                             </div>
@@ -142,13 +142,13 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                 <div 
                                     key={idx} 
                                     onClick={() => handleItemClick(item)} 
-                                    className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer hover-lift shadow-sm"
+                                    className="rounded-2xl border border-white/10 bg-black/10 backdrop-blur-md p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer hover-lift shadow-sm"
                                 >
                                     <div className="flex items-center gap-3 overflow-hidden flex-1">
                                         <div className="text-warning-start/70 group-hover:text-warning-start transition-colors shrink-0">
                                             <Zap size={14} />
                                         </div>
-                                        <span className="text-xs font-bold text-text-primary truncate">
+                                        <span className="text-xs font-bold text-white/90 truncate">
                                             {item.name}
                                         </span>
                                     </div>
@@ -169,27 +169,27 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                         initial={{ opacity: 0 }} 
                         animate={{ opacity: 1 }} 
                         exit={{ opacity: 0 }} 
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
                     >
                         <motion.div 
                             initial={{ scale: 0.98, y: 20 }} 
                             animate={{ scale: 1, y: 0 }} 
                             exit={{ scale: 0.98, y: 20 }} 
-                            className="relative rounded-3xl border border-white/10 bg-black/5 backdrop-blur-2xl w-full max-w-lg shadow-2xl overflow-hidden"
+                            className="relative rounded-3xl border border-white/10 bg-white/[0.05] backdrop-blur-2xl w-full max-w-lg shadow-2xl overflow-hidden"
                         >
                             <div className="p-6 sm:p-8 border-b border-white/10 flex justify-between items-start">
                                 <div>
-                                    <h3 className="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-3 mb-2">
+                                    <h3 className="text-sm font-black text-white/80 uppercase tracking-widest flex items-center gap-3 mb-2">
                                         {selectedItem.name}
-                                        <span className="text-xs bg-danger-start/10 border border-danger-start/20 text-danger-start px-2 py-0.5 rounded uppercase font-black tracking-widest">
+                                        <span className="text-xs bg-danger-start/20 border border-danger-start/30 text-danger-start px-2 py-0.5 rounded uppercase font-black tracking-widest">
                                             {t('inventory.analysis.critical', 'Kritike')}
                                         </span>
                                     </h3>
-                                    <p className="text-xs text-text-muted uppercase font-black tracking-widest">
+                                    <p className="text-xs text-white/60 uppercase font-black tracking-widest">
                                         {t('inventory.analysis.currentStock', 'Stoku Aktual')}: {selectedItem.current_stock} {selectedItem.unit}
                                     </p>
                                 </div>
-                                <button onClick={() => setSelectedItem(null)} className="p-2 hover:bg-white/10 rounded-lg text-text-muted transition-colors hover-lift">
+                                <button onClick={() => setSelectedItem(null)} className="p-2 hover:bg-white/10 rounded-lg text-white/60 transition-colors hover-lift">
                                     <X size={20}/>
                                 </button>
                             </div>
@@ -198,43 +198,43 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                 {loading ? (
                                     <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
                                         <Loader2 size={32} className="animate-spin text-primary-start" />
-                                        <p className="text-xs text-text-muted uppercase font-black tracking-widest animate-pulse">
+                                        <p className="text-xs text-white/60 uppercase font-black tracking-widest animate-pulse">
                                             {t('inventory.analysis.analyzing', 'Inteligjenca Artificiale po analizon...')}
                                         </p>
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
-                                        <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-sm">
+                                        <div className="relative rounded-2xl border border-white/10 bg-black/10 backdrop-blur-md p-5 shadow-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-primary-start" />
                                             <h4 className="text-xs font-black text-primary-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <ShoppingCart size={14} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}
                                             </h4>
-                                            <p className="text-xs text-text-secondary mb-4 leading-relaxed font-medium">
+                                            <p className="text-xs text-white/70 mb-4 leading-relaxed font-medium">
                                                 {aiData.prediction?.reason || t('inventory.analysis.unavailable', 'Analiza momentalisht e padisponueshme.')}
                                             </p>
                                             <button 
                                                 onClick={handleOpenDraftModal} 
                                                 disabled={!aiData.prediction || aiData.prediction.suggested_quantity === 0} 
-                                                className="w-full h-12 bg-indigo-600/20 backdrop-blur-sm border border-indigo-500/30 text-indigo-400 rounded-xl text-xs uppercase font-black tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-600/30 transition-colors disabled:opacity-40 hover-lift shadow-sm"
+                                                className="w-full py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-40"
                                             >
                                                 {t('inventory.analysis.draftOrder', 'Drafto Porosinë')} <ArrowRight size={14} />
                                             </button>
                                         </div>
 
-                                        <div className="relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 shadow-sm">
+                                        <div className="relative rounded-2xl border border-white/10 bg-black/10 backdrop-blur-md p-5 shadow-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-success-start" />
                                             <h4 className="text-xs font-black text-success-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <TrendingUp size={14} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}
                                             </h4>
-                                            <p className="text-xs text-text-secondary font-medium leading-relaxed">
+                                            <p className="text-xs text-white/70 font-medium leading-relaxed">
                                                 {aiData.trend?.trend_analysis || t('inventory.analysis.unavailable', 'Nuk ka të dhëna mjaftueshme shitjeje.')}
                                             </p>
                                             {aiData.trend?.cross_sell_opportunities && (
                                                 <div className="mt-4 pt-4 border-t border-white/10">
-                                                    <p className="text-xs text-text-muted uppercase font-black tracking-widest mb-2">
+                                                    <p className="text-xs text-white/60 uppercase font-black tracking-widest mb-2">
                                                         {t('inventory.analysis.crossSell', 'Mundësi për Shitje të Kryqëzuar')}
                                                     </p>
-                                                    <p className="text-xs text-text-secondary font-medium leading-relaxed">
+                                                    <p className="text-xs text-white/70 font-medium leading-relaxed">
                                                         {aiData.trend.cross_sell_opportunities}
                                                     </p>
                                                 </div>
@@ -255,49 +255,49 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                         initial={{ opacity: 0 }} 
                         animate={{ opacity: 1 }} 
                         exit={{ opacity: 0 }} 
-                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm"
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
                     >
                         <motion.div 
                             initial={{ scale: 0.98, y: 20 }} 
                             animate={{ scale: 1, y: 0 }} 
                             exit={{ scale: 0.98, y: 20 }} 
-                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/5 backdrop-blur-2xl w-full max-w-lg shadow-2xl"
+                            className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.05] backdrop-blur-2xl w-full max-w-lg shadow-2xl"
                         >
                             <div className="p-6 sm:p-8 border-b border-white/10">
-                                <h3 className="text-sm font-black text-text-primary uppercase tracking-widest mb-2">
+                                <h3 className="text-sm font-black text-white/80 uppercase tracking-widest mb-2">
                                     {t('inventory.poModal.title', 'Konfirmo Porosinë')}
                                 </h3>
-                                <p className="text-xs text-text-muted uppercase font-black tracking-widest">
+                                <p className="text-xs text-white/60 uppercase font-black tracking-widest">
                                     {t('inventory.poModal.subtitle', 'Verifikoni detajet para se të gjeneroni dokumentin final.')}
                                 </p>
                             </div>
                             
                             <div className="p-6 sm:p-8 space-y-6">
                                 <div>
-                                    <label className="block text-xs font-black text-text-muted uppercase tracking-widest mb-2">
+                                    <label className="block text-xs font-black text-white/60 uppercase tracking-widest mb-2">
                                         {t('inventory.poModal.supplierName', 'Emri i Furnitorit')}
                                     </label>
                                     <textarea 
                                         value={poSupplier} 
                                         onChange={(e) => setPoSupplier(e.target.value)}
-                                        className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md w-full p-4 h-24 resize-none text-sm placeholder:text-text-muted focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                        className="rounded-2xl border border-white/10 bg-black/10 backdrop-blur-md w-full p-4 h-24 resize-none text-sm text-white/90 placeholder:text-white/40 focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         placeholder={t('inventory.poModal.supplierPlaceholder', 'Shkruani emrin dhe adresën e furnitorit...')}
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-black text-text-muted uppercase tracking-widest mb-2">
+                                        <label className="block text-xs font-black text-white/60 uppercase tracking-widest mb-2">
                                             {t('inventory.poModal.quantity', 'Sasia')}
                                         </label>
                                         <input 
                                             type="number" 
                                             value={poQuantity} 
                                             onChange={(e) => setPoQuantity(parseFloat(e.target.value) || 0)} 
-                                            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md w-full p-4 text-sm focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                            className="rounded-2xl border border-white/10 bg-black/10 backdrop-blur-md w-full p-4 text-sm text-white/90 focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-black text-text-muted uppercase tracking-widest mb-2">
+                                        <label className="block text-xs font-black text-white/60 uppercase tracking-widest mb-2">
                                             {t('inventory.poModal.totalCost', 'Kosto Totale')}
                                         </label>
                                         <input 
@@ -305,7 +305,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             value={manualCost !== "" ? manualCost : calculatedCost.toFixed(2)}
                                             onChange={(e) => setManualCost(e.target.value)}
                                             placeholder={`Calculated: €${calculatedCost.toFixed(2)}`}
-                                            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md w-full p-4 text-sm font-mono focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                            className="rounded-2xl border border-white/10 bg-black/10 backdrop-blur-md w-full p-4 text-sm font-mono text-white/90 focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                 </div>
@@ -314,19 +314,17 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                             <div className="p-6 sm:p-8 border-t border-white/10 flex justify-end gap-3 bg-white/5 backdrop-blur-sm">
                                 <button 
                                     onClick={() => setShowPOModal(false)} 
-                                    className="px-6 h-12 rounded-xl text-xs uppercase font-black tracking-widest text-text-muted hover:text-text-primary hover:bg-white/10 transition-colors hover-lift shadow-sm"
+                                    className="px-6 h-12 rounded-xl text-xs uppercase font-black tracking-widest text-white/70 hover:text-white hover:bg-white/10 transition-colors hover-lift shadow-sm"
                                 >
                                     {t('general.cancel', 'Anulo')}
                                 </button>
                                 <button 
                                     onClick={handleConfirmAndGeneratePO} 
                                     disabled={drafting} 
-                                    className="btn-primary px-6 h-12 rounded-xl flex items-center justify-center gap-2 disabled:opacity-40 hover-lift shadow-sm"
+                                    className="w-full py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 disabled:opacity-40"
                                 >
                                     {drafting ? <Loader2 size={16} className="animate-spin"/> : null}
-                                    <span className="text-xs uppercase font-black tracking-widest">
-                                        {t('inventory.poModal.generatePDF', 'Gjenero PDF')}
-                                    </span>
+                                    {t('inventory.poModal.generatePDF', 'Gjenero PDF')}
                                 </button>
                             </div>
                         </motion.div>
