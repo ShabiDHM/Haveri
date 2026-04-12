@@ -1,5 +1,5 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V6.6 (COMBINED SHADOW)
+// PHOENIX PROTOCOL - INVENTORY LIST V6.7 (VISIBLE COLORS)
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -30,18 +30,18 @@ const ItemCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-indigo-900/10 backdrop-blur-md p-5 hover:border-indigo-500/40 transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.2),inset_0_0_20px_rgba(99,102,241,0.05)] group flex flex-col justify-between h-full min-h-[13rem]"
+            className="relative overflow-hidden rounded-2xl border border-indigo-400/30 bg-indigo-500/10 backdrop-blur-md p-5 hover:border-indigo-400/60 transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.2),inset_0_0_20px_rgba(99,102,241,0.1)] group flex flex-col justify-between h-full min-h-[13rem]"
         >
-            {/* Dynamic Status Accent Line */}
-            <div className={`absolute bottom-0 left-0 w-full h-1 ${isCritical ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+            {/* Dynamic Status Accent Line - Thicker */}
+            <div className={`absolute bottom-0 left-0 w-full h-1.5 ${isCritical ? 'bg-rose-500' : 'bg-emerald-500'} shadow-lg`} />
             
             <div>
                 <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
-                    <div className={`rounded-xl border border-indigo-500/20 bg-indigo-800/20 p-3 ${isPos ? 'text-indigo-300' : 'text-emerald-300'}`}>
+                    <div className={`rounded-xl border border-indigo-400/30 bg-indigo-500/20 p-3 ${isPos ? 'text-indigo-300' : 'text-emerald-300'}`}>
                         {isPos ? <Layers size={18} /> : <Package size={18} />}
                     </div>
                     {isCritical && (
-                        <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                        <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-rose-500/30 text-rose-200 border border-rose-500/50">
                             {t('inventory.lowStock', 'Stoku Kritik')}
                         </span>
                     )}
@@ -53,13 +53,13 @@ const ItemCard: React.FC<{
                     <span className={`text-xl sm:text-2xl font-mono font-bold ${isCritical ? 'text-rose-300' : 'text-white'}`}>
                         {current.toFixed(3)}
                     </span>
-                    <span className="ml-2 text-xs sm:text-sm text-indigo-200/60">{item.unit}</span>
+                    <span className="ml-2 text-xs sm:text-sm text-indigo-200/80">{item.unit}</span>
                 </div>
             </div>
             
-            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-indigo-500/20 flex justify-between items-end">
+            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-indigo-400/20 flex justify-between items-end">
                 <div>
-                    <span className="block text-[10px] sm:text-xs text-indigo-200/60 uppercase tracking-widest font-bold">
+                    <span className="block text-[10px] sm:text-xs text-indigo-200/70 uppercase tracking-widest font-bold">
                         {t('inventory.items.cost', 'Kosto / Njësi')}
                     </span>
                     <span className="text-lg sm:text-xl font-mono font-bold text-emerald-300">
@@ -70,14 +70,14 @@ const ItemCard: React.FC<{
                 <div className="flex items-center gap-1">
                     <button 
                         onClick={() => onEdit(item)} 
-                        className="p-2 hover:bg-indigo-500/20 rounded-lg text-amber-300 hover:text-amber-200 transition-colors hover-lift shadow-sm" 
+                        className="p-2 hover:bg-indigo-500/30 rounded-lg text-amber-300 hover:text-amber-200 transition-colors hover-lift shadow-sm" 
                         title={t('general.edit')}
                     >
                         <Edit size={16} />
                     </button>
                     <button 
                         onClick={() => onDelete(item._id)} 
-                        className="p-2 hover:bg-indigo-500/20 rounded-lg text-rose-300 hover:text-rose-200 transition-colors hover-lift shadow-sm" 
+                        className="p-2 hover:bg-indigo-500/30 rounded-lg text-rose-300 hover:text-rose-200 transition-colors hover-lift shadow-sm" 
                         title={t('general.delete')}
                     >
                         <Trash2 size={16} />
@@ -101,8 +101,8 @@ export const InventoryList: React.FC<InventoryListProps> = ({ manualItems, posIt
     
     if (allItems.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-48 text-indigo-200/60">
-                <Box size={40} className="mb-4 opacity-20" />
+            <div className="flex flex-col items-center justify-center h-48 text-indigo-200/70">
+                <Box size={40} className="mb-4 opacity-30" />
                 <p className="text-sm sm:text-base">
                     {t('inventory.items.noItemsFound', 'Nuk u gjet asnjë artikull.')}
                 </p>
