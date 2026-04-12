@@ -1,9 +1,9 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V6.2 (TRANSLATED EMPTY STATE)
+// PHOENIX PROTOCOL - INVENTORY LIST V6.3 (ATMOSPHERIC GLASS CARDS)
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Edit, Trash2, Layers, Package, Box } from 'lucide-react';
+import { Edit, Trash2, Layers, Package, Box } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InventoryItem } from '../../../data/types';
 
@@ -23,43 +23,46 @@ const ItemCard: React.FC<{
     const { t } = useTranslation();
     const current = Number(item.current_stock);
     const threshold = Number(item.low_stock_threshold || 0);
-    const isLowStock = current <= threshold;
+    const isCritical = current <= threshold;
 
     return (
         <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="glass-panel border border-border-main rounded-3xl p-5 sm:p-6 hover-lift shadow-sm transition-all duration-300 group relative flex flex-col justify-between h-full min-h-[13rem]"
+            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 hover:border-white/20 transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.1)] group flex flex-col justify-between h-full min-h-[13rem]"
         >
+            {/* Dynamic Status Accent Line */}
+            <div className={`absolute bottom-0 left-0 w-full h-1 ${isCritical ? 'bg-rose-500' : 'bg-indigo-500'}`} />
+            
             <div>
                 <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
-                    <div className={`p-2.5 sm:p-3 rounded-2xl bg-surface/30 backdrop-blur-sm border border-border-main ${isPos ? 'text-primary-start' : 'text-success-start'}`}>
+                    <div className={`p-2.5 sm:p-3 rounded-xl bg-white/5 border border-white/10 ${isPos ? 'text-indigo-400' : 'text-emerald-400'}`}>
                         {isPos ? <Layers size={18} /> : <Package size={18} />}
                     </div>
-                    {isLowStock && (
-                        <div className="flex items-center gap-1.5 bg-danger-start/10 text-danger-start text-xs px-2 py-1 rounded-full uppercase tracking-wider font-bold animate-pulse border border-danger-start/20">
-                            <AlertTriangle size={12} /> {t('inventory.lowStock', 'Stoku Kritik')}
-                        </div>
+                    {isCritical && (
+                        <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                            {t('inventory.lowStock', 'Stoku Kritik')}
+                        </span>
                     )}
                 </div>
                 
-                <h2 className="text-base sm:text-lg font-bold text-text-primary group-hover:text-text-primary line-clamp-2">{item.name}</h2>
+                <h4 className="text-white font-bold text-base sm:text-lg mb-1 line-clamp-2">{item.name}</h4>
                 
                 <div className="mt-2 sm:mt-3">
-                    <span className={`text-xl sm:text-2xl font-mono ${isLowStock ? 'text-danger-start' : 'text-text-primary'}`}>
+                    <span className={`text-xl sm:text-2xl font-mono font-bold ${isCritical ? 'text-rose-400' : 'text-white'}`}>
                         {current.toFixed(3)}
                     </span>
-                    <span className="ml-2 text-xs sm:text-sm text-text-muted">{item.unit}</span>
+                    <span className="ml-2 text-xs sm:text-sm text-white/50">{item.unit}</span>
                 </div>
             </div>
             
-            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-border-main flex justify-between items-end">
+            <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-white/10 flex justify-between items-end">
                 <div>
-                    <span className="block text-xs sm:text-xs text-text-muted uppercase tracking-wider font-bold">
+                    <span className="block text-[10px] sm:text-xs text-white/40 uppercase tracking-widest font-bold">
                         {t('inventory.items.cost', 'Kosto / Njësi')}
                     </span>
-                    <span className="text-lg sm:text-xl font-mono font-bold text-success-start">
+                    <span className="text-lg sm:text-xl font-mono font-bold text-emerald-400">
                         €{item.cost_per_unit.toFixed(2)}
                     </span>
                 </div>
@@ -67,14 +70,14 @@ const ItemCard: React.FC<{
                 <div className="flex items-center gap-1">
                     <button 
                         onClick={() => onEdit(item)} 
-                        className="p-2 hover:bg-hover rounded-lg text-warning-start hover:text-warning-start/80 transition-colors hover-lift shadow-sm" 
+                        className="p-2 hover:bg-white/10 rounded-lg text-amber-400 hover:text-amber-300 transition-colors hover-lift shadow-sm" 
                         title={t('general.edit')}
                     >
                         <Edit size={16} />
                     </button>
                     <button 
                         onClick={() => onDelete(item._id)} 
-                        className="p-2 hover:bg-hover rounded-lg text-danger-start hover:text-danger-start/80 transition-colors hover-lift shadow-sm" 
+                        className="p-2 hover:bg-white/10 rounded-lg text-rose-400 hover:text-rose-300 transition-colors hover-lift shadow-sm" 
                         title={t('general.delete')}
                     >
                         <Trash2 size={16} />
@@ -98,7 +101,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({ manualItems, posIt
     
     if (allItems.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-48 text-text-muted">
+            <div className="flex flex-col items-center justify-center h-48 text-white/50">
                 <Box size={40} className="mb-4 opacity-20" />
                 <p className="text-sm sm:text-base">
                     {t('inventory.items.noItemsFound', 'Nuk u gjet asnjë artikull.')}
