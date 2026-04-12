@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.12 (FLEXBOX SCROLL CONTAINER FIX)
+// PHOENIX PROTOCOL - FINANCE TAB V14.13 (DYNAMIC IDENTITY FOR PARTNER CARDS)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -345,7 +345,6 @@ export const FinanceTab: React.FC = () => {
                     </div>
                 </div>
 
-                {/* FIXED: Added flex flex-col to the inner wrapper */}
                 <div className="flex-1 flex flex-col overflow-hidden relative px-4 sm:px-6 pb-4 sm:pb-6">
                     {(activeTab === 'transactions' || activeTab === 'partners') && (
                         <div className="mb-4 sm:mb-6 relative group">
@@ -361,7 +360,6 @@ export const FinanceTab: React.FC = () => {
                     )}
 
                     {activeTab === 'transactions' && (
-                        // FIXED: Changed h-full to flex-1 min-h-0
                         <div className="flex-1 min-h-0 overflow-y-auto custom-finance-scroll pr-1 sm:pr-2 space-y-3 pb-4 sm:pb-20">
                             {loading ? (
                                 <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-primary-start" /></div>
@@ -389,7 +387,6 @@ export const FinanceTab: React.FC = () => {
                     )}
 
                     {activeTab === 'partners' && (
-                        // FIXED: Changed h-full to flex-1 min-h-0
                         <div className="flex-1 min-h-0 overflow-y-auto custom-finance-scroll pr-1 sm:pr-2 space-y-3 pb-4 sm:pb-20">
                             {partnersLoading ? (
                                 <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-primary-start" /></div>
@@ -398,26 +395,55 @@ export const FinanceTab: React.FC = () => {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                                     {filteredPartners.map((partner) => (
-                                        <motion.div key={partner.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface/30 backdrop-blur-sm border border-border-main rounded-2xl p-3 sm:p-5 hover:border-primary-start/30 transition-all group relative hover-lift shadow-sm">
+                                        <div 
+                                            key={partner.id} 
+                                            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 hover:border-white/20 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)]"
+                                        >
+                                            {/* Dynamic Identity Accent Line */}
+                                            <div className={`absolute bottom-0 left-0 w-full h-1 ${partner.type === 'CLIENT' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                            
                                             <div className="flex justify-between items-start mb-3 sm:mb-4">
-                                                <div className="p-2 sm:p-3 rounded-xl bg-primary-start/10 text-primary-start border border-border-main"><Users size={16} className="sm:w-5 sm:h-5" /></div>
+                                                <div className="p-2 sm:p-3 rounded-xl bg-white/5 border border-white/10 text-indigo-400">
+                                                    <Users size={16} className="sm:w-5 sm:h-5" />
+                                                </div>
                                                 <div className="flex flex-col items-end gap-2">
-                                                    <span className={`text-[10px] sm:text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-success-start/20 text-success-start border border-success-start/30' : 'bg-warning-start/20 text-warning-start border border-warning-start/30'}`}>
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${partner.type === 'CLIENT' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
                                                         {partner.type === 'CLIENT' ? 'Klient' : 'Furnitor'}
                                                     </span>
                                                     <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-surface/50 text-danger-start hover:bg-danger-start hover:text-text-inverse transition-all border border-border-main" title={t('general.delete')}><Trash2 size={12} className="sm:w-3.5 sm:h-3.5"/></button>
+                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-white/5 text-rose-400 hover:bg-rose-500/20 transition-all border border-white/10" title={t('general.delete')}>
+                                                            <Trash2 size={12} className="sm:w-3.5 sm:h-3.5"/>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <h4 className="text-base sm:text-lg font-bold text-text-primary mb-2 sm:mb-3 group-hover:text-primary-start transition-colors">{partner.name}</h4>
+                                            <h4 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-3 group-hover:text-primary-start transition-colors">
+                                                {partner.name}
+                                            </h4>
                                             <div className="space-y-1 sm:space-y-2">
-                                                {partner.email && <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-text-muted"><Mail size={12} className="sm:w-3.5 sm:h-3.5 text-primary-start/50" /> {partner.email}</div>}
-                                                {partner.phone && <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-text-muted"><Phone size={12} className="sm:w-3.5 sm:h-3.5 text-primary-start/50" /> {partner.phone}</div>}
-                                                {partner.address && <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-text-muted"><MapPin size={12} className="sm:w-3.5 sm:h-3.5 text-primary-start/50" /> {partner.address}</div>}
+                                                {partner.email && (
+                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/60">
+                                                        <Mail size={12} className="sm:w-3.5 sm:h-3.5 text-indigo-400" /> {partner.email}
+                                                    </div>
+                                                )}
+                                                {partner.phone && (
+                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/60">
+                                                        <Phone size={12} className="sm:w-3.5 sm:h-3.5 text-indigo-400" /> {partner.phone}
+                                                    </div>
+                                                )}
+                                                {partner.address && (
+                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/60">
+                                                        <MapPin size={12} className="sm:w-3.5 sm:h-3.5 text-indigo-400" /> {partner.address}
+                                                    </div>
+                                                )}
                                             </div>
-                                            {partner.tax_id && <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border-main flex justify-between items-center"><span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-text-muted">NIPT / TAX ID</span><span className="text-[10px] sm:text-xs font-mono text-text-secondary">{partner.tax_id}</span></div>}
-                                        </motion.div>
+                                            {partner.tax_id && (
+                                                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-white/10 flex justify-between items-center">
+                                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white/40">NIPT / TAX ID</span>
+                                                    <span className="text-[10px] sm:text-xs font-mono text-white/60">{partner.tax_id}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     ))}
                                 </div>
                             )}
@@ -425,7 +451,6 @@ export const FinanceTab: React.FC = () => {
                     )}
 
                     {activeTab === 'reports' && (
-                        // FIXED: Changed h-full to flex-1 min-h-0
                         <div className="flex-1 min-h-0 overflow-y-auto custom-finance-scroll pr-1 sm:pr-2">
                             {!analyticsData ? ( <div className="text-center text-text-muted py-10">{t('finance.reports.noData')}</div> ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
