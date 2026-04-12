@@ -1,5 +1,5 @@
 // FILE: src/components/business/insights/StockModule.tsx
-// PHOENIX PROTOCOL - STOCK MODULE V14.0 (DUAL‑THEME AWARENESS)
+// PHOENIX PROTOCOL - STOCK MODULE V14.2 (RE‑ATTACHED TO GLOBAL DESIGN SYSTEM)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,73 +91,75 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className="relative overflow-hidden rounded-3xl border border-gray-200 dark:border-white/10 bg-white/60 dark:bg-black/10 backdrop-blur-2xl p-6 shadow-2xl h-full flex flex-col">
+            <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group shadow-sm border border-border-main">
                 
-                {/* Header */}
-                <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                    <h2 className="text-lg font-black uppercase tracking-widest text-gray-900 dark:text-white flex items-center gap-2">
+                {/* Executive Header */}
+                <div className="flex items-center border-b border-border-main pb-5 mb-6 flex-shrink-0">
+                    <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none flex items-center gap-2">
                         <Package className="text-primary-start" size={20} />
                         {t('insights.inventory.title', 'Inteligjenca e Stokut')}
                     </h2>
                 </div>
-
-                {/* Total Stock Value */}
-                <div className="border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 rounded-2xl p-5 mb-6">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-white/50 mb-1">
-                        {t('insights.inventory.value', 'Vlera Totale e Stokut')}
-                    </p>
-                    <h3 className="text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
-                        €{totalStockValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </h3>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-white/40 mt-1">
-                        {t('insights.inventory.valueDesc', 'Para të bllokuara në rafte')}
-                    </p>
-                </div>
-
-                {/* Critical Stock Header */}
-                <div className="flex justify-between items-center mb-3 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${hasLowStock ? 'bg-amber-500 dark:bg-amber-400' : 'bg-emerald-600 dark:bg-emerald-400'}`}></div>
-                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-white/60">
-                            {t('inventory.lowStock', 'Stoku Kritik')}
+                
+                <div className="flex flex-col flex-1 min-h-0">
+                    {/* Total Stock Value */}
+                    <div className="border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 rounded-2xl p-5 mb-6">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-white/50 mb-1">
+                            {t('insights.inventory.value', 'Vlera Totale e Stokut')}
+                        </p>
+                        <h3 className="text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                            €{totalStockValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </h3>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-white/40 mt-1">
+                            {t('insights.inventory.valueDesc', 'Para të bllokuara në rafte')}
+                        </p>
                     </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-widest border ${hasLowStock ? 'bg-amber-500/20 dark:bg-amber-400/20 text-amber-600 dark:text-amber-400 border-amber-500/30 dark:border-amber-400/30' : 'bg-emerald-600/20 dark:bg-emerald-400/20 text-emerald-600 dark:text-emerald-400 border-emerald-600/30 dark:border-emerald-400/30'}`}>
-                        {lowStockItems.length} {t('inventory.itemsCount', 'Artikuj')}
-                    </span>
-                </div>
 
-                {/* Low Stock List */}
-                <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 custom-scrollbar pr-2">
-                    {lowStockItems.length === 0 ? (
-                        <div className="border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 rounded-2xl p-6 text-center">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-white/50">
-                                {t('general.allGood', 'Gjithçka në rregull!')}
-                            </p>
+                    {/* Critical Stock Header */}
+                    <div className="flex justify-between items-center mb-3 flex-shrink-0">
+                        <div className="flex items-center gap-2">
+                            <div className={`w-1.5 h-1.5 rounded-full ${hasLowStock ? 'bg-amber-500 dark:bg-amber-400' : 'bg-emerald-600 dark:bg-emerald-400'}`}></div>
+                            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-white/60">
+                                {t('inventory.lowStock', 'Stoku Kritik')}
+                            </h3>
                         </div>
-                    ) : (
-                        lowStockItems.map((item: any, idx: number) => (
-                            <div 
-                                key={idx} 
-                                onClick={() => handleItemClick(item)} 
-                                className="border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 rounded-2xl p-4 flex justify-between items-center group hover:border-amber-500/50 dark:hover:border-amber-400/50 transition-all cursor-pointer"
-                            >
-                                <div className="flex items-center gap-3 overflow-hidden flex-1">
-                                    <Zap size={14} className="text-amber-500 dark:text-amber-400/70 group-hover:text-amber-600 dark:group-hover:text-amber-400" />
-                                    <span className="text-xs font-bold text-gray-800 dark:text-white/90 truncate">
-                                        {item.name}
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-widest border ${hasLowStock ? 'bg-amber-500/20 dark:bg-amber-400/20 text-amber-600 dark:text-amber-400 border-amber-500/30 dark:border-amber-400/30' : 'bg-emerald-600/20 dark:bg-emerald-400/20 text-emerald-600 dark:text-emerald-400 border-emerald-600/30 dark:border-emerald-400/30'}`}>
+                            {lowStockItems.length} {t('inventory.itemsCount', 'Artikuj')}
+                        </span>
+                    </div>
+
+                    {/* Low Stock List */}
+                    <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 custom-scrollbar pr-2">
+                        {lowStockItems.length === 0 ? (
+                            <div className="border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 rounded-2xl p-6 text-center">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-white/50">
+                                    {t('general.allGood', 'Gjithçka në rregull!')}
+                                </p>
+                            </div>
+                        ) : (
+                            lowStockItems.map((item: any, idx: number) => (
+                                <div 
+                                    key={idx} 
+                                    onClick={() => handleItemClick(item)} 
+                                    className="border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 rounded-2xl p-4 flex justify-between items-center group hover:border-amber-500/50 dark:hover:border-amber-400/50 transition-all cursor-pointer"
+                                >
+                                    <div className="flex items-center gap-3 overflow-hidden flex-1">
+                                        <Zap size={14} className="text-amber-500 dark:text-amber-400/70 group-hover:text-amber-600 dark:group-hover:text-amber-400" />
+                                        <span className="text-xs font-bold text-gray-800 dark:text-white/90 truncate">
+                                            {item.name}
+                                        </span>
+                                    </div>
+                                    <span className="text-xs font-mono font-black text-amber-600 dark:text-amber-400 flex items-center gap-1.5 shrink-0 ml-3">
+                                        <AlertCircle size={12} /> {item.current_stock} {item.unit}
                                     </span>
                                 </div>
-                                <span className="text-xs font-mono font-black text-amber-600 dark:text-amber-400 flex items-center gap-1.5 shrink-0 ml-3">
-                                    <AlertCircle size={12} /> {item.current_stock} {item.unit}
-                                </span>
-                            </div>
-                        ))
-                    )}
+                            ))
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* AI Analysis Modal */}
+            {/* AI Analysis Modal (unchanged, dual‑theme) */}
             <AnimatePresence>
                 {selectedItem && !showPOModal && (
                     <motion.div 
