@@ -1,7 +1,6 @@
 // FILE: src/components/business/insights/StockModule.tsx
-// PHOENIX PROTOCOL - STOCK MODULE V13.3 (HEIGHT ENFORCEMENT & SCROLLING)
-// Fixed: Replaced text-[9px] with text-xs for consistency.
-// FIXED: Added max-h-[300px] to stock list container to prevent card overflow
+// PHOENIX PROTOCOL - STOCK MODULE V13.4 (DYNAMIC STRATEGIST DESIGN SYSTEM)
+// Fixed: Removed duplicate overflow-hidden class
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -93,10 +92,10 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className="glass-panel flex flex-col h-full min-h-[480px] p-6 sm:p-8 hover-lift relative overflow-hidden group shadow-sm border border-border-main">
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.1)] transition-all duration-300 flex flex-col h-full min-h-[480px] hover-lift group">
                 
                 {/* Executive Header */}
-                <div className="flex items-center gap-3 border-b border-border-main pb-5 mb-6 flex-shrink-0">
+                <div className="flex items-center gap-3 border-b border-white/10 pb-5 mb-6 flex-shrink-0">
                     <Package className="text-primary-start" size={20} /> 
                     <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
                         {t('insights.inventory.title', 'Inteligjenca e Stokut')}
@@ -104,8 +103,9 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                 </div>
                 
                 <div className="flex flex-col flex-1 min-h-0">
-                    {/* Main Value Box */}
-                    <div className="glass-input p-5 mb-6 flex-shrink-0 border border-border-main bg-surface/30 backdrop-blur-sm">
+                    {/* Main Value Box - Standardized glass consistency with bottom accent line */}
+                    <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-5 mb-6 flex-shrink-0 shadow-sm">
+                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-start/40 rounded-b-xl"></div>
                         <p className="text-xs text-text-muted uppercase font-black tracking-widest mb-2">
                             {t('insights.inventory.value', 'Vlera Totale e Stokut')}
                         </p>
@@ -130,10 +130,10 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                         </span>
                     </div>
 
-                    {/* List Area - FIXED: Added max-h-[300px] to enforce consistent card height */}
+                    {/* List Area - Standardized glass consistency */}
                     <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 custom-scrollbar pr-2">
                         {lowStockItems.length === 0 ? (
-                            <div className="glass-input p-6 flex items-center justify-center text-center border border-border-main bg-surface/30 backdrop-blur-sm">
+                            <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-6 flex items-center justify-center text-center shadow-sm">
                                 <p className="text-xs text-text-muted uppercase font-black tracking-widest">
                                     {t('general.allGood', 'Gjithçka në rregull!')}
                                 </p>
@@ -143,7 +143,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                 <div 
                                     key={idx} 
                                     onClick={() => handleItemClick(item)} 
-                                    className="glass-input p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer hover-lift border border-border-main bg-surface/30 backdrop-blur-sm"
+                                    className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer hover-lift shadow-sm"
                                 >
                                     <div className="flex items-center gap-3 overflow-hidden flex-1">
                                         <div className="text-warning-start/70 group-hover:text-warning-start transition-colors shrink-0">
@@ -163,7 +163,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                 </div>
             </div>
 
-            {/* AI Analysis Modal */}
+            {/* AI Analysis Modal - Updated glass styling for consistency */}
             <AnimatePresence>
                 {selectedItem && !showPOModal && (
                     <motion.div 
@@ -176,9 +176,9 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                             initial={{ scale: 0.98, y: 20 }} 
                             animate={{ scale: 1, y: 0 }} 
                             exit={{ scale: 0.98, y: 20 }} 
-                            className="glass-panel w-full max-w-lg shadow-sm overflow-hidden relative border border-border-main"
+                            className="relative rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl w-full max-w-lg shadow-sm overflow-hidden"
                         >
-                            <div className="p-6 sm:p-8 border-b border-border-main flex justify-between items-start">
+                            <div className="p-6 sm:p-8 border-b border-white/10 flex justify-between items-start">
                                 <div>
                                     <h3 className="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-3 mb-2">
                                         {selectedItem.name}
@@ -190,7 +190,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                         {t('inventory.analysis.currentStock', 'Stoku Aktual')}: {selectedItem.current_stock} {selectedItem.unit}
                                     </p>
                                 </div>
-                                <button onClick={() => setSelectedItem(null)} className="p-2 hover:bg-hover rounded-lg text-text-muted transition-colors hover-lift">
+                                <button onClick={() => setSelectedItem(null)} className="p-2 hover:bg-white/10 rounded-lg text-text-muted transition-colors hover-lift">
                                     <X size={20}/>
                                 </button>
                             </div>
@@ -205,7 +205,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
-                                        <div className="glass-input p-5 relative overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm">
+                                        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-5 shadow-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-primary-start" />
                                             <h4 className="text-xs font-black text-primary-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <ShoppingCart size={14} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}
@@ -222,7 +222,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             </button>
                                         </div>
 
-                                        <div className="glass-input p-5 relative overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm">
+                                        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-5 shadow-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-success-start" />
                                             <h4 className="text-xs font-black text-success-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <TrendingUp size={14} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}
@@ -231,7 +231,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                                 {aiData.trend?.trend_analysis || t('inventory.analysis.unavailable', 'Nuk ka të dhëna mjaftueshme shitjeje.')}
                                             </p>
                                             {aiData.trend?.cross_sell_opportunities && (
-                                                <div className="mt-4 pt-4 border-t border-border-main">
+                                                <div className="mt-4 pt-4 border-t border-white/10">
                                                     <p className="text-xs text-text-muted uppercase font-black tracking-widest mb-2">
                                                         {t('inventory.analysis.crossSell', 'Mundësi për Shitje të Kryqëzuar')}
                                                     </p>
@@ -249,7 +249,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                 )}
             </AnimatePresence>
 
-            {/* PO Generation Modal */}
+            {/* PO Generation Modal - Updated glass styling */}
             <AnimatePresence>
                 {showPOModal && selectedItem && (
                      <motion.div 
@@ -262,9 +262,9 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                             initial={{ scale: 0.98, y: 20 }} 
                             animate={{ scale: 1, y: 0 }} 
                             exit={{ scale: 0.98, y: 20 }} 
-                            className="glass-panel w-full max-w-lg shadow-sm overflow-hidden relative border border-border-main"
+                            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl w-full max-w-lg shadow-sm"
                         >
-                            <div className="p-6 sm:p-8 border-b border-border-main">
+                            <div className="p-6 sm:p-8 border-b border-white/10">
                                 <h3 className="text-sm font-black text-text-primary uppercase tracking-widest mb-2">
                                     {t('inventory.poModal.title', 'Konfirmo Porosinë')}
                                 </h3>
@@ -281,7 +281,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                     <textarea 
                                         value={poSupplier} 
                                         onChange={(e) => setPoSupplier(e.target.value)}
-                                        className="glass-input w-full p-4 h-24 resize-none text-sm placeholder:text-text-muted border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                        className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-sm w-full p-4 h-24 resize-none text-sm placeholder:text-text-muted focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         placeholder={t('inventory.poModal.supplierPlaceholder', 'Shkruani emrin dhe adresën e furnitorit...')}
                                     />
                                 </div>
@@ -294,7 +294,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             type="number" 
                                             value={poQuantity} 
                                             onChange={(e) => setPoQuantity(parseFloat(e.target.value) || 0)} 
-                                            className="glass-input w-full p-4 text-sm border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                            className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-sm w-full p-4 text-sm focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                     <div>
@@ -306,16 +306,16 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             value={manualCost !== "" ? manualCost : calculatedCost.toFixed(2)}
                                             onChange={(e) => setManualCost(e.target.value)}
                                             placeholder={`Calculated: €${calculatedCost.toFixed(2)}`}
-                                            className="glass-input w-full p-4 text-sm font-mono border border-border-main focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                            className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-sm w-full p-4 text-sm font-mono focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                 </div>
                             </div>
                             
-                            <div className="p-6 sm:p-8 border-t border-border-main flex justify-end gap-3 bg-surface/20 backdrop-blur-sm">
+                            <div className="p-6 sm:p-8 border-t border-white/10 flex justify-end gap-3 bg-white/[0.03] backdrop-blur-sm">
                                 <button 
                                     onClick={() => setShowPOModal(false)} 
-                                    className="px-6 h-12 rounded-lg text-xs uppercase font-black tracking-widest text-text-muted hover:text-text-primary hover:bg-hover transition-colors hover-lift shadow-sm"
+                                    className="px-6 h-12 rounded-lg text-xs uppercase font-black tracking-widest text-text-muted hover:text-text-primary hover:bg-white/10 transition-colors hover-lift shadow-sm"
                                 >
                                     {t('general.cancel', 'Anulo')}
                                 </button>
