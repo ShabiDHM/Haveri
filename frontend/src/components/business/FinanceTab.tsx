@@ -28,50 +28,65 @@ import { Panel } from '../ui/Panel';
 import { useAuth } from '../../context/AuthContext';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    let iconColor = 'text-primary-start';
-    let iconBg = 'bg-primary-start/10';
+    // Determine color classes based on type (with dark mode support)
+    let colorClasses = {
+        text: 'text-indigo-600 dark:text-indigo-400',
+        bg: 'bg-indigo-100 dark:bg-indigo-900/30',
+        border: 'border-indigo-200 dark:border-indigo-800',
+        accent: 'bg-indigo-500',
+        iconColor: 'text-indigo-600 dark:text-indigo-400'
+    };
     
-    if (type === 'income') { 
-        iconColor = 'text-success-start';
-        iconBg = 'bg-success-start/10';
+    if (type === 'income') {
+        colorClasses = {
+            text: 'text-emerald-600 dark:text-emerald-400',
+            bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+            border: 'border-emerald-200 dark:border-emerald-800',
+            accent: 'bg-emerald-500',
+            iconColor: 'text-emerald-600 dark:text-emerald-400'
+        };
     }
-    if (type === 'expense') { 
-        iconColor = 'text-danger-start';
-        iconBg = 'bg-danger-start/10';
+    if (type === 'expense') {
+        colorClasses = {
+            text: 'text-rose-600 dark:text-rose-400',
+            bg: 'bg-rose-100 dark:bg-rose-900/30',
+            border: 'border-rose-200 dark:border-rose-800',
+            accent: 'bg-rose-500',
+            iconColor: 'text-rose-600 dark:text-rose-400'
+        };
     }
-    if (type === 'warning') { 
-        iconColor = 'text-warning-start';
-        iconBg = 'bg-warning-start/10';
+    if (type === 'warning') {
+        colorClasses = {
+            text: 'text-amber-600 dark:text-amber-400',
+            bg: 'bg-amber-100 dark:bg-amber-900/30',
+            border: 'border-amber-200 dark:border-amber-800',
+            accent: 'bg-amber-500',
+            iconColor: 'text-amber-600 dark:text-amber-400'
+        };
     }
-    
-    // Determine bottom accent line color based on type
-    let accentColorClass = 'bg-indigo-500/90';
-    if (type === 'income') accentColorClass = 'bg-emerald-500/90';
-    if (type === 'expense') accentColorClass = 'bg-rose-500/90';
-    if (type === 'warning') accentColorClass = 'bg-amber-500/90';
     
     return (
         <motion.div 
             whileHover={{ y: -4 }} 
             onClick={onClick} 
-            className="relative overflow-hidden rounded-2xl border border-border-main bg-white/[0.06] backdrop-blur-xl p-3 sm:p-5 cursor-pointer group shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_30px_rgba(var(--accent-primary-rgb),0.15)] transition-all duration-300"
+            className="relative overflow-hidden rounded-2xl border border-border-main bg-glass backdrop-blur-xl p-4 sm:p-6 cursor-pointer group shadow-md hover:shadow-xl transition-all duration-300"
         >
-            {/* Accent Grounding Line - Replaces thick top border */}
-            <div className={`absolute bottom-0 left-0 w-full h-1 ${accentColorClass}`} />
+            {/* Accent Grounding Line */}
+            <div className={`absolute bottom-0 left-0 w-full h-1 ${colorClasses.accent}`} />
 
-            <div className="flex justify-between items-start mb-2 sm:mb-4">
-                <div className={`p-2 sm:p-3 rounded-xl bg-white/5 border border-white/10 ${iconColor} ${iconBg}`}>
+            <div className="flex justify-between items-start mb-3 sm:mb-4">
+                <div className={`p-2.5 sm:p-3 rounded-xl ${colorClasses.bg} ${colorClasses.iconColor} border ${colorClasses.border}`}>
                     {icon}
                 </div>
                 {trend && (
-                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-black/20 text-white/50 border border-white/5">
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-black/5 dark:bg-white/10 text-text-muted border border-border-main">
                         {trend}
                     </span>
                 )}
             </div>
             <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">{title}</p>
-                <h3 className="text-lg sm:text-2xl font-black text-white tracking-tight">{amount}</h3>
+                <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-text-muted mb-1">{title}</p>
+                <h3 className={`text-xl sm:text-3xl font-black ${colorClasses.text} tracking-tight`}>{amount}</h3>
             </div>
         </motion.div>
     );
@@ -305,10 +320,10 @@ export const FinanceTab: React.FC = () => {
             `}</style>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={20} className="sm:w-6 sm:h-6" />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
-                <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={20} className="sm:w-6 sm:h-6" />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
-                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={20} className="sm:w-6 sm:h-6" />} type={displayProfit >= 0 ? 'income' : 'expense'} onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} />
-                <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} className="sm:w-6 sm:h-6" />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
+                <HeroStatCard title={t('finance.income')} amount={`€${(displayIncome || 0).toFixed(2)}`} icon={<TrendingUp size={22} className="sm:w-6 sm:h-6" />} type="income" onClick={() => handleKpiClick('income', t('finance.income'))} />
+                <HeroStatCard title={t('finance.cogs')} amount={`€${(costOfGoodsSold || 0).toFixed(2)}`} icon={<Calculator size={22} className="sm:w-6 sm:h-6" />} type="warning" onClick={() => handleKpiClick('cogs', t('finance.cogs'))} />
+                <HeroStatCard title={t('finance.balanceSub')} amount={`€${(displayProfit || 0).toFixed(2)}`} icon={<PiggyBank size={22} className="sm:w-6 sm:h-6" />} type={displayProfit >= 0 ? 'income' : 'expense'} onClick={() => handleKpiClick('profit', t('finance.balanceSub'))} />
+                <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={22} className="sm:w-6 sm:h-6" />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm">
