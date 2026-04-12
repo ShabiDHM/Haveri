@@ -181,7 +181,7 @@ export const FinanceTab: React.FC = () => {
                 return;
             }
             const caseId = workspace?.id || '';
-            let url = `${process.env.REACT_APP_API_URL || '/api/v1'}/finance/invoices/export/excel?case_id=${caseId}`;
+            let url = `${import.meta.env.VITE_API_URL || '/api/v1'}/finance/invoices/export/excel?case_id=${caseId}`;
             if (params.year) url += `&year=${params.year}`;
             if (params.month) url += `&month=${params.month}`;
             if (params.day) url += `&day=${params.day}`;
