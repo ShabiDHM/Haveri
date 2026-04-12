@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.11 (REMOVE HARDCODED TREND)
+// PHOENIX PROTOCOL - FINANCE TAB V14.12 (FLEXBOX SCROLL CONTAINER FIX)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -345,7 +345,8 @@ export const FinanceTab: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-hidden relative px-4 sm:px-6 pb-4 sm:pb-6">
+                {/* FIXED: Added flex flex-col to the inner wrapper */}
+                <div className="flex-1 flex flex-col overflow-hidden relative px-4 sm:px-6 pb-4 sm:pb-6">
                     {(activeTab === 'transactions' || activeTab === 'partners') && (
                         <div className="mb-4 sm:mb-6 relative group">
                             <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
@@ -360,7 +361,8 @@ export const FinanceTab: React.FC = () => {
                     )}
 
                     {activeTab === 'transactions' && (
-                        <div className="h-full overflow-y-auto custom-finance-scroll pr-1 sm:pr-2 space-y-3 pb-4 sm:pb-20">
+                        // FIXED: Changed h-full to flex-1 min-h-0
+                        <div className="flex-1 min-h-0 overflow-y-auto custom-finance-scroll pr-1 sm:pr-2 space-y-3 pb-4 sm:pb-20">
                             {loading ? (
                                 <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-primary-start" /></div>
                             ) : (
@@ -387,7 +389,8 @@ export const FinanceTab: React.FC = () => {
                     )}
 
                     {activeTab === 'partners' && (
-                        <div className="h-full overflow-y-auto custom-finance-scroll pr-1 sm:pr-2 space-y-3 pb-4 sm:pb-20">
+                        // FIXED: Changed h-full to flex-1 min-h-0
+                        <div className="flex-1 min-h-0 overflow-y-auto custom-finance-scroll pr-1 sm:pr-2 space-y-3 pb-4 sm:pb-20">
                             {partnersLoading ? (
                                 <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-primary-start" /></div>
                             ) : filteredPartners.length === 0 ? (
@@ -422,7 +425,8 @@ export const FinanceTab: React.FC = () => {
                     )}
 
                     {activeTab === 'reports' && (
-                        <div className="h-full overflow-y-auto custom-finance-scroll pr-1 sm:pr-2">
+                        // FIXED: Changed h-full to flex-1 min-h-0
+                        <div className="flex-1 min-h-0 overflow-y-auto custom-finance-scroll pr-1 sm:pr-2">
                             {!analyticsData ? ( <div className="text-center text-text-muted py-10">{t('finance.reports.noData')}</div> ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                                     <div className="bg-surface/30 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-border-main shadow-sm">
