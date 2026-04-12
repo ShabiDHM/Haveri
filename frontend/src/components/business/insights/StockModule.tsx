@@ -1,6 +1,5 @@
 // FILE: src/components/business/insights/StockModule.tsx
-// PHOENIX PROTOCOL - STOCK MODULE V13.4 (DYNAMIC STRATEGIST DESIGN SYSTEM)
-// Fixed: Removed duplicate overflow-hidden class
+// PHOENIX PROTOCOL - STOCK MODULE V13.5 (FULL-STACK UI HARMONIZATION)
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -92,7 +91,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
 
     return (
         <>
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.1)] transition-all duration-300 flex flex-col h-full min-h-[480px] hover-lift group">
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.1)] transition-all duration-300 h-full flex flex-col min-h-[480px] hover-lift group">
                 
                 {/* Executive Header */}
                 <div className="flex items-center gap-3 border-b border-white/10 pb-5 mb-6 flex-shrink-0">
@@ -103,8 +102,8 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                 </div>
                 
                 <div className="flex flex-col flex-1 min-h-0">
-                    {/* Main Value Box - Standardized glass consistency with bottom accent line */}
-                    <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-5 mb-6 flex-shrink-0 shadow-sm">
+                    {/* Main Value Box - Vlera Totale e Stokut */}
+                    <div className="relative rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 mb-6 flex-shrink-0 shadow-sm">
                         <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-start/40 rounded-b-xl"></div>
                         <p className="text-xs text-text-muted uppercase font-black tracking-widest mb-2">
                             {t('insights.inventory.value', 'Vlera Totale e Stokut')}
@@ -130,10 +129,10 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                         </span>
                     </div>
 
-                    {/* List Area - Standardized glass consistency */}
+                    {/* List Area */}
                     <div className="flex-1 overflow-y-auto max-h-[300px] space-y-3 custom-scrollbar pr-2">
                         {lowStockItems.length === 0 ? (
-                            <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-6 flex items-center justify-center text-center shadow-sm">
+                            <div className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-6 flex items-center justify-center text-center shadow-sm">
                                 <p className="text-xs text-text-muted uppercase font-black tracking-widest">
                                     {t('general.allGood', 'Gjithçka në rregull!')}
                                 </p>
@@ -143,7 +142,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                 <div 
                                     key={idx} 
                                     onClick={() => handleItemClick(item)} 
-                                    className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer hover-lift shadow-sm"
+                                    className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-4 flex justify-between items-center group hover:border-warning-start/30 transition-all cursor-pointer hover-lift shadow-sm"
                                 >
                                     <div className="flex items-center gap-3 overflow-hidden flex-1">
                                         <div className="text-warning-start/70 group-hover:text-warning-start transition-colors shrink-0">
@@ -163,14 +162,14 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                 </div>
             </div>
 
-            {/* AI Analysis Modal - Updated glass styling for consistency */}
+            {/* AI Analysis Modal */}
             <AnimatePresence>
                 {selectedItem && !showPOModal && (
                     <motion.div 
                         initial={{ opacity: 0 }} 
                         animate={{ opacity: 1 }} 
                         exit={{ opacity: 0 }} 
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-canvas/80 backdrop-blur-sm"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm"
                     >
                         <motion.div 
                             initial={{ scale: 0.98, y: 20 }} 
@@ -205,7 +204,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
-                                        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-5 shadow-sm">
+                                        <div className="relative rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 shadow-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-primary-start" />
                                             <h4 className="text-xs font-black text-primary-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <ShoppingCart size={14} /> {t('inventory.analysis.restockTitle', 'Sugjerim për Rimbushje')}
@@ -222,7 +221,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             </button>
                                         </div>
 
-                                        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-5 shadow-sm">
+                                        <div className="relative rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 shadow-sm">
                                             <div className="absolute top-0 left-0 w-1 h-full bg-success-start" />
                                             <h4 className="text-xs font-black text-success-start uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <TrendingUp size={14} /> {t('inventory.analysis.trendTitle', 'Analiza e Trendit')}
@@ -249,14 +248,14 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                 )}
             </AnimatePresence>
 
-            {/* PO Generation Modal - Updated glass styling */}
+            {/* PO Generation Modal */}
             <AnimatePresence>
                 {showPOModal && selectedItem && (
                      <motion.div 
                         initial={{ opacity: 0 }} 
                         animate={{ opacity: 1 }} 
                         exit={{ opacity: 0 }} 
-                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-canvas/80 backdrop-blur-sm"
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm"
                     >
                         <motion.div 
                             initial={{ scale: 0.98, y: 20 }} 
@@ -281,7 +280,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                     <textarea 
                                         value={poSupplier} 
                                         onChange={(e) => setPoSupplier(e.target.value)}
-                                        className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-sm w-full p-4 h-24 resize-none text-sm placeholder:text-text-muted focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                        className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md w-full p-4 h-24 resize-none text-sm placeholder:text-text-muted focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         placeholder={t('inventory.poModal.supplierPlaceholder', 'Shkruani emrin dhe adresën e furnitorit...')}
                                     />
                                 </div>
@@ -294,7 +293,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             type="number" 
                                             value={poQuantity} 
                                             onChange={(e) => setPoQuantity(parseFloat(e.target.value) || 0)} 
-                                            className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-sm w-full p-4 text-sm focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                            className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md w-full p-4 text-sm focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                     <div>
@@ -306,7 +305,7 @@ export const StockModule: React.FC<StockModuleProps> = ({ data }) => {
                                             value={manualCost !== "" ? manualCost : calculatedCost.toFixed(2)}
                                             onChange={(e) => setManualCost(e.target.value)}
                                             placeholder={`Calculated: €${calculatedCost.toFixed(2)}`}
-                                            className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-sm w-full p-4 text-sm font-mono focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
+                                            className="rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md w-full p-4 text-sm font-mono focus:border-primary-start focus:ring-1 focus:ring-primary-start/40 transition-all"
                                         />
                                     </div>
                                 </div>
