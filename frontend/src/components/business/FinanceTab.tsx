@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V15.0 (GLASS PANEL + CLEANED BACKGROUNDS)
+// PHOENIX PROTOCOL - FINANCE TAB V15.1 (FORCED GLASS PANEL)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -325,7 +325,8 @@ export const FinanceTab: React.FC = () => {
                 <ActionButton icon={<MinusCircle size={16} className="sm:w-5 sm:h-5" />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
-            <Panel glass className="p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col shadow-sm">
+            {/* FORCED GLASS PANEL with !bg-transparent */}
+            <Panel glass className="border border-white/10 !bg-transparent p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col shadow-sm">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 px-4 sm:px-6 pt-4 sm:pt-6">
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-2 sm:gap-3">
                         <Activity className="text-primary-start" size={20} />
