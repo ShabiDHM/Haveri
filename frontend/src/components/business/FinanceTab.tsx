@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.11 (REMOVE HARDCODED TREND)
+// PHOENIX PROTOCOL - FINANCE TAB V14.12 (SYNC THEME COLORS WITH INSIGHTS)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,40 +28,40 @@ import { Panel } from '../ui/Panel';
 import { useAuth } from '../../context/AuthContext';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    // Determine color classes based on type (with dark mode support)
+    // Determine color classes based on type using the global design system (matches Insights tab)
     let colorClasses = {
-        text: 'text-indigo-600 dark:text-indigo-400',
-        bg: 'bg-indigo-100 dark:bg-indigo-900/30',
-        border: 'border-indigo-200 dark:border-indigo-800',
-        accent: 'bg-indigo-500',
-        iconColor: 'text-indigo-600 dark:text-indigo-400'
+        text: 'text-primary-start',
+        bg: 'bg-primary-start/10',
+        border: 'border-primary-start/20',
+        accent: 'bg-primary-start',
+        iconColor: 'text-primary-start'
     };
     
     if (type === 'income') {
         colorClasses = {
-            text: 'text-emerald-600 dark:text-emerald-400',
-            bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-            border: 'border-emerald-200 dark:border-emerald-800',
-            accent: 'bg-emerald-500',
-            iconColor: 'text-emerald-600 dark:text-emerald-400'
+            text: 'text-success-start',
+            bg: 'bg-success-start/10',
+            border: 'border-success-start/20',
+            accent: 'bg-success-start',
+            iconColor: 'text-success-start'
         };
     }
     if (type === 'expense') {
         colorClasses = {
-            text: 'text-rose-600 dark:text-rose-400',
-            bg: 'bg-rose-100 dark:bg-rose-900/30',
-            border: 'border-rose-200 dark:border-rose-800',
-            accent: 'bg-rose-500',
-            iconColor: 'text-rose-600 dark:text-rose-400'
+            text: 'text-danger-start',
+            bg: 'bg-danger-start/10',
+            border: 'border-danger-start/20',
+            accent: 'bg-danger-start',
+            iconColor: 'text-danger-start'
         };
     }
     if (type === 'warning') {
         colorClasses = {
-            text: 'text-amber-600 dark:text-amber-400',
-            bg: 'bg-amber-100 dark:bg-amber-900/30',
-            border: 'border-amber-200 dark:border-amber-800',
-            accent: 'bg-amber-500',
-            iconColor: 'text-amber-600 dark:text-amber-400'
+            text: 'text-warning-start',
+            bg: 'bg-warning-start/10',
+            border: 'border-warning-start/20',
+            accent: 'bg-warning-start',
+            iconColor: 'text-warning-start'
         };
     }
     
