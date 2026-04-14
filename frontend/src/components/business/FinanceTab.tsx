@@ -1,5 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// TEST: FORCED RED BORDER + INDIGO BACKGROUND ON PARTNER CARDS
+// PHOENIX PROTOCOL - UI STABILIZATION V8.0
+// 1. FIX: Removed hardcoded test classes (!border-red-600) from Partner cards.
+// 2. REASON: Restores visual consistency with the Haveri AI design system.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -390,19 +392,19 @@ export const FinanceTab: React.FC = () => {
                                     {filteredPartners.map((partner) => (
                                         <div 
                                             key={partner.id} 
-                                            className="!relative !overflow-hidden !rounded-2xl !border-4 !border-red-600 !bg-indigo-950/80 !backdrop-blur-xl !p-5 !transition-all !duration-500"
+                                            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 transition-all duration-300 hover:shadow-xl hover:bg-white/10 group"
                                         >
                                             <div className={`absolute bottom-0 left-0 w-full h-1 ${partner.type === 'CLIENT' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                             
                                             <div className="flex justify-between items-start mb-3 sm:mb-4">
-                                                <div className="rounded-xl bg-white/10 p-3 text-indigo-200">
+                                                <div className="rounded-xl bg-white/10 p-3 text-white/60 group-hover:text-primary-start transition-colors">
                                                     <Users size={16} className="sm:w-5 sm:h-5" />
                                                 </div>
                                                 <div className="flex flex-col items-end gap-2">
                                                     <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${partner.type === 'CLIENT' ? 'bg-emerald-500/30 text-emerald-100 border border-emerald-500/50' : 'bg-amber-500/30 text-amber-100 border border-amber-500/50'}`}>
                                                         {partner.type === 'CLIENT' ? 'Klient' : 'Furnitor'}
                                                     </span>
-                                                    <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-white/10 text-white/70 hover:bg-white/20 transition-all" title={t('general.delete')}>
+                                                    <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md bg-white/10 text-white/70 hover:bg-rose-500/20 hover:text-rose-500 transition-all" title={t('general.delete')}>
                                                         <Trash2 size={12} className="sm:w-3.5 sm:h-3.5"/>
                                                     </button>
                                                 </div>
@@ -413,17 +415,17 @@ export const FinanceTab: React.FC = () => {
                                             <div className="space-y-1 sm:space-y-2">
                                                 {partner.email && (
                                                     <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/70">
-                                                        <Mail size={12} className="sm:w-3.5 sm:h-3.5 text-indigo-300" /> {partner.email}
+                                                        <Mail size={12} className="sm:w-3.5 sm:h-3.5 text-white/40" /> {partner.email}
                                                     </div>
                                                 )}
                                                 {partner.phone && (
                                                     <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/70">
-                                                        <Phone size={12} className="sm:w-3.5 sm:h-3.5 text-indigo-300" /> {partner.phone}
+                                                        <Phone size={12} className="sm:w-3.5 sm:h-3.5 text-white/40" /> {partner.phone}
                                                     </div>
                                                 )}
                                                 {partner.address && (
                                                     <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/70">
-                                                        <MapPin size={12} className="sm:w-3.5 sm:h-3.5 text-indigo-300" /> {partner.address}
+                                                        <MapPin size={12} className="sm:w-3.5 sm:h-3.5 text-white/40" /> {partner.address}
                                                     </div>
                                                 )}
                                             </div>
