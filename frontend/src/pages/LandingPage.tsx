@@ -1,6 +1,8 @@
 // FILE: src/pages/LandingPage.tsx
-// PHOENIX PROTOCOL - LANDING PAGE V21.0 (DESIGN SYSTEM STANDARDIZED)
-// STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
+// PHOENIX PROTOCOL - LANDING PAGE V22.0 (i18n FALLBACK HARDCODED)
+// 1. FIX: Added hardcoded fallbacks to t() calls for critical UI buttons.
+// 2. REASON: Resolves "Blackout" where raw keys like general.getStarted were visible.
+// 3. STATUS: VERIFIED - COMPLETE FILE REPLACEMENT
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -44,8 +46,8 @@ const LandingPage: React.FC = () => {
                 <div className="hidden md:flex items-center gap-8">
                     <a href="#features" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">{t('navigation.product', 'Produkti')}</a>
                     <a href="#intelligence" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">{t('navigation.intelligence', 'Inteligjenca')}</a>
-                    <Link to="/login" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">{t('general.login')}</Link>
-                    <Link to="/register" className="btn-primary px-5 py-2 text-sm">{t('general.getStarted')}</Link>
+                    <Link to="/login" className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">{t('general.login', 'Hyrja')}</Link>
+                    <Link to="/register" className="btn-primary px-5 py-2 text-sm">{t('general.getStarted', 'Fillo Falas Tani')}</Link>
                 </div>
             </div>
         </nav>
@@ -58,18 +60,18 @@ const LandingPage: React.FC = () => {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
             <h1 className="text-6xl md:text-8xl font-black mb-8 leading-[0.95] tracking-tighter text-text-primary">
-              {t('landing.heroTitle')}<br />
+              {t('landing.heroTitle', 'Zbuloni Forcën e')}<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-success-start via-primary to-primary">
-                {t('landing.heroHighlight')}
+                {t('landing.heroHighlight', 'Inteligjencës Haveri')}
               </span>
             </h1>
             <p className="text-lg md:text-2xl text-text-secondary mb-12 max-w-3xl mx-auto leading-relaxed font-light">
-              {t('landing.heroSubtitle')}
+              {t('landing.heroSubtitle', 'Sistemi operativ për biznesin Kosovar. Auditoni financat, automatizoni faturimin dhe monitoroni stokun me inteligjencë artificiale që njeh ligjet e ATK-së.')}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
               <Link to="/register" className="w-full sm:w-auto group relative px-10 py-5 btn-primary text-lg flex items-center justify-center gap-3">
-                {t('landing.getStarted')}
+                {t('landing.getStarted', 'Fillo Falas Tani')}
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link to="/login" className="w-full sm:w-auto px-10 py-5 glass-input !bg-surface hover:bg-hover transition-colors rounded-2xl font-bold text-lg text-center text-text-primary border border-border-main">
@@ -96,9 +98,9 @@ const LandingPage: React.FC = () => {
                     <div className="absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-primary/20 blur-[100px] rounded-full group-hover:bg-primary/30 transition-all duration-700" />
                     <ShieldCheck className="text-primary mb-6" size={48} strokeWidth={1} />
                     <div>
-                        <h3 className="text-4xl font-black mb-4 tracking-tighter italic text-text-primary">{t('landing.feature1Title')}</h3>
+                        <h3 className="text-4xl font-black mb-4 tracking-tighter italic text-text-primary">{t('landing.feature1Title', 'Auditimi Forenzik')}</h3>
                         <p className="text-text-secondary text-lg max-w-md leading-relaxed">
-                            {t('landing.feature1Desc')}
+                            {t('landing.feature1Desc', 'AI që lidh faturat tuaja direkt me ligjet e ATK-së dhe gjen parregullsi ligjore automatikisht.')}
                         </p>
                     </div>
                     <div className="flex gap-2 mt-6">
@@ -111,9 +113,9 @@ const LandingPage: React.FC = () => {
                 <div className="group relative overflow-hidden rounded-[2.5rem] bg-surface border border-border-main p-10 flex flex-col justify-between h-[450px]">
                     <Users className="text-success-start" size={40} strokeWidth={1} />
                     <div>
-                        <h3 className="text-3xl font-bold mb-3 tracking-tight text-text-primary">{t('landing.feature2Title')}</h3>
+                        <h3 className="text-3xl font-bold mb-3 tracking-tight text-text-primary">{t('landing.feature2Title', 'Portal i Sigurt')}</h3>
                         <p className="text-text-secondary text-base leading-relaxed">
-                            {t('landing.feature2Desc')}
+                            {t('landing.feature2Desc', 'Menaxhoni partnerët dhe klientët tuaj në një platformë të vetme, të enkriptuar dhe të shpejtë.')}
                         </p>
                     </div>
                     <div className="p-4 bg-card rounded-2xl border border-border-main text-xs font-mono text-success-start/70">
@@ -199,7 +201,7 @@ const LandingPage: React.FC = () => {
                 <div className="relative z-10">
                     <h2 className="text-5xl md:text-6xl font-black mb-8 tracking-tighter text-text-primary">Transformoni mënyrën<br/>si punoni.</h2>
                     <Link to="/register" className="inline-flex items-center gap-4 px-12 py-6 btn-primary text-xl">
-                        {t('landing.getStarted')}
+                        {t('landing.getStarted', 'Fillo Falas Tani')}
                         <ChevronRight className="w-6 h-6" />
                     </Link>
                 </div>
