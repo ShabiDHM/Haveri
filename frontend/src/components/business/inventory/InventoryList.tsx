@@ -30,21 +30,14 @@ const ItemCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 hover:border-indigo-500/50 transition-all duration-300 shadow-xl group flex flex-col justify-between h-full min-h-[13rem]"
+            className="!relative !overflow-hidden !rounded-2xl !border !border-white/20 !bg-black/20 !backdrop-blur-2xl !p-5 !transition-all !duration-300 !shadow-[0_8px_32px_rgba(0,0,0,0.3)] !flex !flex-col !justify-between !h-full !min-h-[13rem]"
         >
             {/* Accent Bar */}
-            <div className={`absolute bottom-0 left-0 w-full h-1.5 ${isCritical ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+            <div className={`!absolute !bottom-0 !left-0 !w-full !h-2 ${isCritical ? '!bg-rose-500' : '!bg-emerald-500'}`} />
             
             <div>
-                <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
-                    <div className="rounded-xl border border-white/10 bg-white/10 p-3 text-indigo-200">
-                        {isPos ? <Layers size={18} /> : <Package size={18} />}
-                    </div>
-                    {isCritical && (
-                        <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-rose-500/30 text-rose-100 border border-rose-500/50">
-                            {t('inventory.lowStock', 'Stoku Kritik')}
-                        </span>
-                    )}
+                <div className="!rounded-xl !border !border-white/10 !bg-white/5 !p-3 !text-indigo-300">
+                    {isPos ? <Layers size={18} /> : <Package size={18} />}
                 </div>
                 
                 <h4 className="text-white font-bold text-base sm:text-lg mb-1 line-clamp-2">{item.name}</h4>
