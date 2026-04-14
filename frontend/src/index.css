@@ -11,7 +11,7 @@
     --bg-card: #FFFFFF;
     --bg-glass: rgba(255, 255, 255, 0.85);
     --bg-input: #EDF0F5;
-    --bg-hover: rgba(99, 115, 255, 0.08);
+    --bg-hover: rgba(16, 185, 129, 0.08);
 
     --text-primary: #0F1623;
     --text-secondary: #3D4A5C;
@@ -102,7 +102,7 @@
     --bg-card: #1E293B;
     --bg-glass: rgba(15, 23, 42, 0.85);
     --bg-input: #1E293B;
-    --bg-hover: rgba(99, 115, 255, 0.15);
+    --bg-hover: rgba(16, 185, 129, 0.15);
 
     --text-primary: #F8FAFC;
     --text-secondary: #CBD5E1;
