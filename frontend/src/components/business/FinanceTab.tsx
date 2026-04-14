@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// TEST: FORCE RED BACKGROUND ON PARTNER CARDS TO VERIFY CORRECT FILE
+// TEST: FORCED RED BORDER + INDIGO BACKGROUND ON PARTNER CARDS
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -388,17 +388,14 @@ export const FinanceTab: React.FC = () => {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                                     {filteredPartners.map((partner) => (
-                                        // FORCED RED BACKGROUND + YELLOW BORDER FOR TESTING
                                         <div 
                                             key={partner.id} 
-                                            style={{ backgroundColor: 'red', border: '5px solid yellow' }}
-                                            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 hover:border-indigo-500/50 transition-all duration-300 shadow-xl"
+                                            className="!relative !overflow-hidden !rounded-2xl !border-4 !border-red-600 !bg-indigo-950/80 !backdrop-blur-xl !p-5 !transition-all !duration-500"
                                         >
-                                            {/* Accent Bar */}
                                             <div className={`absolute bottom-0 left-0 w-full h-1 ${partner.type === 'CLIENT' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                             
                                             <div className="flex justify-between items-start mb-3 sm:mb-4">
-                                                <div className="rounded-xl border border-white/10 bg-white/10 p-3 text-indigo-200">
+                                                <div className="rounded-xl bg-white/10 p-3 text-indigo-200">
                                                     <Users size={16} className="sm:w-5 sm:h-5" />
                                                 </div>
                                                 <div className="flex flex-col items-end gap-2">
