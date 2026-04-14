@@ -1,0 +1,16 @@
+{
+  "short_name": "Haveri AI",
+  "name": "Haveri AI | Platforma e Biznesit Tuaj",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#020617",
+  "background_color": "#020617"
+}
