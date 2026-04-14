@@ -1,7 +1,8 @@
 // FILE: vite-env.d.ts
-// PHOENIX PROTOCOL - FULL ENV & MODULE DECLARATIONS V5.0
+// PHOENIX PROTOCOL - FULL ENV & MODULE DECLARATIONS V6.0
 
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string;
@@ -11,13 +12,13 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-// 1. FIX: Support for CSS side-effect imports (Resolves TS2882 for .css)
+// 1. FIX: Support for CSS side-effect imports
 declare module "*.css" {
   const content: string;
   export default content;
 }
 
-// 2. FIX: Support for Moment.js locale side-effect imports (Resolves TS2882 for locales)
+// 2. FIX: Support for Moment.js locale side-effect imports
 declare module 'moment/locale/*' {
   import { Locale } from 'moment';
   const locale: Locale;
