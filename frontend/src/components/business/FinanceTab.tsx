@@ -173,7 +173,7 @@ export const FinanceTab: React.FC = () => {
     };
 
     const handleDeletePartner = async (id: string) => {
-        if (!window.confirm(t('general.confirmDelete', 'A jeni të sigurt që dëshironi ta fshini këtë partner?'))) return;
+        if (!window.confirm(t('general.confirmDelete', 'A jeni i sigurt që dëshironi ta fshini këtë partner?'))) return;
         try {
             await apiService.deletePartner(id);
             setPartners(prev => prev.filter(p => p.id !== id));
@@ -392,7 +392,7 @@ export const FinanceTab: React.FC = () => {
                                     {filteredPartners.map((partner) => (
                                         <div 
                                             key={partner.id} 
-                                            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 transition-all duration-300 hover:shadow-xl hover:bg-white/10 group"
+                                            className="relative overflow-hidden rounded-2xl border border-[var(--border-main)] bg-[var(--bg-card)] p-5 transition-all duration-300 hover-lift group"
                                         >
                                             <div className={`absolute bottom-0 left-0 w-full h-1 ${partner.type === 'CLIENT' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                             
@@ -409,30 +409,30 @@ export const FinanceTab: React.FC = () => {
                                                     </button>
                                                 </div>
                                             </div>
-                                            <h4 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-3">
+                                            <h4 className="text-base sm:text-lg font-bold text-[var(--text-primary)] mb-2 sm:mb-3">
                                                 {partner.name}
                                             </h4>
                                             <div className="space-y-1 sm:space-y-2">
                                                 {partner.email && (
-                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/70">
+                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-[var(--text-secondary)]">
                                                         <Mail size={12} className="sm:w-3.5 sm:h-3.5 text-white/40" /> {partner.email}
                                                     </div>
                                                 )}
                                                 {partner.phone && (
-                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/70">
+                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-[var(--text-secondary)]">
                                                         <Phone size={12} className="sm:w-3.5 sm:h-3.5 text-white/40" /> {partner.phone}
                                                     </div>
                                                 )}
                                                 {partner.address && (
-                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-white/70">
+                                                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-[var(--text-secondary)]">
                                                         <MapPin size={12} className="sm:w-3.5 sm:h-3.5 text-white/40" /> {partner.address}
                                                     </div>
                                                 )}
                                             </div>
                                             {partner.tax_id && (
-                                                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-white/10 flex justify-between items-center">
-                                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white/50">NIPT / TAX ID</span>
-                                                    <span className="text-[10px] sm:text-xs font-mono text-white/70">{partner.tax_id}</span>
+                                                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-[var(--border-main)] flex justify-between items-center">
+                                                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-[var(--text-secondary)]">NIPT / TAX ID</span>
+                                                    <span className="text-[10px] sm:text-xs font-mono text-[var(--text-secondary)]">{partner.tax_id}</span>
                                                 </div>
                                             )}
                                         </div>
