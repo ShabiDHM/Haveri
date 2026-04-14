@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.12 (SYNC THEME COLORS WITH INSIGHTS)
+// PHOENIX PROTOCOL - FINANCE TAB V14.13 (SYNC COLORS WITH INSIGHTS MODULES)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,9 +28,9 @@ import { Panel } from '../ui/Panel';
 import { useAuth } from '../../context/AuthContext';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    // Determine color classes based on type using the global design system (matches Insights tab)
+    // Determine color classes based on type using exact classes from Insights modules
     let colorClasses = {
-        text: 'text-primary-start',
+        text: 'text-emerald-400',
         bg: 'bg-primary-start/10',
         border: 'border-primary-start/20',
         accent: 'bg-primary-start',
@@ -39,7 +39,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     
     if (type === 'income') {
         colorClasses = {
-            text: 'text-success-start',
+            text: 'text-emerald-400',
             bg: 'bg-success-start/10',
             border: 'border-success-start/20',
             accent: 'bg-success-start',
@@ -48,7 +48,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     }
     if (type === 'expense') {
         colorClasses = {
-            text: 'text-danger-start',
+            text: 'text-rose-400',
             bg: 'bg-danger-start/10',
             border: 'border-danger-start/20',
             accent: 'bg-danger-start',
@@ -57,7 +57,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     }
     if (type === 'warning') {
         colorClasses = {
-            text: 'text-warning-start',
+            text: 'text-amber-400',
             bg: 'bg-warning-start/10',
             border: 'border-warning-start/20',
             accent: 'bg-warning-start',
