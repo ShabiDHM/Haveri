@@ -19,12 +19,11 @@
     --text-disabled: #A3AFBF;
     --text-inverse: #FFFFFF;
 
-    /* BRAND COLOR: Emerald/Green (Professional) */
-    --accent-primary: #10B981;
-    --accent-hover: #059669;
-    --accent-subtle: rgba(16, 185, 129, 0.12);
-    --accent-text: #065F46;
-    --accent-primary-rgb: 16, 185, 129;
+    --accent-primary: #6366F1;
+    --accent-hover: #4F52D9;
+    --accent-subtle: rgba(99, 102, 241, 0.12);
+    --accent-text: #4345B5;
+    --accent-primary-rgb: 99, 102, 241;
 
     --status-success: #059669;
     --status-warning: #D97706;
@@ -58,7 +57,7 @@
     /* Enhanced shadows for better depth */
     --shadow-xs: 0 1px 2px rgba(15, 22, 35, 0.05), 0 1px 3px rgba(15, 22, 35, 0.08);
     --shadow-sm: 0 2px 4px rgba(15, 22, 35, 0.06), 0 4px 12px rgba(15, 22, 35, 0.08);
-    --shadow-md: 0 4px 8px rgba(15, 22, 35, 0.08), 0 8px 24px rgba(15, 22, 35, 0.12), 0 0 0 1px rgba(16, 185, 129, 0.1);
+    --shadow-md: 0 4px 8px rgba(15, 22, 35, 0.08), 0 8px 24px rgba(15, 22, 35, 0.12), 0 0 0 1px rgba(99, 102, 241, 0.1);
     --shadow-lg: 0 8px 16px rgba(15, 22, 35, 0.1), 0 20px 48px rgba(15, 22, 35, 0.15), 0 0 0 1px rgba(15, 22, 35, 0.08);
     --shadow-xl: 0 16px 32px rgba(15, 22, 35, 0.12), 0 40px 80px rgba(15, 22, 35, 0.2), 0 0 0 1px rgba(15, 22, 35, 0.1);
 
@@ -72,25 +71,25 @@
     --border-strong: #94A3B8;
     
     /* Colorful accent borders for interactive elements */
-    --border-primary: #10B981;
+    --border-primary: #6366F1;
     --border-success: #059669;
     --border-warning: #D97706;
     --border-danger: #DC2626;
     --border-info: #3B82F6;
     
     /* Subtle border glow for hover states */
-    --border-glow-primary: 0 0 0 1px rgba(16, 185, 129, 0.5);
+    --border-glow-primary: 0 0 0 1px rgba(99, 102, 241, 0.5);
     --border-glow-success: 0 0 0 1px rgba(5, 150, 105, 0.5);
     --border-glow-danger: 0 0 0 1px rgba(220, 38, 38, 0.5);
     
     /* Colorful accent borders (semi-transparent) */
-    --border-accent-primary: rgba(16, 185, 129, 0.7);
+    --border-accent-primary: rgba(99, 102, 241, 0.7);
     --border-accent-success: rgba(5, 150, 105, 0.7);
     --border-accent-warning: rgba(217, 119, 6, 0.7);
     --border-accent-danger: rgba(220, 38, 38, 0.7);
     
     /* Full color borders */
-    --border-primary-solid: #10B981;
+    --border-primary-solid: #6366F1;
     --border-success-solid: #059669;
     --border-danger-solid: #DC2626;
   }
@@ -110,12 +109,11 @@
     --text-disabled: #475569;
     --text-inverse: #0F1623;
 
-    /* BRAND COLOR: Emerald/Green for dark mode */
-    --accent-primary: #34D399;
-    --accent-hover: #10B981;
-    --accent-subtle: rgba(52, 211, 153, 0.15);
-    --accent-text: #34D399;
-    --accent-primary-rgb: 52, 211, 153;
+    --accent-primary: #818CF8;
+    --accent-hover: #A5B4FC;
+    --accent-subtle: rgba(129, 140, 248, 0.15);
+    --accent-text: #A5B4FC;
+    --accent-primary-rgb: 129, 140, 248;
 
     /* Typography Scale - same as light mode */
     --text-xs: 0.75rem;
@@ -144,7 +142,7 @@
     /* Enhanced shadows for dark mode */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(52, 211, 153, 0.2);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(129, 140, 248, 0.2);
     --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5), 0 20px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12);
     --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.6), 0 40px 80px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.15);
 
@@ -158,25 +156,25 @@
     --border-strong: rgba(255, 255, 255, 0.35);
     
     /* Colorful accent borders for interactive elements */
-    --border-primary: #34D399;
+    --border-primary: #818CF8;
     --border-success: #10B981;
     --border-warning: #F59E0B;
     --border-danger: #F87171;
     --border-info: #60A5FA;
     
     /* Subtle border glow for hover states */
-    --border-glow-primary: 0 0 0 1px rgba(52, 211, 153, 0.6);
+    --border-glow-primary: 0 0 0 1px rgba(129, 140, 248, 0.6);
     --border-glow-success: 0 0 0 1px rgba(16, 185, 129, 0.6);
     --border-glow-danger: 0 0 0 1px rgba(248, 113, 113, 0.6);
     
     /* Colorful accent borders - BRIGHTER for dark mode */
-    --border-accent-primary: rgba(52, 211, 153, 0.9);
+    --border-accent-primary: rgba(129, 140, 248, 0.9);
     --border-accent-success: rgba(16, 185, 129, 0.9);
     --border-accent-warning: rgba(245, 158, 11, 0.9);
     --border-accent-danger: rgba(248, 113, 113, 0.9);
     
     /* Full color borders */
-    --border-primary-solid: #34D399;
+    --border-primary-solid: #818CF8;
     --border-success-solid: #10B981;
     --border-danger-solid: #F87171;
   }
@@ -191,19 +189,17 @@
     transition: background-color 0.4s ease, color 0.4s ease;
   }
 
-  /* Light mode texture and gradient mesh - DYNAMIC FLUID MESH */
+  /* Light mode texture and gradient mesh */
   :root body {
     background-image: 
-      radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.1) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(220, 38, 38, 0.1) 0px, transparent 50%);
-    background-color: var(--bg-base);
-    background-attachment: fixed;
+      radial-gradient(ellipse at 15% 20%, rgba(99,102,241,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 75%, rgba(99,102,241,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(148,163,184,0.05) 0%, transparent 70%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366F1' fill-opacity='0.025'%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 
   .dark body {
-    background-image: radial-gradient(at 50% 50%, rgba(52, 211, 153, 0.08) 0px, transparent 60%);
+    background-image: radial-gradient(circle at 50% -20%, rgba(129, 140, 248, 0.12) 0%, transparent 70%);
     background-attachment: fixed;
   }
 
@@ -282,15 +278,17 @@
 }
 
 @layer components {
-  /* Executive Glass Panel - UPDATED */
+  /* Executive Glass Panel */
   .glass-panel {
     background-color: var(--bg-glass);
-    backdrop-filter: blur(24px) saturate(200%);
-    -webkit-backdrop-filter: blur(24px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: var(--glass-border);
+    border-bottom: var(--glass-border-bottom);
+    border-right: var(--glass-border-right);
+    box-shadow: var(--shadow-lg);
     border-radius: 1.5rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 300ms;
   }
 
   /* Card (non‑glass) - Enhanced with stronger border */
@@ -397,7 +395,7 @@
   .glass-input:focus {
     background-color: var(--bg-card);
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 4px rgba(var(--accent-primary-rgb), 0.15);
+    box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.2), inset 0 1px 2px rgba(15, 22, 35, 0.04);
   }
   .glass-input::placeholder {
     color: var(--text-disabled);
@@ -418,7 +416,7 @@
     transition: all 200ms;
   }
   .btn-primary:hover {
-    background: linear-gradient(135deg, var(--accent-hover) 0%, #047857 100%);
+    background: linear-gradient(135deg, var(--accent-hover) 0%, #4547C5 100%);
     box-shadow: 0 4px 16px rgba(var(--accent-primary-rgb), 0.4), 0 2px 6px rgba(var(--accent-primary-rgb), 0.25);
   }
   .btn-primary:active {
@@ -524,8 +522,8 @@
     margin-right: auto;
   }
   .doc-highlight-primary {
-    background: rgba(16, 185, 129, 0.12);
-    border-bottom: 2px solid rgba(16, 185, 129, 0.5);
+    background: rgba(99, 102, 241, 0.12);
+    border-bottom: 2px solid rgba(99, 102, 241, 0.5);
     border-radius: 2px;
   }
   .doc-highlight-risk {
