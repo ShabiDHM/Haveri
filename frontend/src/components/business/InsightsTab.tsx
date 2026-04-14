@@ -1,5 +1,5 @@
 // FILE: src/components/business/InsightsTab.tsx
-// PHOENIX PROTOCOL - INSIGHTS UI V5.9 (EQUAL HEIGHT GRID)
+// PHOENIX PROTOCOL – SEMANTIC PRIMARY ALIASES
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -64,7 +64,7 @@ export const InsightsTab: React.FC = () => {
     if (loading) {
         return (
             <div className="flex justify-center items-center h-96">
-                <Loader2 className="w-12 h-12 animate-spin text-primary-start" />
+                <Loader2 className="w-12 h-12 animate-spin text-primary" />
             </div>
         );
     }
@@ -75,7 +75,7 @@ export const InsightsTab: React.FC = () => {
             <div className="glass-panel p-6 sm:p-8 border border-border-main shadow-sm">
                 <div className="flex items-center justify-between border-b border-border-main pb-5 flex-wrap gap-4">
                     <div className="flex items-center gap-3">
-                        <FileSpreadsheet className="text-primary-start" size={20} />
+                        <FileSpreadsheet className="text-primary" size={20} />
                         <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
                             {t('analyst.smartDataAnalystTitle', 'Analisti i të Dhënave')}
                         </h2>
@@ -83,7 +83,7 @@ export const InsightsTab: React.FC = () => {
                     <div className="flex gap-2">
                         <button
                             onClick={() => setShowAnalystPanel(!showAnalystPanel)}
-                            className="glass-input px-4 py-2.5 flex items-center gap-2 text-xs uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary-start/50 hover-lift shadow-sm"
+                            className="glass-input px-4 py-2.5 flex items-center gap-2 text-xs uppercase font-black tracking-widest transition-colors hover:bg-hover rounded-lg border border-border-main hover:border-primary/50 hover-lift shadow-sm"
                         >
                             {showAnalystPanel ? (
                                 <><ChevronUp size={14} /> {t('insights.hideAnalysis', 'Fshih Analizën')}</>

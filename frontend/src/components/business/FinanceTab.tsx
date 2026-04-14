@@ -1,7 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - BRAND PRIMARY SYNC (INDIGO)
-// Active tabs, search, section icons use primary-start.
-// Income KPI remains emerald, Expense remains rose.
+// PHOENIX PROTOCOL – SEMANTIC PRIMARY ALIASES (EMERALD)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,18 +30,18 @@ import { useAuth } from '../../context/AuthContext';
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     let colorClasses = {
         text: 'text-primary-start',
-        bg: 'bg-primary-start/10',
-        border: 'border-primary-start/20',
+        bg: 'bg-primary/10',
+        border: 'border-primary/20',
         accent: 'bg-primary-start',
         iconColor: 'text-primary-start'
     };
     if (type === 'income') {
         colorClasses = {
-            text: 'text-emerald-600 dark:text-emerald-400',
-            bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-            border: 'border-emerald-200 dark:border-emerald-800',
-            accent: 'bg-emerald-500',
-            iconColor: 'text-emerald-600 dark:text-emerald-400'
+            text: 'text-primary-start',
+            bg: 'bg-primary/10',
+            border: 'border-primary/20',
+            accent: 'bg-primary-start',
+            iconColor: 'text-primary-start'
         };
     }
     if (type === 'expense') {
@@ -69,7 +67,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
         <motion.div 
             whileHover={{ y: -4 }} 
             onClick={onClick} 
-            className="relative overflow-hidden rounded-2xl border border-[var(--border-main)] bg-[var(--bg-card)] p-4 sm:p-6 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300"
+            className="relative overflow-hidden rounded-2xl border border-border-main bg-card p-4 sm:p-6 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300"
         >
             <div className={`absolute bottom-0 left-0 w-full h-1 ${colorClasses.accent}`} />
             <div className="flex justify-between items-start mb-3 sm:mb-4">
@@ -77,13 +75,13 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
                     {icon}
                 </div>
                 {trend && (
-                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-[var(--bg-input)] text-[var(--text-muted)] border border-[var(--border-main)]">
+                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-input text-text-muted border border-border-main">
                         {trend}
                     </span>
                 )}
             </div>
             <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] mb-1">{title}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-text-muted mb-1">{title}</p>
                 <h3 className={`text-xl sm:text-3xl font-black ${colorClasses.text} tracking-tight`}>{amount}</h3>
             </div>
         </motion.div>
@@ -96,7 +94,7 @@ const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
         className={`flex items-center justify-center text-center gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-4 rounded-2xl text-sm sm:text-base font-bold transition-all duration-300 group hover-lift w-full ${
             primary 
                 ? 'btn-primary' 
-                : 'bg-[var(--bg-input)] border border-[var(--border-main)] hover:border-primary-start/50 text-[var(--text-primary)] shadow-sm'
+                : 'bg-input border border-border-main hover:border-primary/50 text-text-primary shadow-sm'
         }`}
     >
         <span className="text-base sm:text-lg">{icon}</span>
@@ -109,8 +107,8 @@ const TabButton = ({ label, icon, isActive, onClick }: any) => (
         onClick={onClick} 
         className={`flex-1 px-3 sm:px-6 py-2 sm:py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1 sm:gap-2 hover-lift ${
             isActive 
-                ? 'bg-primary-start/10 text-primary-start border border-primary-start/30 shadow-sm' 
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-main)]'
+                ? 'bg-primary/10 text-primary-start border border-primary/30 shadow-sm' 
+                : 'text-text-muted hover:text-text-primary hover:bg-hover border border-border-main'
         }`}
     >
         <span className="relative z-10 text-sm sm:text-base">{icon}</span>
@@ -320,21 +318,21 @@ export const FinanceTab: React.FC = () => {
                 <HeroStatCard title={t('finance.expense')} amount={`€${(totalExpenses || 0).toFixed(2)}`} icon={<TrendingDown size={20} />} type="expense" onClick={() => handleKpiClick('expense', t('finance.expense'))} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-[var(--border-main)] bg-[var(--bg-card)] shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-border-main bg-card shadow-sm">
                 <ActionButton primary icon={<Plus size={16} />} label={t('finance.createInvoice')} onClick={() => { setSelectedInvoice(null); setShowInvoiceModal(true); }} />
                 <ActionButton icon={<ShoppingCart size={16} />} label="Krijo shitje" onClick={() => setShowPosModal(true)} />
                 <ActionButton icon={<MinusCircle size={16} />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
-            <Panel glass className="border border-[var(--border-main)] !bg-transparent p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col shadow-sm">
+            <Panel glass className="border border-border-main !bg-transparent p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col shadow-sm">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 px-4 sm:px-6 pt-4 sm:pt-6">
                     <div className="flex items-center gap-3">
                         <Activity className="text-primary-start" size={20} />
-                        <h2 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest leading-none">
+                        <h2 className="text-sm font-black text-text-primary uppercase tracking-widest leading-none">
                             {t('finance.activityAndReports')}
                         </h2>
                     </div>
-                    <div className="w-full sm:w-auto flex bg-[var(--bg-input)] p-1 rounded-2xl gap-1 overflow-x-auto scrollbar-hide border border-[var(--border-main)]">
+                    <div className="w-full sm:w-auto flex bg-input p-1 rounded-2xl gap-1 overflow-x-auto scrollbar-hide border border-border-main">
                         <TabButton label={t('finance.tabTransactions')} icon={<Activity size={14} />} isActive={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} />
                         <TabButton label={t('finance.tabReports')} icon={<BarChart2 size={14} />} isActive={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
                         <TabButton label={t('clients.title', 'Partnerët')} icon={<Users size={14} />} isActive={activeTab === 'partners'} onClick={() => setActiveTab('partners')} />
@@ -344,11 +342,11 @@ export const FinanceTab: React.FC = () => {
                 <div className="flex-1 flex flex-col overflow-hidden relative px-4 sm:px-6 pb-4 sm:pb-6">
                     {(activeTab === 'transactions' || activeTab === 'partners') && (
                         <div className="mb-4 sm:mb-6 relative group">
-                            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-[var(--text-muted)] group-focus-within:text-primary-start transition-colors" />
+                            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-text-muted group-focus-within:text-primary-start transition-colors" />
                             <input 
                                 type="text" 
                                 placeholder={activeTab === 'partners' ? t('general.searchPartners', 'Kërko partnerë...') : t('header.searchPlaceholder')} 
-                                className="w-full pl-9 sm:pl-12 py-2 sm:py-4 bg-[var(--bg-input)] focus:bg-[var(--bg-card)] transition-all border border-[var(--border-main)] text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] rounded-xl text-sm sm:text-base focus:outline-none focus:border-primary-start/50" 
+                                className="w-full pl-9 sm:pl-12 py-2 sm:py-4 bg-input focus:bg-card transition-all border border-border-main text-text-primary placeholder:text-text-disabled rounded-xl text-sm sm:text-base focus:outline-none focus:border-primary/50" 
                                 value={searchTerm} 
                                 onChange={(e) => setSearchTerm(e.target.value)} 
                             />
@@ -387,21 +385,21 @@ export const FinanceTab: React.FC = () => {
                             {partnersLoading ? (
                                 <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-primary-start" /></div>
                             ) : filteredPartners.length === 0 ? (
-                                <div className="text-center text-[var(--text-muted)] py-10 uppercase text-xs font-black tracking-widest">{t('general.noPartnersFound', 'Nuk u gjet asnjë partner.')}</div>
+                                <div className="text-center text-text-muted py-10 uppercase text-xs font-black tracking-widest">{t('general.noPartnersFound', 'Nuk u gjet asnjë partner.')}</div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                                     {filteredPartners.map((partner) => {
                                         const isClient = partner.type === 'CLIENT';
-                                        const typeColor = isClient ? 'text-emerald-500' : 'text-amber-500';
-                                        const typeBg = isClient ? 'bg-emerald-500/10' : 'bg-amber-500/10';
-                                        const typeBorder = isClient ? 'border-emerald-500/20' : 'border-amber-500/20';
+                                        const typeColor = isClient ? 'text-primary-start' : 'text-amber-500';
+                                        const typeBg = isClient ? 'bg-primary/10' : 'bg-amber-500/10';
+                                        const typeBorder = isClient ? 'border-primary/20' : 'border-amber-500/20';
 
                                         return (
                                             <div 
                                                 key={partner.id} 
-                                                className="relative overflow-hidden rounded-2xl border border-[var(--border-main)] bg-[var(--bg-card)] p-5 transition-all duration-300 hover:shadow-md group"
+                                                className="relative overflow-hidden rounded-2xl border border-border-main bg-card p-5 transition-all duration-300 hover:shadow-md group"
                                             >
-                                                <div className={`absolute bottom-0 left-0 w-full h-1 ${isClient ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                                <div className={`absolute bottom-0 left-0 w-full h-1 ${isClient ? 'bg-primary-start' : 'bg-amber-500'}`} />
                                                 
                                                 <div className="flex justify-between items-start mb-3 sm:mb-4">
                                                     <div className={`rounded-xl ${typeBg} p-3 ${typeColor} group-hover:scale-110 transition-transform duration-500`}>
@@ -411,35 +409,35 @@ export const FinanceTab: React.FC = () => {
                                                         <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${typeBg} ${typeColor} border ${typeBorder}`}>
                                                             {isClient ? 'Klient' : 'Furnitor'}
                                                         </span>
-                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md hover:bg-rose-500/10 text-[var(--text-muted)] hover:text-rose-500 transition-all">
+                                                        <button onClick={() => handleDeletePartner(partner.id)} className="p-1.5 rounded-md hover:bg-rose-500/10 text-text-muted hover:text-rose-500 transition-all">
                                                             <Trash2 size={12} />
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <h4 className="text-base font-bold text-[var(--text-primary)] mb-3 tracking-tight">
+                                                <h4 className="text-base font-bold text-text-primary mb-3 tracking-tight">
                                                     {partner.name}
                                                 </h4>
                                                 <div className="space-y-2">
                                                     {partner.email && (
-                                                        <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+                                                        <div className="flex items-center gap-2 text-[11px] text-text-secondary">
                                                             <Mail size={12} className={typeColor} /> {partner.email}
                                                         </div>
                                                     )}
                                                     {partner.phone && (
-                                                        <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+                                                        <div className="flex items-center gap-2 text-[11px] text-text-secondary">
                                                             <Phone size={12} className={typeColor} /> {partner.phone}
                                                         </div>
                                                     )}
                                                     {partner.address && (
-                                                        <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+                                                        <div className="flex items-center gap-2 text-[11px] text-text-secondary">
                                                             <MapPin size={12} className={typeColor} /> {partner.address}
                                                         </div>
                                                     )}
                                                 </div>
                                                 {partner.tax_id && (
-                                                    <div className="mt-4 pt-4 border-t border-[var(--border-main)] flex justify-between items-center">
-                                                        <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-disabled)]">NIPT / TAX ID</span>
-                                                        <span className="text-[10px] font-mono font-bold text-[var(--text-secondary)]">{partner.tax_id}</span>
+                                                    <div className="mt-4 pt-4 border-t border-border-main flex justify-between items-center">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-text-disabled">NIPT / TAX ID</span>
+                                                        <span className="text-[10px] font-mono font-bold text-text-secondary">{partner.tax_id}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -452,16 +450,16 @@ export const FinanceTab: React.FC = () => {
 
                     {activeTab === 'reports' && (
                         <div className="flex-1 min-h-0 overflow-y-auto custom-finance-scroll pr-1 sm:pr-2">
-                            {!analyticsData ? ( <div className="text-center text-[var(--text-muted)] py-10 uppercase text-xs font-black tracking-widest">{t('finance.reports.noData')}</div> ) : (
+                            {!analyticsData ? ( <div className="text-center text-text-muted py-10 uppercase text-xs font-black tracking-widest">{t('finance.reports.noData')}</div> ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
-                                    <div className="bg-[var(--bg-card)] rounded-2xl p-4 sm:p-6 border border-[var(--border-main)] shadow-sm">
-                                        <h4 className="text-xs font-black text-[var(--text-primary)] mb-4 sm:mb-6 flex items-center gap-2 uppercase tracking-widest"><TrendingUp size={16} className="text-emerald-500" /> {t('finance.analytics.salesTrend')}</h4>
+                                    <div className="bg-card rounded-2xl p-4 sm:p-6 border border-border-main shadow-sm">
+                                        <h4 className="text-xs font-black text-text-primary mb-4 sm:mb-6 flex items-center gap-2 uppercase tracking-widest"><TrendingUp size={16} className="text-primary-start" /> {t('finance.analytics.salesTrend')}</h4>
                                         <div className="h-[250px] sm:h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%"><AreaChart data={analyticsData.sales_trend}><defs><linearGradient id="colorSales" x1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="var(--border-main)" vertical={false} opacity={0.5} /><XAxis dataKey="date" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(str) => str.slice(5)} /><YAxis stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} tickMargin={8} /><Tooltip contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '12px', fontSize: '12px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name) as string]} /><Area type="monotone" connectNulls={true} dataKey="amount" stroke="#10b981" strokeWidth={2} fill="url(#colorSales)" /></AreaChart></ResponsiveContainer>
                                         </div>
                                     </div>
-                                    <div className="bg-[var(--bg-card)] rounded-2xl p-4 sm:p-6 border border-[var(--border-main)] shadow-sm">
-                                        <h4 className="text-xs font-black text-[var(--text-primary)] mb-4 sm:mb-6 flex items-center gap-2 uppercase tracking-widest"><BarChart2 size={16} className="text-emerald-500" /> {t('finance.analytics.topProducts')}</h4>
+                                    <div className="bg-card rounded-2xl p-4 sm:p-6 border border-border-main shadow-sm">
+                                        <h4 className="text-xs font-black text-text-primary mb-4 sm:mb-6 flex items-center gap-2 uppercase tracking-widest"><BarChart2 size={16} className="text-primary-start" /> {t('finance.analytics.topProducts')}</h4>
                                         <div className="h-[250px] sm:h-[300px] w-full">
                                             <ResponsiveContainer width="100%" height="100%"><BarChart data={analyticsData.top_products} layout="vertical" margin={{ left: 10 }}><XAxis type="number" hide /><YAxis dataKey="product_name" type="category" width={100} stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} /><Tooltip cursor={{fill: 'var(--bg-hover)'}} contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-main)', borderRadius: '12px', fontSize: '12px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={(value: any, name: any) => [`€${value.toFixed(2)}`, t(`finance.analytics.keys.${name}`, name) as string]} /><Bar dataKey="total_revenue" radius={[0, 4, 4, 0]} barSize={16}>{analyticsData.top_products.map((_: any, index: number) => (<Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />))}</Bar></BarChart></ResponsiveContainer>
                                         </div>
@@ -476,13 +474,13 @@ export const FinanceTab: React.FC = () => {
             <AnimatePresence>
                 {kpiModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
-                            <div className="p-4 sm:p-6 border-b border-[var(--border-main)] bg-primary-start/10 flex justify-between items-center">
-                                <h3 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-2">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-card border border-border-main rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
+                            <div className="p-4 sm:p-6 border-b border-border-main bg-primary/10 flex justify-between items-center">
+                                <h3 className="text-xs font-black text-text-primary uppercase tracking-widest flex items-center gap-2">
                                     <Sparkles size={14} className="text-amber-500" />
                                     {kpiAnalysis?.type}
                                 </h3>
-                                <button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-[var(--bg-hover)] rounded-lg text-[var(--text-muted)] transition-colors">
+                                <button onClick={() => setKpiModalOpen(false)} className="p-1 hover:bg-hover rounded-lg text-text-muted transition-colors">
                                     <X size={18} />
                                 </button>
                             </div>
@@ -490,24 +488,24 @@ export const FinanceTab: React.FC = () => {
                                 {kpiLoading ? (
                                     <div className="flex flex-col items-center py-10 gap-4">
                                         <Loader2 size={32} className="animate-spin text-primary-start" />
-                                        <p className="text-[var(--text-muted)] animate-pulse text-xs font-black uppercase tracking-widest">{t('finance.smartAnalyst.analyzing')}</p>
+                                        <p className="text-text-muted animate-pulse text-xs font-black uppercase tracking-widest">{t('finance.smartAnalyst.analyzing')}</p>
                                     </div>
                                 ) : (
                                     <>
                                         {kpiAnalysis?.summary && (
-                                            <div className="bg-[var(--bg-input)] border border-[var(--border-main)] rounded-xl p-4">
+                                            <div className="bg-input border border-border-main rounded-xl p-4">
                                                 <h4 className="text-[9px] font-black uppercase tracking-widest text-primary-start mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4>
-                                                <p className="text-[var(--text-primary)] leading-relaxed text-sm">{kpiAnalysis?.summary}</p>
+                                                <p className="text-text-primary leading-relaxed text-sm">{kpiAnalysis?.summary}</p>
                                             </div>
                                         )}
                                         {kpiAnalysis?.contributors && kpiAnalysis.contributors.length > 0 && (
                                             <div>
-                                                <h4 className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3">{t('finance.smartAnalyst.keyContributors')}</h4>
+                                                <h4 className="text-[9px] font-black uppercase tracking-widest text-text-muted mb-3">{t('finance.smartAnalyst.keyContributors')}</h4>
                                                 <div className="space-y-2">
                                                     {kpiAnalysis.contributors.map((c:any, i:any) => (
-                                                        <div key={i} className="flex items-center gap-3 p-3 bg-[var(--bg-input)] rounded-lg border border-[var(--border-main)] hover:border-primary-start/30 transition-colors">
+                                                        <div key={i} className="flex items-center gap-3 p-3 bg-input rounded-lg border border-border-main hover:border-primary/30 transition-colors">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-primary-start" />
-                                                            <span className="text-xs font-bold text-[var(--text-primary)]">{c}</span>
+                                                            <span className="text-xs font-bold text-text-primary">{c}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -528,14 +526,14 @@ export const FinanceTab: React.FC = () => {
             
             {showArchiveInvoiceModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl w-full max-w-md p-6 shadow-xl">
-                        <h2 className="text-sm font-black uppercase tracking-widest text-[var(--text-primary)] mb-4">{t('finance.archiveInvoice')}</h2>
-                        <select className="w-full mb-6 bg-[var(--bg-input)] border border-[var(--border-main)] text-[var(--text-primary)] rounded-xl p-3 text-sm focus:outline-none focus:border-primary-start" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                    <div className="bg-card border border-border-main rounded-2xl w-full max-w-md p-6 shadow-xl">
+                        <h2 className="text-sm font-black uppercase tracking-widest text-text-primary mb-4">{t('finance.archiveInvoice')}</h2>
+                        <select className="w-full mb-6 bg-input border border-border-main text-text-primary rounded-xl p-3 text-sm focus:outline-none focus:border-primary" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowArchiveInvoiceModal(false)} className="px-5 py-2 bg-[var(--bg-input)] hover:bg-[var(--bg-hover)] rounded-xl transition-colors text-[var(--text-muted)] text-xs font-black uppercase tracking-widest">{t('general.cancel')}</button>
+                            <button onClick={() => setShowArchiveInvoiceModal(false)} className="px-5 py-2 bg-input hover:bg-hover rounded-xl transition-colors text-text-muted text-xs font-black uppercase tracking-widest">{t('general.cancel')}</button>
                             <button onClick={submitArchiveInvoice} className="px-5 py-2 btn-primary rounded-xl transition-colors text-xs font-black uppercase tracking-widest">{t('general.save')}</button>
                         </div>
                     </div>
@@ -544,14 +542,14 @@ export const FinanceTab: React.FC = () => {
 
             {showArchiveExpenseModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl w-full max-w-md p-6 shadow-xl">
-                        <h2 className="text-sm font-black uppercase tracking-widest text-[var(--text-primary)] mb-4">{t('finance.archiveExpenseTitle')}</h2>
-                        <select className="w-full mb-6 bg-[var(--bg-input)] border border-[var(--border-main)] text-[var(--text-primary)] rounded-xl p-3 text-sm focus:outline-none focus:border-primary-start" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                    <div className="bg-card border border-border-main rounded-2xl w-full max-w-md p-6 shadow-xl">
+                        <h2 className="text-sm font-black uppercase tracking-widest text-text-primary mb-4">{t('finance.archiveExpenseTitle')}</h2>
+                        <select className="w-full mb-6 bg-input border border-border-main text-text-primary rounded-xl p-3 text-sm focus:outline-none focus:border-primary" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
                         <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowArchiveExpenseModal(false)} className="px-5 py-2 bg-[var(--bg-input)] hover:bg-[var(--bg-hover)] rounded-xl transition-colors text-[var(--text-muted)] text-xs font-black uppercase tracking-widest">{t('general.cancel')}</button>
+                            <button onClick={() => setShowArchiveExpenseModal(false)} className="px-5 py-2 bg-input hover:bg-hover rounded-xl transition-colors text-text-muted text-xs font-black uppercase tracking-widest">{t('general.cancel')}</button>
                             <button onClick={submitArchiveExpense} className="px-5 py-2 btn-primary rounded-xl transition-colors text-xs font-black uppercase tracking-widest">{t('general.save')}</button>
                         </div>
                     </div>
