@@ -1,5 +1,5 @@
 // FILE: src/components/ui/Panel.tsx
-// DIAGNOSTIC TEST – ADD RED BORDER TO VERIFY PANEL USAGE
+// DIAGNOSTIC TEST – RED BORDER TO VERIFY USAGE
 
 import React from 'react';
 import clsx from 'clsx';
@@ -13,9 +13,9 @@ interface PanelProps {
 
 export const Panel: React.FC<PanelProps> = ({ 
   children, 
-  className = "", 
-  noPadding = false, 
-  glass = false 
+  className = "",
+  noPadding: _noPadding,
+  glass: _glass
 }) => {
   return (
     <div className={clsx("border-4 border-red-600", className)}>
