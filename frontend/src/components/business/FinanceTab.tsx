@@ -1,8 +1,7 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - BRAND CONSISTENCY V11.0
-// 1. FIX: Aligned Tab and Icon colors with the Primary brand (Success/Green).
-// 2. FIX: Implemented type-aware coloring for Partner card icons and badges.
-// 3. RESULT: Unified visual language across Finance and Insights sections.
+// PHOENIX PROTOCOL - BRAND PRIMARY SYNC (INDIGO)
+// Active tabs, search, section icons use primary-start.
+// Income KPI remains emerald, Expense remains rose.
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,11 +31,11 @@ import { useAuth } from '../../context/AuthContext';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     let colorClasses = {
-        text: 'text-indigo-600 dark:text-indigo-400',
-        bg: 'bg-indigo-100 dark:bg-indigo-900/30',
-        border: 'border-indigo-200 dark:border-indigo-800',
-        accent: 'bg-indigo-500',
-        iconColor: 'text-indigo-600 dark:text-indigo-400'
+        text: 'text-primary-start',
+        bg: 'bg-primary-start/10',
+        border: 'border-primary-start/20',
+        accent: 'bg-primary-start',
+        iconColor: 'text-primary-start'
     };
     if (type === 'income') {
         colorClasses = {
@@ -97,7 +96,7 @@ const ActionButton = ({ icon, label, onClick, primary = false }: any) => (
         className={`flex items-center justify-center text-center gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-4 rounded-2xl text-sm sm:text-base font-bold transition-all duration-300 group hover-lift w-full ${
             primary 
                 ? 'btn-primary' 
-                : 'bg-[var(--bg-input)] border border-[var(--border-main)] hover:border-emerald-500/50 text-[var(--text-primary)] shadow-sm'
+                : 'bg-[var(--bg-input)] border border-[var(--border-main)] hover:border-primary-start/50 text-[var(--text-primary)] shadow-sm'
         }`}
     >
         <span className="text-base sm:text-lg">{icon}</span>
@@ -110,7 +109,7 @@ const TabButton = ({ label, icon, isActive, onClick }: any) => (
         onClick={onClick} 
         className={`flex-1 px-3 sm:px-6 py-2 sm:py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1 sm:gap-2 hover-lift ${
             isActive 
-                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-sm' 
+                ? 'bg-primary-start/10 text-primary-start border border-primary-start/30 shadow-sm' 
                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-main)]'
         }`}
     >
@@ -330,7 +329,7 @@ export const FinanceTab: React.FC = () => {
             <Panel glass className="border border-[var(--border-main)] !bg-transparent p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col shadow-sm">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 px-4 sm:px-6 pt-4 sm:pt-6">
                     <div className="flex items-center gap-3">
-                        <Activity className="text-emerald-500" size={20} />
+                        <Activity className="text-primary-start" size={20} />
                         <h2 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-widest leading-none">
                             {t('finance.activityAndReports')}
                         </h2>
@@ -345,11 +344,11 @@ export const FinanceTab: React.FC = () => {
                 <div className="flex-1 flex flex-col overflow-hidden relative px-4 sm:px-6 pb-4 sm:pb-6">
                     {(activeTab === 'transactions' || activeTab === 'partners') && (
                         <div className="mb-4 sm:mb-6 relative group">
-                            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-[var(--text-muted)] group-focus-within:text-emerald-500 transition-colors" />
+                            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-[var(--text-muted)] group-focus-within:text-primary-start transition-colors" />
                             <input 
                                 type="text" 
                                 placeholder={activeTab === 'partners' ? t('general.searchPartners', 'Kërko partnerë...') : t('header.searchPlaceholder')} 
-                                className="w-full pl-9 sm:pl-12 py-2 sm:py-4 bg-[var(--bg-input)] focus:bg-[var(--bg-card)] transition-all border border-[var(--border-main)] text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] rounded-xl text-sm sm:text-base focus:outline-none focus:border-emerald-500/50" 
+                                className="w-full pl-9 sm:pl-12 py-2 sm:py-4 bg-[var(--bg-input)] focus:bg-[var(--bg-card)] transition-all border border-[var(--border-main)] text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] rounded-xl text-sm sm:text-base focus:outline-none focus:border-primary-start/50" 
                                 value={searchTerm} 
                                 onChange={(e) => setSearchTerm(e.target.value)} 
                             />
@@ -359,7 +358,7 @@ export const FinanceTab: React.FC = () => {
                     {activeTab === 'transactions' && (
                         <div className="flex-1 min-h-0 overflow-y-auto custom-finance-scroll pr-1 sm:pr-2 space-y-3 pb-4 sm:pb-20">
                             {loading ? (
-                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-emerald-500" /></div>
+                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-primary-start" /></div>
                             ) : (
                                 <TransactionList 
                                     allTransactions={allTransactions} 
@@ -386,7 +385,7 @@ export const FinanceTab: React.FC = () => {
                     {activeTab === 'partners' && (
                         <div className="flex-1 min-h-0 overflow-y-auto custom-finance-scroll pr-1 sm:pr-2 space-y-3 pb-4 sm:pb-20">
                             {partnersLoading ? (
-                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-emerald-500" /></div>
+                                <div className="flex justify-center h-48 items-center"><Loader2 className="w-10 h-10 sm:w-12 sm:h-12 animate-spin text-primary-start" /></div>
                             ) : filteredPartners.length === 0 ? (
                                 <div className="text-center text-[var(--text-muted)] py-10 uppercase text-xs font-black tracking-widest">{t('general.noPartnersFound', 'Nuk u gjet asnjë partner.')}</div>
                             ) : (
@@ -478,7 +477,7 @@ export const FinanceTab: React.FC = () => {
                 {kpiModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
-                            <div className="p-4 sm:p-6 border-b border-[var(--border-main)] bg-emerald-500/10 flex justify-between items-center">
+                            <div className="p-4 sm:p-6 border-b border-[var(--border-main)] bg-primary-start/10 flex justify-between items-center">
                                 <h3 className="text-xs font-black text-[var(--text-primary)] uppercase tracking-widest flex items-center gap-2">
                                     <Sparkles size={14} className="text-amber-500" />
                                     {kpiAnalysis?.type}
@@ -490,14 +489,14 @@ export const FinanceTab: React.FC = () => {
                             <div className="p-6 space-y-6">
                                 {kpiLoading ? (
                                     <div className="flex flex-col items-center py-10 gap-4">
-                                        <Loader2 size={32} className="animate-spin text-emerald-500" />
+                                        <Loader2 size={32} className="animate-spin text-primary-start" />
                                         <p className="text-[var(--text-muted)] animate-pulse text-xs font-black uppercase tracking-widest">{t('finance.smartAnalyst.analyzing')}</p>
                                     </div>
                                 ) : (
                                     <>
                                         {kpiAnalysis?.summary && (
                                             <div className="bg-[var(--bg-input)] border border-[var(--border-main)] rounded-xl p-4">
-                                                <h4 className="text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4>
+                                                <h4 className="text-[9px] font-black uppercase tracking-widest text-primary-start mb-2">{t('finance.smartAnalyst.executiveSummary')}</h4>
                                                 <p className="text-[var(--text-primary)] leading-relaxed text-sm">{kpiAnalysis?.summary}</p>
                                             </div>
                                         )}
@@ -506,8 +505,8 @@ export const FinanceTab: React.FC = () => {
                                                 <h4 className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3">{t('finance.smartAnalyst.keyContributors')}</h4>
                                                 <div className="space-y-2">
                                                     {kpiAnalysis.contributors.map((c:any, i:any) => (
-                                                        <div key={i} className="flex items-center gap-3 p-3 bg-[var(--bg-input)] rounded-lg border border-[var(--border-main)] hover:border-emerald-500/30 transition-colors">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                        <div key={i} className="flex items-center gap-3 p-3 bg-[var(--bg-input)] rounded-lg border border-[var(--border-main)] hover:border-primary-start/30 transition-colors">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-primary-start" />
                                                             <span className="text-xs font-bold text-[var(--text-primary)]">{c}</span>
                                                         </div>
                                                     ))}
@@ -531,7 +530,7 @@ export const FinanceTab: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl w-full max-w-md p-6 shadow-xl">
                         <h2 className="text-sm font-black uppercase tracking-widest text-[var(--text-primary)] mb-4">{t('finance.archiveInvoice')}</h2>
-                        <select className="w-full mb-6 bg-[var(--bg-input)] border border-[var(--border-main)] text-[var(--text-primary)] rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-500" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                        <select className="w-full mb-6 bg-[var(--bg-input)] border border-[var(--border-main)] text-[var(--text-primary)] rounded-xl p-3 text-sm focus:outline-none focus:border-primary-start" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
@@ -547,7 +546,7 @@ export const FinanceTab: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl w-full max-w-md p-6 shadow-xl">
                         <h2 className="text-sm font-black uppercase tracking-widest text-[var(--text-primary)] mb-4">{t('finance.archiveExpenseTitle')}</h2>
-                        <select className="w-full mb-6 bg-[var(--bg-input)] border border-[var(--border-main)] text-[var(--text-primary)] rounded-xl p-3 text-sm focus:outline-none focus:border-emerald-500" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
+                        <select className="w-full mb-6 bg-[var(--bg-input)] border border-[var(--border-main)] text-[var(--text-primary)] rounded-xl p-3 text-sm focus:outline-none focus:border-primary-start" value={selectedWorkspaceForInvoice} onChange={(e) => setSelectedWorkspaceForInvoice(e.target.value)}>
                             <option value="">{t('archive.generalNoCase')}</option>
                             {workspaces.map(w => (<option key={w.id} value={w.id}>{w.title}</option>))}
                         </select>
