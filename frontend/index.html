@@ -1,7 +1,7 @@
 <!-- FILE: index.html -->
-<!-- PHOENIX PROTOCOL - PWA INTEGRATION V3.1 -->
-<!-- 1. FIX: Updated manifest link extension from .json to .webmanifest -->
-<!-- 2. REASON: vite-plugin-pwa generates manifest.webmanifest by default. -->
+<!-- PHOENIX PROTOCOL - PWA ALIGNMENT V4.0 -->
+<!-- 1. FIX: Reverted manifest link to .json and aligned with vite.config.ts -->
+<!-- 2. REASON: Resolves the persistent 404 by matching the browser's request and the plugin's forced output. -->
 
 <!doctype html>
 <html lang="sq">
@@ -10,9 +10,9 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- PHOENIX: PWA & Theme -->
+    <!-- PHOENIX: PWA & Theme Integration -->
     <meta name="theme-color" content="#020617" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="manifest" href="/manifest.json" />
 
     <!-- BRANDING & SEO -->
     <title>Haveri AI | Platforma e Biznesit Tuaj</title>
