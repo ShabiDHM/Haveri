@@ -1,5 +1,5 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// TEST: BRIGHT RED BACKGROUND TO VERIFY FILE IS BEING USED
+// FINAL GLASS STYLING FOR INVENTORY CARDS
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -30,7 +30,6 @@ const ItemCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            style={{ backgroundColor: 'red', border: '5px solid yellow' }}
             className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 hover:border-indigo-500/50 transition-all duration-300 shadow-xl group flex flex-col justify-between h-full min-h-[13rem]"
         >
             {/* Accent Bar */}
