@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V15.1 (FORCED GLASS PANEL)
+// PHOENIX PROTOCOL - DIRECT GLASS STYLING ON PARTNER CARDS
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -325,7 +325,6 @@ export const FinanceTab: React.FC = () => {
                 <ActionButton icon={<MinusCircle size={16} className="sm:w-5 sm:h-5" />} label={t('finance.addExpense')} onClick={() => { setSelectedExpense(null); setShowExpenseModal(true); }} />
             </div>
 
-            {/* FORCED GLASS PANEL with !bg-transparent */}
             <Panel glass className="border border-white/10 !bg-transparent p-0 overflow-hidden min-h-[500px] sm:min-h-[600px] flex flex-col shadow-sm">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 pb-4 sm:pb-6 px-4 sm:px-6 pt-4 sm:pt-6">
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-2 sm:gap-3">
@@ -389,14 +388,16 @@ export const FinanceTab: React.FC = () => {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                                     {filteredPartners.map((partner) => (
+                                        // DIRECT GLASS STYLING – NO PANEL, NO OLD CLASSES
                                         <div 
                                             key={partner.id} 
-                                            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 hover:border-white/20 transition-all duration-300 shadow-xl"
+                                            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 hover:border-indigo-500/50 transition-all duration-300 shadow-xl"
                                         >
-                                            <div className={`absolute bottom-0 left-0 w-full h-1.5 ${partner.type === 'CLIENT' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                            {/* Accent Bar */}
+                                            <div className={`absolute bottom-0 left-0 w-full h-1 ${partner.type === 'CLIENT' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                             
                                             <div className="flex justify-between items-start mb-3 sm:mb-4">
-                                                <div className="rounded-xl bg-white/10 p-3 text-indigo-200">
+                                                <div className="rounded-xl border border-white/10 bg-white/10 p-3 text-indigo-200">
                                                     <Users size={16} className="sm:w-5 sm:h-5" />
                                                 </div>
                                                 <div className="flex flex-col items-end gap-2">

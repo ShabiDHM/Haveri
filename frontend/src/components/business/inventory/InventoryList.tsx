@@ -1,5 +1,5 @@
 // FILE: src/components/business/inventory/InventoryList.tsx
-// PHOENIX PROTOCOL - INVENTORY LIST V6.8 (USES GLASS STYLING)
+// DIRECT GLASS STYLING – NO PANEL, NO OLD CLASSES
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -30,14 +30,14 @@ const ItemCard: React.FC<{
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 hover:border-white/20 transition-all duration-300 shadow-xl group flex flex-col justify-between h-full min-h-[13rem]"
+            className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 hover:border-indigo-500/50 transition-all duration-300 shadow-xl group flex flex-col justify-between h-full min-h-[13rem]"
         >
-            {/* Dynamic Status Accent Line */}
+            {/* Accent Bar */}
             <div className={`absolute bottom-0 left-0 w-full h-1.5 ${isCritical ? 'bg-rose-500' : 'bg-emerald-500'}`} />
             
             <div>
                 <div className="flex justify-between items-start gap-4 mb-3 sm:mb-4">
-                    <div className="rounded-xl bg-white/10 p-3 text-indigo-200">
+                    <div className="rounded-xl border border-white/10 bg-white/10 p-3 text-indigo-200">
                         {isPos ? <Layers size={18} /> : <Package size={18} />}
                     </div>
                     {isCritical && (
