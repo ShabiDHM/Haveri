@@ -1,115 +1,125 @@
 // FILE: src/components/business/InventoryTab.tsx
-// PHOENIX PROTOCOL - BRAND PRIMARY SYNC (INDIGO)
-// Active UI elements use primary-start. Green only for stock levels (handled in InventoryList).
-// No hardcoded white – uses theme CSS variables.
+// PHOENIX PROTOCOL - INVENTORY TAB V26.0 (CONSOLIDATED TOP ROW, MAXIMUM VERTICAL SPACE)
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Plus, Loader2, FileSpreadsheet, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Package, Plus, Search, X, Loader2 } from 'lucide-react';
-import { InventoryList } from './inventory/InventoryList';
 import { InventoryItem } from '../../data/types';
-import { apiService } from '../../services/api';
+
+import { useInventoryData } from '../../hooks/useInventoryData';
+import { InventoryList } from './inventory/InventoryList';
+import { InventoryItemModal } from './modals/InventoryItemModal';
+import { InventoryImportModal } from './modals/InventoryImportModal';
+import { Panel } from '../ui/Panel';
 import { useAuth } from '../../context/AuthContext';
+
+const ActionButton = ({ icon, label, onClick, primary = false }: { icon: React.ReactNode, label: string, onClick: () => void, primary?: boolean }) => (
+    <button 
+        onClick={onClick} 
+        className={`
+            flex items-center justify-center text-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-2xl text-sm sm:text-base font-bold transition-all duration-300 group w-full sm:w-auto hover-lift shadow-sm
+            ${primary 
+                ? 'btn-primary' 
+                : 'glass-input !bg-surface hover:bg-hover transition-colors cursor-pointer border border-border-main'
+            }
+        `}
+    >
+        <span className={`transition-transform duration-300 group-hover:scale-110 ${primary ? '' : 'text-success-start'}`}>{icon}</span>
+        <span className="truncate">{label}</span>
+    </button>
+);
 
 export const InventoryTab: React.FC = () => {
     const { t } = useTranslation();
     const { workspace } = useAuth();
-    const [items, setItems] = useState<InventoryItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    
+    const { 
+        loading, manualItems, posItems, 
+        loadData, deleteItem 
+    } = useInventoryData(workspace?.id);
+
     const [searchTerm, setSearchTerm] = useState('');
+    const [showItemModal, setShowItemModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false); 
 
-    const fetchItems = async () => {
-        setLoading(true);
-        try {
-            const data = await apiService.getInventoryItems(workspace?.id);
-            setItems(data || []);
-        } catch (error) {
-            console.error('Failed to fetch inventory items:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
 
-    useEffect(() => {
-        fetchItems();
-    }, [workspace?.id]);
+    const openCreateItem = () => { setEditingItem(null); setShowItemModal(true); };
+    const openEditItem = (item: InventoryItem) => { setEditingItem(item); setShowItemModal(true); };
+    const handleDeleteItem = async (id: string) => { if (window.confirm(t('general.confirmDelete'))) await deleteItem(id); };
 
-    const filteredItems = items.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredManual = manualItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredPos = posItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const handleEdit = (item: InventoryItem) => {
-        console.log('Edit item:', item);
-    };
-
-    const handleDelete = async (id: string) => {
-        if (window.confirm(t('general.confirmDelete'))) {
-            try {
-                await apiService.deleteInventoryItem(id);
-                await fetchItems();
-            } catch (error) {
-                console.error('Failed to delete item:', error);
-            }
-        }
-    };
+    if (loading) return <div className="flex justify-center h-96 items-center"><Loader2 className="w-12 h-12 animate-spin text-success-start" /></div>;
 
     return (
-        <div className="space-y-6">
-            {/* Header and Actions */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-primary-start/10 border border-primary-start/20">
-                        <Package className="text-primary-start" size={22} />
+        <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="flex flex-col h-[calc(100vh-140px)] space-y-4 sm:space-y-6 overflow-hidden"
+        >
+            <style>{`
+                .custom-finance-scroll::-webkit-scrollbar { width: 8px; } 
+                .custom-finance-scroll::-webkit-scrollbar-track { background: transparent; } 
+                .custom-finance-scroll::-webkit-scrollbar-thumb { background: var(--status-success); border-radius: 10px; opacity: 0.3; }
+                @media (min-width: 640px) {
+                    .custom-finance-scroll::-webkit-scrollbar { width: 6px; }
+                }
+            `}</style>
+
+            {/* Consolidated Top Panel: Actions + Search */}
+            <Panel className="p-3 sm:p-4 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 flex-shrink-0">
+                {/* Left side: Action buttons */}
+                <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3 sm:gap-4">
+                    <ActionButton primary icon={<Plus size={20} />} label={t('inventory.items.add')} onClick={openCreateItem} />
+                    <ActionButton icon={<FileSpreadsheet size={20} />} label={t('inventory.items.import', 'Importo Artikujt')} onClick={() => setShowImportModal(true)} />
+                </div>
+
+                {/* Right side: Search input */}
+                <div className="w-full md:max-w-md">
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-success-start transition-colors" />
+                        <input 
+                            type="text" 
+                            placeholder={t('header.searchPlaceholder')} 
+                            className="glass-input w-full pl-12 py-3 sm:py-4 text-sm sm:text-base border border-border-main focus:border-success-start transition-all" 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                        />
                     </div>
-                    <h1 className="text-xl sm:text-2xl font-black text-[var(--text-primary)] uppercase tracking-widest leading-none">
-                        {t('inventory.title', 'Menaxhimi i Stokut')}
-                    </h1>
                 </div>
-                <button
-                    onClick={() => console.log('Add item')}
-                    className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary-start/20 transition-all hover-lift"
-                >
-                    <Plus size={16} />
-                    {t('inventory.addItem', 'Shto Artikull')}
-                </button>
-            </div>
+            </Panel>
 
-            {/* Search Bar - Brand Primary Focus */}
-            <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)] group-focus-within:text-primary-start transition-colors" />
-                <input
-                    type="text"
-                    placeholder={t('header.searchPlaceholder')}
-                    className="w-full pl-11 pr-10 py-3.5 bg-[var(--bg-input)] focus:bg-[var(--bg-card)] transition-all border border-[var(--border-main)] text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] rounded-2xl focus:outline-none focus:border-primary-start/50 shadow-sm"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                {searchTerm && (
-                    <button
-                        onClick={() => setSearchTerm('')}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                    >
-                        <X size={18} />
-                    </button>
-                )}
-            </div>
-
-            {/* Inventory List Rendering */}
-            {loading ? (
-                <div className="flex flex-col justify-center items-center h-64 gap-4">
-                    <Loader2 className="w-10 h-10 animate-spin text-primary-start" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] animate-pulse">
-                        Duke përpunuar të dhënat e stokut...
-                    </p>
+            {/* Main List Panel: only scrollable inventory cards, no padding/margin */}
+            <Panel className="flex-1 flex flex-col overflow-hidden border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm min-h-0 p-0">
+                <div className="flex-1 overflow-y-auto custom-finance-scroll p-0">
+                    <InventoryList 
+                        manualItems={filteredManual} 
+                        posItems={filteredPos} 
+                        onEdit={openEditItem} 
+                        onDelete={handleDeleteItem} 
+                    />
                 </div>
-            ) : (
-                <InventoryList
-                    manualItems={filteredItems}
-                    posItems={[]}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                />
-            )}
-        </div>
+            </Panel>
+
+            <InventoryItemModal 
+                isOpen={showItemModal} 
+                onClose={() => setShowItemModal(false)} 
+                onSuccess={loadData} 
+                itemToEdit={editingItem} 
+                onDelete={handleDeleteItem} 
+            />
+            
+            <InventoryImportModal 
+                isOpen={showImportModal} 
+                onClose={() => setShowImportModal(false)} 
+                onSuccess={loadData} 
+                target="items"
+                title={t('inventory.items.importTitle', 'Importo Artikujt e Inventarit')}
+                requiredColumns="Emri, Njësia, Kosto, Stoku, Kufiri i Stokut të Ulët"
+            />
+        </motion.div>
     );
 };
