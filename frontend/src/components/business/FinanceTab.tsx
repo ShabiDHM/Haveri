@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - DIRECT GLASS STYLING ON PARTNER CARDS
+// TEST: FORCE RED BACKGROUND ON PARTNER CARDS TO VERIFY CORRECT FILE
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -388,9 +388,10 @@ export const FinanceTab: React.FC = () => {
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                                     {filteredPartners.map((partner) => (
-                                        // DIRECT GLASS STYLING – NO PANEL, NO OLD CLASSES
+                                        // FORCED RED BACKGROUND + YELLOW BORDER FOR TESTING
                                         <div 
                                             key={partner.id} 
+                                            style={{ backgroundColor: 'red', border: '5px solid yellow' }}
                                             className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-5 hover:border-indigo-500/50 transition-all duration-300 shadow-xl"
                                         >
                                             {/* Accent Bar */}
