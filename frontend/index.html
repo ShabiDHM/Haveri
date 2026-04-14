@@ -1,7 +1,7 @@
 <!-- FILE: index.html -->
-<!-- PHOENIX PROTOCOL - PWA INTEGRATION V3.0 -->
-<!-- 1. FIX: Added <link rel="manifest"> and theme-color to satisfy browser PWA heuristics. -->
-<!-- 2. RESULT: This will resolve the "Download error or resource isn't a valid image" console error. -->
+<!-- PHOENIX PROTOCOL - PWA INTEGRATION V3.1 -->
+<!-- 1. FIX: Updated manifest link extension from .json to .webmanifest -->
+<!-- 2. REASON: vite-plugin-pwa generates manifest.webmanifest by default. -->
 
 <!doctype html>
 <html lang="sq">
@@ -10,9 +10,9 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- PHOENIX: ADD THESE TWO LINES -->
+    <!-- PHOENIX: PWA & Theme -->
     <meta name="theme-color" content="#020617" />
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/manifest.webmanifest" />
 
     <!-- BRANDING & SEO -->
     <title>Haveri AI | Platforma e Biznesit Tuaj</title>
