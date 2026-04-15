@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V15.9 (ADDED PASSWORD RESET METHODS)
+// PHOENIX PROTOCOL - API V15.10 (ADDED VAT TO POS TRANSACTION PAYLOAD)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -359,6 +359,8 @@ class ApiService {
         inventory_item_id: string; 
         quantity: number; 
         total_price: number; 
+        vat_rate?: number;
+        vat_amount?: number;
         product_name?: string;
         description?: string;
         transaction_date?: string;

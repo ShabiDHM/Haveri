@@ -1,5 +1,5 @@
 // FILE: src/components/business/modals/PosModal.tsx
-// PHOENIX PROTOCOL - POS MODAL V2.3 (COMPLETE PAYLOAD FOR INVOICE)
+// PHOENIX PROTOCOL - POS MODAL V2.4 (EXPLICIT VAT PAYLOAD FIX)
 
 import React, { useState, useEffect } from 'react';
 import { X, ShoppingCart, AlertCircle, TrendingUp } from 'lucide-react';
@@ -60,11 +60,13 @@ export const PosModal: React.FC<PosModalProps> = ({ isOpen, onClose, onSuccess }
                 inventory_item_id: selectedItemId,
                 quantity: quantity,
                 total_price: totalPrice,
+                vat_rate: vatRate,           // Explicitly pass the user's configured VAT rate
+                vat_amount: vatAmount,       // Explicitly pass the calculated VAT amount
                 product_name: selectedItem?.name || 'Produkt POS',
                 description: `${selectedItem?.name || 'Produkt'} x${quantity}`,
                 transaction_date: now,
                 payment_method: 'CASH',
-                notes: `Shitje POS: ${selectedItem?.name} x${quantity} = €${totalPrice.toFixed(2)}`
+                notes: `Shitje POS: ${selectedItem?.name} x${quantity} = €${totalPrice.toFixed(2)} (TVSH: ${vatRate}%)`
             }, workspace?.id);
             onSuccess();
             onClose();
