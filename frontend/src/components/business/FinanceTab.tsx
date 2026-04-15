@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.13 (SYNC COLORS WITH INSIGHTS MODULES)
+// PHOENIX PROTOCOL - FINANCE TAB V14.14 (UI CONSISTENCY PATCH)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,18 +28,18 @@ import { Panel } from '../ui/Panel';
 import { useAuth } from '../../context/AuthContext';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    // Determine color classes based on type using exact classes from Insights modules
+    // SYNCED WITH STOCK/TAX MODULES
     let colorClasses = {
-        text: 'text-emerald-400',
-        bg: 'bg-primary-start/10',
-        border: 'border-primary-start/20',
+        text: 'text-text-primary',
+        bg: 'bg-surface/50',
+        border: 'border-border-main',
         accent: 'bg-primary-start',
         iconColor: 'text-primary-start'
     };
     
     if (type === 'income') {
         colorClasses = {
-            text: 'text-emerald-400',
+            text: 'text-success-start',
             bg: 'bg-success-start/10',
             border: 'border-success-start/20',
             accent: 'bg-success-start',
@@ -48,7 +48,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     }
     if (type === 'expense') {
         colorClasses = {
-            text: 'text-rose-400',
+            text: 'text-danger-start',
             bg: 'bg-danger-start/10',
             border: 'border-danger-start/20',
             accent: 'bg-danger-start',
@@ -57,7 +57,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     }
     if (type === 'warning') {
         colorClasses = {
-            text: 'text-amber-400',
+            text: 'text-warning-start',
             bg: 'bg-warning-start/10',
             border: 'border-warning-start/20',
             accent: 'bg-warning-start',
@@ -69,9 +69,8 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
         <motion.div 
             whileHover={{ y: -4 }} 
             onClick={onClick} 
-            className="relative overflow-hidden rounded-2xl border border-border-main bg-glass backdrop-blur-xl p-4 sm:p-6 cursor-pointer group shadow-md hover:shadow-xl transition-all duration-300"
+            className="relative overflow-hidden rounded-2xl border border-border-main bg-surface/30 backdrop-blur-sm p-4 sm:p-6 cursor-pointer group shadow-sm hover:shadow-md transition-all duration-300"
         >
-            {/* Accent Grounding Line */}
             <div className={`absolute bottom-0 left-0 w-full h-1 ${colorClasses.accent}`} />
 
             <div className="flex justify-between items-start mb-3 sm:mb-4">
@@ -79,7 +78,7 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
                     {icon}
                 </div>
                 {trend && (
-                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-black/5 dark:bg-white/10 text-text-muted border border-border-main">
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-surface border border-border-main text-text-muted">
                         {trend}
                     </span>
                 )}
@@ -184,7 +183,6 @@ export const FinanceTab: React.FC = () => {
         }
     };
 
-    // --- EXCEL EXPORT HANDLER (with date filters) ---
     const handleExportExcel = async (params: { year?: number; month?: number; day?: number; label: string }) => {
         try {
             const token = localStorage.getItem('accessToken');
@@ -217,7 +215,6 @@ export const FinanceTab: React.FC = () => {
         }
     };
 
-    // --- EXCLUDE POS TRANSACTIONS: they are already represented by invoices ---
     const allTransactions: TransactionItem[] = useMemo(() => {
         const combined: TransactionItem[] = [
             ...invoices.map(i => ({ 
@@ -236,7 +233,6 @@ export const FinanceTab: React.FC = () => {
                 label: e.category, 
                 raw: e 
             })),
-            // POS transactions removed to avoid duplication (each POS creates an invoice)
         ];
         return combined.filter(tx => !searchTerm || tx.label.toLowerCase().includes(searchTerm.toLowerCase()) || tx.amount.toString().includes(searchTerm))
                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
