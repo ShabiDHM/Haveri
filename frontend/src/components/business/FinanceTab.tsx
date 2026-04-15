@@ -1,5 +1,5 @@
 // FILE: src/components/business/FinanceTab.tsx
-// PHOENIX PROTOCOL - FINANCE TAB V14.14 (UI CONSISTENCY PATCH)
+// PHOENIX PROTOCOL - FINANCE TAB V14.15 (USES CSS UTILITIES FROM INDEX.CSS)
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,7 +28,7 @@ import { Panel } from '../ui/Panel';
 import { useAuth } from '../../context/AuthContext';
 
 const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
-    // SYNCED WITH STOCK/TAX MODULES
+    // Use CSS utilities defined in index.css (text-positive, text-negative, text-warning)
     let colorClasses = {
         text: 'text-text-primary',
         bg: 'bg-surface/50',
@@ -39,29 +39,29 @@ const HeroStatCard = ({ title, amount, icon, trend, type, onClick }: any) => {
     
     if (type === 'income') {
         colorClasses = {
-            text: 'text-success-start',
-            bg: 'bg-success-start/10',
-            border: 'border-success-start/20',
-            accent: 'bg-success-start',
-            iconColor: 'text-success-start'
+            text: 'text-positive',
+            bg: 'bg-status-success/10',
+            border: 'border-status-success/20',
+            accent: 'bg-status-success',
+            iconColor: 'text-status-success'
         };
     }
     if (type === 'expense') {
         colorClasses = {
-            text: 'text-danger-start',
-            bg: 'bg-danger-start/10',
-            border: 'border-danger-start/20',
-            accent: 'bg-danger-start',
-            iconColor: 'text-danger-start'
+            text: 'text-negative',
+            bg: 'bg-status-danger/10',
+            border: 'border-status-danger/20',
+            accent: 'bg-status-danger',
+            iconColor: 'text-status-danger'
         };
     }
     if (type === 'warning') {
         colorClasses = {
-            text: 'text-warning-start',
-            bg: 'bg-warning-start/10',
-            border: 'border-warning-start/20',
-            accent: 'bg-warning-start',
-            iconColor: 'text-warning-start'
+            text: 'text-warning',
+            bg: 'bg-status-warning/10',
+            border: 'border-status-warning/20',
+            accent: 'bg-status-warning',
+            iconColor: 'text-status-warning'
         };
     }
     
