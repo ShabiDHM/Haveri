@@ -1,5 +1,5 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - FORTIFIED HEADER OPACITY V2
+// PHOENIX PROTOCOL - FORTIFIED HEADER V2.1 (MOBILE PROFILE VISIBILITY)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -57,7 +57,6 @@ const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProfileOpen]);
   
-  // PHOENIX: Added Projects as first item
   const navItems = [
       { label: t('projectsDashboard.title', 'Projektet'), path: '/projects', icon: FolderOpen, exact: true },
       { label: t('business.finance', 'Financat'), path: '/business/finance', icon: FileText },
@@ -84,10 +83,8 @@ const Header: React.FC = () => {
   const isProjectsRoute = location.pathname === "/projects";
 
   return (
-    // PHOENIX DIRECTIVE: Increased opacity from /80 to /95 to prevent text bleed-through
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 md:px-8 py-3 bg-canvas/95 backdrop-blur-xl border-b border-border-main">
       
-      {/* Left: Brand */}
       <div className="flex items-center gap-3 shrink-0">
         {!isProjectsRoute && (
           <button 
@@ -97,13 +94,11 @@ const Header: React.FC = () => {
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         )}
-        {/* PHOENIX: Logo now links to Projects dashboard */}
         <Link to="/projects" className="flex items-center">
           <BrandLogo />
         </Link>
       </div>
 
-      {/* Center: Segmented Glass Bar - HIDDEN on /projects */}
       {!isProjectsRoute && (
         <div className="hidden lg:flex items-center bg-surface/50 p-1 rounded-2xl border border-border-main shadow-inner">
           {navItems.map((item) => {
@@ -128,7 +123,6 @@ const Header: React.FC = () => {
         </div>
       )}
 
-      {/* Right: Actions */}
       <div className="flex items-center gap-3">
         <button 
           onClick={toggleTheme} 
@@ -145,8 +139,8 @@ const Header: React.FC = () => {
           )}
         </Link>
 
-        {/* User profile */}
-        <div className="relative hidden sm:block">
+        {/* User profile: Removed 'hidden sm:block' to ensure it renders on mobile */}
+        <div className="relative">
           <button
             ref={buttonRef}
             onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -201,7 +195,6 @@ const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation Overlay - HIDDEN on /projects */}
       {!isProjectsRoute && isMobileMenuOpen && (
         <div className="fixed inset-x-0 top-16 bg-card border-b border-border-main p-4 lg:hidden z-40 shadow-lg">
           <div className="grid grid-cols-2 gap-3">
