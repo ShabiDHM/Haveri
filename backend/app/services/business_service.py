@@ -1,5 +1,5 @@
 # FILE: backend/app/services/business_service.py
-# PHOENIX PROTOCOL - BUSINESS SERVICE V2.2 (FIXED ZERO VALUE HANDLING)
+# PHOENIX PROTOCOL - BUSINESS SERVICE V2.3 (EXPLICIT 0-VALUE PERSISTENCE)
 
 import structlog
 import mimetypes
@@ -10,7 +10,6 @@ from pymongo.database import Database
 from fastapi import UploadFile, HTTPException
 
 from ..models.business import BusinessProfileUpdate, BusinessProfileInDB
-from ..models.common import PyObjectId
 from ..services import storage_service
 
 logger = structlog.get_logger(__name__)
@@ -27,6 +26,9 @@ class BusinessService:
             new_profile = {
                 "user_id": ObjectId(user_id),
                 "firm_name": "Zyra Ligjore",
+                "vat_rate": 18.0,
+                "target_margin": 30.0,
+                "currency": "EUR",
                 "branding_color": "#1f2937",
                 "created_at": datetime.now(timezone.utc),
                 "updated_at": datetime.now(timezone.utc)
@@ -37,26 +39,21 @@ class BusinessService:
         return BusinessProfileInDB(**profile)
 
     def update_profile(self, user_id: str, data: BusinessProfileUpdate) -> BusinessProfileInDB:
-        current_profile = self.get_or_create_profile(user_id)
-        
-        # CRITICAL FIX: Use exclude_none=True instead of exclude_unset=True
-        # This allows 0 values to be saved (exclude_unset would exclude 0 because
-        # it treats 0 as "unset" in some cases, but we want to allow 0% VAT)
-        # exclude_none=True only excludes actual None values, preserving 0
-        update_data = data.model_dump(exclude_none=True)
+        # Use exclude_unset=True to ensure only fields explicitly provided are updated
+        # This prevents overwriting existing values with defaults.
+        update_data = data.model_dump(exclude_unset=True)
         update_data["updated_at"] = datetime.now(timezone.utc)
         
-        # Log the update for debugging
         logger.info("business.profile_update", user_id=user_id, update_fields=list(update_data.keys()))
         
         result = self.db.business_profiles.find_one_and_update(
-            {"_id": ObjectId(current_profile.id)},
+            {"user_id": ObjectId(user_id)},
             {"$set": update_data},
             return_document=True
         )
         
         if not result:
-            raise HTTPException(status_code=404, detail="Profile not found after update.")
+            raise HTTPException(status_code=404, detail="Profile not found.")
             
         return BusinessProfileInDB(**result)
 
@@ -75,7 +72,7 @@ class BusinessService:
             logo_url = f"business/logo/{user_id}?ts={int(datetime.now().timestamp())}"
             
             result = self.db.business_profiles.find_one_and_update(
-                {"_id": ObjectId(current_profile.id)},
+                {"user_id": ObjectId(user_id)},
                 {
                     "$set": {
                         "logo_storage_key": storage_key,
@@ -87,7 +84,6 @@ class BusinessService:
             )
             
             return BusinessProfileInDB(**result)
-            
         except Exception as e:
             logger.error("business.logo_upload_failed", error=str(e))
             raise HTTPException(500, "Ngarkimi i logos dështoi.")

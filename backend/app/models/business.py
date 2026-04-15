@@ -1,7 +1,5 @@
 # FILE: backend/app/models/business.py
-# PHOENIX PROTOCOL - BUSINESS ENTITY V18.0 (OPTIONAL FISCAL PARAMETERS)
-# 1. MADE vat_rate, target_margin, currency optional in update schema.
-# 2. Preserved defaults for creation.
+# PHOENIX PROTOCOL - BUSINESS ENTITY V18.1 (STRICT VALIDATION FOR 0 VALUES)
 
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
@@ -18,15 +16,15 @@ class BusinessProfileBase(BaseModel):
     tax_id: Optional[str] = None 
     branding_color: str = "#1f2937"
     
-    # PHOENIX: Fiscal Configuration for BI Module
+    # PHOENIX: Fiscal Configuration
     vat_rate: float = 18.0
     target_margin: float = 30.0
     currency: str = "EUR"
 
 class BusinessProfileUpdate(BaseModel):
     """
-    Schema for updating profile details.
-    All fields are optional to allow partial updates.
+    Schema for updating profile details. 
+    Added ge=0 to ensure 0 is accepted as a valid number and not filtered out.
     """
     firm_name: Optional[str] = None
     address: Optional[str] = None
@@ -36,8 +34,8 @@ class BusinessProfileUpdate(BaseModel):
     website: Optional[str] = None
     tax_id: Optional[str] = None
     branding_color: Optional[str] = None
-    vat_rate: Optional[float] = None
-    target_margin: Optional[float] = None
+    vat_rate: Optional[float] = Field(default=None, ge=0)
+    target_margin: Optional[float] = Field(default=None, ge=0)
     currency: Optional[str] = None
 
 class BusinessProfileInDB(BusinessProfileBase):
