@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/laws.py
-# PHOENIX PROTOCOL - PRIVATE LAW SEARCH (BUSINESS APP) - FIXED AUDIT CHAT
+# PHOENIX PROTOCOL - LEGAL KNOWLEDGE BASE (FIXED: NOW USING legal_knowledge_base)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -15,7 +15,6 @@ class LawExplainRequest(BaseModel):
     article_number: str
     prompt: str
 
-# FIXED: Audit Chat Request Model - uses law_title and article_number
 class AuditChatRequest(BaseModel):
     law_title: str
     article_number: str
@@ -70,7 +69,7 @@ STILI: Shqip standard, i qartë, me pika dhe lista për lehtësi.
 """
 
 # ==================================================================
-# FIXED: AUDIT CHAT ENDPOINT - uses law_title and article_number
+# FIXED: AUDIT CHAT ENDPOINT - NOW USING legal_knowledge_base
 # ==================================================================
 @router.post("/audit-chat")
 async def audit_chat(
@@ -82,7 +81,8 @@ async def audit_chat(
     Accepts law_title and article_number, retrieves the article content, and streams AI response.
     """
     try:
-        collection = vector_store_service.get_business_kb_collection()
+        # FIXED: Use legal_knowledge_base (agent_type='legal')
+        collection = vector_store_service.get_legal_kb_collection()
         
         # Retrieve all chunks for this law title and article number
         results = collection.get(
@@ -183,7 +183,7 @@ async def explain_law_article(
         raise HTTPException(status_code=500, detail=f"AI Synthesis failed: {str(e)}")
 
 # ----------------------------------------------------------------------
-# DATA RETRIEVAL ENDPOINTS (using business_knowledge_base)
+# DATA RETRIEVAL ENDPOINTS (FIXED: NOW USING legal_knowledge_base)
 # ----------------------------------------------------------------------
 @router.get("/search")
 async def search_laws(
@@ -192,13 +192,15 @@ async def search_laws(
     current_user = Depends(get_current_user)
 ):
     """
-    Search the business knowledge base (ingested laws).
+    Search the legal knowledge base (laws and regulations).
+    FIXED: Now uses agent_type='legal' to query legal_knowledge_base.
     """
     try:
+        # FIXED: Use agent_type='legal' to query legal_knowledge_base
         raw_results = vector_store_service.query_public_library(
             query_text=q,
             n_results=limit,
-            agent_type='business'
+            agent_type='legal'  # <--- CHANGED FROM 'business' TO 'legal'
         )
         results = []
         for item in raw_results:
@@ -222,10 +224,12 @@ async def search_laws(
 @router.get("/titles")
 async def get_law_titles(current_user = Depends(get_current_user)):
     """
-    Retrieve all unique law titles from business_knowledge_base.
+    Retrieve all unique law titles from legal_knowledge_base.
+    FIXED: Now uses get_legal_kb_collection() directly.
     """
     try:
-        collection = vector_store_service.get_business_kb_collection()
+        # FIXED: Use legal_knowledge_base directly
+        collection = vector_store_service.get_legal_kb_collection()
         results = collection.get(include=["metadatas"], limit=10000)
         metadatas = results.get("metadatas") or []
         titles: Set[str] = set()
@@ -245,9 +249,11 @@ async def get_law_article(
 ):
     """
     Retrieve a specific article of a law (all chunks concatenated).
+    FIXED: Now uses get_legal_kb_collection().
     """
     try:
-        collection = vector_store_service.get_business_kb_collection()
+        # FIXED: Use legal_knowledge_base
+        collection = vector_store_service.get_legal_kb_collection()
         results = collection.get(
             where={"$and": [{"law_title": {"$eq": law_title}}, {"article_number": {"$eq": article_number}}]},
             include=["documents", "metadatas"]
@@ -281,9 +287,11 @@ async def get_law_articles_by_title(
 ):
     """
     Get overview of a law: list of article numbers.
+    FIXED: Now uses get_legal_kb_collection().
     """
     try:
-        collection = vector_store_service.get_business_kb_collection()
+        # FIXED: Use legal_knowledge_base
+        collection = vector_store_service.get_legal_kb_collection()
         results = collection.get(
             where={"law_title": {"$eq": law_title}},
             include=["metadatas"],
@@ -315,9 +323,11 @@ async def get_law_chunk(
 ):
     """
     Retrieve a single chunk by its ID.
+    FIXED: Now uses get_legal_kb_collection().
     """
     try:
-        collection = vector_store_service.get_business_kb_collection()
+        # FIXED: Use legal_knowledge_base
+        collection = vector_store_service.get_legal_kb_collection()
         result = collection.get(ids=[chunk_id], include=["documents", "metadatas"])
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

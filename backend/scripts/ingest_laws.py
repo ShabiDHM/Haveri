@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PHOENIX PROTOCOL - INGEST KOSOVO LAWS (FIXED EMBEDDING DIMENSION)
+PHOENIX PROTOCOL - INGEST KOSOVO LAWS (LEGAL KNOWLEDGE BASE)
 Run: docker compose exec backend python scripts/ingest_laws.py /app/data/laws --force
 """
 
@@ -27,7 +27,8 @@ except ImportError as e:
 
 CHROMA_HOST = os.getenv("CHROMA_HOST", "chroma")
 CHROMA_PORT = int(os.getenv("CHROMA_PORT", 8000))
-COLLECTION_NAME = "business_knowledge_base"
+# FIXED: Laws go to legal_knowledge_base, NOT business_knowledge_base
+COLLECTION_NAME = "legal_knowledge_base"
 
 def get_embedding_dimension() -> int:
     """Generate a dummy embedding to determine current dimension."""
