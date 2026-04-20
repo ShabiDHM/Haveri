@@ -1,5 +1,5 @@
 # FILE: backend/app/services/finance_service.py
-# PHOENIX PROTOCOL - FINANCE SERVICE V9.1 (CASCADE DELETE)
+# PHOENIX PROTOCOL - FINANCE SERVICE V10.0 (NULL DATE FIX + ENFORCED TIMESTAMP)
 
 import logging
 import csv
@@ -117,14 +117,20 @@ class FinanceService:
 
     # --- POS / TRANSACTION LOGIC ---
     async def get_monthly_pos_revenue(self, async_db: Any, user_id: str, month: int, year: int, case_id: Optional[str] = None) -> float:
-        """Get POS revenue for a specific month (excluding deleted transactions)"""
+        """Get POS revenue for a specific month (excluding deleted transactions and null dates)"""
         try:
             start_date = datetime(year, month, 1)
             end_date = datetime(year + 1, 1, 1) if month == 12 else datetime(year, month + 1, 1)
             
+            # CRITICAL FIX: Explicitly exclude null dates
             match_filter = {
                 "user_id": str(user_id),
-                "date_time": {"$gte": start_date, "$lt": end_date},
+                "date_time": {
+                    "$gte": start_date,
+                    "$lt": end_date,
+                    "$ne": None,           # <--- EXCLUDE NULL DATES
+                    "$type": "date"        # <--- ENSURE DATE TYPE
+                },
                 "deleted_at": None
             }
             if case_id:
@@ -157,6 +163,20 @@ class FinanceService:
         business_profile = self.db.business_profiles.find_one({"user_id": ObjectId(user_id)})
         vat_rate = business_profile.get("vat_rate", 0) if business_profile else 0
 
+        # CRITICAL FIX: Ensure date_time is NEVER null
+        transaction_date = data.get("transaction_date")
+        if transaction_date is None:
+            transaction_date = datetime.now(timezone.utc)
+        elif isinstance(transaction_date, str):
+            try:
+                transaction_date = datetime.fromisoformat(transaction_date.replace('Z', '+00:00'))
+            except:
+                transaction_date = datetime.now(timezone.utc)
+        
+        # Ensure we have a timezone-aware datetime
+        if transaction_date.tzinfo is None:
+            transaction_date = transaction_date.replace(tzinfo=timezone.utc)
+
         doc = {
             "user_id": str(user_oid),
             "product_name": data.get("product_name"),
@@ -164,7 +184,7 @@ class FinanceService:
             "category": data.get("category", "Shitje"),
             "amount": data.get("total_price", 0.0),
             "total_amount": data.get("total_price", 0.0),
-            "date_time": data.get("transaction_date", datetime.now(timezone.utc)),
+            "date_time": transaction_date,  # <--- NEVER NULL
             "source": "MANUAL",
             "status": "PAID",
             "payment_method": data.get("payment_method", "CASH"),
@@ -346,10 +366,11 @@ class FinanceService:
         result["expenses_deleted"] = expense_result.modified_count
         
         # Soft delete POS transactions (they use string user_id)
+        # CRITICAL FIX: Include null date check in deletion query
         pos_query = {
             "user_id": str(user_id),
             "deleted_at": None,
-            "date_time": {"$gte": start_date, "$lt": end_date}
+            "date_time": {"$gte": start_date, "$lt": end_date, "$ne": None, "$type": "date"}
         }
         if case_id:
             pos_query["case_id"] = case_id
