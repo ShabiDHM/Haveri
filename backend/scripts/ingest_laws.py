@@ -83,16 +83,24 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 def extract_law_title(text: str, filename: str) -> str:
+    """Extract law title and clean newlines/extra whitespace."""
     sample = text[:5000]
     match = re.search(r'(LIGJI\s+(?:[Nn]r\.?\s*[\d/]+(?:\s*[A-Za-z0-9_-]+)?)\s+[^\n.]+)', sample, re.IGNORECASE)
     if match:
-        return match.group(1).strip()
+        title = match.group(1).strip()
+        # CRITICAL FIX: Remove newlines and normalize whitespace
+        title = ' '.join(title.split())
+        return title
     match = re.search(r'(LIGJI\s+PËR\s+[^\n.]+)', sample, re.IGNORECASE)
     if match:
-        return match.group(1).strip()
+        title = match.group(1).strip()
+        title = ' '.join(title.split())
+        return title
     name = os.path.splitext(filename)[0]
     name = re.sub(r'[_-]', ' ', name)
-    return f"Ligji: {name}"
+    title = f"Ligji: {name}"
+    title = ' '.join(title.split())
+    return title
 
 def split_by_article(text: str) -> List[Tuple[str, str]]:
     lines = text.split('\n')
