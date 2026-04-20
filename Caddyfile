@@ -1,40 +1,45 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - SIMPLE WORKING CONFIG
+# PHOENIX PROTOCOL - REVISED ROUTING V3.5
 
 {
     email shabanbala@gmail.com
 }
 
-# Haveri API (subdomain)
+# Haveri API (Dedicated Subdomain)
 api.haveri.tech {
     reverse_proxy haveri-backend:8000
 }
 
 # Haveri Main Domain
 haveri.tech {
-    route /api/* {
+    # Forward all API traffic specifically to the backend container
+    # handle_path strips /api from the incoming request if needed, 
+    # but here we keep /api/v1 to match FastAPI expectations.
+    handle_path /api/* {
         reverse_proxy haveri-backend:8000
     }
+
+    # Serve the frontend
     handle {
         root * /app/dist
+        try_files {path} {path}/ /index.html
         file_server
-        try_files {path} /index.html
     }
 }
 
-# Juristi API (subdomain)
+# Juristi API (Dedicated Subdomain)
 api.juristi.tech {
     reverse_proxy juristi-backend:8000
 }
 
 # Juristi Main Domain
 juristi.tech {
-    route /api/* {
+    handle_path /api/* {
         reverse_proxy juristi-backend:8000
     }
     handle {
         root * /app/dist
+        try_files {path} {path}/ /index.html
         file_server
-        try_files {path} /index.html
     }
 }
