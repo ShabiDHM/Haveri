@@ -1,5 +1,5 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V15.10 (ADDED VAT TO POS TRANSACTION PAYLOAD)
+// PHOENIX PROTOCOL - API V15.11 (FIXED: PRODUCTION URL NOW USES api.haveri.tech)
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
@@ -76,12 +76,12 @@ const getBaseUrl = (): string => {
         
         if (isProduction) {
             console.log('[API] Production mode - using api.haveri.tech');
-            return 'https://api.haveri.tech';
+            return 'https://api.haveri.tech';  // <--- FIXED: Now uses api subdomain
         }
         
         if (isPreview) {
             console.log('[API] Preview mode - using api.haveri.tech');
-            return 'https://api.haveri.tech';
+            return 'https://api.haveri.tech';  // <--- FIXED: Now uses api subdomain
         }
         
         console.log('[API] Development mode - using localhost:8000');
@@ -646,17 +646,7 @@ class ApiService {
         }
     }
 
-    // ========== LAW AUDITOR CHAT (UPDATED - uses law_title + article_number) ==========
-    /**
-     * Interactive chat with the Rigid Auditor anchored to a specific law article.
-     * Accepts law_title and article_number to identify the article.
-     * Returns an AsyncGenerator that yields streaming text chunks.
-     * 
-     * @param lawTitle - The title of the law
-     * @param articleNumber - The article number
-     * @param query - The user's question about the article
-     * @returns AsyncGenerator yielding string chunks
-     */
+    // ========== LAW AUDITOR CHAT ==========
     public async *askLawAuditor(lawTitle: string, articleNumber: string, query: string): AsyncGenerator<string, void, unknown> {
         const token = tokenManager.get();
         if (!token) {
