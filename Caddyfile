@@ -1,12 +1,15 @@
 # FILE: Caddyfile
-# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V10.0 (HAVERI REPLACEMENT)
-# 1. UPDATED: api.haveri.tech now points to new haveri-backend container.
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V11.0 (FULL DOMAIN SUPPORT FOR BOTH APPS)
 
 {
     email shabanbala@gmail.com
 }
 
-# JURISTI API GATEWAY
+# ==================================================================
+# JURISTI APP
+# ==================================================================
+
+# Juristi API (subdomain)
 api.juristi.tech {
     reverse_proxy juristi-backend:8000 {
         header_up Host {host}
@@ -21,7 +24,41 @@ api.juristi.tech {
     }
 }
 
-# HAVERI API GATEWAY
+# Juristi Main Domain (juristi.tech)
+juristi.tech {
+    # API requests go to backend
+    handle_path /api/* {
+        reverse_proxy juristi-backend:8000 {
+            header_up Host {host}
+            header_up Origin {header.Origin}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Port {server_port}
+            header_up X-Forwarded-Proto {scheme}
+
+            transport http {
+                read_timeout 10m
+            }
+        }
+    }
+    
+    # All other requests serve the frontend static files
+    handle {
+        root * /app/dist
+        file_server
+        try_files {path} /index.html
+    }
+}
+
+# Juristi www redirect
+www.juristi.tech {
+    redir https://juristi.tech{uri} permanent
+}
+
+# ==================================================================
+# HAVERI APP
+# ==================================================================
+
+# Haveri API (subdomain)
 api.haveri.tech {
     reverse_proxy haveri-backend:8000 {
         header_up Host {host}
@@ -34,4 +71,34 @@ api.haveri.tech {
             read_timeout 10m
         }
     }
+}
+
+# Haveri Main Domain (haveri.tech)
+haveri.tech {
+    # API requests go to backend
+    handle_path /api/* {
+        reverse_proxy haveri-backend:8000 {
+            header_up Host {host}
+            header_up Origin {header.Origin}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Port {server_port}
+            header_up X-Forwarded-Proto {scheme}
+
+            transport http {
+                read_timeout 10m
+            }
+        }
+    }
+    
+    # All other requests serve the frontend static files
+    handle {
+        root * /app/dist
+        file_server
+        try_files {path} /index.html
+    }
+}
+
+# Haveri www redirect
+www.haveri.tech {
+    redir https://haveri.tech{uri} permanent
 }
