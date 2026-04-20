@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - SINGLE SCROLLBAR (ONLY RESULTS AREA)
+// PHOENIX PROTOCOL - SINGLE SCROLLBAR (ONLY RESULTS AREA) - FIXED: ALL LAWS DISPLAY
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,33 +29,8 @@ interface LawSearchPageProps {
   onBackToDrafting?: () => void;
 }
 
-const KNOWN_JUNK_MAP: Record<string, string> = {
-  'kodi lid': 'LIGJI NR. 06/L-082 – PËR MBROJTJEN E TË DHËNAVE PERSONALE'
-};
-
 function normalizeForDisplay(title: string): string {
   return title.trim().replace(/\s+/g, ' ');
-}
-
-function extractDescriptiveFromSource(source: string): string | null {
-  const match = source.match(/_PËR_(.+)\.pdf$/i);
-  if (match && match[1]) {
-    const descriptive = match[1].replace(/_/g, ' ').trim();
-    return `PËR ${descriptive}`;
-  }
-  return null;
-}
-
-function isBareLawNumber(title: string): boolean {
-  const trimmed = title.trim();
-  if (!/^LIGJ/i.test(trimmed)) return false;
-  if (!/\//.test(trimmed)) return false;
-  if (/[—–-]/.test(trimmed) && !/^LIGJI?\s+NR\.?\s*\d+(?:\/[A-Za-z0-9-]+)*$/.test(trimmed)) {
-    return false;
-  }
-  const wordCount = trimmed.split(/\s+/).length;
-  if (wordCount > 4) return false;
-  return true;
 }
 
 function useDebounce<T extends (...args: any[]) => any>(callback: T, delay: number) {
@@ -85,9 +60,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
   const [loadingTitles, setLoadingTitles] = useState(true);
   const [selectedLaw, setSelectedLaw] = useState<string>('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  
-  const [enrichedTitles, setEnrichedTitles] = useState<Map<string, string>>(new Map());
-  const [enrichingTitles, setEnrichingTitles] = useState<Set<string>>(new Set());
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -107,57 +79,19 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // FIXED: Simplified law titles loading - no enrichment, no filtering
   useEffect(() => {
     apiService.getLawTitles()
-      .then(async (titles) => {
-        const filteredTitles = titles.filter(title => normalizeForDisplay(title).length >= 2);
-        setLawTitles(filteredTitles);
-        
-        const initialEnriched = new Map<string, string>();
-        const remainingTitles: string[] = [];
-        
-        filteredTitles.forEach(title => {
-          const lower = title.toLowerCase().trim();
-          if (KNOWN_JUNK_MAP[lower]) {
-            initialEnriched.set(title, KNOWN_JUNK_MAP[lower]);
-          } else {
-            remainingTitles.push(title);
-          }
-        });
-        setEnrichedTitles(initialEnriched);
-        
-        const bareTitles = remainingTitles.filter(isBareLawNumber);
-        if (bareTitles.length === 0) return;
-
-        setEnrichingTitles(new Set(bareTitles));
-        
-        const enrichmentPromises = bareTitles.map(async (bareTitle) => {
-          try {
-            const lawData = await apiService.getLawArticlesByTitle(bareTitle);
-            if (lawData?.source) {
-              const descriptive = extractDescriptiveFromSource(lawData.source);
-              if (descriptive) return { bare: bareTitle, full: `${bareTitle} – ${descriptive}` };
-            }
-            if (lawData?.law_title && lawData.law_title !== bareTitle) {
-              return { bare: bareTitle, full: lawData.law_title };
-            }
-            return { bare: bareTitle, full: bareTitle };
-          } catch {
-            return { bare: bareTitle, full: bareTitle };
-          }
-        });
-
-        const results = await Promise.all(enrichmentPromises);
-        const newMap = new Map(initialEnriched);
-        results.forEach(({ bare, full }) => newMap.set(bare, full));
-        setEnrichedTitles(newMap);
-        setEnrichingTitles(new Set());
-      })
-      .catch((err) => {
-        console.error(err);
+      .then((titles) => {
+        // Only filter out truly empty titles
+        const validTitles = titles.filter(title => title && title.trim().length > 0);
+        setLawTitles(validTitles);
         setLoadingTitles(false);
       })
-      .finally(() => setLoadingTitles(false));
+      .catch((err) => {
+        console.error('Failed to load law titles:', err);
+        setLoadingTitles(false);
+      });
   }, []);
 
   const groupedResults = useMemo(() => {
@@ -221,10 +155,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
     navigate(`/laws/overview?lawTitle=${encodeURIComponent(lawTitle)}`);
   };
 
-  const getDisplayTitle = (original: string): string => {
-    return enrichedTitles.has(original) ? enrichedTitles.get(original)! : original;
-  };
-
   const handleViewArticle = (lawTitle: string, articleNumber: string) => {
     navigate(`/law-article?lawTitle=${encodeURIComponent(lawTitle)}&articleNumber=${encodeURIComponent(articleNumber)}`);
   };
@@ -257,7 +187,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
   }
 
   return (
-    // Outer container: no overflow-y-auto (single scroll handled by results area)
     <div className="flex flex-col h-full w-full">
       <div className="max-w-5xl mx-auto w-full px-6 sm:px-8 mt-12 flex-1">
         {/* Back button */}
@@ -269,14 +198,13 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
           <span>KTHEHU</span>
         </button>
 
-        {/* Search card - overflow-visible, no hidden */}
+        {/* Search card */}
         <div className="glass-panel p-8 sm:p-10 rounded-[2rem] border border-border-main shadow-xl w-full mb-8 overflow-visible relative z-20">
           <div className="relative z-30 mb-5">
             <button
               ref={buttonRef}
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="w-full flex items-center justify-between px-6 py-5 rounded-xl border border-border-main bg-surface text-left transition-all hover:border-blue-500/50 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20"
-              disabled={enrichingTitles.size > 0}
             >
               <div className="flex items-center gap-3">
                 <Filter size={18} className="text-primary-start" />
@@ -284,11 +212,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                   {selectedLaw ? normalizeForDisplay(selectedLaw) : t('lawSearch.selectLaw', 'Shfleto ligje specifike...')}
                 </span>
               </div>
-              {enrichingTitles.size > 0 ? (
-                <Loader2 className="h-4 w-4 animate-spin text-primary-start" />
-              ) : (
-                <ChevronDown size={18} className={`text-text-muted transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
-              )}
+              <ChevronDown size={18} className={`text-text-muted transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <AnimatePresence>
@@ -306,8 +230,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                       onClick={() => handleLawSelect(title)}
                       className="w-full text-left px-6 py-3.5 hover:bg-hover text-sm font-medium text-text-primary hover:text-primary-start transition-colors border-b border-border-main/50 last:border-0 flex items-center justify-between"
                     >
-                      <span className="truncate pr-4">{normalizeForDisplay(getDisplayTitle(title))}</span>
-                      {enrichingTitles.has(title) && <Loader2 className="shrink-0 h-3 w-3 animate-spin text-primary-start" />}
+                      <span className="truncate pr-4">{normalizeForDisplay(title)}</span>
                     </button>
                   ))}
                 </motion.div>
@@ -338,7 +261,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
           </div>
         </div>
 
-        {/* ONLY results area scrolls - single scrollbar */}
+        {/* Results area */}
         <div className="overflow-y-auto custom-scrollbar pb-12" style={{ maxHeight: 'calc(100vh - 380px)' }}>
           {loading && (
             <div className="space-y-4">
