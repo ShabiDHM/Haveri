@@ -1,5 +1,5 @@
 # FILE: app/api/endpoints/drafting.py
-# PHOENIX PROTOCOL - DRAFTING ENDPOINT V3.2 (0% VAT SUPPORT & CONDITIONAL VAT ROW)
+# PHOENIX PROTOCOL - DRAFTING ENDPOINT V3.3 (CORRECTED /stream ROUTE)
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -281,6 +281,31 @@ class PurchaseOrderStore:
         )
 
 # ---------- API Endpoints ----------
+@router.post("/stream")
+async def stream_drafting(
+    request: DraftRequest,
+    current_user: UserInDB = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    """
+    Streaming endpoint for AI-powered document drafting.
+    Returns Server-Sent Events (SSE) stream of generated content.
+    """
+    service = DraftingService()
+    
+    async def event_generator():
+        async for chunk in service.draft_document_stream(
+            user_prompt=request.user_prompt,
+            document_type=request.document_type,
+            include_legal_context=request.include_legal_context
+        ):
+            yield chunk
+    
+    return StreamingResponse(
+        event_generator(), 
+        media_type="text/event-stream"
+    )
+
 @router.post("/purchase-order")
 async def create_purchase_order(
     order: PurchaseOrderRequest,
