@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - REACT PORTAL DROPDOWN (THEME-AWARE)
+// PHOENIX PROTOCOL - REACT PORTAL DROPDOWN (FIXED THEME)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -254,7 +254,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
               <ChevronDown size={18} className={`text-text-muted transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Portal dropdown – THEME-AWARE */}
+            {/* Portal dropdown – THEME FIXED: uses bg-surface and glass-panel */}
             {dropdownOpen && portalRoot && dropdownCoords && createPortal(
               <motion.div
                 id="law-portal-dropdown"
@@ -270,7 +270,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                   maxHeight: '250px',
                   overflowY: 'auto',
                 }}
-                className="bg-card border border-border-main rounded-xl shadow-2xl py-2 custom-scrollbar"
+                className="glass-panel bg-surface border border-border-main rounded-xl shadow-2xl py-2 custom-scrollbar"
               >
                 {lawTitles.map(title => (
                   <button

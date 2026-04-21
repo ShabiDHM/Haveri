@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V8.0 (FULLY MOBILE-RESPONSIVE + FLUID HEIGHT)
+// PHOENIX PROTOCOL - CONFIG PANEL V8.1 (EXPANDED LIBRARY BUTTON TEXT)
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Send, RefreshCw, ChevronDown, BookOpen } from 'lucide-react';
@@ -93,14 +93,14 @@ export const ConfigPanel: React.FC<ExtendedConfigPanelProps> = ({
           </h2>
         </div>
 
-        {/* Right side: Biblioteka button */}
+        {/* Right side: Biblioteka Ligjore button */}
         <button
           onClick={onOpenLibrary}
           className="h-10 flex items-center gap-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest bg-surface hover:bg-hover border border-border-main transition-all"
           title={t('drafting.libraryTooltip', 'Biblioteka e Ligjeve')}
         >
           <BookOpen size={18} />
-          <span>{t('drafting.libraryBtn', 'Biblioteka')}</span>
+          <span>{t('drafting.libraryBtn', 'Biblioteka Ligjore')}</span>
         </button>
       </div>
 
