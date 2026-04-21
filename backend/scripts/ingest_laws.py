@@ -82,25 +82,43 @@ def clean_text(text: str) -> str:
     text = re.sub(r'\n\s*\n', '\n\n', text)
     return text.strip()
 
+def sanitize_title(title: str) -> str:
+    """
+    Sanitize law title by removing all newlines, carriage returns, and collapsing whitespace.
+    This prevents corrupted metadata that breaks frontend routing.
+    """
+    if not title:
+        return ""
+    # Remove all newline and carriage return characters
+    title = title.replace('\n', ' ').replace('\r', ' ')
+    # Collapse multiple spaces into single spaces and strip
+    title = ' '.join(title.split())
+    return title.strip()
+
 def extract_law_title(text: str, filename: str) -> str:
-    """Extract law title and clean newlines/extra whitespace."""
+    """
+    Extract law title and sanitize to remove newlines and extra whitespace.
+    CRITICAL FIX: All return paths must be sanitized to prevent corrupted metadata.
+    """
     sample = text[:5000]
+    
+    # Pattern 1: LIGJI NR. XX/L-XXX PËR ...
     match = re.search(r'(LIGJI\s+(?:[Nn]r\.?\s*[\d/]+(?:\s*[A-Za-z0-9_-]+)?)\s+[^\n.]+)', sample, re.IGNORECASE)
     if match:
         title = match.group(1).strip()
-        # CRITICAL FIX: Remove newlines and normalize whitespace
-        title = ' '.join(title.split())
-        return title
+        return sanitize_title(title)
+    
+    # Pattern 2: LIGJI PËR ...
     match = re.search(r'(LIGJI\s+PËR\s+[^\n.]+)', sample, re.IGNORECASE)
     if match:
         title = match.group(1).strip()
-        title = ' '.join(title.split())
-        return title
+        return sanitize_title(title)
+    
+    # Fallback: Use filename
     name = os.path.splitext(filename)[0]
     name = re.sub(r'[_-]', ' ', name)
     title = f"Ligji: {name}"
-    title = ' '.join(title.split())
-    return title
+    return sanitize_title(title)
 
 def split_by_article(text: str) -> List[Tuple[str, str]]:
     lines = text.split('\n')
@@ -198,7 +216,7 @@ def ingest_legal_laws(directory: str, force: bool = False, chunk_size: int = 100
                 if emb and len(emb) == dimension:
                     embeddings.append(emb)
                 else:
-                    print(f"⚠️  Bad embedding for chunk {chunk_id}, using zero vector")
+                    print(f"⚠️  Bad embedding for chunk, using zero vector")
                     embeddings.append([0.0] * dimension)
             for i in range(0, len(batch_ids), 50):
                 collection.add(
