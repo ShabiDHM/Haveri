@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - SIMPLIFIED LAW SEARCH (INCREASED DROPDOWN HEIGHT)
+// PHOENIX PROTOCOL - DROPDOWN SHOWS ALL ITEMS
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -63,6 +63,18 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>('bottom');
+
+  // Calculate dropdown position based on available space
+  useEffect(() => {
+    if (dropdownOpen && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - buttonRect.bottom;
+      const spaceAbove = buttonRect.top;
+      // If less than 300px below, show above
+      setDropdownPosition(spaceBelow < 300 && spaceAbove > spaceBelow ? 'top' : 'bottom');
+    }
+  }, [dropdownOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -221,9 +233,11 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  // FIXED: Increased max height from max-h-80 (20rem/320px) to max-h-96 (24rem/384px)
-                  // This allows showing 5-6 items without scrolling
-                  className="absolute top-full left-0 right-0 z-[100] mt-1 bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl max-h-96 overflow-y-auto custom-scrollbar py-2"
+                  // FIXED: Dynamic positioning based on available space
+                  className={`absolute z-[100] mt-1 bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl w-full custom-scrollbar py-2 ${
+                    dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
+                  }`}
+                  style={{ maxHeight: '400px', overflowY: 'auto' }}
                 >
                   {lawTitles.map(title => (
                     <button
@@ -231,7 +245,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                       onClick={() => handleLawSelect(title)}
                       className="w-full text-left px-6 py-3.5 hover:bg-hover text-sm font-medium text-text-primary hover:text-primary-start transition-colors border-b border-border-main/50 last:border-0 flex items-center justify-between"
                     >
-                      <span className="truncate pr-4">{normalizeForDisplay(title)}</span>
+                      <span className="pr-4 whitespace-normal break-words">{normalizeForDisplay(title)}</span>
                     </button>
                   ))}
                 </motion.div>
