@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - SIMPLIFIED LAW SEARCH (NO ENRICHMENT, NO FILTERING)
+// PHOENIX PROTOCOL - SIMPLIFIED LAW SEARCH (INCREASED DROPDOWN HEIGHT)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -221,7 +221,9 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 z-[100] mt-1 bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl max-h-80 overflow-y-auto custom-scrollbar py-2"
+                  // FIXED: Increased max height from max-h-80 (20rem/320px) to max-h-96 (24rem/384px)
+                  // This allows showing 5-6 items without scrolling
+                  className="absolute top-full left-0 right-0 z-[100] mt-1 bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl max-h-96 overflow-y-auto custom-scrollbar py-2"
                 >
                   {lawTitles.map(title => (
                     <button
