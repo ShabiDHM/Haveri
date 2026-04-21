@@ -1,7 +1,8 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - DROPDOWN OPENS UPWARD
+// PHOENIX PROTOCOL - PORTAL-BASED DROPDOWN FIX
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, X, BookOpen, AlertCircle, ChevronRight, ChevronDown, Loader2, Scale, Filter, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -60,9 +61,43 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
   const [loadingTitles, setLoadingTitles] = useState(true);
   const [selectedLaw, setSelectedLaw] = useState<string>('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // PHOENIX: Advanced dropdown positioning for Portal
+  const updateDropdownPosition = useCallback(() => {
+    if (buttonRef.current && dropdownOpen) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const dropdownHeight = 300; // Estimated max height
+
+      let top = rect.bottom + window.scrollY + 8; // Default below
+      
+      // If not enough space below, and more space above, open upwards
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+         top = rect.top + window.scrollY - dropdownHeight - 8;
+      }
+
+      setDropdownPosition({
+        top: top,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [dropdownOpen]);
+
+  useEffect(() => {
+    updateDropdownPosition();
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [updateDropdownPosition]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,7 +114,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // SIMPLIFIED: No enrichment, no filtering - just load titles directly
   useEffect(() => {
     apiService.getLawTitles()
       .then((titles) => {
@@ -185,10 +219,44 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
     );
   }
 
+  // PHOENIX: Define the portal content separately
+  const portalContent = dropdownOpen ? (
+      <div
+        ref={dropdownRef}
+        style={{
+            position: 'absolute',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
+            maxHeight: '300px',
+            overflowY: 'auto',
+            zIndex: 99999, // Absolute top layer
+        }}
+        className="bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl py-2 custom-scrollbar"
+      >
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+            >
+                {lawTitles.map(title => (
+                    <button
+                        key={title}
+                        onClick={() => handleLawSelect(title)}
+                        className="w-full text-left px-6 py-3.5 hover:bg-hover text-sm font-medium text-text-primary hover:text-primary-start transition-colors border-b border-border-main/50 last:border-0 flex items-center justify-between"
+                    >
+                        <span className="pr-4 whitespace-normal break-words">{normalizeForDisplay(title)}</span>
+                    </button>
+                ))}
+            </motion.div>
+        </AnimatePresence>
+      </div>
+  ) : null;
+
   return (
     <div className="flex flex-col h-full w-full">
       <div className="max-w-5xl mx-auto w-full px-6 sm:px-8 mt-12 flex-1">
-        {/* Back button */}
         <button
           onClick={handleBack}
           className="text-xs font-black uppercase tracking-widest text-text-primary bg-surface/50 border border-border-main px-4 py-2 rounded-lg mb-6 hover:bg-surface transition-all w-fit flex items-center gap-2"
@@ -197,12 +265,14 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
           <span>KTHEHU</span>
         </button>
 
-        {/* Search card */}
-        <div className="glass-panel p-8 sm:p-10 rounded-[2rem] border border-border-main shadow-xl w-full mb-8 overflow-visible relative z-20">
-          <div className="relative z-30 mb-5">
+        <div className="glass-panel p-8 sm:p-10 rounded-[2rem] border border-border-main shadow-xl w-full mb-8">
+          <div className="relative mb-5">
             <button
               ref={buttonRef}
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+              onClick={() => {
+                setDropdownOpen(!dropdownOpen);
+                updateDropdownPosition(); // Force position calc on click
+              }}
               className="w-full flex items-center justify-between px-6 py-5 rounded-xl border border-border-main bg-surface text-left transition-all hover:border-blue-500/50 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20"
             >
               <div className="flex items-center gap-3">
@@ -213,30 +283,10 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
               </div>
               <ChevronDown size={18} className={`text-text-muted transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
-
-            <AnimatePresence>
-              {dropdownOpen && (
-                <motion.div
-                  ref={dropdownRef}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  // CRITICAL FIX: Position dropdown ABOVE the button
-                  className="absolute bottom-full left-0 right-0 z-[100] mb-1 bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl py-2"
-                  style={{ maxHeight: '400px', overflowY: 'auto' }}
-                >
-                  {lawTitles.map(title => (
-                    <button
-                      key={title}
-                      onClick={() => handleLawSelect(title)}
-                      className="w-full text-left px-6 py-3.5 hover:bg-hover text-sm font-medium text-text-primary hover:text-primary-start transition-colors border-b border-border-main/50 last:border-0 flex items-center justify-between"
-                    >
-                      <span className="pr-4 whitespace-normal break-words">{normalizeForDisplay(title)}</span>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            
+            {/* Render Portal outside the DOM hierarchy */}
+            {typeof document !== 'undefined' && createPortal(portalContent, document.body)}
+            
           </div>
 
           <div className="relative group">
@@ -262,7 +312,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
           </div>
         </div>
 
-        {/* Results area */}
         <div className="overflow-y-auto custom-scrollbar pb-12" style={{ maxHeight: 'calc(100vh - 380px)' }}>
           {loading && (
             <div className="space-y-4">
