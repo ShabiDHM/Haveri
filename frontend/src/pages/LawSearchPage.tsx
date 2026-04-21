@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - SINGLE SCROLLBAR (ONLY RESULTS AREA) - FIXED: ALL LAWS DISPLAY
+// PHOENIX PROTOCOL - SIMPLIFIED LAW SEARCH (NO ENRICHMENT, NO FILTERING)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -79,11 +79,10 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // FIXED: Simplified law titles loading - no enrichment, no filtering
+  // SIMPLIFIED: No enrichment, no filtering - just load titles directly
   useEffect(() => {
     apiService.getLawTitles()
       .then((titles) => {
-        // Only filter out truly empty titles
         const validTitles = titles.filter(title => title && title.trim().length > 0);
         setLawTitles(validTitles);
         setLoadingTitles(false);
