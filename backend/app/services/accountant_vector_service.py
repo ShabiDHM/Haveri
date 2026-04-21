@@ -1,6 +1,5 @@
 # FILE: backend/app/services/accountant_vector_service.py
-# PHOENIX PROTOCOL - ACCOUNTANT VECTOR V3.0 (ROBUST LEGAL RETRIEVAL)
-# FIX: Multi-query retrieval to ensure both rate and deadline are found.
+# PHOENIX PROTOCOL - ACCOUNTANT VECTOR V3.1 (FIXED: LEGAL COLLECTION)
 
 from __future__ import annotations
 import logging
@@ -133,21 +132,21 @@ async def get_combined_context(
     
     private_rag = await asyncio.to_thread(havery_vs.query_private_diary, context_id, query)
     
-    # --- PHOENIX FIX: Multi-query legal retrieval ---
-    # Use the original query plus targeted queries for key legal concepts.
+    # --- PHOENIX FIX: Multi-query legal retrieval using legal_knowledge_base ---
+    # Changed agent_type from 'business' to 'legal' for all legal queries.
     global_rag = []
-    # 1. Original query
-    global_rag += await asyncio.to_thread(havery_vs.query_public_library, query, agent_type='business', n_results=5)
+    # 1. Original query – now using legal collection
+    global_rag += await asyncio.to_thread(havery_vs.query_public_library, query, agent_type='legal', n_results=5)
     # 2. If query mentions TVSH, add targeted queries for rate and deadline
     if 'tvsh' in query.lower():
         # Rate query
-        rate_results = await asyncio.to_thread(havery_vs.query_public_library, 'norma standarde e TVSH', agent_type='business', n_results=3)
+        rate_results = await asyncio.to_thread(havery_vs.query_public_library, 'norma standarde e TVSH', agent_type='legal', n_results=3)
         global_rag += rate_results
         # Deadline query (monthly declaration)
-        deadline_results = await asyncio.to_thread(havery_vs.query_public_library, 'afati i deklarimit mujor TVSH', agent_type='business', n_results=3)
+        deadline_results = await asyncio.to_thread(havery_vs.query_public_library, 'afati i deklarimit mujor TVSH', agent_type='legal', n_results=3)
         global_rag += deadline_results
         # Also search for '20' (common deadline day)
-        day_results = await asyncio.to_thread(havery_vs.query_public_library, 'deri më 20', agent_type='business', n_results=3)
+        day_results = await asyncio.to_thread(havery_vs.query_public_library, 'deri më 20', agent_type='legal', n_results=3)
         global_rag += day_results
     
     # Remove duplicates based on content (simple heuristic)
@@ -162,10 +161,13 @@ async def get_combined_context(
             unique_global.append(doc)
     global_rag = unique_global[:15]  # Limit to 15 total law chunks
     
-    context_str = "\n--- ARKIVA DHE LIGJET ---\n"
+    # Build context with clear separation for legal base
+    context_str = "\n--- ARKIVA PERSONALE DHE DOKUMENTE ---\n"
     for d in private_rag: 
         context_str += f"DOKUMENT: {d['content']}\n"
-    for l in global_rag: 
-        context_str += f"LIGJI: {l['content']}\n"
+    if global_rag:
+        context_str += "\n--- BAZA LIGJORE (KOSOVË) ---\n"
+        for l in global_rag: 
+            context_str += f"LIGJI: {l['content']}\n"
     
     return f"{year_context}{structured_data_context}\n{context_str}"
