@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - REACT PORTAL DROPDOWN (FIXED POSITION, ESCAPES CLIPPING)
+// PHOENIX PROTOCOL - REACT PORTAL DROPDOWN (ALWAYS DOWNWARD)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -31,11 +31,9 @@ interface LawSearchPageProps {
 }
 
 interface DropdownCoords {
-  top?: number;
-  bottom?: number;
+  top: number;
   left: number;
   width: number;
-  openUpward: boolean;
 }
 
 function normalizeForDisplay(title: string): string {
@@ -77,21 +75,14 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
     return null;
   }, []);
 
-  // Update dropdown position when open or window changes
+  // Update dropdown position – ALWAYS downward
   const updatePosition = useCallback(() => {
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    const DROPDOWN_HEIGHT_ESTIMATE = 250; // max height + padding
-    const openUpward = spaceBelow < DROPDOWN_HEIGHT_ESTIMATE && spaceAbove > spaceBelow;
-    
     setDropdownCoords({
+      top: rect.bottom + window.scrollY + 8, // 8px gap below button
       left: rect.left,
       width: rect.width,
-      openUpward,
-      top: openUpward ? undefined : rect.bottom + window.scrollY + 8,
-      bottom: openUpward ? window.innerHeight - rect.top + window.scrollY + 8 : undefined,
     });
   }, []);
 
@@ -116,7 +107,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
         buttonRef.current &&
         !buttonRef.current.contains(event.target as Node)
       ) {
-        // Check if the click target is inside the portal dropdown
         const portalDropdown = document.querySelector('#law-portal-dropdown');
         if (portalDropdown && portalDropdown.contains(event.target as Node)) {
           return;
@@ -264,7 +254,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
               <ChevronDown size={18} className={`text-text-muted transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Portal dropdown */}
+            {/* Portal dropdown – ALWAYS DOWNWARD */}
             {dropdownOpen && portalRoot && dropdownCoords && createPortal(
               <motion.div
                 id="law-portal-dropdown"
@@ -274,6 +264,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                 style={{
                   position: 'fixed',
                   left: dropdownCoords.left,
+                  top: dropdownCoords.top,
                   width: dropdownCoords.width,
                   zIndex: 99999,
                   maxHeight: '250px',
@@ -283,10 +274,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                   borderRadius: '0.75rem',
                   boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
                   padding: '0.5rem 0',
-                  ...(dropdownCoords.openUpward
-                    ? { bottom: dropdownCoords.bottom }
-                    : { top: dropdownCoords.top }
-                  )
                 }}
                 className="custom-scrollbar"
               >
