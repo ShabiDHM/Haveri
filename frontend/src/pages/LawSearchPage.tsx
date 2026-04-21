@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - DROPDOWN SHOWS ALL ITEMS
+// PHOENIX PROTOCOL - DROPDOWN OPENS UPWARD
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -63,18 +63,6 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>('bottom');
-
-  // Calculate dropdown position based on available space
-  useEffect(() => {
-    if (dropdownOpen && buttonRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - buttonRect.bottom;
-      const spaceAbove = buttonRect.top;
-      // If less than 300px below, show above
-      setDropdownPosition(spaceBelow < 300 && spaceAbove > spaceBelow ? 'top' : 'bottom');
-    }
-  }, [dropdownOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -233,10 +221,8 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  // FIXED: Dynamic positioning based on available space
-                  className={`absolute z-[100] mt-1 bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl w-full custom-scrollbar py-2 ${
-                    dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
-                  }`}
+                  // CRITICAL FIX: Position dropdown ABOVE the button
+                  className="absolute bottom-full left-0 right-0 z-[100] mb-1 bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl py-2"
                   style={{ maxHeight: '400px', overflowY: 'auto' }}
                 >
                   {lawTitles.map(title => (
