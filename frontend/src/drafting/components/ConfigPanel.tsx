@@ -1,5 +1,5 @@
 // FILE: src/drafting/components/ConfigPanel.tsx
-// PHOENIX PROTOCOL - CONFIG PANEL V8.1 (EXPANDED LIBRARY BUTTON TEXT)
+// PHOENIX PROTOCOL - CONFIG PANEL V8.3 (HARDCODED LIBRARY BUTTON TEXT)
 
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { FileText, LayoutTemplate, Send, RefreshCw, ChevronDown, BookOpen } from 'lucide-react';
@@ -93,14 +93,14 @@ export const ConfigPanel: React.FC<ExtendedConfigPanelProps> = ({
           </h2>
         </div>
 
-        {/* Right side: Biblioteka Ligjore button */}
+        {/* Right side: Biblioteka Ligjore button (HARDCODED) */}
         <button
           onClick={onOpenLibrary}
           className="h-10 flex items-center gap-2 px-4 rounded-xl text-xs font-black uppercase tracking-widest bg-surface hover:bg-hover border border-border-main transition-all"
-          title={t('drafting.libraryTooltip', 'Biblioteka e Ligjeve')}
+          title="Biblioteka e Ligjeve"
         >
           <BookOpen size={18} />
-          <span>{t('drafting.libraryBtn', 'Biblioteka Ligjore')}</span>
+          <span>Biblioteka Ligjore</span>
         </button>
       </div>
 
