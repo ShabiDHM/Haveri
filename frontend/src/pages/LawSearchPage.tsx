@@ -1,5 +1,5 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - REACT PORTAL DROPDOWN (ALWAYS DOWNWARD)
+// PHOENIX PROTOCOL - REACT PORTAL DROPDOWN (THEME-AWARE)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -80,7 +80,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
     setDropdownCoords({
-      top: rect.bottom + window.scrollY + 8, // 8px gap below button
+      top: rect.bottom + window.scrollY + 8,
       left: rect.left,
       width: rect.width,
     });
@@ -254,7 +254,7 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
               <ChevronDown size={18} className={`text-text-muted transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Portal dropdown – ALWAYS DOWNWARD */}
+            {/* Portal dropdown – THEME-AWARE */}
             {dropdownOpen && portalRoot && dropdownCoords && createPortal(
               <motion.div
                 id="law-portal-dropdown"
@@ -269,13 +269,8 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
                   zIndex: 99999,
                   maxHeight: '250px',
                   overflowY: 'auto',
-                  backgroundColor: 'var(--color-surface, #ffffff)',
-                  border: '1px solid var(--color-border-main, #e2e8f0)',
-                  borderRadius: '0.75rem',
-                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                  padding: '0.5rem 0',
                 }}
-                className="custom-scrollbar"
+                className="bg-card border border-border-main rounded-xl shadow-2xl py-2 custom-scrollbar"
               >
                 {lawTitles.map(title => (
                   <button
