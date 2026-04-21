@@ -1,5 +1,5 @@
 # FILE: backend/app/api/endpoints/analysis.py
-# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V6.9 (FIXED COGS KPI INSIGHT)
+# PHOENIX PROTOCOL - INTELLIGENCE ENGINE V7.0 (DUAL-PILLAR LEGAL + BUSINESS)
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from typing import List, Dict, Any, Optional
@@ -20,6 +20,7 @@ from app.services.finance_service import FinanceService
 from app.services import llm_service
 from app.services import spreadsheet_service
 from app.services.analytics_service import AnalyticsService
+from app.services import vector_store_service  # <--- ADDED FOR LEGAL RETRIEVAL
 from app.models.finance import AnalyticsDashboardData
 
 router = APIRouter()
@@ -144,6 +145,7 @@ async def generate_kpi_insight(request: KpiInsightRequest, current_user: UserInD
     contributors = []
     ai_context_data = ""
 
+    # --- BUSINESS DATA CALCULATION (unchanged) ---
     if request.kpi_type == 'income':
         invoices = finance_service.get_invoices(context_id, year=analysis_year)
         period_data = [i for i in invoices if i.status == 'PAID']
@@ -168,7 +170,6 @@ async def generate_kpi_insight(request: KpiInsightRequest, current_user: UserInD
         contributors = [f"Fitimi Neto: €{profit:.2f}", f"Marzha: {margin:.1f}%"]
 
     elif request.kpi_type == 'cogs':
-        # PHOENIX: Use actual COGS from finance data instead of recipes
         invoices = finance_service.get_invoices(context_id, year=analysis_year)
         
         business_profile = db.business_profiles.find_one({"user_id": ObjectId(context_id)})
@@ -214,12 +215,57 @@ async def generate_kpi_insight(request: KpiInsightRequest, current_user: UserInD
             ai_context_data = f"Nuk ka të dhëna për Koston e Mallrave të Shitura (COGS) për vitin {analysis_year}. Shtoni fatura me artikuj për të filluar llogaritjen."
             contributors = [f"Viti: {analysis_year}", "Status: Pa të dhëna"]
 
+    # --- NEW: RETRIEVE LEGAL CONTEXT (Dual‑Pillar) ---
+    legal_context = ""
+    try:
+        # Query legal knowledge base using the KPI type as the search term
+        legal_results = vector_store_service.query_public_library(
+            query_text=request.kpi_type,
+            agent_type='legal',   # <--- CRITICAL: use legal collection
+            n_results=3
+        )
+        if legal_results:
+            legal_context = "\n--- BAZA LIGJORE (KOSOVË) ---\n"
+            for idx, doc in enumerate(legal_results, 1):
+                legal_context += f"LIGJ {idx}: {doc.get('content', '')}\n"
+    except Exception as e:
+        logger.warning(f"Legal context retrieval failed: {e}")
+
+    # --- BUILD PROMPT WITH BUSINESS + LEGAL ---
     if ai_context_data:
-        try:
-            summary = await llm_service.ask_business_consultant(user_id=str(current_user.id), query=f"Vepro si CFO. Analizo shkurt në Shqip këtë KPI: {ai_context_data}")
-        except:
-            summary = f"Analiza përfundoi për vitin {analysis_year}."
-    
+        # Business data exists
+        full_context = f"--- TË DHËNAT E BIZNESIT ---\n{ai_context_data}\n"
+        if legal_context:
+            full_context += legal_context
+        else:
+            full_context += "\n--- BAZA LIGJORE ---\nNuk u gjetën ligje specifike për këtë KPI.\n"
+        
+        prompt = (
+            f"Vepro si CFO. Bazuar në të dhënat e biznesit dhe ligjet e Kosovës më poshtë, analizo shkurt KPI-n '{request.kpi_type}' në gjuhën shqipe.\n"
+            f"Përdor informacionin ligjor për të vlerësuar përputhshmërinë dhe për të sugjeruar përmirësime.\n\n"
+            f"{full_context}\n\n"
+            f"Përgjigju në 2-3 fjali."
+        )
+    else:
+        # No business data – instruct LLM to report absence
+        full_context = "Nuk ka asnjë faturë, shpenzim apo transaksion për këtë periudhë."
+        prompt = (
+            f"Vepro si CFO. Nuk ka të dhëna financiare për KPI-n '{request.kpi_type}' në sistem.\n"
+            f"Përgjigju në gjuhën shqipe duke thënë qartë se nuk ka informacion të mjaftueshëm për të kryer analizën. "
+            f"Mos jep leksione të përgjithshme ligjore nëse nuk ke fakte biznesi.\n\n"
+            f"{full_context}"
+        )
+
+    # --- CALL LLM ---
+    try:
+        summary = await llm_service.ask_business_consultant(
+            user_id=str(current_user.id),
+            query=prompt
+        )
+    except Exception as e:
+        logger.error(f"KPI insight LLM failed: {e}")
+        summary = f"Analiza përfundoi për vitin {analysis_year} por pati një gabim teknik."
+
     return KpiInsightResponse(summary=summary, key_contributors=contributors)
 
 @router.post("/inventory/predict", response_model=RestockPrediction)

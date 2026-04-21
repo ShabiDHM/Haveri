@@ -1,15 +1,36 @@
 // FILE: src/drafting/utils/promptConstructor.ts
-// PHOENIX PROTOCOL - USER CONTEXT PARSER V2 (DE-DUPLICATED)
+// PHOENIX PROTOCOL - DUAL-LAYER SMART PROMPT (LEGAL CONTEXT + TEMPLATE)
 
 import { TemplateType } from '../types';
 import { getDocumentStructureInstructions } from './templateHelpers';
 
-export const constructSmartPrompt = (userText: string, template: TemplateType): string => {
+export const constructSmartPrompt = (userText: string, template: TemplateType, legalContext?: string): string => {
   // NOTE: The conflicting LEGAL_WHITELIST has been intentionally removed from here.
   // The strict Kosovo statute mapping and System Directives are now securely handled 
   // by the Zero-Hallucination Protocol in DraftingPage.tsx.
 
+  // Prepare legal context block with clear precedence rules
+  const legalContextBlock = legalContext
+    ? `
+[BAZA LIGJORE E APLIKUAR (KOSOVË)]
+${legalContext}
+
+[UDHËZIME PËR PËRPARËSINË LIGJORE]
+1. Përdor BAZËN LIGJORE më sipër për të përcaktuar klauzolat e detyrueshme dhe kushtet ligjore.
+2. Përdor STRUKTURËN E TEMPLATE-it më poshtë për formatin dhe stilin e paraqitjes.
+3. **RREGULLA THEMELORE**: Nëse ndonjë dispozitë e TEMPLATE-it bie ndesh me BAZËN LIGJORE, LIGJI KA PËRPARËSI.
+   - Anulo pjesën kontradiktore të TEMPLATE-it dhe zëvendësoje me atë që kërkon ligji.
+   - Trego qartë në dokument se ke bërë këtë përshtatje ligjore.
+   - Mos shto kurrë klauzola që janë të ndaluara me ligj.
+`
+    : `
+[BAZA LIGJORE E APLIKUAR]
+Nuk është ofruar kontekst ligjor shtesë. Përdor strukturën e template-it pa ndërhyrje ligjore.
+`;
+
   return `
+${legalContextBlock}
+
 [FAKTET DHE KËRKESA E KLIENTIT]
 Të dhënat e ofruara nga përdoruesi për këtë rast:
 """
