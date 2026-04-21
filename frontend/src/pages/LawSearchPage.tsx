@@ -1,7 +1,8 @@
 // FILE: src/pages/LawSearchPage.tsx
-// PHOENIX PROTOCOL - FINAL FIX: DROPDOWN WITH SCROLL (based on working implementation)
+// PHOENIX PROTOCOL - REACT PORTAL DROPDOWN (FIXED POSITION, ESCAPES CLIPPING)
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Search, X, BookOpen, AlertCircle, ChevronRight, ChevronDown, Loader2, Scale, Filter, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +28,14 @@ interface ArticleGroup {
 
 interface LawSearchPageProps {
   onBackToDrafting?: () => void;
+}
+
+interface DropdownCoords {
+  top?: number;
+  bottom?: number;
+  left: number;
+  width: number;
+  openUpward: boolean;
 }
 
 function normalizeForDisplay(title: string): string {
@@ -60,24 +69,64 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
   const [loadingTitles, setLoadingTitles] = useState(true);
   const [selectedLaw, setSelectedLaw] = useState<string>('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownCoords, setDropdownCoords] = useState<DropdownCoords | null>(null);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const portalRoot = useMemo(() => {
+    if (typeof document !== 'undefined') return document.body;
+    return null;
+  }, []);
 
+  // Update dropdown position when open or window changes
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const DROPDOWN_HEIGHT_ESTIMATE = 250; // max height + padding
+    const openUpward = spaceBelow < DROPDOWN_HEIGHT_ESTIMATE && spaceAbove > spaceBelow;
+    
+    setDropdownCoords({
+      left: rect.left,
+      width: rect.width,
+      openUpward,
+      top: openUpward ? undefined : rect.bottom + window.scrollY + 8,
+      bottom: openUpward ? window.innerHeight - rect.top + window.scrollY + 8 : undefined,
+    });
+  }, []);
+
+  // Recalculate on open, scroll, resize
+  useEffect(() => {
+    if (dropdownOpen) {
+      updatePosition();
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition, true);
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition, true);
+      };
+    }
+  }, [dropdownOpen, updatePosition]);
+
+  // Click outside handler (portal version)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
+        dropdownOpen &&
         buttonRef.current &&
         !buttonRef.current.contains(event.target as Node)
       ) {
+        // Check if the click target is inside the portal dropdown
+        const portalDropdown = document.querySelector('#law-portal-dropdown');
+        if (portalDropdown && portalDropdown.contains(event.target as Node)) {
+          return;
+        }
         setDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [dropdownOpen]);
 
   // Load law titles directly without enrichment
   useEffect(() => {
@@ -215,27 +264,44 @@ export default function LawSearchPage({ onBackToDrafting }: LawSearchPageProps) 
               <ChevronDown size={18} className={`text-text-muted transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            <AnimatePresence>
-              {dropdownOpen && (
-                <motion.div
-                  ref={dropdownRef}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 right-0 z-[100] mt-2 bg-surface dark:bg-gray-900 border border-border-main rounded-xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar py-2"
-                >
-                  {lawTitles.map(title => (
-                    <button
-                      key={title}
-                      onClick={() => handleLawSelect(title)}
-                      className="w-full text-left px-6 py-3.5 hover:bg-hover text-sm font-medium text-text-primary hover:text-primary-start transition-colors border-b border-border-main/50 last:border-0 flex items-center justify-between"
-                    >
-                      <span className="truncate pr-4">{normalizeForDisplay(title)}</span>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Portal dropdown */}
+            {dropdownOpen && portalRoot && dropdownCoords && createPortal(
+              <motion.div
+                id="law-portal-dropdown"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                style={{
+                  position: 'fixed',
+                  left: dropdownCoords.left,
+                  width: dropdownCoords.width,
+                  zIndex: 99999,
+                  maxHeight: '250px',
+                  overflowY: 'auto',
+                  backgroundColor: 'var(--color-surface, #ffffff)',
+                  border: '1px solid var(--color-border-main, #e2e8f0)',
+                  borderRadius: '0.75rem',
+                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                  padding: '0.5rem 0',
+                  ...(dropdownCoords.openUpward
+                    ? { bottom: dropdownCoords.bottom }
+                    : { top: dropdownCoords.top }
+                  )
+                }}
+                className="custom-scrollbar"
+              >
+                {lawTitles.map(title => (
+                  <button
+                    key={title}
+                    onClick={() => handleLawSelect(title)}
+                    className="w-full text-left px-6 py-3.5 hover:bg-hover text-sm font-medium text-text-primary hover:text-primary-start transition-colors border-b border-border-main/50 last:border-0 flex items-center justify-between"
+                  >
+                    <span className="truncate pr-4">{normalizeForDisplay(title)}</span>
+                  </button>
+                ))}
+              </motion.div>,
+              portalRoot
+            )}
           </div>
 
           <div className="relative group">
