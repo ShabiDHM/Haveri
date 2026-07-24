@@ -1,7 +1,9 @@
 {
-    "python.defaultInterpreterPath": "$/.venv/Scripts/python.exe",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
     "python.terminal.activateEnvironment": true,
-    "python.analysis.typeCheckingMode": "basic",
-    "terminal.integrated.cwd": "$",
-    "cSpell.words": ["venv", "pycache", "Haveri"]
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/backend",
+        "${workspaceFolder}/ai-core-service"
+    ],
+    "terminal.integrated.cwd": "${workspaceFolder}/backend"
 }

@@ -1,6 +1,6 @@
 # FILE: backend/app/core/db.py
-# PHOENIX PROTOCOL - DB MGMT V5.3 (PYLANCE COMPLIANT)
-# 1. REFACTOR: Replaced strict Motor types with 'Any' to resolve Pylance "Variable not allowed" errors.
+# PHOENIX PROTOCOL - DB MGMT V6.1 (DEFEANSIVE BYPASSES)
+# 1. OPTIMIZATION: Caught Neo4j connectivity errors to prevent startup crashes when Neo4j is offline.
 # 2. STATUS: Linter Clean & Production Ready.
 
 import logging
@@ -23,7 +23,6 @@ sync_mongo_client: Optional[pymongo.MongoClient] = None
 db_instance: Optional[Database] = None
 redis_sync_client: Optional[redis.Redis] = None
 
-# We use Any for Motor types because Pylance treats them as runtime variables
 async_mongo_client: Any = None
 async_db_instance: Any = None
 
@@ -40,13 +39,14 @@ def connect_to_mongo() -> Database:
     logger.info("--- [DB] Attempting to connect to Sync MongoDB... ---")
     try:
         client = pymongo.MongoClient(settings.DATABASE_URI, serverSelectionTimeoutMS=5000)
-        client.admin.command('ismaster')
+        client.admin.command('ping')
         
         # Parse DB name safely
         parsed_uri = urlparse(settings.DATABASE_URI)
         db_name = parsed_uri.path.lstrip('/')
         if not db_name: 
-            raise ValueError("Database name not found in DATABASE_URI.")
+            db_name = "haveri_production"
+            logger.info(f"--- [DB] No database name found in URI. Defaulting to: '{db_name}' ---")
         
         sync_mongo_client = client
         db_instance = client[db_name]
@@ -83,12 +83,13 @@ async def connect_to_motor() -> Any:
     try:
         client = AsyncIOMotorClient(settings.DATABASE_URI, serverSelectionTimeoutMS=5000)
         # Verify connection
-        await client.admin.command('ismaster')
+        await client.admin.command('ping')
         
         parsed_uri = urlparse(settings.DATABASE_URI)
         db_name = parsed_uri.path.lstrip('/')
         if not db_name: 
-            raise ValueError("Database name not found in DATABASE_URI.")
+            db_name = "haveri_production"
+            logger.info(f"--- [DB] No database name found in URI. Defaulting to: '{db_name}' ---")
         
         async_mongo_client = client
         async_db_instance = client[db_name]
@@ -98,8 +99,8 @@ async def connect_to_motor() -> Any:
         logger.critical(f"--- [DB] CRITICAL: Could not connect to Async MongoDB (Motor): {e} ---")
         raise
 
-def connect_to_neo4j() -> Driver:
-    """Connects to Neo4j and returns the driver instance."""
+def connect_to_neo4j() -> Optional[Driver]:
+    """Connects to Neo4j and returns the driver instance. Bypassed safely if offline."""
     global neo4j_driver
     if neo4j_driver is not None: 
         return neo4j_driver
@@ -115,8 +116,8 @@ def connect_to_neo4j() -> Driver:
         logger.info("--- [DB] Successfully connected to Neo4j Graph Database. ---")
         return neo4j_driver
     except Exception as e:
-        logger.critical(f"--- [DB] CRITICAL: Could not connect to Neo4j: {e} ---")
-        raise
+        logger.warning(f"--- [DB] ⚠️ Neo4j is offline or unavailable. Bypassing safely: {e} ---")
+        return None
 
 # --- Shutdown Logic ---
 
@@ -138,8 +139,11 @@ def close_redis_connection():
 def close_neo4j_connection():
     global neo4j_driver
     if neo4j_driver: 
-        neo4j_driver.close()
-        logger.info("--- [DB] Neo4j connection closed. ---")
+        try:
+            neo4j_driver.close()
+            logger.info("--- [DB] Neo4j connection closed. ---")
+        except Exception:
+            pass
 
 # --- Dependency Providers ---
 

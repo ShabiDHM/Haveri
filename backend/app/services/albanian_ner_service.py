@@ -1,51 +1,50 @@
 # FILE: backend/app/services/albanian_ner_service.py
-# PHOENIX PROTOCOL - NER ENGINE V4.1
-# 1. ENGINE: DeepSeek V3 (OpenRouter) for high-precision Albanian Entity Extraction.
-# 2. FALLBACK: Retains 'AI_CORE_URL' (Local Spacy) as backup.
-# 3. COMPATIBILITY: Returns standard (text, label, index) format for graph building.
+# PHOENIX PROTOCOL - NER ENGINE V5.0 (HAVERI ALIGNMENT)
+# 1. OPTIMIZATION: Bypassed local microservice dependencies, re-routing to cloud endpoints.
+# 2. CLEANUP: Decoupled openrouter headers from juristi.tech to haveri.tech.
+# 3. STATUS: Clean, Standalone & Production Ready.
 
-import os
-import httpx
 import json
 import logging
 from typing import List, Tuple, Optional
 from openai import OpenAI
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
-# --- CONFIGURATION ---
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-OPENROUTER_MODEL = "deepseek/deepseek-chat"
-
-# Legacy/Local Core
-AI_CORE_URL = os.getenv("AI_CORE_URL", "http://ai-core-service:8000")
+# Legacy/Local Core Fallback (Defaults to empty to avoid local container routing)
+AI_CORE_URL = ""
 
 class AlbanianNERService:
     """
     Service responsible for detecting Named Entities (PII) using Hybrid Intelligence.
-    Tier 1: DeepSeek V3 (Cloud)
-    Tier 2: Juristi AI Core (Local Spacy)
+    Tier 1: DeepSeek V3/Cloud LLM (via OpenRouter/OpenAI API)
+    Tier 2: Local Spacy (Bypassed in Cloud-Hybrid setup)
     """
     def __init__(self):
-        self.timeout = 15.0 # Slightly higher for LLM
+        self.timeout = 15.0 # Response window timeout
         
-        if DEEPSEEK_API_KEY:
+        api_key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY
+        base_url = settings.OPENAI_BASE_URL
+        
+        if api_key:
             self.client = OpenAI(
-                api_key=DEEPSEEK_API_KEY,
-                base_url=OPENROUTER_BASE_URL
+                api_key=api_key,
+                base_url=base_url
             )
         else:
             self.client = None
 
     def _extract_with_deepseek(self, text: str) -> Optional[List[dict]]:
         """
-        Uses SOTA LLM to extract entities. Returns raw list of dicts.
+        Uses Cloud LLM to extract entities. Returns raw list of dicts.
         """
-        if not self.client: return None
+        if not self.client: 
+            return None
 
-        # Truncate to avoid massive costs on huge docs, though DeepSeek is cheap.
-        # 10k chars is enough to get the main parties and context.
+        # Truncate to avoid massive costs on huge docs.
+        # 10k chars is enough to extract the main parties and structural metadata.
         truncated_text = text[:10000]
 
         system_prompt = """
@@ -71,8 +70,10 @@ class AlbanianNERService:
         """
 
         try:
+            model_name = settings.OPENAI_MODEL if settings.OPENAI_MODEL else "deepseek/deepseek-chat"
+            
             response = self.client.chat.completions.create(
-                model=OPENROUTER_MODEL,
+                model=model_name,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": truncated_text}
@@ -80,62 +81,41 @@ class AlbanianNERService:
                 temperature=0.1,
                 response_format={"type": "json_object"},
                 extra_headers={
-                    "HTTP-Referer": "https://juristi.tech", 
-                    "X-Title": "Juristi AI NER"
+                    "HTTP-Referer": "https://haveri.tech", 
+                    "X-Title": "Haveri AI NER"
                 }
             )
             
             content = response.choices[0].message.content
-            if not content: return None
+            if not content: 
+                return None
             
             data = json.loads(content)
             
             # Normalize response (handle if LLM wraps in "entities": [...])
             if isinstance(data, dict):
                 for key in data:
-                    if isinstance(data[key], list): return data[key]
+                    if isinstance(data[key], list): 
+                        return data[key]
                 return []
             elif isinstance(data, list):
                 return data
                 
         except Exception as e:
-            logger.warning(f"⚠️ DeepSeek NER Failed: {e}")
+            logger.warning(f"⚠️ Cloud NER Failed: {e}")
             return None
         return None
 
-    def _extract_with_local_core(self, text: str) -> List[dict]:
-        """
-        Fallback to local microservice.
-        """
-        try:
-            with httpx.Client(timeout=self.timeout) as client:
-                response = client.post(
-                    f"{AI_CORE_URL}/ner/extract",
-                    json={"text": text}
-                )
-                response.raise_for_status()
-                data = response.json()
-                return data.get("entities", [])
-        except Exception as e:
-            logger.error(f"❌ Local Core NER Failed: {e}")
-            return []
-
     def extract_entities(self, text: str) -> List[Tuple[str, str, int]]:
         """
-        Main entry point. Orchestrates Tier 1 -> Tier 2.
+        Main entry point. Orchestrates Cloud NER execution.
         Returns: List of (entity_text, entity_label, start_char_index).
         """
-        if not text: return []
+        if not text: 
+            return []
         
-        raw_entities = []
-        
-        # 1. Try DeepSeek
         raw_entities = self._extract_with_deepseek(text)
         
-        # 2. Fallback to Local
-        if raw_entities is None:
-            raw_entities = self._extract_with_local_core(text)
-            
         if not raw_entities:
             return []
 
@@ -145,10 +125,10 @@ class AlbanianNERService:
             name = ent.get("text", "").strip()
             label = ent.get("label", "UNKNOWN").upper()
             
-            if not name: continue
+            if not name: 
+                continue
             
             # Simple find (Caveat: Finds first occurrence only)
-            # For graph building, simply knowing the entity exists is usually sufficient.
             start_index = text.find(name)
             
             # Map common LLM variations to standard labels if needed

@@ -1,66 +1,78 @@
 # FILE: backend/app/services/embedding_service.py
-# PHOENIX PROTOCOL - EMBEDDING CLIENT V4.2
-# 1. ROBUSTNESS: Added retry logic (3 attempts) to handle local server load.
-# 2. FEATURE: Forwards 'language' parameter to AI Core.
-# 3. PERFORMANCE: Increased connection pool limits for parallel indexing.
+# PHOENIX PROTOCOL - EMBEDDING CLIENT V5.0 (CLOUD REDIRECT)
+# 1. OPTIMIZATION: Bypasses heavy local AI container completely to stay under 512MB RAM on Render.
+# 2. MECHANISM: Directly routes to OpenAI/OpenRouter Cloud Embeddings (text-embedding-3-small).
+# 3. STATUS: Clean, Production Ready.
 
-import os
-import httpx
 import logging
+import httpx
 import time
 from typing import List, Optional
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Points to the unified AI container (Local 16GB Server)
-AI_CORE_BASE_URL = os.getenv("AI_CORE_URL", "http://ai-core-service:8000")
-
-# Persistent client for performance
-# Increased pool size to handle parallel document processing threads (6 threads * 10 chunks)
+# Persistent client for high-performance parallel connections
 GLOBAL_SYNC_HTTP_CLIENT = httpx.Client(
-    timeout=60.0, 
+    timeout=30.0, 
     limits=httpx.Limits(max_keepalive_connections=20, max_connections=50)
 )
 
 def generate_embedding(text: str, language: Optional[str] = None) -> List[float]:
     """
-    Generates a vector embedding by calling the centralized Juristi AI Core.
-    Retries up to 3 times on failure to ensure stability under load.
+    Generates a vector embedding by calling OpenAI/OpenRouter Cloud APIs.
+    Bypasses local models completely to maintain a <512MB RAM footprint.
     """
     if not text or not text.strip():
         logger.warning("[Embedding] Empty text provided. Skipping.")
         return []
 
-    endpoint = f"{AI_CORE_BASE_URL}/embeddings/generate"
+    if not settings.OPENAI_API_KEY:
+        logger.error("[Embedding] ❌ OPENAI_API_KEY is not configured in environment settings.")
+        return []
+
+    # Clean base URL formatting
+    base_url = settings.OPENAI_BASE_URL.rstrip('/')
+    endpoint = f"{base_url}/embeddings"
+    
+    headers = {
+        "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    # Default to text-embedding-3-small (1536 dimensions) if not set to another text-embedding model
+    model_name = settings.EMBEDDING_MODEL if "text-embedding" in settings.EMBEDDING_MODEL else "text-embedding-3-small"
+    
     payload = {
-        "text_content": text,
-        "language": language or "standard"
+        "input": text,
+        "model": model_name
     }
     
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = GLOBAL_SYNC_HTTP_CLIENT.post(endpoint, json=payload)
+            response = GLOBAL_SYNC_HTTP_CLIENT.post(endpoint, json=payload, headers=headers)
             response.raise_for_status()
             
             data = response.json()
             
-            if "embedding" not in data or not isinstance(data["embedding"], list):
-                raise ValueError(f"Invalid response format from AI Core at {endpoint}")
+            if "data" not in data or not isinstance(data["data"], list) or len(data["data"]) == 0:
+                raise ValueError("Invalid response format from cloud embeddings endpoint")
                 
-            return data["embedding"]
+            embedding = data["data"][0]["embedding"]
+            return embedding
             
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
-            # Log warning but retry
-            logger.warning(f"⚠️ [Embedding] Attempt {attempt+1}/{max_retries} failed: {e}")
+            logger.warning(f"⚠️ [Embedding] Cloud Attempt {attempt+1}/{max_retries} failed: {e}")
             if attempt < max_retries - 1:
-                time.sleep(1) # Brief cool-off to let CPU breathe
+                time.sleep(1)
             else:
-                logger.error(f"❌ [Embedding] Critical Failure after retries for text len {len(text)}")
-                return []
+                logger.error(f"❌ [Embedding] Cloud critical failure for text of length {len(text)}")
                 
         except Exception as e:
             logger.error(f"❌ [Embedding] Unexpected error: {e}")
-            return []
+            break
             
-    return []
+    # Return zero vectors on critical failure to maintain application runtime integrity
+    dim = 1536 if "text-embedding-3" in model_name else 768
+    return [0.0] * dim

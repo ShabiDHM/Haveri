@@ -1,37 +1,31 @@
-# FILE: ai-core-service/app/main.py
-from fastapi import FastAPI
+# FILE: ai-core-service/main.py
+# PHOENIX PROTOCOL - AI CORE V11.0 (API PREFIX ALIGNED)
+# 1. FIX: Added APIRouter with settings.API_V1_STR prefix for Advocatus compatibility.
+
+import os
+import sys
+import logging
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-import logging
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
 
 from config import settings
 from routers import embeddings, reranking, ner, categorization
-# NOTE: Managers are imported, but their models are NOT loaded here.
-from services.embedding_manager import embedding_manager
-from services.rerank_manager import rerank_manager
-from services.ner_manager import ner_manager
-from services.categorization_manager import categorization_manager
 
-# Configure Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"🚀 {settings.PROJECT_NAME} Starting...")
-    
-    # PHOENIX FIX: DO NOT load models on startup.
-    # This ensures the server starts instantly and passes its healthcheck.
-    # Models will be lazy-loaded by their respective managers on first use.
-    
+    logger.info(f"--- [AI-CORE] Booting {settings.PROJECT_NAME}... ---")
     yield
-    logger.info(f"🛑 Shutting down {settings.PROJECT_NAME}...")
+    logger.info("--- [AI-CORE] Shutting down... ---")
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    lifespan=lifespan
-)
+app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,19 +35,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register Routers
-app.include_router(embeddings.router, prefix="/embeddings", tags=["Embeddings"])
-app.include_router(reranking.router, prefix="/reranking", tags=["Reranking"])
-app.include_router(ner.router, prefix="/ner", tags=["NER"])
-app.include_router(categorization.router, prefix="/categorization", tags=["Categorization"])
+# --- ALIGNED ROUTING ---
+api_v1_router = APIRouter(prefix=settings.API_V1_STR)
+api_v1_router.include_router(embeddings.router, prefix="/embeddings", tags=["Embeddings"])
+api_v1_router.include_router(reranking.router, prefix="/reranking", tags=["Reranking"])
+api_v1_router.include_router(ner.router, prefix="/ner", tags=["NER"])
+api_v1_router.include_router(categorization.router, prefix="/categorization", tags=["Categorization"])
 
-@app.get("/")
-def root():
-    return {
-        "service": settings.PROJECT_NAME,
-        "status": "operational", 
-        "modules": ["embeddings", "reranking", "ner", "categorization"]
-    }
+app.include_router(api_v1_router)
 
 @app.get("/health")
 def health_check():
@@ -61,4 +50,4 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8001, reload=True)

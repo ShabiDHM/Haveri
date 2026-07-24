@@ -1,5 +1,8 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - LLM SERVICE V6.5 (RESTORATION & FIX)
+# PHOENIX PROTOCOL - LLM SERVICE V7.0 (SaaS ALIGNMENT)
+# 1. OPTIMIZATION: Integrated with centralized config settings for robust cloud completions.
+# 2. MECHANISM: Runs strictly in async modes utilizing the global concurrency semaphore.
+# 3. STATUS: Clean, Production Ready.
 
 import os
 import json
@@ -9,14 +12,13 @@ import asyncio
 from typing import List, Dict, Any, Optional, AsyncGenerator
 from openai import AsyncOpenAI 
 
+from app.core.config import settings
 from .text_sterilization_service import sterilize_text_for_llm
 from . import vector_store_service
 
 logger = logging.getLogger(__name__)
 
-# --- CONFIGURATION ---
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+# --- CONFIGURATION DEFAULTS ---
 OPENROUTER_MODEL = "deepseek/deepseek-chat"
 
 _async_client: Optional[AsyncOpenAI] = None
@@ -27,52 +29,74 @@ BUSINESS_CONSULTANT_RULES = """
 RREGULLAT E KËSHILLIMIT (PRAKTIKA MË E MIRË):
 1. ROLI: Ti je Këshilltar Biznesi për NVM-të në Kosovë.
 2. BURIMET: "TË DHËNAT E PËRDORUESIT" janë faktet absolute.
-3. STIILI: Profesional, i qartë, në gjuhën Shqipe.
+3. STILI: Profesional, i qartë, në gjuhën Shqipe.
 """
 
 def get_async_client() -> Optional[AsyncOpenAI]:
+    """Retrieves or instantiates the unified AsyncOpenAI client using centralized settings."""
     global _async_client
-    if _async_client: return _async_client
-    api_key = DEEPSEEK_API_KEY or os.getenv("OPENAI_API_KEY")
-    base_url = OPENROUTER_BASE_URL if DEEPSEEK_API_KEY else os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+    if _async_client: 
+        return _async_client
+    
+    api_key = settings.OPENAI_API_KEY or settings.DEEPSEEK_API_KEY
+    base_url = settings.OPENAI_BASE_URL
+    
     if api_key:
         try: 
             _async_client = AsyncOpenAI(api_key=api_key, base_url=base_url)
             return _async_client
-        except Exception as e: logger.error(f"Async AI Client Init Failed: {e}")
+        except Exception as e: 
+            logger.error(f"Async AI Client Init Failed: {e}")
     return None
 
 def get_semaphore() -> asyncio.Semaphore:
+    """Controls concurrent connections to prevent hitting cloud rate limits."""
     global _api_semaphore
-    if _api_semaphore is None: _api_semaphore = asyncio.Semaphore(10)
+    if _api_semaphore is None: 
+        _api_semaphore = asyncio.Semaphore(10)
     return _api_semaphore
 
 def _parse_json_safely(content: str) -> Dict[str, Any]:
-    try: return json.loads(content)
+    try: 
+        return json.loads(content)
     except json.JSONDecodeError:
         match = re.search(r'\{.*\}', content, re.DOTALL)
         if match:
-            try: return json.loads(match.group(0))
-            except: pass
+            try: 
+                return json.loads(match.group(0))
+            except Exception: 
+                pass
         return {}
 
 def chunk_text(text: str, chunk_size: int = 4000) -> List[str]:
-    if not text: return []
+    if not text: 
+        return []
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
 async def _call_deepseek_async(system_prompt: str, user_prompt: str, json_mode: bool = False) -> Optional[str]:
     client = get_async_client()
     sem = get_semaphore()
-    if not client: return None
+    if not client: 
+        logger.error("[LLM] Async AI Client is unconfigured.")
+        return None
     async with sem:
         try:
             full_system_prompt = f"{system_prompt}\n\n{BUSINESS_CONSULTANT_RULES}"
+            
+            # Select model cleanly from centralized settings, falling back to openrouter default
+            model_name = settings.OPENAI_MODEL if settings.OPENAI_MODEL else OPENROUTER_MODEL
+            
             kwargs = {
-                "model": os.getenv("OPENAI_MODEL", OPENROUTER_MODEL),
-                "messages": [{"role": "system", "content": full_system_prompt}, {"role": "user", "content": user_prompt}],
+                "model": model_name,
+                "messages": [
+                    {"role": "system", "content": full_system_prompt}, 
+                    {"role": "user", "content": user_prompt}
+                ],
                 "temperature": 0.1
             }
-            if json_mode: kwargs["response_format"] = {"type": "json_object"}
+            if json_mode: 
+                kwargs["response_format"] = {"type": "json_object"}
+                
             response = await client.chat.completions.create(**kwargs)
             return response.choices[0].message.content
         except Exception as e:
@@ -82,7 +106,8 @@ async def _call_deepseek_async(system_prompt: str, user_prompt: str, json_mode: 
 async def process_chunks_parallel(text: str, system_prompt: str, chunk_size: int = 6000) -> List[str]:
     """Processes large documents in parallel chunks using the Global Semaphore."""
     chunks = chunk_text(text, chunk_size)
-    if not chunks: return []
+    if not chunks: 
+        return []
     logger.info(f"Hydra Activated: Processing {len(chunks)} chunks.")
     tasks = [_call_deepseek_async(system_prompt, f"PARTIAL CONTENT SEGMENT:\n{chunk}") for chunk in chunks]
     results = await asyncio.gather(*tasks)
@@ -97,9 +122,14 @@ async def stream_text_async(system_prompt: str, user_prompt: str, temp: float = 
     async with sem:
         try:
             full_system_prompt = f"{system_prompt}\n\n{BUSINESS_CONSULTANT_RULES}"
+            model_name = settings.OPENAI_MODEL if settings.OPENAI_MODEL else OPENROUTER_MODEL
+            
             stream = await client.chat.completions.create(
-                model=os.getenv("OPENAI_MODEL", OPENROUTER_MODEL),
-                messages=[{"role": "system", "content": full_system_prompt}, {"role": "user", "content": user_prompt}],
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": full_system_prompt}, 
+                    {"role": "user", "content": user_prompt}
+                ],
                 temperature=temp,
                 stream=True
             )
@@ -139,7 +169,9 @@ async def ask_business_consultant(user_id: str, query: str) -> str:
         user_context = "\n".join([f"- {d['content']}" for d in user_docs])
         response = await _call_deepseek_async("Je Këshilltar Biznesi. Përgjigju shkurt në Shqip.", f"PYETJA: {query}\nKONTEKSTI:\n{user_context}")
         return response or "Sistemi i ngarkuar."
-    except: return "Gabim teknik."
+    except Exception as e: 
+        logger.error(f"Consultant Ask Failed: {e}")
+        return "Gabim teknik."
 
 async def extract_expense_data(text: str) -> Dict[str, Any]:
     clean = sterilize_text_for_llm(text[:3000], redact_names=False)

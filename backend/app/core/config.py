@@ -1,7 +1,7 @@
 # FILE: backend/app/core/config.py
-# PHOENIX PROTOCOL - CONFIGURATION V8.0 (GRAPH DB INTEGRATION)
-# 1. FEATURE: Added Neo4j Graph Database credentials.
-# 2. STATUS: Ready for graph service implementation.
+# PHOENIX PROTOCOL - CONFIGURATION V9.0 (SaaS CLOUD-HYBRID INTEGRATION)
+# 1. OPTIMIZATION: Default EMBEDDING_MODEL redirected to standard cloud text-embedding-3-small.
+# 2. STATUS: Clean, Production-Ready.
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Union
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     
     # --- Auth ---
     SECRET_KEY: str = "changeme"
-    ALGORITHM: str = "HS2256"
+    ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 10080
 
@@ -61,19 +61,20 @@ class Settings(BaseSettings):
     # --- AI Engines ---
     OPENAI_API_KEY: str = "" 
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
-    OPENAI_MODEL: str = "gpt-4o"
+    OPENAI_MODEL: str = "gpt-4o-mini"
     DEEPSEEK_API_KEY: str = ""
     LOCAL_LLM_URL: str = "http://host.docker.internal:11434/api/generate"
     HF_TOKEN: str = ""
 
     # --- Internal AI Microservices ---
-    EMBEDDING_MODEL: str = "sentence-transformers/distiluse-base-multilingual-cased-v2"
-    CHROMA_HOST: str = "chroma"
+    # Defaulting to cloud-native embeddings to bypass local model loading
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
+    CHROMA_HOST: str = ""
     CHROMA_PORT: int = 8000
-    EMBEDDING_SERVICE_URL: str = "http://embedding-service:8001"
-    NER_SERVICE_URL: str = "http://ner-service:8002"
-    RERANK_SERVICE_URL: str = "http://rerank-service:8003"
-    CATEGORIZATION_SERVICE_URL: str = "http://categorization-service:8004"
+    EMBEDDING_SERVICE_URL: str = ""
+    NER_SERVICE_URL: str = ""
+    RERANK_SERVICE_URL: str = ""
+    CATEGORIZATION_SERVICE_URL: str = ""
     
     # --- Encryption (BYOK) ---
     ENCRYPTION_SALT: str = ""

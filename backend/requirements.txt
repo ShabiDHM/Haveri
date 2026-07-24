@@ -1,80 +1,62 @@
-# FILE: backend/requirements.txt (UNIFIED & PINNED - V5.4)
-# PHOENIX PROTOCOL - ADDED pdfplumber FOR ROBUST PDF EXTRACTION
+# PHOENIX PROTOCOL - HAVERI BACKEND (PYTHON 3.13 COMPATIBLE)
+--extra-index-url https://download.pytorch.org/whl/cpu
 
-# --- Core Web Framework & Async ---
-fastapi==0.109.2
-uvicorn[standard]==0.29.0
-starlette==0.36.3
-websockets
-anyio==4.10.0
-
-# --- Pydantic & Settings ---
-pydantic==2.7.1
-pydantic-core==2.18.2
-pydantic-settings==2.10.1
-python-dotenv==1.1.1
-
-# --- Authentication ---
-passlib==1.7.4
-bcrypt==4.0.1
-python-jose[cryptography]
-email-validator==2.3.0
-
-# --- Database & Cache ---
-pymongo==4.6.1
-redis==5.0.4
-motor==3.3.2
-neo4j==5.18.0
-
-# --- Task Queue ---
-celery==5.4.0
-kombu==5.5.4
-billiard==4.2.1
-vine==5.1.0
-amqp==5.3.1
-
-# --- Logging & Utilities ---
-structlog
-python-multipart==0.0.20
-click==8.2.1
-typing_extensions==4.15.0
-boto3==1.40.32
-Jinja2==3.1.4
-requests
-dateparser==1.2.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.31.0
+starlette>=0.39.0
+websockets>=13.0
+anyio>=4.6.0
+pydantic>=2.9.0
+pydantic-core>=2.23.0
+pydantic-settings>=2.5.0
+python-dotenv>=1.0.1
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.2.0
+python-jose[cryptography]>=3.3.0
+email-validator>=2.2.0
+pymongo>=4.9.1
+redis>=5.1.0
+motor>=3.6.0
+neo4j>=5.25.0
+celery>=5.4.0
+kombu>=5.5.4
+billiard>=4.2.1
+vine>=5.1.0
+amqp>=5.3.1
+structlog>=24.4.0
+python-multipart>=0.0.12
+click>=8.1.7
+typing_extensions>=4.12.0
+boto3>=1.35.0
+Jinja2>=3.1.4
+requests>=2.32.0
+dateparser>=1.2.0
 holidays>=0.40
-
-# --- Document Processing & Scraping ---
-fpdf2==2.7.9
-pdf2image==1.17.0
-pdfminer.six==20250506
-PyMuPDF==1.26.4
-pypdf==6.0.0
-python-docx==1.2.0
-python-pptx==0.6.23
-pytesseract==0.3.13
-pillow==11.3.0
-reportlab==4.4.3
-pandas
-openpyxl
-opencv-python-headless==4.9.0.80
-beautifulsoup4==4.12.3
-# PHOENIX ADDITION: Robust PDF text extraction
-pdfplumber>=0.10.0
-
-# --- AI & ML Dependencies ---
-chromadb-client==1.1.0
-langchain
-langchain-community
-langchain-openai
-langchain-text-splitters
-langdetect==1.0.9
-numpy<2,>=1.26.4
+fpdf2>=2.8.0
+pdf2image>=1.17.0
+pdfminer.six>=20240706
+PyMuPDF>=1.24.10
+pypdf>=5.0.0
+python-docx>=1.1.2
+python-pptx>=1.0.0
+pytesseract>=0.3.13
+pillow>=11.0.0
+reportlab>=4.2.5
+pandas>=2.2.3
+openpyxl>=3.1.5
+opencv-python-headless>=4.10.0
+beautifulsoup4>=4.12.3
+pdfplumber>=0.11.0
+chromadb-client>=0.4.0
+langchain>=0.3.0
+langchain-community>=0.3.0
+langchain-openai>=0.2.0
+langchain-text-splitters>=0.3.0
+langdetect>=1.0.9
+numpy>=2.1.0
 onnxruntime>=1.19.0
-openai>=1.0.0
-
-# AI Service Specific
-torch --index-url https://download.pytorch.org/whl/cpu
-transformers
-sentence-transformers
-spacy==3.7.4
+openai>=1.50.0
+torch
+transformers>=4.45.0
+sentence-transformers>=3.1.0
+spacy>=3.8.0

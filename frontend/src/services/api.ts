@@ -1,7 +1,9 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API V15.11 (FIXED: PRODUCTION URL NOW USES api.haveri.tech)
+// PHOENIX PROTOCOL - API V16.4 (FULLY DECOUPLED STANDALONE STATE)
+// 1. CLEANUP: Completely removed the residual SOURCE_API_V1_URL reference.
+// 2. STATUS: Standalone, Decoupled & Production Ready.
 
-import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError, AxiosHeaders } from 'axios';
 import type {
     LoginRequest, RegisterRequest, Workspace, CreateWorkspaceRequest, Document, User, UpdateUserRequest,
     DeletedDocumentResponse, CalendarEvent, CalendarEventCreateRequest,
@@ -61,6 +63,16 @@ export const AUTH_TOKEN_KEY = 'haveri_access_token';
 
 // PHOENIX: Robust base URL detection for all environments
 const getBaseUrl = (): string => { 
+    // Prioritize injection via Vite production/staging build environment variables (safe typed indexing)
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+        const metaEnv = import.meta.env as Record<string, any>;
+        if (metaEnv['VITE_API_URL']) {
+            const envUrl = metaEnv['VITE_API_URL'] as string;
+            console.log('[API] Environment override detected - using', envUrl);
+            return envUrl.replace(/\/$/, ""); // Trim trailing slash safely
+        }
+    }
+
     if (typeof window !== 'undefined') { 
         const hostname = window.location.hostname;
         
@@ -74,14 +86,9 @@ const getBaseUrl = (): string => {
                          hostname.includes('netlify.app') ||
                          hostname.includes('github.io');
         
-        if (isProduction) {
-            console.log('[API] Production mode - using api.haveri.tech');
-            return 'https://api.haveri.tech';  // <--- FIXED: Now uses api subdomain
-        }
-        
-        if (isPreview) {
-            console.log('[API] Preview mode - using api.haveri.tech');
-            return 'https://api.haveri.tech';  // <--- FIXED: Now uses api subdomain
+        if (isProduction || isPreview) {
+            console.log('[API] Cloud mode - using api.haveri.tech');
+            return 'https://api.haveri.tech';  
         }
         
         console.log('[API] Development mode - using localhost:8000');
@@ -93,7 +100,6 @@ const getBaseUrl = (): string => {
 const normalizedUrl = getBaseUrl();
 export const API_BASE_URL = normalizedUrl;
 export const API_V1_URL = `${API_BASE_URL}/api/v1`;
-export const SOURCE_API_V1_URL = 'https://api.juristi.tech/api/v1';
 
 class TokenManager {
     private accessToken: string | null = null;
@@ -121,7 +127,7 @@ class ApiService {
     public setLogoutHandler(handler: () => void) { this.onUnauthorized = handler; }
     private processQueue(error: Error | null) { this.failedQueue.forEach(prom => { if (error) prom.reject(error); else prom.resolve(tokenManager.get()); }); this.failedQueue = []; }
     private setupInterceptors() {
-        this.axiosInstance.interceptors.request.use((config) => {
+        this.axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
             const token = tokenManager.get();
             if (!config.headers) config.headers = new AxiosHeaders();
             if (token) {
@@ -129,9 +135,9 @@ class ApiService {
                 else (config.headers as any).Authorization = `Bearer ${token}`;
             }
             return config;
-        }, (error) => Promise.reject(error));
+        }, (error: any) => Promise.reject(error));
 
-        this.axiosInstance.interceptors.response.use((response) => response, async (error: AxiosError) => {
+        this.axiosInstance.interceptors.response.use((response: AxiosResponse) => response, async (error: AxiosError) => {
             const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
             if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh') {
                 if (this.isRefreshing) { return new Promise((resolve, reject) => { this.failedQueue.push({ resolve, reject }); }).then((token) => { if (originalRequest.headers instanceof AxiosHeaders) { originalRequest.headers.set('Authorization', `Bearer ${token}`); } else { (originalRequest.headers as any).Authorization = `Bearer ${token}`; } return this.axiosInstance(originalRequest); }); }
@@ -205,7 +211,7 @@ class ApiService {
 
     // --- DOCUMENTS ---
     public async getDocuments(workspaceId: string): Promise<Document[]> { const response = await this.axiosInstance.get<any>(`/workspace/${workspaceId}/documents`); return Array.isArray(response.data) ? response.data : (response.data?.documents || []); }
-    public async uploadDocument(workspaceId: string, file: File, onProgress?: (percent: number) => void): Promise<Document> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<Document>(`/workspace/${workspaceId}/documents/upload`, formData, { onUploadProgress: (progressEvent) => { if (onProgress && progressEvent.total) { const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total); onProgress(percent); } } }); return response.data; }
+    public async uploadDocument(workspaceId: string, file: File, onProgress?: (percent: number) => void): Promise<Document> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<Document>(`/workspace/${workspaceId}/documents/upload`, formData, { onUploadProgress: (progressEvent: any) => { if (onProgress && progressEvent.total) { const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total); onProgress(percent); } } }); return response.data; }
     public async getDocument(workspaceId: string, documentId: string): Promise<Document> { const response = await this.axiosInstance.get<Document>(`/workspace/${workspaceId}/documents/${documentId}`); return response.data; }
     public async deleteDocument(workspaceId: string, documentId: string): Promise<DeletedDocumentResponse> { const response = await this.axiosInstance.delete<DeletedDocumentResponse>(`/workspace/${workspaceId}/documents/${documentId}`); return response.data; }
     public async bulkDeleteDocuments(workspaceId: string, documentIds: string[]): Promise<any> { const response = await this.axiosInstance.post(`/workspace/${workspaceId}/documents/bulk-delete`, { document_ids: documentIds }); return response.data; }
@@ -276,13 +282,13 @@ class ApiService {
 
     public async createPurchaseOrder(data: { item_id: string; item_name: string; unit: string; quantity: number; estimated_cost: number; supplier_name: string; }): Promise<any> { const response = await this.axiosInstance.post('/drafting/purchase-order', data); return response.data; }
 
-    // NEW: Get purchase order data for editing
+    // Get purchase order data for editing
     public async getPurchaseOrderData(archiveId: string): Promise<{ po_number: string; order_data: any }> {
         const response = await this.axiosInstance.get(`/drafting/purchase-order/${archiveId}`);
         return response.data;
     }
 
-    // NEW: Update purchase order and regenerate PDF
+    // Update purchase order and regenerate PDF
     public async updatePurchaseOrder(archiveId: string, data: any): Promise<any> {
         const response = await this.axiosInstance.put(`/drafting/purchase-order/${archiveId}`, data);
         return response.data;
@@ -400,7 +406,7 @@ class ApiService {
     // --- IMPORTS ---
     public async previewImport(file: File): Promise<ImportPreviewResponse> { const formData = new FormData(); formData.append('file', file); const response = await this.axiosInstance.post<ImportPreviewResponse>('/finance/import/preview', formData); return response.data; }
 
-    // PHOENIX: Updated confirmImport to accept defaultCategory for bank imports
+    // confirmImport
     public async confirmImport(file: File, mapping: Record<string, string>, importType: 'pos' | 'bank', workspaceId?: string, defaultCategory?: string): Promise<ImportResult> {
         const formData = new FormData();
         formData.append('file', file);
