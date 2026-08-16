@@ -1,11 +1,11 @@
 // FILE: src/components/Header.tsx
-// HAVERI - ASISTENTI VIRTUAL (MOBILE BOTTOM BAR & MODERN HEADER)
+// HAVERI - ASISTENTI VIRTUAL (ME TAB-IN PULSI PUBLIK)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Bell, LogOut, User as UserIcon, 
     MessageSquare, FolderOpen, 
-    Activity, Shield, 
+    Activity, Shield, Landmark, ExternalLink,
     Sun, Moon, Building2, Briefcase
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -50,15 +50,22 @@ const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProfileOpen]);
   
-  // Elementet e Navigimit
+  // Lista e Tab-eve duke përfshirë Pulsi Publik
   const navItems = [
       { label: 'Pulsi i Tregut', shortLabel: 'Pulsi', path: '/business/insights', icon: Activity },
       { label: 'Mundësitë & Projektet', shortLabel: 'Mundësitë', path: '/projects', icon: Briefcase },
+      { 
+        label: 'Pulsi Publik', 
+        shortLabel: 'Publik', 
+        path: 'https://www.pulsipublik.org/local_government.html', 
+        icon: Landmark, 
+        isExternal: true 
+      },
       { label: 'Arkiva', shortLabel: 'Arkiva', path: '/business/archive', icon: FolderOpen },
   ];
 
   if (user?.role?.toUpperCase() === 'ADMIN') {
-      navItems.push({ label: 'Administrimi', shortLabel: 'Admin', path: '/admin', icon: Shield });
+      navItems.push({ label: 'Administrimi', shortLabel: 'Admin', path: '/admin', icon: Shield } as any);
   }
 
   const handleDropdownNavigate = (path: string) => {
@@ -80,9 +87,25 @@ const Header: React.FC = () => {
           <BrandLogo />
         </Link>
 
-        {/* Desktop Navigimi (Vetëm për Desktop) */}
+        {/* Desktop Navigimi */}
         <div className="hidden lg:flex items-center bg-surface/50 p-1 rounded-2xl border border-border-main shadow-inner">
           {navItems.map((item) => {
+            if (item.isExternal) {
+              return (
+                <a
+                  key={item.label}
+                  href={item.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-text-muted hover:text-text-primary transition-all duration-200"
+                >
+                  <item.icon size={16} className="text-primary-start" />
+                  <span>{item.label}</span>
+                  <ExternalLink size={11} className="opacity-60" />
+                </a>
+              );
+            }
+
             const active = isActive(item.path);
             return (
               <NavLink
@@ -165,17 +188,34 @@ const Header: React.FC = () => {
         </div>
       </header>
 
-      {/* 2. SHIRITI I POSHTËM MODERN NË MOBILE (NATIVE MOBILE BOTTOM TAB BAR) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-canvas/90 backdrop-blur-xl border-t border-border-main px-2 py-1.5 shadow-2xl">
+      {/* 2. SHIRITI I POSHTËM MOBILE ME PULSI PUBLIK */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-canvas/90 backdrop-blur-xl border-t border-border-main px-1.5 py-1.5 shadow-2xl">
         <div className="flex items-center justify-around max-w-md mx-auto">
           {navItems.map((item) => {
+            if (item.isExternal) {
+              return (
+                <a
+                  key={item.label}
+                  href={item.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center py-1.5 px-2.5 rounded-xl text-text-muted hover:text-text-primary transition-all duration-150 relative"
+                >
+                  <item.icon size={20} className="stroke-[1.8] text-primary-start" />
+                  <span className="text-[10px] font-bold mt-1 tracking-tight">
+                    {item.shortLabel}
+                  </span>
+                </a>
+              );
+            }
+
             const active = isActive(item.path);
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
                 className={`
-                  flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all duration-150 relative
+                  flex flex-col items-center justify-center py-1.5 px-2.5 rounded-xl transition-all duration-150 relative
                   ${active 
                     ? 'text-primary-start font-black' 
                     : 'text-text-muted hover:text-text-primary'
