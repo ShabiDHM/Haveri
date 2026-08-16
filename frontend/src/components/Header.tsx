@@ -128,7 +128,7 @@ const Header: React.FC = () => {
         <button 
           onClick={() => navigate('/business/insights')} 
           className="p-2 text-text-muted hover:text-text-primary hover:bg-surface/20 rounded-lg relative"
-          title="Pulsi i Tregut"
+          title="Pulsi i Tregut në Kosovë"
         >
           <Bell size={18} />
           {alertCount > 0 && (
