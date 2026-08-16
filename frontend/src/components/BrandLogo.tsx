@@ -1,8 +1,8 @@
 // FILE: src/components/BrandLogo.tsx
-// HAVERI - ASISTENTI VIRTUAL
+// HAVERI - PULSI I TREGUT
 
 import React from 'react';
-import { Brain } from 'lucide-react';
+import { Activity } from 'lucide-react';
 
 interface BrandLogoProps {
   className?: string;
@@ -12,9 +12,9 @@ interface BrandLogoProps {
 export const BrandLogo: React.FC<BrandLogoProps> = ({ className = '', showSubtitle = true }) => {
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      {/* Ikona e Logove */}
+      {/* Ikona e Brandit */}
       <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-primary-start to-blue-500 flex items-center justify-center text-white shadow-md shadow-primary-start/20 shrink-0">
-        <Brain size={20} className="stroke-[2.2]" />
+        <Activity size={20} className="stroke-[2.5]" />
       </div>
 
       {/* Titulli dhe Nëntitulli */}
@@ -24,7 +24,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ className = '', showSubtit
         </span>
         {showSubtitle && (
           <span className="text-[10px] font-bold text-primary-start uppercase tracking-widest leading-none mt-1">
-            Asistenti Virtual
+            Pulsi i Tregut
           </span>
         )}
       </div>
