@@ -1,5 +1,5 @@
 // FILE: src/App.tsx
-// HAVERI AI - ROUTER V3.0 (CLEAN INTELLIGENCE SUITE)
+// HAVERI AI - PURE INTELLIGENCE SUITE
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import MainLayout from './pages/MainLayout';
 
-// Core Pages
+// Core Pages Only
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -18,10 +18,6 @@ import LandingPage from './pages/LandingPage';
 import BusinessPage from './pages/BusinessPage';
 import AccountPage from './pages/AccountPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
-import ClientPortalPage from './pages/ClientPortalPage';
-import { IntegrationsPage } from './pages/IntegrationsPage';
-import MobileUploadPage from './pages/MobileUploadPage';
-import { ProfileTab } from './components/business/ProfileTab';
 import ProjectsDashboardPage from './pages/ProjectsDashboardPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -63,10 +59,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
-      <Route path="/portal/:workspaceId" element={<ClientPortalPage />} />
-
-      {/* Standalone Protected Routes */}
-      <Route path="/mobile-upload/:token" element={<MobileUploadPage />} />
 
       {/* Protected Routes with MainLayout */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
@@ -74,15 +66,12 @@ const AppRoutes: React.FC = () => {
         <Route path="/business/insights" element={<BusinessPage view="insights" />} />
         <Route path="/business/briefing" element={<BusinessPage view="briefing" />} />
         <Route path="/business/archive" element={<BusinessPage view="archive" />} />
-        <Route path="/business/inbox" element={<BusinessPage view="inbox" />} />
         <Route path="/business" element={<Navigate to="/business/insights" replace />} />
 
-        {/* Standard Workspace Routes */}
+        {/* Lead Management & Account */}
         <Route path="/projects" element={<ProjectsDashboardPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/account" element={<AccountPage />} />
-        <Route path="/profile" element={<ProfileTab />} />
-        <Route path="/integrations" element={<IntegrationsPage />} />
       </Route>
 
       {/* Admin Protected Route */}
