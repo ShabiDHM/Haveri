@@ -1,224 +1,328 @@
 // FILE: src/components/business/InsightsTab.tsx
-// HAVERI AI - QENDRA E INTELIGJENCËS (LIGHT & DARK THEME ADAPTIVE)
+// HAVERI AI - QENDRA E INTELIGJENCËS MOBILE-FIRST (KARTAT E VËMENDJES & VIP)
 
 import React, { useState } from 'react';
+import { 
+    Flame, AlertTriangle, Phone, MessageSquare, 
+    ArrowUpRight, BookmarkPlus, Sparkles,
+    ShieldAlert, MapPin, CheckCircle
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SinjalTregu {
   id: string;
-  category: 'CONSTRUCTION' | 'AUCTION' | 'TENDER';
+  category: 'CONSTRUCTION' | 'AUCTION' | 'TENDER' | 'RISK';
   title: string;
   location: string;
   metric: string;
   timestamp: string;
+  investorName: string;
+  investorPhone?: string;
   details: string;
   tag: string;
+  isVip?: boolean;
   urgency: 'HIGH' | 'MEDIUM' | 'NORMAL';
 }
 
 const SINJALET_FILLUESE: SinjalTregu[] = [
   {
-    id: '1',
+    id: 'vip-1',
     category: 'CONSTRUCTION',
-    title: 'Banesim Kolektiv me Shërbime (B+P+7)',
-    location: 'Prishtinë (Mati 1 - Zona Kadastrale 714)',
-    metric: '9,450 m²',
-    timestamp: 'Sot, 11:30',
-    details: 'Investitori: "Alba Group SH.P.K." - Leje Ndërtimore e aprovuar. Furnizim i hapur për beton, dritare dhe instalime elektrike.',
-    tag: 'LEJE NDËRTIMORE',
+    title: 'Kompleks Rezidencial & Afarist (2B+P+8)',
+    location: 'Prishtinë (Arbëri / Dragodan)',
+    metric: '14,200 m²',
+    timestamp: 'Sapo u publikua',
+    investorName: 'Dardania Construction Group',
+    investorPhone: '+38349111222',
+    details: 'Leje Ndërtimore e vulosur. Faza e tenderimit të brendshëm: Furnizuesi kryesor për beton, pompim dhe dritare alumini ende i papërcaktuar.',
+    tag: '💎 EKSKLUZIVE',
+    isVip: true,
     urgency: 'HIGH'
   },
   {
-    id: '2',
+    id: 'vip-2',
     category: 'AUCTION',
-    title: 'Ankand Publik: Depo Industriale & Magazinë',
-    location: 'Ferizaj (Zona Industriale)',
-    metric: '€68,000 (Vlerësuar: €140,000)',
-    timestamp: 'Sot, 09:15',
-    details: 'Përmbarues Privat: Likuidim i pasurisë së sekuestruar me 51% zbritje nga çmimi i vlerësuar. Afati i depozitimit: 7 ditë.',
-    tag: 'PËRMBARIM & ZBRITJE',
+    title: 'Ankand Urgjent: Depo Industriale 1,800 m²',
+    location: 'Ferizaj (Magjistralja Prishtinë-Shkup)',
+    metric: '€62,000 (-58% Zbritje)',
+    timestamp: 'Afati: 48 Orë',
+    investorName: 'Përmbaruesi Privat (Lënda: 412/26)',
+    investorPhone: '+38344333444',
+    details: 'Likuidim i menjëhershëm nga përmbarimi. Vlera reale në treg mbi €150,000. Mundësi blerjeje me pagesë të menjëhershme.',
+    tag: '⚡ 48 ORË AFAT',
+    isVip: true,
     urgency: 'HIGH'
   },
   {
-    id: '3',
+    id: 'reg-1',
     category: 'TENDER',
-    title: 'Furnizim me Pajisje & Materiale Infrastrukturore',
-    location: 'Komuna e Prizrenit',
-    metric: '€185,000',
-    timestamp: 'Dje, 16:40',
-    details: 'E-Prokurimi: Specifikimet teknike të nxjerra automatikisht. 4 artikuj përputhen me profilin e furnizuesve të regjistruar.',
+    title: 'Furnizim me Materiale Ndërtimore & Ndriçim Publik',
+    location: 'Komuna e Gjilanit',
+    metric: '€145,000',
+    timestamp: 'Sot, 10:15',
+    investorName: 'Drejtoria e Shërbimeve Publike',
+    details: 'Specifikimet teknike: Kërkohen 12 artikuj standardë. Nuk kërkohet përvojë e gjatë në tenderë të mëparshëm.',
     tag: 'TENDER PUBLIK',
     urgency: 'MEDIUM'
   },
   {
-    id: '4',
+    id: 'reg-2',
     category: 'CONSTRUCTION',
-    title: 'Objekt Afarist & Qendër Tregtare',
-    location: 'Fushë Kosovë (Pranë Rrethit Kryesor)',
-    metric: '4,200 m²',
-    timestamp: 'Dje, 14:10',
-    details: 'Investitori: "Dardania Invest" - Faza para fillimit të punimeve. Kërkohen nënkontraktues për punë të vrazhda dhe fasadë.',
-    tag: 'LEJE NDËRTIMORE',
+    title: 'Banesim Kolektiv me Shërbime (B+P+6)',
+    location: 'Fushë Kosovë (Zona 2)',
+    metric: '6,800 m²',
+    timestamp: 'Dje, 15:40',
+    investorName: 'Prishtina Real Estate SH.P.K.',
+    investorPhone: '+38349555666',
+    details: 'Leje e rregullt. Punimet fillojnë brenda 30 ditëve. Kërkohen oferta për armaturë çeliku dhe hidroizolim.',
+    tag: 'LEJE NDËRTIMI',
     urgency: 'NORMAL'
+  },
+  {
+    id: 'reg-3',
+    category: 'RISK',
+    title: 'Paralajmërim Bllokade: Default mbi Pagesat me Afat',
+    location: 'Regjioni Prizren',
+    metric: 'RREZIK I LARTË',
+    timestamp: 'Dje, 12:20',
+    investorName: 'Kompani Distribucioni (Informatë Konfidenciale)',
+    details: '3 lëndë përmbarimore të hapura këtë javë. Këshillohet ndërprerja e dërgimit të mallit me faturë me afat (me pritje).',
+    tag: '⚠️ KUJDES B2B',
+    urgency: 'HIGH'
   }
 ];
 
 export const InsightsTab: React.FC = () => {
-  const [filter, setFilter] = useState<'ALL' | 'CONSTRUCTION' | 'AUCTION' | 'TENDER'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | 'VIP' | 'CONSTRUCTION' | 'AUCTION' | 'TENDER'>('ALL');
+  const [savedDeals, setSavedDeals] = useState<string[]>([]);
+  const navigate = useNavigate();
+
+  const handleSaveToDeals = (id: string) => {
+    if (!savedDeals.includes(id)) {
+      setSavedDeals(prev => [...prev, id]);
+    }
+  };
+
+  const openWhatsApp = (phone: string, title: string) => {
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const message = encodeURIComponent(`Përshëndetje! Po ju kontaktoj lidhur me projektin "${title}". A keni mundësi të bisedojmë për ofertën e furnizimit?`);
+    window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+  };
 
   const filteredSignals = filter === 'ALL' 
     ? SINJALET_FILLUESE 
+    : filter === 'VIP'
+    ? SINJALET_FILLUESE.filter(s => s.isVip)
     : SINJALET_FILLUESE.filter(s => s.category === filter);
 
+  const vipSignals = SINJALET_FILLUESE.filter(s => s.isVip);
+
   return (
-    <div className="space-y-6">
-      {/* Rreshti i Metrikave Kryesore */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Metrika 1: Ndërtimi */}
-        <div className="p-5 rounded-2xl glass-panel bg-surface/50 border border-border-main shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              🏗️ Radari i Ndërtimit
+    <div className="space-y-5 pb-12">
+      
+      {/* 1. SEKSIONI I KARTAVE TË VËMENDJES (VIP ATTENTION CARDS) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
             </span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
-              +14 Këtë Javë
-            </span>
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black text-text-primary tracking-tight">38,650 m²</div>
-            <p className="text-xs text-text-muted mt-1">Sipërfaqe e re ndërtimore e aprovuar në Kosovë</p>
-          </div>
-        </div>
-
-        {/* Metrika 2: Ankandet */}
-        <div className="p-5 rounded-2xl glass-panel bg-surface/50 border border-border-main shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-              🔨 Ankandet & Likuidimet
-            </span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-bold">
-              -48% Zbritje Mesatare
-            </span>
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black text-text-primary tracking-tight">€420,000</div>
-            <p className="text-xs text-text-muted mt-1">Vlerë e pasurive dhe stokut në shitje përmbarimore</p>
-          </div>
-        </div>
-
-        {/* Metrika 3: Tenderët */}
-        <div className="p-5 rounded-2xl glass-panel bg-surface/50 border border-border-main shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-bold uppercase tracking-wider text-primary-start">
-              📑 Radari i Tenderëve
-            </span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-primary-start/10 text-primary-start border border-primary-start/20 font-bold">
-              Aktive
-            </span>
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black text-text-primary tracking-tight">€1.24M</div>
-            <p className="text-xs text-text-muted mt-1">Tenderë publikë me mundësi furnizimi të drejtpërdrejtë</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Paneli Kryesor i Sinjaleve të Tregut */}
-      <div className="p-6 rounded-2xl glass-panel bg-surface/50 border border-border-main shadow-sm">
-        {/* Titulli dhe Filtrat */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-border-main">
-          <div>
-            <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Sinjalet e Drejtpërdrejta të Tregut në Kosovë
+            <h2 className="text-xs font-black uppercase tracking-widest text-text-primary">
+              Sinjalet me Vëmendje të Lartë (VIP)
             </h2>
-            <p className="text-xs text-text-muted mt-0.5">
-              Të dhëna të filtruara në kohë reale nga Komunat, Përmbaruesit Privatë dhe E-Prokurimi
-            </p>
           </div>
-
-          {/* Butonat e Filtrimit */}
-          <div className="flex items-center gap-1.5 p-1 bg-surface/80 rounded-xl border border-border-main">
-            <button
-              onClick={() => setFilter('ALL')}
-              className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                filter === 'ALL'
-                  ? 'bg-primary-start text-white shadow-sm'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              Të Gjitha
-            </button>
-            <button
-              onClick={() => setFilter('CONSTRUCTION')}
-              className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                filter === 'CONSTRUCTION'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              🏗️ Ndërtim
-            </button>
-            <button
-              onClick={() => setFilter('AUCTION')}
-              className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                filter === 'AUCTION'
-                  ? 'bg-amber-600 text-white shadow-sm'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              🔨 Ankande
-            </button>
-            <button
-              onClick={() => setFilter('TENDER')}
-              className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                filter === 'TENDER'
-                  ? 'bg-primary-start text-white shadow-sm'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              📑 Tenderë
-            </button>
-          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-start/10 text-primary-start">
+            Vetëm për Administratorët
+          </span>
         </div>
 
-        {/* Lista e Sinjaleve */}
-        <div className="divide-y divide-border-main mt-2">
-          {filteredSignals.map((signal) => (
+        {/* Kartat e Rëndësisë së Veçantë */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          {vipSignals.map(vip => (
             <div 
-              key={signal.id}
-              className="py-4 hover:bg-hover/60 px-3 rounded-xl transition-all duration-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+              key={vip.id}
+              className="p-4 sm:p-5 rounded-2xl glass-panel bg-surface/80 border-2 border-primary-start/40 shadow-lg relative overflow-hidden flex flex-col justify-between space-y-3"
             >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded tracking-wide ${
-                    signal.category === 'CONSTRUCTION'
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                      : signal.category === 'AUCTION'
-                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                      : 'bg-primary-start/10 text-primary-start border border-primary-start/20'
-                  }`}>
-                    {signal.tag}
-                  </span>
-                  <span className="text-xs text-text-muted">• {signal.timestamp}</span>
-                </div>
-                <h3 className="text-sm font-semibold text-text-primary">{signal.title}</h3>
-                <p className="text-xs text-text-secondary">{signal.details}</p>
-                <div className="text-[11px] text-text-muted font-mono">
-                  📍 {signal.location}
-                </div>
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-primary-start text-white tracking-wider flex items-center gap-1 shadow-sm">
+                  <Sparkles size={12} />
+                  {vip.tag}
+                </span>
+                <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                  {vip.metric}
+                </span>
               </div>
 
-              <div className="flex md:flex-col items-end justify-between w-full md:w-auto gap-2">
-                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20">
-                  {signal.metric}
-                </span>
-                <button className="text-xs font-bold text-primary-start hover:underline">
-                  Shiko Detajet & Kontaktin &rarr;
+              <div>
+                <h3 className="text-base font-black text-text-primary leading-snug">
+                  {vip.title}
+                </h3>
+                <div className="flex items-center gap-1.5 text-xs text-text-muted mt-1 font-medium">
+                  <MapPin size={13} className="text-primary-start shrink-0" />
+                  <span>{vip.location}</span>
+                </div>
+                <p className="text-xs text-text-secondary mt-2 leading-relaxed line-clamp-2">
+                  {vip.details}
+                </p>
+              </div>
+
+              {/* Butonat e Veprimit të Shpejtë në Mobile */}
+              <div className="pt-2 border-t border-border-main flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {vip.investorPhone && (
+                    <button
+                      onClick={() => openWhatsApp(vip.investorPhone!, vip.title)}
+                      className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                    >
+                      <MessageSquare size={14} />
+                      <span>WhatsApp</span>
+                    </button>
+                  )}
+                  {vip.investorPhone && (
+                    <a
+                      href={`tel:${vip.investorPhone}`}
+                      className="p-2 rounded-xl bg-surface border border-border-main text-text-primary hover:bg-hover transition-colors"
+                      title="Telefono"
+                    >
+                      <Phone size={14} />
+                    </a>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => handleSaveToDeals(vip.id)}
+                  className={`text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1 ${
+                    savedDeals.includes(vip.id)
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                      : 'text-primary-start hover:bg-primary-start/10'
+                  }`}
+                >
+                  {savedDeals.includes(vip.id) ? (
+                    <>
+                      <CheckCircle size={14} /> E Ruajtur
+                    </>
+                  ) : (
+                    <>
+                      <BookmarkPlus size={14} /> Ruaj te Mundësitë
+                    </>
+                  )}
                 </button>
               </div>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* 2. SHIRITI I FILTRAVE TË SHPEJTË NË MOBILE */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+        {[
+          { key: 'ALL', label: 'Të Gjitha' },
+          { key: 'VIP', label: '🔥 VIP / Urgjente' },
+          { key: 'CONSTRUCTION', label: '🏗️ Ndërtim' },
+          { key: 'AUCTION', label: '🔨 Ankande' },
+          { key: 'TENDER', label: '📑 Tenderë' },
+        ].map(item => (
+          <button
+            key={item.key}
+            onClick={() => setFilter(item.key as any)}
+            className={`px-4 py-2 text-xs font-black rounded-xl whitespace-nowrap transition-all active:scale-95 ${
+              filter === item.key
+                ? 'bg-primary-start text-white shadow-sm'
+                : 'glass-panel bg-surface/70 text-text-muted hover:text-text-primary border border-border-main'
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 3. FLUKSI I SINJALEVE TË TREGUT (FEED-I KRYESOR) */}
+      <div className="space-y-3">
+        {filteredSignals.map((signal) => (
+          <div 
+            key={signal.id}
+            className="p-4 sm:p-5 rounded-2xl glass-panel bg-surface/50 border border-border-main hover:border-primary-start/40 shadow-sm transition-all duration-200 flex flex-col justify-between space-y-3"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                    signal.category === 'CONSTRUCTION'
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                      : signal.category === 'AUCTION'
+                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                      : signal.category === 'RISK'
+                      ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                      : 'bg-primary-start/10 text-primary-start border border-primary-start/20'
+                  }`}>
+                    {signal.tag}
+                  </span>
+                  <span className="text-[11px] text-text-muted font-medium">• {signal.timestamp}</span>
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-text-primary leading-snug pt-0.5">
+                  {signal.title}
+                </h3>
+              </div>
+
+              <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 shrink-0">
+                {signal.metric}
+              </span>
+            </div>
+
+            <p className="text-xs text-text-secondary leading-relaxed">
+              {signal.details}
+            </p>
+
+            <div className="flex items-center gap-1 text-[11px] text-text-muted font-medium">
+              <MapPin size={13} className="text-primary-start shrink-0" />
+              <span>{signal.location}</span>
+            </div>
+
+            {/* Veprimet në Fund të Kartës */}
+            <div className="pt-3 border-t border-border-main flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                {signal.investorPhone && (
+                  <button
+                    onClick={() => openWhatsApp(signal.investorPhone!, signal.title)}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                  >
+                    <MessageSquare size={13} />
+                    <span>WhatsApp</span>
+                  </button>
+                )}
+                {signal.investorPhone && (
+                  <a
+                    href={`tel:${signal.investorPhone}`}
+                    className="p-1.5 rounded-lg bg-surface border border-border-main text-text-primary"
+                    title="Telefono"
+                  >
+                    <Phone size={13} />
+                  </a>
+                )}
+              </div>
+
+              <button
+                onClick={() => handleSaveToDeals(signal.id)}
+                className={`text-xs font-bold px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                  savedDeals.includes(signal.id)
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                    : 'text-primary-start hover:underline'
+                }`}
+              >
+                {savedDeals.includes(signal.id) ? (
+                  <>
+                    <CheckCircle size={13} /> Ruajtur
+                  </>
+                ) : (
+                  <>
+                    <BookmarkPlus size={13} /> Ruaj Marrëveshjen
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
