@@ -1,29 +1,37 @@
 // FILE: src/pages/ProjectsDashboardPage.tsx
-// PHOENIX PROTOCOL – PROJECTS DASHBOARD V2.0 (TITLE RENAMED, SUBTITLE LARGER)
+// HAVERI AI - MENAXHIMI I MUNDËSIVE & KONTRATAVE B2B (100% SHQIP)
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Plus, Loader2, FolderOpen, Activity, Search, Trash2 } from 'lucide-react';
+import { 
+    Plus, Loader2, FolderOpen, Search, Trash2, 
+    Briefcase, ArrowUpRight, 
+    Phone, Mail, Building2, Wallet
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import WorkspaceCard from '../components/WorkspaceCard';
 import { Workspace } from '../data/types';
+import { useNavigate } from 'react-router-dom';
 
-const ProjectsDashboardPage: React.FC = () => {
-  const { t } = useTranslation();
+export const ProjectsDashboardPage: React.FC = () => {
   const { workspaces, refreshWorkspaces } = useAuth();
+  const navigate = useNavigate();
+  
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [newWorkspaceData, setNewWorkspaceData] = useState({
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'WON'>('ALL');
+
+  const [newDealData, setNewDealData] = useState({
     title: '',
     clientName: '',
     clientEmail: '',
     clientPhone: '',
+    estimatedValue: '',
   });
-  const [workspaceToDelete, setWorkspaceToDelete] = useState<string | null>(null);
+
+  const [dealToDelete, setDealToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -37,110 +45,233 @@ const ProjectsDashboardPage: React.FC = () => {
 
   const filteredWorkspaces = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
-    if (!term) return workspaces;
-    return workspaces.filter(ws => 
-      ws.title?.toLowerCase().includes(term) ||
-      ws.client?.name?.toLowerCase().includes(term)
-    );
-  }, [workspaces, searchTerm]);
+    return workspaces.filter(ws => {
+      const matchesSearch = !term || 
+        ws.title?.toLowerCase().includes(term) ||
+        ws.client?.name?.toLowerCase().includes(term);
+      
+      const matchesStatus = statusFilter === 'ALL' || ws.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [workspaces, searchTerm, statusFilter]);
 
-  const handleCreateWorkspace = async (e: React.FormEvent) => {
+  const handleCreateDeal = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsCreating(true);
     try {
-      const workspaceNumber = `WS-${Date.now().toString().slice(-8)}`;
+      const workspaceNumber = `MARR-${Date.now().toString().slice(-6)}`;
       const payload = {
         workspace_number: workspaceNumber,
-        title: newWorkspaceData.title,
-        clientName: newWorkspaceData.clientName,
-        clientEmail: newWorkspaceData.clientEmail,
-        clientPhone: newWorkspaceData.clientPhone,
+        title: newDealData.title,
+        clientName: newDealData.clientName,
+        clientEmail: newDealData.clientEmail,
+        clientPhone: newDealData.clientPhone,
         status: 'ACTIVE',
       };
       await apiService.createWorkspace(payload);
       await refreshWorkspaces();
       setShowCreateModal(false);
-      setNewWorkspaceData({ title: '', clientName: '', clientEmail: '', clientPhone: '' });
+      setNewDealData({ title: '', clientName: '', clientEmail: '', clientPhone: '', estimatedValue: '' });
     } catch (error) {
-      console.error('Failed to create workspace:', error);
-      alert(t('error.createWorkspace', 'Failed to create project.'));
+      console.error('Dështoi krijimi i marrëveshjes:', error);
+      alert('Dështoi ruajtja e marrëveshjes.');
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleDeleteWorkspace = async () => {
-    if (!workspaceToDelete) return;
+  const handleDeleteDeal = async () => {
+    if (!dealToDelete) return;
     setIsDeleting(true);
     try {
-      await apiService.deleteWorkspace(workspaceToDelete);
+      await apiService.deleteWorkspace(dealToDelete);
       await refreshWorkspaces();
-      setWorkspaceToDelete(null);
+      setDealToDelete(null);
     } catch (error) {
-      console.error('Failed to delete workspace:', error);
-      alert(t('error.deleteWorkspace', 'Failed to delete project.'));
+      console.error('Dështoi fshirja:', error);
+      alert('Nuk mund të fshihet marrëveshja.');
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const inputClasses = "glass-input w-full px-5 py-3.5 rounded-2xl text-sm transition-all placeholder:text-text-secondary/50 border border-border-main bg-surface focus:border-primary-start focus:ring-1 focus:ring-primary-start/40";
-  const labelClasses = "block text-[11px] font-bold text-primary-start uppercase tracking-widest mb-2 ml-1";
+  const inputClasses = "glass-input w-full px-5 py-3.5 rounded-2xl text-sm transition-all placeholder:text-slate-500 border border-slate-800 bg-slate-900/60 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 text-white";
+  const labelClasses = "block text-[11px] font-bold text-blue-400 uppercase tracking-widest mb-2 ml-1";
 
   return (
-    <div className="flex flex-col min-h-screen bg-base text-text-primary">
-      <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 pb-24">
-        <div className="glass-panel p-5 sm:p-6 md:p-8 flex flex-col min-h-[70vh] border border-border-main shadow-sm">
-          <div className="shrink-0 space-y-5 mb-6">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-6 border-b border-border-main pb-6">
-              <div className="flex flex-col gap-1">
-                {/* Title changed from "Projektet e Mia" to "PROJEKTET" */}
-                <h2 className="text-2xl font-black text-text-primary tracking-tighter uppercase leading-none flex items-center gap-2">
-                  <Activity className="text-primary-start" size={24} />
-                  {t('projectsDashboard.title', 'PROJEKTET')}
-                </h2>
-                {/* Subtitle font size increased from text-[10px] to text-sm */}
-                <p className="text-sm font-black text-text-muted uppercase tracking-[0.2em] mt-1 ml-8">
-                  {t('projectsDashboard.subtitle', 'Menaxhimi i Projekteve Aktive')}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="btn-primary flex items-center gap-3 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-[0.98] shrink-0 hover-lift shadow-sm"
-              >
-                <Plus size={16} strokeWidth={4} />
-                <span className="hidden sm:inline">{t('projectsDashboard.newProject', 'Projekt i Ri')}</span>
-              </button>
+    <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100">
+      <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 pb-24 space-y-6">
+        
+        {/* Metrikat Kryesore të Shitjeve & Pipeline */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-sm shadow-xl">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+              💼 Vlera në Negocim
+            </span>
+            <div className="mt-2 text-2xl font-bold text-white">€185,000</div>
+            <p className="text-xs text-slate-400 mt-1">Oferta aktive në shqyrtim nga investitorët</p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-sm shadow-xl">
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
+              📊 Marrëveshje Aktive
+            </span>
+            <div className="mt-2 text-2xl font-bold text-white">{filteredWorkspaces.length} Projekte</div>
+            <p className="text-xs text-slate-400 mt-1">Marrëveshje në ndjekje e sipër</p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-sm shadow-xl">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+              ✅ Kontrata të Mbyllura
+            </span>
+            <div className="mt-2 text-2xl font-bold text-white">€92,400</div>
+            <p className="text-xs text-slate-400 mt-1">Furnizime të konfirmuara këtë muaj</p>
+          </div>
+        </div>
+
+        {/* Paneli Kryesor i Marrëveshjeve */}
+        <div className="p-6 sm:p-8 rounded-2xl bg-slate-900/80 border border-slate-800 backdrop-blur-sm shadow-2xl space-y-6">
+          
+          {/* Header & Butoni Shto */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-800">
+            <div>
+              <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                <Briefcase className="text-blue-400" size={22} />
+                Mundësitë & Marrëveshjet B2B
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Menaxhimi i marrëveshjeve të zbuluara nga Inteligjenca e Tregut
+              </p>
             </div>
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted group-focus-within:text-primary-start transition-colors" />
+
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-blue-600/20 transition-all duration-200"
+            >
+              <Plus size={16} strokeWidth={3} />
+              <span>Shto Marrëveshje</span>
+            </button>
+          </div>
+
+          {/* Shiriti i Kërkimit dhe Filtrat */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-400 transition-colors" />
               <input 
                 type="text" 
-                placeholder={t('header.searchPlaceholder', 'Kërko projekte ose klientë...')} 
-                className="glass-input w-full pl-10 py-3 bg-surface/80 backdrop-blur-sm focus:bg-surface transition-all border border-border-main text-text-primary placeholder:text-text-muted rounded-xl text-sm focus:outline-none" 
+                placeholder="Kërko marrëveshje, investitorë ose kompani..." 
+                className="w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 focus:border-blue-500 text-white placeholder:text-slate-500 rounded-xl text-sm focus:outline-none transition-all" 
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)} 
               />
             </div>
+
+            <div className="flex items-center gap-1.5 p-1 bg-slate-950/60 rounded-xl border border-slate-800 self-start sm:self-auto">
+              <button
+                onClick={() => setStatusFilter('ALL')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  statusFilter === 'ALL'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Të Gjitha
+              </button>
+              <button
+                onClick={() => setStatusFilter('ACTIVE')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  statusFilter === 'ACTIVE'
+                    ? 'bg-amber-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Në Bisedime
+              </button>
+              <button
+                onClick={() => setStatusFilter('WON')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  statusFilter === 'WON'
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Të Fituara
+              </button>
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-6">
+
+          {/* Lista e Marrëveshjeve */}
+          <div className="pt-2">
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="animate-spin h-10 w-10 text-primary-start" />
+                <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
               </div>
             ) : filteredWorkspaces.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 opacity-40">
-                <FolderOpen size={40} />
-                <p className="mt-3 font-bold uppercase tracking-widest text-xs">{t('projectsDashboard.noProjects', 'Nuk u gjet asgjë')}</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <FolderOpen size={48} className="text-slate-600 mb-3" />
+                <p className="font-bold text-sm text-slate-300">Nuk u gjet asnjë marrëveshje</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Krijoni një marrëveshje të re ose shtoni leje ndërtimi nga tab-i "Inteligjenca".
+                </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredWorkspaces.map((workspace: Workspace) => (
-                  <WorkspaceCard
+                  <div
                     key={workspace.id}
-                    workspace={workspace}
-                    onDelete={(id) => setWorkspaceToDelete(id)}
-                  />
+                    className="p-5 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 transition-all duration-200 flex flex-col justify-between space-y-4"
+                  >
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-wide">
+                          {workspace.workspace_number || 'MARRËVESHJE'}
+                        </span>
+                        <button
+                          onClick={() => setDealToDelete(workspace.id)}
+                          className="text-slate-500 hover:text-rose-400 transition-colors p-1"
+                          title="Fshij Marrëveshjen"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+
+                      <h3 className="text-base font-bold text-white mt-3 line-clamp-1">
+                        {workspace.title}
+                      </h3>
+
+                      <div className="mt-3 space-y-1.5 text-xs text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <Building2 size={14} className="text-slate-500 shrink-0" />
+                          <span className="text-slate-300 font-medium">{workspace.client?.name || 'Investitor i Paemërtuar'}</span>
+                        </div>
+                        {workspace.client?.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone size={14} className="text-slate-500 shrink-0" />
+                            <span>{workspace.client.phone}</span>
+                          </div>
+                        )}
+                        {workspace.client?.email && (
+                          <div className="flex items-center gap-2">
+                            <Mail size={14} className="text-slate-500 shrink-0" />
+                            <span className="truncate">{workspace.client.email}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                        <Wallet size={14} />
+                        Faza e Negocimit
+                      </span>
+                      <button
+                        onClick={() => navigate('/business/insights')}
+                        className="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                      >
+                        Shiko Inteligjencën <ArrowUpRight size={14} />
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -148,56 +279,78 @@ const ProjectsDashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Modali i Krijimit të Marrëveshjes */}
       <AnimatePresence>
         {showCreateModal && (
-          <div className="fixed inset-0 bg-canvas/60 backdrop-blur-xl flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="glass-panel w-full max-w-lg p-8 sm:p-10 rounded-[3rem] shadow-sm border border-border-main"
+              className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl w-full max-w-lg space-y-6"
             >
-              <h2 className="text-2xl font-bold text-text-primary mb-8 tracking-tight uppercase">
-                {t('projectsDashboard.createProjectTitle', 'Krijo Projekt të Ri')}
+              <h2 className="text-xl font-bold text-white tracking-tight">
+                Regjistro Marrëveshje / Mundësi të Re
               </h2>
-              <form onSubmit={handleCreateWorkspace} className="space-y-6">
+              <form onSubmit={handleCreateDeal} className="space-y-4">
                 <div>
-                  <label className={labelClasses}>{t('projectsDashboard.projectName', 'Emri i Projektit')}</label>
+                  <label className={labelClasses}>Titulli i Marrëveshjes</label>
                   <input
                     required
-                    placeholder={t('projectsDashboard.projectNamePlaceholder', 'Titulli i Projektit')}
-                    value={newWorkspaceData.title}
-                    onChange={(e) => setNewWorkspaceData(p => ({ ...p, title: e.target.value }))}
+                    placeholder="p.sh. Furnizim me Beton - Mati 1 (Kompleksi Alba)"
+                    value={newDealData.title}
+                    onChange={(e) => setNewDealData(p => ({ ...p, title: e.target.value }))}
                     className={inputClasses}
                   />
                 </div>
-                <div className="pt-6 border-t border-border-main space-y-5">
-                  <p className={labelClasses}>{t('projectsDashboard.clientDetails', 'Detajet e Klientit')}</p>
+
+                <div>
+                  <label className={labelClasses}>Emri i Investitorit / Klientit</label>
                   <input
                     required
-                    placeholder={t('projectsDashboard.clientName', 'Emri i Klientit')}
-                    value={newWorkspaceData.clientName}
-                    onChange={(e) => setNewWorkspaceData(p => ({ ...p, clientName: e.target.value }))}
+                    placeholder="p.sh. Alba Group SH.P.K."
+                    value={newDealData.clientName}
+                    onChange={(e) => setNewDealData(p => ({ ...p, clientName: e.target.value }))}
                     className={inputClasses}
                   />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClasses}>Numri i Telefonit</label>
                     <input
-                      placeholder={t('projectsDashboard.clientEmail', 'Email')}
-                      value={newWorkspaceData.clientEmail}
-                      onChange={(e) => setNewWorkspaceData(p => ({ ...p, clientEmail: e.target.value }))}
+                      placeholder="p.sh. 049 123 456"
+                      value={newDealData.clientPhone}
+                      onChange={(e) => setNewDealData(p => ({ ...p, clientPhone: e.target.value }))}
                       className={inputClasses}
                     />
+                  </div>
+                  <div>
+                    <label className={labelClasses}>Email i Kontaktit</label>
                     <input
-                      placeholder={t('projectsDashboard.clientPhone', 'Telefon')}
-                      value={newWorkspaceData.clientPhone}
-                      onChange={(e) => setNewWorkspaceData(p => ({ ...p, clientPhone: e.target.value }))}
+                      placeholder="p.sh. info@kompania.com"
+                      value={newDealData.clientEmail}
+                      onChange={(e) => setNewDealData(p => ({ ...p, clientEmail: e.target.value }))}
                       className={inputClasses}
                     />
                   </div>
                 </div>
-                <div className="flex justify-between items-center mt-10">
-                  <button type="button" onClick={() => setShowCreateModal(false)} className="px-6 py-4 font-bold text-text-secondary hover:text-text-primary transition-all text-xs uppercase tracking-widest">{t('general.cancel', 'Anulo')}</button>
-                  <button type="submit" disabled={isCreating} className="btn-primary px-10 h-14 rounded-2xl flex items-center justify-center gap-3 active:scale-95 text-xs uppercase tracking-widest disabled:opacity-50 hover-lift shadow-sm">{isCreating ? <Loader2 className="animate-spin h-5 w-5" /> : t('general.create', 'Krijo')}</button>
+
+                <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-800">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowCreateModal(false)} 
+                    className="px-5 py-2.5 rounded-xl border border-slate-800 text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors"
+                  >
+                    Anulo
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={isCreating} 
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider disabled:opacity-50 transition-all shadow-md shadow-blue-600/20"
+                  >
+                    {isCreating ? <Loader2 className="animate-spin h-4 w-4" /> : 'Krijo Marrëveshje'}
+                  </button>
                 </div>
               </form>
             </motion.div>
@@ -205,34 +358,35 @@ const ProjectsDashboardPage: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* Modali i Konfirmimit të Fshirjes */}
       <AnimatePresence>
-        {workspaceToDelete && (
-          <div className="fixed inset-0 bg-canvas/60 backdrop-blur-xl flex items-center justify-center z-[110] p-4">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="glass-panel w-full max-w-md p-10 rounded-[3rem] shadow-sm text-center border border-border-main">
-              <div className="w-20 h-20 bg-danger-start/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-border-main shadow-inner">
-                <Trash2 className="h-10 w-10 text-danger-start" />
+        {dealToDelete && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[110] p-4">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl w-full max-w-md text-center space-y-4">
+              <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto border border-rose-500/20">
+                <Trash2 className="h-8 w-8 text-rose-500" />
               </div>
-              <h2 className="text-2xl font-black text-text-primary mb-3 uppercase tracking-tight">
-                {t('projectsDashboard.deleteConfirmTitle', 'Fshij Projektin?')}
+              <h2 className="text-xl font-bold text-white tracking-tight">
+                Fshij këtë Marrëveshje?
               </h2>
-              <p className="text-text-secondary text-sm mb-10 leading-relaxed italic font-medium">
-                {t('projectsDashboard.deleteConfirmMessage', 'Kjo veprim është i pakthyeshëm.')}
+              <p className="text-slate-400 text-xs leading-relaxed">
+                Ky veprim do ta fshijë marrëveshjen nga pipeline-i juaj i shitjeve.
               </p>
-              <div className="flex justify-center gap-5">
+              <div className="flex justify-center gap-3 pt-2">
                 <button 
                   type="button" 
-                  onClick={() => setWorkspaceToDelete(null)} 
-                  className="btn-secondary flex-1 h-14 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-widest hover-lift shadow-sm"
+                  onClick={() => setDealToDelete(null)} 
+                  className="flex-1 py-2.5 rounded-xl border border-slate-800 text-slate-300 hover:text-white text-xs font-bold uppercase tracking-wider"
                 >
-                  {t('general.cancel', 'Anulo')}
+                  Anulo
                 </button>
                 <button 
                   type="button" 
-                  onClick={handleDeleteWorkspace} 
+                  onClick={handleDeleteDeal} 
                   disabled={isDeleting} 
-                  className="flex-1 h-14 rounded-2xl bg-danger-start hover:bg-danger-start/80 text-text-primary font-black flex items-center justify-center gap-3 active:scale-95 text-xs sm:text-sm uppercase tracking-widest disabled:opacity-50 transition-all hover-lift shadow-sm"
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-wider disabled:opacity-50 transition-all"
                 >
-                  {isDeleting ? <Loader2 className="animate-spin h-5 w-5" /> : t('general.delete', 'Fshij')}
+                  {isDeleting ? <Loader2 className="animate-spin h-4 w-4 mx-auto" /> : 'Fshij'}
                 </button>
               </div>
             </motion.div>
