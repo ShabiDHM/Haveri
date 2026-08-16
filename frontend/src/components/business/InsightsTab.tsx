@@ -3,11 +3,10 @@
 
 import React, { useState } from 'react';
 import { 
-    Flame, AlertTriangle, Phone, MessageSquare, 
-    ArrowUpRight, BookmarkPlus, Sparkles,
-    ShieldAlert, MapPin, CheckCircle
+    Phone, MessageSquare, 
+    BookmarkPlus, Sparkles,
+    MapPin, CheckCircle
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface SinjalTregu {
   id: string;
@@ -95,7 +94,6 @@ const SINJALET_FILLUESE: SinjalTregu[] = [
 export const InsightsTab: React.FC = () => {
   const [filter, setFilter] = useState<'ALL' | 'VIP' | 'CONSTRUCTION' | 'AUCTION' | 'TENDER'>('ALL');
   const [savedDeals, setSavedDeals] = useState<string[]>([]);
-  const navigate = useNavigate();
 
   const handleSaveToDeals = (id: string) => {
     if (!savedDeals.includes(id)) {
@@ -137,7 +135,7 @@ export const InsightsTab: React.FC = () => {
           </span>
         </div>
 
-        {/* Kartat e Rëndësisë së Veçantë */}
+        {/* Kartat VIP */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {vipSignals.map(vip => (
             <div 
