@@ -1,12 +1,12 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - FORTIFIED HEADER V2.1 (MOBILE PROFILE VISIBILITY)
+// HAVERI AI - INTELLIGENCE SUITE HEADER
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-    Bell, LogOut, User as UserIcon, LayoutDashboard, 
-    MessageSquare, Menu, FileText, Package, FolderOpen, 
-    Sparkles, X, Shield, Share2, 
-    Sun, Moon, Building2
+    Bell, LogOut, User as UserIcon, 
+    MessageSquare, Menu, FolderOpen, 
+    Sparkles, X, Shield, 
+    Sun, Moon, Building2, Briefcase
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -16,7 +16,7 @@ import { apiService } from '../services/api';
 import BrandLogo from './BrandLogo';
 
 const Header: React.FC = () => {
-  const { user, logout, isAuthenticated, selectedYear, setSelectedYear } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { t } = useTranslation();
   const location = useLocation();
@@ -57,17 +57,15 @@ const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProfileOpen]);
   
+  // Cleaned Intelligence Navigation
   const navItems = [
-      { label: t('projectsDashboard.title', 'Projektet'), path: '/projects', icon: FolderOpen, exact: true },
-      { label: t('business.finance', 'Financat'), path: '/business/finance', icon: FileText },
-      { label: t('inventory.tabItems_short', 'Stoku'), path: '/business/inventory', icon: Package },
-      { label: t('business.archive', 'Arkiva'), path: '/business/archive', icon: FolderOpen },
-      { label: t('business.insights', 'Inteligjenca'), path: '/business/insights', icon: Sparkles },
-      { label: t('sidebar.legal', 'Zyra Ligjore'), path: '/business/briefing', icon: LayoutDashboard, exact: true },
+      { label: 'Inteligjenca', path: '/business/insights', icon: Sparkles },
+      { label: 'Leads & Projekte', path: '/projects', icon: Briefcase },
+      { label: 'Arkiva', path: '/business/archive', icon: FolderOpen },
   ];
 
   if (user?.role?.toUpperCase() === 'ADMIN') {
-      navItems.push({ label: t('sidebar.admin', 'Admin'), path: '/admin', icon: Shield, exact: false } as any);
+      navItems.push({ label: 'Admin', path: '/admin', icon: Shield });
   }
 
   const handleDropdownNavigate = (path: string) => {
@@ -76,53 +74,49 @@ const Header: React.FC = () => {
   };
 
   const isActive = (item: any) => {
-    if (item.exact) return location.pathname === item.path;
     return location.pathname.startsWith(item.path);
   };
-
-  const isProjectsRoute = location.pathname === "/projects";
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 md:px-8 py-3 bg-canvas/95 backdrop-blur-xl border-b border-border-main">
       
+      {/* Logo & Mobile Menu Toggle */}
       <div className="flex items-center gap-3 shrink-0">
-        {!isProjectsRoute && (
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-            className="p-2 text-text-primary lg:hidden hover:bg-surface/20 rounded-lg"
-          >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        )}
-        <Link to="/projects" className="flex items-center">
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+          className="p-2 text-text-primary lg:hidden hover:bg-surface/20 rounded-lg"
+        >
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+        <Link to="/business/insights" className="flex items-center">
           <BrandLogo />
         </Link>
       </div>
 
-      {!isProjectsRoute && (
-        <div className="hidden lg:flex items-center bg-surface/50 p-1 rounded-2xl border border-border-main shadow-inner">
-          {navItems.map((item) => {
-            const active = isActive(item);
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all duration-200
-                  ${active 
-                    ? 'bg-canvas text-primary-start shadow-sm' 
-                    : 'text-text-muted hover:text-text-primary'
-                  }
-                `}
-              >
-                <item.icon size={18} />
-                <span className="hidden xl:inline">{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </div>
-      )}
+      {/* Desktop Navigation */}
+      <div className="hidden lg:flex items-center bg-surface/50 p-1 rounded-2xl border border-border-main shadow-inner">
+        {navItems.map((item) => {
+          const active = isActive(item);
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={`
+                flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold uppercase tracking-wider transition-all duration-200
+                ${active 
+                  ? 'bg-primary-start text-white shadow-md' 
+                  : 'text-text-muted hover:text-text-primary'
+                }
+              `}
+            >
+              <item.icon size={17} />
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
+      </div>
 
+      {/* Right Controls: Theme, Alerts, User Profile */}
       <div className="flex items-center gap-3">
         <button 
           onClick={toggleTheme} 
@@ -132,14 +126,17 @@ const Header: React.FC = () => {
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <Link to="/calendar" className="p-2 text-text-muted hover:text-text-primary hover:bg-surface/20 rounded-lg relative">
+        <button 
+          onClick={() => navigate('/business/insights')} 
+          className="p-2 text-text-muted hover:text-text-primary hover:bg-surface/20 rounded-lg relative"
+        >
           <Bell size={18} />
           {alertCount > 0 && (
             <span className="absolute top-2 right-2 w-2 h-2 bg-danger-start rounded-full animate-pulse"></span>
           )}
-        </Link>
+        </button>
 
-        {/* User profile: Removed 'hidden sm:block' to ensure it renders on mobile */}
+        {/* User Profile Dropdown */}
         <div className="relative">
           <button
             ref={buttonRef}
@@ -158,27 +155,11 @@ const Header: React.FC = () => {
                 <p className="text-xs text-text-muted">{user?.email}</p>
               </div>
 
-              {isAuthenticated && (
-                <div className="px-4 py-2 flex items-center justify-between hover:bg-hover">
-                  <span className="text-xs font-bold text-text-muted">{t('navigation.year', 'Viti Fiskal')}</span>
-                  <select 
-                    value={selectedYear} 
-                    onChange={(e) => setSelectedYear(parseInt(e.target.value))} 
-                    className="bg-transparent text-primary text-sm font-bold outline-none cursor-pointer"
-                  >
-                    {[2026, 2025, 2024, 2023].map(y => <option key={y} value={y} className="bg-card">{y}</option>)}
-                  </select>
-                </div>
-              )}
-
               <button onClick={() => handleDropdownNavigate('/account')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
                 <UserIcon size={16} className="mr-3 text-primary" />{t('sidebar.account')}
               </button>
               <button onClick={() => handleDropdownNavigate('/profile')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
                 <Building2 size={16} className="mr-3 text-primary" />{t('business.profile', 'Profili')}
-              </button>
-              <button onClick={() => handleDropdownNavigate('/integrations')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
-                <Share2 size={16} className="mr-3 text-primary" />{t('navigation.integrations', 'Integrimet')}
               </button>
               <button onClick={() => handleDropdownNavigate('/support')} className="w-full text-left flex items-center px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-hover">
                 <MessageSquare size={16} className="mr-3 text-primary" />{t('sidebar.support')}
@@ -195,7 +176,8 @@ const Header: React.FC = () => {
         </div>
       </div>
 
-      {!isProjectsRoute && isMobileMenuOpen && (
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
         <div className="fixed inset-x-0 top-16 bg-card border-b border-border-main p-4 lg:hidden z-40 shadow-lg">
           <div className="grid grid-cols-2 gap-3">
             {navItems.map(item => (
