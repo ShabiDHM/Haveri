@@ -1,45 +1,37 @@
 // FILE: src/pages/BusinessPage.tsx
-// Original – no law tab
+// HAVERI AI - BUSINESS WORKSPACE (INTELLIGENCE CORE)
 
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ProfileTab } from '../components/business/ProfileTab';
-import { FinanceTab } from '../components/business/FinanceTab';
 import { ArchiveTab } from '../components/business/ArchiveTab';
-import { InventoryTab } from '../components/business/InventoryTab';
-import LegalDraftingTab from '../components/business/LegalDraftingTab';
 import { InsightsTab } from '../components/business/InsightsTab';
 import { InboxTab } from '../components/business/InboxTab';
 
-type BusinessView = 'briefing' | 'finance' | 'inventory' | 'archive' | 'insights' | 'profile' | 'inbox';
+type BusinessView = 'insights' | 'archive' | 'profile' | 'inbox' | 'briefing';
 
 interface BusinessPageProps {
-    view?: BusinessView;
+  view?: BusinessView;
 }
 
-const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'briefing' }) => {
+const BusinessPage: React.FC<BusinessPageProps> = ({ view = 'insights' }) => {
   const { workspace, isLoading: isAuthLoading } = useAuth();
 
   const renderActiveTab = () => {
     if (isAuthLoading) return null;
 
     switch (view) {
-      case 'briefing': 
-        return <LegalDraftingTab />;
-      case 'finance': 
-        return <FinanceTab />;
-      case 'inventory': 
-        return <InventoryTab />;
-      case 'archive': 
-        return <ArchiveTab key={workspace?.id || 'root'} workspaceId={workspace?.id} />;
-      case 'insights': 
+      case 'insights':
+      case 'briefing':
         return <InsightsTab />;
-      case 'profile': 
+      case 'archive':
+        return <ArchiveTab key={workspace?.id || 'root'} workspaceId={workspace?.id} />;
+      case 'profile':
         return <ProfileTab />;
-      case 'inbox': 
+      case 'inbox':
         return <InboxTab />;
-      default: 
-        return <LegalDraftingTab />;
+      default:
+        return <InsightsTab />;
     }
   };
 
