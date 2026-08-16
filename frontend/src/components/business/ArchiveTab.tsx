@@ -1,5 +1,5 @@
 // FILE: src/components/business/ArchiveTab.tsx
-// PHOENIX PROTOCOL - INTERNAL SCROLLING (HEADER FIXED, CARDS SCROLL)
+// HAVERI AI - ARCHIVE & DOCUMENT VIEWER
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,10 +13,8 @@ import { useTranslation } from 'react-i18next';
 import { useArchiveData } from '../../hooks/useArchiveData';
 import PDFViewerModal from '../PDFViewerModal';
 import ShareModal from '../ShareModal';
-import { ForensicAccountantModal } from './insights/ForensicAccountantModal';
 import { ArchiveCard, getFileIcon } from './archive/ArchiveCard';
 import { Panel } from '../ui/Panel';
-import { EditPurchaseOrderModal } from './modals/EditPurchaseOrderModal';
 
 interface ArchiveTabProps {
     workspaceId?: string;
@@ -127,10 +125,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
     const [renameValue, setRenameValue] = useState("");
     const [showRenameModal, setShowRenameModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
-    const [showForensicModal, setShowForensicModal] = useState(false);
     const [chatDoc, setChatDoc] = useState<{id: string, title: string} | null>(null);
-    const [editPoId, setEditPoId] = useState<string | null>(null);
-    const [showEditModal, setShowEditModal] = useState(false);
 
     const archiveInputRef = useRef<HTMLInputElement>(null);
 
@@ -164,15 +159,6 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
         } catch(e) { 
             alert(t('error.generic')); 
         }
-    };
-
-    const handleEditContent = (item: ArchiveItemOut) => {
-        setEditPoId(item.id);
-        setShowEditModal(true);
-    };
-
-    const handleEditSuccess = () => {
-        fetchArchiveContent();
     };
 
     const handleViewItem = async (item: ArchiveItemOut) => {
@@ -221,7 +207,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
             animate={{ opacity: 1 }} 
             className="h-[calc(100vh-140px)] overflow-hidden flex flex-col glass-panel p-6 md:p-8 border border-border-main shadow-sm"
         >
-            {/* Fixed Top Panel - search + action buttons + breadcrumbs integrated */}
+            {/* Top Search & Actions */}
             <div className="flex-shrink-0 space-y-4">
                 <Panel className="p-4 sm:p-6 border border-border-main bg-surface/30 backdrop-blur-sm shadow-sm">
                     <div className="flex flex-col xl:flex-row gap-4">
@@ -236,7 +222,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                             />
                         </div>
                         
-                        {/* Button group with breadcrumbs integrated */}
+                        {/* Button Group */}
                         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 items-center">
                             {breadcrumbs.map((crumb, index) => {
                                 const isLast = index === breadcrumbs.length - 1;
@@ -275,7 +261,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                 </Panel>
             </div>
 
-            {/* Scrollable Content Area: cards grid */}
+            {/* Scrollable Content Area */}
             <div className="flex-1 overflow-y-auto custom-scrollbar mt-4 pr-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                     <AnimatePresence>
@@ -297,17 +283,15 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                                 onRename={() => { setItemToRename(item); setRenameValue(item.title); setShowRenameModal(true); }} 
                                 onShare={() => shareItem(item)} 
                                 onAskAI={() => setChatDoc({id: item.id, title: item.title})}
-                                onEditContent={item.category === 'purchase_order' ? () => handleEditContent(item) : undefined}
                             />
                         ))}
                     </AnimatePresence>
                 </div>
             </div>
             
-            <ForensicAccountantModal isOpen={showForensicModal} onClose={() => setShowForensicModal(false)} />
             <AnimatePresence>{chatDoc && <DocumentChatModal documentId={chatDoc.id} documentTitle={chatDoc.title} onClose={() => setChatDoc(null)} />}</AnimatePresence>
             
-            {/* Modals (unchanged) */}
+            {/* Folder Creation Modal */}
             <AnimatePresence>
                 {showFolderModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
@@ -336,6 +320,7 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                 )}
             </AnimatePresence>
             
+            {/* Rename Modal */}
             <AnimatePresence>
                 {showRenameModal && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
@@ -363,13 +348,6 @@ export const ArchiveTab: React.FC<ArchiveTabProps> = ({ workspaceId }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
-            
-            <EditPurchaseOrderModal
-                isOpen={showEditModal}
-                archiveId={editPoId}
-                onClose={() => setShowEditModal(false)}
-                onSuccess={handleEditSuccess}
-            />
             
             {viewingDoc && <PDFViewerModal documentData={viewingDoc} onClose={() => setViewingDoc(null)} t={t} directUrl={viewingUrl || ""} />}
             {showShareModal && <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} caseId={(isInsideWorkspace ? currentView.id : workspaceId) || ""} caseTitle={currentView.name} />}
