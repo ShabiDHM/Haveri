@@ -1,11 +1,11 @@
 // FILE: src/components/Header.tsx
-// HAVERI AI - KOKA E NAVIGIMIT (100% SHQIP)
+// HAVERI - ASISTENTI VIRTUAL (PULSI I TREGUT NË KOSOVË)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Bell, LogOut, User as UserIcon, 
     MessageSquare, Menu, FolderOpen, 
-    Sparkles, X, Shield, 
+    Activity, X, Shield, 
     Sun, Moon, Building2, Briefcase
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -55,9 +55,9 @@ const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProfileOpen]);
   
-  // Navigimi i pastër në Shqip
+  // Navigimi Kryesor me emrin e plotë
   const navItems = [
-      { label: 'Inteligjenca', path: '/business/insights', icon: Sparkles },
+      { label: 'Pulsi i Tregut në Kosovë', path: '/business/insights', icon: Activity },
       { label: 'Mundësitë & Projektet', path: '/projects', icon: Briefcase },
       { label: 'Arkiva', path: '/business/archive', icon: FolderOpen },
   ];
@@ -78,7 +78,7 @@ const Header: React.FC = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 md:px-8 py-3 bg-canvas/95 backdrop-blur-xl border-b border-border-main">
       
-      {/* Logo & Menyja Mobile */}
+      {/* Logo */}
       <div className="flex items-center gap-3 shrink-0">
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -92,7 +92,7 @@ const Header: React.FC = () => {
         </Link>
       </div>
 
-      {/* Navigimi Kryesor */}
+      {/* Desktop Navigation */}
       <div className="hidden lg:flex items-center bg-surface/50 p-1 rounded-2xl border border-border-main shadow-inner">
         {navItems.map((item) => {
           const active = isActive(item);
@@ -115,7 +115,7 @@ const Header: React.FC = () => {
         })}
       </div>
 
-      {/* Kontrollet e Djathta: Tema, Njoftimet, Profili */}
+      {/* Kontrollet e Djathta */}
       <div className="flex items-center gap-3">
         <button 
           onClick={toggleTheme} 
@@ -128,7 +128,7 @@ const Header: React.FC = () => {
         <button 
           onClick={() => navigate('/business/insights')} 
           className="p-2 text-text-muted hover:text-text-primary hover:bg-surface/20 rounded-lg relative"
-          title="Njoftimet e Tregut"
+          title="Pulsi i Tregut në Kosovë"
         >
           <Bell size={18} />
           {alertCount > 0 && (
@@ -188,7 +188,7 @@ const Header: React.FC = () => {
                 className="flex flex-col items-center p-4 rounded-xl bg-surface border border-border-main text-text-secondary hover:text-primary hover:bg-hover transition-all"
               >
                 <item.icon size={24} className="mb-2" />
-                <span className="text-xs font-bold">{item.label}</span>
+                <span className="text-xs font-bold text-center">{item.label}</span>
               </Link>
             ))}
           </div>

@@ -1,5 +1,5 @@
 // FILE: src/components/business/InsightsTab.tsx
-// HAVERI AI - QENDRA E INTELIGJENCËS MOBILE-FIRST (KARTAT E VËMENDJES & VIP)
+// HAVERI - PULSI I TREGUT NË KOSOVË (MOBILE-FIRST & THEME ADAPTIVE)
 
 import React, { useState } from 'react';
 import { 
@@ -118,7 +118,7 @@ export const InsightsTab: React.FC = () => {
   return (
     <div className="space-y-5 pb-12">
       
-      {/* 1. SEKSIONI I KARTAVE TË VËMENDJES (VIP ATTENTION CARDS) */}
+      {/* 1. SEKSIONI I KARTAVE TË VËMENDJES (VIP) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
@@ -127,11 +127,11 @@ export const InsightsTab: React.FC = () => {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
             </span>
             <h2 className="text-xs font-black uppercase tracking-widest text-text-primary">
-              Sinjalet me Vëmendje të Lartë (VIP)
+              Pulsi i Tregut në Kosovë (Sinjalet VIP)
             </h2>
           </div>
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-start/10 text-primary-start">
-            Vetëm për Administratorët
+            Ekskluzive
           </span>
         </div>
 
@@ -212,7 +212,7 @@ export const InsightsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. SHIRITI I FILTRAVE TË SHPEJTË NË MOBILE */}
+      {/* 2. SHIRITI I FILTRAVE TË SHPEJTË */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
         {[
           { key: 'ALL', label: 'Të Gjitha' },
@@ -235,7 +235,7 @@ export const InsightsTab: React.FC = () => {
         ))}
       </div>
 
-      {/* 3. FLUKSI I SINJALEVE TË TREGUT (FEED-I KRYESOR) */}
+      {/* 3. FLUKSI I SINJALEVE TË TREGUT (FEED-I) */}
       <div className="space-y-3">
         {filteredSignals.map((signal) => (
           <div 
@@ -325,3 +325,5 @@ export const InsightsTab: React.FC = () => {
     </div>
   );
 };
+
+export default InsightsTab;
